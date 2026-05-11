@@ -116,7 +116,7 @@ defmodule Sanbase.SocialData.Spikes do
       metric: metadata.internal_metric,
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
-      interval: Sanbase.DateTimeUtils.str_to_sec(interval)
+      interval: Sanbase.Utils.DateTime.str_to_sec(interval)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)

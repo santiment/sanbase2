@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     # User is inserted one day ago, but the registration_state datetime is set to the moment
     # of creation, i.e. now
     assert Sanbase.TestUtils.datetime_close_to(
-             Sanbase.DateTimeUtils.from_iso8601!(result1["joinedAt"]),
+             Sanbase.Utils.DateTime.from_iso8601!(result1["joinedAt"]),
              Timex.now(),
              seconds: 2
            )
@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     # User is just now and the registration_state datetime is set to the moment
     # of creation, i.e. now
     assert Sanbase.TestUtils.datetime_close_to(
-             Sanbase.DateTimeUtils.from_iso8601!(result2["joinedAt"]),
+             Sanbase.Utils.DateTime.from_iso8601!(result2["joinedAt"]),
              Timex.now(),
              seconds: 2
            )
@@ -136,7 +136,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     # inserted_at datetime, i.e. yesterday
     #
     assert Sanbase.TestUtils.datetime_close_to(
-             Sanbase.DateTimeUtils.from_iso8601!(result3["joinedAt"]),
+             Sanbase.Utils.DateTime.from_iso8601!(result3["joinedAt"]),
              one_day_ago,
              seconds: 2
            )

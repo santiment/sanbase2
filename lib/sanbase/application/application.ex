@@ -9,7 +9,7 @@ defmodule Sanbase.Application do
   alias Sanbase.EventBus.KafkaExporterSubscriber
 
   def start(_type, _args) do
-    Code.ensure_loaded?(Envy) && Envy.auto_load()
+    # .env files are loaded in config/runtime.exs via Sanbase.EnvConfigLoader.auto_load/0
 
     # Container type is one of: web, scrapers, signals, all
     container_type = container_type()
@@ -323,6 +323,9 @@ defmodule Sanbase.Application do
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,
+
+      # Start the Hammer rate limiter backend (ETS)
+      {Sanbase.RateLimit, [clean_period: :timer.minutes(10), key_older_than: :timer.hours(4)]},
 
       # Start telegram rate limiter. Used both in web and alerts
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(

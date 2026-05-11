@@ -18,11 +18,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
 
   defp do_call(:get_metric, alias, %Resolution{context: context} = resolution) do
     %{arguments: %{metric: metric}} = resolution
+    version = Map.get(resolution.arguments, :version, Sanbase.Metric.default_version())
     selectors = get_selectors(resolution)
     # In case of no alias, use the query name as alias. It is guaranteed that if there are two
     # of the same queries in a document, at least one of them will have an alias,
     # otherwise we get name collision.
-    elem = {:get_metric, alias || "getMetric", metric, selectors}
+    elem = {:get_metric, alias || "getMetric", metric, selectors, version}
 
     %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end
@@ -52,7 +53,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   defp get_selectors(%Resolution{} = resolution) do
     resolution.definition.selections
     |> Enum.map(fn %{name: name} = field ->
-      case Inflex.camelize(name, :lower) do
+      case Sanbase.Utils.Inflect.camelize(name, :lower) do
         name when name in @fields_with_selector ->
           argument_data_to_selector(field.argument_data)
 

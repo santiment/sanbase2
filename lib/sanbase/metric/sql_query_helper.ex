@@ -346,7 +346,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     from_unix = dt_to_unix(:from, from)
     to_unix = dt_to_unix(:to, to)
 
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
     span = div(to_unix - from_unix, interval_sec) |> max(1)
 
     {from_unix, to_unix, interval_sec, span}

@@ -135,7 +135,7 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
     end
 
     defp execute_dashboard_text_widget_mutation(conn, mutation, args) do
-      mutation_name = mutation |> Inflex.camelize(:lower)
+      mutation_name = mutation |> Sanbase.Utils.Inflect.camelize(:lower)
 
       mutation = """
       mutation {
@@ -280,7 +280,7 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
     end
 
     defp execute_dashboard_image_widget_mutation(conn, mutation, args) do
-      mutation_name = mutation |> Inflex.camelize(:lower)
+      mutation_name = mutation |> Sanbase.Utils.Inflect.camelize(:lower)
 
       mutation = """
       mutation {

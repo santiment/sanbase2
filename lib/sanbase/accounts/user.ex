@@ -10,6 +10,7 @@ defmodule Sanbase.Accounts.User do
     User,
     EthAccount,
     UserApikeyToken,
+    UserOnboarding,
     UserSettings,
     UserFollower,
     UserRole
@@ -97,8 +98,10 @@ defmodule Sanbase.Accounts.User do
 
     field(:metric_access_level, :string, default: "released")
     field(:feature_access_level, :string, default: "released")
+    field(:available_metrics_lookback_days, :integer)
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
+    has_one(:user_onboarding, UserOnboarding, on_delete: :delete_all)
 
     has_one(:telegram_user_tokens, Telegram.UserToken, on_delete: :delete_all)
     has_one(:uniswap_staking, User.UniswapStaking, on_delete: :delete_all)
@@ -145,7 +148,7 @@ defmodule Sanbase.Accounts.User do
   end
 
   def changeset(%User{} = user, attrs \\ %{}) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+    attrs = Sanbase.Utils.DateTime.truncate_datetimes(attrs)
 
     user
     |> cast(attrs, [
@@ -172,6 +175,7 @@ defmodule Sanbase.Accounts.User do
       :name,
       :metric_access_level,
       :feature_access_level,
+      :available_metrics_lookback_days,
       :registration_state,
       :description,
       :website_url,
@@ -192,6 +196,10 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:twitter_id)
     |> validate_inclusion(:metric_access_level, @allowed_access_levels)
     |> validate_inclusion(:feature_access_level, @allowed_access_levels)
+    |> validate_number(:available_metrics_lookback_days,
+      greater_than: 0,
+      less_than_or_equal_to: 7300
+    )
   end
 
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)

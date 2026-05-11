@@ -51,12 +51,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
         |> extract_timeseries_data_per_slug()
 
       assert %{"datetime" => dt_str1, "data" => data1} = result |> Enum.at(0)
-      assert dt_str1 |> Sanbase.DateTimeUtils.from_iso8601!() == dt1
+      assert dt_str1 |> Sanbase.Utils.DateTime.from_iso8601!() == dt1
       assert %{"slug" => project1.slug, "value" => 200.0} in data1
       assert %{"slug" => project2.slug, "value" => 150.0} in data1
 
       assert %{"datetime" => dt_str2, "data" => data2} = result |> Enum.at(1)
-      assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
+      assert dt_str2 |> Sanbase.Utils.DateTime.from_iso8601!() == dt2
       assert %{"slug" => project1.slug, "value" => 400.0} in data2
       assert %{"slug" => project2.slug, "value" => 100.0} in data2
     end)
@@ -90,12 +90,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
         |> extract_timeseries_data_per_slug()
 
       assert %{"datetime" => dt_str1, "data" => data1} = result |> Enum.at(0)
-      assert dt_str1 |> Sanbase.DateTimeUtils.from_iso8601!() == dt1
+      assert dt_str1 |> Sanbase.Utils.DateTime.from_iso8601!() == dt1
       assert %{"slug" => project1.slug, "value" => 400.0} in data1
       assert %{"slug" => project2.slug, "value" => 100.0} in data1
 
       assert %{"datetime" => dt_str2, "data" => data2} = result |> Enum.at(1)
-      assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
+      assert dt_str2 |> Sanbase.Utils.DateTime.from_iso8601!() == dt2
       assert %{"slug" => project1.slug, "value" => 500.0} in data2
       assert %{"slug" => project2.slug, "value" => 200.0} in data2
     end)
@@ -131,12 +131,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
         |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
 
       assert %{"datetime" => dt_str1, "data" => data1} = result |> Enum.at(0)
-      assert dt_str1 |> Sanbase.DateTimeUtils.from_iso8601!() == dt1
+      assert dt_str1 |> Sanbase.Utils.DateTime.from_iso8601!() == dt1
       assert %{"slug" => project1.slug, "value" => 400} in data1
       assert %{"slug" => project2.slug, "value" => 100} in data1
 
       assert %{"datetime" => dt_str2, "data" => data2} = result |> Enum.at(1)
-      assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
+      assert dt_str2 |> Sanbase.Utils.DateTime.from_iso8601!() == dt2
       assert %{"slug" => project1.slug, "value" => 500} in data2
       assert %{"slug" => project2.slug, "value" => 200} in data2
 
@@ -155,12 +155,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
         |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
 
       assert %{"dt" => dt_str1, "d" => data1} = result |> Enum.at(0)
-      assert dt_str1 |> Sanbase.DateTimeUtils.from_iso8601!() == dt1
+      assert dt_str1 |> Sanbase.Utils.DateTime.from_iso8601!() == dt1
       assert %{"s" => project1.slug, "v" => 400} in data1
       assert %{"s" => project2.slug, "v" => 100} in data1
 
       assert %{"dt" => dt_str2, "d" => data2} = result |> Enum.at(1)
-      assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
+      assert dt_str2 |> Sanbase.Utils.DateTime.from_iso8601!() == dt2
       assert %{"s" => project1.slug, "v" => 500} in data2
       assert %{"s" => project2.slug, "v" => 200} in data2
     end)

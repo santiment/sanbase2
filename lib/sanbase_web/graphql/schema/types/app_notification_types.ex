@@ -8,9 +8,11 @@ defmodule SanbaseWeb.Graphql.AppNotificationTypes do
     field(:type, non_null(:string))
     field(:title, :string)
     field(:content, :string)
+    field(:url, :string)
     field(:entity_type, :string)
     field(:entity_id, :integer)
     field(:entity_name, :string)
+    field(:entity_description, :string)
     field(:is_broadcast, non_null(:boolean))
     field(:json_data, :json)
     field(:inserted_at, non_null(:datetime))
@@ -21,6 +23,11 @@ defmodule SanbaseWeb.Graphql.AppNotificationTypes do
 
     field(:read_at, :datetime)
     field(:user, :public_user)
+  end
+
+  object :notification_type_setting do
+    field(:type, non_null(:string))
+    field(:is_enabled, non_null(:boolean))
   end
 
   object :app_notification_type_stats do

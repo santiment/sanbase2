@@ -2,8 +2,8 @@ defmodule Sanbase.Metric.Registry.Validation do
   import Ecto.Changeset
 
   def validate_interval(column, value) when column in [:min_interval, :stabilization_period] do
-    if Sanbase.DateTimeUtils.valid_compound_duration?(value) do
-      if Sanbase.DateTimeUtils.str_to_days(value) > 30 do
+    if Sanbase.Utils.DateTime.valid_compound_duration?(value) do
+      if Sanbase.Utils.DateTime.str_to_days(value) > 30 do
         [
           {column, "The provided #{column} value #{value} is too big - more than 30 days."}
         ]
@@ -117,7 +117,7 @@ defmodule Sanbase.Metric.Registry.Validation do
   end
 
   defp interval?(value) do
-    is_binary(value) and Sanbase.DateTimeUtils.valid_compound_duration?(value)
+    is_binary(value) and Sanbase.Utils.DateTime.valid_compound_duration?(value)
   end
 
   defp suffixed_string_number?(num) when is_binary(num) do

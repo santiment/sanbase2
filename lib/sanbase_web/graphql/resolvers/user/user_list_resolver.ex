@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   @trending_words_size 10
   @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
-                   |> Enum.map(&Inflex.camelize(&1, :lower))
+                   |> Enum.map(&Sanbase.Utils.Inflect.camelize(&1, :lower))
 
   ###########################
   #         Queries         #
@@ -357,14 +357,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def update_watchlist_settings(_root, %{id: watchlist_id, settings: settings}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    UserList.Settings.update_or_create_settings(watchlist_id, current_user.id, settings)
-    |> case do
-      {:ok, %{settings: settings}} ->
-        {:ok, settings}
+    # Settings are per-(watchlist_id, user_id) — this mutates the caller's own
+    # view preferences for the watchlist, not the watchlist's global settings.
+    # Public watchlists are readable by anyone, so anyone may store their own
+    # per-user preferences; private watchlists only by the owner.
+    with {:ok, watchlist} <- UserList.by_id(watchlist_id, []),
+         true <- watchlist.is_public or watchlist.user_id == current_user.id do
+      UserList.Settings.update_or_create_settings(watchlist_id, current_user.id, settings)
+      |> case do
+        {:ok, %{settings: settings}} ->
+          {:ok, settings}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error,
-         message: "Cannot update watchlist settings", details: changeset_errors(changeset)}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:error,
+           message: "Cannot update watchlist settings", details: changeset_errors(changeset)}
+      end
+    else
+      # Same generic error for not-found and not-owned-private so callers can't
+      # distinguish absent IDs from private watchlists they don't own.
+      {:error, _reason} -> {:error, "Cannot update settings for this watchlist"}
+      false -> {:error, "Cannot update settings for this watchlist"}
     end
   end
 

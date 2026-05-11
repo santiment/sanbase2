@@ -7,7 +7,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
   alias Sanbase.Project.AvailableQueries
 
   setup_all_with_mocks([
-    {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: []}} end]}
+    {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _, _ -> {:ok, %{rows: []}} end]}
   ]) do
     []
   end

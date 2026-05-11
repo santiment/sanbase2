@@ -3,7 +3,7 @@ defmodule Sanbase.BlockchainAddress.ListSelector.Validator do
   alias Sanbase.Project.ListSelector.Transform
 
   def valid_selector?(args) do
-    args = Sanbase.MapUtils.atomize_keys(args)
+    args = Sanbase.Utils.Map.atomize_keys(args)
     filters = Transform.args_to_filters(args)
     pagination = Transform.args_to_pagination(args) || %{}
 

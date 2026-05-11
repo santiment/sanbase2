@@ -3,7 +3,7 @@ defmodule Sanbase.Alert.History.ResultBuilder.Transformer do
   Prepare the raw data for checking when the alrt would have fired in the past
   """
   import Sanbase.Math, only: [percent_change: 2]
-  import Sanbase.DateTimeUtils, only: [str_to_days: 1]
+  import Sanbase.Utils.DateTime, only: [str_to_days: 1]
 
   @doc ~s"""
   Transform the raw data into data points containing the actual value, the percent

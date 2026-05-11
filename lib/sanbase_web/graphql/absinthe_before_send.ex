@@ -255,7 +255,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         # to the underlaying GraphQL query. If there is no alias, use the query
         # name as key. In a document if two or more of the same queries are used,
         # all but one need to have an alias so there would be no name conflicts.
-        {Inflex.camelize(alias || name, :lower), Inflex.camelize(name, :lower)}
+        {Sanbase.Utils.Inflect.camelize(alias || name, :lower),
+         Sanbase.Utils.Inflect.camelize(name, :lower)}
       end)
     end)
     |> Map.new()
@@ -266,13 +267,14 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   # Create an API Call event for every query in a Document separately.
   defp export_api_call_data(query_metadata) when is_map(query_metadata) do
     Enum.map(query_metadata.success_queries, fn query ->
-      {query, selector} = get_query_and_selector(query)
+      {query, selector, version} = get_query_and_selector(query)
 
       %{
         id: query_metadata.request_id,
         timestamp: query_metadata.timestamp,
         query: query,
         selector: Jason.encode!(selector),
+        version: version,
         status_code: 200,
         has_graphql_errors: query_metadata.has_graphql_errors,
         user_id: query_metadata.caller_data.user_id,
@@ -307,13 +309,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     end
   end
 
-  defp get_query_and_selector({:get_metric, _alias, metric, selector}),
-    do: {"getMetric|#{metric}", selector}
+  defp get_query_and_selector({:get_metric, _alias, metric, selector, version}),
+    do: {"getMetric|#{metric}", selector, version}
 
   defp get_query_and_selector({:get_signal, _alias, signal, selector}),
-    do: {"getSignal|#{signal}", selector}
+    do: {"getSignal|#{signal}", selector, nil}
 
-  defp get_query_and_selector(query), do: {query, nil}
+  defp get_query_and_selector(query), do: {query, nil, nil}
 
   defp remote_ip(blueprint) do
     if Map.has_key?(blueprint.execution.context, :remote_ip),
@@ -371,7 +373,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         error_queries =
           errors
           |> Enum.flat_map(fn
-            %{path: [name | _]} -> [Inflex.camelize(name, :lower)]
+            %{path: [name | _]} -> [Sanbase.Utils.Inflect.camelize(name, :lower)]
             %{path: []} -> []
             %{path: nil} -> []
             _ -> []
@@ -414,7 +416,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # which is later used to resolve aliases to query names.
 
     # Get a map where the values are one of:
-    # - {:get_metric, alias, metric, selector} |
+    # - {:get_metric, alias, metric, selector, version} |
     # - {:get_signal, alias, signal, selector} |
     # These will replace the `alias: getMetric` seen in the queries list in order
     # to enrich them with the metric/signal that has been queried by the user
@@ -423,11 +425,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     alias_to_get_query_tuple_map =
       Map.get(blueprint.execution.context, :__get_query_name_arg__, [])
       |> Map.new(fn
-        {:get_metric, alias, _metric, _selector} = tuple ->
-          {Inflex.camelize(alias, :lower), tuple}
+        {:get_metric, alias, _metric, _selector, _version} = tuple ->
+          {Sanbase.Utils.Inflect.camelize(alias, :lower), tuple}
 
         {:get_signal, alias, _signal, _selector} = tuple ->
-          {Inflex.camelize(alias, :lower), tuple}
+          {Sanbase.Utils.Inflect.camelize(alias, :lower), tuple}
       end)
 
     # Rename aliases to the query name itself, or in case of getMetric and getSignal -- the whole tuple.
@@ -435,7 +437,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # the selector that has been provided (like {"slugs": ["bitcoin", "ethereum"]})
     rename_mapper = fn list ->
       Enum.map(list, fn alias ->
-        alias = alias |> Inflex.camelize(:lower)
+        alias = alias |> Sanbase.Utils.Inflect.camelize(:lower)
         Map.get(alias_to_get_query_tuple_map, alias) || Map.fetch!(alias_to_query_name_map, alias)
       end)
     end

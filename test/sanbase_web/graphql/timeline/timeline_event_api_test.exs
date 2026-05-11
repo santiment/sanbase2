@@ -321,11 +321,11 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       result = execute_mutation(context.conn, mutation, "vote")
 
       assert result["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
-      voted_at = result["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      voted_at = result["votedAt"] |> Sanbase.Utils.DateTime.from_iso8601!()
 
       assert Sanbase.TestUtils.datetime_close_to(
                Timex.now(),
-               Sanbase.DateTimeUtils.from_iso8601!(voted_at),
+               Sanbase.Utils.DateTime.from_iso8601!(voted_at),
                2,
                :seconds
              )
@@ -339,11 +339,11 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
       result1 = execute_mutation(context.conn, upvote_mutation, "vote")
       assert result1["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
-      voted_at = result1["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      voted_at = result1["votedAt"] |> Sanbase.Utils.DateTime.from_iso8601!()
 
       assert Sanbase.TestUtils.datetime_close_to(
                Timex.now(),
-               Sanbase.DateTimeUtils.from_iso8601!(voted_at),
+               Sanbase.Utils.DateTime.from_iso8601!(voted_at),
                2,
                :seconds
              )
@@ -360,6 +360,18 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       result = execute_mutation(context.conn, mutation, "unvote")
       assert result["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
       assert result["votedAt"] == nil
+    end
+
+    test "private timeline events are not votable by other users", context do
+      private_owner = insert(:user)
+      {timeline_event, _user_trigger} = create_timeline_event(private_owner, false)
+      mutation = upvote_timeline_event_mutation(timeline_event.id)
+
+      error = execute_mutation_with_error(context.conn, mutation)
+
+      assert error ==
+               "The entity of type timeline_event with id #{timeline_event.id} does not exist, " <>
+                 "or is private and not owned by you."
     end
   end
 
@@ -823,12 +835,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     """
   end
 
-  defp create_timeline_event(user) do
+  defp create_timeline_event(user, is_public \\ true) do
     user_trigger =
       insert(:user_trigger,
         user: user,
         trigger: %{
-          is_public: true,
+          is_public: is_public,
           settings: default_trigger_settings_string_keys(),
           title: "my trigger",
           description: "DAA going up 300%"

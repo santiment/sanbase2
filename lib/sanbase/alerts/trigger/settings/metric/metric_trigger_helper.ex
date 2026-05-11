@@ -4,7 +4,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
   """
 
   import Sanbase.Alert.Utils
-  import Sanbase.DateTimeUtils
+  import Sanbase.Utils.DateTime
 
   alias Sanbase.Cache
   alias Sanbase.Metric

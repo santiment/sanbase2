@@ -33,9 +33,13 @@ defmodule SanbaseWeb.Graphql.ProjectHiddenApiTest do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
 
+    before_update = DateTime.utc_now() |> DateTime.truncate(:second)
+
     assert {:ok, _} =
              Sanbase.Project.changeset(p2, %{is_hidden: true, hidden_reason: "duplicate"})
              |> Sanbase.Repo.update()
+
+    after_update = DateTime.utc_now()
 
     # not a hidden project
     project = project_by_slug(conn, %{slug: p1.slug})
@@ -59,12 +63,9 @@ defmodule SanbaseWeb.Graphql.ProjectHiddenApiTest do
 
     assert slug == p2.slug
 
-    assert Sanbase.TestUtils.datetime_close_to(
-             DateTime.utc_now(),
-             Sanbase.DateTimeUtils.from_iso8601!(dt),
-             1,
-             :seconds
-           )
+    hidden_since = Sanbase.Utils.DateTime.from_iso8601!(dt)
+    assert DateTime.compare(hidden_since, before_update) in [:eq, :gt]
+    assert DateTime.compare(hidden_since, after_update) in [:eq, :lt]
   end
 
   defp project_by_slug(conn, args) do

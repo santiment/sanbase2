@@ -248,6 +248,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
   def vote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with {:ok, entity, entity_id} <- only_one_entity_id?(args),
+         :ok <- can_vote_for_entity(entity, entity_id, user.id),
          vote_args <- args_to_vote_args(args, user) do
       case Vote.create(vote_args) do
         {:ok, vote} ->
@@ -262,6 +263,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
   def unvote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with {:ok, entity, entity_id} <- only_one_entity_id?(args),
+         :ok <- can_vote_for_entity(entity, entity_id, user.id),
          vote_args <- args_to_vote_args(args, user) do
       case Vote.downvote(vote_args) do
         {:ok, vote} ->
@@ -272,5 +274,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
           {:error, "Cannot remove vote for #{entity} with id #{entity_id}"}
       end
     end
+  end
+
+  defp can_vote_for_entity(entity, entity_id, user_id) do
+    entity_type = Sanbase.Entity.vote_entity_to_entity_type(entity)
+
+    case Sanbase.Entity.get_visibility_data(entity_type, entity_id) do
+      # Hidden entities (even public ones, and even those owned by the caller)
+      # are treated as if they don't exist — voting on them would bring them
+      # back into trending/leaderboard surfaces.
+      {:ok, %{is_hidden: true}} ->
+        not_visible_error(entity, entity_id)
+
+      {:ok, %{user_id: ^user_id}} ->
+        :ok
+
+      {:ok, %{is_public: true}} ->
+        :ok
+
+      # Merge "private and not owned" and "does not exist" into one message
+      # so an attacker cannot probe private entity IDs.
+      _ ->
+        not_visible_error(entity, entity_id)
+    end
+  end
+
+  defp not_visible_error(entity, entity_id) do
+    {:error,
+     "The entity of type #{entity} with id #{entity_id} does not exist, " <>
+       "or is private and not owned by you."}
   end
 end

@@ -23,6 +23,9 @@ defmodule Sanbase.Accounts.Settings do
     field(:paid_with, :string, default: nil)
     field(:favorite_metrics, {:array, :string}, default: [])
 
+    # App Notification settings
+    field(:disabled_notification_types, {:array, :string}, default: [])
+
     # Alerts settings
     field(:has_telegram_connected, :boolean, virtual: true)
     field(:telegram_chat_id, :integer)
@@ -68,6 +71,7 @@ defmodule Sanbase.Accounts.Settings do
       :is_promoter,
       :paid_with,
       :favorite_metrics,
+      :disabled_notification_types,
       :alerts_per_day_limit,
       :alerts_fired,
       :is_subscribed_edu_emails,

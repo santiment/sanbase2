@@ -66,15 +66,23 @@ defmodule Sanbase.Alert.Evaluator do
   defp do_evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
     %{cooldown: cooldown, last_triggered: last_triggered} = trigger
 
-    # Along with the trigger settings (the `cache_key`) take into account also
-    # the last triggered datetime and cooldown. This is done because an alert
-    # can only be fired if it did not fire in the past `cooldown` intereval of time
-    # NOTE: Do not apply hashing on the cache key because it can have :nocache
-    # in the first place and it is trated differently
-    cache_key = {Trigger.cache_key(trigger), {last_triggered, cooldown}}
-
+    # Some trigger settings (e.g. EthWallet, Screener) return `:nocache` from
+    # `cache_key/1` because their result depends on order-dependent state that
+    # can't be keyed. For those we skip the cache entirely. Otherwise the cache
+    # key combines the settings-derived key with `last_triggered` + `cooldown`
+    # so results are invalidated after a trigger fires.
     result =
-      Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn -> Trigger.evaluate(trigger) end)
+      case Trigger.cache_key(trigger) do
+        :nocache ->
+          Trigger.evaluate(trigger)
+
+        key ->
+          cache_key = {key, {last_triggered, cooldown}}
+
+          Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
+            Trigger.evaluate(trigger)
+          end)
+      end
 
     case result do
       {:ok, evaluated_trigger} ->

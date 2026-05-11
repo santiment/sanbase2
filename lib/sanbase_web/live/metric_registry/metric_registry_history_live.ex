@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.MetricRegistryHistoryLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(%{"id" => metric_registry_id}, _session, socket) do
@@ -21,29 +21,28 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col space-y-8 ">
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry History
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title="Metric Registry History"
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Registry"
           href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="List Sync Runs"
           href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"
         />
       </div>
 
-      <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
-      <div class="font-bold text-xl text-blue-800">{@metric_registry.metric}</div>
+      <div class="divider my-8"></div>
+      <div class="font-bold text-xl text-primary">{@metric_registry.metric}</div>
       <.table id="metrics_registry_sync_runs" rows={@history_list}>
         <:col :let={row} label="ID">
           {row.id}
@@ -83,24 +82,18 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
 
   defp change_trigger_formatted(assigns) do
     ~H"""
-    <span
-      :if={@change_trigger}
-      class={[
-        "px-3 py-2 text-xs font-semibold text-white rounded-full text-nowrap",
-        get_bg_color(@change_trigger)
-      ]}
-    >
+    <span :if={@change_trigger} class={["badge badge-sm text-nowrap", badge_variant(@change_trigger)]}>
       {@change_trigger |> String.replace("_", " ") |> String.upcase()}
     </span>
     """
   end
 
-  defp get_bg_color(change_trigger) do
+  defp badge_variant(change_trigger) do
     case change_trigger do
-      "sync_apply" -> "bg-blue-800"
-      "change_request_approve" -> "bg-green-800"
-      "change_request_undo" -> "bg-red-800"
-      _ -> "bg-gray-800"
+      "sync_apply" -> "badge-info"
+      "change_request_approve" -> "badge-success"
+      "change_request_undo" -> "badge-error"
+      _ -> "badge-neutral"
     end
   end
 end

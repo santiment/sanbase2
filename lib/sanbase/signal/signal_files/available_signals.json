@@ -1,349 +1,5 @@
 [
   {
-    "human_readable_name": "Minting Dai Signal",
-    "name": "dai_mint",
-    "signal": "dai_mint",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Old Coins Moved",
-    "name": "old_coins_moved",
-    "signal": "old_coins_moved",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Large Transactions",
-    "name": "large_transactions",
-    "signal": "large_transactions",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly MVRV USD {{timebound_human_readable}}",
-    "name": "anomaly_mvrv_usd_{{timebound}}",
-    "signal": "anomalies_mvrv_usd_{{timebound}}",
-    "timebound": [
-      "1d",
-      "7d",
-      "30d",
-      "60d",
-      "90d",
-      "180d",
-      "365d",
-      "2y",
-      "3y",
-      "5y",
-      "10y"
-    ],
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly MVRV USD",
-    "name": "anomaly_mvrv_usd",
-    "signal": "anomalies_mvrv_usd_20y",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Circulation {{timebound_human_readable}}",
-    "name": "anomaly_circulation_{{timebound}}",
-    "signal": "anomalies_stack_circulation_{{timebound}}",
-    "timebound": ["1d"],
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Daily Active Addresses",
-    "name": "anomaly_daily_active_addresses",
-    "signal": "anomalies_daily_active_addresses",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Network Growth",
-    "name": "anomaly_network_growth",
-    "signal": "anomalies_network_growth",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Velocity",
-    "name": "anomaly_velocity",
-    "signal": "anomalies_token_velocity",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Age Consumed",
-    "name": "anomaly_age_consumed",
-    "signal": "anomalies_stack_age_consumed",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Payment Count",
-    "name": "anomaly_payment_count",
-    "signal": "anomalies_payment_count",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Supply On Exchanges",
-    "name": "anomaly_supply_on_exchanges",
-    "signal": "anomalies_exchange_token_supply",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Transaction Count",
-    "name": "anomaly_transaction_count",
-    "signal": "anomalies_transaction_count",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Comulative Age Consumed",
-    "name": "anomaly_cumulative_age_consumed",
-    "signal": "anomalies_stack_cumulative_age_consumed",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Active Deposits",
-    "name": "anomaly_active_deposits",
-    "signal": "anomalies_active_deposits",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Anomaly Active Withdrawals",
-    "name": "anomaly_active_withdrawals",
-    "signal": "anomalies_active_withdrawals",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "MCD Art Liquidations",
-    "name": "mcd_art_liquidations",
-    "signal": "mcd_art_liquidations",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Large Exchange Deposit",
-    "name": "large_exchange_deposit",
-    "signal": "large_exchange_deposit",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Large Exchange Withdrawal",
-    "name": "large_exchange_withdrawal",
-    "signal": "large_exchange_withdrawal",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Price All Time High (USD)",
-    "name": "price_usd_all_time_high",
-    "signal": "ath_price_usd",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Anomaly Transaction Volume",
-    "name": "anomaly_transaction_volume",
-    "signal": "anomalies_transaction_volume",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
-    "human_readable_name": "Project In Trending Words",
-    "name": "project_in_trending_words",
-    "signal": "project_in_trends",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    }
-  },
-  {
     "human_readable_name": "MVRV {{timebound_human_readable}} Danger Zone",
     "name": "mvrv_usd_{{timebound}}_upper_zone",
     "signal": "mvrv_usd_{{timebound}}_upper_zone",
@@ -374,6 +30,36 @@
       "180d",
       "365d"
     ],
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
+  },
+  {
+    "human_readable_name": "Anomaly: Project In Trending Words",
+    "name": "anomaly_project_in_trending_words",
+    "signal": "project_in_trends",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
+  },
+  {
+    "human_readable_name": "Anomaly: Total Liquidations",
+    "name": "anomaly_total_liquidations",
+    "signal": "total_liquidations",
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",

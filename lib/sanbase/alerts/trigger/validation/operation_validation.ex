@@ -1,5 +1,5 @@
 defmodule Sanbase.Alert.Validation.Operation do
-  import Sanbase.Validation
+  import Sanbase.Utils.Validation
 
   alias Sanbase.Alert.Operation
 

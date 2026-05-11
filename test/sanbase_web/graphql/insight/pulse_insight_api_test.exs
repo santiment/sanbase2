@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     fetched_insight = json_response(result, 200)["data"]["insight"]
     assert fetched_insight["state"] == post.state
 
-    created_at = Sanbase.DateTimeUtils.from_iso8601!(fetched_insight["createdAt"])
+    created_at = Sanbase.Utils.DateTime.from_iso8601!(fetched_insight["createdAt"])
 
     assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
@@ -135,7 +135,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
              :seconds
            )
 
-    updated_at = Sanbase.DateTimeUtils.from_iso8601!(fetched_insight["updatedAt"])
+    updated_at = Sanbase.Utils.DateTime.from_iso8601!(fetched_insight["updatedAt"])
 
     assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),

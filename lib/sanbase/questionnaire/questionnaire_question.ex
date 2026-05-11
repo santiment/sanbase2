@@ -43,7 +43,12 @@ defmodule Sanbase.Questionnaire.Question do
 
     field(:order, :integer)
     field(:question, :string)
-    field(:type, QuestionType, default: :single_select)
+
+    field(:type, Ecto.Enum,
+      values: [:multiple_select, :single_select, :open_text, :open_number, :boolean],
+      default: :single_select
+    )
+
     field(:answer_options, :map, default: %{})
 
     # If true, append an open text answer at the end.

@@ -3,7 +3,7 @@ import Config
 if config_env() in [:dev, :test] do
   # In order to properly work while developing locally,
   # load the .env file before doing the configuration
-  Code.ensure_loaded?(Envy) && Envy.auto_load()
+  Sanbase.EnvConfigLoader.auto_load()
 end
 
 config :ueberauth, Ueberauth.Strategy.Google.OAuth,
@@ -27,6 +27,10 @@ config :sanbase, Sanbase.SimpleMailer,
   configuration_set: System.get_env("AWS_SES_CONFIGURATION_SET")
 
 config :sanbase, SanbaseWeb.SESController, webhook_secret: System.get_env("SES_WEBHOOK_SECRET")
+
+if mailjet_webhook_secret = System.get_env("MAILJET_WEBHOOK_SECRET") do
+  config :sanbase, SanbaseWeb.MailjetController, webhook_secret: mailjet_webhook_secret
+end
 
 config :sanbase, Sanbase.SmartContracts.SanrNFT,
   alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
@@ -82,6 +86,12 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
   parity_url = System.get_env("PARITY_URL")
 
+  # MCP tool calls (e.g. combined_trends_tool) can run long due to document
+  # collection + AI summarization. The timeout chain must be ordered:
+  # Cowboy idle_timeout (180s) > Anubis request_timeout (150s) > task work (120s)
+  idle_timeout =
+    if System.get_env("CONTAINER_TYPE") == "mcp", do: 180_000, else: 100_000
+
   config :sanbase, SanbaseWeb.Endpoint,
     url: [host: host, port: port],
     http: [
@@ -92,7 +102,7 @@ if config_env() == :prod do
         max_header_value_length: 8192,
         max_request_line_length: 16_384,
         max_headers: 100,
-        idle_timeout: 100_000
+        idle_timeout: idle_timeout
       ]
     ],
     secret_key_base: secret_key_base,
@@ -110,9 +120,7 @@ if config_env() == :prod do
       "//*.sanbase-admin.production.san"
     ]
 
-  config :sanbase, Sanbase.Repo,
-    ssl: true,
-    ssl_opts: [verify: :verify_none]
+  config :sanbase, Sanbase.Repo, ssl: [verify: :verify_none]
 
   db_url = System.get_env("DATABASE_URL")
   uri = URI.parse(db_url)
@@ -130,8 +138,7 @@ if config_env() == :prod do
           database: database,
           port: 5432,
           parameters: [],
-          ssl: true,
-          ssl_opts: [verify: :verify_none],
+          ssl: [verify: :verify_none],
           channel_name: "sanbase_cluster"
         ]
       ]
@@ -163,5 +170,6 @@ if config_env() == :prod do
     ]
 
   config :sanbase, Sanbase.Metric.Registry.Sync,
-    sync_secret: System.get_env("METRIC_REGISTRY_SYNC_SECRET")
+    sync_secret: System.get_env("METRIC_REGISTRY_SYNC_SECRET"),
+    export_secret: System.get_env("METRIC_REGISTRY_EXPORT_SECRET")
 end

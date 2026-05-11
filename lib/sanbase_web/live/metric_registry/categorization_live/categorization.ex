@@ -1,12 +1,11 @@
 defmodule SanbaseWeb.CategorizationLive.Index do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   alias Sanbase.Metric.Category
   alias Sanbase.Metric.Category.MetricCategoryMapping
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Helper
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -53,13 +52,13 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         Metric Categorization
       </div>
 
       <.navigation />
 
-      <div class="text-gray-600 whitespace-pre-line" phx-no-curly-interpolation>
+      <div class="text-base-content/70 whitespace-pre-line" phx-no-curly-interpolation>
         Assign metrics to categories and groups.
         One metric can have a single variant, like `price_usd`.
         One metric can generate many variants, like the single metric `mvrv_usd_{{timebound}}` generates mvrv_usd_1d, mvrv_usd_7d, mvrv_usd_30d, etc.
@@ -85,8 +84,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       />
 
       <div :if={@loading} class="flex justify-center items-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        <p class="ml-4 text-gray-600">Loading metrics...</p>
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="ml-4 text-base-content/70">Loading metrics...</p>
       </div>
     </div>
     """
@@ -95,22 +94,22 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   def navigation(assigns) do
     ~H"""
     <div class="my-4 flex flex-row space-x-2">
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to Metric Registry"
         href={~p"/admin/metric_registry"}
         icon="hero-home"
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Manage Categories"
         href={~p"/admin/metric_registry/categorization/categories"}
         icon="hero-rectangle-group"
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Manage Groups"
         href={~p"/admin/metric_registry/categorization/groups"}
         icon="hero-user-group"
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Preview UI Metadata Sidebar"
         href={~p"/admin/metric_registry/categorization/preview_sidebar"}
         icon="hero-eye"
@@ -129,7 +128,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
   def filters(assigns) do
     ~H"""
-    <div class="bg-white p-4 rounded-lg shadow my-4">
+    <div class="card bg-base-100 border border-base-300 shadow p-4 my-4">
       <.simple_form for={%{}} as={:filters} phx-change="filter">
         <div class="flex flex-col sm:flex-row sm:flex-wrap gap-4">
           <.input
@@ -257,35 +256,35 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
     ~H"""
     <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-      <div class="bg-white p-4 rounded-lg shadow">
-        <div class="text-sm text-gray-600">Total Metrics</div>
-        <div class="text-2xl font-bold text-gray-800">{@metrics_count}</div>
-        <div class="text-xs text-gray-500">({@variants_count} variants)</div>
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
+        <div class="text-sm text-base-content/60">Total Metrics</div>
+        <div class="text-2xl font-bold">{@metrics_count}</div>
+        <div class="text-xs text-base-content/50">({@variants_count} variants)</div>
       </div>
-      <div class="bg-white p-4 rounded-lg shadow">
-        <div class="text-sm text-gray-600">Filtered</div>
-        <div class="text-2xl font-bold text-gray-800">{@filtered_count}</div>
-        <div class="text-xs text-gray-500">({@filtered_variants_count} variants)</div>
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
+        <div class="text-sm text-base-content/60">Filtered</div>
+        <div class="text-2xl font-bold">{@filtered_count}</div>
+        <div class="text-xs text-base-content/50">({@filtered_variants_count} variants)</div>
       </div>
-      <div class="bg-white p-4 rounded-lg shadow">
-        <div class="text-sm text-gray-600">Categorized</div>
-        <div class="text-2xl font-bold text-green-600">{@categorized_count}</div>
-        <div class="text-xs text-gray-500">({@categorized_variants_count} variants)</div>
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
+        <div class="text-sm text-base-content/60">Categorized</div>
+        <div class="text-2xl font-bold text-success">{@categorized_count}</div>
+        <div class="text-xs text-base-content/50">({@categorized_variants_count} variants)</div>
       </div>
-      <div class="bg-white p-4 rounded-lg shadow">
-        <div class="text-sm text-gray-600">Not Categorized</div>
-        <div class="text-2xl font-bold text-orange-600">{@not_categorized_count}</div>
-        <div class="text-xs text-gray-500">({@not_categorized_variants_count} variants)</div>
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
+        <div class="text-sm text-base-content/60">Not Categorized</div>
+        <div class="text-2xl font-bold text-warning">{@not_categorized_count}</div>
+        <div class="text-xs text-base-content/50">({@not_categorized_variants_count} variants)</div>
       </div>
-      <div class="bg-white p-4 rounded-lg shadow">
-        <div class="text-sm text-gray-600">Has UI Metadata</div>
-        <div class="text-2xl font-bold text-blue-600">{@has_ui_metadata_count}</div>
-        <div class="text-xs text-gray-500">({@has_ui_metadata_variants_count} variants)</div>
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
+        <div class="text-sm text-base-content/60">Has UI Metadata</div>
+        <div class="text-2xl font-bold text-info">{@has_ui_metadata_count}</div>
+        <div class="text-xs text-base-content/50">({@has_ui_metadata_variants_count} variants)</div>
       </div>
-      <div class="bg-white p-4 rounded-lg shadow">
-        <div class="text-sm text-gray-600">show on Sanbase</div>
-        <div class="text-2xl font-bold text-purple-600">{@show_on_sanbase_count}</div>
-        <div class="text-xs text-gray-500">({@show_on_sanbase_variants_count} variants)</div>
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
+        <div class="text-sm text-base-content/60">Show on Sanbase</div>
+        <div class="text-2xl font-bold text-secondary">{@show_on_sanbase_count}</div>
+        <div class="text-xs text-base-content/50">({@show_on_sanbase_variants_count} variants)</div>
       </div>
     </div>
     """
@@ -296,35 +295,21 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
   def metrics_table(assigns) do
     ~H"""
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="rounded-box border border-base-300 overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="table table-sm">
+          <thead>
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Metric
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Source
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Group
-              </th>
-              <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                UI
-              </th>
-              <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Sanbase
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+              <th>Metric</th>
+              <th>Source</th>
+              <th>Category</th>
+              <th>Group</th>
+              <th class="text-center">UI</th>
+              <th class="text-center">Sanbase</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody>
             <.metric_row
               :for={metric <- @filtered_metrics}
               metric={metric}
@@ -334,7 +319,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         </table>
       </div>
 
-      <div :if={@filtered_metrics == []} class="px-6 py-12 text-center text-gray-500">
+      <div :if={@filtered_metrics == []} class="px-6 py-12 text-center text-base-content/50">
         No metrics found matching your filters.
       </div>
     </div>
@@ -347,77 +332,76 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   def metric_row(assigns) do
     ~H"""
     <tr class={Map.get(@categories_colors, @metric.category_name)}>
-      <td class="px-6 py-4 max-w-[320px] break-words">
+      <td class="max-w-[320px] break-words">
         <div class="flex flex-col">
           <div class="flex items-center gap-2">
-            <div class="text-sm font-medium text-gray-900">{@metric.metric}</div>
-            <span
-              :if={@metric.is_multi_category?}
-              class="px-2 py-0.5 text-xs font-medium rounded bg-indigo-100 text-indigo-700"
-            >
+            <div class="text-sm font-medium">{@metric.metric}</div>
+            <span :if={@metric.is_multi_category?} class="badge badge-xs badge-secondary badge-soft">
               MultiCategory
             </span>
           </div>
-          <div class="text-xs text-gray-500">
+          <div class="text-xs text-base-content/60">
             {@metric.human_readable_name}
           </div>
 
-          <div :if={@metric.variants_count >= 2} class="text-xs text-purple-800">
-            (#{@metric.variants_count} variants)
+          <div :if={@metric.variants_count >= 2} class="text-xs text-secondary">
+            ({@metric.variants_count} variants)
           </div>
         </div>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap">
-        <span
-          :if={@metric.source_type == "registry"}
-          class="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800"
-        >
+      <td>
+        <span :if={@metric.source_type == "registry"} class="badge badge-sm badge-info badge-soft">
           <.link navigate={~p"/admin/metric_registry/show/#{@metric.source_id}"}>
             {@metric.source_display}
           </.link>
         </span>
 
-        <span
-          :if={@metric.source_type == "code"}
-          class="px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800"
-        >
+        <span :if={@metric.source_type == "code"} class="badge badge-sm badge-secondary badge-soft">
           {@metric.source_display}
         </span>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap">
-        <div :if={@metric.category_name} class="text-sm text-gray-900">
+      <td>
+        <div :if={@metric.category_name} class="text-sm">
           {@metric.category_name}
         </div>
-        <div :if={!@metric.category_name} class="text-sm text-gray-400 italic">
+        <div :if={!@metric.category_name} class="text-sm text-base-content/40 italic">
           Not assigned
         </div>
       </td>
-      <td class="px-6 py-4 max-w-[144px] break-normal">
-        <div :if={@metric.group_name} class="text-sm text-gray-900">
+      <td class="max-w-[144px] break-normal">
+        <div :if={@metric.group_name} class="text-sm">
           {@metric.group_name}
         </div>
-        <div :if={!@metric.group_name} class="text-sm text-gray-400 italic">
+        <div :if={!@metric.group_name} class="text-sm text-base-content/40 italic">
           -
         </div>
       </td>
-      <td class="px-2 py-4 whitespace-nowrap text-center">
-        <.icon :if={@metric.has_ui_metadata?} name="hero-check-circle" class="w-5 h-5 text-green-600" />
-        <.icon :if={!@metric.has_ui_metadata?} name="hero-x-circle" class="w-5 h-5 text-red-400" />
+      <td class="text-center">
+        <.icon :if={@metric.has_ui_metadata?} name="hero-check-circle" class="size-5 text-success" />
+        <.icon
+          :if={!@metric.has_ui_metadata?}
+          name="hero-x-circle"
+          class="size-5 text-error opacity-60"
+        />
       </td>
 
-      <td class="px-2 py-4 whitespace-nowrap text-center">
-        <.icon :if={@metric.show_on_sanbase?} name="hero-eye" class="w-5 h-5 text-green-600" />
-        <.icon :if={!@metric.show_on_sanbase?} name="hero-eye-slash" class="w-5 h-5 text-gray-400" />
+      <td class="text-center">
+        <.icon :if={@metric.show_on_sanbase?} name="hero-eye" class="size-5 text-success" />
+        <.icon
+          :if={!@metric.show_on_sanbase?}
+          name="hero-eye-slash"
+          class="size-5 text-base-content/40"
+        />
       </td>
 
-      <td class="px-6 py-4 whitespace-nowrap text-sm">
+      <td class="text-sm">
         <div class="flex flex-col space-y-1">
           <.link
             :if={!@metric.mapping_id}
             navigate={
               ~p"/admin/metric_registry/categorization/mappings/new?#{build_new_params(@metric)}"
             }
-            class="text-green-600 hover:text-green-900"
+            class="link link-success"
           >
             Assign to Category
           </.link>
@@ -426,7 +410,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             navigate={
               ~p"/admin/metric_registry/categorization/ui_metadata/list/#{@metric.mapping_id}"
             }
-            class="text-purple-600 hover:text-purple-900"
+            class="link link-secondary"
           >
             {"Manage UI Metadata (#{length(@metric.mapping.ui_metadata_list)})"}
           </.link>
@@ -436,7 +420,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             navigate={
               ~p"/admin/metric_registry/categorization/mappings/new?#{build_new_params(@metric)}"
             }
-            class="text-green-600 hover:text-green-900"
+            class="link link-success"
           >
             Assign extra category
           </.link>
@@ -444,7 +428,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
           <.link
             :if={@metric.mapping_id}
             navigate={~p"/admin/metric_registry/categorization/mappings/edit/#{@metric.mapping_id}"}
-            class="text-blue-600 hover:text-blue-900"
+            class="link link-primary"
           >
             Edit Categorization
           </.link>
@@ -452,7 +436,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             :if={@metric.mapping_id}
             phx-click="delete_mapping"
             phx-value-id={@metric.mapping_id}
-            class="text-red-600 hover:text-red-900 text-left"
+            class="link link-error text-left"
             data-confirm="Are you sure you want to remove this categorization?"
           >
             Remove Categorization
@@ -569,8 +553,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       |> Map.new(fn {category, index} ->
         {category.name,
          if(rem(index, 2) == 0,
-           do: "bg-white hover:bg-neutral-200",
-           else: "bg-neutral-100 hover:bg-neutral-200"
+           do: "hover:bg-base-200",
+           else: "bg-base-200 hover:bg-base-300"
          )}
       end)
 

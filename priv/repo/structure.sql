@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict bxOjVbSva4meUk6nwZghTgchybjNgokKNazPAuDMt0bqEDQqdfv89M3CUWOI4fR
+\restrict PP2b5QCcDaGcyKYxx5dKLmzCiXrAI5ifShCyMCc6llMYFwQEKo8JbCeGcGux6vf
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -229,35 +229,6 @@ BEGIN
   RETURN result;
 END;
 $$;
-
-
---
--- Name: movefinishedobanjobs(character varying, bigint); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.movefinishedobanjobs(queue_arg character varying, limit_arg bigint) RETURNS bigint
-    LANGUAGE plpgsql
-    AS $_$
- DECLARE
-   rows_count numeric;
- BEGIN
-   WITH finished_job_ids_cte AS (
-     SELECT id from oban_jobs
-     WHERE queue = $1 AND completed_at IS NOT NULL
-     LIMIT $2
-   ),
-   moved_rows AS (
-     DELETE FROM oban_jobs a
-     WHERE a.id IN (SELECT id FROM finished_job_ids_cte)
-     RETURNING a.queue, a.worker, a.args, a.inserted_at, a.completed_at
-   )
-   INSERT INTO finished_oban_jobs(queue, worker, args, inserted_at, completed_at)
-   SELECT * FROM moved_rows;
-
-   GET DIAGNOSTICS rows_count = ROW_COUNT;
-   RETURN rows_count;
- END;
- $_$;
 
 
 --
@@ -1702,39 +1673,6 @@ CREATE SEQUENCE public.featured_items_id_seq
 --
 
 ALTER SEQUENCE public.featured_items_id_seq OWNED BY public.featured_items.id;
-
-
---
--- Name: finished_oban_jobs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.finished_oban_jobs (
-    id bigint NOT NULL,
-    queue character varying(255),
-    worker character varying(255),
-    args jsonb,
-    inserted_at timestamp(0) without time zone,
-    completed_at timestamp(0) without time zone
-);
-
-
---
--- Name: finished_oban_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.finished_oban_jobs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: finished_oban_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.finished_oban_jobs_id_seq OWNED BY public.finished_oban_jobs.id;
 
 
 --
@@ -3214,7 +3152,11 @@ CREATE TABLE public.post_images (
     image_url text NOT NULL,
     content_hash text NOT NULL,
     hash_algorithm text NOT NULL,
-    post_id bigint
+    post_id bigint,
+    image_url_w400 text,
+    image_url_w800 text,
+    image_url_w1200 text,
+    image_url_w2000 text
 );
 
 
@@ -4198,7 +4140,9 @@ CREATE TABLE public.sanbase_notifications (
     json_data jsonb,
     is_deleted boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    entity_description text,
+    url text
 );
 
 
@@ -5280,6 +5224,41 @@ ALTER SEQUENCE public.user_lists_id_seq OWNED BY public.user_lists.id;
 
 
 --
+-- Name: user_onboardings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_onboardings (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    title character varying(255),
+    goal character varying(255),
+    used_tools character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    uses_behaviour_analysis character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_onboardings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_onboardings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_onboardings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_onboardings_id_seq OWNED BY public.user_onboardings.id;
+
+
+--
 -- Name: user_promo_codes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5495,7 +5474,8 @@ CREATE TABLE public.users (
     description text,
     website_url character varying(255),
     twitter_handle character varying(255),
-    feature_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL
+    feature_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL,
+    available_metrics_lookback_days integer
 );
 
 
@@ -6166,13 +6146,6 @@ ALTER TABLE ONLY public.featured_items ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- Name: finished_oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.finished_oban_jobs ALTER COLUMN id SET DEFAULT nextval('public.finished_oban_jobs_id_seq'::regclass);
-
-
---
 -- Name: geoip_data id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6817,6 +6790,13 @@ ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.u
 
 
 --
+-- Name: user_onboardings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_onboardings ALTER COLUMN id SET DEFAULT nextval('public.user_onboardings_id_seq'::regclass);
+
+
+--
 -- Name: user_promo_codes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7270,14 +7250,6 @@ ALTER TABLE ONLY public.faq_entries_tags
 
 ALTER TABLE ONLY public.featured_items
     ADD CONSTRAINT featured_items_pkey PRIMARY KEY (id);
-
-
---
--- Name: finished_oban_jobs finished_oban_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.finished_oban_jobs
-    ADD CONSTRAINT finished_oban_jobs_pkey PRIMARY KEY (id);
 
 
 --
@@ -8113,6 +8085,14 @@ ALTER TABLE ONLY public.user_lists
 
 
 --
+-- Name: user_onboardings user_onboardings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_onboardings
+    ADD CONSTRAINT user_onboardings_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: user_promo_codes user_promo_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8768,27 +8748,6 @@ CREATE UNIQUE INDEX featured_items_user_trigger_id_index ON public.featured_item
 
 
 --
--- Name: finished_oban_jobs_args_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX finished_oban_jobs_args_index ON public.finished_oban_jobs USING gin (args);
-
-
---
--- Name: finished_oban_jobs_inserted_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX finished_oban_jobs_inserted_at_index ON public.finished_oban_jobs USING btree (inserted_at);
-
-
---
--- Name: finished_oban_jobs_queue_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX finished_oban_jobs_queue_index ON public.finished_oban_jobs USING btree (queue);
-
-
---
 -- Name: geoip_data_ip_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9377,6 +9336,13 @@ CREATE INDEX sanbase_notifications_inserted_at_index ON public.sanbase_notificat
 
 
 --
+-- Name: sanbase_notifications_read_status_notification_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sanbase_notifications_read_status_notification_id_index ON public.sanbase_notifications_read_status USING btree (notification_id);
+
+
+--
 -- Name: sanbase_notifications_read_status_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9696,6 +9662,13 @@ CREATE UNIQUE INDEX user_followers_user_id_follower_id_index ON public.user_foll
 --
 
 CREATE UNIQUE INDEX user_lists_slug_index ON public.user_lists USING btree (slug);
+
+
+--
+-- Name: user_onboardings_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_onboardings_user_id_index ON public.user_onboardings USING btree (user_id);
 
 
 --
@@ -10645,7 +10618,7 @@ ALTER TABLE ONLY public.post_comments_mapping
 --
 
 ALTER TABLE ONLY public.post_images
-    ADD CONSTRAINT post_images_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+    ADD CONSTRAINT post_images_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE SET NULL;
 
 
 --
@@ -11193,6 +11166,14 @@ ALTER TABLE ONLY public.user_lists
 
 
 --
+-- Name: user_onboardings user_onboardings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_onboardings
+    ADD CONSTRAINT user_onboardings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_promo_codes user_promo_codes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11436,7 +11417,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict bxOjVbSva4meUk6nwZghTgchybjNgokKNazPAuDMt0bqEDQqdfv89M3CUWOI4fR
+\unrestrict PP2b5QCcDaGcyKYxx5dKLmzCiXrAI5ifShCyMCc6llMYFwQEKo8JbCeGcGux6vf
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11995,3 +11976,11 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
 INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
 INSERT INTO public."schema_migrations" (version) VALUES (20260326120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260407090744);
+INSERT INTO public."schema_migrations" (version) VALUES (20260407120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260409120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260409120001);
+INSERT INTO public."schema_migrations" (version) VALUES (20260422120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260427125517);

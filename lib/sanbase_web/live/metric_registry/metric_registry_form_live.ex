@@ -1,11 +1,9 @@
 defmodule SanbaseWeb.MetricRegistryFormLive do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
-
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Registry.Permissions
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(params, _session, socket) do
@@ -79,21 +77,21 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
-      <div class="text-gray-800 text-2xl">
+      <div class="text-2xl">
         <div :if={@live_action == :edit and not @is_updating_change_request}>
-          Edit <span class="text-blue-700">{@metric_registry.metric}</span>
+          Edit <span class="text-primary">{@metric_registry.metric}</span>
         </div>
 
         <div :if={@live_action == :edit and @is_updating_change_request}>
           Edit Change Request #{@update_change_request_id} for metric
-          <span class="text-blue-700">{@metric_registry.metric}</span>
+          <span class="text-primary">{@metric_registry.metric}</span>
         </div>
         <div
           :if={
             @live_action == :new and @is_duplicate_creation == false and
               not @is_updating_change_request
           }
-          class="text-blue-700"
+          class="text-primary"
         >
           Creating a new metric
         </div>
@@ -102,7 +100,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           :if={
             @live_action == :new and @is_duplicate_creation == true and @is_updating_change_request
           }
-          class="text-blue-700"
+          class="text-primary"
         >
           Duplicating the metric {@metric_registry.metric}
         </div>
@@ -112,25 +110,26 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         </div>
       </div>
 
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.user_details
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Registry"
           href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={@live_action == :edit}
           text="See Metric"
           href={~p"/admin/metric_registry/show/#{@metric_registry}"}
           icon="hero-arrow-right-circle"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names) and @live_action == :edit}
           text="Duplicate Metric"
           href={
@@ -139,7 +138,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           icon="hero-document-duplicate"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names) and @live_action == :edit}
           text="Assign to Category/Group"
           href={
@@ -332,10 +331,10 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         options={[true, false]}
       />
       <div class={[
-        "rounded-lg p-4 mt-4",
+        "rounded-box p-4 mt-4 border",
         if(@disabled,
-          do: "bg-gray-50 border border-gray-200",
-          else: "bg-orange-50 border border-orange-200"
+          do: "bg-base-200 border-base-300",
+          else: "bg-warning/10 border-warning/30"
         )
       ]}>
         <.input
@@ -411,9 +410,9 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         name={@name}
         value="new"
         phx-click={JS.dispatch("change")}
-        class="bg-blue-50 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 font-semibold rounded-lg text-sm px-5 py-2.5 inline-flex items-center transition-colors"
+        class="btn btn-sm btn-soft btn-primary"
       >
-        <.icon name="hero-plus-circle" class="w-5 h-5 mr-2" /> Add
+        <.icon name="hero-plus-circle" class="size-4" /> Add
       </button>
     </div>
     """
@@ -430,9 +429,9 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   def embeds_input(assigns) do
     ~H"""
-    <div class="bg-gray-50 rounded-lg px-4 py-4 mb-4 border border-gray-200">
-      <span class="text-sm font-semibold leading-6 text-gray-800 block mb-3">
-        {Inflex.camelize(@plural)}
+    <div class="bg-base-200 rounded-box px-4 py-4 mb-4 border border-base-300">
+      <span class="text-sm font-semibold leading-6 text-base-content block mb-3">
+        {Sanbase.Utils.Inflect.camelize(@plural)}
       </span>
       <.inputs_for :let={ef} field={@form[@form_field]}>
         <input type="hidden" name={"registry[#{@sort_param}][]"} value={ef.index} />
@@ -695,7 +694,6 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
           {:error, changeset} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(changeset)
-            require(IEx).pry
 
             {:noreply,
              socket

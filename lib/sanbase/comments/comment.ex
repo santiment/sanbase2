@@ -98,7 +98,7 @@ defmodule Sanbase.Comment do
   end
 
   def changeset(%__MODULE__{} = comment, attrs \\ %{}) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+    attrs = Sanbase.Utils.DateTime.truncate_datetimes(attrs)
 
     comment
     |> cast(attrs, [:user_id, :parent_id, :root_parent_id, :content, :edited_at])
@@ -161,7 +161,7 @@ defmodule Sanbase.Comment do
       minute: Config.module_get(__MODULE__, :creation_limit_minute, 3)
     }
 
-    Sanbase.Ecto.Common.has_not_reached_rate_limits?(__MODULE__, user_id,
+    Sanbase.Utils.EctoCommon.has_not_reached_rate_limits?(__MODULE__, user_id,
       limits: limits,
       entity_singular: "comment",
       entity_plural: "comments"

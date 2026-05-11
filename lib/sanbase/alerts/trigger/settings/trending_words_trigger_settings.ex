@@ -87,12 +87,12 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
              operation: %{send_at_predefined_time: true, trigger_time: trigger_time}
            } = settings
          ) do
-      trigger_time = Sanbase.DateTimeUtils.time_from_iso8601!(trigger_time)
+      trigger_time = Sanbase.Utils.DateTime.time_from_iso8601!(trigger_time)
       now = Time.utc_now()
       after_15_mins = Time.add(now, 15 * 60, :second)
 
       settings =
-        case Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
+        case Sanbase.Utils.DateTime.time_in_range?(trigger_time, now, after_15_mins) do
           true ->
             template_kv = %{settings.target => template_kv(settings, top_words)}
             %{settings | triggered?: true, template_kv: template_kv}
@@ -289,7 +289,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     defp extend_with_datetime_link({template, kv}) do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       datetime_iso = now |> DateTime.to_iso8601()
-      datetime_human_readable = now |> Sanbase.DateTimeUtils.to_human_readable()
+      datetime_human_readable = now |> Sanbase.Utils.DateTime.to_human_readable()
 
       template =
         template <> "[Trending words at {{datetime_human_readable}}]({{trending_words_url}})\n"

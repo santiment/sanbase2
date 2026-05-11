@@ -37,7 +37,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   import Sanbase.Math, only: [to_integer: 1, to_float: 1]
 
-  alias Sanbase.DateTimeUtils
   alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, TickerFetcher}
 
@@ -277,7 +276,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     } = ticker
 
     %PricePoint{
-      datetime: DateTimeUtils.from_iso8601!(last_updated),
+      datetime: Sanbase.Utils.DateTime.from_iso8601!(last_updated),
       price_usd: (price_usd || 0) |> to_float(),
       price_btc: (price_btc || 0) |> to_float(),
       marketcap_usd: (marketcap_usd || 0) |> to_integer(),

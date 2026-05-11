@@ -157,13 +157,13 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{address: _address}), do: []
+  def available_metrics(%{address: _address}, _opts), do: {:ok, []}
 
-  def available_metrics(%{contract_address: contract_address}) do
-    Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
+  def available_metrics(%{contract_address: contract_address}, opts) do
+    Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address, opts)
   end
 
-  def available_metrics(%{slug: slug}) do
+  def available_metrics(%{slug: slug}, _opts) do
     with %Project{} = project <- Project.by_slug(slug) do
       case Project.twitter_handle(project) do
         {:ok, _} -> {:ok, @metrics}
@@ -208,13 +208,9 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def min_plan_map(), do: @min_plan_map
 
   defp unsupported_selector_error(selector) do
-    provided_keys =
-      selector
-      |> Map.keys()
-      |> Enum.map_join(", ", &inspect/1)
-
-    "The provided selector #{inspect(selector)} is not supported. " <>
-      "The selector must have the following field: slug. " <>
-      "Provided selector fields: #{provided_keys}"
+    Sanbase.Metric.Utils.unsupported_selector_error(
+      selector,
+      "The selector must have the following field: slug"
+    )
   end
 end

@@ -212,7 +212,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def dev_activity(organizations, from, to, interval, "movingAverage", ma_base) do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
     dev_activity_query(organizations, from, to, interval)
@@ -248,7 +248,7 @@ defmodule Sanbase.Clickhouse.Github do
         "movingAverage",
         ma_base
       ) do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
     github_activity_query(organizations, from, to, interval)
@@ -295,7 +295,7 @@ defmodule Sanbase.Clickhouse.Github do
         "movingAverage",
         ma_base
       ) do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
     do_dev_activity_contributors_count(organizations, from, to, interval)
@@ -325,7 +325,7 @@ defmodule Sanbase.Clickhouse.Github do
         "movingAverage",
         ma_base
       ) do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
     do_github_activity_contributors_count(organizations, from, to, interval)

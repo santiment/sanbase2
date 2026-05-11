@@ -233,29 +233,11 @@ defmodule Sanbase.Alert.Scheduler do
     %{type: type, run_uuid: run_uuid} = info_map
 
     filtered =
-      Enum.filter(user_triggers, fn %{trigger: trigger, user: user} ->
+      Enum.filter(user_triggers, fn %{trigger: trigger, user: user} = ut ->
         channels = List.wrap(trigger.settings.channel)
 
         channels != [] and
-          Enum.any?(channels, fn
-            "email" ->
-              User.Alert.can_receive_email_alert?(user)
-
-            "telegram" ->
-              User.Alert.can_receive_telegram_alert?(user)
-
-            %{"webhook" => webhook_url} ->
-              User.Alert.can_receive_webhook_alert?(user, webhook_url)
-
-            "web_push" ->
-              # web push cannot be received currently. So if the other channels
-              # like telegram and email are not receivable, then the presence of
-              # web push should not cause scheduling of the alert
-              false
-
-            _ ->
-              true
-          end)
+          Enum.any?(channels, &channel_receivable?(&1, user, ut))
       end)
 
     total_count = length(user_triggers)
@@ -271,6 +253,38 @@ defmodule Sanbase.Alert.Scheduler do
     end
 
     filtered
+  end
+
+  # web push cannot be received currently, so its presence alone is not enough
+  # to schedule the alert.
+  defp channel_receivable?("email", user, _ut), do: User.Alert.can_receive_email_alert?(user)
+
+  defp channel_receivable?("telegram", user, _ut),
+    do: User.Alert.can_receive_telegram_alert?(user)
+
+  defp channel_receivable?("web_push", _user, _ut), do: false
+
+  defp channel_receivable?(%{"webhook" => url}, user, _ut),
+    do: User.Alert.can_receive_webhook_alert?(user, url)
+
+  defp channel_receivable?(%{webhook: url}, user, _ut),
+    do: User.Alert.can_receive_webhook_alert?(user, url)
+
+  defp channel_receivable?(%{"telegram_channel" => chat_id}, user, _ut),
+    do: User.Alert.can_receive_telegram_channel_alert?(user, chat_id)
+
+  defp channel_receivable?(%{telegram_channel: chat_id}, user, _ut),
+    do: User.Alert.can_receive_telegram_channel_alert?(user, chat_id)
+
+  # Bare "webhook" / "telegram_channel" strings or any other unknown channel
+  # cannot deliver — no URL / chat id to send to. Skip evaluation entirely so
+  # the alert does not waste resources or crash later in send_to_channel/3.
+  defp channel_receivable?(channel, _user, ut) do
+    Logger.warning(
+      "Skipping alert evaluation: unsupported notification channel #{inspect(channel)} for user_trigger_id=#{ut.id}"
+    )
+
+    false
   end
 
   defp deactivate_non_repeating(triggers) do
@@ -372,7 +386,7 @@ defmodule Sanbase.Alert.Scheduler do
     # all alerts will be different, sometimes only by a second
     now =
       Timex.now()
-      |> Sanbase.DateTimeUtils.round_datetime(second: 30)
+      |> Sanbase.Utils.DateTime.round_datetime(second: 30)
       |> Timex.set(microsecond: {0, 0})
 
     # Update all triggered_at regardless if the send to the channel succeed
@@ -504,7 +518,7 @@ defmodule Sanbase.Alert.Scheduler do
         dt
 
       datetime_str when is_binary(datetime_str) ->
-        Sanbase.DateTimeUtils.from_iso8601!(datetime_str)
+        Sanbase.Utils.DateTime.from_iso8601!(datetime_str)
     end)
     |> Enum.max_by(&DateTime.to_unix/1)
   end

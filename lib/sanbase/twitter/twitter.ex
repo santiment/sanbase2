@@ -70,7 +70,7 @@ defmodule Sanbase.Twitter do
     """
 
     params = %{
-      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
+      interval: Sanbase.Utils.DateTime.str_to_sec(interval),
       twitter_handle: twitter_handle,
       from: from,
       to: to
@@ -95,7 +95,7 @@ defmodule Sanbase.Twitter do
     """
 
     params = %{
-      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
+      interval: Sanbase.Utils.DateTime.str_to_sec(interval),
       twitter_handles: twitter_handles,
       from: from,
       to: to

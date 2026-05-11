@@ -18,25 +18,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     Sanbase.Clickhouse.Label.label_fqns_with_asset(slug)
   end
 
-  def available_metrics(%Project{slug: slug}, _args, resolution) do
-    # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
-
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
-
-    query = :available_metrics
-    cache_key = {__MODULE__, query, slug, user_metric_access_level} |> Sanbase.Cache.hash()
-
-    fun = fn ->
-      Metric.available_metrics_for_selector(%{slug: slug},
-        user_metric_access_level: user_metric_access_level
+  def available_metrics(%Project{} = project, _args, resolution),
+    do:
+      resolve_available(
+        project,
+        resolution,
+        :available_metrics,
+        &Metric.available_metrics_for_selector/2
       )
-    end
 
-    maybe_register_and_get(cache_key, fun, slug, query)
-  end
+  def available_timeseries_metrics(%Project{} = project, _args, resolution),
+    do:
+      resolve_available(
+        project,
+        resolution,
+        :available_timeseries_metrics,
+        &Metric.available_timeseries_metrics_for_slug/2
+      )
+
+  def available_histogram_metrics(%Project{} = project, _args, resolution),
+    do:
+      resolve_available(
+        project,
+        resolution,
+        :available_histogram_metrics,
+        &Metric.available_histogram_metrics_for_slug/2
+      )
+
+  def available_table_metrics(%Project{} = project, _args, resolution),
+    do:
+      resolve_available(
+        project,
+        resolution,
+        :available_table_metrics,
+        &Metric.available_table_metrics_for_slug/2
+      )
 
   def available_metrics_extended(%Project{} = project, args, resolution) do
     case available_metrics(project, args, resolution) do
@@ -46,64 +62,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     end
   end
 
-  def available_timeseries_metrics(%Project{slug: slug}, _args, resolution) do
+  defp resolve_available(%Project{slug: slug}, resolution, query, metric_fn) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
+      user_metric_access_level = user_metric_access_level(resolution)
+      lookback_days = user_available_metrics_lookback_days(resolution)
 
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
+      cache_key =
+        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+        |> Sanbase.Cache.hash()
 
-    query = :available_timeseries_metrics
-    cache_key = {__MODULE__, query, slug, user_metric_access_level} |> Sanbase.Cache.hash()
+      fun = fn ->
+        metric_fn.(%{slug: slug},
+          user_metric_access_level: user_metric_access_level,
+          lookback_days: lookback_days
+        )
+      end
 
-    fun = fn ->
-      Metric.available_timeseries_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level
-      )
+      maybe_register_and_get(cache_key, fun, slug, query)
     end
-
-    maybe_register_and_get(cache_key, fun, slug, query)
   end
 
-  def available_histogram_metrics(%Project{slug: slug}, _args, resolution) do
-    # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
-
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
-
-    query = :available_histogram_metrics
-    cache_key = {__MODULE__, query, slug, user_metric_access_level} |> Sanbase.Cache.hash()
-
-    fun = fn ->
-      Metric.available_histogram_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level
-      )
-    end
-
-    maybe_register_and_get(cache_key, fun, slug, query)
+  defp user_metric_access_level(resolution) do
+    get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+      "released"
   end
 
-  def available_table_metrics(%Project{slug: slug}, _args, resolution) do
-    # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
-
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
-
-    query = :available_table_metrics
-    cache_key = {__MODULE__, query, slug, user_metric_access_level} |> Sanbase.Cache.hash()
-
-    fun = fn ->
-      Metric.available_table_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level
-      )
-    end
-
-    maybe_register_and_get(cache_key, fun, slug, query)
+  defp user_available_metrics_lookback_days(resolution) do
+    get_in(resolution.context, [
+      :auth,
+      :current_user,
+      Access.key(:available_metrics_lookback_days)
+    ])
   end
 
   def aggregated_timeseries_data(
@@ -111,12 +101,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         %{from: from, to: to, metric: metric} = args,
         %{context: %{loader: loader}}
       ) do
-    # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
-
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
-    with true <- Metric.has_metric?(metric),
+    # TEMP 02.02.2023: Handle ripple -> xrp rename
+    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}),
+         true <- Metric.has_metric?(metric),
          false <- Metric.hard_deprecated?(metric),
          include_incomplete_data = Map.get(args, :include_incomplete_data, false),
          {:ok, from, to} <-
@@ -191,14 +180,47 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   # Get the available metrics from the rehydrating cache. If the function for computing it
   # is not register - register it and get the result after that.
-  # It can make 5 attempts with 5 seconds timeout, after which it returns an error
+  # It can make 5 attempts with 5 seconds timeout, after which it returns an error.
+  #
+  # In the test environment `:use_rehydrating_cache` defaults to `false` so the resolver
+  # takes the synchronous `Sanbase.Cache.get_or_store/2` fallback below. Rationale: the
+  # `RehydratingCache` GenServer periodically re-runs every registered closure, and a
+  # closure registered inside a `with_mocks` block can outlive that block and re-fire
+  # later against real code (e.g. Clickhouse adapters), producing intermittent
+  # "could not lookup Ecto repo Sanbase.ClickhouseRepo" warnings in unrelated tests.
+  # The supervisor is also not started in the test app boot path — see
+  # `Sanbase.Application.Web`. Tests that need to exercise the RC wiring end-to-end flip
+  # the flag back to `true` in their `setup` block and start a per-test
+  # `RehydratingCache.Supervisor` via `start_supervised!`.
   defp maybe_register_and_get(cache_key, fun, slug, query, attempts \\ 5)
 
-  defp maybe_register_and_get(_cache_key, _fun, slug, query, 0) do
-    {:error, handle_graphql_error(query, slug, "timeout")}
+  defp maybe_register_and_get(cache_key, fun, slug, query, attempts) do
+    if rehydrating_cache_enabled?() do
+      register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts)
+    else
+      # Synchronous fallback used in test only. `Sanbase.Cache.get_or_store/2` unwraps
+      # `{:nocache, {:ok, value}}` to `{:ok, value}`, so full `:nocache` semantics are
+      # NOT preserved on this path. Tests that depend on `:nocache` propagation must opt
+      # back into the RC path.
+      Sanbase.Cache.get_or_store({cache_key, @ttl}, fun)
+    end
   end
 
-  defp maybe_register_and_get(cache_key, fun, slug, query, attempts) do
+  defp rehydrating_cache_enabled?() do
+    Application.get_env(:sanbase, :use_rehydrating_cache, true)
+  end
+
+  defp register_and_get_via_rehydrating_cache(_cache_key, _fun, slug, query, 0) do
+    {:error,
+     handle_graphql_error(
+       query,
+       slug,
+       "timeout after 5 attempts waiting on RehydratingCache " <>
+         "(upstream adapter(s) likely slow — see prior 'slow module' warnings)"
+     )}
+  end
+
+  defp register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts) do
     case RehydratingCache.get(cache_key, 5_000, return_nocache: true) do
       {:nocache, {:ok, value}} ->
         {:nocache, {:ok, value}}
@@ -219,12 +241,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
           description
         )
 
-        maybe_register_and_get(cache_key, fun, slug, query, attempts - 1)
+        register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts - 1)
 
       {:error, :timeout} ->
         # Recursively call itself. This is guaranteed to not continue forever
         # as the graphql request will timeout at some point and stop the recursion
-        maybe_register_and_get(cache_key, fun, slug, query, attempts - 1)
+        register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts - 1)
     end
   end
 

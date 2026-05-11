@@ -243,7 +243,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
             %PricePoint{
               marketcap_usd: marketcap_usd |> Sanbase.Math.to_integer(),
               volume_usd: volume_usd |> Sanbase.Math.to_integer(),
-              datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)
+              datetime: Sanbase.Utils.DateTime.from_iso8601!(datetime_iso8601)
             }
           end
         )

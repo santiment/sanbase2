@@ -1,0 +1,48 @@
+<div class="mt-6 p-4">
+  <div class="flex items-center justify-between">
+    <h3 class="text-3xl font-medium text-base-content">
+      {"#{String.capitalize(@type)} #{@resource}"}
+    </h3>
+    <% toggle_target = if @form_layout == :compact, do: "vertical", else: "compact" %>
+    <% toggle_query =
+      @conn.query_params
+      |> Map.put("resource", @resource)
+      |> Map.put("layout", toggle_target) %>
+    <% toggle_url =
+      if @type == "new",
+        do: ~p"/admin/generic/new?#{toggle_query}",
+        else: ~p"/admin/generic/#{@data}/edit?#{toggle_query}" %>
+    <.link href={toggle_url} class="btn btn-sm btn-soft">
+      Layout: {@form_layout} (switch)
+    </.link>
+  </div>
+
+  <SanbaseWeb.AdminComponents.resource_form_compact
+    :if={@form_layout == :compact}
+    conn={@conn}
+    changeset={@changeset}
+    data={@data}
+    type={@type}
+    resource={@resource}
+    fields={@fields}
+    field_type_map={@field_type_map}
+    belongs_to_fields={@belongs_to_fields}
+    collections={@collections}
+    fields_override={@fields_override}
+    form_label_width={@form_label_width}
+    form_input_max_width={@form_input_max_width}
+  />
+
+  <SanbaseWeb.AdminComponents.resource_form_vertical
+    :if={@form_layout == :vertical}
+    conn={@conn}
+    changeset={@changeset}
+    data={@data}
+    type={@type}
+    resource={@resource}
+    fields={@fields}
+    field_type_map={@field_type_map}
+    belongs_to_fields={@belongs_to_fields}
+    collections={@collections}
+  />
+</div>

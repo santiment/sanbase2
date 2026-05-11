@@ -19,10 +19,9 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "3.4.1",
+  version: "4.1.18",
   default: [
     args: ~w(
-      --config=tailwind.config.js
       --input=css/app.css
       --output=../priv/static/assets/app.css
     ),
@@ -49,6 +48,13 @@ config :sanbase,
   env: Mix.env(),
   ecto_repos: [Sanbase.Repo],
   available_slugs_module: Sanbase.AvailableSlugs
+
+# Test-isolation switch for `SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver`.
+# When true (dev/prod default), the resolver routes through `Sanbase.Cache.RehydratingCache`.
+# When false (see config/test.exs), it falls back to `Sanbase.Cache.get_or_store/2`.
+# This flag does NOT start/stop the RehydratingCache.Supervisor — that is gated separately
+# in `lib/sanbase/application/web.ex`.
+config :sanbase, :use_rehydrating_cache, true
 
 config :sanbase, Sanbase.PromEx,
   disabled: false,
@@ -94,7 +100,8 @@ config :sanbase, Sanbase.KafkaExporter,
     {:system, "KAFKA_OPEN_INTEREST_TOPIC_V2", "open_interest_cryptocompare_v2"},
   funding_rate_topic: {:system, "KAFKA_FUNDING_RATE_TOPIC", "funding_rate_cryptocompare"},
   api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"},
-  twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"}
+  twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"},
+  hyperliquid_bbo_topic: {:system, "KAFKA_HYPERLIQUID_BBO_TOPIC", "hyperliquid_bbo_prices"}
 
 config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
   event_bus_topic: {:system, "KAFKA_EVENT_BUS_TOPIC", "sanbase_event_bus"},
@@ -148,7 +155,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base:
     "not_secret_please_do_not_report_Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
-  render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
+  render_errors: [formats: [json: SanbaseWeb.ErrorJSON], layout: false],
   server: true,
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
@@ -165,7 +172,7 @@ config :sasl, sasl_error_logger: false
 # Configures Elixir's Logger
 config :logger, :console,
   format: {Sanbase.Utils.JsonLogger, :format},
-  metadata: [:request_id, :api_token, :user_id, :remote_ip, :complexity, :query, :san_balance],
+  metadata: [:request_id, :user_id, :remote_ip, :complexity, :query, :san_balance],
   handle_otp_reports: true,
   handle_sasl_reports: true
 
@@ -188,15 +195,6 @@ config :earmark,
   # disable using parallel map die to timeout errors
   timeout: nil,
   mapper: &Enum.map/2
-
-config :hammer,
-  backend: {
-    Hammer.Backend.ETS,
-    [
-      expiry_ms: 60_000 * 60 * 4,
-      cleanup_interval_ms: 60_000 * 10
-    ]
-  }
 
 config :tesla,
   adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
@@ -265,7 +263,6 @@ config :libcluster,
         port: 5432,
         parameters: [],
         ssl: false,
-        ssl_opts: nil,
         channel_name: "sanbase_cluster"
       ]
     ]
@@ -328,7 +325,9 @@ config :ex_audit,
   ],
   primitive_structs: [DateTime, NaiveDateTime, Date]
 
-config :sanbase, Sanbase.Metric.Registry.Sync, sync_secret: "secret_only_on_prod"
+config :sanbase, Sanbase.Metric.Registry.Sync,
+  sync_secret: "secret_only_on_prod",
+  export_secret: "export_secret_only_on_prod"
 
 # Import configs
 import_config "ueberauth_config.exs"

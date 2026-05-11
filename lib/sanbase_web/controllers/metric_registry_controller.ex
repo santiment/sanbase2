@@ -4,7 +4,7 @@ defmodule SanbaseWeb.MetricRegistryController do
   require Logger
 
   def sync(conn, %{"secret" => secret} = params) do
-    case secret == get_sync_secret() do
+    case valid_secret?(secret, get_sync_secret()) do
       true ->
         try do
           case Sanbase.Metric.Registry.Sync.apply_sync(
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.MetricRegistryController do
         "actual_changes" => actual_changes,
         "secret" => secret
       }) do
-    case secret == get_sync_secret() do
+    case valid_secret?(secret, get_sync_secret()) do
       true ->
         # The code fetches the sync by the UUID and checks there if the sync is dry run or not
         case Sanbase.Metric.Registry.Sync.mark_sync_as_completed(sync_uuid, actual_changes) do
@@ -73,40 +73,57 @@ defmodule SanbaseWeb.MetricRegistryController do
     end
   end
 
+  def export_json(conn, %{"secret" => secret}) do
+    case valid_secret?(secret, get_export_secret()) do
+      true ->
+        conn
+        |> put_resp_content_type("application/x-ndjson")
+        |> resp(200, get_metric_registry_json())
+        |> send_resp()
+
+      false ->
+        conn
+        |> resp(403, "Unauthorized")
+        |> send_resp()
+    end
+  end
+
   def export_json(conn, _params) do
     conn
-    |> resp(200, get_metric_registry_json())
+    |> resp(403, "Unauthorized")
     |> send_resp()
   end
 
   defp get_metric_registry_json() do
     Sanbase.Metric.Registry.all()
-    |> Enum.take(1)
     |> Enum.map(&transform/1)
-
-    # |> Enum.map(&Jason.encode!/1)
-    # |> Enum.intersperse("\n")
+    |> Enum.map(&Jason.encode!/1)
+    |> Enum.intersperse("\n")
   end
 
   defp transform(struct) when is_struct(struct) do
     struct
     |> Map.from_struct()
     |> Map.drop([:__meta__, :inserted_at, :updated_at, :change_suggestions])
-    |> Map.new(fn
-      {k, v} when is_list(v) ->
-        {k, Enum.map(v, &transform/1)}
-
-      {k, v} when is_map(v) ->
-        {k, transform(v)}
-
-      {k, v} ->
-        {k, v}
-    end)
+    |> Map.new(fn {k, v} -> {k, transform(v)} end)
   end
 
+  defp transform(list) when is_list(list), do: Enum.map(list, &transform/1)
+  defp transform(map) when is_map(map), do: Map.new(map, fn {k, v} -> {k, transform(v)} end)
+  defp transform(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> transform()
   defp transform(data), do: data
 
   defp get_sync_secret() do
     Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
   end
+
+  defp get_export_secret() do
+    Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :export_secret)
+  end
+
+  defp valid_secret?(secret, expected) when is_binary(secret) and is_binary(expected) do
+    Plug.Crypto.secure_compare(secret, expected)
+  end
+
+  defp valid_secret?(_secret, _expected), do: false
 end

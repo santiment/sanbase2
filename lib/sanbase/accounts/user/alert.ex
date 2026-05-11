@@ -26,10 +26,19 @@ defmodule Sanbase.Accounts.User.Alert do
     user = Sanbase.Repo.preload(user, :user_settings)
     settings = UserSettings.settings_for(user)
 
-    valid_webhook_url? = match?(:ok, Sanbase.Validation.valid_url?(webhook_url))
+    valid_webhook_url? = match?(:ok, Sanbase.Utils.Validation.valid_public_url?(webhook_url))
     alert_limit_reached? = daily_limit_reached?(settings, "webhook")
 
     valid_webhook_url? and not alert_limit_reached?
+  end
+
+  def can_receive_telegram_channel_alert?(user, chat_id) do
+    user = Sanbase.Repo.preload(user, :user_settings)
+    settings = UserSettings.settings_for(user)
+
+    alert_limit_reached? = daily_limit_reached?(settings, "telegram_channel")
+
+    is_binary(chat_id) and chat_id != "" and not alert_limit_reached?
   end
 
   defp daily_limit_reached?(%{} = settings, channel) when is_binary(channel) do

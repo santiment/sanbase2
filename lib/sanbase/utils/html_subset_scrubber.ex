@@ -2,6 +2,8 @@ defmodule Sanbase.Utils.HtmlSubsetScrubber do
   require HtmlSanitizeEx.Scrubber.Meta
   alias HtmlSanitizeEx.Scrubber.Meta
 
+  @before_compile HtmlSanitizeEx.ScrubberCompiler
+
   Meta.remove_cdata_sections_before_scrub()
   Meta.strip_comments()
 
@@ -56,6 +58,4 @@ defmodule Sanbase.Utils.HtmlSubsetScrubber do
   Meta.allow_tag_with_these_attributes("iframe", ["src"])
   Meta.allow_tag_with_these_attributes("figure", ["class", "id"])
   Meta.allow_tag_with_these_attributes("figcaption", ["class", "id"])
-
-  Meta.strip_everything_not_covered()
 end

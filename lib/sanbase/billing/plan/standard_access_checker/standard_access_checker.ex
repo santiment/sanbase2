@@ -50,7 +50,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
         :ok
 
       queries ->
-        require Sanbase.Break, as: Break
+        require Sanbase.Utils.Break, as: Break
 
         Break.break("""
         There are GraphQL queries defined without specifying their access level.

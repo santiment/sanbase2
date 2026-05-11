@@ -9,6 +9,6 @@ defmodule Mix.Tasks.LoadDotenv do
 
   @impl Mix.Task
   def run(_args) do
-    Envy.auto_load()
+    Sanbase.EnvConfigLoader.auto_load()
   end
 end

@@ -15,15 +15,27 @@ defmodule SanbaseWeb.Endpoint do
     signing_salt: "grT-As16"
   ]
 
-  socket("/socket", SanbaseWeb.UserSocket, websocket: true, check_origin: false)
+  @websocket_allowed_origins [
+    "//*.santiment.net",
+    "//*.santiment.network",
+    "//*.sanr.app",
+    "//*.sanitize.page",
+    "//*.sanbase-admin.stage.san",
+    "//sanbase-admin.stage.san",
+    "//*.sanbase-admin.production.san",
+    "//sanbase-admin.production.san",
+    "//localhost"
+  ]
+
+  socket("/socket", SanbaseWeb.UserSocket, websocket: [check_origin: @websocket_allowed_origins])
 
   socket("/live", Phoenix.LiveView.Socket,
     websocket: [
       connect_info: [
         session: {SanbaseWeb.LiveViewUtils, :session_options, [@session_options]}
-      ]
-    ],
-    check_origin: false
+      ],
+      check_origin: @websocket_allowed_origins
+    ]
   )
 
   # Serve at "/" the static files from "priv/static" directory.
@@ -41,14 +53,16 @@ defmodule SanbaseWeb.Endpoint do
   # Prometheus /metrics endpoint
   plug(PromEx.Plug, prom_ex_module: SanbaseWeb.Prometheus)
 
+  if Code.ensure_loaded?(Tidewave) do
+    plug Tidewave
+  end
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do
+    socket("/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket)
     plug(Phoenix.CodeReloader)
-  end
-
-  if Code.ensure_loaded?(Tidewave) do
-    plug Tidewave
+    plug(Phoenix.LiveReloader)
   end
 
   plug(Plug.RequestId)

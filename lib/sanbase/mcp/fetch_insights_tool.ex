@@ -109,7 +109,7 @@ defmodule Sanbase.MCP.FetchInsightsTool do
       title: post.title,
       short_desc: post.short_desc,
       text: truncate_text(post.text),
-      published_at: Sanbase.DateTimeUtils.to_iso8601(post.published_at),
+      published_at: Sanbase.Utils.DateTime.to_iso8601(post.published_at),
       author: %{
         username: post.user.username || "Unnamed"
       },

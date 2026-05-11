@@ -1,14 +1,11 @@
 defmodule SanbaseWeb.Admin.InvoicesLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
+
   alias Sanbase.Billing.Invoices.{InvoiceArchive, GenerationJob, S3Storage}
-  # S3Storage used in delete/regenerate events
 
   @start_year 2020
-
-  # ---------------------------------------------------------------------------
-  # Mount
-  # ---------------------------------------------------------------------------
 
   def mount(_params, _session, socket) do
     if connected?(socket), do: GenerationJob.subscribe()
@@ -26,33 +23,32 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
       |> assign(:job, if(job_state.status == :idle, do: nil, else: job_state))
       |> assign(:confirm_action, nil)
       |> assign(:confirm_archive_id, nil)
-      |> assign(:flash_error, nil)
 
     {:ok, socket}
   end
 
-  # ---------------------------------------------------------------------------
-  # Events
-  # ---------------------------------------------------------------------------
-
   def handle_event("select_period", %{"year" => year, "month" => month}, socket) do
     {:noreply,
      socket
-     |> assign(:selected_year, String.to_integer(year))
-     |> assign(:selected_month, String.to_integer(month))}
+     |> assign(:selected_year, parse_int(year, socket.assigns.selected_year))
+     |> assign(:selected_month, parse_int(month, socket.assigns.selected_month))}
   end
 
   def handle_event("generate", %{"year" => year, "month" => month}, socket) do
-    year = String.to_integer(year)
-    month = String.to_integer(month)
+    year = parse_int(year, nil)
+    month = parse_int(month, nil)
     user_id = socket.assigns.current_user.id
 
-    case GenerationJob.start_job(year, month, user_id) do
-      :ok ->
-        {:noreply, socket |> assign(:selected_year, year) |> assign(:selected_month, month)}
+    if is_nil(year) or is_nil(month) do
+      {:noreply, socket}
+    else
+      case GenerationJob.start_job(year, month, user_id) do
+        :ok ->
+          {:noreply, socket |> assign(:selected_year, year) |> assign(:selected_month, month)}
 
-      {:error, :already_running} ->
-        {:noreply, put_flash(socket, :error, "A generation job is already running")}
+        {:error, :already_running} ->
+          {:noreply, put_flash(socket, :error, "A generation job is already running")}
+      end
     end
   end
 
@@ -66,12 +62,12 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
   end
 
   def handle_event("confirm_delete", %{"id" => id}, socket) do
-    {:noreply, assign(socket, confirm_action: :delete, confirm_archive_id: String.to_integer(id))}
+    {:noreply, assign(socket, confirm_action: :delete, confirm_archive_id: parse_int(id, nil))}
   end
 
   def handle_event("confirm_regenerate", %{"id" => id}, socket) do
     {:noreply,
-     assign(socket, confirm_action: :regenerate, confirm_archive_id: String.to_integer(id))}
+     assign(socket, confirm_action: :regenerate, confirm_archive_id: parse_int(id, nil))}
   end
 
   def handle_event("cancel_confirm", _params, socket) do
@@ -114,7 +110,7 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
   end
 
   def handle_event("reset_stale", %{"id" => id}, socket) do
-    archive = Enum.find(socket.assigns.archives, &(&1.id == String.to_integer(id)))
+    archive = Enum.find(socket.assigns.archives, &(&1.id == parse_int(id, nil)))
 
     if archive do
       InvoiceArchive.create_or_update(%{
@@ -128,10 +124,6 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
     {:noreply, assign(socket, :archives, InvoiceArchive.list_all())}
   end
 
-  # ---------------------------------------------------------------------------
-  # PubSub
-  # ---------------------------------------------------------------------------
-
   def handle_info({:job_update, job_state}, socket) do
     socket = assign(socket, :job, if(job_state.status == :idle, do: nil, else: job_state))
 
@@ -144,10 +136,6 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
 
     {:noreply, socket}
   end
-
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
 
   defp progress_percent(nil), do: 0
 
@@ -220,11 +208,11 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
   defp format_datetime(nil), do: "-"
   defp format_datetime(dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M")
 
-  defp status_badge_class("completed"), do: "bg-green-100 text-green-800"
-  defp status_badge_class("failed"), do: "bg-red-100 text-red-800"
-  defp status_badge_class("generating"), do: "bg-yellow-100 text-yellow-800"
-  defp status_badge_class("pending"), do: "bg-gray-100 text-gray-800"
-  defp status_badge_class(_), do: "bg-gray-100 text-gray-800"
+  defp status_badge_class("completed"), do: "badge-success"
+  defp status_badge_class("failed"), do: "badge-error"
+  defp status_badge_class("generating"), do: "badge-warning"
+  defp status_badge_class("pending"), do: "badge-ghost"
+  defp status_badge_class(_), do: "badge-ghost"
 
   defp job_running?(job), do: job != nil and job.status == :running
 
@@ -232,191 +220,143 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
     archive.status == "generating" and not job_running?(job)
   end
 
-  # ---------------------------------------------------------------------------
-  # Render
-  # ---------------------------------------------------------------------------
-
   def render(assigns) do
     ~H"""
     <div class="p-6 max-w-6xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Invoice Archives</h1>
-      <p class="text-sm text-gray-500 mb-6">
+      <h1 class="text-3xl font-bold mb-2">Invoice Archives</h1>
+      <p class="text-sm text-base-content/60 mb-6">
         Generate, download, and manage monthly invoice archive ZIPs from Stripe.
       </p>
 
       <%!-- ── Generate controls ─────────────────────────────────────── --%>
-      <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+      <div class="card bg-base-100 border border-base-300 p-4 mb-6">
         <form phx-change="select_period" phx-submit="generate" class="flex items-end gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-            <select
-              name="year"
-              class="block w-28 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-            >
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Year</legend>
+            <select name="year" class="select select-sm w-28">
               <option :for={y <- @years} value={y} selected={y == @selected_year}>{y}</option>
             </select>
-          </div>
+          </fieldset>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-            <select
-              name="month"
-              class="block w-36 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-            >
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Month</legend>
+            <select name="month" class="select select-sm w-36">
               <option :for={m <- 1..12} value={m} selected={m == @selected_month}>
                 {month_name(m)}
               </option>
             </select>
-          </div>
+          </fieldset>
 
-          <button
-            type="submit"
-            disabled={job_running?(@job)}
-            class={"px-4 py-2 rounded-md text-sm font-medium text-white #{if job_running?(@job), do: "bg-indigo-300 cursor-not-allowed", else: "bg-indigo-600 hover:bg-indigo-700"}"}
-          >
+          <button type="submit" disabled={job_running?(@job)} class="btn btn-sm btn-primary">
             Generate
           </button>
         </form>
       </div>
 
       <%!-- ── Progress bar ──────────────────────────────────────────── --%>
-      <div :if={job_running?(@job)} class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+      <div :if={job_running?(@job)} class="card bg-base-100 border border-base-300 p-4 mb-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-gray-700">
-            {progress_text(@job)}
-          </span>
-          <button phx-click="cancel" class="text-sm text-red-600 hover:text-red-800 font-medium">
+          <span class="text-sm font-medium">{progress_text(@job)}</span>
+          <button phx-click="cancel" class="btn btn-xs btn-soft btn-error">
             Cancel
           </button>
         </div>
 
-        <div class="w-full bg-gray-200 rounded-full h-3">
-          <div
-            class="bg-indigo-600 h-3 rounded-full transition-all duration-300"
-            style={"width: #{progress_percent(@job)}%"}
-          >
-          </div>
-        </div>
+        <progress class="progress progress-primary w-full" value={progress_percent(@job)} max="100">
+        </progress>
 
-        <div :if={@job.failed > 0} class="mt-2 text-sm text-red-600">
+        <div :if={@job.failed > 0} class="mt-2 text-sm text-error">
           {length(@job.errors)} error(s) during download
         </div>
       </div>
 
       <%!-- ── Job done/failed/cancelled banner ──────────────────────── --%>
-      <div
-        :if={@job && @job.status == :done}
-        class="bg-green-50 border border-green-200 rounded-lg p-3 mb-6 text-sm text-green-800"
-      >
-        Generation complete! {month_name(@job.month)} {@job.year} archive is ready.
+      <div :if={@job && @job.status == :done} role="alert" class="alert alert-success mb-6">
+        <span>Generation complete! {month_name(@job.month)} {@job.year} archive is ready.</span>
       </div>
 
-      <div
-        :if={@job && @job.status == :failed}
-        class="bg-red-50 border border-red-200 rounded-lg p-3 mb-6 text-sm text-red-800"
-      >
-        Generation failed. {Enum.join(@job.errors, "; ")}
+      <div :if={@job && @job.status == :failed} role="alert" class="alert alert-error mb-6">
+        <span>Generation failed. {Enum.join(@job.errors, "; ")}</span>
       </div>
 
-      <div
-        :if={@job && @job.status == :cancelled}
-        class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6 text-sm text-yellow-800"
-      >
-        Generation cancelled.
+      <div :if={@job && @job.status == :cancelled} role="alert" class="alert alert-warning mb-6">
+        <span>Generation cancelled.</span>
       </div>
 
       <%!-- ── Confirmation modal ────────────────────────────────────── --%>
-      <div
-        :if={@confirm_action}
-        class="fixed inset-0 bg-gray-600/50 flex items-center justify-center z-50"
-      >
-        <div class="bg-white rounded-lg p-6 max-w-sm mx-auto shadow-xl">
-          <h3 class="text-lg font-medium text-gray-900 mb-2">
+      <div :if={@confirm_action} class="modal modal-open">
+        <div class="modal-box max-w-sm">
+          <h3 class="text-lg font-medium mb-2">
             {if @confirm_action == :delete, do: "Delete Archive", else: "Regenerate Archive"}
           </h3>
-          <p class="text-sm text-gray-600 mb-4">
+          <p class="text-sm text-base-content/70 mb-4">
             {if @confirm_action == :delete,
               do: "This will permanently delete the archive and its S3 file. Continue?",
               else: "This will delete the existing archive and generate a new one. Continue?"}
           </p>
-          <div class="flex justify-end gap-3">
-            <button
-              phx-click="cancel_confirm"
-              class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-            >
+          <div class="modal-action">
+            <button phx-click="cancel_confirm" class="btn btn-sm btn-soft">
               Cancel
             </button>
             <button
               phx-click={if @confirm_action == :delete, do: "delete", else: "regenerate"}
-              class={"px-3 py-2 text-sm font-medium text-white rounded-md #{if @confirm_action == :delete, do: "bg-red-600 hover:bg-red-700", else: "bg-indigo-600 hover:bg-indigo-700"}"}
+              class={[
+                "btn btn-sm",
+                if(@confirm_action == :delete, do: "btn-error", else: "btn-primary")
+              ]}
             >
               {if @confirm_action == :delete, do: "Delete", else: "Regenerate"}
             </button>
           </div>
         </div>
+        <div class="modal-backdrop" phx-click="cancel_confirm"></div>
       </div>
 
       <%!-- ── Archives table ────────────────────────────────────────── --%>
-      <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <div class="rounded-box border border-base-300 overflow-hidden">
+        <table class="table table-zebra table-sm">
+          <thead>
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Month
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Invoices
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Amount
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                File Size
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Generated At
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+              <th>Month</th>
+              <th>Status</th>
+              <th>Invoices</th>
+              <th>Total Amount</th>
+              <th>File Size</th>
+              <th>Generated At</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody>
             <tr :if={@archives == []}>
-              <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">
+              <td colspan="7" class="text-center text-base-content/60 py-6">
                 No archives generated yet. Select a month and click Generate to create one.
               </td>
             </tr>
-            <tr :for={archive <- @archives} class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">
-                {month_name(archive.month)} {archive.year}
-              </td>
-              <td class="px-4 py-3 text-sm">
-                <span class={"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium #{status_badge_class(archive.status)}"}>
+            <tr :for={archive <- @archives}>
+              <td class="font-medium">{month_name(archive.month)} {archive.year}</td>
+              <td>
+                <span class={["badge badge-sm", status_badge_class(archive.status)]}>
                   {archive.status}
                 </span>
                 <span
                   :if={archive.status == "failed" && archive.error_message}
-                  class="block text-xs text-red-500 mt-1 max-w-xs truncate"
+                  class="block text-xs text-error mt-1 max-w-xs truncate"
                   title={archive.error_message}
                 >
                   {archive.error_message}
                 </span>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-600">{archive.invoice_count}</td>
-              <td class="px-4 py-3 text-sm text-gray-600">{format_amount(archive.total_amount)}</td>
-              <td class="px-4 py-3 text-sm text-gray-600">{format_file_size(archive.file_size)}</td>
-              <td class="px-4 py-3 text-sm text-gray-600">{format_datetime(archive.updated_at)}</td>
-              <td class="px-4 py-3 text-sm">
+              <td class="text-base-content/70">{archive.invoice_count}</td>
+              <td class="text-base-content/70">{format_amount(archive.total_amount)}</td>
+              <td class="text-base-content/70">{format_file_size(archive.file_size)}</td>
+              <td class="text-base-content/70">{format_datetime(archive.updated_at)}</td>
+              <td>
                 <div class="flex items-center gap-2">
                   <button
                     :if={archive.status == "completed" && archive.s3_key}
                     phx-click="download"
                     phx-value-id={archive.id}
-                    class="text-indigo-600 hover:text-indigo-800 font-medium"
+                    class="link link-primary text-sm font-medium"
                   >
                     Download
                   </button>
@@ -425,7 +365,7 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
                     phx-click="confirm_regenerate"
                     phx-value-id={archive.id}
                     disabled={job_running?(@job)}
-                    class={"font-medium #{if job_running?(@job), do: "text-gray-400 cursor-not-allowed", else: "text-yellow-600 hover:text-yellow-800"}"}
+                    class="link text-warning text-sm font-medium"
                   >
                     Regenerate
                   </button>
@@ -433,7 +373,7 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
                     :if={stale_generating?(archive, @job)}
                     phx-click="reset_stale"
                     phx-value-id={archive.id}
-                    class="text-orange-600 hover:text-orange-800 font-medium"
+                    class="link text-warning text-sm font-medium"
                   >
                     Reset
                   </button>
@@ -442,7 +382,7 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
                     phx-click="confirm_delete"
                     phx-value-id={archive.id}
                     disabled={job_running?(@job)}
-                    class={"font-medium #{if job_running?(@job), do: "text-gray-400 cursor-not-allowed", else: "text-red-600 hover:text-red-800"}"}
+                    class="link text-error text-sm font-medium"
                   >
                     Delete
                   </button>

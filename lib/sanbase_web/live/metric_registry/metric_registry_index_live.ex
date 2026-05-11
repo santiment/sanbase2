@@ -7,6 +7,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   alias Sanbase.Metric.Registry.Permissions
   alias Sanbase.Metric.Category.MetricCategoryMapping
   alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
+  alias SanbaseWeb.MetricRegistryComponents
 
   require Logger
 
@@ -73,12 +75,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       />
     </.modal>
     <div class="flex flex-col items-start justify-evenly">
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry Index
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title="Metric Registry Index"
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
       <div class="text-gray-400 text-sm py-2">
         <div>
@@ -100,7 +101,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           {row.id}
         </:col>
         <:col :let={row} label="Metric Names" col_class="max-w-[420px]">
-          <.metric_names
+          <MetricRegistryComponents.metric_names
             metric={row.metric}
             internal_metric={row.internal_metric}
             human_readable_name={row.human_readable_name}
@@ -137,7 +138,10 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           <.sync_status row={row} metric_ids_with_changes={@metric_ids_with_changes} />
         </:col>
         <:col :let={row} label="Dates">
-          <.dates inserted_at={row.inserted_at} updated_at={row.updated_at} />
+          <AdminSharedComponents.dates_display
+            inserted_at={row.inserted_at}
+            updated_at={row.updated_at}
+          />
         </:col>
         <:col
           :let={row}
@@ -147,14 +151,14 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           <div class="flex flex-col gap-1.5">
             <.link
               navigate={~p"/admin/metric_registry/show/#{row.id}"}
-              class="inline-flex items-center justify-center px-2.5 py-1 text-sm font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 border border-blue-200"
+              class="btn btn-sm btn-outline btn-primary"
             >
               Show
             </.link>
             <.link
               :if={Permissions.can?(:edit, roles: @current_user_role_names)}
               navigate={~p"/admin/metric_registry/edit/#{row.id}"}
-              class="inline-flex items-center justify-center px-2.5 py-1 text-sm font-medium text-green-700 bg-green-50 rounded hover:bg-green-100 border border-green-200"
+              class="btn btn-sm btn-outline btn-success"
             >
               Edit
             </.link>
@@ -283,30 +287,6 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     end
   end
 
-  defp dates(assigns) do
-    inserted_duration =
-      Sanbase.DateTimeUtils.rough_duration_since(assigns.inserted_at, abbreviate: true)
-
-    updated_duration =
-      Sanbase.DateTimeUtils.rough_duration_since(assigns.updated_at, abbreviate: true)
-
-    assigns =
-      assign(assigns, inserted_duration: inserted_duration, updated_duration: updated_duration)
-
-    ~H"""
-    <div class="flex flex-col gap-1">
-      <div class="flex items-center gap-1.5 text-nowrap">
-        <.icon name="hero-plus-circle" class="w-4 h-4 text-green-600" />
-        <span class="text-gray-700 text-sm">{@inserted_duration} ago</span>
-      </div>
-      <div :if={@inserted_at != @updated_at} class="flex items-center gap-1.5 text-nowrap">
-        <.icon name="hero-pencil-square" class="w-4 h-4 text-amber-600" />
-        <span class="text-gray-700 text-sm">{@updated_duration} ago</span>
-      </div>
-    </div>
-    """
-  end
-
   defp docs(assigns) do
     ~H"""
     <div>
@@ -414,7 +394,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           rows={Enum.filter(@metrics, &(&1.id in @changed_metrics_ids))}
         >
           <:col :let={row} label="Metric" col_class="max-w-[420px]">
-            <.metric_names
+            <MetricRegistryComponents.metric_names
               metric={row.metric}
               internal_metric={row.internal_metric}
               human_readable_name={row.human_readable_name}
@@ -428,15 +408,15 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           </:col>
         </.table>
         <div class="mt-4">
-          <.phx_click_button
+          <AdminSharedComponents.action_button
             phx_click="confirm_verified_changes_update"
-            class="bg-green-500 hover:bg-green-900 text-white"
+            class="btn-success"
             text="Confirm Changes"
             count={length(@changed_metrics_ids)}
           />
-          <.phx_click_button
+          <AdminSharedComponents.action_button
             phx_click="hide_show_verified_changes_modal"
-            class="bg-white hover:bg-gray-100 text-gray-800"
+            class="btn-soft"
             text="Close"
           />
         </div>
@@ -464,20 +444,20 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     """
   end
 
-  def sync_status(assigns) do
+  defp sync_status(assigns) do
     ~H"""
     <div>
-      <span :if={@row.sync_status == "synced"} class="text-green-900 ms-3 text-sm font-bold">
+      <span :if={@row.sync_status == "synced"} class="text-success ms-3 text-sm font-bold">
         SYNCED
       </span>
 
-      <span :if={@row.sync_status == "not_synced"} class="text-red-700 ms-3 text-sm font-bold">
+      <span :if={@row.sync_status == "not_synced"} class="text-error ms-3 text-sm font-bold">
         <div>NOT SYNCED</div>
       </span>
 
       <div
         :if={@row.sync_status == "not_synced" and @row.id in @metric_ids_with_changes}
-        class="text-gray-400 text-sm font-semibold cursor-pointer"
+        class="text-base-content/60 text-sm font-semibold cursor-pointer"
         phx-click={JS.push("show_not_synced_diff", value: %{metric_registry_id: @row.id})}
       >
         (click to see diff)
@@ -485,7 +465,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
       <div
         :if={@row.sync_status == "not_synced" and @row.id not in @metric_ids_with_changes}
-        class="text-gray-400 text-xs font-semibold "
+        class="text-base-content/60 text-xs font-semibold "
       >
         (New metric, no changes)
       </div>
@@ -497,45 +477,45 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     ~H"""
     <div class="my-2">
       <div>
-        <AvailableMetricsComponents.link_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:create, roles: @current_user_role_names)}
           icon="hero-plus"
           text="Create New Metric"
           href={~p"/admin/metric_registry/new"}
         />
-        <AvailableMetricsComponents.link_button
+        <AdminSharedComponents.nav_button
           icon="hero-list-bullet"
           text="See Change Requests"
           href={~p"/admin/metric_registry/change_suggestions"}
         />
 
-        <AvailableMetricsComponents.link_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:start_sync, roles: @current_user_role_names)}
           icon="hero-arrow-path-rounded-square"
           text="Sync Metrics"
           href={~p"/admin/metric_registry/sync"}
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:see_sync_runs, roles: @current_user_role_names)}
           text="List Sync Runs"
           href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"
         />
 
-        <AvailableMetricsComponents.link_button
+        <AdminSharedComponents.nav_button
           icon="hero-document-text"
           text="Docs"
           href="https://github.com/santiment/sanbase2/blob/master/docs/metric_registry/index.md"
           target="_blank"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           icon="hero-tag"
           text="Categorization"
           href={~p"/admin/metric_registry/categorization"}
         />
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           icon="hero-list-bullet"
           text="UI Display Order"
           href={~p"/admin/metric_registry/display_order"}
@@ -550,7 +530,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     <div>
       <form phx-change="apply_filters" class="flex flex-col mb-4">
         <div>
-          <span class="text-sm font-semibold leading-6 text-zinc-800">Filters</span>
+          <span class="text-sm font-semibold leading-6 text-base-content">Filters</span>
           <div class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-2 md:space-y-0">
             <.filter_input
               id="metric-name-search"
@@ -562,14 +542,34 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             <.filter_status value={@filter["status"]} />
           </div>
           <div class="flex flex-row mt-4 space-x-2 ">
-            <.filter_not_deprecated />
-            <.filter_unverified />
-            <.filter_not_synced />
-            <.filter_without_docs />
+            <AdminSharedComponents.filter_checkbox
+              id="not-deprecated-only"
+              name="not_deprecated_only"
+              label="Not Deprecated"
+              checked={@filter["not_deprecated_only"] == "on"}
+            />
+            <AdminSharedComponents.filter_checkbox
+              id="unverified-only"
+              name="unverified_only"
+              label="Unverified"
+              checked={@filter["unverified_only"] == "on"}
+            />
+            <AdminSharedComponents.filter_checkbox
+              id="not-synced-only"
+              name="not_synced_only"
+              label="Not Synced"
+              checked={@filter["not_synced_only"] == "on"}
+            />
+            <AdminSharedComponents.filter_checkbox
+              id="no-docs-only"
+              name="no_docs_only"
+              label="Without Docs"
+              checked={@filter["no_docs_only"] == "on"}
+            />
           </div>
         </div>
         <div>
-          <span class="text-sm font-semibold leading-6 text-zinc-800">Sort By</span>
+          <span class="text-sm font-semibold leading-6 text-base-content">Sort By</span>
           <.input
             id="sort-by"
             type="select"
@@ -588,84 +588,19 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           />
         </div>
       </form>
-      <.phx_click_button
+      <AdminSharedComponents.action_button
         :if={Permissions.can?(:access_verified_status, roles: @current_user_role_names)}
         phx_click="show_verified_changes_modal"
         class={
           if(@changed_metrics_ids == [],
-            do: "text-gray-900 bg-white hover:bg-gray-100",
-            else: "border border-green-700 text-white bg-green-500 hover:bg-green-600"
+            do:
+              "bg-base-100 border border-base-content/40 hover:bg-base-200 hover:border-base-content/70",
+            else: "btn-success"
           )
         }
         text="Apply Verified Status Changes"
         count={length(@changed_metrics_ids)}
       />
-    </div>
-    """
-  end
-
-  defp filter_not_deprecated(assigns) do
-    ~H"""
-    <div class="flex items-center mb-4 ">
-      <label for="not-deprecated-only" class="cursor-pointer ms-2 text-sm font-medium text-gray-900">
-        <input
-          id="not-deprecated-only"
-          name="not_deprecated_only"
-          type="checkbox"
-          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-        /> Not Deprecated
-      </label>
-    </div>
-    """
-  end
-
-  defp filter_unverified(assigns) do
-    ~H"""
-    <div class="flex items-center mb-4 ">
-      <label for="unverified-only" class="cursor-pointer ms-2 text-sm font-medium text-gray-900">
-        <input
-          id="unverified-only"
-          name="unverified_only"
-          type="checkbox"
-          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-        /> Unverified
-      </label>
-    </div>
-    """
-  end
-
-  defp filter_not_synced(assigns) do
-    ~H"""
-    <div class="flex items-center mb-4 ">
-      <label
-        for="not-synced-only"
-        class="cursor-pointer ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-      >
-        <input
-          id="not-synced-only"
-          name="not_synced_only"
-          type="checkbox"
-          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-        /> Not Synced
-      </label>
-    </div>
-    """
-  end
-
-  defp filter_without_docs(assigns) do
-    ~H"""
-    <div class="flex items-center mb-4 ">
-      <label
-        for="no-docs-only"
-        class="cursor-pointer ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-      >
-        <input
-          id="no-docs-only"
-          name="no_docs_only"
-          type="checkbox"
-          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-        /> Without Docs
-      </label>
     </div>
     """
   end
@@ -677,7 +612,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       id={@id}
       value={@value || ""}
       name={@name}
-      class="block w-64 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+      class="input input-bordered input-sm w-64"
       placeholder={@placeholder}
       phx-debounce="200"
     />
@@ -688,7 +623,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     ~H"""
     <select
       name="status"
-      class="block w-48 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+      class="select select-bordered select-sm w-48"
     >
       <option value="">All Statuses</option>
       <option
@@ -699,60 +634,6 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         {String.capitalize(status)}
       </option>
     </select>
-    """
-  end
-
-  attr :phx_click, :string, required: true
-  attr :text, :string, required: true
-  attr :count, :integer, required: false, default: nil
-  attr :class, :string, required: true
-
-  defp phx_click_button(assigns) do
-    ~H"""
-    <button
-      type="button"
-      phx-click={@phx_click}
-      class={[
-        "border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2",
-        @class
-      ]}
-    >
-      {@text}
-      <span :if={@count > 0} class="text-white">({@count})</span>
-    </button>
-    """
-  end
-
-  attr :metric, :string, required: true
-  attr :internal_metric, :string, required: true
-  attr :human_readable_name, :string, required: true
-  attr :status, :string, required: true
-  attr :category_mappings, :list, required: false, default: nil
-
-  defp metric_names(assigns) do
-    ~H"""
-    <div class="flex flex-col break-normal">
-      <div class="text-black text-base">
-        {@human_readable_name}
-        <span
-          :if={@status in ["alpha", "beta"]}
-          class={if @status == "alpha", do: "text-amber-600 text-sm", else: "text-violet-600 text-sm"}
-        >
-          ({String.upcase(@status)})
-        </span>
-      </div>
-      <div class="text-gray-900 text-sm">{@metric} (API)</div>
-      <div class="text-gray-900 text-sm">{@internal_metric} (DB)</div>
-      <div :if={@category_mappings != []} class="flex flex-wrap gap-1 mt-1">
-        <span
-          :for={category_mapping <- @category_mappings}
-          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-        >
-          <.icon name="hero-tag" class="w-3 h-3 mr-1" />
-          {category_mapping.category.name}<span :if={category_mapping.group}>/{category_mapping.group.name}</span>
-        </span>
-      </div>
-    </div>
     """
   end
 
@@ -768,8 +649,9 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
   defp apply_filters(metrics, filters) do
     metrics
-    |> maybe_apply_filter(:maybe_hide_hard_deprecated, filters)
+    |> maybe_apply_filter(:not_deprecated_only, filters)
     |> maybe_apply_filter(:match_metric, filters)
+    |> maybe_apply_filter(:status, filters)
     |> maybe_apply_filter(:unverified_only, filters)
     |> maybe_apply_filter(:not_synced_only, filters)
     |> maybe_apply_filter(:no_docs_only, filters)
@@ -792,7 +674,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     |> Enum.sort_by(&String.jaro_distance(query, &1.metric), :desc)
   end
 
-  defp maybe_apply_filter(metrics, :unverified_only, %{"not_deprecated_only" => "on"}) do
+  defp maybe_apply_filter(metrics, :not_deprecated_only, %{"not_deprecated_only" => "on"}) do
     metrics
     |> Enum.reject(fn m ->
       m.hard_deprecate_after && DateTime.before?(m.hard_deprecate_after, DateTime.utc_now())
@@ -820,7 +702,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     end)
   end
 
-  defp maybe_apply_filter(metrics, :match_metric, %{"status" => status}) when status != "" do
+  defp maybe_apply_filter(metrics, :status, %{"status" => status}) when status != "" do
     metrics
     |> Enum.filter(fn m ->
       m.status == status

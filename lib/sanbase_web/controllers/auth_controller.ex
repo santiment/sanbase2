@@ -258,18 +258,84 @@ defmodule SanbaseWeb.AuthController do
       @valid_redirect_hosts ["localhost" | @valid_redirect_hosts]
   end
 
-  @doc false
-  def validate_redirect_url(url) do
-    case URI.parse(url) do
-      %URI{scheme: "sanbase"} ->
-        true
+  # Temporary headroom — real FE redirect URLs should fit in 2048, but until we
+  # audit every deep-link case we keep 4096 to avoid breaking login returns.
+  @max_redirect_url_length 4096
 
-      %URI{scheme: "https", host: host} when host in @valid_redirect_hosts ->
-        true
+  @doc false
+  def validate_redirect_url(url) when is_binary(url) do
+    cond do
+      byte_size(url) > @max_redirect_url_length ->
+        Logger.warning("Rejecting oversized redirect URL (#{byte_size(url)} bytes)")
+        {:error, "Invalid redirect URL"}
+
+      contains_control_chars?(url) ->
+        Logger.warning("Rejecting redirect URL with control characters")
+        {:error, "Invalid redirect URL"}
+
+      true ->
+        do_validate_redirect_url(url)
+    end
+  end
+
+  def validate_redirect_url(_), do: {:error, "Invalid redirect URL"}
+
+  defp do_validate_redirect_url(url) do
+    case URI.parse(url) do
+      %URI{scheme: "sanbase", userinfo: nil, host: host, port: nil}
+      when is_binary(host) and host != "" ->
+        if valid_sanbase_deeplink_host?(host) do
+          true
+        else
+          Logger.warning("Rejecting sanbase:// redirect with suspicious host: #{url}")
+          {:error, "Invalid redirect URL"}
+        end
+
+      %URI{scheme: "https", userinfo: nil, host: host, port: port}
+      when is_binary(host) and port in [nil, 443] ->
+        if String.downcase(host) in @valid_redirect_hosts do
+          true
+        else
+          Logger.warning(
+            "Attempt to redirect to an unsupported endpoint after login: #{redact_url(url)}"
+          )
+
+          {:error, "Invalid redirect URL"}
+        end
 
       _ ->
-        Logger.warning("Attempt to redirect to an unsupported endpoint after login: #{url}")
+        Logger.warning(
+          "Attempt to redirect to an unsupported endpoint after login: #{redact_url(url)}"
+        )
+
         {:error, "Invalid redirect URL"}
     end
   end
+
+  defp redact_url(url) do
+    url
+    |> URI.parse()
+    |> Map.merge(%{userinfo: nil, query: nil, fragment: nil})
+    |> URI.to_string()
+  rescue
+    _ -> "<unparseable>"
+  end
+
+  # Reject CR/LF/NUL/tab and any other ASCII control byte. These have no
+  # business in a URL and are classic vectors for log-injection and HTTP
+  # response splitting.
+  defp contains_control_chars?(url) do
+    String.match?(url, ~r/[\x00-\x1F\x7F]/)
+  end
+
+  # The sanbase:// deep-link scheme uses the host component as an "action"
+  # (e.g., sanbase://home, sanbase://portfolio/btc). Reject anything that
+  # looks like a real DNS host (contains a dot) or is otherwise non-empty
+  # nonsense — that prevents attackers from smuggling their own domain
+  # through the mobile app's deep-link handler.
+  defp valid_sanbase_deeplink_host?(host) when is_binary(host) and host != "" do
+    not String.contains?(host, ".") and String.match?(host, ~r/^[a-zA-Z0-9_-]+$/)
+  end
+
+  defp valid_sanbase_deeplink_host?(_), do: false
 end

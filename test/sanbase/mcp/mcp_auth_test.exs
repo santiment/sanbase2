@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers, only: [try_few_times: 2, wait_for_mcp_initialization: 0]
 
+  @moduletag capture_log: true
+
   setup do
     user = insert(:user)
 

@@ -9,9 +9,11 @@ defmodule Sanbase.AppNotifications.Notification do
   @optional_fields [
     :title,
     :content,
+    :url,
     :user_id,
     :entity_type,
     :entity_name,
+    :entity_description,
     :entity_id,
     :is_system_generated,
     :is_broadcast,
@@ -28,8 +30,10 @@ defmodule Sanbase.AppNotifications.Notification do
           type: String.t(),
           title: String.t() | nil,
           content: String.t() | nil,
+          url: String.t() | nil,
           user_id: pos_integer() | nil,
           entity_name: String.t() | nil,
+          entity_description: String.t() | nil,
           entity_type: String.t() | nil,
           entity_id: integer() | nil,
           is_system_generated: boolean(),
@@ -47,8 +51,10 @@ defmodule Sanbase.AppNotifications.Notification do
     field(:type, :string)
     field(:title, :string)
     field(:content, :string)
+    field(:url, :string)
 
     field(:entity_name, :string)
+    field(:entity_description, :string)
     field(:entity_type, :string)
     field(:entity_id, :integer)
 
@@ -75,6 +81,46 @@ defmodule Sanbase.AppNotifications.Notification do
     notification
     |> cast(attrs, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
+    |> validate_broadcast_lengths()
+    |> validate_url()
     |> foreign_key_constraint(:user_id)
+  end
+
+  defp validate_broadcast_lengths(changeset) do
+    type = get_field(changeset, :type)
+
+    if is_binary(type) and String.starts_with?(type, "santiment_broadcast") do
+      changeset
+      |> validate_length(:title, min: 6)
+      |> validate_length(:content, min: 10)
+    else
+      changeset
+    end
+  end
+
+  defp validate_url(changeset) do
+    case get_change(changeset, :url) do
+      nil -> changeset
+      url -> do_validate_url(changeset, url)
+    end
+  end
+
+  defp do_validate_url(changeset, "/" <> _ = path) do
+    # Relative path — prepend a dummy host so URI.parse can validate the path
+    case URI.new("https://app.santiment.net" <> path) do
+      {:ok, %URI{path: p}} when is_binary(p) -> changeset
+      _ -> add_error(changeset, :url, "is not a valid relative path")
+    end
+  end
+
+  defp do_validate_url(changeset, url) do
+    case URI.new(url) do
+      {:ok, %URI{scheme: scheme, host: host}}
+      when scheme in ["http", "https"] and is_binary(host) and host != "" ->
+        changeset
+
+      _ ->
+        add_error(changeset, :url, "must be a valid URL (https://...) or a relative path (/...)")
+    end
   end
 end

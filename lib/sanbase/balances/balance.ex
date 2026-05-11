@@ -145,7 +145,7 @@ defmodule Sanbase.Balance do
       # for `from` datetime requires knowing the balance at `from` minus `interval`
       # datetime. Furthermore, the consecutive differences computation reduces the
       # number of elements by 1, so the extension by 1 interval also addresses this.
-      from = DateTime.add(from, -Sanbase.DateTimeUtils.str_to_sec(interval))
+      from = DateTime.add(from, -Sanbase.Utils.DateTime.str_to_sec(interval))
 
       case do_historical_balance(addresses, slug, decimals, blockchain, from, to, interval) do
         {:ok, balances} ->

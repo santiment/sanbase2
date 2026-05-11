@@ -48,7 +48,7 @@ defmodule Sanbase.Billing.Subscription.Stats do
       join: p in Plan,
       on: s.plan_id == p.id,
       where:
-        p.product_id == 2 and s.status in ["active", "trialing", "past_due"] and
+        p.product_id == 2 and s.status in [:active, :trialing, :past_due] and
           not is_nil(s.stripe_id),
       group_by: [s.user_id, p.product_id],
       having: count(s.id) >= 2,
@@ -61,7 +61,7 @@ defmodule Sanbase.Billing.Subscription.Stats do
         on: s.plan_id == p.id,
         where:
           s.user_id == ^user_id and p.product_id == 2 and
-            s.status in ["active", "trialing", "past_due"] and not is_nil(s.stripe_id),
+            s.status in [:active, :trialing, :past_due] and not is_nil(s.stripe_id),
         select: {s.id, s.stripe_id, s.plan_id, s.status, s.inserted_at},
         order_by: [desc: s.inserted_at]
       )

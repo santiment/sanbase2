@@ -217,7 +217,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
   end
 
   defp rate_limit_error_message(%{blocked_for_seconds: seconds}, user, plan_name) do
-    human_duration = Sanbase.DateTimeUtils.seconds_to_human_readable(seconds)
+    human_duration = Sanbase.Utils.DateTime.seconds_to_human_readable(seconds)
 
     message_details =
       case user do
@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
          user,
          plan_name
        ) do
-    human_duration = Sanbase.DateTimeUtils.seconds_to_human_readable(seconds)
+    human_duration = Sanbase.Utils.DateTime.seconds_to_human_readable(seconds)
 
     message_details =
       case user do

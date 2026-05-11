@@ -1,10 +1,10 @@
 defmodule SanbaseWeb.MetricRegistryShowLive do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   import SanbaseWeb.AvailableMetricsDescription
 
   alias Sanbase.Metric.Registry.Permissions
+  alias SanbaseWeb.AdminSharedComponents
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
@@ -33,42 +33,41 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry Details | {@metric_registry.metric}
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title={"Metric Registry Details | #{@metric_registry.metric}"}
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Registry"
           href={~p"/admin/metric_registry"}
           icon="hero-arrow-uturn-left"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names)}
           text="Edit Metric"
           href={~p"/admin/metric_registry/edit/#{@metric_registry}"}
           icon="hero-pencil-square"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:see_history, roles: @current_user_role_names)}
           text="History"
           href={~p"/admin/metric_registry/history/#{@metric_registry}"}
           icon="hero-calendar-days"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:see_history, roles: @current_user_role_names)}
           text="Diff Since Last Sync"
           href={~p"/admin/metric_registry/diff/#{@metric_registry}"}
           icon="hero-code-bracket-square"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names)}
           text="Duplicate Metric"
           href={
@@ -77,7 +76,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           icon="hero-document-duplicate"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Notifications"
           href={
             ~p"/admin/generic/search?resource=notifications&search[filters][0][field]=metric_registry_id&search[filters][0][value]=#{@metric_registry.id}"
@@ -85,7 +84,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           icon="hero-envelope"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names)}
           text="Test Metric"
           href={@metric_graphiql_url}
@@ -108,27 +107,19 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       </.table>
 
       <div :if={@mappings != []} class="mt-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Categorization</h2>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <h2 class="text-xl font-semibold mb-4">Categorization</h2>
+        <div class="rounded-box border border-base-300 overflow-x-auto">
+          <table class="table table-zebra table-sm">
+            <thead>
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Group
-                </th>
+                <th>Category</th>
+                <th>Group</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
               <tr :for={mapping <- @mappings}>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {mapping.category.name}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {if mapping.group, do: mapping.group.name, else: "-"}
-                </td>
+                <td>{mapping.category.name}</td>
+                <td>{if mapping.group, do: mapping.group.name, else: "-"}</td>
               </tr>
             </tbody>
           </table>
@@ -204,13 +195,6 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       {to_string(@value)}
     </div>
     """
-  end
-
-  defp stringify(ll) do
-    ll
-    |> List.wrap()
-    |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
-    |> Enum.join(", ")
   end
 
   defp get_rows(metric_registry) do
@@ -301,7 +285,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Default Aggregation",
-        value: stringify(metric_registry.default_aggregation),
+        value: metric_registry.default_aggregation |> to_string() |> String.upcase(),
         popover_target: "popover-default-aggregation",
         popover_target_text: get_popover_text(%{key: "Default Aggregation"})
       },

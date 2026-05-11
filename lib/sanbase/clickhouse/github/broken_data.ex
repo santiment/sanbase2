@@ -6,11 +6,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter.BrokenData do
 
   @broken_data File.read!(json_file)
                |> Jason.decode!()
-               |> Sanbase.MapUtils.atomize_keys()
+               |> Sanbase.Utils.Map.atomize_keys()
                |> Enum.map(fn elem ->
                  elem
-                 |> Map.put(:from, Sanbase.DateTimeUtils.from_iso8601!(elem[:from]))
-                 |> Map.put(:to, Sanbase.DateTimeUtils.from_iso8601!(elem[:to]))
+                 |> Map.put(:from, Sanbase.Utils.DateTime.from_iso8601!(elem[:from]))
+                 |> Map.put(:to, Sanbase.Utils.DateTime.from_iso8601!(elem[:to]))
                end)
 
   def get(_metric, _slug, from, to) do

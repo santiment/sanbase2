@@ -111,7 +111,7 @@ defmodule Sanbase.TestHelpers do
   end
 
   def generate_datetimes(from, interval, count) when count >= 1 do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
 
     0..(count - 1) |> Enum.map(fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
   end

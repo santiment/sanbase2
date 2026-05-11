@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.GenericAdmin.ObanJob do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Oban.Job
   def resource_name, do: "oban_jobs"
+  def singular_resource_name, do: "oban_job"
 
   def resource() do
     %{

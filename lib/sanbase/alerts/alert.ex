@@ -49,6 +49,32 @@ defimpl Sanbase.Alert, for: Any do
 
   defp send_to_channel("web_push", _user_trigger, _max_alerts_to_send), do: {"web_push", []}
 
+  defp send_to_channel(channel, user_trigger, _max_alerts_to_send) do
+    %{
+      id: trigger_id,
+      user: %User{id: user_id},
+      trigger: %{settings: %{payload: payload_map}}
+    } = user_trigger
+
+    Logger.error(
+      "Unsupported alert notification channel #{inspect(channel)} for user_trigger_id=#{trigger_id} user_id=#{user_id}"
+    )
+
+    error_list =
+      Enum.map(payload_map, fn {identifier, _payload} ->
+        {identifier,
+         {:error,
+          %{
+            reason: :unsupported_notification_channel,
+            channel: channel,
+            user_id: user_id,
+            trigger_id: trigger_id
+          }}}
+      end)
+
+    {"unknown", error_list}
+  end
+
   defp send_webhook(
          trigger,
          webhook_url,
@@ -57,7 +83,7 @@ defimpl Sanbase.Alert, for: Any do
     %{id: user_trigger_id} = trigger
 
     fun = fn identifier, payload ->
-      case Sanbase.Validation.valid_url?(webhook_url) do
+      case Sanbase.Utils.Validation.valid_public_url?(webhook_url) do
         :ok ->
           payload = transform_payload(payload, trigger.id, :webhook)
           do_send_webhook(webhook_url, identifier, payload, user_trigger_id)

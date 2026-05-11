@@ -2,7 +2,6 @@ defmodule Sanbase.Email.NewsletterTokenTest do
   use Sanbase.DataCase, async: true
 
   import Sanbase.Factory
-  alias Sanbase.DateTimeUtils
 
   alias Sanbase.Email.NewsletterToken
 
@@ -15,7 +14,8 @@ defmodule Sanbase.Email.NewsletterTokenTest do
     end
 
     test "expired token" do
-      nt = insert(:newsletter_token, email_token_generated_at: DateTimeUtils.hours_ago(25))
+      nt =
+        insert(:newsletter_token, email_token_generated_at: Sanbase.Utils.DateTime.hours_ago(25))
 
       assert NewsletterToken.verify_token(nt.email, nt.token) == {:error, :expired_token}
     end

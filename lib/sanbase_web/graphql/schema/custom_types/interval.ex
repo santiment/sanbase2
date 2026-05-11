@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.Interval do
   end
 
   defp decode(%Absinthe.Blueprint.Input.String{value: value}) do
-    case Sanbase.DateTimeUtils.valid_compound_duration?(value) do
+    case Sanbase.Utils.DateTime.valid_compound_duration?(value) do
       true -> {:ok, value}
       _ -> :error
     end

@@ -78,17 +78,38 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
       %{
         name: "social_volume_total",
         description: "Total social media mentions and discussions",
-        unit: "count"
+        unit: "count",
+        supports_many_slugs: false
       },
       %{
         name: "social_dominance_total",
         description: "Share of total crypto social mentions attributed to the asset",
-        unit: "percent"
+        unit: "percent",
+        supports_many_slugs: false
       },
       %{
         name: "sentiment_weighted_total",
         description: "Overall weighted social sentiment score",
-        unit: "score"
+        unit: "score",
+        supports_many_slugs: false
+      },
+      %{
+        name: "sentiment_balance_total",
+        description: "Overall social sentiment balance score (positive minus negative)",
+        unit: "score",
+        supports_many_slugs: false
+      },
+      %{
+        name: "sentiment_positive_total",
+        description: "Total positive social sentiment mentions",
+        unit: "count",
+        supports_many_slugs: false
+      },
+      %{
+        name: "sentiment_negative_total",
+        description: "Total negative social sentiment mentions",
+        unit: "count",
+        supports_many_slugs: false
       },
       for source <- [:twitter, :telegram, :reddit] do
         [
@@ -96,24 +117,28 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
             name: "sentiment_weighted_#{source}",
             description:
               "Weighted social sentiment score computed on the text messages in #{source}",
-            unit: "score"
+            unit: "score",
+            supports_many_slugs: false
           },
           %{
             name: "social_volume_#{source}",
             description: "Social media mentions in #{source}",
-            unit: "count"
+            unit: "count",
+            supports_many_slugs: false
           },
           %{
             name: "social_dominance_#{source}",
             description: "Share of crypto social mentions attributed to the asset in #{source}",
-            unit: "percent"
+            unit: "percent",
+            supports_many_slugs: false
           }
         ]
       end,
       %{
         name: "twitter_followers",
         description: "Number of followers on the project's official Twitter/X account",
-        unit: "count"
+        unit: "count",
+        supports_many_slugs: false
       }
     ]
     |> List.flatten()
@@ -195,6 +220,20 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
           "Number of on-chain transactions with value exceeding $1M USD, indicating large whale activity",
         unit: "count",
         supports_many_slugs: true
+      },
+      %{
+        name: "mean_age",
+        description:
+          "Mean coin age in days — average number of days since each coin was last moved on-chain",
+        unit: "days",
+        supports_many_slugs: true
+      },
+      %{
+        name: "mean_dollar_invested_age",
+        description:
+          "Mean dollar invested age — average number of days each dollar has been invested in the asset",
+        unit: "days",
+        supports_many_slugs: true
       }
     ]
   end
@@ -205,7 +244,8 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
         name: "total_funding_rates_aggregated_per_asset",
         description:
           "Aggregated funding rate across all exchanges for a given asset, reflecting overall market sentiment in perpetual futures",
-        unit: "rate"
+        unit: "rate",
+        supports_many_slugs: false
       }
     ]
   end

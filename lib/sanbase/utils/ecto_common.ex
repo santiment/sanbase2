@@ -1,4 +1,4 @@
-defmodule Sanbase.Ecto.Common do
+defmodule Sanbase.Utils.EctoCommon do
   import Ecto.Query
 
   @doc ~s"""

@@ -8,7 +8,7 @@ defmodule Sanbase.Repo.Migrations.CreatePgvectorExtension do
     # it was not done with this migration exactly
     schema = schema()
 
-    unless schema in ["public", "extensions"] do
+    if schema not in ["public", "extensions"] do
       raise ArgumentError, "Invalid schema name: #{inspect(schema)}"
     end
 

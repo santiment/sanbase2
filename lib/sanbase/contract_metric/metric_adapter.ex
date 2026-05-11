@@ -173,8 +173,8 @@ defmodule Sanbase.Contract.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{contract_address: _}), do: {:ok, @metrics}
-  def available_metrics(%{slug: _}), do: {:ok, []}
+  def available_metrics(%{contract_address: _}, _opts), do: {:ok, @metrics}
+  def available_metrics(%{slug: _}, _opts), do: {:ok, []}
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: {:ok, []}
@@ -185,14 +185,10 @@ defmodule Sanbase.Contract.MetricAdapter do
   # Private functions
 
   defp unsupported_selector_error(selector) do
-    provided_keys =
-      selector
-      |> Map.keys()
-      |> Enum.map_join(", ", &inspect/1)
-
-    "The provided selector #{inspect(selector)} is not supported. " <>
-      "The selector must have the following field: contractAddress. " <>
-      "Provided selector fields: #{provided_keys}"
+    Sanbase.Metric.Utils.unsupported_selector_error(
+      selector,
+      "The selector must have the following field: contractAddress"
+    )
   end
 
   defp not_implemented_error(function, metric) do

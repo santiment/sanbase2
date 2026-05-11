@@ -89,7 +89,7 @@ defmodule Sanbase.Model.Ico do
   # Private functions
 
   defp funds_raised_ico_end_price_from_currencies(_project, ico, target_currency, date) do
-    datetime = Sanbase.DateTimeUtils.date_to_datetime(date)
+    datetime = Sanbase.Utils.DateTime.date_to_datetime(date)
 
     Repo.preload(ico, ico_currencies: [:currency])
     |> Map.get(:ico_currencies, [])

@@ -123,6 +123,8 @@ defmodule SanbaseWeb.Router do
 
     import Phoenix.LiveDashboard.Router
 
+    get("/", GenericAdminController, :home)
+
     # Project Changelog routes
     live("/project_changelog", ProjectChangelogLive)
 
@@ -243,6 +245,7 @@ defmodule SanbaseWeb.Router do
     live "/notifications/manual/discord", NotificationsLive.ManualDiscordFormLive
     live "/notifications/manual/email", NotificationsLive.ManualEmailFormLive
     live "/notifications/broadcast", NotificationsLive.BroadcastNotificationFormLive
+    live "/notifications/broadcast/overview", NotificationsLive.BroadcastOverviewLive
     live "/notifications/digest/:action", NotificationsLive.DigestFormLive
     # Add route for scheduled deprecation notification UI
     live "/scheduled_deprecations", ScheduledDeprecationIndexLive, :index
@@ -251,14 +254,17 @@ defmodule SanbaseWeb.Router do
     resources("/reports", ReportController)
     resources("/custom_plans", CustomPlanController)
 
-    get("/", GenericAdminController, :home)
     get("/generic/search", GenericAdminController, :search)
     get("/generic/show_action", GenericAdminController, :show_action)
+
+    live "/promo_trials/new", Admin.PromoTrialLive.Form, :new
+
     resources("/generic", GenericAdminController)
 
     live("/ses_events", Admin.SesEventsLive)
     live("/mcp_tool_invocations", Admin.McpToolInvocationsLive)
     live("/user_stats", UserStatsLive)
+    live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
     live("/user_roles", Admin.UserRolesLive, :index)
     get("/download_inactive_users_csv", InactiveUsersController, :download_csv)
   end
@@ -376,10 +382,10 @@ defmodule SanbaseWeb.Router do
     get("/santiment_team_members/:secret", DataController, :santiment_team_members)
     get("/cryptocompare_asset_mapping", CryptocompareAssetMappingController, :data)
     post("/stripe_webhook", StripeController, :webhook)
-    post("/mailjet/webhook", MailjetController, :webhook)
+    post("/mailjet/webhook/:secret", MailjetController, :webhook)
     post("/ses/webhook/:secret", SESController, :webhook)
 
-    post("/projects_data_validator_webhook", RepoReaderController, :validator_webhook)
+    post("/projects_data_validator_webhook/:secret", RepoReaderController, :validator_webhook)
     post("/projects_data_reader_webhook/:secret", RepoReaderController, :reader_webhook)
   end
 

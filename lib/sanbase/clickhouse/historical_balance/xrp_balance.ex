@@ -290,7 +290,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         SELECT dt, assetRefId, address, blockNumber, transactionIndex, (balance - oldBalance) AS change
         FROM xrp_balances
         WHERE
-          address IN ({addresses}) AND
+          address IN ({{addresses}}) AND
           currency = {{currency}} AND
           assetRefId = cityHash64('XRP_' || {{issuer_currency}}) AND
           dt >= toDateTime({{from}}) AND

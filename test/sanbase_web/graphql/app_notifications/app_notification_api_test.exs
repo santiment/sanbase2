@@ -607,6 +607,176 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
     end
   end
 
+  describe "enableNotificationTypes / disableNotificationTypes mutations" do
+    test "disable and re-enable notification types", %{conn: conn} do
+      disable_mutation = """
+      mutation {
+        disableNotificationTypes(types: ["create_vote", "new_follower"]) {
+          type
+          isEnabled
+        }
+      }
+      """
+
+      result = execute_mutation(conn, disable_mutation, "disableNotificationTypes")
+
+      vote = Enum.find(result, &(&1["type"] == "create_vote"))
+      follower = Enum.find(result, &(&1["type"] == "new_follower"))
+      insight = Enum.find(result, &(&1["type"] == "publish_insight"))
+
+      assert vote["isEnabled"] == false
+      assert follower["isEnabled"] == false
+      assert insight["isEnabled"] == true
+
+      enable_mutation = """
+      mutation {
+        enableNotificationTypes(types: ["create_vote"]) {
+          type
+          isEnabled
+        }
+      }
+      """
+
+      result = execute_mutation(conn, enable_mutation, "enableNotificationTypes")
+
+      vote = Enum.find(result, &(&1["type"] == "create_vote"))
+      follower = Enum.find(result, &(&1["type"] == "new_follower"))
+
+      assert vote["isEnabled"] == true
+      assert follower["isEnabled"] == false
+    end
+
+    test "returns error for unsupported types", %{conn: conn} do
+      mutation = """
+      mutation {
+        disableNotificationTypes(types: ["invalid_type"]) {
+          type
+          isEnabled
+        }
+      }
+      """
+
+      error_msg = execute_mutation_with_error(conn, mutation)
+      assert error_msg =~ "Unsupported notification types"
+    end
+
+    test "requires authentication" do
+      conn = build_conn()
+
+      mutation = """
+      mutation {
+        disableNotificationTypes(types: ["create_vote"]) {
+          type
+          isEnabled
+        }
+      }
+      """
+
+      error_msg = execute_mutation_with_error(conn, mutation)
+      assert error_msg =~ "unauthorized"
+    end
+  end
+
+  describe "notificationTypeSettings on currentUser" do
+    test "returns all types as enabled by default", %{conn: conn} do
+      query = """
+      {
+        currentUser {
+          notificationTypeSettings {
+            type
+            isEnabled
+          }
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "currentUser")
+      settings = result["notificationTypeSettings"]
+
+      assert length(settings) == length(AppNotifications.supported_notification_types())
+      assert Enum.all?(settings, & &1["isEnabled"])
+    end
+
+    test "reflects disabled types after mutation", %{conn: conn} do
+      disable_mutation = """
+      mutation {
+        disableNotificationTypes(types: ["create_vote", "new_follower"]) {
+          type
+          isEnabled
+        }
+      }
+      """
+
+      execute_mutation(conn, disable_mutation, "disableNotificationTypes")
+
+      query = """
+      {
+        currentUser {
+          notificationTypeSettings {
+            type
+            isEnabled
+          }
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "currentUser")
+      settings = result["notificationTypeSettings"]
+
+      vote = Enum.find(settings, &(&1["type"] == "create_vote"))
+      follower = Enum.find(settings, &(&1["type"] == "new_follower"))
+      insight = Enum.find(settings, &(&1["type"] == "publish_insight"))
+
+      assert vote["isEnabled"] == false
+      assert follower["isEnabled"] == false
+      assert insight["isEnabled"] == true
+    end
+  end
+
+  describe "disabled types prevent notification creation via events" do
+    setup %{author: author, follower: follower} do
+      {:ok, _} = Sanbase.Accounts.UserFollower.follow(author.id, follower.id)
+      :ok
+    end
+
+    test "disabled type notifications are not created by events", %{
+      conn: conn,
+      author: author
+    } do
+      # Disable create_watchlist
+      disable_mutation = """
+      mutation {
+        disableNotificationTypes(types: ["create_watchlist"]) {
+          type
+          isEnabled
+        }
+      }
+      """
+
+      execute_mutation(conn, disable_mutation, "disableNotificationTypes")
+
+      # Author creates a public watchlist — follower should NOT get notified
+      {:ok, _watchlist} =
+        Sanbase.UserList.create_user_list(author, %{
+          name: "Disabled Type Watchlist",
+          is_public: true
+        })
+
+      :timer.sleep(100)
+
+      query = """
+      {
+        getCurrentUserNotifications {
+          notifications { id type }
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "getCurrentUserNotifications")
+      assert result["notifications"] == []
+    end
+  end
+
   describe "integration: event-driven notifications via GraphQL" do
     setup %{author: author, follower: follower} do
       {:ok, _} = UserFollower.follow(author.id, follower.id)

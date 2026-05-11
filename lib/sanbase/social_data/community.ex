@@ -74,7 +74,7 @@ defmodule Sanbase.SocialData.Community do
       data
       |> Enum.map(fn {timestamp, value} ->
         %{
-          datetime: Sanbase.DateTimeUtils.from_iso8601!(timestamp),
+          datetime: Sanbase.Utils.DateTime.from_iso8601!(timestamp),
           mentions_count: value
         }
       end)

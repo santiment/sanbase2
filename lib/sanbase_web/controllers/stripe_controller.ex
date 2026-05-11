@@ -7,7 +7,7 @@ defmodule SanbaseWeb.StripeController do
 
   def webhook(conn, _params) do
     stripe_event = conn.assigns[:stripe_event]
-    Logger.info("Stripe event received: #{inspect(stripe_event)}")
+    Logger.info("Stripe event received: type=#{stripe_event["type"]} id=#{stripe_event["id"]}")
 
     case StripeEvent.by_id(stripe_event["id"]) do
       nil ->

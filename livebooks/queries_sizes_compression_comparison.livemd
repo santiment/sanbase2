@@ -138,5 +138,5 @@ m =
   |> Base.decode64!()
   |> :zlib.gunzip()
   |> Jason.decode!()
-  |> Sanbase.MapUtils.atomize_keys_shallow()
+  |> Sanbase.Utils.Map.atomize_keys_shallow()
 ```

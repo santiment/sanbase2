@@ -1,7 +1,7 @@
 defmodule Sanbase.Price.SqlQuery do
   @table "asset_prices_v3"
 
-  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
+  import Sanbase.Utils.DateTime, only: [maybe_str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
     only: [

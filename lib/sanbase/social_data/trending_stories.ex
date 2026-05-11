@@ -1,5 +1,5 @@
 defmodule Sanbase.SocialData.TrendingStories do
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.Utils.DateTime, only: [str_to_sec: 1]
   import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, dt_to_unix: 2]
 
   @type slug :: String.t()

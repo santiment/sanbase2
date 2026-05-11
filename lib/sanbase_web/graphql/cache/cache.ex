@@ -177,7 +177,8 @@ defmodule SanbaseWeb.Graphql.Cache do
 
       true ->
         [
-          access_to_experiemental_metrics: user.metric_access_level
+          access_to_experiemental_metrics: user.metric_access_level,
+          available_metrics_lookback_days: user.available_metrics_lookback_days
         ]
     end
   end
@@ -198,9 +199,9 @@ defmodule SanbaseWeb.Graphql.Cache do
     case source do
       # Make sure to use both metric and version when using version
       %{metric: _, version: _} = source -> source
-      %{id: id} -> id
-      %{slug: slug} -> slug
-      %{word: word} -> word
+      %{id: id} when not is_nil(id) -> id
+      %{slug: slug} when not is_nil(slug) -> slug
+      %{word: word} when not is_nil(word) -> word
       _ -> source
     end
   end

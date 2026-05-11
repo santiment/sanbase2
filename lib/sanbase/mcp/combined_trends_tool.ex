@@ -307,7 +307,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     # Step 1: Collect all words and fetch their documents
     collect_start_time = System.monotonic_time(:millisecond)
     Logger.info("📄 Starting document collection...")
-    all_words_with_docs = collect_words_and_documents(words_data)
+    collect_result = collect_words_and_documents(words_data)
     collect_end_time = System.monotonic_time(:millisecond)
     collect_duration_ms = collect_end_time - collect_start_time
 
@@ -315,10 +315,10 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
       "📄 Document collection completed in: #{collect_duration_ms}ms (#{Float.round(collect_duration_ms / 1000, 2)}s)"
     )
 
-    Logger.info("📊 Collected documents for #{length(all_words_with_docs)} words")
+    Logger.info("📊 Collected documents for #{length(collect_result)} words")
 
     # Step 2: Batch summarize all words and documents in one OpenAI call
-    word_summaries = batch_summarize_documents_with_ai(all_words_with_docs)
+    word_summaries = batch_summarize_documents_with_ai(collect_result)
 
     # Step 3: Apply summaries back to the word data structure
     enriched_words =
@@ -363,7 +363,19 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     end)
     # Remove duplicate words across time periods
     |> Enum.uniq_by(& &1.word)
-    |> Enum.map(&fetch_word_documents/1)
+    |> Task.async_stream(&fetch_word_documents/1,
+      max_concurrency: 4,
+      timeout: 120_000,
+      on_timeout: :kill_task
+    )
+    |> Enum.flat_map(fn
+      {:ok, result} ->
+        [result]
+
+      {:exit, :timeout} ->
+        Logger.warning("Document fetch task timed out after 120s")
+        []
+    end)
     # Only words with documents
     |> Enum.filter(fn {_word, documents} -> String.trim(documents) != "" end)
   end
@@ -433,7 +445,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
       system_prompt = """
       You are a helpful assistant that summarizes social media discussions about trending cryptocurrency words.
       You will receive multiple trending words with their associated social media posts.
-      For each word, provide a concise summary of the discussions.
+      For each word, provide a concise summary of the discussions. The summary must be brief and accurate and must not exceed 100-200 words.
 
       Format your response as a JSON object where each key is the trending word and the value is the summary.
       Example: {"bitcoin": "Summary of bitcoin discussions...", "ethereum": "Summary of ethereum discussions..."}
@@ -443,7 +455,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
 
       openai_result =
         openai_client().chat_completion(system_prompt, batch_content,
-          max_tokens: 1000,
+          max_tokens: max(length(words_with_docs) * 300, 1000),
           temperature: 0.3
         )
 
@@ -492,27 +504,39 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
   end
 
   defp parse_batch_summary_response(response, words_with_docs) do
-    case Jason.decode(String.trim(response)) do
-      {:ok, summaries} when is_map(summaries) ->
-        # Use AI summaries where available, fallback for missing ones
-        words_with_docs
-        |> Enum.map(fn {word, docs} ->
-          summary =
-            Map.get(summaries, word) ||
-              Map.get(summaries, String.downcase(word)) ||
-              generate_fallback_summary(word, docs)
+    cleaned =
+      response
+      |> String.trim()
+      |> String.replace(~r/^```json\s*/i, "")
+      |> String.replace(~r/```\s*$/, "")
+      |> String.trim()
 
-          {word, summary}
-        end)
-        |> Map.new()
+    case Jason.decode(cleaned) do
+      {:ok, summaries} when is_map(summaries) ->
+        build_summary_map(summaries, words_with_docs)
 
       _ ->
-        Logger.warning("Failed to parse batch summary response as JSON: #{response}")
-        # Return fallback summaries
+        Logger.warning(
+          "Failed to parse batch summary response as JSON: #{String.slice(response, 0, 200)}"
+        )
+
         words_with_docs
         |> Enum.map(fn {word, docs} -> {word, generate_fallback_summary(word, docs)} end)
         |> Map.new()
     end
+  end
+
+  defp build_summary_map(summaries, words_with_docs) do
+    words_with_docs
+    |> Enum.map(fn {word, docs} ->
+      summary =
+        Map.get(summaries, word) ||
+          Map.get(summaries, String.downcase(word)) ||
+          generate_fallback_summary(word, docs)
+
+      {word, summary}
+    end)
+    |> Map.new()
   end
 
   defp generate_fallback_summary(_word, docs) do

@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.RefreshTokenAgeCheck do
 
     case SanbaseWeb.Guardian.decode_and_verify(refresh_token) do
       {:ok, %{"iat" => issued_at_unix}} ->
-        seconds = age_less_than |> Sanbase.DateTimeUtils.str_to_sec()
+        seconds = age_less_than |> Sanbase.Utils.DateTime.str_to_sec()
         unix_now = DateTime.utc_now() |> DateTime.to_unix()
 
         case unix_now - issued_at_unix < seconds do
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.RefreshTokenAgeCheck do
   def call(resolution, _opts), do: Resolution.put_result(resolution, {:error, :unauthorized})
 
   defp error_msg(less_than) do
-    less_than_human_readable = Sanbase.DateTimeUtils.interval_to_str(less_than)
+    less_than_human_readable = Sanbase.Utils.DateTime.interval_to_str(less_than)
 
     """
     Unauthorized. Reason: The authentication must have been done less than \

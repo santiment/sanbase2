@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
   alias Sanbase.Insight.PostImage
   alias Sanbase.Utils.FileHash
 
+  @image_extensions ~w(.jpg .jpeg .gif .png)
+
   @doc ~s"""
     Receives a list of `%Plug.Upload{}` representing the images and uploads them.
     The files are first uploaded to an AWS S3 bucket and then the image url,
@@ -40,12 +42,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
         content_hash: content_hash,
         hash_algorithm: FileHash.algorithm() |> Atom.to_string()
       }
+      |> Map.merge(variant_urls(file_name, content_hash, arg.filename))
     else
       {:error, error} ->
         %{
           file_name: file_name,
           error: error
         }
+    end
+  end
+
+  defp variant_urls(file_name, scope, original_filename) do
+    ext = original_filename |> Path.extname() |> String.downcase()
+
+    if ext in @image_extensions do
+      %{
+        image_url_w400: FileStore.url({file_name, scope}, :w400),
+        image_url_w800: FileStore.url({file_name, scope}, :w800),
+        image_url_w1200: FileStore.url({file_name, scope}, :w1200),
+        image_url_w2000: FileStore.url({file_name, scope}, :w2000)
+      }
+    else
+      %{}
     end
   end
 

@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def get_metric(_root, %{metric: metric} = args, resolution) do
     # TODO: Check that the version is also deprecated
-    version = Map.get(args, :version, "1.0")
+    version = Map.get(args, :version, Sanbase.Metric.default_version())
 
     with false <- Metric.hard_deprecated?(metric),
          true <- Metric.has_metric?(metric),
@@ -86,9 +86,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def get_available_metrics_for_selector(_root, args, resolution) do
     user_metric_access_level = resolution_to_metric_access_level(resolution)
+    lookback_days = resolution_to_available_metrics_lookback_days(resolution)
 
     case Metric.available_metrics_for_selector(args.selector,
-           user_metric_access_level: user_metric_access_level
+           user_metric_access_level: user_metric_access_level,
+           lookback_days: lookback_days
          ) do
       {:ok, metrics} ->
         metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
@@ -392,7 +394,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
           selectors_str =
             list
             |> Enum.map(&Atom.to_string/1)
-            |> Enum.map(&Inflex.camelize(&1, :lower))
+            |> Enum.map(&Sanbase.Utils.Inflect.camelize(&1, :lower))
             |> Enum.join(", ")
 
           {:halt,
@@ -502,8 +504,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp interval_no_smaller_than_min_interval(metric, interval) do
     {:ok, metadata} = Metric.metadata(metric)
 
-    if Sanbase.DateTimeUtils.str_to_sec(interval) <
-         Sanbase.DateTimeUtils.str_to_sec(metadata.min_interval) do
+    if Sanbase.Utils.DateTime.str_to_sec(interval) <
+         Sanbase.Utils.DateTime.str_to_sec(metadata.min_interval) do
       {:ok, metadata.min_interval}
     else
       {:ok, interval}
@@ -530,7 +532,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
 
   defp transform_interval("all_spent_coins_cost", interval) do
-    Enum.max([Sanbase.DateTimeUtils.str_to_days(interval), 1])
+    Enum.max([Sanbase.Utils.DateTime.str_to_days(interval), 1])
     |> to_string()
     |> Kernel.<>("d")
   end
@@ -665,6 +667,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp resolution_to_metric_access_level(resolution) do
     get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
       "released"
+  end
+
+  defp resolution_to_available_metrics_lookback_days(resolution) do
+    get_in(resolution.context, [
+      :auth,
+      :current_user,
+      Access.key(:available_metrics_lookback_days)
+    ])
   end
 
   defp user_can_access_version?(version, resolution) do

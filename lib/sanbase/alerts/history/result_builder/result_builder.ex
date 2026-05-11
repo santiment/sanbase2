@@ -9,7 +9,7 @@ defmodule Sanbase.Alert.History.ResultBuilder do
         opts \\ []
       ) do
     %{operation: operation, time_window: time_window} = settings
-    cooldown_sec = Sanbase.DateTimeUtils.str_to_sec(cooldown)
+    cooldown_sec = Sanbase.Utils.DateTime.str_to_sec(cooldown)
 
     {result, _} =
       data

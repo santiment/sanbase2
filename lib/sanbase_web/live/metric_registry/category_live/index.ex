@@ -1,9 +1,8 @@
 defmodule SanbaseWeb.CategoryLive.Index do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   alias Sanbase.Metric.UIMetadata.Category
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -150,22 +149,22 @@ defmodule SanbaseWeb.CategoryLive.Index do
   def navigation(assigns) do
     ~H"""
     <div class="my-4 flex flex-row space-x-2">
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to Metric Registry"
         href={~p"/admin/metric_registry"}
         icon="hero-home"
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Display Order"
         href={~p"/admin/metric_registry/display_order"}
         icon="hero-list-bullet"
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Manage Groups"
         href={~p"/admin/metric_registry/groups"}
         icon="hero-user-group"
       />
-      <AvailableMetricsComponents.link_button
+      <AdminSharedComponents.nav_button
         icon="hero-plus"
         text="Create New Category"
         href={~p"/admin/metric_registry/categories/new"}

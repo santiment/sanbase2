@@ -50,6 +50,7 @@ defmodule Sanbase.Entity do
           | :user_trigger
           | :dashboard
           | :query
+          | :timeline_event
 
   @type option ::
           {:page, non_neg_integer()}
@@ -78,11 +79,55 @@ defmodule Sanbase.Entity do
   """
   @spec get_visibility_data(entity_type, entity_id) ::
           {:ok, Sanbase.Entity.Behaviour.visibility_map()} | {:error, String.t()}
-  def get_visibility_data(entity_type, entity_id) do
-    module = deduce_entity_module(entity_type)
+  # Timeline event visibility is derived from the backing entity.
+  # A private watchlist/trigger or unpublished insight must not become votable
+  # just because there is a timeline event pointing to it.
+  def get_visibility_data(:timeline_event, timeline_event_id)
+      when is_integer(timeline_event_id) do
+    case Sanbase.Timeline.TimelineEvent.by_id(timeline_event_id, []) do
+      {:ok, timeline_event} ->
+        timeline_event_visibility_data(timeline_event)
 
-    module.get_visibility_data(entity_id)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
+
+  def get_visibility_data(:timeline_event, timeline_event_id),
+    do: {:error, "Invalid timeline event id: #{inspect(timeline_event_id)}. Expected an integer."}
+
+  def get_visibility_data(entity_type, entity_id) do
+    case Registry.fetch_entity_module(entity_type) do
+      {:ok, module} -> module.get_visibility_data(entity_id)
+      :error -> {:error, "Unknown entity type: #{inspect(entity_type)}"}
+    end
+  end
+
+  defp timeline_event_visibility_data(%{post_id: post_id}) when is_integer(post_id) do
+    Sanbase.Insight.Post.get_visibility_data(post_id)
+  end
+
+  defp timeline_event_visibility_data(%{user_list_id: user_list_id})
+       when is_integer(user_list_id) do
+    Sanbase.UserList.get_visibility_data(user_list_id)
+  end
+
+  defp timeline_event_visibility_data(%{user_trigger_id: user_trigger_id})
+       when is_integer(user_trigger_id) do
+    Sanbase.Alert.UserTrigger.get_visibility_data(user_trigger_id)
+  end
+
+  defp timeline_event_visibility_data(%{id: timeline_event_id}) do
+    {:error, "Timeline event with id #{timeline_event_id} does not reference a supported entity"}
+  end
+
+  @doc """
+  Maps the vote-API entity name to the Entity-API type.
+  The Vote schema uses `:post` (column `post_id`) while the Entity API
+  exposes the same entity as `:insight`. Other types are identical.
+  """
+  def vote_entity_to_entity_type(:post), do: :insight
+  def vote_entity_to_entity_type(other), do: other
 
   @doc ~s"""
   Return information about the number of created entities by a given user

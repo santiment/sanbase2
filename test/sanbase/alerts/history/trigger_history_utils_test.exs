@@ -1,35 +1,51 @@
 defmodule Sanbase.Alert.TriggerHistoryUtilsTest do
-  use Sanbase.DataCase, async: true
+  use ExUnit.Case, async: true
 
   alias Sanbase.Alert.History.Utils
 
-  test "#percent_change_calculations_with_cooldown" do
-    percent_changes = [{5, 6}, {10, 11}, {7, 8}, {3, 2}, {100, 105}, {4, 3}, {8, 10}, {9, 11}]
+  describe "percent_change_calculations_with_cooldown/3" do
+    test "with cooldown of 2, suppresses triggers during cooldown" do
+      values = [{5, 6}, {10, 11}, {7, 8}, {3, 2}, {100, 105}, {4, 3}, {8, 10}, {9, 11}]
+      operation = %{percent_up: 5.0}
 
-    percent_threshold = %{percent_up: 5.0}
+      result = Utils.percent_change_calculations_with_cooldown(values, operation, 2)
 
-    percent_change_calculations =
-      Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 2)
+      assert length(result) == 8
+      assert count_triggered(result) == 3
+    end
 
-    assert percent_change_calculations |> length() == 8
-    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 3
+    test "with cooldown of 0, all matching triggers fire" do
+      values = [{5, 6}, {10, 11}, {7, 8}, {3, 2}, {100, 105}, {4, 3}, {8, 10}, {9, 11}]
+      operation = %{percent_up: 5.0}
 
-    # no cooldown
-    percent_change_calculations =
-      Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 0)
+      result = Utils.percent_change_calculations_with_cooldown(values, operation, 0)
 
-    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 6
+      assert count_triggered(result) == 6
+    end
 
-    percent_change_calculations =
-      Utils.percent_change_calculations_with_cooldown(percent_changes, %{percent_up: 5.0}, 2)
+    test "returns empty list for empty input" do
+      result = Utils.percent_change_calculations_with_cooldown([], %{percent_up: 5.0}, 0)
+      assert result == []
+    end
 
-    assert percent_change_calculations |> length() == 8
-    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 3
+    test "no triggers when threshold is very high" do
+      values = [{100, 101}, {100, 102}]
+      operation = %{percent_up: 50.0}
+
+      result = Utils.percent_change_calculations_with_cooldown(values, operation, 0)
+      assert count_triggered(result) == 0
+    end
+
+    test "every value triggers when threshold is very low" do
+      values = [{100, 110}, {100, 120}, {100, 130}]
+      operation = %{percent_up: 1.0}
+
+      result = Utils.percent_change_calculations_with_cooldown(values, operation, 0)
+      assert count_triggered(result) == 3
+    end
   end
 
-  defp filter_with_bigger_threshold(percent_change_calculations) do
-    Enum.filter(percent_change_calculations, fn {_percent_change, is_bigger_than_threshold?} ->
-      is_bigger_than_threshold?
-    end)
+  defp count_triggered(results) do
+    Enum.count(results, fn {_pct, triggered?} -> triggered? end)
   end
 end

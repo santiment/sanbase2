@@ -56,7 +56,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
 
         v =
           if k in [:start_date, :end_date, :trial_start, :trial_end] and not is_nil(v) do
-            Sanbase.DateTimeUtils.from_iso8601!(v)
+            Sanbase.Utils.DateTime.from_iso8601!(v)
           else
             v
           end
@@ -72,7 +72,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   def fill_history(subscriptions, start_date, end_date) do
-    Sanbase.DateTimeUtils.generate_dates_inclusive(start_date, end_date)
+    Sanbase.Utils.DateTime.generate_dates_inclusive(start_date, end_date)
     |> Enum.each(fn date ->
       dt = DateTime.new!(date, ~T[00:00:00])
       stats = stats(subscriptions, dt)
@@ -211,12 +211,28 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
         latest_invoice_amount_due: latest_invoice_amount(subscription, :amount_due),
         latest_invoice_amount_paid: latest_invoice_amount(subscription, :amount_paid),
         metadata: subscription.metadata,
+        discount: extract_discount(Map.get(subscription, :discount)),
         start_date: subscription.start_date |> format_dt(:start),
         end_date: subscription.ended_at |> format_dt(:end),
         trial_start: subscription.trial_start |> format_dt(:start),
         trial_end: subscription.trial_end |> format_dt(:end)
       }
     end)
+  end
+
+  defp extract_discount(nil), do: nil
+
+  defp extract_discount(discount) do
+    coupon = Map.get(discount, :coupon)
+
+    %{
+      coupon_id: coupon && Map.get(coupon, :id),
+      coupon_name: coupon && Map.get(coupon, :name),
+      percent_off: coupon && Map.get(coupon, :percent_off),
+      amount_off: coupon && Map.get(coupon, :amount_off),
+      duration: coupon && Map.get(coupon, :duration),
+      end: discount |> Map.get(:end) |> format_dt(:end)
+    }
   end
 
   defp plan(subscription) do
@@ -255,6 +271,8 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
       DateTime.compare(date, end_date) in [:lt, :eq]
   end
 
+  # These functions filter in-memory maps from the Stripe API where status is a string.
+  # The Ecto queries (get_active_*_count) use atom comparisons via Ecto.Enum.
   def active_subscriptions(subscriptions) do
     Enum.filter(subscriptions, fn subscription ->
       subscription.status in ["active", "past_due"]
@@ -269,7 +287,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
 
   def other_status_subscriptions(subscriptions) do
     Enum.filter(subscriptions, fn subscription ->
-      subscription.status not in ["active", "trialing"]
+      subscription.status not in ["active", "past_due", "trialing"]
     end)
   end
 

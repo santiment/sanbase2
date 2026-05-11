@@ -4,7 +4,11 @@ defmodule Sanbase.ExternalServices.RateLimiting.WaitServer do
 
   require Logger
 
-  # Allow max 5 requests per 1 second. Wait 1 second before executing each request.
+  # scale - the time window in milliseconds (e.g. 1000 = 1 second)
+  # limit - the maximum number of requests allowed within that window
+  # time_between_requests - forced sleep in ms between each allowed request
+  #
+  # Defaults: allow max 5 requests per 1 second, wait 1 second between each request.
   @default_scale 1000
   @default_limit 5
   @default_time_between_requests_ms 1000
@@ -59,19 +63,17 @@ defmodule Sanbase.ExternalServices.RateLimiting.WaitServer do
     {:ok, count}
   end
 
-  def sleep_algorithm({bucket, scale, limit, _} = state, {:deny, _}) do
-    {:ok, {_, _, wait_period, _, _}} = Hammer.inspect_bucket(bucket, scale, limit)
-
+  def sleep_algorithm({bucket, scale, limit, _} = state, {:deny, wait_period}) do
     Logger.info(fn ->
       "Rate limit exceeded. bucket: #{bucket}, wait_period: #{wait_period}"
     end)
 
     Process.sleep(wait_period)
-    sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))
+    sleep_algorithm(state, Sanbase.RateLimit.hit(bucket, scale, limit))
   end
 
   def handle_call(:wait, _, {bucket, scale, limit, _} = state) do
-    result = sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))
+    result = sleep_algorithm(state, Sanbase.RateLimit.hit(bucket, scale, limit))
     {:reply, result, state}
   end
 

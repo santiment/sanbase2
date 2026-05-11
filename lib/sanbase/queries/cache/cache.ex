@@ -130,7 +130,7 @@ defmodule Sanbase.Queries.Cache do
   end
 
   defp to_datetime(dt) when is_binary(dt) do
-    Sanbase.DateTimeUtils.from_iso8601!(dt)
+    Sanbase.Utils.DateTime.from_iso8601!(dt)
   end
 
   defp to_datetime(dt), do: dt

@@ -1,6 +1,6 @@
 defmodule Sanbase.Notifications.Handler do
   import Ecto.Query
-  import Sanbase.DateTimeUtils, only: [seconds_after: 1]
+  import Sanbase.Utils.DateTime, only: [seconds_after: 1]
 
   alias Sanbase.{Repo, Notifications.Notification}
 

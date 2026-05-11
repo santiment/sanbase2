@@ -1,5 +1,5 @@
 defmodule Sanbase.MarkExchanges do
-  import Sanbase.MapUtils, only: [replace_lazy: 3]
+  import Sanbase.Utils.Map, only: [replace_lazy: 3]
 
   @exchange_labels ["centralized_exchange", "decentralized_exchange", "CEX", "DEX"]
 

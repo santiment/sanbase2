@@ -149,7 +149,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     """
 
     params = %{
-      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
+      interval: Sanbase.Utils.DateTime.str_to_sec(interval),
       from: from,
       to: to,
       user_id: user_id

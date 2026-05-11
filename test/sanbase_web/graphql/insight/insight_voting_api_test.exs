@@ -38,7 +38,7 @@ defmodule Sanbase.InsihgtVotingApiTest do
 
     assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
-             voted_at |> Sanbase.DateTimeUtils.from_iso8601!(),
+             voted_at |> Sanbase.Utils.DateTime.from_iso8601!(),
              5,
              :seconds
            )
@@ -96,6 +96,34 @@ defmodule Sanbase.InsihgtVotingApiTest do
 
     assert voted_at == nil
     assert total_votes == 0
+  end
+
+  test "cannot vote on a draft/unpublished insight", context do
+    %{user: user} = context
+    draft_insight = insert(:post, state: Post.approved_state(), ready_state: "draft", user: user)
+
+    other_user = insert(:user)
+    other_conn = setup_jwt_auth(build_conn(), other_user)
+
+    result = vote_raw(other_conn, draft_insight)
+
+    assert %{"errors" => [%{"message" => message}]} = result
+    assert message =~ "private" or message =~ "does not exist"
+  end
+
+  defp vote_raw(conn, %{id: insight_id}) do
+    mutation = """
+    mutation {
+      vote(insightId: #{insight_id}){
+        votes{ totalVotes currentUserVotes totalVoters }
+        votedAt
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
   end
 
   defp get_votes(conn, %{id: insight_id}) do

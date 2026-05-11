@@ -171,7 +171,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
   defp construct_name(:metric, name), do: name |> to_string()
   defp construct_name(:signal, name), do: name |> to_string()
-  defp construct_name(:query, name), do: name |> Inflex.camelize(:lower)
+  defp construct_name(:query, name), do: name |> Sanbase.Utils.Inflect.camelize(:lower)
 
   defp additional_data("metric", metric) do
     case Sanbase.Metric.metadata(metric) do

@@ -1,9 +1,10 @@
 defmodule SanbaseWeb.CategoryLive.Form do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
+  import SanbaseWeb.AdminLiveHelpers, only: [format_errors: 1]
+
   alias Sanbase.Metric.UIMetadata.Category
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -63,7 +64,7 @@ defmodule SanbaseWeb.CategoryLive.Form do
       </div>
 
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Categories"
           href={~p"/admin/metric_registry/categories"}
           icon="hero-arrow-uturn-left"
@@ -116,13 +117,5 @@ defmodule SanbaseWeb.CategoryLive.Form do
            category: %{socket.assigns.category | name: name, display_order: display_order}
          )}
     end
-  end
-
-  defp format_errors(changeset) do
-    changeset.errors
-    |> Enum.map(fn {field, {message, _}} ->
-      "#{Phoenix.Naming.humanize(field)} #{message}"
-    end)
-    |> Enum.join(", ")
   end
 end

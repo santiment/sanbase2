@@ -95,7 +95,7 @@ defmodule Sanbase.Queries.Executor.Result do
       # The frontend won't provide compressed rows when caching the query,
       # so if it's missing it should be ok.
       |> Map.filter(fn {k, v} -> is_nil(v) and k not in @skippable_fields end)
-      |> Enum.map(fn {k, _v} -> Inflex.camelize(k, :lower) end)
+      |> Enum.map(fn {k, _v} -> Sanbase.Utils.Inflect.camelize(k, :lower) end)
       |> Enum.sort()
 
     case nil_fields do
@@ -111,7 +111,8 @@ defmodule Sanbase.Queries.Executor.Result do
     with {:ok, map} <- Jason.decode(json) do
       # The JSON provided by the frontend to the API might include
       # keys like queryStartTime, queryEndTime, etc.
-      map_with_underscore_keys = Map.new(map, fn {k, v} -> {Inflex.underscore(k), v} end)
+      map_with_underscore_keys =
+        Map.new(map, fn {k, v} -> {Sanbase.Utils.Inflect.underscore(k), v} end)
 
       {:ok, map_with_underscore_keys}
     end

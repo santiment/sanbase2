@@ -29,6 +29,10 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   def pipeline(%Absinthe.Plug.Request.Query{pipeline: pipeline}) do
     pipeline
     |> Absinthe.Pipeline.insert_before(
+      Absinthe.Phase.Document.Validation.Result,
+      SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth
+    )
+    |> Absinthe.Pipeline.insert_before(
       Absinthe.Phase.Document.Complexity.Analysis,
       SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess
     )
@@ -133,7 +137,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
     operations
     |> Enum.flat_map(fn %{selections: selections} ->
       selections
-      |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
+      |> Enum.map(fn %{name: name} -> Sanbase.Utils.Inflect.camelize(name, :lower) end)
     end)
   end
 
@@ -203,6 +207,83 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent do
   def run(bp_root, _), do: {:ok, bp_root}
 end
 
+defmodule SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth do
+  @moduledoc """
+  Rejects GraphQL documents whose selection nesting exceeds @max_depth.
+
+  The existing complexity analyzer bounds total cost but does not stop a
+  client from sending a deeply-nested query that hits a single expensive
+  resolver repeatedly or exploits cycles in the schema. An explicit depth
+  cap blocks introspection/DoS attempts that bypass complexity scoring.
+  """
+  use Absinthe.Phase
+
+  @max_depth 15
+
+  @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
+  def run(bp_root, _) do
+    fragments = Map.new(bp_root.fragments || [], fn f -> {f.name, f} end)
+
+    max =
+      bp_root.operations
+      |> Enum.map(&operation_depth(&1, fragments))
+      |> Enum.max(fn -> 0 end)
+
+    if max > @max_depth do
+      error = %Absinthe.Phase.Error{
+        phase: __MODULE__,
+        message: "Query exceeds maximum nesting depth of #{@max_depth}"
+      }
+
+      {:ok, Absinthe.Phase.put_error(bp_root, error)}
+    else
+      {:ok, bp_root}
+    end
+  end
+
+  defp operation_depth(%{selections: selections}, fragments),
+    do: selections_depth(selections, 1, fragments, MapSet.new())
+
+  defp operation_depth(_, _), do: 0
+
+  defp selections_depth([], depth, _fragments, _seen), do: depth
+
+  defp selections_depth(selections, depth, fragments, seen) do
+    selections
+    |> Enum.map(&node_depth(&1, depth, fragments, seen))
+    |> Enum.max(fn -> depth end)
+  end
+
+  # Named fragment spreads carry no inline selections; resolve them against
+  # bp_root.fragments and track visited names so a cyclic fragment graph can't
+  # make the walker loop. Without this, a query can chain spreads to reach
+  # arbitrary depth at runtime while this phase reports depth 0.
+  defp node_depth(
+         %Absinthe.Blueprint.Document.Fragment.Spread{name: name},
+         depth,
+         fragments,
+         seen
+       ) do
+    cond do
+      MapSet.member?(seen, name) ->
+        depth
+
+      fragment = Map.get(fragments, name) ->
+        selections_depth(fragment.selections, depth, fragments, MapSet.put(seen, name))
+
+      true ->
+        depth
+    end
+  end
+
+  defp node_depth(%{selections: inner}, depth, fragments, seen)
+       when is_list(inner) and inner != [] do
+    selections_depth(inner, depth + 1, fragments, seen)
+  end
+
+  defp node_depth(_, depth, _fragments, _seen), do: depth
+end
+
 defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
   use Absinthe.Phase
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
@@ -225,7 +306,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
     selections
     |> Enum.flat_map(fn
       %{name: name, argument_data: %{metric: metric}} = struct ->
-        case Inflex.underscore(name) do
+        case Sanbase.Utils.Inflect.underscore(name) do
           "get_metric" ->
             get_metric_selections_to_metrics(struct.selections, metric)
 
@@ -241,7 +322,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
   defp get_metric_selections_to_metrics(selections, metric) do
     selections =
       Enum.map(selections, fn
-        %{name: name} -> name |> Inflex.underscore()
+        %{name: name} -> name |> Sanbase.Utils.Inflect.underscore()
         _ -> nil
       end)
       |> Enum.reject(&is_nil/1)

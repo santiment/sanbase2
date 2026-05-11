@@ -249,7 +249,7 @@ defmodule Sanbase.Billing.Invoices.GenerationJob do
       pdf_entries = Enum.reverse(pdf_entries)
 
       # Check if still running (might have been cancelled)
-      unless GenServer.call(gen_pid, :running?) do
+      if !GenServer.call(gen_pid, :running?) do
         return_early()
       end
 

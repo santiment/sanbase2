@@ -1,9 +1,10 @@
 defmodule SanbaseWeb.Categorization.GroupLive.Form do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
+  import SanbaseWeb.AdminLiveHelpers, only: [format_errors: 1]
+
   alias Sanbase.Metric.Category
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -54,12 +55,12 @@ defmodule SanbaseWeb.Categorization.GroupLive.Form do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         {if @action == :new, do: "Create New Group", else: "Edit Group"}
       </div>
 
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Groups"
           href={~p"/admin/metric_registry/categorization/groups"}
           icon="hero-arrow-uturn-left"
@@ -121,13 +122,5 @@ defmodule SanbaseWeb.Categorization.GroupLive.Form do
            }
          )}
     end
-  end
-
-  defp format_errors(changeset) do
-    changeset.errors
-    |> Enum.map(fn {field, {message, _}} ->
-      "#{Phoenix.Naming.humanize(field)} #{message}"
-    end)
-    |> Enum.join(", ")
   end
 end

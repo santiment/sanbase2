@@ -215,8 +215,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_metrics(), do: Registry.metrics_list()
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(selector) do
-    available_metrics_for_selector_query(selector)
+  def available_metrics(selector, opts) do
+    available_metrics_for_selector_query(selector, opts)
     |> ClickhouseRepo.query_transform(fn [metric] ->
       Map.get(Registry.metric_to_names_map(), metric)
     end)
@@ -425,14 +425,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   defp unsupported_selector_error(selector) do
-    provided_keys =
-      selector
-      |> Map.keys()
-      |> Enum.map_join(", ", &inspect/1)
-
-    "The provided selector #{inspect(selector)} is not supported. " <>
-      "The selector must have at least one of the following fields: slug, address, contractAddress. " <>
-      "Provided selector fields: #{provided_keys}"
+    Sanbase.Metric.Utils.unsupported_selector_error(
+      selector,
+      "The selector must have at least one of the following fields: slug, address, contractAddress"
+    )
   end
 
   defp get_filters(metric, opts) do

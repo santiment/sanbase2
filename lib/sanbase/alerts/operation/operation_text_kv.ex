@@ -258,7 +258,7 @@ defmodule Sanbase.Alert.OperationText.KV do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     before =
-      Sanbase.DateTimeUtils.before_interval(settings.time_window, now)
+      Sanbase.Utils.DateTime.before_interval(settings.time_window, now)
       |> DateTime.truncate(:second)
 
     {:ok, metric_metadata} = Sanbase.Metric.metadata(settings.metric)
@@ -273,9 +273,9 @@ defmodule Sanbase.Alert.OperationText.KV do
 
     kv = %{
       metric_data_from: before,
-      metric_data_from_human_readable: Sanbase.DateTimeUtils.to_human_readable(before),
+      metric_data_from_human_readable: Sanbase.Utils.DateTime.to_human_readable(before),
       metric_data_to: now,
-      metric_data_to_human_readable: Sanbase.DateTimeUtils.to_human_readable(now),
+      metric_data_to_human_readable: Sanbase.Utils.DateTime.to_human_readable(now),
       metric_data_aggregation: metric_metadata.default_aggregation
     }
 
@@ -286,7 +286,7 @@ defmodule Sanbase.Alert.OperationText.KV do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     before =
-      Sanbase.DateTimeUtils.before_interval(settings.time_window, now)
+      Sanbase.Utils.DateTime.before_interval(settings.time_window, now)
       |> DateTime.truncate(:second)
 
     {:ok, signal_metadata} = Sanbase.Signal.metadata(settings.signal)
@@ -301,9 +301,9 @@ defmodule Sanbase.Alert.OperationText.KV do
 
     kv = %{
       signal_data_from: before,
-      signal_data_from_human_readable: Sanbase.DateTimeUtils.to_human_readable(before),
+      signal_data_from_human_readable: Sanbase.Utils.DateTime.to_human_readable(before),
       signal_data_to: now,
-      signal_data_to_human_readable: Sanbase.DateTimeUtils.to_human_readable(now),
+      signal_data_to_human_readable: Sanbase.Utils.DateTime.to_human_readable(now),
       signal_data_aggregation: signal_metadata.default_aggregation
     }
 

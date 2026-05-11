@@ -23,8 +23,8 @@ defmodule Sanbase.TemplateEngine.Utils do
   def human_readable(data) do
     cond do
       # Transform interval to human readable interval
-      Sanbase.DateTimeUtils.valid_interval?(data) ->
-        Sanbase.DateTimeUtils.interval_to_str(data)
+      Sanbase.Utils.DateTime.valid_interval?(data) ->
+        Sanbase.Utils.DateTime.interval_to_str(data)
 
       # Transform numbers to human readable number
       is_number_outside_range_inclusive(data, -1_000_000, 1_000_000) ->

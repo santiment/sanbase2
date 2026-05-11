@@ -18,7 +18,7 @@ defmodule Sanbase.Project.Selector do
 
   # Only rename the key so the rest of the arguments are not lost
   def args_to_raw_selector(%{selector: %{slugs: _} = selector}),
-    do: Sanbase.MapUtils.rename_key(selector, :slugs, :slug)
+    do: Sanbase.Utils.Map.rename_key(selector, :slugs, :slug)
 
   def args_to_raw_selector(%{selector: %{} = selector}), do: selector
   def args_to_raw_selector(_), do: %{}

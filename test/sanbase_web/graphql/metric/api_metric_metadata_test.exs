@@ -175,14 +175,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                match?(
                  %DateTime{},
                  metadata["restrictedFrom"]
-                 |> Sanbase.DateTimeUtils.from_iso8601!()
+                 |> Sanbase.Utils.DateTime.from_iso8601!()
                )
 
       assert is_nil(metadata["restrictedTo"]) or
                match?(
                  %DateTime{},
                  metadata["restrictedTo"]
-                 |> Sanbase.DateTimeUtils.from_iso8601!()
+                 |> Sanbase.Utils.DateTime.from_iso8601!()
                )
     end
   end

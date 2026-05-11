@@ -83,6 +83,17 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 
 config :sanbase, Sanbase.Metric.Registry.ChangeSuggestion, debug_applying_changes: true
 
+# Default-off in test. Tests that need the real RehydratingCache path (e.g.
+# `project_available_metrics_test.exs`) flip this back to true in their `setup`
+# block and start a per-test `Sanbase.Cache.RehydratingCache.Supervisor` via
+# `start_supervised!`.
+config :sanbase, :use_rehydrating_cache, false
+
+# Run Subscription.maybe_cancel_async synchronously so the sandbox-owning test
+# process owns the DB checkout. Async Task outlives the test and crashes with
+# `owner ... exited` when it tries to query after sandbox teardown.
+config :sanbase, :subscribe_cancel_async?, false
+
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
@@ -90,8 +101,7 @@ config :sanbase, Sanbase.Repo,
   password: "postgres",
   database: "sanbase_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool_size: 5,
-  ssl: false,
-  ssl_opts: []
+  ssl: false
 
 config :sanbase, Sanbase.ClickhouseRepo,
   clickhouse_repo_enabled?: false,
@@ -137,6 +147,7 @@ config :waffle,
   storage_dir_prefix: "/"
 
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
+config :sanbase, SanbaseWeb.MailjetController, webhook_secret: "test_mailjet_secret"
 
 config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}
 
@@ -154,6 +165,10 @@ config :sanbase, Oban.Admin,
 
 config :sanbase, Sanbase.Cryptocompare.Price.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "true"}
+
+config :sanbase, Sanbase.Hyperliquid.Bbo.WebsocketScraper,
+  enabled?: "false",
+  coalesce_window_ms: "1000"
 
 # So the router can read it compile time
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")

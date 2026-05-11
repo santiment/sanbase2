@@ -13,6 +13,8 @@ defmodule Sanbase.Metric do
   by aggregating data fetched by multiple modules.
   """
 
+  require Logger
+
   import Sanbase.Metric.MetricReplace,
     only: [maybe_replace_metric: 2, maybe_replace_metrics: 2]
 
@@ -49,6 +51,9 @@ defmodule Sanbase.Metric do
   """
   @type available_metrics_with_nocache_result ::
           {:ok, list(metric)} | {:nocache, {:ok, list(metric)}}
+
+  @default_version "1.0"
+  def default_version(), do: @default_version
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -756,25 +761,64 @@ defmodule Sanbase.Metric do
 
   def available_metrics_for_selector(selector, opts) do
     user_metric_access_level = Keyword.get(opts, :user_metric_access_level, "released")
-    parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
+    lookback_days = Keyword.get(opts, :lookback_days)
+    # `ordered: true` so we can zip each result back to its module even when the
+    # task exits with `{:exit, :timeout}` (exit reasons carry no module reference).
+    # `on_timeout: :kill_task` — without it the stream crashes the caller on any
+    # task timeout; with it the slow task is killed and shows up as `{:exit, :timeout}`
+    # in the result stream, letting the rest of the batch complete normally.
+    parallel_opts = [
+      ordered: true,
+      max_concurrency: 10,
+      timeout: 60_000,
+      on_timeout: :kill_task
+    ]
 
     parallel_fun = fn module ->
       cache_key =
         {__MODULE__, :available_metrics_for_selector_in_module, module, selector,
-         user_metric_access_level}
+         user_metric_access_level, lookback_days}
         |> Sanbase.Cache.hash()
 
       Sanbase.Cache.get_or_store(cache_key, fn ->
-        module.available_metrics(selector)
+        module.available_metrics(selector, opts)
         |> maybe_remove_experimental_metrics(user_metric_access_level)
       end)
     end
 
-    metrics_in_modules =
-      Sanbase.Parallel.map(Helper.metric_modules(), parallel_fun, parallel_opts)
+    modules = Helper.metric_modules()
 
-    combine_metrics_in_modules(metrics_in_modules, selector)
+    tagged_results =
+      modules
+      |> Sanbase.Parallel.map(parallel_fun, parallel_opts)
+      |> Enum.zip(modules)
+      |> Enum.map(fn {result, module} -> {module, result} end)
+
+    combine_metrics_in_modules(tagged_results, selector)
   end
+
+  # Opts that change the metric result and therefore must be part of the cache
+  # key. Anything not in this list is ignored when keying the cache. New opts
+  # that affect the output MUST be added here, otherwise stale results will be
+  # served. Hashing the raw `opts` keyword list is unsafe because key order
+  # affects the SHA, so two semantically-equivalent calls would split the cache.
+  @cached_opts [:user_metric_access_level, :lookback_days]
+
+  defp available_metrics_for_slug_cache_key(selector, opts) do
+    whitelisted = Enum.map(@cached_opts, &{&1, Keyword.get(opts, &1)})
+
+    {__MODULE__, :available_metrics_for_slug, selector, whitelisted}
+    |> Sanbase.Cache.hash()
+  end
+
+  # Note: callers (e.g. `SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver`)
+  # may wrap these functions in their own `Sanbase.Cache.get_or_store` and/or
+  # `RehydratingCache`. That layering is intentional — the outer cache lives in
+  # the request hot path and uses a per-query key, while the inner cache here
+  # serves non-resolver callers (e.g. `Sanbase.MCP.DataCatalog`,
+  # `live/.../preview_sidebar.ex`, `Sanbase.RunExamples`) that bypass the
+  # resolver. Both layers key on the same whitelist via
+  # `available_metrics_for_slug_cache_key/2` so they invalidate together.
 
   @doc ~s"""
   Get the available timeseries metrics for a given slug.
@@ -785,8 +829,9 @@ defmodule Sanbase.Metric do
   def available_timeseries_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector, opts) end
+        available_metrics_for_slug_cache_key(selector, opts),
+        fn -> available_metrics_for_selector(selector, opts) end,
+        return_nocache: true
       )
 
     case available_metrics do
@@ -807,8 +852,9 @@ defmodule Sanbase.Metric do
   def available_histogram_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector, opts) end
+        available_metrics_for_slug_cache_key(selector, opts),
+        fn -> available_metrics_for_selector(selector, opts) end,
+        return_nocache: true
       )
 
     case available_metrics do
@@ -829,8 +875,9 @@ defmodule Sanbase.Metric do
   def available_table_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector, opts) end
+        available_metrics_for_slug_cache_key(selector, opts),
+        fn -> available_metrics_for_selector(selector, opts) end,
+        return_nocache: true
       )
 
     case available_metrics do
@@ -1069,13 +1116,13 @@ defmodule Sanbase.Metric do
   end
 
   defp filter_metrics_by_min_interval(metrics, interval, compare_fun) do
-    interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_to_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
 
     metrics
     |> Enum.filter(fn metric ->
       {:ok, %{min_interval: min_interval}} = metadata(metric)
 
-      min_interval_sec = Sanbase.DateTimeUtils.str_to_sec(min_interval)
+      min_interval_sec = Sanbase.Utils.DateTime.str_to_sec(min_interval)
 
       compare_fun.(min_interval_sec, interval_to_sec)
     end)
@@ -1096,16 +1143,15 @@ defmodule Sanbase.Metric do
     end
   end
 
-  defp combine_metrics_in_modules(metrics_in_modules, selector) do
-    # Combine the results of the different metric modules. In case any of the
-    # metric modules returned an :error tuple, wrap the result in a :nocache
-    # tuple so the next attempt to fetch the data will try to fetch the metrics
-    # again.
+  defp combine_metrics_in_modules(tagged_results, selector) do
+    # `tagged_results` is a list of `{module, result}` pairs from parallel_fun.
+    # Wrap in `:nocache` if any module returned a non-`:ok` result so the next
+    # attempt retries.
     hidden = hidden_metrics()
 
     available_metrics =
-      Enum.flat_map(metrics_in_modules, fn
-        {:ok, metrics} -> metrics
+      Enum.flat_map(tagged_results, fn
+        {_module, {:ok, metrics}} -> metrics
         _ -> []
       end)
       |> maybe_replace_metrics(selector)
@@ -1113,14 +1159,28 @@ defmodule Sanbase.Metric do
       |> Enum.reject(&(&1 in hidden))
       |> Enum.sort()
 
-    has_errors? =
-      metrics_in_modules
-      |> Enum.any?(&(not match?({:ok, _}, &1)))
+    failed_modules =
+      Enum.reject(tagged_results, fn {_module, result} -> match?({:ok, _}, result) end)
 
-    case has_errors? do
-      true -> {:nocache, {:ok, available_metrics}}
-      false -> {:ok, available_metrics}
+    case failed_modules do
+      [] ->
+        {:ok, available_metrics}
+
+      _ ->
+        log_failed_modules(failed_modules, selector)
+        {:nocache, {:ok, available_metrics}}
     end
+  end
+
+  defp log_failed_modules(failed_modules, selector) do
+    failures =
+      failed_modules
+      |> Enum.map_join("; ", fn {module, result} -> "#{inspect(module)} -> #{inspect(result)}" end)
+
+    Logger.warning(
+      "available_metrics_for_selector: #{length(failed_modules)} module(s) failed " <>
+        "for selector=#{inspect(selector)} failures=[#{failures}]"
+    )
   end
 
   defp sort_data_field_by_slug_asc(list) do

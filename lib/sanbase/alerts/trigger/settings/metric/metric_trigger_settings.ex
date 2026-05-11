@@ -8,7 +8,8 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerSettings do
   use Vex.Struct
   use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "metric_signal"
 
-  import Sanbase.{Validation, Alert.Validation}
+  import Sanbase.Utils.Validation
+  import Sanbase.Alert.Validation
 
   alias __MODULE__
   alias Sanbase.Alert.Type

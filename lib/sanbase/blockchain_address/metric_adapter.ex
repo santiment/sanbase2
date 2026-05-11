@@ -61,14 +61,13 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics(%{address: _address}, _opts), do: {:ok, []}
 
-  def available_metrics(%{address: _address}), do: []
-
-  def available_metrics(%{contract_address: contract_address}) do
-    Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
+  def available_metrics(%{contract_address: contract_address}, opts) do
+    Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address, opts)
   end
 
-  def available_metrics(%{slug: slug}) do
+  def available_metrics(%{slug: slug}, _opts) do
     with {:ok, _, _, infrastructure} <- Project.contract_info_infrastructure_by_slug(slug),
          blockchain when is_binary(blockchain) <-
            BlockchainAddress.blockchain_from_infrastructure(infrastructure) do
@@ -210,14 +209,10 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   defp unsupported_selector_error(selector) do
-    provided_keys =
-      selector
-      |> Map.keys()
-      |> Enum.map_join(", ", &inspect/1)
-
-    "The provided selector #{inspect(selector)} is not supported. " <>
-      "The selector must have the following fields: slug, blockchainAddress. " <>
-      "Provided selector fields: #{provided_keys}"
+    Sanbase.Metric.Utils.unsupported_selector_error(
+      selector,
+      "The selector must have the following fields: slug, blockchainAddress"
+    )
   end
 
   def addresses_by_filter("historical_balance", %{slug: slug}, operator, threshold, opts) do

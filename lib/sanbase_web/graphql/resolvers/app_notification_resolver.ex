@@ -75,6 +75,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
     {:ok, AppNotifications.list_muted_users(user.id)}
   end
 
+  def enable_notification_types(_root, %{types: types}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    AppNotifications.enable_notification_types(user, types)
+  end
+
+  def disable_notification_types(_root, %{types: types}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    AppNotifications.disable_notification_types(user, types)
+  end
+
+  def notification_type_settings(user, _args, _resolution) do
+    {:ok, AppNotifications.notification_type_settings(user)}
+  end
+
   defp build_opts(args) do
     opts = [limit: Map.get(args, :limit, 20)]
 

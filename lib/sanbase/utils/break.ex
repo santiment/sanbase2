@@ -1,4 +1,4 @@
-defmodule Sanbase.Break do
+defmodule Sanbase.Utils.Break do
   defmodule CompileError do
     defexception [:message]
   end

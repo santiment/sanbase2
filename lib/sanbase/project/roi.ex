@@ -112,7 +112,7 @@ defmodule Sanbase.Project.Roi do
 
   defp calc_token_usd_ico_price(price_from, currency_from, ico_start_date, update_naive_dt) do
     with :gt <- Date.compare(update_naive_dt |> NaiveDateTime.to_date(), ico_start_date),
-         datetime <- Sanbase.DateTimeUtils.date_to_datetime(ico_start_date),
+         datetime <- Sanbase.Utils.DateTime.date_to_datetime(ico_start_date),
          price_usd when not is_nil(price_usd) <-
            Sanbase.Price.Utils.fetch_last_price_before(currency_from, "USD", datetime) do
       price_usd = Sanbase.Math.to_float(price_usd) |> Decimal.from_float()

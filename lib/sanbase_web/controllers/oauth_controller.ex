@@ -54,7 +54,9 @@ defmodule SanbaseWeb.OAuthController do
   # --- Authorize (GET) - preauthorize then show consent ---
 
   def authorize(%Plug.Conn{} = conn, _params) do
-    Logger.info("[OAuth] authorize — all params: #{inspect(conn.params)}")
+    Logger.info(
+      "[OAuth] authorize — client_id: #{inspect(conn.params["client_id"])}, response_type: #{inspect(conn.params["response_type"])}, scope: #{inspect(conn.params["scope"])}"
+    )
 
     case current_user_from_session(conn) do
       {:ok, user, conn} ->
@@ -94,6 +96,7 @@ defmodule SanbaseWeb.OAuthController do
   def authorize_consent(%Plug.Conn{} = conn, %{"decision" => "deny"} = params) do
     with redirect_uri when is_binary(redirect_uri) <- params["redirect_uri"],
          client_id when is_binary(client_id) <- params["client_id"],
+         true <- valid_uuid?(client_id),
          %Boruta.Ecto.Client{redirect_uris: uris} <-
            Sanbase.Repo.get(Boruta.Ecto.Client, client_id),
          true <- redirect_uri in uris do
@@ -145,7 +148,7 @@ defmodule SanbaseWeb.OAuthController do
         pkce: true,
         public_refresh_token: true,
         confidential: false,
-        access_token_ttl: 3600,
+        access_token_ttl: 86_400,
         authorization_code_ttl: 60,
         refresh_token_ttl: 30 * 86_400
       }
@@ -437,4 +440,15 @@ defmodule SanbaseWeb.OAuthController do
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  # Only accept the canonical 8-4-4-4-12 UUID text form; Ecto.UUID.cast/1 also
+  # accepts raw 16-byte binaries, which are not valid request parameters.
+  defp valid_uuid?(
+         <<_::binary-size(8), "-", _::binary-size(4), "-", _::binary-size(4), "-",
+           _::binary-size(4), "-", _::binary-size(12)>> = value
+       ) do
+    match?({:ok, _}, Ecto.UUID.cast(value))
+  end
+
+  defp valid_uuid?(_), do: false
 end

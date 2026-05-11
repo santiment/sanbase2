@@ -194,7 +194,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
             aggregation = Keyword.get(opts, :aggregation) || metadata.default_aggregation
 
             value =
-              Sanbase.MathAggregation.compute(result, aggregation, & &1.value)
+              Sanbase.Utils.MathAggregation.compute(result, aggregation, & &1.value)
               |> Sanbase.Math.round_float()
 
             {:ok, %{value: value}}
@@ -272,16 +272,17 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{address: _address}), do: []
+  def available_metrics(%{address: _address}, _opts), do: {:ok, []}
 
-  def available_metrics(%{contract_address: contract_address}) do
-    metrics = Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
-
-    # The metric is available only for `source`, not for `slug`
-    metrics -- ["social_active_users"]
+  def available_metrics(%{contract_address: contract_address}, opts) do
+    case Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address, opts) do
+      # The metric is available only for `source`, not for `slug`
+      {:ok, metrics} -> {:ok, metrics -- ["social_active_users"]}
+      {:error, _} = error -> error
+    end
   end
 
-  def available_metrics(%{slug: slug}) do
+  def available_metrics(%{slug: slug}, _opts) do
     with %Project{telegram_link: telegram_link} <- Project.by_slug(slug, preload?: false) do
       metrics =
         case is_binary(telegram_link) do
@@ -402,12 +403,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   defp unsupported_selector_error(selector) do
-    provided_keys =
-      selector
-      |> Map.keys()
-      |> Enum.map_join(", ", &inspect/1)
-
-    "The provided selector #{inspect(selector)} is not supported. " <>
-      "Provided selector fields: #{provided_keys}"
+    Sanbase.Metric.Utils.unsupported_selector_error(selector)
   end
 end

@@ -808,8 +808,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
                  ]
                } = stored
 
-        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_start_time))
-        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_end_time))
+        assert datetime_close_to_now?(Sanbase.Utils.DateTime.from_iso8601!(query_start_time))
+        assert datetime_close_to_now?(Sanbase.Utils.DateTime.from_iso8601!(query_end_time))
 
         cache =
           get_cached_dashboard_queries_executions(context.conn, %{dashboard_id: dashboard.id})
@@ -831,8 +831,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
                  }
                ] = cache
 
-        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_start_time))
-        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_end_time))
+        assert datetime_close_to_now?(Sanbase.Utils.DateTime.from_iso8601!(query_start_time))
+        assert datetime_close_to_now?(Sanbase.Utils.DateTime.from_iso8601!(query_end_time))
       end)
     end
 

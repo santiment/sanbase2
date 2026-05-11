@@ -289,7 +289,7 @@ defmodule Sanbase.TemplateEngine do
   end
 
   defp validate_inline_value!(value, key) do
-    unless Regex.match?(~r/^[a-zA-Z0-9_.]+$/, value) do
+    if !Regex.match?(~r/^[a-zA-Z0-9_.]+$/, value) do
       raise TemplateEngineError,
         message:
           "Inline value for #{key} contains invalid characters. " <>

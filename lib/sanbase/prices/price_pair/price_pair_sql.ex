@@ -310,19 +310,24 @@ defmodule Sanbase.Price.PricePairSql do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_quote_assets_query(slug, source) do
+  @default_lookback_days 14
+
+  def available_quote_assets_query(slug, source, opts \\ []) do
+    lookback_days = Keyword.get(opts, :lookback_days) || @default_lookback_days
+
     sql = """
     SELECT distinct(quote_asset)
     FROM #{@table}
     WHERE
       #{base_asset_filter(slug, argument_name: "slug")} AND
       source = {{source}} AND
-      dt > now() - INTERVAL 14 DAY
+      dt > now() - INTERVAL {{lookback_days}} DAY
     """
 
     params = %{
       slug: slug,
-      source: source
+      source: source,
+      lookback_days: lookback_days
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)

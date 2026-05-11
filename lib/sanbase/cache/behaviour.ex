@@ -30,7 +30,8 @@ defmodule Sanbase.Cache.Behaviour do
   must be executed only once and the rest of the queries will wait until the result
   is ready.
   """
-  @callback get_or_store(cache, key, fun) :: {:ok, stored_value} | {:error, error}
+  @callback get_or_store(cache, key, fun, Keyword.t()) ::
+              {:ok, stored_value} | {:nocache, {:ok, stored_value}} | {:error, error}
 
   @doc ~s"""
   Get the size of the cache in megabytes
@@ -47,5 +48,5 @@ defmodule Sanbase.Cache.Behaviour do
   """
   @callback clear_all(cache) :: :ok
 
-  @optional_callbacks get_or_store: 3
+  @optional_callbacks get_or_store: 4
 end

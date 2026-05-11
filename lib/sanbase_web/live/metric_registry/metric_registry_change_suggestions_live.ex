@@ -1,10 +1,12 @@
 defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.AdminFormsComponents
+  import SanbaseWeb.AdminLiveHelpers,
+    only: [order_records_by_status: 1, put_changeset_error_flash: 3, update_row_by_id: 3]
+
+  alias SanbaseWeb.AdminSharedComponents
   alias Sanbase.Metric.Registry.Permissions
   alias Sanbase.Metric.Registry.ChangeSuggestion
-  alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -29,14 +31,13 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   def render(assigns) do
     ~H"""
     <div>
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry Change Requests
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title="Metric Registry Change Requests"
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to Metric Registry"
         href={~p"/admin/metric_registry"}
         icon="hero-home"
@@ -49,18 +50,21 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           rows={visible_rows(@rows, @selected_tab, @filters)}
         >
           <:col :let={row} label="Status">
-            <AdminFormsComponents.status status={row.status} />
+            <AdminSharedComponents.status_badge status={row.status} />
           </:col>
           <:col :let={row} label="Metric" col_class="max-w-[320px] break-words">
             <.link
               :if={row.metric_registry_id}
-              class="underline text-blue-600"
+              class="link link-primary"
               href={~p"/admin/metric_registry/show/#{row.metric_registry_id}"}
               target="_blank"
             >
               {row.metric_registry.metric}
             </.link>
-            <span :if={!row.metric_registry_id} class="text-sm font-bold text-green-800">
+            <span
+              :if={!row.metric_registry_id}
+              class="badge badge-sm badge-success badge-soft whitespace-nowrap"
+            >
               NEW METRIC
             </span>
           </:col>
@@ -144,7 +148,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     case ChangeSuggestion.undo(record_id) do
       {:ok, record} ->
         rows =
-          update_assigns_row(socket.assigns.rows, record_id, record.status)
+          update_row_by_id(socket.assigns.rows, record_id, %{status: record.status})
 
         socket =
           socket
@@ -154,7 +158,8 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         {:noreply, socket}
 
       {:error, changeset} ->
-        {:noreply, add_changeset_error_flash(socket, changeset)}
+        {:noreply,
+         put_changeset_error_flash(socket, changeset, "Error reverting the suggested changes")}
     end
   end
 
@@ -175,7 +180,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
     case Sanbase.Metric.Registry.ChangeSuggestion.update_status(record_id, status) do
       {:ok, _} ->
-        rows = update_assigns_row(socket.assigns.rows, record_id, status)
+        rows = update_row_by_id(socket.assigns.rows, record_id, %{status: status})
 
         socket =
           socket
@@ -185,7 +190,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         {:noreply, socket}
 
       {:error, changeset} ->
-        {:noreply, add_changeset_error_flash(socket, changeset)}
+        {:noreply,
+         put_changeset_error_flash(
+           socket,
+           changeset,
+           "Error #{action}ing the suggested changes"
+         )}
     end
   end
 
@@ -206,7 +216,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   defp formatted_changes(assigns) do
     ~H"""
     <div>
-      <div :if={@is_new_metric and no_docs?(@changes)} class="text-2xl font-bold text-red-700 mb-2">
+      <div :if={@is_new_metric and no_docs?(@changes)} class="text-2xl font-bold text-error mb-2">
         MISSING DOCUMENTATION
       </div>
       <div>
@@ -224,12 +234,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     ~H"""
     <div class="flex flex-col">
       <div class="text-nowrap">
-        <span class="text-green-600 font-bold">Created</span> {Sanbase.DateTimeUtils.rough_duration_since(
+        <span class="text-success font-bold">Created</span> {Sanbase.Utils.DateTime.rough_duration_since(
           @inserted_at
         )} ago
       </div>
       <div :if={@inserted_at != @updated_at}>
-        <span class="text-amber-600 font-bold">Updated</span> {Sanbase.DateTimeUtils.rough_duration_since(
+        <span class="text-warning font-bold">Updated</span> {Sanbase.Utils.DateTime.rough_duration_since(
           @updated_at
         )} ago
       </div>
@@ -255,7 +265,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   defp tabs(assigns) do
     ~H"""
-    <div class="flex flex-wrap space-x-2 mt-6 border-b border-gray-200">
+    <div role="tablist" class="tabs tabs-border mt-6">
       <.tab
         text="Pending Approval"
         tab="pending_approval"
@@ -280,14 +290,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   defp tab(assigns) do
     ~H"""
-    <span phx-click={JS.push("select_tab", value: %{tab: @tab})}>
-      <span class={[
-        "inline-block text-sm font-bold p-2 rounded-t-lg cursor-pointer hover:border-b-2 hover:border-blue-600 hover:text-blue-600",
-        if(@is_selected,
-          do: "border-blue-800 border-b-2 text-blue-800",
-          else: "text-gray-800"
-        )
-      ]}>
+    <span
+      role="tab"
+      phx-click={JS.push("select_tab", value: %{tab: @tab})}
+      class={["tab font-bold", if(@is_selected, do: "tab-active text-primary")]}
+    >
+      <span>
         {@text} ({@count})
       </span>
     </span>
@@ -305,21 +313,24 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       <input type="hidden" name="metric_registry_id" value={@row.metric_registry_id} />
       <input type="hidden" name="change_request_submitter_email" value={@row.submitted_by} />
 
-      <.action_button
+      <AdminSharedComponents.approval_button
+        name="action"
         value="approve"
         text="Approve"
         disabled={@row.status != "pending_approval"}
-        colors="bg-green-600 hover:bg-green-800"
+        variant="btn-success"
       />
-      <.action_button
+      <AdminSharedComponents.approval_button
+        name="action"
         value="decline"
         text="Decline"
         disabled={@row.status != "pending_approval"}
-        colors="bg-red-600 hover:bg-red-800"
+        variant="btn-error"
       />
-      <.action_button
+      <AdminSharedComponents.approval_button
+        name="action"
         value="undo"
-        text={undo_text(@row.status)}
+        text={AdminSharedComponents.undo_text(@row.status)}
         disabled={
           # Undo is disabled if it's still in pending state or
           # if the change request is for adding a new metric and it is approved
@@ -327,10 +338,10 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           @row.status == "pending_approval" or
             (@row.status == "approved" and @row.metric_registry_id == nil)
         }
-        colors="bg-amber-600 hover:bg-amber-800"
+        variant="btn-warning"
       />
 
-      <.action_button
+      <AdminSharedComponents.approval_button
         :if={
           @row.status == "pending_approval" and
             Permissions.can?(:edit_change_suggestion,
@@ -339,52 +350,14 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
               submitter_email: @row.submitted_by
             )
         }
+        name="action"
         disabled={false}
         value="edit"
         text="Edit"
-        colors="bg-fuchsia-600 hover:bg-fuchsia-800"
+        variant="btn-secondary"
       />
     </.form>
     """
-  end
-
-  defp undo_text("approved"), do: "Undo Approval"
-  defp undo_text("declined"), do: "Undo Refusal"
-  defp undo_text("pending_approval"), do: "Undo"
-
-  defp action_button(assigns) do
-    ~H"""
-    <AdminFormsComponents.button
-      name="action"
-      value={@value}
-      class={if @disabled, do: "bg-gray-300", else: @colors}
-      disabled={@disabled}
-      display_text={@text}
-    />
-    """
-  end
-
-  defp add_changeset_error_flash(socket, changeset_or_error) do
-    error_msg =
-      case changeset_or_error do
-        %Ecto.Changeset{} = changeset ->
-          Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
-
-        error when is_binary(error) ->
-          error
-      end
-
-    socket
-    |> put_flash(:error, "Error accepting the suggested changes.\n Reason: #{error_msg}!")
-  end
-
-  defp update_assigns_row(rows, record_id, status) do
-    rows
-    |> Enum.map(fn
-      %{id: ^record_id} = record -> Map.put(record, :status, status)
-      record -> record
-    end)
-    |> order_records()
   end
 
   defp list_all_submissions() do
@@ -393,12 +366,6 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     |> Enum.map(
       &Map.update!(&1, :changes, fn encoded -> ChangeSuggestion.decode_changes(encoded) end)
     )
-    |> order_records()
-  end
-
-  @status_order %{"pending_approval" => 3, "approved" => 2, "declined" => 1}
-  defp order_records(handles) do
-    handles
-    |> Enum.sort_by(&{@status_order[&1.status], &1.id}, :desc)
+    |> order_records_by_status()
   end
 end

@@ -225,7 +225,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
       "" -> "1d"
       interval -> interval
     end
-    |> Sanbase.DateTimeUtils.str_to_sec()
+    |> Sanbase.Utils.DateTime.str_to_sec()
   end
 
   defp years_difference_weighted(from, to) do

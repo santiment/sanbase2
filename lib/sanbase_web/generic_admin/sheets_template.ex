@@ -1,5 +1,8 @@
 defmodule SanbaseWeb.GenericAdmin.SheetsTemplate do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.SheetsTemplate
+  def resource_name, do: "sheets_templates"
+  def singular_resource_name, do: "sheets_template"
 
   def resource() do
     %{

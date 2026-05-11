@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       %{"data" => %{"vote" => vote}} = vote(conn, config["id"], direction: :up)
       config_res = get_chart_configuration_votes(conn, config["id"])
       assert config_res["votedAt"] == vote["votedAt"]
-      voted_at = vote["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      voted_at = vote["votedAt"] |> Sanbase.Utils.DateTime.from_iso8601!()
       assert Sanbase.TestUtils.datetime_close_to(voted_at, Timex.now(), seconds: 2)
       assert vote["votes"] == config_res["votes"]
       assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}

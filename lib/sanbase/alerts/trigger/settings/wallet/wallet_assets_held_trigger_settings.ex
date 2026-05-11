@@ -11,7 +11,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "wallet_assets_held"
 
   import Sanbase.Alert.Validation
-  import Sanbase.DateTimeUtils, only: [round_datetime: 1]
+  import Sanbase.Utils.DateTime, only: [round_datetime: 1]
 
   alias __MODULE__
   alias Sanbase.Alert.Type

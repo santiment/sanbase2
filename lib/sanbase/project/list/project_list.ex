@@ -734,7 +734,7 @@ defmodule Sanbase.Project.List do
           p in query,
           inner_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
           where: latest_cmc.volume_usd >= ^min_volume,
-          order_by: latest_cmc.rank
+          order_by: [asc: latest_cmc.rank, asc: p.slug]
         )
     end
   end

@@ -11,6 +11,8 @@ All notifications share the following base structure:
 - `entity_type` (string): Type of entity the notification relates to (e.g., "insight", "watchlist", "user_trigger")
 - `entity_id` (integer): ID of the entity the notification relates to
 - `entity_name` (string): Name/title of the entity
+- `entity_description` (string | null): Description of the entity (e.g., alert description). Currently populated for `alert_triggered` notifications.
+- `url` (string | null): Optional link associated with the notification. Can be a relative path (e.g., `/charts`) resolved by the frontend, or a fully qualified URL (e.g., `https://academy.santiment.net/...`). Currently used by broadcast notifications.
 - `user_id` (integer): ID of the user who triggered the notification (the actor, not the receiver)
 - `is_broadcast` (boolean): Always `false` for these notifications
 - `is_system_generated` (boolean): Always `false` for these notifications
@@ -182,11 +184,12 @@ All notifications share the following base structure:
 **json_data:**
 ```json
 {
-  "comment_preview": "This is the first 150 characters of the comment content..."
+  "comment_preview": "This is the first 150 characters of the comment content...",
+  "alert_is_active": true  // Only present when entity_type is "user_trigger"
 }
 ```
 
-**Example:**
+**Example (comment on an insight):**
 ```json
 {
   "id": 126,
@@ -199,6 +202,26 @@ All notifications share the following base structure:
   "is_system_generated": false,
   "json_data": {
     "comment_preview": "Great analysis! I think you're right about the trend..."
+  },
+  "inserted_at": "2026-02-03T12:00:00Z",
+  "read_at": null
+}
+```
+
+**Example (comment on an alert):**
+```json
+{
+  "id": 126,
+  "type": "create_comment",
+  "entity_type": "user_trigger",
+  "entity_id": 555,
+  "entity_name": "BTC Price Above $50k",
+  "user_id": 999,
+  "is_broadcast": false,
+  "is_system_generated": false,
+  "json_data": {
+    "comment_preview": "Nice alert setup!",
+    "alert_is_active": true
   },
   "inserted_at": "2026-02-03T12:00:00Z",
   "read_at": null
@@ -226,9 +249,11 @@ All notifications share the following base structure:
 - `entity_name`: The name/title of the entity
 - `user_id`: The voter's user ID
 
-**json_data:** `{}` (empty)
+**json_data:**
+- `{}` (empty) for most entity types
+- `{"alert_is_active": true/false}` when `entity_type` is `"user_trigger"`
 
-**Example:**
+**Example (vote on an insight):**
 ```json
 {
   "id": 127,
@@ -240,6 +265,25 @@ All notifications share the following base structure:
   "is_broadcast": false,
   "is_system_generated": false,
   "json_data": {},
+  "inserted_at": "2026-02-03T12:15:00Z",
+  "read_at": null
+}
+```
+
+**Example (vote on an alert):**
+```json
+{
+  "id": 127,
+  "type": "create_vote",
+  "entity_type": "user_trigger",
+  "entity_id": 555,
+  "entity_name": "BTC Price Above $50k",
+  "user_id": 888,
+  "is_broadcast": false,
+  "is_system_generated": false,
+  "json_data": {
+    "alert_is_active": false
+  },
   "inserted_at": "2026-02-03T12:15:00Z",
   "read_at": null
 }
@@ -296,9 +340,15 @@ All notifications share the following base structure:
 - `entity_type`: `"user_trigger"`
 - `entity_id`: The alert ID
 - `entity_name`: The alert title, or `"Alert {alert_id}"` if no title is provided
+- `entity_description`: The alert description (from `trigger.description`), or `null` if not set
 - `user_id`: The alert owner's user ID
 
-**json_data:** `{}` (empty)
+**json_data:**
+```json
+{
+  "alert_is_active": true  // Whether the alert is currently active
+}
+```
 
 **Example:**
 ```json
@@ -308,12 +358,148 @@ All notifications share the following base structure:
   "entity_type": "user_trigger",
   "entity_id": 555,
   "entity_name": "BTC Price Above $50k",
+  "entity_description": "Triggers when BTC price crosses $50,000",
   "user_id": 789,
   "is_broadcast": false,
   "is_system_generated": false,
-  "json_data": {},
+  "json_data": {
+    "alert_is_active": true
+  },
   "inserted_at": "2026-02-03T13:00:00Z",
   "read_at": null
 }
 ```
 
+---
+
+## Broadcast Notification Types
+
+Broadcast notifications are system-generated messages sent to all registered users. Unlike user-triggered notifications, they have `is_broadcast: true`, `is_system_generated: true`, and `user_id: null`.
+
+All broadcast types share the `santiment_broadcast` prefix. Users can individually disable any broadcast type via their notification settings.
+
+**Shared fields:**
+- `is_broadcast`: `true`
+- `is_system_generated`: `true`
+- `user_id`: `null`
+- `url` (string | null): Optional link — either a relative path (`/charts`) or a fully qualified URL (`https://academy.santiment.net/...`)
+
+**Validation rules:**
+- `title`: minimum 6 characters
+- `content`: minimum 10 characters
+- `url` (when provided): must be a valid relative path starting with `/`, or a fully qualified `http`/`https` URL
+
+**Creation:** Broadcast notifications are created by admins via the admin UI at `/admin/notifications/broadcast`. A single notification record is inserted and linked to all eligible users via bulk-inserted read status records.
+
+### 8. `santiment_broadcast`
+
+**Description:** General-purpose broadcast for announcements that don't fit a specific category.
+
+**Example:**
+```json
+{
+  "id": 200,
+  "type": "santiment_broadcast",
+  "title": "Scheduled Maintenance",
+  "content": "We will be performing maintenance on March 15th from 2:00-4:00 UTC.",
+  "url": null,
+  "is_broadcast": true,
+  "is_system_generated": true,
+  "user_id": null,
+  "json_data": {},
+  "inserted_at": "2026-03-14T10:00:00Z",
+  "read_at": null
+}
+```
+
+---
+
+### 9. `santiment_broadcast_new_features`
+
+**Description:** Announces new features and product updates.
+
+**Example:**
+```json
+{
+  "id": 201,
+  "type": "santiment_broadcast_new_features",
+  "title": "New Charts Experience",
+  "content": "We've redesigned the charts page with improved performance and new indicators.",
+  "url": "/charts",
+  "is_broadcast": true,
+  "is_system_generated": true,
+  "user_id": null,
+  "json_data": {},
+  "inserted_at": "2026-03-14T10:00:00Z",
+  "read_at": null
+}
+```
+
+---
+
+### 10. `santiment_broadcast_tutorials`
+
+**Description:** Shares educational content and how-to guides.
+
+**Example:**
+```json
+{
+  "id": 202,
+  "type": "santiment_broadcast_tutorials",
+  "title": "Getting Started with Alerts",
+  "content": "Learn how to set up custom alerts to track on-chain activity in real time.",
+  "url": "https://academy.santiment.net/education-and-use-cases/alerts-overview",
+  "is_broadcast": true,
+  "is_system_generated": true,
+  "user_id": null,
+  "json_data": {},
+  "inserted_at": "2026-03-14T10:00:00Z",
+  "read_at": null
+}
+```
+
+---
+
+### 11. `santiment_broadcast_youtube_video`
+
+**Description:** Notifies users about new YouTube videos and live streams.
+
+**Example:**
+```json
+{
+  "id": 203,
+  "type": "santiment_broadcast_youtube_video",
+  "title": "Weekly Market Update",
+  "content": "Watch our latest analysis of this week's crypto market movements.",
+  "url": "https://www.youtube.com/watch?v=example",
+  "is_broadcast": true,
+  "is_system_generated": true,
+  "user_id": null,
+  "json_data": {},
+  "inserted_at": "2026-03-14T10:00:00Z",
+  "read_at": null
+}
+```
+
+---
+
+### 12. `santiment_broadcast_social_trends`
+
+**Description:** Highlights notable social media trends and sentiment shifts.
+
+**Example:**
+```json
+{
+  "id": 204,
+  "type": "santiment_broadcast_social_trends",
+  "title": "Trending: Ethereum Surge",
+  "content": "Ethereum social dominance has reached its highest level in 3 months across major platforms.",
+  "url": "/social-trends",
+  "is_broadcast": true,
+  "is_system_generated": true,
+  "user_id": null,
+  "json_data": {},
+  "inserted_at": "2026-03-14T10:00:00Z",
+  "read_at": null
+}
+```

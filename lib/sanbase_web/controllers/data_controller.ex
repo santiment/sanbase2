@@ -11,7 +11,9 @@ defmodule SanbaseWeb.DataController do
   This contains information about santiment team users, so it cannot be publicly freely available
   """
   def santiment_team_members(conn, %{"secret" => secret}) do
-    case santiment_team_members_secret() == secret do
+    expected = santiment_team_members_secret()
+
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
         {:ok, data} = get_santiment_team_members()
 
@@ -67,7 +69,9 @@ defmodule SanbaseWeb.DataController do
   end
 
   def monitored_twitter_handles(conn, %{"secret" => secret}) do
-    case santiment_team_members_secret() == secret do
+    expected = santiment_team_members_secret()
+
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
         cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
         {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_monitored_twitter_handles_list/0)
@@ -153,7 +157,7 @@ defmodule SanbaseWeb.DataController do
           public_name: metric,
           name: metadata.internal_metric,
           min_interval: metadata.min_interval,
-          min_interval_seconds: Sanbase.DateTimeUtils.str_to_sec(metadata.min_interval),
+          min_interval_seconds: Sanbase.Utils.DateTime.str_to_sec(metadata.min_interval),
           table: Map.get(table_map, metric)
         }
         |> Jason.encode!()
@@ -368,9 +372,8 @@ defmodule SanbaseWeb.DataController do
     end
   end
 
-  # On stage/prod the env var is set and is different from the default one.
+  # Fails closed: returns nil when the env var is missing so the
+  # is_binary(expected) guard at the call sites rejects all requests.
   defp santiment_team_members_secret(),
-    do:
-      System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET") ||
-        "random_secret"
+    do: System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET")
 end

@@ -1,5 +1,5 @@
 defmodule Sanbase.Utils.ListSelector.Transform do
-  import Sanbase.DateTimeUtils
+  import Sanbase.Utils.DateTime
 
   def args_to_filters_combinator(args) do
     (get_in(args, [:selector, :filters_combinator]) || "and")

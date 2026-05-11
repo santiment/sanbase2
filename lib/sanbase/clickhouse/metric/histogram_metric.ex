@@ -1,5 +1,5 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.Utils.DateTime, only: [str_to_sec: 1]
   import Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
   import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]

@@ -19,8 +19,21 @@ defmodule Sanbase.Application.Web do
       # Sweeping the Guardian JWT refresh tokens
       {Guardian.DB.Sweeper, [interval: 20 * 60 * 1000]},
 
-      # Rehydrating cache
-      Sanbase.Cache.RehydratingCache.Supervisor,
+      # Rehydrating cache — intentionally NOT started in the test env.
+      #
+      # `Sanbase.Cache.RehydratingCache` is a globally-named GenServer that
+      # periodically re-runs every registered closure. In test, closures
+      # registered inside a `with_mocks` block can outlive that block and
+      # fire later against real code paths (e.g. Clickhouse adapters),
+      # producing intermittent
+      #   "could not lookup Ecto repo Sanbase.ClickhouseRepo"
+      # warnings during otherwise unrelated tests and making the suite
+      # flaky. Gating the supervisor here keeps the test app clean by
+      # default; tests that genuinely need RC (e.g.
+      # `project_available_metrics_test.exs` and the dedicated
+      # `rehydrating_cache_test.exs`) start a per-test supervisor via
+      # `start_supervised!`, which ExUnit tears down at test exit.
+      start_in(Sanbase.Cache.RehydratingCache.Supervisor, [:dev, :prod]),
 
       # Oban instance responsible for sending emails
       {Oban, oban_web_config()},

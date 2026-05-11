@@ -6,6 +6,7 @@ defmodule Sanbase.Kafka.ApiCall do
           timestamp: non_neg_integer() | nil,
           id: String.t(),
           query: String.t() | nil,
+          version: String.t() | nil,
           status_code: non_neg_integer(),
           has_graphql_errors: boolean() | nil,
           user_id: non_neg_integer() | nil,

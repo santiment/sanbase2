@@ -148,9 +148,9 @@ defmodule Sanbase.MCP.MetricsAndAssetsDiscoveryTool do
             "All slugs available for #{metric} metric. Use slug filter for full asset details."
         }
 
-      {:error, reason} ->
+      {:error, error} ->
         %{
-          error: reason,
+          error: error,
           available_metrics: DataCatalog.get_metric_names()
         }
     end

@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
         %{"data" => %{"getMetric" => %{"lastDatetimeComputedAt" => last_dt}}} =
           get_last_datetime_computed_at(conn, metric, %{slug: project.slug})
 
-        last_dt = Sanbase.DateTimeUtils.from_iso8601!(last_dt)
+        last_dt = Sanbase.Utils.DateTime.from_iso8601!(last_dt)
         assert match?(%DateTime{}, last_dt)
       end
     end)

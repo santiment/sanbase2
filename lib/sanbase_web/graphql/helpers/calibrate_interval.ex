@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
-  alias Sanbase.DateTimeUtils
-
   def calibrate(module, id, from, to, interval, min_seconds \\ 300, max_data_points \\ 500)
 
   def calibrate(module, id, from, to, "", min_seconds, max_data_points) do
@@ -81,8 +79,8 @@ defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
     ma_interval =
       max(
         div(
-          DateTimeUtils.str_to_sec(moving_average_base),
-          DateTimeUtils.str_to_sec(interval)
+          Sanbase.Utils.DateTime.str_to_sec(moving_average_base),
+          Sanbase.Utils.DateTime.str_to_sec(interval)
         ),
         2
       )

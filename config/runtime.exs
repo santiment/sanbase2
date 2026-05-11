@@ -35,6 +35,11 @@ end
 config :sanbase, Sanbase.SmartContracts.SanrNFT,
   alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
 
+# CSV string of extra emails to treat as "team members" in the MCP admin
+# views. The @santiment.net domain is excluded unconditionally; this
+# variable lets us add gmail/personal accounts of teammates.
+config :sanbase, Sanbase.MCP.ToolInvocation, team_emails: System.get_env("MCP_TEAM_EMAILS", "")
+
 kafka_url = System.get_env("KAFKA_URL", "blockchain-kafka-kafka")
 kafka_port = System.get_env("KAFKA_PORT", "9092")
 kafka_enabled = System.get_env("REAL_KAFKA_ENABLED", "true")

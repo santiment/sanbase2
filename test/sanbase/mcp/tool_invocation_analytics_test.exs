@@ -178,6 +178,117 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
     end
   end
 
+  describe "list_invocations/1 with exclude_team_members" do
+    setup do
+      santiment_user = insert(:user, email: "alice@santiment.net")
+      gmail_team_user = insert(:user, email: "alice.personal@gmail.com")
+      external_user = insert(:user, email: "trader@example.com")
+
+      {:ok, _} = create_basic_invocation(santiment_user)
+      {:ok, _} = create_basic_invocation(gmail_team_user)
+      {:ok, _} = create_basic_invocation(external_user)
+      {:ok, anon} = create_basic_invocation(nil)
+
+      %{
+        santiment_user: santiment_user,
+        gmail_team_user: gmail_team_user,
+        external_user: external_user,
+        anon_id: anon.id
+      }
+    end
+
+    test "default behavior includes everyone", %{santiment_user: s, external_user: e} do
+      emails =
+        ToolInvocation.list_invocations([])
+        |> Enum.map(& &1.user)
+        |> Enum.map(fn
+          nil -> nil
+          u -> u.email
+        end)
+
+      assert s.email in emails
+      assert e.email in emails
+      assert nil in emails
+    end
+
+    test "exclude_team_members hides @santiment.net but keeps anonymous and externals",
+         %{santiment_user: s, external_user: e, gmail_team_user: g} do
+      emails =
+        ToolInvocation.list_invocations(exclude_team_members: true)
+        |> Enum.map(fn
+          %{user: nil} -> nil
+          %{user: u} -> u.email
+        end)
+
+      refute s.email in emails
+      assert e.email in emails
+      # gmail user is not in MCP_TEAM_EMAILS list — still visible
+      assert g.email in emails
+      assert nil in emails
+    end
+
+    test "exclude_team_members also hides emails from the team_emails config",
+         %{gmail_team_user: g, external_user: e} do
+      previous = Application.get_env(:sanbase, ToolInvocation, [])
+
+      Application.put_env(
+        :sanbase,
+        ToolInvocation,
+        Keyword.put(previous, :team_emails, "alice.personal@gmail.com, other@example.org")
+      )
+
+      on_exit(fn -> Application.put_env(:sanbase, ToolInvocation, previous) end)
+
+      emails =
+        ToolInvocation.list_invocations(exclude_team_members: true)
+        |> Enum.map(fn
+          %{user: nil} -> nil
+          %{user: u} -> u.email
+        end)
+
+      refute g.email in emails
+      assert e.email in emails
+    end
+
+    test "team-emails CSV is case-insensitive and trims whitespace",
+         %{gmail_team_user: g} do
+      previous = Application.get_env(:sanbase, ToolInvocation, [])
+
+      Application.put_env(
+        :sanbase,
+        ToolInvocation,
+        Keyword.put(previous, :team_emails, "  ALICE.Personal@Gmail.com  ")
+      )
+
+      on_exit(fn -> Application.put_env(:sanbase, ToolInvocation, previous) end)
+
+      emails =
+        ToolInvocation.list_invocations(exclude_team_members: true)
+        |> Enum.map(fn
+          %{user: nil} -> nil
+          %{user: u} -> u.email
+        end)
+
+      refute g.email in emails
+    end
+
+    test "count_invocations honors exclude_team_members" do
+      total = ToolInvocation.count_invocations([])
+      filtered = ToolInvocation.count_invocations(exclude_team_members: true)
+      assert filtered == total - 1
+    end
+  end
+
+  defp create_basic_invocation(user) do
+    ToolInvocation.create(%{
+      user_id: user && user.id,
+      tool_name: "fetch_metric_data_tool",
+      params: %{},
+      is_successful: true,
+      duration_ms: 5
+    })
+  end
+
   defp seed_invocation(user, datetime) do
     {:ok, inv} =
       ToolInvocation.create(%{

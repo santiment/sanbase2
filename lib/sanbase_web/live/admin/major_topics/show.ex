@@ -27,7 +27,10 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
   end
 
   def handle_event("edit", %{"id" => id}, socket) do
-    {:noreply, assign(socket, :editing_id, String.to_integer(id))}
+    case find_topic_in_batch(socket, id) do
+      nil -> {:noreply, socket}
+      topic -> {:noreply, assign(socket, :editing_id, topic.id)}
+    end
   end
 
   def handle_event("cancel_edit", _params, socket) do
@@ -35,7 +38,10 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
   end
 
   def handle_event("view_description", %{"id" => id}, socket) do
-    {:noreply, assign(socket, :viewing_id, String.to_integer(id))}
+    case find_topic_in_batch(socket, id) do
+      nil -> {:noreply, socket}
+      topic -> {:noreply, assign(socket, :viewing_id, topic.id)}
+    end
   end
 
   def handle_event("close_description", _params, socket) do
@@ -43,14 +49,15 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
   end
 
   def handle_event("save", %{"topic_id" => id, "label" => label}, socket) do
-    topic = MajorTopics.get_topic!(id)
-
-    case MajorTopics.update_topic(topic, %{label: label}) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Label updated")
-         |> assign_batch(MajorTopics.get_batch!(socket.assigns.batch.id))}
+    with topic when not is_nil(topic) <- find_topic_in_batch(socket, id),
+         {:ok, _} <- MajorTopics.update_topic(topic, %{label: label}) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Label updated")
+       |> assign_batch(MajorTopics.get_batch!(socket.assigns.batch.id))}
+    else
+      nil ->
+        {:noreply, put_flash(socket, :error, "Topic not found in this batch")}
 
       {:error, changeset} ->
         {:noreply, put_flash(socket, :error, "Update failed: #{inspect(changeset.errors)}")}
@@ -58,23 +65,35 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
   end
 
   def handle_event("remove", %{"id" => id}, socket) do
-    topic = MajorTopics.get_topic!(id)
-    {:ok, _} = MajorTopics.mark_topic_removed(topic)
+    with topic when not is_nil(topic) <- find_topic_in_batch(socket, id),
+         {:ok, _} <- MajorTopics.mark_topic_removed(topic) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Topic removed")
+       |> assign_batch(MajorTopics.get_batch!(socket.assigns.batch.id))}
+    else
+      nil ->
+        {:noreply, put_flash(socket, :error, "Topic not found in this batch")}
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Topic removed")
-     |> assign_batch(MajorTopics.get_batch!(socket.assigns.batch.id))}
+      {:error, changeset} ->
+        {:noreply, put_flash(socket, :error, "Remove failed: #{inspect(changeset.errors)}")}
+    end
   end
 
   def handle_event("restore", %{"id" => id}, socket) do
-    topic = MajorTopics.get_topic!(id)
-    {:ok, _} = MajorTopics.restore_topic(topic)
+    with topic when not is_nil(topic) <- find_topic_in_batch(socket, id),
+         {:ok, _} <- MajorTopics.restore_topic(topic) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Topic restored")
+       |> assign_batch(MajorTopics.get_batch!(socket.assigns.batch.id))}
+    else
+      nil ->
+        {:noreply, put_flash(socket, :error, "Topic not found in this batch")}
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Topic restored")
-     |> assign_batch(MajorTopics.get_batch!(socket.assigns.batch.id))}
+      {:error, changeset} ->
+        {:noreply, put_flash(socket, :error, "Restore failed: #{inspect(changeset.errors)}")}
+    end
   end
 
   def handle_event("publish", _params, socket) do
@@ -93,6 +112,10 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
       {:error, changeset} ->
         {:noreply, put_flash(socket, :error, "Publish failed: #{inspect(changeset.errors)}")}
     end
+  end
+
+  defp find_topic_in_batch(socket, id) do
+    Enum.find(socket.assigns.batch.topics, fn t -> to_string(t.id) == to_string(id) end)
   end
 
   defp current_user_id(socket) do

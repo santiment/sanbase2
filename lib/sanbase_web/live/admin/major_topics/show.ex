@@ -8,7 +8,10 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
 
     {:ok,
      socket
-     |> assign(:page_title, "Batch #{batch.id}")
+     |> assign(
+       :page_title,
+       "Batch #{Date.to_iso8601(batch.interval_start)} → #{Date.to_iso8601(batch.interval_end)}"
+     )
      |> assign(:current_user, socket.assigns[:current_user])
      |> assign_batch(batch)}
   end
@@ -20,6 +23,7 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
     |> assign(:batch, batch)
     |> assign(:active_count, active_count)
     |> assign(:editing_id, nil)
+    |> assign_new(:viewing_id, fn -> nil end)
   end
 
   def handle_event("edit", %{"id" => id}, socket) do
@@ -28,6 +32,14 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
 
   def handle_event("cancel_edit", _params, socket) do
     {:noreply, assign(socket, :editing_id, nil)}
+  end
+
+  def handle_event("view_description", %{"id" => id}, socket) do
+    {:noreply, assign(socket, :viewing_id, String.to_integer(id))}
+  end
+
+  def handle_event("close_description", _params, socket) do
+    {:noreply, assign(socket, :viewing_id, nil)}
   end
 
   def handle_event("save", %{"topic_id" => id, "label" => label}, socket) do
@@ -101,11 +113,13 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
 
       <div class="flex items-start justify-between mb-6">
         <div>
-          <h1 class="text-3xl font-bold">Major Topics Batch #{@batch.id}</h1>
+          <h1 class="text-3xl font-bold">
+            Major Topics Batch {Date.to_iso8601(@batch.interval_start)} → {Date.to_iso8601(
+              @batch.interval_end
+            )}
+          </h1>
           <div class="mt-2 text-sm text-base-content/70 space-x-3 font-mono">
-            <span>
-              {Date.to_iso8601(@batch.interval_start)} → {Date.to_iso8601(@batch.interval_end)}
-            </span>
+            <span>id: {@batch.id}</span>
             <span>•</span>
             <span>source: {@batch.source}</span>
             <span>•</span>
@@ -189,7 +203,15 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
               </td>
               <td class="font-mono text-xs">{topic.top_words}</td>
               <td class="text-xs text-base-content/80">
-                <div class="line-clamp-3">{topic.description}</div>
+                <button
+                  type="button"
+                  phx-click="view_description"
+                  phx-value-id={topic.id}
+                  class="text-left line-clamp-3 hover:text-primary cursor-pointer"
+                  title="Click to view full description"
+                >
+                  {topic.description}
+                </button>
               </td>
               <td class="text-right text-xs">{length(topic.values)}</td>
               <td class="text-right whitespace-nowrap">
@@ -222,6 +244,37 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div
+        :if={@viewing_id}
+        class="fixed inset-0 z-50 flex items-center justify-center"
+        phx-window-keydown="close_description"
+        phx-key="escape"
+      >
+        <div class="absolute inset-0 bg-black/50" phx-click="close_description"></div>
+        <% topic = Enum.find(@batch.topics, &(&1.id == @viewing_id)) %>
+        <div class="relative bg-base-100 rounded-box shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+          <div class="px-6 py-4 border-b border-base-300 flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-bold">{topic && topic.label}</h2>
+              <p :if={topic} class="text-xs text-base-content/60 mt-1 font-mono">
+                {topic.top_words}
+              </p>
+            </div>
+            <button
+              type="button"
+              phx-click="close_description"
+              class="btn btn-sm btn-ghost btn-circle"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="px-6 py-4 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed">
+            {topic && topic.description}
+          </div>
+        </div>
       </div>
     </div>
     """

@@ -6,26 +6,25 @@ defmodule Sanbase.MCP.Server do
     version: "1.0.0",
     capabilities: [:tools, :prompts]
 
+  alias Sanbase.Accounts.User
+  alias Sanbase.MCP.{Auth, ToolInvocation}
+
+  @banned_message "Your account is banned from the Santiment MCP server. Contact support."
+
   @impl true
   def init(_client_info, %Anubis.Server.Frame{} = frame) do
-    user = Sanbase.MCP.Auth.headers_list_to_user(frame.context.headers)
+    user = Auth.headers_list_to_user(frame.context.headers)
     frame = assign(frame, :current_user, user)
     {:ok, frame |> assign(:is_authenticated, not is_nil(user))}
   end
 
   @impl true
   def handle_request(%{"method" => "tools/call"} = request, %Anubis.Server.Frame{} = frame) do
-    frame = assign_current_user(frame)
-    tool_name = get_in(request, ["params", "name"])
-    params = get_in(request, ["params", "arguments"]) || %{}
-    start_time = System.monotonic_time(:millisecond)
+    handle_invocation(request, frame, "tool")
+  end
 
-    result = Anubis.Server.Handlers.handle(request, __MODULE__, frame)
-
-    duration_ms = System.monotonic_time(:millisecond) - start_time
-    track_tool_invocation(result, frame, tool_name, params, duration_ms)
-
-    result
+  def handle_request(%{"method" => "prompts/get"} = request, %Anubis.Server.Frame{} = frame) do
+    handle_invocation(request, frame, "prompt")
   end
 
   def handle_request(request, %Anubis.Server.Frame{} = frame) do
@@ -59,7 +58,63 @@ defmodule Sanbase.MCP.Server do
     component(Sanbase.MCP.CheckAuthentication)
   end
 
-  defp track_tool_invocation(result, frame, tool_name, params, duration_ms) do
+  defp handle_invocation(request, frame, kind) do
+    frame = assign_current_user(frame)
+    name = get_in(request, ["params", "name"])
+    params = get_in(request, ["params", "arguments"]) || %{}
+
+    case mcp_access_check(frame, name) do
+      :ok ->
+        start_time = System.monotonic_time(:millisecond)
+        result = Anubis.Server.Handlers.handle(request, __MODULE__, frame)
+        duration_ms = System.monotonic_time(:millisecond) - start_time
+        track_invocation(result, frame, name, params, duration_ms, kind)
+        result
+
+      {:banned, frame} ->
+        record_banned_attempt(frame, name, params, kind)
+        {:reply, error_response(@banned_message), frame}
+
+      {:rate_limited, error_message} ->
+        result = {:reply, error_response(error_message), frame}
+        track_invocation(result, frame, name, params, 0, kind)
+        result
+    end
+  end
+
+  defp error_response(message) do
+    Anubis.Server.Response.tool()
+    |> Anubis.Server.Response.error(message)
+    |> Anubis.Server.Response.to_protocol()
+  end
+
+  defp mcp_access_check(frame, tool_name) do
+    case frame.assigns[:current_user] do
+      nil ->
+        {:rate_limited,
+         "Authentication required to use MCP tools. Please provide a valid API key or OAuth token."}
+
+      user ->
+        # Re-check ban flag against the DB so a mid-session ban applies immediately
+        # without relying on the user struct cached in frame assigns.
+        if User.mcp_banned?(user.id) do
+          {:banned, frame}
+        else
+          check_rate_limits(user, tool_name)
+        end
+    end
+  end
+
+  defp check_rate_limits(user, tool_name) do
+    with {:ok, _} <- ToolInvocation.check_rate_limit(user.id),
+         {:ok, _} <- ToolInvocation.check_tool_rate_limit(user.id, tool_name) do
+      :ok
+    else
+      {:error, message} -> {:rate_limited, message}
+    end
+  end
+
+  defp track_invocation(result, frame, tool_name, params, duration_ms, kind) do
     {is_successful, error_message, response_size_bytes} =
       case result do
         {:reply, %{"isError" => true, "content" => content}, _frame} ->
@@ -74,6 +129,10 @@ defmodule Sanbase.MCP.Server do
           size = response_size_bytes(content)
           {true, nil, size}
 
+        {:reply, %{"messages" => messages}, _frame} ->
+          size = response_size_bytes(messages)
+          {true, nil, size}
+
         {:error, %{message: message}, _frame} ->
           {false, message, nil}
 
@@ -81,22 +140,66 @@ defmodule Sanbase.MCP.Server do
           {false, "Unknown error", nil}
       end
 
+    persist_tool_invocation(
+      build_attrs(frame, tool_name, params, duration_ms, kind, %{
+        is_successful: is_successful,
+        error_message: error_message,
+        response_size_bytes: response_size_bytes
+      })
+    )
+  end
+
+  defp record_banned_attempt(frame, tool_name, params, kind) do
+    persist_tool_invocation(
+      build_attrs(frame, tool_name, params, 0, kind, %{
+        is_successful: false,
+        error_message: "banned",
+        response_size_bytes: nil
+      })
+    )
+  end
+
+  defp build_attrs(frame, tool_name, params, duration_ms, kind, outcome) do
     user = frame.assigns[:current_user]
     headers = frame.context.headers || []
-    auth_method = Sanbase.MCP.Auth.get_auth_method(headers)
+    %{user_agent: ua, session_id: sid, client: client} = request_context(headers)
 
-    attrs = %{
+    %{
       user_id: if(user, do: user.id),
       tool_name: tool_name,
       params: params,
-      is_successful: is_successful,
-      error_message: error_message,
-      response_size_bytes: response_size_bytes,
+      is_successful: outcome.is_successful,
+      error_message: outcome.error_message,
+      response_size_bytes: outcome.response_size_bytes,
       duration_ms: duration_ms,
-      auth_method: auth_method
+      auth_method: Auth.get_auth_method(headers),
+      user_agent: ua,
+      client: client,
+      session_id: sid,
+      kind: kind
     }
+  end
 
-    persist_tool_invocation(attrs)
+  defp request_context(headers) do
+    ua =
+      case Auth.get_header(headers, "user-agent") do
+        {_, value} -> value
+        _ -> nil
+      end
+
+    sid =
+      case Auth.get_header(headers, "mcp-session-id") do
+        {_, value} ->
+          value
+
+        _ ->
+          case Auth.get_header(headers, "x-request-id") do
+            {_, value} -> value
+            _ -> nil
+          end
+      end
+
+    %{user_agent: ua, session_id: sid, client: ToolInvocation.derive_client_from_user_agent(ua)}
   end
 
   # In test, Ecto SQL Sandbox ties DB connections to the test process.
@@ -105,12 +208,12 @@ defmodule Sanbase.MCP.Server do
   @env Application.compile_env(:sanbase, :env)
   if @env == :test do
     defp persist_tool_invocation(attrs) do
-      Sanbase.MCP.ToolInvocation.create(attrs)
+      ToolInvocation.create(attrs)
     end
   else
     defp persist_tool_invocation(attrs) do
       Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-        Sanbase.MCP.ToolInvocation.create(attrs)
+        ToolInvocation.create(attrs)
       end)
     end
   end
@@ -126,7 +229,7 @@ defmodule Sanbase.MCP.Server do
 
     user =
       frame.assigns[:current_user] ||
-        Sanbase.MCP.Auth.headers_list_to_user(headers)
+        Auth.headers_list_to_user(headers)
 
     frame =
       if user do

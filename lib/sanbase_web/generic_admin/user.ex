@@ -19,7 +19,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
         :twitter_id,
         :is_superuser,
         :san_balance,
-        :metric_access_level
+        :metric_access_level,
+        :is_mcp_banned
       ],
       edit_fields: [
         :is_superuser,
@@ -28,7 +29,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
         :stripe_customer_id,
         :metric_access_level,
         :feature_access_level,
-        :available_metrics_lookback_days
+        :available_metrics_lookback_days,
+        :is_mcp_banned
       ],
       fields_override: %{
         metric_access_level: %{
@@ -187,6 +189,15 @@ defmodule SanbaseWeb.GenericAdmin.User do
           }
         ],
         actions: []
+      },
+      %{
+        name: "MCP Access",
+        fields: [
+          %{field_name: "is_mcp_banned", data: inspect(user.is_mcp_banned)},
+          %{field_name: "mcp_banned_at", data: inspect(user.mcp_banned_at)},
+          %{field_name: "mcp_banned_reason", data: user.mcp_banned_reason || "-"}
+        ],
+        actions: if(user.is_mcp_banned, do: [:mcp_unban_user], else: [:mcp_ban_user])
       }
     ]
   end
@@ -212,6 +223,18 @@ defmodule SanbaseWeb.GenericAdmin.User do
     |> Sanbase.ModeratorQueries.reset_user_monthly_credits()
 
     GenericAdminController.show(conn, %{"resource" => "users", "id" => user_id})
+  end
+
+  def mcp_ban_user(conn, %{id: id}) do
+    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
+    User.mcp_ban!(user, "Banned via admin")
+    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
+  end
+
+  def mcp_unban_user(conn, %{id: id}) do
+    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
+    User.mcp_unban!(user)
+    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
   end
 
   def user_link(row) do

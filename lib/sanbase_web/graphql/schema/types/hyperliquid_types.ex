@@ -1,6 +1,12 @@
 defmodule SanbaseWeb.Graphql.HyperliquidTypes do
   use Absinthe.Schema.Notation
 
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
+
+  alias SanbaseWeb.Graphql.Resolvers.HyperliquidBboResolver
+  alias SanbaseWeb.Graphql.Complexity
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
+
   @desc ~s"""
   A bucketed BBO (best bid / best offer) snapshot for a Hyperliquid asset.
 
@@ -25,5 +31,41 @@ defmodule SanbaseWeb.Graphql.HyperliquidTypes do
     (bid_price * ask_volume + ask_price * bid_volume) / (bid_volume + ask_volume).
     """
     field(:weighted_mid_price, :float)
+  end
+
+  @desc ~s"""
+  Entry point for Hyperliquid BBO (best bid / best offer) data.
+
+  Use `timeseriesData` to fetch a bucketed BBO timeseries for a given slug
+  and `availableProjects` to list projects backed by a Hyperliquid source
+  mapping.
+  """
+  object :hyperliquid_bbo_data do
+    @desc ~s"""
+    Fetch Hyperliquid BBO timeseries for a given slug.
+
+    Each output row represents one interval bucket; within a bucket, bid and
+    ask values are taken from the row with the largest `dt`, so every row
+    reflects a single source snapshot.
+    """
+    field :timeseries_data, list_of(:hyperliquid_bbo_point) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:interval))
+      arg(:caching_params, :caching_params_input_object)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+      cache_resolve(&HyperliquidBboResolver.timeseries_data/3, ttl: 60, max_ttl_offset: 30)
+    end
+
+    @desc ~s"""
+    List of projects that have a `hyperliquid` source slug mapping and can be
+    queried via `timeseriesData`.
+    """
+    field :available_projects, list_of(:project) do
+      cache_resolve(&HyperliquidBboResolver.available_projects/3, ttl: 300)
+    end
   end
 end

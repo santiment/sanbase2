@@ -68,6 +68,14 @@ defmodule Sanbase.MajorTopicsTest do
       assert length(MajorTopics.get_batch!(batch2.id).topics) == 1
     end
 
+    test "returns {:error, _} on malformed interval instead of raising" do
+      payload =
+        sample_payload()
+        |> Map.put(:interval, "not-a-real-interval")
+
+      assert {:error, _reason} = MajorTopics.upsert_batch_from_payload(payload)
+    end
+
     test "no-op when batch is already published" do
       payload = sample_payload()
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload)

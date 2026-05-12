@@ -41,8 +41,6 @@ defmodule Sanbase.MajorTopics.TopicBatch do
       :version,
       :type,
       :state,
-      :published_at,
-      :published_by_id,
       :fetched_at
     ])
     |> validate_required([

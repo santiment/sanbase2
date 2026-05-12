@@ -72,50 +72,54 @@ defmodule Sanbase.MajorTopics do
   """
   @spec upsert_batch_from_payload(map()) :: {:ok, TopicBatch.t()} | {:error, term()}
   def upsert_batch_from_payload(%{source: source, version: version, interval: interval} = payload) do
-    {interval_start, interval_end} = parse_interval(interval)
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    with {:ok, {interval_start, interval_end}} <- parse_interval(interval) do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    Repo.transaction(fn ->
-      batch =
-        case Repo.get_by(TopicBatch, source: source, interval_text: interval, version: version) do
-          nil ->
-            %TopicBatch{}
-            |> TopicBatch.changeset(%{
-              source: source,
-              interval_text: interval,
-              interval_start: interval_start,
-              interval_end: interval_end,
-              version: version,
-              type: payload[:type] || derive_type(payload),
-              state: @draft,
-              fetched_at: now
-            })
-            |> Repo.insert!()
+      Repo.transaction(fn ->
+        batch =
+          case Repo.get_by(TopicBatch, source: source, interval_text: interval, version: version) do
+            nil ->
+              attrs = %{
+                source: source,
+                interval_text: interval,
+                interval_start: interval_start,
+                interval_end: interval_end,
+                version: version,
+                type: payload[:type] || derive_type(payload),
+                state: @draft,
+                fetched_at: now
+              }
 
-          existing ->
-            existing
-        end
+              case %TopicBatch{} |> TopicBatch.changeset(attrs) |> Repo.insert() do
+                {:ok, batch} -> batch
+                {:error, changeset} -> Repo.rollback(changeset)
+              end
 
-      cond do
-        batch.state == @published ->
+            existing ->
+              existing
+          end
+
+        if batch.state == @published do
           batch
+        else
+          replace_topics(batch, payload.topics)
 
-        true ->
-          replace_topics!(batch, payload.topics, now)
-          %{batch | fetched_at: now} |> Ecto.Changeset.change(fetched_at: now) |> Repo.update!()
-      end
-    end)
+          case batch |> Ecto.Changeset.change(fetched_at: now) |> Repo.update() do
+            {:ok, updated} -> updated
+            {:error, changeset} -> Repo.rollback(changeset)
+          end
+        end
+      end)
+    end
   end
 
   defp derive_type(%{topics: [%{type: type} | _]}), do: type
   defp derive_type(_), do: nil
 
-  defp replace_topics!(batch, topics, _now) do
+  defp replace_topics(batch, topics) do
     Repo.delete_all(from(t in MajorTopic, where: t.batch_id == ^batch.id))
 
-    topics
-    |> Enum.with_index()
-    |> Enum.each(fn {topic, idx} ->
+    Enum.each(Enum.with_index(topics), fn {topic, idx} ->
       attrs = %{
         batch_id: batch.id,
         ch_id: topic.ch_id,
@@ -129,9 +133,10 @@ defmodule Sanbase.MajorTopics do
         values: serialize_values(Map.get(topic, :values, []))
       }
 
-      %MajorTopic{}
-      |> MajorTopic.changeset(attrs)
-      |> Repo.insert!()
+      case %MajorTopic{} |> MajorTopic.changeset(attrs) |> Repo.insert() do
+        {:ok, _} -> :ok
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
     end)
   end
 
@@ -169,24 +174,31 @@ defmodule Sanbase.MajorTopics do
   """
   @spec publish_batch(TopicBatch.t(), integer() | nil) ::
           {:ok, TopicBatch.t()} | {:error, :already_published | Ecto.Changeset.t()}
-  def publish_batch(%TopicBatch{state: @published}, _user_id), do: {:error, :already_published}
-
-  def publish_batch(%TopicBatch{} = batch, user_id) do
+  def publish_batch(%TopicBatch{state: @draft} = batch, user_id) do
     batch
     |> TopicBatch.publish_changeset(user_id)
     |> Repo.update()
   end
 
+  def publish_batch(%TopicBatch{}, _user_id), do: {:error, :already_published}
+
   # interval looks like "2026-05-04T00:00:00/2026-05-11T00:00:00"
-  defp parse_interval(interval) do
-    [start_str, end_str] = String.split(interval, "/", parts: 2)
-    {parse_date(start_str), parse_date(end_str)}
+  defp parse_interval(interval) when is_binary(interval) do
+    with [start_str, end_str] <- String.split(interval, "/", parts: 2),
+         {:ok, start_date} <- parse_date(start_str),
+         {:ok, end_date} <- parse_date(end_str) do
+      {:ok, {start_date, end_date}}
+    else
+      _ -> {:error, "Invalid interval format: #{inspect(interval)}"}
+    end
   end
+
+  defp parse_interval(other), do: {:error, "Invalid interval format: #{inspect(other)}"}
 
   defp parse_date(str) do
     str
     |> String.split("T", parts: 2)
     |> List.first()
-    |> Date.from_iso8601!()
+    |> Date.from_iso8601()
   end
 end

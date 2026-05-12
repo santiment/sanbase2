@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       |> assign(:email_search, "")
       |> assign(:metric_search, "")
       |> assign(:include_team, false)
-      |> assign(:collapsed_sessions, MapSet.new())
+      |> assign(:expanded_sessions, MapSet.new())
       |> assign(:page, 1)
       |> assign(:page_size, @page_size)
       |> assign(:tool_names, ToolInvocation.tool_names())
@@ -76,14 +76,14 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   end
 
   def handle_event("toggle_session", %{"session-id" => sid}, socket) do
-    collapsed = socket.assigns.collapsed_sessions
+    expanded = socket.assigns.expanded_sessions
 
-    collapsed =
-      if MapSet.member?(collapsed, sid),
-        do: MapSet.delete(collapsed, sid),
-        else: MapSet.put(collapsed, sid)
+    expanded =
+      if MapSet.member?(expanded, sid),
+        do: MapSet.delete(expanded, sid),
+        else: MapSet.put(expanded, sid)
 
-    {:noreply, assign(socket, :collapsed_sessions, collapsed)}
+    {:noreply, assign(socket, :expanded_sessions, expanded)}
   end
 
   def handle_event("next_page", _, socket) do
@@ -386,7 +386,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
           />
           <tr
             :for={row <- @grouped_rows}
-            :if={row.role != :child or not MapSet.member?(@collapsed_sessions, row.session_id)}
+            :if={row.role != :child or MapSet.member?(@expanded_sessions, row.session_id)}
             id={"inv-#{row.inv.id}"}
             class={[
               row.role == :child && "bg-base-200/40 border-l-4 border-primary/60"
@@ -401,9 +401,17 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
                 class="btn btn-xs btn-ghost mr-1"
                 title={"Session " <> short_session(row.session_id) <> " — " <> Integer.to_string(row.count) <> " calls"}
               >
-                {if MapSet.member?(@collapsed_sessions, row.session_id), do: "▶", else: "▼"}
+                {if MapSet.member?(@expanded_sessions, row.session_id), do: "▼", else: "▶"}
                 <span class="badge badge-xs badge-neutral ml-1">{row.count}</span>
               </button>
+              <span
+                :if={row.role == :child}
+                class="btn btn-xs btn-ghost mr-1"
+                style="visibility: hidden"
+                aria-hidden="true"
+              >
+                ▶ <span class="badge badge-xs badge-neutral ml-1">{row.count}</span>
+              </span>
               <button
                 type="button"
                 phx-click="show_params"

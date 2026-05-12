@@ -118,21 +118,27 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> Repo.all()
   end
 
+  @builtin_team_emails ["tsvetozar.penov@gmail.com"]
+
   @doc """
   List of additional team-member emails to exclude from admin views by
   default. Sourced from the `:team_emails` config (CSV string set from the
-  `MCP_TEAM_EMAILS` env var). Returned as a lower-cased list; the
-  `@santiment.net` domain is excluded unconditionally elsewhere and is not
-  duplicated here.
+  `MCP_TEAM_EMAILS` env var), merged with a small built-in list of known
+  personal accounts of teammates. Returned as a lower-cased, de-duplicated
+  list; the `@santiment.net` domain is excluded unconditionally elsewhere
+  and is not duplicated here.
   """
   @spec team_emails() :: [String.t()]
   def team_emails do
-    __MODULE__
-    |> Config.module_get(:team_emails, "")
-    |> to_string()
-    |> String.split(",", trim: true)
-    |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
-    |> Enum.reject(&(&1 == ""))
+    configured =
+      __MODULE__
+      |> Config.module_get(:team_emails, "")
+      |> to_string()
+      |> String.split(",", trim: true)
+      |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
+      |> Enum.reject(&(&1 == ""))
+
+    Enum.uniq(@builtin_team_emails ++ configured)
   end
 
   @doc """

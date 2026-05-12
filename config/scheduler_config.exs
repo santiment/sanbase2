@@ -177,6 +177,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_academy_chunks: [
       schedule: "0 17 * * *",
       task: {Sanbase.Knowledge.Academy, :reindex_academy, []}
+    ],
+    fetch_major_topics: [
+      schedule: "0 5 * * *",
+      task: {Sanbase.MajorTopics.CronJob, :run, []}
     ]
     # Temporarily disabled jobs for CMC metadata fetching and contract decimals updating
     # until they are fully tested

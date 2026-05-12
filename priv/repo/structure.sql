@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict zY3C0tIwdrSWdEaeAKfsTlsLXp4p8Da0rjeuJtMbPE3u6XbtDGi2fLpziv0eZK6
+\restrict MGqEcjjv5Bj7d9SzGKGTG4BBRyNg3SXGmrFDjjmmw9rcn4eIZji2lT9SEQ1a9fy
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -2185,6 +2185,47 @@ CREATE SEQUENCE public.list_items_id_seq
 --
 
 ALTER SEQUENCE public.list_items_id_seq OWNED BY public.list_items.id;
+
+
+--
+-- Name: major_topics; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.major_topics (
+    id bigint NOT NULL,
+    batch_id bigint NOT NULL,
+    ch_id text NOT NULL,
+    topic_id integer NOT NULL,
+    label text NOT NULL,
+    original_label text NOT NULL,
+    top_words text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    is_crypto_relevant boolean DEFAULT true NOT NULL,
+    is_removed boolean DEFAULT false NOT NULL,
+    "position" integer DEFAULT 0 NOT NULL,
+    "values" jsonb DEFAULT '[]'::jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: major_topics_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.major_topics_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: major_topics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.major_topics_id_seq OWNED BY public.major_topics.id;
 
 
 --
@@ -4901,6 +4942,46 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 
 --
+-- Name: topic_batches; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.topic_batches (
+    id bigint NOT NULL,
+    source character varying(255) NOT NULL,
+    interval_text character varying(255) NOT NULL,
+    interval_start date NOT NULL,
+    interval_end date NOT NULL,
+    version integer DEFAULT 1 NOT NULL,
+    type character varying(255),
+    state character varying(255) DEFAULT 'draft'::character varying NOT NULL,
+    published_at timestamp(0) without time zone,
+    published_by_id bigint,
+    fetched_at timestamp(0) without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: topic_batches_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.topic_batches_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: topic_batches_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.topic_batches_id_seq OWNED BY public.topic_batches.id;
+
+
+--
 -- Name: tweet_classifications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6251,6 +6332,13 @@ ALTER TABLE ONLY public.list_items ALTER COLUMN id SET DEFAULT nextval('public.l
 
 
 --
+-- Name: major_topics id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.major_topics ALTER COLUMN id SET DEFAULT nextval('public.major_topics_id_seq'::regclass);
+
+
+--
 -- Name: market_segments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6731,6 +6819,13 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping ALTER COLUMN id SET DEFA
 --
 
 ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('public.timeline_events_id_seq'::regclass);
+
+
+--
+-- Name: topic_batches id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.topic_batches ALTER COLUMN id SET DEFAULT nextval('public.topic_batches_id_seq'::regclass);
 
 
 --
@@ -7380,6 +7475,14 @@ ALTER TABLE ONLY public.list_items
 
 
 --
+-- Name: major_topics major_topics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.major_topics
+    ADD CONSTRAINT major_topics_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: market_segments market_segments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8009,6 +8112,14 @@ ALTER TABLE ONLY public.timeline_events
 
 ALTER TABLE ONLY public.oauth_tokens
     ADD CONSTRAINT tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: topic_batches topic_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.topic_batches
+    ADD CONSTRAINT topic_batches_pkey PRIMARY KEY (id);
 
 
 --
@@ -8874,6 +8985,20 @@ CREATE UNIQUE INDEX list_items_user_list_id_project_id_index ON public.list_item
 
 
 --
+-- Name: major_topics_batch_id_ch_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX major_topics_batch_id_ch_id_index ON public.major_topics USING btree (batch_id, ch_id);
+
+
+--
+-- Name: major_topics_batch_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX major_topics_batch_id_index ON public.major_topics USING btree (batch_id);
+
+
+--
 -- Name: market_segments_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9585,6 +9710,20 @@ CREATE INDEX timeline_events_user_list_id_index ON public.timeline_events USING 
 --
 
 CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USING btree (user_trigger_id);
+
+
+--
+-- Name: topic_batches_source_interval_text_version_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX topic_batches_source_interval_text_version_index ON public.topic_batches USING btree (source, interval_text, version);
+
+
+--
+-- Name: topic_batches_state_published_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX topic_batches_state_published_at_index ON public.topic_batches USING btree (state, published_at);
 
 
 --
@@ -10432,6 +10571,14 @@ ALTER TABLE ONLY public.list_items
 
 
 --
+-- Name: major_topics major_topics_batch_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.major_topics
+    ADD CONSTRAINT major_topics_batch_id_fkey FOREIGN KEY (batch_id) REFERENCES public.topic_batches(id) ON DELETE CASCADE;
+
+
+--
 -- Name: mcp_tool_invocations mcp_tool_invocations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11120,6 +11267,14 @@ ALTER TABLE ONLY public.timeline_events
 
 
 --
+-- Name: topic_batches topic_batches_published_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.topic_batches
+    ADD CONSTRAINT topic_batches_published_by_id_fkey FOREIGN KEY (published_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: tweet_classifications tweet_classifications_disagreement_tweet_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11459,7 +11614,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict zY3C0tIwdrSWdEaeAKfsTlsLXp4p8Da0rjeuJtMbPE3u6XbtDGi2fLpziv0eZK6
+\unrestrict MGqEcjjv5Bj7d9SzGKGTG4BBRyNg3SXGmrFDjjmmw9rcn4eIZji2lT9SEQ1a9fy
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12026,5 +12181,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260409120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260409120001);
 INSERT INTO public."schema_migrations" (version) VALUES (20260422120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260427125517);
+INSERT INTO public."schema_migrations" (version) VALUES (20260511101919);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112644);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);

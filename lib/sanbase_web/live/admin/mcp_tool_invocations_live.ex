@@ -17,6 +17,8 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       |> assign(:tool_name_filter, "")
       |> assign(:email_search, "")
       |> assign(:metric_search, "")
+      |> assign(:include_team, false)
+      |> assign(:collapsed_sessions, MapSet.new())
       |> assign(:page, 1)
       |> assign(:page_size, @page_size)
       |> assign(:tool_names, ToolInvocation.tool_names())
@@ -63,6 +65,25 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
      |> assign(:metric_search, metric)
      |> assign(:page, 1)
      |> load_invocations()}
+  end
+
+  def handle_event("toggle_include_team", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:include_team, not socket.assigns.include_team)
+     |> assign(:page, 1)
+     |> load_invocations()}
+  end
+
+  def handle_event("toggle_session", %{"session-id" => sid}, socket) do
+    collapsed = socket.assigns.collapsed_sessions
+
+    collapsed =
+      if MapSet.member?(collapsed, sid),
+        do: MapSet.delete(collapsed, sid),
+        else: MapSet.put(collapsed, sid)
+
+    {:noreply, assign(socket, :collapsed_sessions, collapsed)}
   end
 
   def handle_event("next_page", _, socket) do
@@ -151,8 +172,38 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
 
     socket
     |> assign(:invocations, invocations)
+    |> assign(:grouped_rows, group_by_session(invocations))
     |> assign(:total_count, total)
     |> assign(:total_pages, total_pages)
+  end
+
+  # Tags each invocation with its role in the grouped view:
+  #   * :single — no session, or the only call in its session on this page
+  #   * :header — first row of a session that has >1 calls on this page
+  #   * :child  — subsequent row of such a session (hidden when collapsed)
+  defp group_by_session(invocations) do
+    counts =
+      invocations
+      |> Enum.reject(&(&1.session_id in [nil, ""]))
+      |> Enum.frequencies_by(& &1.session_id)
+
+    {rows, _seen} =
+      Enum.reduce(invocations, {[], MapSet.new()}, fn inv, {acc, seen} ->
+        sid = inv.session_id
+        count = if sid in [nil, ""], do: 1, else: Map.get(counts, sid, 1)
+
+        role =
+          cond do
+            count <= 1 -> :single
+            MapSet.member?(seen, sid) -> :child
+            true -> :header
+          end
+
+        seen = if role == :header, do: MapSet.put(seen, sid), else: seen
+        {[%{inv: inv, role: role, session_id: sid, count: count} | acc], seen}
+      end)
+
+    Enum.reverse(rows)
   end
 
   defp load_timeline(socket) do
@@ -183,6 +234,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       tool_name: assigns.tool_name_filter,
       email_search: assigns.email_search,
       metric: assigns.metric_search,
+      exclude_team_members: not assigns.include_team,
       page: assigns.page,
       page_size: assigns.page_size
     ]
@@ -287,6 +339,19 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         </form>
       </fieldset>
 
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Team members</legend>
+        <label class="label cursor-pointer gap-2">
+          <input
+            type="checkbox"
+            class="toggle toggle-sm"
+            checked={@include_team}
+            phx-click="toggle_include_team"
+          />
+          <span class="label-text text-sm">Include team</span>
+        </label>
+      </fieldset>
+
       <div class="flex items-end">
         <span class="text-sm text-base-content/60">
           {if @total_count > 0,
@@ -319,29 +384,47 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             colspan={11}
             message="No invocations found matching your filters."
           />
-          <tr :for={inv <- @invocations} id={"inv-#{inv.id}"}>
-            <td>
+          <tr
+            :for={row <- @grouped_rows}
+            :if={row.role != :child or not MapSet.member?(@collapsed_sessions, row.session_id)}
+            id={"inv-#{row.inv.id}"}
+            class={[
+              row.role == :child && "bg-base-200/40 border-l-4 border-primary/60"
+            ]}
+          >
+            <td class="whitespace-nowrap">
+              <button
+                :if={row.role == :header}
+                type="button"
+                phx-click="toggle_session"
+                phx-value-session-id={row.session_id}
+                class="btn btn-xs btn-ghost mr-1"
+                title={"Session " <> short_session(row.session_id) <> " — " <> Integer.to_string(row.count) <> " calls"}
+              >
+                {if MapSet.member?(@collapsed_sessions, row.session_id), do: "▶", else: "▼"}
+                <span class="badge badge-xs badge-neutral ml-1">{row.count}</span>
+              </button>
               <button
                 type="button"
                 phx-click="show_params"
-                phx-value-id={inv.id}
+                phx-value-id={row.inv.id}
                 class="btn btn-xs btn-primary"
               >
                 Show
               </button>
             </td>
-            <td class="text-base-content/70">{format_datetime(inv.inserted_at)}</td>
+            <td class="text-base-content/70">{format_datetime(row.inv.inserted_at)}</td>
             <td class="font-mono">
-              {if inv.user, do: inv.user.email, else: "Anonymous"}
+              {if row.inv.user, do: row.inv.user.email, else: "Anonymous"}
             </td>
-            <td><.tool_badge tool_name={inv.tool_name} /></td>
-            <td class="text-base-content/70">{inv.kind}</td>
-            <td class="text-base-content/70">{inv.client || "-"}</td>
-            <td class="text-base-content/70">{Enum.join(inv.metrics, ", ")}</td>
-            <td class="text-base-content/70">{Enum.join(inv.slugs, ", ")}</td>
-            <td class="text-base-content/70">{inv.duration_ms}</td>
-            <td class="text-base-content/70">{format_bytes(inv.response_size_bytes)}</td>
-            <td><.status_badge is_successful={inv.is_successful} /></td>
+            <td><.tool_badge tool_name={row.inv.tool_name} /></td>
+            <td class="text-base-content/70">{row.inv.kind}</td>
+            <td class="text-base-content/70">{row.inv.client || "-"}</td>
+            <td class="text-base-content/70">{Enum.join(row.inv.metrics, ", ")}</td>
+            <td class="text-base-content/70">{Enum.join(row.inv.slugs, ", ")}</td>
+            <td class="text-base-content/70">{row.inv.duration_ms}</td>
+            <td class="text-base-content/70">{format_bytes(row.inv.response_size_bytes)}</td>
+            <td><.status_badge is_successful={row.inv.is_successful} /></td>
           </tr>
         </tbody>
       </table>
@@ -619,4 +702,9 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   defp format_bytes(nil), do: "-"
   defp format_bytes(bytes) when bytes < 1024, do: "#{bytes} B"
   defp format_bytes(bytes), do: "#{Float.round(bytes / 1024, 1)} KB"
+
+  defp short_session(nil), do: "-"
+  defp short_session(""), do: "-"
+  defp short_session(sid) when byte_size(sid) <= 8, do: sid
+  defp short_session(sid), do: binary_part(sid, 0, 8) <> "…"
 end

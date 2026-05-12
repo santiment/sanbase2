@@ -119,6 +119,23 @@ defmodule Sanbase.MCP.ToolInvocation do
   end
 
   @doc """
+  List of additional team-member emails to exclude from admin views by
+  default. Sourced from the `:team_emails` config (CSV string set from the
+  `MCP_TEAM_EMAILS` env var). Returned as a lower-cased list; the
+  `@santiment.net` domain is excluded unconditionally elsewhere and is not
+  duplicated here.
+  """
+  @spec team_emails() :: [String.t()]
+  def team_emails do
+    __MODULE__
+    |> Config.module_get(:team_emails, "")
+    |> to_string()
+    |> String.split(",", trim: true)
+    |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  @doc """
   Bucketed usage time series. Returns rows of `{bucket_ts, total, unique_users}`
   ordered by bucket ascending.
 
@@ -354,11 +371,17 @@ defmodule Sanbase.MCP.ToolInvocation do
   defp base_query, do: from(i in __MODULE__)
 
   defp apply_filters(query, opts) do
+    email_search = opts |> Keyword.get(:email_search) |> normalize_search()
+    exclude_team = Keyword.get(opts, :exclude_team_members, false)
+
     query
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
-    |> maybe_filter_user(Keyword.get(opts, :email_search))
+    |> apply_user_filters(email_search, exclude_team)
     |> maybe_filter_metric(Keyword.get(opts, :metric))
   end
+
+  defp normalize_search(nil), do: ""
+  defp normalize_search(s) when is_binary(s), do: String.trim(s)
 
   defp maybe_filter_tool_name(query, nil), do: query
   defp maybe_filter_tool_name(query, ""), do: query
@@ -367,22 +390,50 @@ defmodule Sanbase.MCP.ToolInvocation do
     where(query, [i], i.tool_name == ^tool_name)
   end
 
-  defp maybe_filter_user(query, nil), do: query
-  defp maybe_filter_user(query, ""), do: query
+  defp apply_user_filters(query, "", false), do: query
 
-  defp maybe_filter_user(query, search) do
+  defp apply_user_filters(query, email_search, exclude_team) do
+    # Email search needs the user row, so an INNER join (which also drops
+    # anonymous invocations — matching the previous behavior). Team-member
+    # exclusion alone uses a LEFT join so anonymous calls are not dropped.
+    query =
+      if email_search != "" do
+        from(i in query, join: u in assoc(i, :user), as: :user)
+      else
+        from(i in query, left_join: u in assoc(i, :user), as: :user)
+      end
+
+    query
+    |> apply_email_search(email_search)
+    |> apply_team_exclusion(exclude_team)
+  end
+
+  defp apply_email_search(query, ""), do: query
+
+  defp apply_email_search(query, search) do
     escaped =
       search
       |> String.replace("\\", "\\\\")
       |> String.replace("%", "\\%")
       |> String.replace("_", "\\_")
 
-    search_term = "%#{escaped}%"
+    term = "%#{escaped}%"
+    where(query, [user: u], ilike(u.email, ^term))
+  end
 
-    from(i in query,
-      join: u in assoc(i, :user),
-      where: ilike(u.email, ^search_term)
-    )
+  defp apply_team_exclusion(query, false), do: query
+
+  defp apply_team_exclusion(query, true) do
+    query =
+      where(
+        query,
+        [user: u],
+        is_nil(u.email) or not ilike(u.email, "%@santiment.net")
+      )
+
+    Enum.reduce(team_emails(), query, fn email, q ->
+      where(q, [user: u], is_nil(u.email) or not ilike(u.email, ^email))
+    end)
   end
 
   defp maybe_filter_metric(query, nil), do: query

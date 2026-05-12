@@ -21,12 +21,79 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
       assert ToolInvocation.derive_client_from_user_agent("OpenAI/1.2.3") == "chatgpt"
     end
 
+    test "matches openai / chatgpt regardless of case and embedded substrings" do
+      assert ToolInvocation.derive_client_from_user_agent("openai") == "chatgpt"
+      assert ToolInvocation.derive_client_from_user_agent("OPENAI") == "chatgpt"
+      assert ToolInvocation.derive_client_from_user_agent("openai-mcp/0.1") == "chatgpt"
+      assert ToolInvocation.derive_client_from_user_agent("chatgpt") == "chatgpt"
+    end
+
     test "matches Cursor" do
       assert ToolInvocation.derive_client_from_user_agent("Cursor/0.42 mcp") == "cursor"
     end
 
-    test "unknown UA falls back to other" do
-      assert ToolInvocation.derive_client_from_user_agent("curl/8.4.0") == "other"
+    test "unknown UA falls back to raw UA string" do
+      assert ToolInvocation.derive_client_from_user_agent("curl/8.4.0") == "curl/8.4.0"
+    end
+
+    test "raw UA fallback is truncated to the column size" do
+      long = String.duplicate("a", 64)
+      assert ToolInvocation.derive_client_from_user_agent(long) == String.duplicate("a", 32)
+    end
+  end
+
+  describe "derive_client/2" do
+    test "returns nil when both inputs are absent" do
+      assert ToolInvocation.derive_client(nil, nil) == nil
+      assert ToolInvocation.derive_client(nil, %{}) == nil
+    end
+
+    test "matches known client from User-Agent first" do
+      assert ToolInvocation.derive_client("Claude-User/1.0", nil) == "claude"
+    end
+
+    test "falls back to clientInfo.name when UA is missing" do
+      assert ToolInvocation.derive_client(nil, %{"name" => "claude-ai", "version" => "0.1"}) ==
+               "claude"
+
+      assert ToolInvocation.derive_client(nil, %{"name" => "ChatGPT"}) == "chatgpt"
+      assert ToolInvocation.derive_client(nil, %{"name" => "openai"}) == "chatgpt"
+      assert ToolInvocation.derive_client(nil, %{"name" => "cursor-mcp"}) == "cursor"
+    end
+
+    test "uses clientInfo when UA is present but unknown" do
+      assert ToolInvocation.derive_client("custom-cli/1.0", %{"name" => "Claude Desktop"}) ==
+               "claude"
+    end
+
+    test "returns raw clientInfo.name when no known client matches" do
+      assert ToolInvocation.derive_client(nil, %{"name" => "some-custom-client"}) ==
+               "some-custom-client"
+    end
+
+    test "falls back to raw UA when clientInfo is absent and UA is unknown" do
+      assert ToolInvocation.derive_client("curl/8.4.0", nil) == "curl/8.4.0"
+    end
+
+    test "prefers clientInfo.name over raw UA in the fallback" do
+      assert ToolInvocation.derive_client("curl/8.4.0", %{"name" => "my-mcp-app"}) == "my-mcp-app"
+    end
+  end
+
+  describe "user_agent_from_client_info/1" do
+    test "returns nil for nil or empty input" do
+      assert ToolInvocation.user_agent_from_client_info(nil) == nil
+      assert ToolInvocation.user_agent_from_client_info(%{}) == nil
+      assert ToolInvocation.user_agent_from_client_info(%{"version" => "1.0"}) == nil
+    end
+
+    test "formats name/version when both present" do
+      assert ToolInvocation.user_agent_from_client_info(%{"name" => "Claude", "version" => "1.2"}) ==
+               "Claude/1.2"
+    end
+
+    test "returns just name when version is missing" do
+      assert ToolInvocation.user_agent_from_client_info(%{"name" => "Claude"}) == "Claude"
     end
   end
 
@@ -72,18 +139,20 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
       assert inv.slugs == ["bitcoin"]
     end
 
-    test "invalid client value is rejected", %{user: user} do
-      assert {:error, changeset} =
-               ToolInvocation.create(%{
-                 user_id: user.id,
-                 tool_name: "fetch_metric_data_tool",
-                 params: %{},
-                 is_successful: true,
-                 duration_ms: 10,
-                 client: "bogus"
-               })
+    test "client column accepts arbitrary strings and is truncated", %{user: user} do
+      long_client = String.duplicate("x", 64)
 
-      assert {_, _} = changeset.errors[:client]
+      {:ok, inv} =
+        ToolInvocation.create(%{
+          user_id: user.id,
+          tool_name: "fetch_metric_data_tool",
+          params: %{},
+          is_successful: true,
+          duration_ms: 10,
+          client: long_client
+        })
+
+      assert byte_size(inv.client) == 32
     end
   end
 

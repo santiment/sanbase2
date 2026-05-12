@@ -181,29 +181,41 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   #   * :single — no session, or the only call in its session on this page
   #   * :header — first row of a session that has >1 calls on this page
   #   * :child  — subsequent row of such a session (hidden when collapsed)
+  #
+  # Rows from the same session are clustered together (header first, then
+  # children) so that when a user has multiple concurrent MCP sessions, the
+  # timestamp-interleaved rows are re-grouped visually. Cluster order follows
+  # each session's newest row, preserving the overall desc-by-timestamp feel.
   defp group_by_session(invocations) do
-    counts =
-      invocations
-      |> Enum.reject(&(&1.session_id in [nil, ""]))
-      |> Enum.frequencies_by(& &1.session_id)
+    {ordered_keys, by_key} =
+      Enum.reduce(invocations, {[], %{}}, fn inv, {order, acc} ->
+        key = session_key(inv)
 
-    {rows, _seen} =
-      Enum.reduce(invocations, {[], MapSet.new()}, fn inv, {acc, seen} ->
-        sid = inv.session_id
-        count = if sid in [nil, ""], do: 1, else: Map.get(counts, sid, 1)
-
-        role =
-          cond do
-            count <= 1 -> :single
-            MapSet.member?(seen, sid) -> :child
-            true -> :header
-          end
-
-        seen = if role == :header, do: MapSet.put(seen, sid), else: seen
-        {[%{inv: inv, role: role, session_id: sid, count: count} | acc], seen}
+        case Map.get(acc, key) do
+          nil -> {[key | order], Map.put(acc, key, [inv])}
+          rows -> {order, Map.put(acc, key, [inv | rows])}
+        end
       end)
 
-    Enum.reverse(rows)
+    ordered_keys
+    |> Enum.reverse()
+    |> Enum.flat_map(fn key -> by_key |> Map.fetch!(key) |> Enum.reverse() |> build_group() end)
+  end
+
+  defp session_key(%{session_id: sid} = inv) when sid in [nil, ""], do: {:none, inv.id}
+  defp session_key(%{session_id: sid}), do: {:sid, sid}
+
+  defp build_group([inv]),
+    do: [%{inv: inv, role: :single, session_id: inv.session_id, count: 1}]
+
+  defp build_group([head | tail]) do
+    count = 1 + length(tail)
+    sid = head.session_id
+
+    [
+      %{inv: head, role: :header, session_id: sid, count: count}
+      | Enum.map(tail, &%{inv: &1, role: :child, session_id: sid, count: count})
+    ]
   end
 
   defp load_timeline(socket) do

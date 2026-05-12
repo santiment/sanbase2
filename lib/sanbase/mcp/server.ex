@@ -162,7 +162,8 @@ defmodule Sanbase.MCP.Server do
   defp build_attrs(frame, tool_name, params, duration_ms, kind, outcome) do
     user = frame.assigns[:current_user]
     headers = frame.context.headers || []
-    %{user_agent: ua, session_id: sid, client: client} = request_context(headers)
+    client_info = frame.context.client_info
+    %{user_agent: ua, session_id: sid, client: client} = request_context(headers, client_info)
 
     %{
       user_id: if(user, do: user.id),
@@ -180,8 +181,12 @@ defmodule Sanbase.MCP.Server do
     }
   end
 
-  defp request_context(headers) do
-    ua =
+  # Many MCP clients don't send a User-Agent header (CLI/SDK wrappers, some
+  # transports), so fall back to the MCP `clientInfo` sent during the
+  # `initialize` handshake. Anubis exposes it at `frame.context.client_info`
+  # and it's set for every MCP client.
+  defp request_context(headers, client_info) do
+    ua_header =
       case Auth.get_header(headers, "user-agent") do
         {_, value} -> value
         _ -> nil
@@ -199,7 +204,11 @@ defmodule Sanbase.MCP.Server do
           end
       end
 
-    %{user_agent: ua, session_id: sid, client: ToolInvocation.derive_client_from_user_agent(ua)}
+    %{
+      user_agent: ua_header || ToolInvocation.user_agent_from_client_info(client_info),
+      session_id: sid,
+      client: ToolInvocation.derive_client(ua_header, client_info)
+    }
   end
 
   # In test, Ecto SQL Sandbox ties DB connections to the test process.

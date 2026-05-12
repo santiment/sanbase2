@@ -8,7 +8,7 @@ defmodule Sanbase.MCP.ToolInvocation do
   alias Sanbase.Utils.Config
 
   @user_agent_max 512
-  @known_clients ~w(claude chatgpt cursor other)
+  @client_max 32
   @kinds ~w(tool prompt)
 
   schema "mcp_tool_invocations" do
@@ -51,30 +51,84 @@ defmodule Sanbase.MCP.ToolInvocation do
     invocation
     |> cast(attrs, @fields)
     |> update_change(:user_agent, &truncate_user_agent/1)
+    |> update_change(:client, &truncate_client/1)
     |> validate_required([:tool_name, :is_successful, :duration_ms, :kind])
     |> validate_inclusion(:kind, @kinds)
-    |> validate_inclusion(:client, @known_clients)
   end
 
   @doc """
-  Maps a raw User-Agent header to one of the known client identifiers.
-  Returns nil for nil input so unknown legacy rows stay nil.
+  Maps a raw User-Agent header to a client identifier. Matches the well-known
+  clients (claude/chatgpt/cursor) and falls back to the raw UA string
+  (truncated to the column's size limit) when no match is found. Returns nil
+  only for nil input so legacy rows stay nil.
   """
   @spec derive_client_from_user_agent(String.t() | nil) :: String.t() | nil
   def derive_client_from_user_agent(nil), do: nil
 
   def derive_client_from_user_agent(ua) when is_binary(ua) do
-    cond do
-      Regex.match?(~r/Claude/i, ua) -> "claude"
-      Regex.match?(~r/ChatGPT|OpenAI/i, ua) -> "chatgpt"
-      Regex.match?(~r/Cursor/i, ua) -> "cursor"
-      true -> "other"
+    match_known_client(ua) || truncate_client(ua)
+  end
+
+  @doc """
+  Derives the client identifier from the User-Agent header and the MCP
+  `clientInfo` (from the `initialize` handshake). Many MCP clients (custom
+  CLIs, some SDK wrappers) omit User-Agent but always provide clientInfo,
+  so we try the header first, then clientInfo.name, and fall back to
+  whichever raw string is present (truncated). Returns nil only when both
+  inputs are absent.
+  """
+  @spec derive_client(String.t() | nil, map() | nil) :: String.t() | nil
+  def derive_client(user_agent, client_info) do
+    name = client_info_name(client_info)
+
+    match_known_client(user_agent) ||
+      match_known_client(name) ||
+      truncate_client(name) ||
+      truncate_client(user_agent)
+  end
+
+  @doc """
+  Builds a synthetic User-Agent string from MCP `clientInfo` for invocations
+  where the transport didn't carry a User-Agent header. Format: `name/version`
+  (or just `name` if version is absent). Returns nil if clientInfo is empty.
+  """
+  @spec user_agent_from_client_info(map() | nil) :: String.t() | nil
+  def user_agent_from_client_info(nil), do: nil
+
+  def user_agent_from_client_info(%{} = ci) do
+    case {client_info_name(ci), client_info_version(ci)} do
+      {nil, _} -> nil
+      {name, nil} -> name
+      {name, version} -> "#{name}/#{version}"
     end
   end
+
+  defp client_info_name(nil), do: nil
+  defp client_info_name(%{} = ci), do: ci["name"] || ci[:name]
+  defp client_info_version(%{} = ci), do: ci["version"] || ci[:version]
+
+  defp match_known_client(nil), do: nil
+  defp match_known_client(""), do: nil
+
+  defp match_known_client(s) when is_binary(s) do
+    cond do
+      Regex.match?(~r/Claude/i, s) -> "claude"
+      Regex.match?(~r/ChatGPT|OpenAI/i, s) -> "chatgpt"
+      Regex.match?(~r/Cursor/i, s) -> "cursor"
+      true -> nil
+    end
+  end
+
+  defp match_known_client(_), do: nil
 
   defp truncate_user_agent(nil), do: nil
   defp truncate_user_agent(ua) when byte_size(ua) <= @user_agent_max, do: ua
   defp truncate_user_agent(ua), do: binary_part(ua, 0, @user_agent_max)
+
+  defp truncate_client(nil), do: nil
+  defp truncate_client(""), do: nil
+  defp truncate_client(c) when byte_size(c) <= @client_max, do: c
+  defp truncate_client(c), do: binary_part(c, 0, @client_max)
 
   def create(attrs) do
     attrs = extract_metrics_and_slugs(attrs)

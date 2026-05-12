@@ -635,6 +635,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp get_query_or_argument(:timeseries_data, %{signal: signal}, _args),
     do: {:signal, signal}
 
+  # hyperliquid BBO prices — nested under `hyperliquidBboPrices`
+  defp get_query_or_argument(:timeseries_data, %{__source__: :hyperliquid_bbo_prices}, _args),
+    do: {:query, :hyperliquid_bbo_prices}
+
   defp get_query_or_argument(:aggregated_timeseries_data, %{signal: signal}, _args),
     do: {:signal, signal}
 

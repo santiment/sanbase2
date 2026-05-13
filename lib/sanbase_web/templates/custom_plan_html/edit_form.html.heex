@@ -1,59 +1,58 @@
 <div class="max-w-4xl mx-auto">
   <.form :let={f} for={@form} action={@action} multipart id="edit-custom-plan-form">
-    <div
-      :if={@form.source.action}
-      class="text-white px-6 py-4 border-0 rounded-lg relative mb-6 bg-red-500"
-    >
+    <div :if={@form.source.action} class="alert alert-error mb-6">
       <p class="font-medium">Oops, something went wrong! Please check the errors below.</p>
     </div>
     
 <!-- General Plan Fields -->
-    <div class="bg-white shadow-lg rounded-lg p-8 mb-6">
-      <h2 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">
+    <div class="bg-base-100 shadow-lg rounded-lg p-8 mb-6">
+      <h2 class="text-xl font-bold text-base-content mb-6 pb-2 border-b border-base-300">
         General Plan Fields
       </h2>
 
       <div class="mb-5">
-        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Plan Name</label>
+        <label for="name" class="block text-sm font-medium text-base-content/80 mb-1">
+          Plan Name
+        </label>
         {text_input(f, :name,
           id: "name",
           class:
-            "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+            "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
         )}
         {error_tag(f, :name)}
       </div>
 
       <div class="grid grid-cols-3 gap-4 mb-5">
         <div>
-          <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="amount" class="block text-sm font-medium text-base-content/80 mb-1">
             Amount (cents)
           </label>
           {text_input(f, :amount,
             id: "amount",
             class:
-              "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+              "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
           )}
           {error_tag(f, :amount)}
         </div>
         <div>
-          <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="currency" class="block text-sm font-medium text-base-content/80 mb-1">
             Currency
           </label>
           {text_input(f, :currency,
             id: "currency",
             class:
-              "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+              "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
           )}
           {error_tag(f, :currency)}
         </div>
         <div>
-          <label for="interval" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="interval" class="block text-sm font-medium text-base-content/80 mb-1">
             Interval
           </label>
           {text_input(f, :interval,
             id: "interval",
             class:
-              "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+              "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
           )}
           {error_tag(f, :interval)}
         </div>
@@ -61,104 +60,106 @@
     </div>
     
 <!-- Restrictions -->
-    <div class="bg-white shadow-lg rounded-lg p-8 mb-6">
-      <h2 class="text-xl font-bold text-gray-800 mb-2 pb-2 border-b border-gray-200">
+    <div class="bg-base-100 shadow-lg rounded-lg p-8 mb-6">
+      <h2 class="text-xl font-bold text-base-content mb-2 pb-2 border-b border-base-300">
         Access Restrictions
       </h2>
-      <p class="text-sm text-gray-500 mb-4">
+      <p class="text-sm text-base-content/60 mb-4">
         Patterns use Elixir regex with partial matching.
-        Use <code class="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">^</code>
+        Use <code class="bg-base-200 px-1 py-0.5 rounded text-xs font-mono">^</code>
         to anchor to start,
-        <code class="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">$</code>
+        <code class="bg-base-200 px-1 py-0.5 rounded text-xs font-mono">$</code>
         to anchor to end. <strong>not_accessible has higher priority than accessible.</strong>
       </p>
 
-      <details class="mb-6 border border-gray-200 rounded-lg">
-        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-800 bg-gray-50 rounded-lg select-none">
+      <details class="mb-6 border border-base-300 rounded-lg">
+        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-primary hover:text-primary/80 bg-base-200 rounded-lg select-none">
           Show access map examples
         </summary>
         <div class="px-4 py-3 space-y-4">
-          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wide">Metric Access</h4>
+          <h4 class="text-xs font-bold text-base-content/80 uppercase tracking-wide">
+            Metric Access
+          </h4>
           <table class="w-full text-xs border-collapse mb-2">
             <thead>
-              <tr class="border-b border-gray-200">
-                <th class="text-left py-1.5 pr-3 text-gray-500 font-medium w-1/4">Goal</th>
-                <th class="text-left py-1.5 text-gray-500 font-medium">JSON</th>
+              <tr class="border-b border-base-300">
+                <th class="text-left py-1.5 pr-3 text-base-content/60 font-medium w-1/4">Goal</th>
+                <th class="text-left py-1.5 text-base-content/60 font-medium">JSON</th>
               </tr>
             </thead>
-            <tbody class="text-gray-700">
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">All metrics</td>
+            <tbody class="text-base-content/80">
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">All metrics</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">All except MVRV</td>
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">All except MVRV</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": "all", "not_accessible": [], "not_accessible_patterns": ["mvrv_.*"]}
                   </code>
                 </td>
               </tr>
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">Only social (via pattern)</td>
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">Only social (via pattern)</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": [], "accessible_patterns": ["social_.*", "sentiment_.*"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">Social + extras, minus some</td>
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">Social + extras, minus some</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": ["price_usd", "volume_usd"], "accessible_patterns": ["social_.*"], "not_accessible": ["social_active_users"], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">Social, exclude dominance</td>
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">Social, exclude dominance</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": [], "accessible_patterns": ["social_.*", "sentiment_.*"], "not_accessible": [], "not_accessible_patterns": ["social_dominance_.*"]}
                   </code>
                 </td>
               </tr>
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">Starts with "price"</td>
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">Starts with "price"</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": [], "accessible_patterns": ["^price"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr>
-                <td class="py-1.5 pr-3 text-gray-600">Ends with "_usd"</td>
+                <td class="py-1.5 pr-3 text-base-content/80">Ends with "_usd"</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": [], "accessible_patterns": ["_usd$"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
@@ -167,56 +168,56 @@
             </tbody>
           </table>
 
-          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wide pt-2 border-t border-gray-200">
+          <h4 class="text-xs font-bold text-base-content/80 uppercase tracking-wide pt-2 border-t border-base-300">
             Query Access
           </h4>
           <table class="w-full text-xs border-collapse mb-2">
             <thead>
-              <tr class="border-b border-gray-200">
-                <th class="text-left py-1.5 pr-3 text-gray-500 font-medium w-1/4">Goal</th>
-                <th class="text-left py-1.5 text-gray-500 font-medium">JSON</th>
+              <tr class="border-b border-base-300">
+                <th class="text-left py-1.5 pr-3 text-base-content/60 font-medium w-1/4">Goal</th>
+                <th class="text-left py-1.5 text-base-content/60 font-medium">JSON</th>
               </tr>
             </thead>
-            <tbody class="text-gray-700">
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">All queries</td>
+            <tbody class="text-base-content/80">
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">All queries</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">All except specific ones</td>
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">All except specific ones</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": "all", "not_accessible": ["history_price"], "not_accessible_patterns": ["mvrv"]}
                   </code>
                 </td>
               </tr>
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">Only specific + pattern</td>
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">Only specific + pattern</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": ["current_user", "all_projects"], "accessible_patterns": ["get_metric"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr>
-                <td class="py-1.5 pr-3 text-gray-600">No queries at all</td>
+                <td class="py-1.5 pr-3 text-base-content/80">No queries at all</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": [], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
@@ -225,45 +226,45 @@
             </tbody>
           </table>
 
-          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wide pt-2 border-t border-gray-200">
+          <h4 class="text-xs font-bold text-base-content/80 uppercase tracking-wide pt-2 border-t border-base-300">
             Signal Access
           </h4>
           <table class="w-full text-xs border-collapse">
             <thead>
-              <tr class="border-b border-gray-200">
-                <th class="text-left py-1.5 pr-3 text-gray-500 font-medium w-1/4">Goal</th>
-                <th class="text-left py-1.5 text-gray-500 font-medium">JSON</th>
+              <tr class="border-b border-base-300">
+                <th class="text-left py-1.5 pr-3 text-base-content/60 font-medium w-1/4">Goal</th>
+                <th class="text-left py-1.5 text-base-content/60 font-medium">JSON</th>
               </tr>
             </thead>
-            <tbody class="text-gray-700">
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">All signals</td>
+            <tbody class="text-base-content/80">
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">All signals</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
-              <tr class="border-b border-gray-100">
-                <td class="py-1.5 pr-3 text-gray-600">Only DAI signals (via pattern)</td>
+              <tr class="border-b border-base-300">
+                <td class="py-1.5 pr-3 text-base-content/80">Only DAI signals (via pattern)</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": [], "accessible_patterns": ["dai_.*"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr>
-                <td class="py-1.5 pr-3 text-gray-600">No signals at all</td>
+                <td class="py-1.5 pr-3 text-base-content/80">No signals at all</td>
                 <td class="py-1.5">
                   <code
                     phx-no-curly-interpolation
-                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                    class="bg-base-200 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
                   >
                     {"accessible": [], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
@@ -276,7 +277,7 @@
 
       <.inputs_for :let={ff} field={f[:restrictions]}>
         <div class="mb-5">
-          <label for="metric_access" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="metric_access" class="block text-sm font-medium text-base-content/80 mb-1">
             Metric Access
           </label>
           {textarea(ff, :metric_access,
@@ -284,13 +285,13 @@
             id: "metric_access",
             rows: 3,
             class:
-              "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-mono text-sm"
+              "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition font-mono text-sm"
           )}
           {error_tag(ff, :metric_access)}
         </div>
 
         <div class="mb-5">
-          <label for="query_access" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="query_access" class="block text-sm font-medium text-base-content/80 mb-1">
             Query Access
           </label>
           {textarea(ff, :query_access,
@@ -298,13 +299,13 @@
             id: "query_access",
             rows: 3,
             class:
-              "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-mono text-sm"
+              "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition font-mono text-sm"
           )}
           {error_tag(ff, :query_access)}
         </div>
 
         <div class="mb-5">
-          <label for="signal_access" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="signal_access" class="block text-sm font-medium text-base-content/80 mb-1">
             Signal Access
           </label>
           {textarea(ff, :signal_access,
@@ -312,21 +313,21 @@
             id: "signal_access",
             rows: 3,
             class:
-              "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-mono text-sm"
+              "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition font-mono text-sm"
           )}
           {error_tag(ff, :signal_access)}
         </div>
 
         <div class="mb-5">
-          <label for="api_call_limits" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="api_call_limits" class="block text-sm font-medium text-base-content/80 mb-1">
             API Call Limits
           </label>
-          <div class="text-xs text-gray-400 mb-1.5">
-            <code phx-no-curly-interpolation class="bg-gray-50 px-1 rounded font-mono">
+          <div class="text-xs text-base-content/60 mb-1.5">
+            <code phx-no-curly-interpolation class="bg-base-200 px-1 rounded font-mono">
               {"month": 3000000, "hour": 100000, "minute": 3000}
             </code>
             or
-            <code phx-no-curly-interpolation class="bg-gray-50 px-1 rounded font-mono">
+            <code phx-no-curly-interpolation class="bg-base-200 px-1 rounded font-mono">
               {"has_limits": false}
             </code>
           </div>
@@ -335,7 +336,7 @@
             id: "api_call_limits",
             rows: 2,
             class:
-              "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-mono text-sm"
+              "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition font-mono text-sm"
           )}
           {error_tag(ff, :api_call_limits)}
         </div>
@@ -344,34 +345,34 @@
           <div>
             <label
               for="historical_data_in_days"
-              class="block text-sm font-medium text-gray-700 mb-1"
+              class="block text-sm font-medium text-base-content/80 mb-1"
             >
               Historical Data (days)
             </label>
-            <div class="text-xs text-gray-400 mb-1.5">
+            <div class="text-xs text-base-content/60 mb-1.5">
               Non-negative integer or empty for no restriction
             </div>
             {text_input(ff, :historical_data_in_days,
               id: "historical_data_in_days",
               class:
-                "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
             )}
             {error_tag(ff, :historical_data_in_days)}
           </div>
           <div>
             <label
               for="realtime_data_cut_off_in_days"
-              class="block text-sm font-medium text-gray-700 mb-1"
+              class="block text-sm font-medium text-base-content/80 mb-1"
             >
               Realtime Data Cut-off (days)
             </label>
-            <div class="text-xs text-gray-400 mb-1.5">
+            <div class="text-xs text-base-content/60 mb-1.5">
               Non-negative integer or empty for no restriction
             </div>
             {text_input(ff, :realtime_data_cut_off_in_days,
               id: "realtime_data_cut_off_in_days",
               class:
-                "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
             )}
             {error_tag(ff, :realtime_data_cut_off_in_days)}
           </div>
@@ -380,13 +381,13 @@
         <div class="mb-5">
           <label
             for="restricted_access_as_plan"
-            class="block text-sm font-medium text-gray-700 mb-1"
+            class="block text-sm font-medium text-base-content/80 mb-1"
           >
             Restricted Access As Plan
           </label>
-          <div class="text-xs text-gray-400 mb-1.5">
+          <div class="text-xs text-base-content/60 mb-1.5">
             Controls how
-            <code phx-no-curly-interpolation class="bg-gray-50 px-1 rounded font-mono">
+            <code phx-no-curly-interpolation class="bg-base-200 px-1 rounded font-mono">
               min_plan
             </code>
             field is applied. One of: FREE, BASIC, PRO, BUSINESS_PRO, BUSINESS_MAX
@@ -394,7 +395,7 @@
           {text_input(ff, :restricted_access_as_plan,
             id: "restricted_access_as_plan",
             class:
-              "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+              "w-full px-4 py-2.5 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
           )}
           {error_tag(ff, :restricted_access_as_plan)}
         </div>
@@ -402,10 +403,7 @@
     </div>
 
     <div class="flex justify-end">
-      {submit("Update Plan",
-        class:
-          "px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
-      )}
+      {submit("Update Plan", class: "btn btn-primary")}
     </div>
   </.form>
 </div>

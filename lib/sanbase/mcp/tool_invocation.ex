@@ -502,13 +502,36 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
     |> apply_user_filters(email_search, exclude_team)
     |> maybe_filter_metric(Keyword.get(opts, :metric))
-    |> maybe_hide_banned(Keyword.get(opts, :hide_banned, false))
+    |> maybe_hide_auto_rejected(Keyword.get(opts, :hide_auto_rejected, false))
   end
 
-  defp maybe_hide_banned(query, false), do: query
+  defp maybe_hide_auto_rejected(query, false), do: query
 
-  defp maybe_hide_banned(query, true) do
-    where(query, [i], is_nil(i.error_message) or i.error_message != "banned")
+  defp maybe_hide_auto_rejected(query, true) do
+    where(
+      query,
+      [i],
+      is_nil(i.error_message) or
+        (i.error_message != "banned" and not ilike(i.error_message, "Rate limit exceeded:%"))
+    )
+  end
+
+  @doc """
+  Number of distinct users with at least one rate-limit rejection in the
+  given window. Used to badge the "Rate-limited users" tab so dashboards
+  flash when new abusers appear.
+  """
+  @spec rate_limited_users_count(DateTime.t()) :: non_neg_integer()
+  def rate_limited_users_count(%DateTime{} = since) do
+    from(i in __MODULE__,
+      where:
+        i.inserted_at >= ^since and
+          i.is_successful == false and
+          ilike(i.error_message, "Rate limit exceeded:%") and
+          not is_nil(i.user_id),
+      select: count(i.user_id, :distinct)
+    )
+    |> Repo.one()
   end
 
   defp normalize_search(nil), do: ""

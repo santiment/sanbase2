@@ -18,6 +18,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       |> assign(:email_search, "")
       |> assign(:metric_search, "")
       |> assign(:include_team, false)
+      |> assign(:hide_banned, true)
       |> assign(:expanded_sessions, MapSet.new())
       |> assign(:page, 1)
       |> assign(:page_size, @page_size)
@@ -25,7 +26,6 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       |> assign(:modal_invocation, nil)
       |> assign(:timeline_window, "7d")
       |> assign(:ban_target, nil)
-      |> assign(:ban_reason, "")
       |> assign_invocations_tab()
 
     {:ok, socket}
@@ -75,6 +75,14 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
      |> load_invocations()}
   end
 
+  def handle_event("toggle_hide_banned", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:hide_banned, not socket.assigns.hide_banned)
+     |> assign(:page, 1)
+     |> load_invocations()}
+  end
+
   def handle_event("toggle_session", %{"session-id" => sid}, socket) do
     expanded = socket.assigns.expanded_sessions
 
@@ -113,32 +121,27 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   def handle_event("open_ban", %{"user-id" => user_id}, socket) do
     user_id = String.to_integer(user_id)
     target = Enum.find(socket.assigns.rate_limited_rows, &(&1.user_id == user_id))
-    {:noreply, socket |> assign(:ban_target, target) |> assign(:ban_reason, "")}
+    {:noreply, assign(socket, :ban_target, target)}
   end
 
   def handle_event("close_ban", _, socket) do
     {:noreply, assign(socket, :ban_target, nil)}
   end
 
-  def handle_event("update_ban_reason", %{"reason" => reason}, socket) do
-    {:noreply, assign(socket, :ban_reason, reason)}
-  end
-
-  def handle_event("confirm_ban", _, socket) do
+  def handle_event("confirm_ban", params, socket) do
     case socket.assigns.ban_target do
       nil ->
         {:noreply, socket}
 
       %{user_id: user_id} ->
-        reason = String.trim(socket.assigns.ban_reason)
+        reason = params |> Map.get("reason", "") |> String.trim()
         reason = if reason == "", do: "Banned via admin", else: reason
 
         with {:ok, user} <- User.by_id(user_id) do
           User.mcp_ban!(user, reason)
         end
 
-        {:noreply,
-         socket |> assign(:ban_target, nil) |> assign(:ban_reason, "") |> load_rate_limited()}
+        {:noreply, socket |> assign(:ban_target, nil) |> load_rate_limited()}
     end
   end
 
@@ -247,6 +250,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       email_search: assigns.email_search,
       metric: assigns.metric_search,
       exclude_team_members: not assigns.include_team,
+      hide_banned: assigns.hide_banned,
       page: assigns.page,
       page_size: assigns.page_size
     ]
@@ -265,7 +269,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       <.rate_limited_panel :if={@tab == :rate_limited} {assigns} />
 
       <.params_modal modal_invocation={@modal_invocation} />
-      <.ban_modal ban_target={@ban_target} ban_reason={@ban_reason} />
+      <.ban_modal ban_target={@ban_target} />
     </div>
     """
   end
@@ -364,6 +368,19 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         </label>
       </fieldset>
 
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Banned attempts</legend>
+        <label class="label cursor-pointer gap-2">
+          <input
+            type="checkbox"
+            class="toggle toggle-sm"
+            checked={@hide_banned}
+            phx-click="toggle_hide_banned"
+          />
+          <span class="label-text text-sm">Hide banned</span>
+        </label>
+      </fieldset>
+
       <div class="flex items-end">
         <span class="text-sm text-base-content/60">
           {if @total_count > 0,
@@ -435,7 +452,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             </td>
             <td class="text-base-content/70">{format_datetime(row.inv.inserted_at)}</td>
             <td class="font-mono">
-              {if row.inv.user, do: row.inv.user.email, else: "Anonymous"}
+              <.user_label user={row.inv.user} />
             </td>
             <td><.tool_badge tool_name={row.inv.tool_name} /></td>
             <td class="text-base-content/70">{row.inv.kind}</td>
@@ -537,9 +554,8 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         <table class="table table-zebra table-sm">
           <thead>
             <tr>
-              <th>Email</th>
-              <th>User ID</th>
-              <th class="text-right">Hits</th>
+              <th>User</th>
+              <th class="text-right">Rate-limit hits</th>
               <th>Last hit</th>
               <th>MCP-banned?</th>
               <th>Actions</th>
@@ -548,12 +564,13 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
           <tbody>
             <AdminSharedComponents.empty_table_row
               :if={@rate_limited_rows == []}
-              colspan={6}
+              colspan={5}
               message="No rate-limited users in this window."
             />
             <tr :for={row <- @rate_limited_rows}>
-              <td class="font-mono">{row.email}</td>
-              <td class="text-base-content/70">{row.user_id}</td>
+              <td class="font-mono">
+                <.user_label user={row} />
+              </td>
               <td class="text-right font-mono">{row.hits}</td>
               <td class="text-base-content/70">{format_datetime(row.last_hit)}</td>
               <td>
@@ -623,6 +640,9 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   end
 
   defp ban_modal(assigns) do
+    {_id, target_label} = user_id_and_label(assigns[:ban_target])
+    assigns = assign(assigns, target_label: target_label)
+
     ~H"""
     <.modal
       :if={@ban_target}
@@ -632,12 +652,12 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       max_modal_width="max-w-md"
     >
       <h3 class="font-semibold mb-2">
-        Ban {@ban_target.email} from MCP
+        Ban {@target_label} from MCP
       </h3>
       <p class="text-sm text-base-content/60 mb-4">
         The user keeps full access to the rest of Sanbase. They will see a banned message on the next MCP call.
       </p>
-      <form phx-change="update_ban_reason" phx-submit="confirm_ban">
+      <form phx-submit="confirm_ban">
         <fieldset class="fieldset">
           <legend class="fieldset-legend">Reason (optional)</legend>
           <textarea
@@ -645,7 +665,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             class="textarea textarea-sm w-full"
             rows="3"
             placeholder="e.g. abusive automated traffic"
-          >{@ban_reason}</textarea>
+          ></textarea>
         </fieldset>
         <div class="flex justify-end gap-2 mt-4">
           <button type="button" phx-click="close_ban" class="btn btn-sm btn-ghost">Cancel</button>
@@ -675,6 +695,32 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     <span class="badge badge-sm badge-secondary">{@tool_name}</span>
     """
   end
+
+  # Accepts a preloaded User struct or a plain map with `:user_id`, `:email`,
+  # `:username` (e.g. from `rate_limited_users/1`). Renders a link to the
+  # generic admin user page with the first non-blank of email → username →
+  # `user##{id}`. Returns "Anonymous" when no user is attached.
+  defp user_label(assigns) do
+    {id, label} = user_id_and_label(assigns[:user])
+    assigns = assign(assigns, id: id, label: label)
+
+    ~H"""
+    <a :if={@id} href={"/admin/generic/users/#{@id}"} class="link link-hover">{@label}</a>
+    <span :if={!@id} class="text-base-content/50">Anonymous</span>
+    """
+  end
+
+  defp user_id_and_label(nil), do: {nil, "Anonymous"}
+
+  defp user_id_and_label(%{} = u) do
+    id = Map.get(u, :id) || Map.get(u, :user_id)
+    label = blank_or(Map.get(u, :email)) || blank_or(Map.get(u, :username)) || "user##{id}"
+    {id, label}
+  end
+
+  defp blank_or(nil), do: nil
+  defp blank_or(""), do: nil
+  defp blank_or(s) when is_binary(s), do: s
 
   defp status_badge(assigns) do
     {text, class} =

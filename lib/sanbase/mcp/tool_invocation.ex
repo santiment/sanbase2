@@ -287,13 +287,14 @@ defmodule Sanbase.MCP.ToolInvocation do
         i.inserted_at >= ^since and
           i.is_successful == false and
           ilike(i.error_message, "Rate limit exceeded:%"),
-      group_by: [u.id, u.email, u.is_mcp_banned],
+      group_by: [u.id, u.email, u.username, u.is_mcp_banned],
       having: count(i.id) >= ^min_hits,
       order_by: [desc: count(i.id)],
       limit: ^limit,
       select: %{
         user_id: u.id,
         email: u.email,
+        username: u.username,
         hits: count(i.id),
         last_hit: max(i.inserted_at),
         is_mcp_banned: u.is_mcp_banned
@@ -307,10 +308,12 @@ defmodule Sanbase.MCP.ToolInvocation do
   Returns {:ok, true} if under limits, {:error, message} if rate limited.
   """
   def check_rate_limit(user_id) do
+    # `||` fallbacks guard against Config.module_get returning nil when the
+    # module env is registered (e.g. with :team_emails) but lacks these keys.
     limits = %{
-      minute: Config.module_get(__MODULE__, :global_rate_limit_minute, 25),
-      hour: Config.module_get(__MODULE__, :global_rate_limit_hour, 100),
-      day: Config.module_get(__MODULE__, :global_rate_limit_day, 500)
+      minute: Config.module_get(__MODULE__, :global_rate_limit_minute, 25) || 25,
+      hour: Config.module_get(__MODULE__, :global_rate_limit_hour, 100) || 100,
+      day: Config.module_get(__MODULE__, :global_rate_limit_day, 500) || 500
     }
 
     do_check_rate_limit(user_id, nil, limits)
@@ -322,9 +325,9 @@ defmodule Sanbase.MCP.ToolInvocation do
   """
   def check_tool_rate_limit(user_id, "combined_trends_tool") do
     limits = %{
-      minute: Config.module_get(__MODULE__, :combined_trends_rate_limit_minute, 3),
-      hour: Config.module_get(__MODULE__, :combined_trends_rate_limit_hour, 20),
-      day: Config.module_get(__MODULE__, :combined_trends_rate_limit_day, 50)
+      minute: Config.module_get(__MODULE__, :combined_trends_rate_limit_minute, 3) || 3,
+      hour: Config.module_get(__MODULE__, :combined_trends_rate_limit_hour, 20) || 20,
+      day: Config.module_get(__MODULE__, :combined_trends_rate_limit_day, 50) || 50
     }
 
     do_check_rate_limit(user_id, "combined_trends_tool", limits)
@@ -438,6 +441,13 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
     |> apply_user_filters(email_search, exclude_team)
     |> maybe_filter_metric(Keyword.get(opts, :metric))
+    |> maybe_hide_banned(Keyword.get(opts, :hide_banned, false))
+  end
+
+  defp maybe_hide_banned(query, false), do: query
+
+  defp maybe_hide_banned(query, true) do
+    where(query, [i], is_nil(i.error_message) or i.error_message != "banned")
   end
 
   defp normalize_search(nil), do: ""

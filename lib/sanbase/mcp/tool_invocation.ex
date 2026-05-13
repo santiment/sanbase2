@@ -154,13 +154,73 @@ defmodule Sanbase.MCP.ToolInvocation do
   end
 
   def stats_since(since_datetime) do
-    from(i in __MODULE__,
-      where: i.inserted_at >= ^since_datetime,
-      group_by: i.tool_name,
-      select: {i.tool_name, count(i.id)}
-    )
+    base_query()
+    |> where([i], i.inserted_at >= ^since_datetime)
+    |> exclude_noise()
+    |> group_by([i], i.tool_name)
+    |> select([i], {i.tool_name, count(i.id)})
     |> Repo.all()
     |> Map.new()
+  end
+
+  @doc """
+  Counts the invocation rows that the headline stats / timeline intentionally
+  filter out (team-member traffic, rate-limit rejections, banned-attempt
+  retries) in a given window. Returned as a map for a small "filtered out"
+  side panel in the admin view.
+  """
+  @spec noise_counts_since(DateTime.t()) :: %{
+          team: non_neg_integer(),
+          rate_limited: non_neg_integer(),
+          banned: non_neg_integer()
+        }
+  def noise_counts_since(since_datetime) do
+    in_window = fn ->
+      from(i in __MODULE__, where: i.inserted_at >= ^since_datetime)
+    end
+
+    rate_limited =
+      in_window.()
+      |> where([i], ilike(i.error_message, "Rate limit exceeded:%"))
+      |> Repo.aggregate(:count, :id)
+
+    banned =
+      in_window.()
+      |> where([i], i.error_message == "banned")
+      |> Repo.aggregate(:count, :id)
+
+    team =
+      in_window.()
+      |> join(:inner, [i], u in assoc(i, :user), as: :user)
+      |> where(^team_member_condition())
+      |> Repo.aggregate(:count, :id)
+
+    %{team: team, rate_limited: rate_limited, banned: banned}
+  end
+
+  # Composes the OR'd email patterns ("@santiment.net" + each configured
+  # team email) into a single dynamic clause. Requires a `[user: u]`
+  # named binding on the query.
+  defp team_member_condition do
+    base = dynamic([user: u], ilike(u.email, "%@santiment.net"))
+
+    Enum.reduce(team_emails(), base, fn email, dyn ->
+      dynamic([user: u], ^dyn or ilike(u.email, ^email))
+    end)
+  end
+
+  # LEFT JOIN users, exclude team members and rate-limit/banned-attempt rows.
+  # Used by headline stats, timeline, and top_by — anywhere we want to count
+  # "real" traffic without the auto-generated noise.
+  defp exclude_noise(query) do
+    query
+    |> join(:left, [i], u in assoc(i, :user), as: :user)
+    |> apply_team_exclusion(true)
+    |> where(
+      [i],
+      is_nil(i.error_message) or
+        (not ilike(i.error_message, "Rate limit exceeded:%") and i.error_message != "banned")
+    )
   end
 
   def tool_names do
@@ -212,6 +272,7 @@ defmodule Sanbase.MCP.ToolInvocation do
 
     base_query()
     |> where([i], i.inserted_at >= ^since)
+    |> exclude_noise()
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
     |> maybe_filter_client(Keyword.get(opts, :client))
     |> maybe_filter_kind(Keyword.get(opts, :kind))
@@ -232,36 +293,36 @@ defmodule Sanbase.MCP.ToolInvocation do
   def top_by(dimension, since, limit \\ 10)
 
   def top_by(:tool_name, %DateTime{} = since, limit) do
-    from(i in __MODULE__,
-      where: i.inserted_at >= ^since,
-      group_by: i.tool_name,
-      order_by: [desc: count(i.id)],
-      limit: ^limit,
-      select: {i.tool_name, count(i.id)}
-    )
+    base_query()
+    |> where([i], i.inserted_at >= ^since)
+    |> exclude_noise()
+    |> group_by([i], i.tool_name)
+    |> order_by([i], desc: count(i.id))
+    |> limit(^limit)
+    |> select([i], {i.tool_name, count(i.id)})
     |> Repo.all()
   end
 
   def top_by(:client, %DateTime{} = since, limit) do
-    from(i in __MODULE__,
-      where: i.inserted_at >= ^since,
-      group_by: i.client,
-      order_by: [desc: count(i.id)],
-      limit: ^limit,
-      select: {i.client, count(i.id)}
-    )
+    base_query()
+    |> where([i], i.inserted_at >= ^since)
+    |> exclude_noise()
+    |> group_by([i], i.client)
+    |> order_by([i], desc: count(i.id))
+    |> limit(^limit)
+    |> select([i], {i.client, count(i.id)})
     |> Repo.all()
   end
 
   def top_by(:metric, %DateTime{} = since, limit) do
-    from(i in __MODULE__,
-      where: i.inserted_at >= ^since,
-      cross_join: m in fragment("unnest(?)", i.metrics),
-      group_by: m,
-      order_by: [desc: count(i.id)],
-      limit: ^limit,
-      select: {m, count(i.id)}
-    )
+    base_query()
+    |> where([i], i.inserted_at >= ^since)
+    |> exclude_noise()
+    |> join(:cross, [i], m in fragment("unnest(?)", i.metrics), as: :metric)
+    |> group_by([metric: m], m)
+    |> order_by([i], desc: count(i.id))
+    |> limit(^limit)
+    |> select([i, metric: m], {m, count(i.id)})
     |> Repo.all()
   end
 

@@ -160,10 +160,13 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   defp load_tab(socket, :rate_limited), do: load_rate_limited(socket)
 
   defp assign_invocations_tab(socket) do
-    stats = ToolInvocation.stats_since(DateTime.add(DateTime.utc_now(), -24 * 3600, :second))
+    since = DateTime.add(DateTime.utc_now(), -24 * 3600, :second)
+    stats = ToolInvocation.stats_since(since)
+    noise = ToolInvocation.noise_counts_since(since)
 
     socket
     |> assign(:stats, stats)
+    |> assign(:noise, noise)
     |> load_invocations()
   end
 
@@ -229,6 +232,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     |> assign(:top_clients, ToolInvocation.top_by(:client, since))
     |> assign(:top_tools, ToolInvocation.top_by(:tool_name, since))
     |> assign(:timeline_bucket, bucket)
+    |> assign(:timeline_noise, ToolInvocation.noise_counts_since(since))
   end
 
   defp load_rate_limited(socket) do
@@ -307,7 +311,12 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
 
   defp invocations_panel(assigns) do
     ~H"""
-    <.stats_bar stats={@stats} />
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+      <div class="lg:col-span-3">
+        <.stats_bar stats={@stats} />
+      </div>
+      <.noise_panel noise={@noise} window_label="24h" />
+    </div>
 
     <div class="flex flex-col sm:flex-row gap-4 mb-6">
       <fieldset class="fieldset">
@@ -517,6 +526,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         <div class="flex flex-col gap-4">
           <.top_table title="Top clients" rows={@top_clients} />
           <.top_table title="Top tools / prompts" rows={@top_tools} />
+          <.noise_panel noise={@timeline_noise} window_label={@timeline_window} />
         </div>
       </div>
     </div>
@@ -678,7 +688,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
 
   defp stats_bar(assigns) do
     ~H"""
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
       <AdminSharedComponents.mini_stat_card
         :for={{tool_name, count} <- Enum.sort_by(@stats, fn {_, c} -> -c end)}
         label={tool_name}
@@ -686,6 +696,24 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         suffix="(24h)"
         truncate
       />
+    </div>
+    """
+  end
+
+  defp noise_panel(assigns) do
+    ~H"""
+    <div class="rounded-box border border-base-300 bg-base-200/50 p-3 text-sm">
+      <div class="font-semibold text-base-content/70 mb-2">
+        Filtered out ({@window_label})
+      </div>
+      <dl class="grid grid-cols-2 gap-x-3 gap-y-1">
+        <dt class="text-base-content/60">Team</dt>
+        <dd class="text-right font-mono">{@noise.team}</dd>
+        <dt class="text-base-content/60">Rate-limited</dt>
+        <dd class="text-right font-mono">{@noise.rate_limited}</dd>
+        <dt class="text-base-content/60">Banned attempts</dt>
+        <dd class="text-right font-mono">{@noise.banned}</dd>
+      </dl>
     </div>
     """
   end

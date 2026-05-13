@@ -7,7 +7,7 @@ defmodule Sanbase.MCP.ToolInvocationTest do
   alias Sanbase.MCP.ToolInvocation
 
   setup do
-    user = insert(:user, username: "mcp_tracking_user", email: "mcp_tracking@santiment.net")
+    user = insert(:user, username: "mcp_tracking_user", email: "mcp_tracking@example.com")
     bearer_token = Sanbase.TestHelpers.setup_mcp_oauth_client(user)
 
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])

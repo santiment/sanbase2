@@ -158,8 +158,8 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
 
   describe "time_series/1" do
     setup do
-      user_a = insert(:user)
-      user_b = insert(:user)
+      user_a = insert(:user, email: "ts_a@example.com")
+      user_b = insert(:user, email: "ts_b@example.com")
       %{user_a: user_a, user_b: user_b}
     end
 

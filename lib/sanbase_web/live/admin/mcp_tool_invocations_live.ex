@@ -290,7 +290,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     <div class="flex flex-col w-full px-4 py-6">
       <h1 class="text-2xl font-bold mb-6">{@page_title}</h1>
 
-      <.tab_bar tab={@tab} />
+      <.tab_bar tab={@tab} rate_limited_users_count={@rate_limited_users_count} />
 
       <.invocations_panel :if={@tab == :invocations} {assigns} />
       <.timeline_panel :if={@tab == :timeline} {assigns} />

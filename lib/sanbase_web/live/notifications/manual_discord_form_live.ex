@@ -20,7 +20,7 @@ defmodule SanbaseWeb.NotificationsLive.ManualDiscordFormLive do
       <div class="flex items-center justify-between mb-4">
         <.link
           navigate={~p"/admin/generic?resource=notifications"}
-          class="text-sm text-gray-600 hover:text-gray-900"
+          class="text-sm text-base-content/70 hover:text-base-content"
         >
           ← Back to Notifications
         </.link>

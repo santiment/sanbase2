@@ -14,7 +14,7 @@ defmodule Sanbase.Accounts.UserOnboarding do
   @titles ~w(crypto_trader researcher content_maker new_in_crypto)
   @goals ~w(catch_trends make_better_trade_entries build_analysis understand_whats_going_on)
   @used_tools ~w(price_charts screeners on_chain_analytics social_signals news_feeds none_of_the_above)
-  @behaviour_analysis_answers ~w(yes no not_sure)
+  @behaviour_analysis_answers ~w(yes no not_sure aware_but_unused)
 
   def allowed_titles, do: @titles
   def allowed_goals, do: @goals

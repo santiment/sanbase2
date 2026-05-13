@@ -151,9 +151,9 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         <span :if={@email}>Submit changes as: <span class="font-bold">{@email}</span></span>
       </div>
       <.simple_form id="metric_registry_form" for={@form} phx-change="validate" phx-submit="save">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <.icon name="hero-identification" class="w-5 h-5 mr-2 text-blue-600" /> Basic Information
+        <div class="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+            <.icon name="hero-identification" class="w-5 h-5 mr-2 text-primary" /> Basic Information
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <.input type="text" id="input-metric" field={@form[:metric]} label="Metric" />
@@ -172,18 +172,18 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           />
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <.icon name="hero-tag" class="w-5 h-5 mr-2 text-blue-600" /> References
+        <div class="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+            <.icon name="hero-tag" class="w-5 h-5 mr-2 text-primary" /> References
           </h3>
           <.aliases_input form={@form} />
           <.tables_input form={@form} />
           <.docs_input form={@form} />
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <.icon name="hero-cog-6-tooth" class="w-5 h-5 mr-2 text-blue-600" /> Configuration
+        <div class="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+            <.icon name="hero-cog-6-tooth" class="w-5 h-5 mr-2 text-primary" /> Configuration
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <.input
@@ -230,16 +230,16 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <.icon name="hero-currency-dollar" class="w-5 h-5 mr-2 text-blue-600" /> Access Plans
+        <div class="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+            <.icon name="hero-currency-dollar" class="w-5 h-5 mr-2 text-primary" /> Access Plans
           </h3>
           <.min_plan_input form={@form} />
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <.icon name="hero-adjustments-horizontal" class="w-5 h-5 mr-2 text-blue-600" />
+        <div class="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+            <.icon name="hero-adjustments-horizontal" class="w-5 h-5 mr-2 text-primary" />
             Advanced Settings
           </h3>
           <.selectors_input form={@form} />
@@ -290,9 +290,9 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         </div>
 
         <.deprecation_input form={@form} />
-        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-sm border-2 border-blue-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <.icon name="hero-document-text" class="w-5 h-5 mr-2 text-blue-600" />
+        <div class="bg-info/10 rounded-lg shadow-sm border-2 border-info/30 p-6">
+          <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+            <.icon name="hero-document-text" class="w-5 h-5 mr-2 text-primary" />
             Change Request Details
           </h3>
 
@@ -319,9 +319,9 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     assigns = assign(assigns, disabled: assigns.form[:is_deprecated].value in [false, "false"])
 
     ~H"""
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-        <.icon name="hero-exclamation-triangle" class="w-5 h-5 mr-2 text-orange-600" /> Deprecation
+    <div class="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6 mb-6">
+      <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+        <.icon name="hero-exclamation-triangle" class="w-5 h-5 mr-2 text-warning" /> Deprecation
       </h3>
       <.input
         type="select"
@@ -390,12 +390,12 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     ~H"""
     <button
       type="button"
-      class="mt-2.5 mr-2 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 rounded-lg text-sm px-3 py-2.5 inline-flex items-center transition-colors"
+      class="mt-2.5 mr-2 bg-error/10 border border-error/30 hover:bg-error/20 hover:border-error/40 rounded-lg text-sm px-3 py-2.5 inline-flex items-center transition-colors"
       name={@name}
       value={@ef.index}
       phx-click={JS.dispatch("change")}
     >
-      <.icon name="hero-x-mark" class="w-4 h-4 text-red-600" />
+      <.icon name="hero-x-mark" class="w-4 h-4 text-error" />
     </button>
     """
   end

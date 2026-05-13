@@ -81,7 +81,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         current_user_role_names={@current_user_role_names}
         trim_role_prefix="Metric Registry "
       />
-      <div class="text-gray-400 text-sm py-2">
+      <div class="text-base-content/60 text-sm py-2">
         <div>
           Showing {length(@visible_metrics_ids)} metrics
         </div>
@@ -290,11 +290,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   defp docs(assigns) do
     ~H"""
     <div>
-      <span :if={@docs == []} class="text-gray-400 text-sm font-semibold">Missing</span>
-      <span :if={@docs != []} class="text-gray-900 text-sm font-semibold">
+      <span :if={@docs == []} class="text-base-content/60 text-sm font-semibold">Missing</span>
+      <span :if={@docs != []} class="text-base-content text-sm font-semibold">
         <.link
           :for={%{link: link} <- @docs}
-          class="underline text-blue-600 hover:text-blue-800 hover:cursor-pointer"
+          class="underline text-primary hover:text-primary/80 hover:cursor-pointer"
           href={link}
           target="_blank"
         >
@@ -311,7 +311,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <div :for={table_map <- @tables}>
         {Map.get(table_map, :name)}
       </div>
-      <div class="text-gray-400">
+      <div class="text-base-content/60">
         (min interval <b>{@min_interval}</b>)
       </div>
     </div>
@@ -334,10 +334,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       assigns = assign(assigns, :html_safe_changes, html_safe_changes)
 
       ~H"""
-      <div :if={@metric_registry.last_sync_datetime} class="font-bold text-xl text-blue-800 mb-4">
+      <div :if={@metric_registry.last_sync_datetime} class="font-bold text-xl text-primary mb-4">
         Diff Since Last Sync | {@metric_registry.metric}
       </div>
-      <div :if={!@metric_registry.last_sync_datetime} class="font-bold text-gray-400 text-sm mb-4">
+      <div
+        :if={!@metric_registry.last_sync_datetime}
+        class="font-bold text-base-content/60 text-sm mb-4"
+      >
         Diff Since Metric Creation | {@metric_registry.metric}
       </div>
       <div>{@html_safe_changes}</div>
@@ -403,8 +406,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             />
           </:col>
           <:col :let={row} label="New Status">
-            <span :if={row.is_verified} class="ms-3 text-sm font-bold text-green-900">VERIFIED</span>
-            <span :if={!row.is_verified} class="ms-3 text-sm font-bold text-red-700">UNVERIFIED</span>
+            <span :if={row.is_verified} class="ms-3 text-sm font-bold text-success">VERIFIED</span>
+            <span :if={!row.is_verified} class="ms-3 text-sm font-bold text-error">UNVERIFIED</span>
           </:col>
         </.table>
         <div class="mt-4">
@@ -438,7 +441,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           )
         }
       />
-      <div class="relative w-11 h-6 bg-red-500 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600">
+      <div class="relative w-11 h-6 bg-error rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-base-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success">
       </div>
     </label>
     """

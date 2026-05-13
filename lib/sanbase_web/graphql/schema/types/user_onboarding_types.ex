@@ -28,6 +28,7 @@ defmodule SanbaseWeb.Graphql.UserOnboardingTypes do
     value(:yes, as: "yes")
     value(:no, as: "no")
     value(:not_sure, as: "not_sure")
+    value(:aware_but_unused, as: "aware_but_unused")
   end
 
   object :user_onboarding do

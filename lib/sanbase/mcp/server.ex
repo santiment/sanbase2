@@ -178,12 +178,23 @@ defmodule Sanbase.MCP.Server do
     client_info = frame.context.client_info
     %{user_agent: ua, session_id: sid, client: client} = request_context(headers, client_info)
 
+    user_id = if user, do: user.id
+    hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
+
+    {tool_name, params, error_message} =
+      if hide_activity? do
+        masked_error = if outcome.error_message, do: "<masked>"
+        {"<masked>", %{}, masked_error}
+      else
+        {tool_name, params, outcome.error_message}
+      end
+
     %{
-      user_id: if(user, do: user.id),
+      user_id: user_id,
       tool_name: tool_name,
       params: params,
       is_successful: outcome.is_successful,
-      error_message: outcome.error_message,
+      error_message: error_message,
       response_size_bytes: outcome.response_size_bytes,
       duration_ms: duration_ms,
       auth_method: Auth.get_auth_method(headers),

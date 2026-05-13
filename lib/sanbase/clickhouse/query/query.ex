@@ -221,18 +221,41 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   defp add_settings(%{sql: sql, log_comment: log_comment} = query) do
+    user_id = Process.get(:__graphql_query_current_user_id__)
+    hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
+
     log_comment =
-      if user_id = Process.get(:__graphql_query_current_user_id__),
-        do: Map.put_new(log_comment, :user_id, user_id),
-        else: Map.put_new(log_comment, :user_id, 0)
+      cond do
+        hide_activity? ->
+          # Keep user_id (matches the Kafka api_call export) but drop the
+          # request/stacktrace breadcrumbs that could reveal what was queried.
+          log_comment
+          |> Map.drop([:stacktrace, :graphql_request_log_id])
+          |> Map.put(:user_id, user_id)
+
+        user_id ->
+          Map.put_new(log_comment, :user_id, user_id)
+
+        true ->
+          Map.put_new(log_comment, :user_id, 0)
+      end
 
     log_comment_str =
       if map_size(log_comment) > 0 do
         " log_comment='#{Jason.encode!(log_comment)}'"
       end
 
+    log_queries_str = if hide_activity?, do: " log_queries=0"
+
+    settings_parts =
+      [log_comment_str, log_queries_str]
+      |> Enum.reject(&is_nil/1)
+
     settings_str =
-      if log_comment_str, do: "\nSETTINGS" <> log_comment_str, else: ""
+      case settings_parts do
+        [] -> ""
+        parts -> "\nSETTINGS" <> Enum.join(parts, ",")
+      end
 
     sql = sql <> settings_str
 

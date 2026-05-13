@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       |> assign(:email_search, "")
       |> assign(:metric_search, "")
       |> assign(:include_team, false)
-      |> assign(:hide_banned, true)
+      |> assign(:hide_auto_rejected, true)
       |> assign(:expanded_sessions, MapSet.new())
       |> assign(:page, 1)
       |> assign(:page_size, @page_size)
@@ -26,21 +26,38 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       |> assign(:modal_invocation, nil)
       |> assign(:timeline_window, "7d")
       |> assign(:ban_target, nil)
-      |> assign_invocations_tab()
+      |> assign(:rate_limited_users_count, rate_limited_users_count())
 
     {:ok, socket}
   end
 
   @impl true
-  def handle_event("switch_tab", %{"tab" => tab}, socket) do
-    tab = String.to_existing_atom(tab)
+  def handle_params(params, _url, socket) do
+    tab = parse_tab(params["tab"])
 
     socket =
-      socket
-      |> assign(:tab, tab)
-      |> load_tab(tab)
+      if socket.assigns[:tab] == tab and tab_loaded?(socket, tab) do
+        socket
+      else
+        socket |> assign(:tab, tab) |> load_tab(tab)
+      end
 
     {:noreply, socket}
+  end
+
+  defp parse_tab("timeline"), do: :timeline
+  defp parse_tab("rate_limited"), do: :rate_limited
+  defp parse_tab(_), do: :invocations
+
+  # Was the data for the requested tab already loaded? Avoids re-running
+  # the tab's queries when handle_params fires for an unrelated URL update.
+  defp tab_loaded?(socket, :invocations), do: Map.has_key?(socket.assigns, :stats)
+  defp tab_loaded?(socket, :timeline), do: Map.has_key?(socket.assigns, :timeline_rows)
+  defp tab_loaded?(socket, :rate_limited), do: Map.has_key?(socket.assigns, :rate_limited_rows)
+
+  @impl true
+  def handle_event("switch_tab", %{"tab" => tab}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/mcp_tool_invocations?tab=#{tab}")}
   end
 
   def handle_event("filter_tool_name", %{"tool_name" => tool_name}, socket) do
@@ -75,10 +92,10 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
      |> load_invocations()}
   end
 
-  def handle_event("toggle_hide_banned", _params, socket) do
+  def handle_event("toggle_hide_auto_rejected", _params, socket) do
     {:noreply,
      socket
-     |> assign(:hide_banned, not socket.assigns.hide_banned)
+     |> assign(:hide_auto_rejected, not socket.assigns.hide_auto_rejected)
      |> assign(:page, 1)
      |> load_invocations()}
   end
@@ -238,7 +255,14 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   defp load_rate_limited(socket) do
     since = DateTime.add(DateTime.utc_now(), -@rate_limited_window_seconds, :second)
 
-    assign(socket, :rate_limited_rows, ToolInvocation.rate_limited_users(since: since))
+    socket
+    |> assign(:rate_limited_rows, ToolInvocation.rate_limited_users(since: since))
+    |> assign(:rate_limited_users_count, ToolInvocation.rate_limited_users_count(since))
+  end
+
+  defp rate_limited_users_count do
+    since = DateTime.add(DateTime.utc_now(), -@rate_limited_window_seconds, :second)
+    ToolInvocation.rate_limited_users_count(since)
   end
 
   defp window_to_since_and_bucket("24h"), do: {hours_ago(24), "hour"}
@@ -254,7 +278,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       email_search: assigns.email_search,
       metric: assigns.metric_search,
       exclude_team_members: not assigns.include_team,
-      hide_banned: assigns.hide_banned,
+      hide_auto_rejected: assigns.hide_auto_rejected,
       page: assigns.page,
       page_size: assigns.page_size
     ]
@@ -304,6 +328,12 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         class={["tab", @tab == :rate_limited && "tab-active"]}
       >
         Rate-limited users
+        <span
+          :if={@rate_limited_users_count > 0}
+          class="badge badge-error badge-sm ml-1"
+        >
+          {@rate_limited_users_count}
+        </span>
       </a>
     </div>
     """
@@ -378,15 +408,15 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       </fieldset>
 
       <fieldset class="fieldset">
-        <legend class="fieldset-legend">Banned attempts</legend>
+        <legend class="fieldset-legend">Auto-rejected</legend>
         <label class="label cursor-pointer gap-2">
           <input
             type="checkbox"
             class="toggle toggle-sm"
-            checked={@hide_banned}
-            phx-click="toggle_hide_banned"
+            checked={@hide_auto_rejected}
+            phx-click="toggle_hide_auto_rejected"
           />
-          <span class="label-text text-sm">Hide banned</span>
+          <span class="label-text text-sm">Hide rate-limit + banned</span>
         </label>
       </fieldset>
 
@@ -733,7 +763,13 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     assigns = assign(assigns, id: id, label: label)
 
     ~H"""
-    <a :if={@id} href={"/admin/generic/users/#{@id}"} class="link link-hover">{@label}</a>
+    <a
+      :if={@id}
+      href={~p"/admin/generic/#{@id}?resource=users"}
+      class="link link-hover"
+    >
+      {@label}
+    </a>
     <span :if={!@id} class="text-base-content/50">Anonymous</span>
     """
   end

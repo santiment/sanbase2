@@ -46,6 +46,13 @@ defmodule Sanbase.Application do
       config: %{metadata: [:file, :line]}
     })
 
+    # Drop GraphQL document logs (Absinthe.Logger.log_run/2 output) for users
+    # with NDA-protected activity. See Sanbase.Accounts.privacy_protected_user_ids/0.
+    :logger.add_primary_filter(
+      :sanbase_hide_protected_activity,
+      {&Sanbase.Logger.HideProtectedActivityFilter.filter/2, []}
+    )
+
     case Supervisor.start_link(children, opts) do
       {:ok, _} = ok ->
         ok

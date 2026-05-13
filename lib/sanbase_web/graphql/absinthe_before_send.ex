@@ -266,8 +266,16 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   # Create an API Call event for every query in a Document separately.
   defp export_api_call_data(query_metadata) when is_map(query_metadata) do
+    user_id = query_metadata.caller_data.user_id
+    hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
+
     Enum.map(query_metadata.success_queries, fn query ->
-      {query, selector, version} = get_query_and_selector(query)
+      {query, selector, version} =
+        if hide_activity? do
+          {"<masked>", nil, nil}
+        else
+          get_query_and_selector(query)
+        end
 
       %{
         id: query_metadata.request_id,
@@ -277,7 +285,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         version: version,
         status_code: 200,
         has_graphql_errors: query_metadata.has_graphql_errors,
-        user_id: query_metadata.caller_data.user_id,
+        user_id: user_id,
         san_tokens: query_metadata.caller_data.san_balance,
         auth_method: query_metadata.caller_data.auth_method,
         api_token: query_metadata.caller_data.api_token,

@@ -3,6 +3,26 @@ defmodule Sanbase.Accounts do
   alias Sanbase.Accounts.User
   alias Sanbase.Accounts.EthAccount
 
+  @doc """
+  IDs of users whose activity (GraphQL queries, MCP tool calls, ClickHouse
+  query metadata, application logs) must not be persisted in detail. We
+  still record that *something* happened — counts, durations, success
+  flags — but the query text, MCP params, and ClickHouse `system.query_log`
+  entries are masked or suppressed. Used to honor NDAs with privacy-
+  sensitive customers (e.g. hedge funds).
+  """
+  @spec privacy_protected_user_ids() :: MapSet.t(non_neg_integer())
+  def privacy_protected_user_ids do
+    1..10 |> Enum.to_list() |> MapSet.new()
+  end
+
+  @spec privacy_protected?(non_neg_integer() | nil) :: boolean()
+  def privacy_protected?(user_id) when is_integer(user_id) do
+    MapSet.member?(privacy_protected_user_ids(), user_id)
+  end
+
+  def privacy_protected?(_), do: false
+
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)
   end

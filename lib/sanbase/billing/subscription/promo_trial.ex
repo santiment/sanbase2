@@ -179,7 +179,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}],
       trial_end: trial_end_unix,
-      cancel_at: trial_end_unix
+      cancel_at: trial_end_unix - 60
     }
   end
 

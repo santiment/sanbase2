@@ -187,4 +187,36 @@ defmodule Sanbase.MCP.RateLimitTest do
       Application.put_env(:sanbase, Sanbase.MCP.ToolInvocation, original)
     end
   end
+
+  describe "team_member?/1" do
+    test "matches the @santiment.net domain case-insensitively" do
+      assert ToolInvocation.team_member?(%{email: "alice@santiment.net"})
+      assert ToolInvocation.team_member?(%{email: "Bob@Santiment.NET"})
+    end
+
+    test "matches built-in team emails" do
+      assert ToolInvocation.team_member?(%{email: "tsvetozar.penov@gmail.com"})
+    end
+
+    test "matches configured team emails (case-insensitive)" do
+      original = Application.get_env(:sanbase, Sanbase.MCP.ToolInvocation)
+
+      Application.put_env(
+        :sanbase,
+        Sanbase.MCP.ToolInvocation,
+        Keyword.merge(original || [], team_emails: "teammate@example.com")
+      )
+
+      assert ToolInvocation.team_member?(%{email: "teammate@example.com"})
+      assert ToolInvocation.team_member?(%{email: "TEAMMATE@example.com"})
+
+      Application.put_env(:sanbase, Sanbase.MCP.ToolInvocation, original)
+    end
+
+    test "returns false for unrelated emails and missing input" do
+      refute ToolInvocation.team_member?(%{email: "external@example.com"})
+      refute ToolInvocation.team_member?(%{email: nil})
+      refute ToolInvocation.team_member?(nil)
+    end
+  end
 end

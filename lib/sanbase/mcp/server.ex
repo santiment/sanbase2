@@ -106,11 +106,15 @@ defmodule Sanbase.MCP.Server do
   end
 
   defp check_rate_limits(user, tool_name) do
-    with {:ok, _} <- ToolInvocation.check_rate_limit(user.id),
-         {:ok, _} <- ToolInvocation.check_tool_rate_limit(user.id, tool_name) do
+    if ToolInvocation.team_member?(user) do
       :ok
     else
-      {:error, message} -> {:rate_limited, message}
+      with {:ok, _} <- ToolInvocation.check_rate_limit(user.id),
+           {:ok, _} <- ToolInvocation.check_tool_rate_limit(user.id, tool_name) do
+        :ok
+      else
+        {:error, message} -> {:rate_limited, message}
+      end
     end
   end
 

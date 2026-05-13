@@ -256,6 +256,20 @@ defmodule Sanbase.MCP.ToolInvocation do
   end
 
   @doc """
+  Returns true if the user is a Santiment team member — i.e. has an
+  `@santiment.net` email or appears in the configured `team_emails/0`
+  list. Team members bypass MCP rate limits and are filtered out of
+  headline admin stats.
+  """
+  @spec team_member?(map() | nil) :: boolean()
+  def team_member?(%{email: email}) when is_binary(email) do
+    lower = String.downcase(email)
+    String.ends_with?(lower, "@santiment.net") or lower in team_emails()
+  end
+
+  def team_member?(_), do: false
+
+  @doc """
   Bucketed usage time series. Returns rows of `{bucket_ts, total, unique_users}`
   ordered by bucket ascending.
 

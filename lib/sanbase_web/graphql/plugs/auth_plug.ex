@@ -86,6 +86,10 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
             Process.put(:__graphql_query_current_user_id__, user_id)
             Logger.metadata(user_id: user_id)
 
+            if Sanbase.Accounts.privacy_protected?(user_id) do
+              Logger.metadata(hide_user_activity: true)
+            end
+
           _ ->
             Logger.metadata(user_id: "anonymous")
         end

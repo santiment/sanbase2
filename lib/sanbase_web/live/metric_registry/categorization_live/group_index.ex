@@ -174,7 +174,7 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
     assigns = assign(assigns, ungrouped_metrics_count: ungrouped_metrics_count)
 
     ~H"""
-    <div class="mt-4">
+    <div>
       <AdminSharedComponents.nav_button
         href={~p"/admin/metric_registry/categorization/metrics_order?category_id=#{@category.id}"}
         text={"Reorder Ungrouped Metrics (#{@ungrouped_metrics_count})"}

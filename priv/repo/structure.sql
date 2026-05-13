@@ -2,14 +2,15 @@
 -- PostgreSQL database dump
 --
 
-\restrict MGqEcjjv5Bj7d9SzGKGTG4BBRyNg3SXGmrFDjjmmw9rcn4eIZji2lT9SEQ1a9fy
+\restrict rg49JhdfuYvzkmMwjbtFtgpts4TBllmDGQKCJMBxkwdDmdxkoEEefAh524URkUs
 
--- Dumped from database version 15.15 (Homebrew)
--- Dumped by pg_dump version 15.15 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -11614,7 +11615,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict MGqEcjjv5Bj7d9SzGKGTG4BBRyNg3SXGmrFDjjmmw9rcn4eIZji2lT9SEQ1a9fy
+\unrestrict rg49JhdfuYvzkmMwjbtFtgpts4TBllmDGQKCJMBxkwdDmdxkoEEefAh524URkUs
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

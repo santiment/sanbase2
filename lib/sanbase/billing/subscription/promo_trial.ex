@@ -173,10 +173,13 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   end
 
   defp promotional_subsciption_data(user, plan, trial_days) do
+    trial_end_unix = Timex.shift(Timex.now(), days: trial_days) |> DateTime.to_unix()
+
     %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}],
-      trial_end: Timex.shift(Timex.now(), days: trial_days) |> DateTime.to_unix()
+      trial_end: trial_end_unix,
+      cancel_at: trial_end_unix
     }
   end
 

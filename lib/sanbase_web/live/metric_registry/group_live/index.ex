@@ -37,7 +37,7 @@ defmodule SanbaseWeb.GroupLive.Index do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-base-content text-2xl mb-4">
         Metric Groups
       </div>
 
@@ -80,30 +80,30 @@ defmodule SanbaseWeb.GroupLive.Index do
   def groups_table(assigns) do
     ~H"""
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="min-w-full divide-y divide-base-300">
+        <thead class="bg-base-200">
           <tr>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
             >
               Category
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
             >
               Group Name
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
             >
               Actions
             </th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-base-100 divide-y divide-base-300">
           <.category_groups :for={category <- @categories} category={category} />
         </tbody>
       </table>
@@ -133,18 +133,18 @@ defmodule SanbaseWeb.GroupLive.Index do
 
   def group_row(assigns) do
     ~H"""
-    <tr class="hover:bg-gray-50">
+    <tr class="hover:bg-base-200">
       <td
         :if={@index == 0}
-        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+        class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60"
         rowspan={@category_groups_count}
       >
         {@category.name}
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
         {@group.name}
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
         <.group_actions group={@group} />
       </td>
     </tr>
@@ -155,17 +155,17 @@ defmodule SanbaseWeb.GroupLive.Index do
 
   def empty_category_row(assigns) do
     ~H"""
-    <tr class="hover:bg-gray-50">
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+    <tr class="hover:bg-base-200">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
         {@category.name}
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60 italic">
         No groups
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
         <.link
           navigate={~p"/admin/metric_registry/groups/new?category_id=#{@category.id}"}
-          class="text-blue-600 hover:text-blue-900"
+          class="link link-primary"
         >
           Add Group
         </.link>
@@ -181,14 +181,14 @@ defmodule SanbaseWeb.GroupLive.Index do
     <div class="flex space-x-2">
       <.link
         navigate={~p"/admin/metric_registry/groups/edit/#{@group.id}"}
-        class="text-blue-600 hover:text-blue-900"
+        class="link link-primary"
       >
         Edit
       </.link>
       <button
         phx-click="delete"
         phx-value-id={@group.id}
-        class="text-red-600 hover:text-red-900"
+        class="link link-error"
         data-confirm="Are you sure you want to delete this group?"
       >
         Delete

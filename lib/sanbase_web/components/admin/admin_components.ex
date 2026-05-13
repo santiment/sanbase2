@@ -1459,19 +1459,19 @@ defmodule SanbaseWeb.AdminComponents do
 
       :boolean ->
         if result == true,
-          do: Phoenix.HTML.raw(~s(<span class="hero-check-circle text-green-500"></span>)),
-          else: Phoenix.HTML.raw(~s(<span class="hero-x-circle text-red-500"></span>))
+          do: Phoenix.HTML.raw(~s(<span class="hero-check-circle text-success"></span>)),
+          else: Phoenix.HTML.raw(~s(<span class="hero-x-circle text-error"></span>))
 
       :boolean_nullable ->
         cond do
           result == true ->
-            Phoenix.HTML.raw(~s(<span class="hero-check-circle text-green-500"></span>))
+            Phoenix.HTML.raw(~s(<span class="hero-check-circle text-success"></span>))
 
           result == false ->
-            Phoenix.HTML.raw(~s(<span class="hero-x-circle text-red-500"></span>))
+            Phoenix.HTML.raw(~s(<span class="hero-x-circle text-error"></span>))
 
           true ->
-            Phoenix.HTML.raw(~s(<span class="text-gray-400">—</span>))
+            Phoenix.HTML.raw(~s(<span class="text-base-content/60">—</span>))
         end
 
       _ ->

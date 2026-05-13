@@ -29,7 +29,7 @@ defmodule Sanbase.Billing.PromoTrialTest do
       {:ok, context}
     end
 
-    test "passes cancel_at == trial_end to Stripe for list-of-plans variant", context do
+    test "passes cancel_at 60s before trial_end for list-of-plans variant", context do
       plan = context.plans.plan_pro_sanbase
 
       assert {:ok, [_subscription]} =
@@ -41,11 +41,11 @@ defmodule Sanbase.Billing.PromoTrialTest do
 
       assert_receive {:stripe_create_subscription, args}
       assert is_integer(args.trial_end)
-      assert args.cancel_at == args.trial_end
+      assert args.cancel_at == args.trial_end - 60
       assert args.customer == "cus_test_promo"
     end
 
-    test "passes cancel_at == trial_end to Stripe for single plan_id variant", context do
+    test "passes cancel_at 60s before trial_end for single plan_id variant", context do
       plan = context.plans.plan_pro_sanbase
 
       assert {:ok, _subscription} =
@@ -56,10 +56,10 @@ defmodule Sanbase.Billing.PromoTrialTest do
                })
 
       assert_receive {:stripe_create_subscription, args}
-      assert args.cancel_at == args.trial_end
+      assert args.cancel_at == args.trial_end - 60
     end
 
-    test "string-keyed params variant also sets cancel_at == trial_end", context do
+    test "string-keyed params variant also sets cancel_at 60s before trial_end", context do
       plan = context.plans.plan_pro_sanbase
 
       assert {:ok, [_subscription]} =
@@ -70,7 +70,7 @@ defmodule Sanbase.Billing.PromoTrialTest do
                })
 
       assert_receive {:stripe_create_subscription, args}
-      assert args.cancel_at == args.trial_end
+      assert args.cancel_at == args.trial_end - 60
     end
 
     test "trial_end timestamp roughly matches requested trial_days", context do

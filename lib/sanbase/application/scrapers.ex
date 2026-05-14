@@ -64,8 +64,13 @@ defmodule Sanbase.Application.Scrapers do
       # Realtime coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 
-      # Oban for scraper jobs
-      {Oban, oban_scrapers_config()},
+      # Oban for scraper jobs.
+      # Wrapped in a dedicated supervisor with a relaxed restart policy so
+      # transient `Oban.Sonar` crashes during dev recompiles don't cascade.
+      start_if(
+        fn -> {Sanbase.Application.ObanSupervisor, config: oban_scrapers_config()} end,
+        &Sanbase.Application.ObanSupervisor.enabled?/0
+      ),
 
       # Scrape and export Cryptocompare realtime and historical prices.
       # Historical prices work is scheduled by Oban

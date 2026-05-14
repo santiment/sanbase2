@@ -35,8 +35,13 @@ defmodule Sanbase.Application.Web do
       # `start_supervised!`, which ExUnit tears down at test exit.
       start_in(Sanbase.Cache.RehydratingCache.Supervisor, [:dev, :prod]),
 
-      # Oban instance responsible for sending emails
-      {Oban, oban_web_config()},
+      # Oban instance responsible for sending emails.
+      # Wrapped in a dedicated supervisor with a relaxed restart policy so
+      # transient `Oban.Sonar` crashes during dev recompiles don't cascade.
+      start_if(
+        fn -> {Sanbase.Application.ObanSupervisor, config: oban_web_config()} end,
+        &Sanbase.Application.ObanSupervisor.enabled?/0
+      ),
 
       # Start libcluster
       start_in(

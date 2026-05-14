@@ -55,8 +55,15 @@ defmodule Sanbase.Application.ObanSupervisor do
   @spec enabled?() :: boolean()
   def enabled?() do
     case Config.module_get(Sanbase, :env) do
-      :dev -> System.get_env("OBAN_ENABLED", "false") == "true"
-      _ -> true
+      :dev ->
+        System.get_env("OBAN_ENABLED", "false")
+        |> to_string()
+        |> String.trim()
+        |> String.downcase()
+        |> Kernel.in(["true", "1"])
+
+      _ ->
+        true
     end
   end
 end

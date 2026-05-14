@@ -317,12 +317,14 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   # Private functions
 
   defp find_best_subscription(requested_product, user_id) do
-    api_sub = Subscription.current_subscription(user_id, @product_id_api)
-    sanbase_sub = Subscription.current_subscription(user_id, @product_id_sanbase)
-
+    # Never cross product boundaries. Sanbase and SanAPI plans grant access to
+    # different metric sets (e.g. Custom SanAPI plans may be social-only), so
+    # using one product's subscription for the other product's calls leads to
+    # incorrect access. Nil resolves to the FREE plan via
+    # Subscription.plan_name/1.
     case Product.code_by_id(requested_product) do
-      "SANBASE" -> sanbase_sub || api_sub
-      "SANAPI" -> api_sub || sanbase_sub
+      "SANBASE" -> Subscription.current_subscription(user_id, @product_id_sanbase)
+      "SANAPI" -> Subscription.current_subscription(user_id, @product_id_api)
     end
   end
 
@@ -337,8 +339,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   end
 
   defp get_user_subscription_for_sanbase(user_id) do
-    get_user_subscription(user_id, @product_id_sanbase) ||
-      get_user_subscription(user_id, @product_id_api)
+    # Only consider Sanbase subscriptions here. A SanAPI/Custom subscription
+    # would otherwise restrict Sanbase access to whatever the API plan allows
+    # (e.g. social-only metrics for custom plans). Nil resolves to the FREE
+    # plan via Subscription.plan_name/1.
+    get_user_subscription(user_id, @product_id_sanbase)
   end
 
   defp anon_user_auth_struct(conn) do

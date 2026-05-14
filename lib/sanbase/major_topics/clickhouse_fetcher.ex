@@ -30,6 +30,21 @@ defmodule Sanbase.MajorTopics.ClickhouseFetcher do
           topics: [topic()]
         }
 
+  @doc """
+  Re-query the metadata table for a specific `(source, version, interval)` and
+  return `%{ch_id => top_words_string}` using the current top-words selection
+  rules. Used by `Sanbase.MajorTopics.backfill_top_words/1` to refresh stored
+  top words on historical batches without touching moderation state.
+  """
+  @spec fetch_top_words(String.t(), integer(), String.t()) ::
+          {:ok, %{String.t() => String.t()}} | {:error, term()}
+  def fetch_top_words(source, version, interval) do
+    case fetch_metadata(source, version, interval) do
+      {:ok, rows} -> {:ok, Map.new(rows, fn row -> {row.ch_id, row.top_words} end)}
+      {:error, _} = err -> err
+    end
+  end
+
   @spec fetch_latest_batch(keyword()) :: {:ok, payload()} | {:error, String.t()}
   def fetch_latest_batch(opts \\ []) do
     source = Keyword.get(opts, :source, @default_source)
@@ -113,7 +128,7 @@ defmodule Sanbase.MajorTopics.ClickhouseFetcher do
   end
 
   @doc """
-  Pick the 5 highest-scoring words from a `words_score` Array(String) where each
+  Pick the 10 highest-scoring words from a `words_score` Array(String) where each
   element is a JSON-encoded `{"word", "score"}` map; join into a comma-separated
   string. Public so tests can exercise it without ClickHouse access.
   """
@@ -127,7 +142,7 @@ defmodule Sanbase.MajorTopics.ClickhouseFetcher do
       end
     end)
     |> Enum.sort_by(fn {_word, score} -> score end, :desc)
-    |> Enum.take(5)
+    |> Enum.take(10)
     |> Enum.map(fn {word, _score} -> word end)
     |> Enum.join(",")
   end

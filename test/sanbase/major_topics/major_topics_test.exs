@@ -9,7 +9,7 @@ defmodule Sanbase.MajorTopicsTest do
   alias Sanbase.MajorTopics.TopicBatch
 
   describe "top_words_string/1" do
-    test "picks top 5 by score and joins comma-separated" do
+    test "picks top 10 by score and joins comma-separated" do
       words_score = [
         ~s({"word": "alpha", "score": 0.1}),
         ~s({"word": "beta",  "score": 0.5}),
@@ -17,10 +17,16 @@ defmodule Sanbase.MajorTopicsTest do
         ~s({"word": "delta", "score": 0.9}),
         ~s({"word": "eps",   "score": 0.4}),
         ~s({"word": "zeta",  "score": 0.05}),
-        ~s({"word": "eta",   "score": 0.7})
+        ~s({"word": "eta",   "score": 0.7}),
+        ~s({"word": "theta", "score": 0.6}),
+        ~s({"word": "iota",  "score": 0.2}),
+        ~s({"word": "kappa", "score": 0.45}),
+        ~s({"word": "lambda","score": 0.35}),
+        ~s({"word": "mu",    "score": 0.02})
       ]
 
-      assert ClickhouseFetcher.top_words_string(words_score) == "delta,eta,beta,eps,gamma"
+      assert ClickhouseFetcher.top_words_string(words_score) ==
+               "delta,eta,theta,beta,kappa,eps,lambda,gamma,iota,alpha"
     end
 
     test "ignores malformed JSON elements" do

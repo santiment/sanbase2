@@ -7,6 +7,9 @@ defmodule Sanbase.MajorTopics do
 
   import Ecto.Query
 
+  require Logger
+
+  alias Sanbase.MajorTopics.ClickhouseFetcher
   alias Sanbase.MajorTopics.MajorTopic
   alias Sanbase.MajorTopics.TopicBatch
   alias Sanbase.Repo
@@ -181,6 +184,74 @@ defmodule Sanbase.MajorTopics do
   end
 
   def publish_batch(%TopicBatch{}, _user_id), do: {:error, :already_published}
+
+  @doc """
+  Re-query ClickHouse for the given batch and refresh the stored `top_words`
+  string on each topic. Only the `top_words` field is touched — `label`,
+  `is_removed`, `description`, `position`, and other moderation state are
+  preserved.
+
+  Safe to run from a remote console:
+
+      Sanbase.MajorTopics.backfill_top_words(42)
+
+  Returns either `{:error, reason}` or a summary map counting updated /
+  unchanged / missing topics.
+  """
+  @spec backfill_top_words(integer()) ::
+          {:ok,
+           %{
+             topics_updated: non_neg_integer(),
+             topics_unchanged: non_neg_integer(),
+             topics_missing_in_ch: non_neg_integer(),
+             errors: [String.t()]
+           }}
+          | {:error, term()}
+  def backfill_top_words(batch_id) when is_integer(batch_id) do
+    case Repo.get(TopicBatch, batch_id) do
+      nil ->
+        {:error, :batch_not_found}
+
+      batch ->
+        with {:ok, by_ch_id} <-
+               ClickhouseFetcher.fetch_top_words(batch.source, batch.version, batch.interval_text) do
+          summary =
+            Repo.all(from(t in MajorTopic, where: t.batch_id == ^batch.id))
+            |> Enum.reduce(
+              %{topics_updated: 0, topics_unchanged: 0, topics_missing_in_ch: 0, errors: []},
+              fn topic, acc ->
+                update_topic_top_words(topic, batch, Map.get(by_ch_id, topic.ch_id), acc)
+              end
+            )
+
+          Logger.info(
+            "[backfill_top_words] batch #{batch.id}: #{inspect(Map.delete(summary, :errors))}"
+          )
+
+          {:ok, %{summary | errors: Enum.reverse(summary.errors)}}
+        end
+    end
+  end
+
+  defp update_topic_top_words(_topic, _batch, nil, acc) do
+    %{acc | topics_missing_in_ch: acc.topics_missing_in_ch + 1}
+  end
+
+  defp update_topic_top_words(%MajorTopic{top_words: current} = topic, batch, new, acc) do
+    if new == current do
+      %{acc | topics_unchanged: acc.topics_unchanged + 1}
+    else
+      case topic |> Ecto.Changeset.change(top_words: new) |> Repo.update() do
+        {:ok, _} ->
+          %{acc | topics_updated: acc.topics_updated + 1}
+
+        {:error, cs} ->
+          msg = "topic #{topic.id} (batch #{batch.id}): #{inspect(cs.errors)}"
+          Logger.error("[backfill_top_words] #{msg}")
+          %{acc | errors: [msg | acc.errors]}
+      end
+    end
+  end
 
   # interval looks like "2026-05-04T00:00:00/2026-05-11T00:00:00"
   defp parse_interval(interval) when is_binary(interval) do

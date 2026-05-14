@@ -16,14 +16,22 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
      |> assign_batch(batch)}
   end
 
+  @highlight_top_n 20
+
   defp assign_batch(socket, batch) do
     active_count = Enum.count(batch.topics, fn t -> !t.is_removed end)
+
+    highlighted_ids =
+      batch.topics
+      |> Enum.reject(& &1.is_removed)
+      |> Enum.take(@highlight_top_n)
+      |> MapSet.new(& &1.id)
 
     socket
     |> assign(:batch, batch)
     |> assign(:active_count, active_count)
+    |> assign(:highlighted_ids, highlighted_ids)
     |> assign(:editing_id, nil)
-    |> assign_new(:viewing_id, fn -> nil end)
   end
 
   def handle_event("edit", %{"id" => id}, socket) do
@@ -35,17 +43,6 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
 
   def handle_event("cancel_edit", _params, socket) do
     {:noreply, assign(socket, :editing_id, nil)}
-  end
-
-  def handle_event("view_description", %{"id" => id}, socket) do
-    case find_topic_in_batch(socket, id) do
-      nil -> {:noreply, socket}
-      topic -> {:noreply, assign(socket, :viewing_id, topic.id)}
-    end
-  end
-
-  def handle_event("close_description", _params, socket) do
-    {:noreply, assign(socket, :viewing_id, nil)}
   end
 
   def handle_event("save", %{"topic_id" => id, "label" => label}, socket) do
@@ -127,7 +124,7 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
 
   def render(assigns) do
     ~H"""
-    <div class="p-6 max-w-7xl">
+    <div class="p-6 max-w-screen-2xl">
       <div class="mb-4">
         <.link navigate={~p"/admin/major_topics"} class="link text-sm">
           ← Back to batches
@@ -173,48 +170,29 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
       </div>
 
       <div class="rounded-box border border-base-300 overflow-hidden">
-        <table class="table">
+        <table class="table w-full">
           <thead>
             <tr>
               <th class="w-12">#</th>
-              <th class="w-1/4">Label</th>
-              <th>Top words</th>
+              <th class="w-56">Label</th>
+              <th class="w-28">Top words</th>
               <th>Description</th>
-              <th class="w-20 text-right">Points</th>
-              <th class="w-32 text-right">Actions</th>
+              <th class="w-16 text-right">Points</th>
+              <th class="w-28 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr
               :for={topic <- @batch.topics}
-              class={topic.is_removed && "opacity-40 line-through"}
+              class={[
+                topic.is_removed && "opacity-40 line-through",
+                MapSet.member?(@highlighted_ids, topic.id) && "bg-success/10"
+              ]}
             >
-              <td class="text-xs text-base-content/60">{topic.position}</td>
-              <td>
-                <form
-                  :if={@editing_id == topic.id}
-                  phx-submit="save"
-                  class="flex items-center gap-2"
-                >
-                  <input type="hidden" name="topic_id" value={topic.id} />
-                  <input
-                    type="text"
-                    name="label"
-                    value={topic.label}
-                    class="input input-sm input-bordered w-full"
-                    autofocus
-                  />
-                  <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                  <button
-                    type="button"
-                    phx-click="cancel_edit"
-                    class="btn btn-sm btn-ghost"
-                  >
-                    Cancel
-                  </button>
-                </form>
-                <div :if={@editing_id != topic.id} class="flex items-center gap-2">
-                  <span class="font-medium">{topic.label}</span>
+              <td class="text-xs text-base-content/60 align-top">{topic.position}</td>
+              <td class="align-top">
+                <div class="flex items-start gap-1 flex-wrap">
+                  <span class="font-medium text-sm">{topic.label}</span>
                   <span
                     :if={topic.label != topic.original_label}
                     class="badge badge-xs badge-info"
@@ -224,22 +202,20 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
                   </span>
                 </div>
               </td>
-              <td class="font-mono text-xs">{topic.top_words}</td>
-              <td class="text-xs text-base-content/80">
-                <button
-                  type="button"
-                  phx-click="view_description"
-                  phx-value-id={topic.id}
-                  class="text-left line-clamp-3 hover:text-primary cursor-pointer"
-                  title="Click to view full description"
-                >
-                  {topic.description}
-                </button>
+              <td class="font-mono text-[11px] align-top">
+                <div class="flex flex-col gap-0.5 leading-tight">
+                  <span :for={word <- String.split(topic.top_words || "", ",", trim: true)}>
+                    {word}
+                  </span>
+                </div>
               </td>
-              <td class="text-right text-xs">{length(topic.values)}</td>
-              <td class="text-right whitespace-nowrap">
+              <td class="text-[11px] leading-snug text-base-content/80 whitespace-pre-wrap align-top">
+                {topic.description}
+              </td>
+              <td class="text-right text-xs align-top">{length(topic.values)}</td>
+              <td class="text-right whitespace-nowrap align-top">
                 <button
-                  :if={@editing_id != topic.id and @batch.state == "draft"}
+                  :if={@batch.state == "draft"}
                   phx-click="edit"
                   phx-value-id={topic.id}
                   class="link link-primary text-sm"
@@ -270,33 +246,49 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
       </div>
 
       <div
-        :if={@viewing_id}
+        :if={@editing_id}
         class="fixed inset-0 z-50 flex items-center justify-center"
-        phx-window-keydown="close_description"
+        phx-window-keydown="cancel_edit"
         phx-key="escape"
       >
-        <div class="absolute inset-0 bg-black/50" phx-click="close_description"></div>
-        <% topic = Enum.find(@batch.topics, &(&1.id == @viewing_id)) %>
-        <div class="relative bg-base-100 rounded-box shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+        <div class="absolute inset-0 bg-black/50" phx-click="cancel_edit"></div>
+        <% editing_topic = Enum.find(@batch.topics, &(&1.id == @editing_id)) %>
+        <div
+          :if={editing_topic}
+          class="relative bg-base-100 rounded-box shadow-xl max-w-2xl w-full mx-4 flex flex-col"
+        >
           <div class="px-6 py-4 border-b border-base-300 flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-bold">{topic && topic.label}</h2>
-              <p :if={topic} class="text-xs text-base-content/60 mt-1 font-mono">
-                {topic.top_words}
+              <h2 class="text-lg font-bold">Edit label</h2>
+              <p class="text-xs text-base-content/60 mt-1">
+                Original: <span class="font-mono">{editing_topic.original_label}</span>
               </p>
             </div>
             <button
               type="button"
-              phx-click="close_description"
+              phx-click="cancel_edit"
               class="btn btn-sm btn-ghost btn-circle"
               aria-label="Close"
             >
               ✕
             </button>
           </div>
-          <div class="px-6 py-4 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed">
-            {topic && topic.description}
-          </div>
+          <form phx-submit="save" class="px-6 py-4 flex flex-col gap-3">
+            <input type="hidden" name="topic_id" value={editing_topic.id} />
+            <input
+              type="text"
+              name="label"
+              value={editing_topic.label}
+              class="input input-bordered w-full"
+              autofocus
+            />
+            <div class="flex items-center justify-end gap-2">
+              <button type="button" phx-click="cancel_edit" class="btn btn-ghost">
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

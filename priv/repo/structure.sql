@@ -2,15 +2,14 @@
 -- PostgreSQL database dump
 --
 
-\restrict rg49JhdfuYvzkmMwjbtFtgpts4TBllmDGQKCJMBxkwdDmdxkoEEefAh524URkUs
+\restrict XR55GNxHNdkAMsNOnzFKuonxzGMrRwwuVvk9nnAG047KLvHaBC2rejfACK9JSat
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 15.15 (Homebrew)
+-- Dumped by pg_dump version 15.15 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -2280,7 +2279,9 @@ CREATE TABLE public.mcp_tool_invocations (
     user_agent character varying(512),
     client character varying(32),
     session_id character varying(128),
-    kind character varying(255) DEFAULT 'tool'::character varying NOT NULL
+    kind character varying(255) DEFAULT 'tool'::character varying NOT NULL,
+    product_code character varying(16),
+    plan_name character varying(32)
 );
 
 
@@ -9042,6 +9043,20 @@ CREATE INDEX mcp_tool_invocations_metrics_gin ON public.mcp_tool_invocations USI
 
 
 --
+-- Name: mcp_tool_invocations_plan_name_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_plan_name_inserted_at_index ON public.mcp_tool_invocations USING btree (plan_name, inserted_at);
+
+
+--
+-- Name: mcp_tool_invocations_product_code_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_product_code_inserted_at_index ON public.mcp_tool_invocations USING btree (product_code, inserted_at);
+
+
+--
 -- Name: mcp_tool_invocations_session_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11615,7 +11630,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict rg49JhdfuYvzkmMwjbtFtgpts4TBllmDGQKCJMBxkwdDmdxkoEEefAh524URkUs
+\unrestrict XR55GNxHNdkAMsNOnzFKuonxzGMrRwwuVvk9nnAG047KLvHaBC2rejfACK9JSat
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12185,3 +12200,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260427125517);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511101919);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112644);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);
+INSERT INTO public."schema_migrations" (version) VALUES (20260515075234);

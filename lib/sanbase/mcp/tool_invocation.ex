@@ -5,6 +5,9 @@ defmodule Sanbase.MCP.ToolInvocation do
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Utils.Config
 
   @user_agent_max 512
@@ -26,6 +29,8 @@ defmodule Sanbase.MCP.ToolInvocation do
     field(:client, :string)
     field(:session_id, :string)
     field(:kind, :string, default: "tool")
+    field(:product_code, :string)
+    field(:plan_name, :string)
 
     timestamps()
   end
@@ -44,7 +49,9 @@ defmodule Sanbase.MCP.ToolInvocation do
     :user_agent,
     :client,
     :session_id,
-    :kind
+    :kind,
+    :product_code,
+    :plan_name
   ]
 
   def changeset(invocation, attrs) do
@@ -131,11 +138,59 @@ defmodule Sanbase.MCP.ToolInvocation do
   defp truncate_client(c), do: binary_part(c, 0, @client_max)
 
   def create(attrs) do
-    attrs = extract_metrics_and_slugs(attrs)
+    attrs =
+      attrs
+      |> extract_metrics_and_slugs()
+      |> maybe_snapshot_plan()
 
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Resolves the user's most recent active/trialing subscription and returns
+  `%{product_code: code, plan_name: name}`. Returns `%{product_code: nil,
+  plan_name: "FREE"}` for users with no subscription so the breakdown buckets
+  unsubscribed users under FREE. Returns `%{product_code: nil, plan_name: nil}`
+  when `user_id` is nil (anonymous invocations).
+
+  "Last subscription in vigor" = the most recently created subscription among
+  active/past_due/trialing across all products. Cross-product because a user
+  may simultaneously have SANBASE and SANAPI subs and the latest one is the
+  signal we want for analytics.
+  """
+  @spec plan_snapshot_for(integer() | nil) :: %{
+          product_code: String.t() | nil,
+          plan_name: String.t() | nil
+        }
+  def plan_snapshot_for(nil), do: %{product_code: nil, plan_name: nil}
+
+  def plan_snapshot_for(user_id) when is_integer(user_id) do
+    case Subscription.user_subscriptions(%User{id: user_id}) do
+      [%Subscription{plan: %Plan{} = plan} | _] ->
+        %{
+          product_code: Product.code_by_id(plan.product_id),
+          plan_name: Plan.plan_name(plan)
+        }
+
+      _ ->
+        %{product_code: nil, plan_name: "FREE"}
+    end
+  end
+
+  defp maybe_snapshot_plan(attrs) do
+    cond do
+      Map.has_key?(attrs, :plan_name) or Map.has_key?(attrs, "plan_name") ->
+        attrs
+
+      user_id = Map.get(attrs, :user_id) || Map.get(attrs, "user_id") ->
+        snap = plan_snapshot_for(user_id)
+        attrs |> Map.put(:product_code, snap.product_code) |> Map.put(:plan_name, snap.plan_name)
+
+      true ->
+        attrs
+    end
   end
 
   def list_invocations(opts \\ []) do
@@ -232,6 +287,20 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> Repo.all()
   end
 
+  @doc """
+  Distinct, non-null plan_name values that have ever been recorded.
+  Used to populate the admin filter dropdown.
+  """
+  def plan_names do
+    from(i in __MODULE__,
+      where: not is_nil(i.plan_name),
+      distinct: true,
+      select: i.plan_name,
+      order_by: i.plan_name
+    )
+    |> Repo.all()
+  end
+
   @builtin_team_emails ["tsvetozar.penov@gmail.com"]
 
   @doc """
@@ -279,6 +348,8 @@ defmodule Sanbase.MCP.ToolInvocation do
     * `:tool_name` (string) — filter by tool/prompt name.
     * `:client` (string) — filter by derived client.
     * `:kind` (`"tool" | "prompt"`) — filter by kind.
+    * `:plan_name` (string) — filter by user's plan at invocation time.
+    * `:product_code` (string) — filter by product code (`SANBASE` / `SANAPI`).
   """
   def time_series(opts) do
     since = Keyword.fetch!(opts, :since)
@@ -290,6 +361,8 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
     |> maybe_filter_client(Keyword.get(opts, :client))
     |> maybe_filter_kind(Keyword.get(opts, :kind))
+    |> maybe_filter_plan_name(Keyword.get(opts, :plan_name))
+    |> maybe_filter_product_code(Keyword.get(opts, :product_code))
     |> group_by([i], selected_as(:bucket))
     |> order_by([i], asc: selected_as(:bucket))
     |> select(
@@ -337,6 +410,17 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> order_by([i], desc: count(i.id))
     |> limit(^limit)
     |> select([i, metric: m], {m, count(i.id)})
+    |> Repo.all()
+  end
+
+  def top_by(:plan_name, %DateTime{} = since, limit) do
+    base_query()
+    |> where([i], i.inserted_at >= ^since)
+    |> exclude_noise()
+    |> group_by([i], i.plan_name)
+    |> order_by([i], desc: count(i.id))
+    |> limit(^limit)
+    |> select([i], {i.plan_name, count(i.id)})
     |> Repo.all()
   end
 
@@ -516,6 +600,10 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
     |> apply_user_filters(email_search, exclude_team)
     |> maybe_filter_metric(Keyword.get(opts, :metric))
+    |> maybe_filter_plan_name(Keyword.get(opts, :plan_name))
+    |> maybe_filter_product_code(Keyword.get(opts, :product_code))
+    |> maybe_filter_kind(Keyword.get(opts, :kind))
+    |> maybe_filter_client(Keyword.get(opts, :client))
     |> maybe_hide_auto_rejected(Keyword.get(opts, :hide_auto_rejected, false))
   end
 
@@ -618,6 +706,14 @@ defmodule Sanbase.MCP.ToolInvocation do
   defp maybe_filter_kind(query, nil), do: query
   defp maybe_filter_kind(query, ""), do: query
   defp maybe_filter_kind(query, kind), do: where(query, [i], i.kind == ^kind)
+
+  defp maybe_filter_plan_name(query, nil), do: query
+  defp maybe_filter_plan_name(query, ""), do: query
+  defp maybe_filter_plan_name(query, plan), do: where(query, [i], i.plan_name == ^plan)
+
+  defp maybe_filter_product_code(query, nil), do: query
+  defp maybe_filter_product_code(query, ""), do: query
+  defp maybe_filter_product_code(query, code), do: where(query, [i], i.product_code == ^code)
 
   defp apply_pagination(query, opts) do
     page = opts |> Keyword.get(:page, 1) |> max(1)

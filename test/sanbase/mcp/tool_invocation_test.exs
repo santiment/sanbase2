@@ -134,12 +134,20 @@ defmodule Sanbase.MCP.ToolInvocationTest do
   end
 
   test "returns rate limit error when global limit is exceeded", context do
-    original = Application.get_env(:sanbase, Sanbase.MCP.ToolInvocation)
+    original = Application.get_env(:sanbase, Sanbase.MCP.Restrictions, [])
 
     Application.put_env(
       :sanbase,
-      Sanbase.MCP.ToolInvocation,
-      Keyword.merge(original, global_rate_limit_minute: 2)
+      Sanbase.MCP.Restrictions,
+      Keyword.put(
+        original,
+        :global,
+        %{
+          free: %{minute: 2, hour: 10_000, day: 10_000, month: 10_000},
+          pro: %{minute: 2, hour: 10_000, day: 10_000, month: 10_000},
+          max: %{minute: 2, hour: 10_000, day: 10_000, month: 10_000}
+        }
+      )
     )
 
     # Pre-insert invocations to reach the limit
@@ -185,7 +193,7 @@ defmodule Sanbase.MCP.ToolInvocationTest do
     assert rate_limited_inv.error_message =~ "Rate limit exceeded"
     assert rate_limited_inv.duration_ms == 0
 
-    Application.put_env(:sanbase, Sanbase.MCP.ToolInvocation, original)
+    Application.put_env(:sanbase, Sanbase.MCP.Restrictions, original)
   end
 
   test "filters work correctly", context do

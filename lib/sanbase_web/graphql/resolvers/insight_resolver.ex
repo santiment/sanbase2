@@ -4,96 +4,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
   alias Sanbase.Insight.Post
-  alias Sanbase.Insight.PostImage
-  alias Sanbase.Insight.ImageUrl
-  alias Sanbase.Insight.PopularAuthor
+  alias Sanbase.Insights
   alias Sanbase.Comments.EntityComment
 
-  def popular_insight_authors(_root, _args, _resolution) do
-    PopularAuthor.get()
-  end
+  @list_opt_keys [:is_pulse, :is_paywall_required, :from, :to]
+  @list_opt_keys_with_categories [:is_pulse, :is_paywall_required, :categories, :from, :to]
+
+  def popular_insight_authors(_root, _args, _resolution), do: Insights.popular_authors()
 
   def insights(%User{} = user, %{page: page, page_size: page_size} = args, _resolution) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to),
-      page: page,
-      page_size: page_size
-    ]
-
-    {:ok, Post.user_insights(user.id, opts)}
+    {:ok, Insights.user_insights(user.id, list_opts(args, page, page_size))}
   end
 
   def public_insights(%User{} = user, %{page: page, page_size: page_size} = args, _resolution) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to),
-      page: page,
-      page_size: page_size
-    ]
-
-    {:ok, Post.user_public_insights(user.id, opts)}
+    {:ok, Insights.user_public_insights(user.id, list_opts(args, page, page_size))}
   end
 
-  def related_projects(%Post{} = post, _, _) do
-    Post.related_projects(post)
-  end
+  def related_projects(%Post{} = post, _, _), do: Insights.related_projects(post)
 
-  def post(_root, %{id: post_id}, %{context: context} = _resolution) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    user_id = user.id
-
-    case Post.by_id(post_id, []) do
-      {:ok, %Post{state: "approved", ready_state: "published"} = post} ->
-        {:ok, post}
-
-      {:ok, %Post{user_id: ^user_id} = post} ->
-        {:ok, post}
-
-      {:ok, _} ->
-        {:error,
-         "Insight with id #{post_id} does not exist, is not published, or is not approved"}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+  def post(_root, %{id: post_id}, %{context: context}) do
+    viewer_id = get_in(context, [:auth, :current_user, Access.key(:id)])
+    Insights.get_post(post_id, viewer_id)
   end
 
   def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context)
       when is_list(tags) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      categories: Map.get(args, :categories),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to),
-      page: page,
-      page_size: page_size
-    ]
-
-    posts = Post.public_insights_by_tags(tags, opts)
-
-    {:ok, posts}
+    {:ok, Insights.public_insights_by_tags(tags, list_opts(args, page, page_size, :categories))}
   end
 
   def all_insights(_root, %{page: page, page_size: page_size} = args, _resolution) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      categories: Map.get(args, :categories),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to),
-      page: page,
-      page_size: page_size
-    ]
-
-    posts = Post.public_insights(opts)
-
-    {:ok, posts}
+    {:ok, Insights.public_insights(list_opts(args, page, page_size, :categories))}
   end
 
   def all_insights_for_user(
@@ -101,45 +41,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
         %{user_id: user_id, page: page, page_size: page_size} = args,
         _context
       ) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      categories: Map.get(args, :categories),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to),
-      page: page,
-      page_size: page_size
-    ]
-
-    posts = Post.user_public_insights(user_id, opts)
-
-    {:ok, posts}
+    {:ok, Insights.user_public_insights(user_id, list_opts(args, page, page_size, :categories))}
   end
 
   def all_insights_user_voted_for(_root, %{user_id: user_id} = args, _context) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to)
-    ]
-
-    posts = Post.all_insights_user_voted_for(user_id, opts)
-
-    {:ok, posts}
+    {:ok, Insights.user_voted_insights(user_id, list_opts(args))}
   end
 
   def all_insights_by_tag(_root, %{tag: tag} = args, _context) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to)
-    ]
-
-    posts = Post.public_insights_by_tags([tag], opts)
-
-    {:ok, posts}
+    {:ok, Insights.public_insights_by_tags([tag], list_opts(args))}
   end
 
   def all_insights_by_search_term(
@@ -147,70 +57,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
         %{search_term: search_term, page: page, page_size: page_size} = args,
         _context
       ) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to),
-      page: page,
-      page_size: page_size
-    ]
-
-    # Search is done only on the publicly visible (published) insights.
-    search_result_insights = Post.search_published_insights(search_term, opts)
-
-    {:ok, search_result_insights}
+    {:ok, Insights.search_published(search_term, list_opts(args, page, page_size))}
   end
 
-  @doc ~s"""
-  When fetching all insights we need to directly show only the text of the pulse insights.
-  In order to transport less data over the network, this field can be used instead of
-  the `text` field as it will be filled only for those insights.
-  """
-  def pulse_text(%Post{} = post, _args, _resolution) do
-    case Post.pulse?(post) do
-      true -> {:ok, post.text}
-      _ -> {:ok, nil}
-    end
-  end
+  def pulse_text(%Post{} = post, _args, _resolution), do: Insights.pulse_text(post)
 
-  def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    case Post.has_not_reached_rate_limits?(user.id) do
-      {:ok, _} -> Post.create(user, args)
-      {:error, error} -> {:error, error}
-    end
-  end
+  def create_post(_root, args, %{context: %{auth: %{current_user: user}}}),
+    do: Insights.create_post(user, args)
 
   def update_post(_root, %{id: post_id} = args, %{
         context: %{auth: %{current_user: %User{} = user}}
-      }) do
-    Post.update(post_id, user, args)
-  end
+      }),
+      do: Insights.update_post(post_id, user, args)
 
   def delete_post(_root, %{id: post_id}, %{
         context: %{auth: %{current_user: %User{} = user}}
-      }) do
-    Post.delete(post_id, user)
-  end
+      }),
+      do: Insights.delete_post(post_id, user)
 
   def publish_insight(_root, %{id: post_id}, %{
         context: %{auth: %{current_user: %User{id: user_id}}}
-      }) do
-    Post.publish(post_id, user_id)
-  end
+      }),
+      do: Insights.publish(post_id, user_id)
 
-  def all_tags(_root, _args, _context) do
-    {:ok, Sanbase.Tag.all()}
-  end
+  def all_tags(_root, _args, _context), do: {:ok, Insights.all_tags()}
 
-  @doc "Returns all insight categories with the count of published insights in each."
-  @spec all_insight_categories(any(), map(), any()) :: {:ok, list(map())}
-  def all_insight_categories(_root, _args, _context) do
-    Sanbase.Insight.Category.all_with_insight_count()
-  end
+  def all_insight_categories(_root, _args, _context), do: Insights.all_categories_with_count()
 
-  @doc "Returns the categories assigned to a given post via dataloader."
-  @spec post_categories(%Post{}, map(), Absinthe.Resolution.t()) :: any()
   def post_categories(%Post{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :post_categories, id)
@@ -224,68 +97,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end)
   end
 
-  @doc """
-  Resolve images for an insight by combining DB-linked images with
-  regex-extracted images from text. This ensures backward compatibility
-  for old insights where images were never properly linked in the DB.
-  """
-  def resolve_images(%Post{text: text, images: images}, _args, _resolution) do
-    db_images =
-      case images do
-        images when is_list(images) ->
-          Enum.map(images, &post_image_to_map/1)
-
-        _ ->
-          []
-      end
-
-    # Build a case-insensitive lookup from DB images to get variant URLs
-    db_image_by_url =
-      Map.new(db_images, fn img -> {String.downcase(img.image_url), img} end)
-
-    # Regex images are in text-appearance order — use them as the primary source
-    regex_images =
-      ImageUrl.extract_from_text(text)
-      |> Enum.map(fn url ->
-        case Map.get(db_image_by_url, String.downcase(url)) do
-          nil -> %{image_url: url}
-          db_img -> %{db_img | image_url: url}
-        end
-      end)
-
-    # Append any DB-only images not found in the text
-    text_urls =
-      MapSet.new(regex_images, fn %{image_url: url} -> String.downcase(url) end)
-
-    orphan_db_images =
-      Enum.reject(db_images, fn %{image_url: url} ->
-        MapSet.member?(text_urls, String.downcase(url))
-      end)
-
-    all_images =
-      (regex_images ++ orphan_db_images)
-      |> Enum.uniq_by(fn %{image_url: url} -> String.downcase(url) end)
-
-    {:ok, all_images}
-  end
-
-  defp post_image_to_map(%PostImage{} = image) do
-    %{
-      image_url: image.image_url,
-      image_url_w400: image.image_url_w400,
-      image_url_w800: image.image_url_w800,
-      image_url_w1200: image.image_url_w1200,
-      image_url_w2000: image.image_url_w2000
-    }
-  end
+  def resolve_images(%Post{} = post, _args, _resolution), do: Insights.resolve_post_images(post)
 
   def insights_count(%User{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :insights_count_per_user, id)
     |> on_load(fn loader ->
-      {:ok,
-       Dataloader.get(loader, SanbaseDataloader, :insights_count_per_user, id) ||
-         %{total_count: 0, draft_count: 0, pulse_count: 0, paywall_count: 0}}
+      count =
+        Dataloader.get(loader, SanbaseDataloader, :insights_count_per_user, id) ||
+          Insights.empty_insights_count()
+
+      {:ok, count}
     end)
   end
 
@@ -306,7 +128,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end)
   end
 
-  def create_chart_event(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    Post.create_chart_event(user.id, args)
+  def create_chart_event(_root, args, %{context: %{auth: %{current_user: user}}}),
+    do: Insights.create_chart_event(user.id, args)
+
+  defp list_opts(args, page, page_size, :categories) do
+    args
+    |> Map.take(@list_opt_keys_with_categories)
+    |> Map.to_list()
+    |> Keyword.merge(page: page, page_size: page_size)
   end
+
+  defp list_opts(args, page, page_size) do
+    args
+    |> Map.take(@list_opt_keys)
+    |> Map.to_list()
+    |> Keyword.merge(page: page, page_size: page_size)
+  end
+
+  defp list_opts(args), do: args |> Map.take(@list_opt_keys) |> Map.to_list()
 end

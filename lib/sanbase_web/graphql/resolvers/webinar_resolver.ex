@@ -1,12 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.WebinarResolver do
-  alias Sanbase.Webinar
-  alias Sanbase.Webinars.Registration
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Webinars.{Webinar, Registration}
+  alias Sanbase.Billing
 
   def get_webinars(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    plan =
-      Subscription.current_subscription(user, Product.product_sanbase())
-      |> Subscription.plan_name()
+    plan = Billing.sanbase_plan_name(user)
 
     {:ok, Webinar.get_all(%{is_logged_in: true, plan_name: plan})}
   end

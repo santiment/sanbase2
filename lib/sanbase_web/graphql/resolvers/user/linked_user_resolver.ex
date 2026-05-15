@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.LinkedUserResolver do
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Product, Subscription}
+  alias Sanbase.Billing
   alias Sanbase.Accounts.{LinkedUser, LinkedUserCandidate}
 
   def generate_linked_users_token(_root, args, %{context: %{auth: %{current_user: user}}}) do
@@ -24,15 +24,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.LinkedUserResolver do
   end
 
   def primary_user_sanbase_subscription(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    Subscription.get_user_subscription(user.id, Product.product_sanbase())
+    Billing.sanbase_subscription(user.id)
   end
 
   def primary_user_sanbase_subscription(%User{} = user, _args, _resolution) do
-    Subscription.get_user_subscription(user.id, Product.product_sanbase())
+    Billing.sanbase_subscription(user.id)
   end
 
   def primary_user_sanbase_subscription(_root, _args, %{source: %{user: user}}) do
-    Subscription.get_user_subscription(user.id, Product.product_sanbase())
+    Billing.sanbase_subscription(user.id)
   end
 
   def remove_secondary_user(_root, args, %{context: %{auth: %{current_user: user}}}) do

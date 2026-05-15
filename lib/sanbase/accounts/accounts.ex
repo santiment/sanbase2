@@ -3,6 +3,9 @@ defmodule Sanbase.Accounts do
   alias Sanbase.Accounts.User
   alias Sanbase.Accounts.EthAccount
 
+  @terms_and_conditions_fields [:privacy_policy_accepted, :marketing_accepted]
+  @profile_fields [:description, :website_url, :twitter_handle, :avatar_url]
+
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)
   end
@@ -76,5 +79,39 @@ defmodule Sanbase.Accounts do
       {:error, _, reason, _} ->
         {:error, reason}
     end
+  end
+
+  @doc ~s"""
+  Update the user's profile-visible fields (description, website_url, twitter_handle,
+  avatar_url). Allowlist enforced regardless of caller-supplied keys.
+  """
+  @spec update_profile(User.t(), map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  def update_profile(%User{} = user, attrs) do
+    User.update(user, Map.take(attrs, @profile_fields))
+  end
+
+  @doc ~s"""
+  Update the user's terms and conditions acceptance flags. Only
+  `:privacy_policy_accepted` and `:marketing_accepted` are accepted. `nil` values
+  are dropped so callers can pass partial updates.
+  """
+  @spec update_terms_and_conditions(User.t(), map()) ::
+          {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  def update_terms_and_conditions(%User{} = user, attrs) do
+    attrs =
+      attrs
+      |> Map.take(@terms_and_conditions_fields)
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
+
+    User.update(user, attrs)
+  end
+
+  @doc ~s"""
+  Reload the user's `:user_settings` association, bypassing any prior preload.
+  """
+  @spec reload_user_settings(User.t()) :: User.t()
+  def reload_user_settings(%User{} = user) do
+    Repo.preload(user, :user_settings, force: true)
   end
 end

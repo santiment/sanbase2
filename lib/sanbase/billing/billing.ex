@@ -36,6 +36,49 @@ defmodule Sanbase.Billing do
   defdelegate create_free_basic_api, to: ProPlus
   defdelegate delete_free_basic_api, to: ProPlus
 
+  @doc ~s"""
+  Return the user's current Sanbase plan name (e.g. "FREE", "PRO", "MAX").
+  Wraps `Subscription.current_subscription/2` + `Subscription.plan_name/1` so
+  callers do not need to import `Product` or `Subscription` directly.
+  """
+  @spec sanbase_plan_name(User.t() | non_neg_integer()) :: String.t()
+  def sanbase_plan_name(user_or_id) do
+    user_or_id
+    |> Subscription.current_subscription(Product.product_sanbase())
+    |> Subscription.plan_name()
+  end
+
+  @doc ~s"""
+  Return the user's effective plan name across Sanbase and API products.
+  When the Sanbase plan is "FREE", fall back to the API product's plan name.
+  """
+  @spec sanbase_or_api_plan_name(non_neg_integer()) :: String.t()
+  def sanbase_or_api_plan_name(user_id) when is_integer(user_id) do
+    case Subscription.current_subscription_plan(user_id, Product.product_sanbase()) do
+      "FREE" -> Subscription.current_subscription_plan(user_id, Product.product_api())
+      sanbase_plan -> sanbase_plan
+    end
+  end
+
+  @doc ~s"""
+  Return the user's current Sanbase subscription struct (or `nil`).
+  """
+  @spec sanbase_subscription(non_neg_integer()) :: Subscription.t() | nil
+  def sanbase_subscription(user_id) when is_integer(user_id) do
+    Subscription.get_user_subscription(user_id, Product.product_sanbase())
+  end
+
+  @doc ~s"""
+  True if the user has a non-FREE plan on the given product.
+  """
+  @spec user_has_product_access?(User.t() | non_neg_integer(), non_neg_integer()) :: boolean()
+  def user_has_product_access?(user_or_id, product_id) do
+    case Subscription.current_subscription(user_or_id, product_id) do
+      nil -> false
+      %Subscription{} = subscription -> Subscription.plan_name(subscription) != "FREE"
+    end
+  end
+
   def list_products(), do: Repo.all(Product)
 
   def list_plans() do
@@ -121,6 +164,189 @@ defmodule Sanbase.Billing do
       emit_event(result, :update_stripe_customer, %{user: user, card_token: card_token})
 
       {:ok, user}
+    end
+  end
+
+  # ──────────────────────────────────────────────────────────────────
+  # Stripe-facing operations
+  #
+  # The web/resolver layer should call these wrappers rather than
+  # `Sanbase.StripeApi` directly. Each wrapper hides Stripe.* structs
+  # from callers and returns plain maps or already-mapped errors.
+  # ──────────────────────────────────────────────────────────────────
+
+  @doc ~s"""
+  Fetch the latest Stripe state for the user's subscription and sync the local
+  record (used when the UI needs the freshest payment-intent client secret).
+  Returns the same `{:ok, subscription}` shape `Subscription.by_id/1` does, or
+  one of the tagged-tuple error shapes consumed by the resolver's error
+  handler.
+  """
+  @spec refresh_subscription_payment_intent(User.t(), non_neg_integer()) ::
+          {:ok, Subscription.t()} | {:subscription?, any()} | {:error, any()}
+  def refresh_subscription_payment_intent(%User{id: user_id}, subscription_id) do
+    with {_, %Subscription{user_id: ^user_id} = subscription} <-
+           {:subscription?, Subscription.by_id(subscription_id)},
+         {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription.stripe_id) do
+      Subscription.sync_subscription_with_stripe(stripe_subscription, subscription)
+    end
+  end
+
+  @doc "List the user's past Stripe charges, mapped to GraphQL-shaped maps."
+  @spec list_payments(User.t()) :: {:ok, [map()]} | {:error, any()}
+  def list_payments(%User{} = user) do
+    case StripeApi.list_payments(user) do
+      {:ok, []} -> {:ok, []}
+      {:ok, %Stripe.List{data: payments}} -> {:ok, transform_payments(payments)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc "Retrieve a Stripe coupon and project it onto a GraphQL-shaped map."
+  @spec retrieve_coupon(String.t()) :: {:ok, map()} | {:error, any()}
+  def retrieve_coupon(coupon) do
+    case StripeApi.retrieve_coupon(coupon) do
+      {:ok,
+       %Stripe.Coupon{
+         valid: valid,
+         id: id,
+         name: name,
+         percent_off: percent_off,
+         amount_off: amount_off
+       }} ->
+        {:ok,
+         %{
+           is_valid: valid,
+           id: id,
+           name: name,
+           percent_off: percent_off,
+           amount_off: amount_off
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc ~s"""
+  Upcoming invoice for the user's subscription. Returns a `{period_start,
+  period_end, amount_due}` map, `{:error, message}`, or `:no_subscription` /
+  `:not_billable` for invariant failures.
+  """
+  @spec upcoming_invoice(User.t(), non_neg_integer()) :: {:ok, map()} | {:error, any()} | atom()
+  def upcoming_invoice(%User{id: user_id}, subscription_id) do
+    with %Subscription{user_id: ^user_id} = subscription <- Subscription.by_id(subscription_id),
+         true <- subscription.status in [:active, :trialing, :past_due],
+         {:ok, %Stripe.Invoice{} = invoice} <- StripeApi.upcoming_invoice(subscription.stripe_id) do
+      {:ok,
+       %{
+         period_start: DateTime.from_unix!(invoice.period_start),
+         period_end: DateTime.from_unix!(invoice.period_end),
+         amount_due: invoice.total
+       }}
+    end
+  end
+
+  @doc "Default payment instrument projected to a GraphQL-shaped map."
+  @spec default_payment_instrument(User.t()) :: {:ok, map()} | {:card?, nil} | {:error, any()}
+  def default_payment_instrument(%User{} = user) do
+    with {:ok, customer} <- StripeApi.fetch_stripe_customer(user),
+         {:card?, card} when not is_nil(card) <- {:card?, choose_default_card(customer)} do
+      {:ok,
+       %{
+         last4: card.last4,
+         dynamic_last4: card[:dynamic_last4],
+         exp_year: card.exp_year,
+         exp_month: card.exp_month,
+         brand: card.brand,
+         funding: card.funding
+       }}
+    end
+  end
+
+  @doc "Replace the user's default payment card with `card_token`."
+  @spec update_default_payment_instrument(User.t(), String.t()) ::
+          {:ok, true} | {:error, any()}
+  def update_default_payment_instrument(%User{} = user, card_token) do
+    if user.stripe_customer_id do
+      StripeApi.maybe_detach_payment_method(user.stripe_customer_id)
+    end
+
+    case create_or_update_stripe_customer(user, card_token) do
+      {:ok, _} -> {:ok, true}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc "Detach the user's default payment card from their Stripe customer."
+  @spec delete_default_payment_instrument(User.t()) :: {:ok, true} | :error | {:error, any()}
+  def delete_default_payment_instrument(%User{} = user) do
+    case StripeApi.delete_default_card(user) do
+      :ok -> {:ok, true}
+      other -> other
+    end
+  end
+
+  @doc "Create a Stripe SetupIntent and return its `client_secret`."
+  @spec create_setup_intent(User.t()) :: {:ok, %{client_secret: String.t()}} | {:error, any()}
+  def create_setup_intent(%User{} = user) do
+    case StripeApi.create_setup_intent(user) do
+      {:ok, setup_intent} -> {:ok, %{client_secret: setup_intent.client_secret}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc "Stripe customer balance (in SAN credits), expressed as a positive float."
+  @spec san_credit_balance(User.t()) :: float()
+  def san_credit_balance(%User{} = user) do
+    with {:ok, customer} <- StripeApi.retrieve_customer(user),
+         true <- customer.balance < 0 do
+      -(customer.balance / 100)
+    else
+      _ -> 0.00
+    end
+  end
+
+  defp transform_payments(payments) do
+    Enum.map(payments, fn
+      %Stripe.Charge{
+        status: status,
+        amount: amount,
+        created: created,
+        receipt_url: receipt_url,
+        description: description
+      } ->
+        %{
+          status: status,
+          amount: amount,
+          created_at: DateTime.from_unix!(created),
+          receipt_url: receipt_url,
+          description: description
+        }
+    end)
+  end
+
+  # default card can be either a card token or a payment method
+  # they are stored in different places in the customer object
+  defp choose_default_card(customer) do
+    cond do
+      # Check for default payment method first
+      is_map(customer.invoice_settings) and customer.invoice_settings.default_payment_method ->
+        pm_id = customer.invoice_settings.default_payment_method
+        {:ok, pm} = StripeApi.retrieve_payment_method(pm_id)
+        pm.card
+
+      # Fall back to default source if it exists and is a card
+      customer.default_source && is_struct(customer.default_source, Stripe.Card) ->
+        Map.from_struct(customer.default_source)
+
+      # Handle card source type
+      customer.default_source && is_map(customer.default_source) &&
+          Map.get(customer.default_source, :type) == "card" ->
+        get_in(customer.default_source, [:card]) || customer.default_source
+
+      true ->
+        nil
     end
   end
 

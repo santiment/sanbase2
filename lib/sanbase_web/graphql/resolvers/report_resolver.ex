@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
   alias Sanbase.Report
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing
 
   def upload_report(_root, %{report: report} = args, _resolution) do
     {params, _} = Map.split(args, [:name, :description])
@@ -35,10 +35,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
     {:ok, Report.get_by_tags(tags, %{is_logged_in: false})}
   end
 
-  defp get_user_plan(user_id) do
-    case Subscription.current_subscription_plan(user_id, Product.product_sanbase()) do
-      "FREE" -> Subscription.current_subscription_plan(user_id, Product.product_api())
-      sanbase_plan -> sanbase_plan
-    end
-  end
+  defp get_user_plan(user_id), do: Billing.sanbase_or_api_plan_name(user_id)
 end

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
+  alias Sanbase.MetricRegistry
   alias Sanbase.Metric.UIMetadata.DisplayOrder
   alias Sanbase.Repo
 
@@ -14,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
   end
 
   def get_ordered_metrics(_root, _args, _resolution) do
-    ordered_data = DisplayOrder.get_ordered_metrics()
+    ordered_data = MetricRegistry.ui_display_order_ordered_metrics()
 
     {:ok,
      %{
@@ -24,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
   end
 
   def get_ordered_metrics_v2(_root, _args, _resolution) do
-    ordered_data = Sanbase.Metric.Category.get_ordered_metrics()
+    ordered_data = MetricRegistry.category_ordered_metrics()
 
     # Update the dispaly_order based on category. All metrics inside the same category have
     # display_order in ascending order without gaps starting from 1
@@ -48,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
 
   def get_metrics_by_category(_root, %{category: category}, _resolution) do
     # Find category by name
-    case Sanbase.Metric.UIMetadata.Category.by_name(category) do
+    case MetricRegistry.ui_category_by_name(category) do
       nil ->
         {:ok, []}
 
@@ -64,13 +65,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
 
   def get_metrics_by_category_and_group(_root, %{category: category, group: group}, _resolution) do
     # Find category by name
-    case Sanbase.Metric.UIMetadata.Category.by_name(category) do
+    case MetricRegistry.ui_category_by_name(category) do
       nil ->
         {:ok, []}
 
       category_record ->
         # Find group by name and category_id
-        case Sanbase.Metric.UIMetadata.Group.by_name_and_category(group, category_record.id) do
+        case MetricRegistry.ui_group_by_name_and_category(group, category_record.id) do
           nil ->
             {:ok, []}
 

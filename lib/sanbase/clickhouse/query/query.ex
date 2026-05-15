@@ -221,7 +221,7 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   defp add_settings(%{sql: sql, log_comment: log_comment} = query) do
-    user_id = Process.get(:__graphql_query_current_user_id__)
+    user_id = current_user_id()
     hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
 
     log_comment =
@@ -261,4 +261,11 @@ defmodule Sanbase.Clickhouse.Query do
 
     %{query | sql: sql}
   end
+
+  # The conn process puts the current user id in the Process dictionary via
+  # `SanbaseWeb.Graphql.AuthPlug`. Resolvers and inline absinthe code run
+  # in that same process so this works. Dataloader batches and any other
+  # spawned Task run in a *different* process, so they must seed the key
+  # explicitly — see `SanbaseWeb.Graphql.SanbaseDataloader.wrap_kv_fun/2`.
+  defp current_user_id, do: Process.get(:__graphql_query_current_user_id__)
 end

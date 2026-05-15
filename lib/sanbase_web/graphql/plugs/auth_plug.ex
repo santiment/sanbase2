@@ -75,6 +75,13 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   def init(opts), do: opts
 
   def call(conn, _) do
+    # Cowboy worker processes are reused across requests. Clear request-
+    # scoped state from the previous request before authenticating the new
+    # one, otherwise the privacy filter / log_comment / log_queries=0 path
+    # could read a stale `user_id` belonging to the previous caller.
+    Process.delete(:__graphql_query_current_user_id__)
+    Logger.metadata(user_id: nil, hide_user_activity: nil)
+
     conn = conn |> put_private(:origin_url_map, get_origin(conn))
 
     case authenticate(conn, @authentication_methods) do
@@ -85,6 +92,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           %{auth: %{current_user: %{id: user_id}}} ->
             Process.put(:__graphql_query_current_user_id__, user_id)
             Logger.metadata(user_id: user_id)
+            # Populate Sentry user context so the `before_send` scrubber can
+            # detect protected users and strip the GraphQL document /
+            # variables that `Sentry.PlugContext` captured before this plug
+            # ran. See `Sanbase.Sentry.Scrubber`.
+            Sentry.Context.set_user_context(%{id: user_id})
 
             if Sanbase.Accounts.privacy_protected?(user_id) do
               Logger.metadata(hide_user_activity: true)

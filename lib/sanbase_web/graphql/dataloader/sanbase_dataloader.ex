@@ -7,9 +7,23 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.PostgresDataloader
   alias SanbaseWeb.Graphql.PriceDataloader
 
-  @spec data() :: Dataloader.KV.t()
-  def data() do
-    Dataloader.KV.new(&query/2)
+  @spec data(non_neg_integer() | nil) :: Dataloader.KV.t()
+  def data(user_id \\ nil) do
+    Dataloader.KV.new(wrap_kv_fun(&query/2, user_id))
+  end
+
+  # Dataloader.KV runs each batch in a fresh `Task`, so the Process dict
+  # set by `SanbaseWeb.Graphql.AuthPlug` in the conn process does not
+  # carry over. Re-seed the current user id at the top of each batch so
+  # downstream ClickHouse queries (issued via `ClickhouseDataloader`) can
+  # apply the privacy mask + `SETTINGS log_queries=0` for protected users.
+  defp wrap_kv_fun(fun, nil), do: fun
+
+  defp wrap_kv_fun(fun, user_id) do
+    fn batch_key, args ->
+      Process.put(:__graphql_query_current_user_id__, user_id)
+      fun.(batch_key, args)
+    end
   end
 
   @metricshub_dataloader [

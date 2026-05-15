@@ -266,13 +266,25 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   # Create an API Call event for every query in a Document separately.
   defp export_api_call_data(query_metadata) when is_map(query_metadata) do
+    build_export_records(query_metadata)
+    |> Sanbase.Kafka.ApiCall.json_kv_tuple_no_hash_collision()
+    |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
+  end
+
+  @doc false
+  # Public for tests only. Builds the per-query records that are exported
+  # to the `api_call_exporter` Kafka topic. For users in
+  # `Sanbase.Accounts.privacy_protected_user_ids/0` the GraphQL query
+  # name, selector and version fields are replaced with the masked
+  # sentinel so the exported data does not reveal what was queried.
+  def build_export_records(query_metadata) do
     user_id = query_metadata.caller_data.user_id
     hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
 
     Enum.map(query_metadata.success_queries, fn query ->
       {query, selector, version} =
         if hide_activity? do
-          {"<masked>", nil, nil}
+          {Sanbase.Accounts.masked_sentinel(), nil, nil}
         else
           get_query_and_selector(query)
         end
@@ -296,8 +308,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         compressed_response_size_byte: query_metadata.result_sizes.compressed_byte_size
       }
     end)
-    |> Sanbase.Kafka.ApiCall.json_kv_tuple_no_hash_collision()
-    |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
   end
 
   defp generate_id() do

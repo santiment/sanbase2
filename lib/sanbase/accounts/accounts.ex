@@ -23,6 +23,15 @@ defmodule Sanbase.Accounts do
 
   def privacy_protected?(_), do: false
 
+  @doc """
+  Sentinel string used wherever a value would normally be persisted/logged
+  for a `privacy_protected?/1` user. Kept identical across surfaces so
+  downstream consumers (Kafka, ClickHouse readers, MCP analytics) can
+  recognize a masked row with a single equality check.
+  """
+  @spec masked_sentinel() :: String.t()
+  def masked_sentinel, do: "<masked>"
+
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)
   end

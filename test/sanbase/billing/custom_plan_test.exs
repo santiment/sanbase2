@@ -157,6 +157,44 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
     end
   end
 
+  describe "effective plan name when a SanAPI custom plan is used cross-product" do
+    alias SanbaseWeb.Graphql.{AuthPlug, ContextPlug}
+
+    test "Sanbase request resolves to the custom plan's restricted_access_as_plan", context do
+      %{user: user} = context
+
+      conn =
+        build_conn()
+        |> get("/get_routed_conn")
+        |> setup_jwt_auth(user)
+        |> AuthPlug.call(%{})
+        |> ContextPlug.call(%{})
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.requested_product == "SANBASE"
+      assert conn_context.subscription_product == "SANAPI"
+      # The raw plan name is "CUSTOM_API_PLAN", but for SANBASE requests it
+      # must be translated to restricted_access_as_plan ("PRO") so the
+      # SanAPI custom metric whitelist isn't applied to Sanbase access checks.
+      assert conn_context.auth.plan == "PRO"
+    end
+
+    test "SanAPI request keeps the raw custom plan name", context do
+      %{conn: apikey_conn} = context
+
+      conn = apikey_conn |> get("/get_routed_conn") |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.requested_product == "SANAPI"
+      assert conn_context.subscription_product == "SANAPI"
+      # SanAPI requests keep the raw "CUSTOM_*" name so CustomAccessChecker
+      # applies the plan's metric/query whitelist.
+      assert conn_context.auth.plan == "CUSTOM_API_PLAN"
+    end
+  end
+
   describe "validation" do
     test "rejects malformed regex in not_accessible_patterns", context do
       Sanbase.Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9001")

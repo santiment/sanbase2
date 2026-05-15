@@ -198,7 +198,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
             auth_method: :user_token,
             current_user: current_user,
             subscription: subscription,
-            plan: Subscription.plan_name(subscription)
+            plan: effective_plan_name(subscription, "SANBASE")
           },
           requested_product_id: @product_id_sanbase,
           requested_product: "SANBASE",
@@ -232,7 +232,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           auth_method: :user_token,
           current_user: current_user,
           subscription: subscription,
-          plan: Subscription.plan_name(subscription)
+          plan: effective_plan_name(subscription, requested_product)
         },
         requested_product_id: requested_product_id,
         requested_product: requested_product,
@@ -299,7 +299,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           current_user: current_user,
           token: token,
           subscription: subscription,
-          plan: Subscription.plan_name(subscription)
+          plan: effective_plan_name(subscription, Product.code_by_id(requested_product_id))
         },
         subscription_product_id: subscription_product_id,
         subscription_product: subscription_product,
@@ -317,6 +317,13 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   # Private functions
 
   defp find_best_subscription(requested_product, user_id) do
+    # Cross-product fallback in both directions so paying customers keep their
+    # benefits in the other product (e.g. Sanbase MAX gets API access, SanAPI
+    # BUSINESS_PRO gets Sanbase benefits). Plan name translation for the
+    # destination product happens in effective_plan_name/2 — in particular,
+    # SanAPI custom plans are mapped to their `restricted_access_as_plan`
+    # when used for Sanbase requests, so their API-specific metric whitelist
+    # doesn't leak into Sanbase access checks.
     api_sub = Subscription.current_subscription(user_id, @product_id_api)
     sanbase_sub = Subscription.current_subscription(user_id, @product_id_sanbase)
 
@@ -324,6 +331,25 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       "SANBASE" -> sanbase_sub || api_sub
       "SANAPI" -> api_sub || sanbase_sub
     end
+  end
+
+  # A SanAPI custom plan's raw name (e.g. "CUSTOM_FOO") encodes an
+  # API-specific metric whitelist that must not be applied to Sanbase calls.
+  # When a Sanbase request falls back to such a subscription, resolve the
+  # custom plan's `restricted_access_as_plan` (defaulting to FREE) so the
+  # Sanbase access checker treats the user as that standard tier.
+  defp effective_plan_name(subscription, "SANBASE") do
+    case subscription do
+      %Subscription{plan: %{has_custom_restrictions: true, name: name}} ->
+        Sanbase.Queries.Authorization.fetch_base_plan_for_custom(name)
+
+      _ ->
+        Subscription.plan_name(subscription)
+    end
+  end
+
+  defp effective_plan_name(subscription, _requested_product) do
+    Subscription.plan_name(subscription)
   end
 
   defp get_user_subscription(user_id, product) do
@@ -337,6 +363,9 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   end
 
   defp get_user_subscription_for_sanbase(user_id) do
+    # Falls back to a SanAPI subscription so paying SanAPI users keep their
+    # Sanbase benefits. Custom plans are translated separately via
+    # effective_plan_name/2.
     get_user_subscription(user_id, @product_id_sanbase) ||
       get_user_subscription(user_id, @product_id_api)
   end

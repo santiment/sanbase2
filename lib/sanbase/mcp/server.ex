@@ -178,23 +178,17 @@ defmodule Sanbase.MCP.Server do
     client_info = frame.context.client_info
     %{user_agent: ua, session_id: sid, client: client} = request_context(headers, client_info)
 
-    user_id = if user, do: user.id
-    hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
-
-    {tool_name, params, error_message} =
-      if hide_activity? do
-        masked_error = if outcome.error_message, do: "<masked>"
-        {"<masked>", %{}, masked_error}
-      else
-        {tool_name, params, outcome.error_message}
-      end
-
+    # `Sanbase.MCP.Privacy.mask_attrs/1` later replaces tool_name / params /
+    # error_message / user_agent / client with the masked sentinel (or nil)
+    # for users in the privacy-protected set. The shape of activity
+    # (counts, durations, success flag) is preserved so we can still bill
+    # / rate-limit / measure usage without revealing what was queried.
     %{
-      user_id: user_id,
+      user_id: if(user, do: user.id),
       tool_name: tool_name,
       params: params,
       is_successful: outcome.is_successful,
-      error_message: error_message,
+      error_message: outcome.error_message,
       response_size_bytes: outcome.response_size_bytes,
       duration_ms: duration_ms,
       auth_method: Auth.get_auth_method(headers),
@@ -203,6 +197,7 @@ defmodule Sanbase.MCP.Server do
       session_id: sid,
       kind: kind
     }
+    |> Sanbase.MCP.Privacy.mask_attrs()
   end
 
   # Many MCP clients don't send a User-Agent header (CLI/SDK wrappers, some

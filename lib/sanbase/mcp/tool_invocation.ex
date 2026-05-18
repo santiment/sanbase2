@@ -288,17 +288,47 @@ defmodule Sanbase.MCP.ToolInvocation do
   end
 
   @doc """
-  Distinct, non-null plan_name values that have ever been recorded.
-  Used to populate the admin filter dropdown.
+  Distinct `"PRODUCT/PLAN"` combinations that have ever been recorded.
+  Used to populate the admin filter dropdown. SANBASE PRO and SANAPI PRO
+  are distinct entries so filtering can target one product specifically.
+
+  Rows with a `plan_name` but no `product_code` (i.e. legacy FREE buckets
+  for unsubscribed users) are emitted as just `"FREE"`.
   """
-  def plan_names do
+  def plan_combos do
     from(i in __MODULE__,
       where: not is_nil(i.plan_name),
       distinct: true,
-      select: i.plan_name,
-      order_by: i.plan_name
+      select: {i.product_code, i.plan_name},
+      order_by: [asc: i.product_code, asc: i.plan_name]
     )
     |> Repo.all()
+    |> Enum.map(&format_plan_combo/1)
+  end
+
+  @doc """
+  Renders a `{product_code, plan_name}` pair as a single `"PRODUCT/PLAN"`
+  string for UI display, falling back to just the plan name when product
+  is unknown (e.g. the synthetic FREE bucket).
+  """
+  @spec format_plan_combo({String.t() | nil, String.t() | nil}) :: String.t() | nil
+  def format_plan_combo({_product, nil}), do: nil
+  def format_plan_combo({nil, plan}), do: plan
+  def format_plan_combo({product, plan}), do: "#{product}/#{plan}"
+
+  @doc """
+  Splits a `"PRODUCT/PLAN"` combo string back into `{product, plan}`.
+  Accepts a bare plan name (no slash) and returns `{nil, plan}`.
+  """
+  @spec parse_plan_combo(String.t() | nil) :: {String.t() | nil, String.t() | nil}
+  def parse_plan_combo(nil), do: {nil, nil}
+  def parse_plan_combo(""), do: {nil, nil}
+
+  def parse_plan_combo(combo) when is_binary(combo) do
+    case String.split(combo, "/", parts: 2) do
+      [product, plan] -> {product, plan}
+      [plan] -> {nil, plan}
+    end
   end
 
   @builtin_team_emails ["tsvetozar.penov@gmail.com"]
@@ -350,6 +380,9 @@ defmodule Sanbase.MCP.ToolInvocation do
     * `:kind` (`"tool" | "prompt"`) — filter by kind.
     * `:plan_name` (string) — filter by user's plan at invocation time.
     * `:product_code` (string) — filter by product code (`SANBASE` / `SANAPI`).
+    * `:plan_combo` (string `"PRODUCT/PLAN"`) — convenience for the admin
+      UI; splits into `product_code` + `plan_name` filters. Takes
+      precedence over the individual keys when both are set.
   """
   def time_series(opts) do
     since = Keyword.fetch!(opts, :since)
@@ -361,8 +394,7 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
     |> maybe_filter_client(Keyword.get(opts, :client))
     |> maybe_filter_kind(Keyword.get(opts, :kind))
-    |> maybe_filter_plan_name(Keyword.get(opts, :plan_name))
-    |> maybe_filter_product_code(Keyword.get(opts, :product_code))
+    |> apply_plan_filters(opts)
     |> group_by([i], selected_as(:bucket))
     |> order_by([i], asc: selected_as(:bucket))
     |> select(
@@ -417,11 +449,12 @@ defmodule Sanbase.MCP.ToolInvocation do
     base_query()
     |> where([i], i.inserted_at >= ^since)
     |> exclude_noise()
-    |> group_by([i], i.plan_name)
+    |> group_by([i], [i.product_code, i.plan_name])
     |> order_by([i], desc: count(i.id))
     |> limit(^limit)
-    |> select([i], {i.plan_name, count(i.id)})
+    |> select([i], {i.product_code, i.plan_name, count(i.id)})
     |> Repo.all()
+    |> Enum.map(fn {product, plan, count} -> {format_plan_combo({product, plan}), count} end)
   end
 
   @doc """
@@ -464,35 +497,34 @@ defmodule Sanbase.MCP.ToolInvocation do
 
   @doc """
   Check global rate limits for a user across all MCP tool invocations.
-  Returns {:ok, true} if under limits, {:error, message} if rate limited.
-  """
-  def check_rate_limit(user_id) do
-    # `||` fallbacks guard against Config.module_get returning nil when the
-    # module env is registered (e.g. with :team_emails) but lacks these keys.
-    limits = %{
-      minute: Config.module_get(__MODULE__, :global_rate_limit_minute, 25) || 25,
-      hour: Config.module_get(__MODULE__, :global_rate_limit_hour, 100) || 100,
-      day: Config.module_get(__MODULE__, :global_rate_limit_day, 500) || 500
-    }
 
-    do_check_rate_limit(user_id, nil, limits)
+  `tier` is the MCP plan tier (`:free | :pro | :max`); when not supplied it
+  is resolved from the user's current subscriptions. Returns `{:ok, true}`
+  when under limits, `{:error, message}` when any window is hit.
+  """
+  def check_rate_limit(user_id, tier \\ nil) when is_integer(user_id) do
+    tier = tier || Sanbase.MCP.Restrictions.tier_for_user(%User{id: user_id})
+    do_check_rate_limit(user_id, nil, Sanbase.MCP.Restrictions.global_limits(tier))
   end
 
   @doc """
-  Check per-tool rate limits. Only `combined_trends_tool` has specific limits.
-  Other tools return {:ok, true} immediately.
+  Check per-tool rate limits. Only `combined_trends_tool` has a per-tool
+  sub-cap today (it's the only LLM-using tool). All other tools return
+  `{:ok, true}` immediately.
   """
-  def check_tool_rate_limit(user_id, "combined_trends_tool") do
-    limits = %{
-      minute: Config.module_get(__MODULE__, :combined_trends_rate_limit_minute, 3) || 3,
-      hour: Config.module_get(__MODULE__, :combined_trends_rate_limit_hour, 20) || 20,
-      day: Config.module_get(__MODULE__, :combined_trends_rate_limit_day, 50) || 50
-    }
+  def check_tool_rate_limit(user_id, tool_name, tier \\ nil)
 
-    do_check_rate_limit(user_id, "combined_trends_tool", limits)
+  def check_tool_rate_limit(user_id, "combined_trends_tool", tier) when is_integer(user_id) do
+    tier = tier || Sanbase.MCP.Restrictions.tier_for_user(%User{id: user_id})
+
+    do_check_rate_limit(
+      user_id,
+      "combined_trends_tool",
+      Sanbase.MCP.Restrictions.combined_trends_limits(tier)
+    )
   end
 
-  def check_tool_rate_limit(_user_id, _tool_name), do: {:ok, true}
+  def check_tool_rate_limit(_user_id, _tool_name, _tier), do: {:ok, true}
 
   defp do_check_rate_limit(user_id, tool_name, limits) do
     entity_name = if tool_name, do: "#{tool_name} calls", else: "MCP tool calls"
@@ -502,6 +534,11 @@ defmodule Sanbase.MCP.ToolInvocation do
       from(i in __MODULE__,
         where: i.user_id == ^user_id,
         select: %{
+          month:
+            fragment(
+              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
+              ^NaiveDateTime.add(now, -30 * 86_400, :second)
+            ),
           day:
             fragment(
               "COUNT(*) FILTER (WHERE inserted_at >= ?)",
@@ -544,6 +581,11 @@ defmodule Sanbase.MCP.ToolInvocation do
         {:error,
          "Rate limit exceeded: #{counts.day}/#{limits.day} #{entity_name} per day. " <>
            "Daily limit resets after 24 hours from your earliest call."}
+
+      counts.month >= limits.month ->
+        {:error,
+         "Rate limit exceeded: #{counts.month}/#{limits.month} #{entity_name} per 30 days. " <>
+           "Monthly limit uses a rolling 30-day window."}
 
       true ->
         {:ok, true}
@@ -600,11 +642,41 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
     |> apply_user_filters(email_search, exclude_team)
     |> maybe_filter_metric(Keyword.get(opts, :metric))
-    |> maybe_filter_plan_name(Keyword.get(opts, :plan_name))
-    |> maybe_filter_product_code(Keyword.get(opts, :product_code))
+    |> apply_plan_filters(opts)
     |> maybe_filter_kind(Keyword.get(opts, :kind))
     |> maybe_filter_client(Keyword.get(opts, :client))
     |> maybe_hide_auto_rejected(Keyword.get(opts, :hide_auto_rejected, false))
+  end
+
+  # Lets the admin UI pass a single `plan_combo: "PRODUCT/PLAN"` (e.g.
+  # "SANBASE/PRO") and have it expand into product_code + plan_name
+  # filters. Falls back to the individual keys when combo is absent so
+  # programmatic callers can still set them directly.
+  defp apply_plan_filters(query, opts) do
+    case Keyword.get(opts, :plan_combo) do
+      nil ->
+        query
+        |> maybe_filter_plan_name(Keyword.get(opts, :plan_name))
+        |> maybe_filter_product_code(Keyword.get(opts, :product_code))
+
+      "" ->
+        query
+        |> maybe_filter_plan_name(Keyword.get(opts, :plan_name))
+        |> maybe_filter_product_code(Keyword.get(opts, :product_code))
+
+      combo ->
+        case parse_plan_combo(combo) do
+          {nil, plan} ->
+            query
+            |> maybe_filter_plan_name(plan)
+            |> where([i], is_nil(i.product_code))
+
+          {product, plan} ->
+            query
+            |> maybe_filter_plan_name(plan)
+            |> maybe_filter_product_code(product)
+        end
+    end
   end
 
   defp maybe_hide_auto_rejected(query, false), do: query

@@ -485,13 +485,13 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
       assert length(results) == 2
     end
 
-    test "top_by(:plan_name) returns counts per plan" do
+    test "top_by(:plan_name) returns counts per PRODUCT/PLAN combo" do
       since = DateTime.add(DateTime.utc_now(), -3600, :second)
       rows = ToolInvocation.top_by(:plan_name, since)
 
-      assert {"PRO", 2} in rows
+      assert {"SANBASE/PRO", 2} in rows
       assert {"FREE", 1} in rows
-      assert {"MAX", 1} in rows
+      assert {"SANBASE/MAX", 1} in rows
     end
 
     test "time_series filters by plan_name" do
@@ -502,11 +502,22 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
       assert total == 2
     end
 
-    test "plan_names/0 returns distinct non-null plan names" do
-      names = ToolInvocation.plan_names()
-      assert "PRO" in names
-      assert "FREE" in names
-      assert "MAX" in names
+    test "list_invocations filters by plan_combo PRODUCT/PLAN", %{user_pro: user_pro} do
+      results = ToolInvocation.list_invocations(plan_combo: "SANBASE/PRO")
+      assert length(results) == 2
+      assert Enum.all?(results, &(&1.user_id == user_pro.id))
+
+      # A bare plan name (no slash) still works — useful for the FREE bucket
+      # where product_code is nil.
+      free_results = ToolInvocation.list_invocations(plan_combo: "FREE")
+      assert length(free_results) == 1
+    end
+
+    test "plan_combos/0 returns distinct PRODUCT/PLAN strings" do
+      combos = ToolInvocation.plan_combos()
+      assert "SANBASE/PRO" in combos
+      assert "FREE" in combos
+      assert "SANBASE/MAX" in combos
     end
   end
 

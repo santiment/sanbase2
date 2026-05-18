@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       |> assign(:page, 1)
       |> assign(:page_size, @page_size)
       |> assign(:tool_names, ToolInvocation.tool_names())
-      |> assign(:plan_names, ToolInvocation.plan_names())
+      |> assign(:plan_combos, ToolInvocation.plan_combos())
       |> assign(:modal_invocation, nil)
       |> assign(:timeline_window, "7d")
       |> assign(:ban_target, nil)
@@ -86,10 +86,10 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
      |> load_invocations()}
   end
 
-  def handle_event("filter_plan", %{"plan_name" => plan}, socket) do
+  def handle_event("filter_plan", %{"plan_combo" => combo}, socket) do
     {:noreply,
      socket
-     |> assign(:plan_filter, plan)
+     |> assign(:plan_filter, combo)
      |> assign(:page, 1)
      |> load_invocations()}
   end
@@ -288,7 +288,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       tool_name: assigns.tool_name_filter,
       email_search: assigns.email_search,
       metric: assigns.metric_search,
-      plan_name: assigns.plan_filter,
+      plan_combo: assigns.plan_filter,
       exclude_team_members: not assigns.include_team,
       hide_auto_rejected: assigns.hide_auto_rejected,
       page: assigns.page,
@@ -408,12 +408,14 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
 
       <fieldset class="fieldset">
         <legend class="fieldset-legend">Plan</legend>
-        <select id="plan-filter" phx-change="filter_plan" name="plan_name" class="select select-sm">
-          <option value="">All Plans</option>
-          <option :for={pn <- @plan_names} value={pn} selected={pn == @plan_filter}>
-            {pn}
-          </option>
-        </select>
+        <form phx-change="filter_plan" id="plan-filter-form">
+          <select id="plan-filter" name="plan_combo" class="select select-sm">
+            <option value="">All Plans</option>
+            <option :for={combo <- @plan_combos} value={combo} selected={combo == @plan_filter}>
+              {combo}
+            </option>
+          </select>
+        </form>
       </fieldset>
 
       <fieldset class="fieldset">
@@ -782,14 +784,18 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   end
 
   defp plan_badge(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :combo,
+        ToolInvocation.format_plan_combo({assigns[:product_code], assigns[:plan_name]})
+      )
+
     ~H"""
-    <span :if={@plan_name} class={["badge badge-sm", plan_badge_class(@plan_name)]}>
-      {@plan_name}
+    <span :if={@combo} class={["badge badge-sm", plan_badge_class(@plan_name)]}>
+      {@combo}
     </span>
-    <span :if={@plan_name && @product_code} class="badge badge-xs badge-ghost ml-1">
-      {@product_code}
-    </span>
-    <span :if={!@plan_name} class="text-base-content/40">-</span>
+    <span :if={!@combo} class="text-base-content/40">-</span>
     """
   end
 

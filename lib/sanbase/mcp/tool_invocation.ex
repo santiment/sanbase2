@@ -665,11 +665,17 @@ defmodule Sanbase.MCP.ToolInvocation do
         |> maybe_filter_product_code(Keyword.get(opts, :product_code))
 
       combo ->
-        {product, plan} = parse_plan_combo(combo)
+        case parse_plan_combo(combo) do
+          {nil, plan} ->
+            query
+            |> maybe_filter_plan_name(plan)
+            |> where([i], is_nil(i.product_code))
 
-        query
-        |> maybe_filter_plan_name(plan)
-        |> maybe_filter_product_code(product)
+          {product, plan} ->
+            query
+            |> maybe_filter_plan_name(plan)
+            |> maybe_filter_product_code(product)
+        end
     end
   end
 

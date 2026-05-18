@@ -95,7 +95,10 @@ defmodule Sanbase.Metric.Registry.Changelog do
         Jason.decode(struct.old)
 
       nil ->
-        {:error, "No changes known for #{metric_registry_id}"}
+        # No sync_apply row recorded before last_sync_datetime (legacy data
+        # predating changelog instrumentation). Fall back to the earliest
+        # known state from any change_trigger.
+        state_before_last_sync(metric_registry_id, nil)
     end
   end
 end

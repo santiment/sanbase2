@@ -53,6 +53,22 @@ defmodule Sanbase.Project.SourceSlugMapping do
     |> Repo.one()
   end
 
+  @doc ~s"""
+  Return the source slug (as known to `source`) for the project identified by
+  `project_slug` (Sanbase slug), or `nil` if no mapping exists.
+  """
+  @spec get_source_slug(String.t(), String.t()) :: String.t() | nil
+  def get_source_slug(project_slug, source) do
+    from(
+      ssm in __MODULE__,
+      join: p in assoc(ssm, :project),
+      where: ssm.source == ^source and p.slug == ^project_slug,
+      select: ssm.slug,
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   def delete_mappings_for_source_and_slugs(source, slugs) do
     from(
       ssm in __MODULE__,

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict XR55GNxHNdkAMsNOnzFKuonxzGMrRwwuVvk9nnAG047KLvHaBC2rejfACK9JSat
+\restrict fDSPEfXTY6hfipT8Yqtsa2cyR5IXUS5rkS4ScEQkOgpj4bvZQQ7IMjraOid3hZ7
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -4960,7 +4960,8 @@ CREATE TABLE public.topic_batches (
     published_by_id bigint,
     fetched_at timestamp(0) without time zone NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    granularity character varying(255) DEFAULT 'week'::character varying NOT NULL
 );
 
 
@@ -9729,6 +9730,13 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 
 
 --
+-- Name: topic_batches_granularity_state_interval_start_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX topic_batches_granularity_state_interval_start_index ON public.topic_batches USING btree (granularity, state, interval_start);
+
+
+--
 -- Name: topic_batches_source_interval_text_version_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11630,7 +11638,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XR55GNxHNdkAMsNOnzFKuonxzGMrRwwuVvk9nnAG047KLvHaBC2rejfACK9JSat
+\unrestrict fDSPEfXTY6hfipT8Yqtsa2cyR5IXUS5rkS4ScEQkOgpj4bvZQQ7IMjraOid3hZ7
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12201,3 +12209,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260511101919);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112644);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);
 INSERT INTO public."schema_migrations" (version) VALUES (20260515075234);
+INSERT INTO public."schema_migrations" (version) VALUES (20260519151900);

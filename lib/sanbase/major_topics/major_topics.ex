@@ -66,6 +66,7 @@ defmodule Sanbase.MajorTopics do
       where:
         b.state == ^@published and b.granularity == ^granularity and
           b.interval_start == ^interval_start,
+      order_by: [desc: b.inserted_at, desc: b.id],
       limit: 1
     )
     |> Repo.one()

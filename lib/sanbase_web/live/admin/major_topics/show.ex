@@ -16,21 +16,29 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
      |> assign_batch(batch)}
   end
 
-  @highlight_top_n 20
+  @highlight_top_red 10
+  @highlight_top_yellow 20
 
   defp assign_batch(socket, batch) do
     active_count = Enum.count(batch.topics, fn t -> !t.is_removed end)
 
-    highlighted_ids =
-      batch.topics
-      |> Enum.reject(& &1.is_removed)
-      |> Enum.take(@highlight_top_n)
+    active = Enum.reject(batch.topics, & &1.is_removed)
+
+    red_ids =
+      active
+      |> Enum.take(@highlight_top_red)
+      |> MapSet.new(& &1.id)
+
+    yellow_ids =
+      active
+      |> Enum.slice(@highlight_top_red, @highlight_top_yellow - @highlight_top_red)
       |> MapSet.new(& &1.id)
 
     socket
     |> assign(:batch, batch)
     |> assign(:active_count, active_count)
-    |> assign(:highlighted_ids, highlighted_ids)
+    |> assign(:red_ids, red_ids)
+    |> assign(:yellow_ids, yellow_ids)
     |> assign(:editing_id, nil)
   end
 
@@ -186,7 +194,8 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
               :for={topic <- @batch.topics}
               class={[
                 topic.is_removed && "opacity-40 line-through",
-                MapSet.member?(@highlighted_ids, topic.id) && "bg-success/10"
+                MapSet.member?(@red_ids, topic.id) && "bg-error/10",
+                MapSet.member?(@yellow_ids, topic.id) && "bg-warning/10"
               ]}
             >
               <td class="text-xs text-base-content/60 align-top">{topic.position}</td>

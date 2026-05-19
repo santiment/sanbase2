@@ -16,6 +16,7 @@ defmodule Sanbase.MajorTopics do
 
   @draft TopicBatch.draft_state()
   @published TopicBatch.published_state()
+  @default_granularity TopicBatch.week_granularity()
 
   @spec list_batches(keyword()) :: [TopicBatch.t()]
   def list_batches(opts \\ []) do
@@ -42,27 +43,81 @@ defmodule Sanbase.MajorTopics do
     |> Repo.preload(topics: from(t in MajorTopic, order_by: [asc: t.position, asc: t.id]))
   end
 
-  @spec latest_published_batch() :: TopicBatch.t() | nil
-  def latest_published_batch do
+  @spec latest_published_batch(String.t()) :: TopicBatch.t() | nil
+  def latest_published_batch(granularity \\ @default_granularity) do
     from(b in TopicBatch,
-      where: b.state == ^@published,
-      order_by: [desc: b.published_at, desc: b.id],
+      where: b.state == ^@published and b.granularity == ^granularity,
+      order_by: [desc: b.interval_start, desc: b.id],
       limit: 1
     )
     |> Repo.one()
-    |> case do
-      nil ->
-        nil
+    |> preload_active_topics()
+  end
 
-      batch ->
-        Repo.preload(batch,
-          topics:
-            from(t in MajorTopic,
-              where: t.is_removed == false,
-              order_by: [asc: t.position, asc: t.id]
-            )
+  @doc """
+  Fetch the published batch at the given `(granularity, interval_start)`. Returns
+  `nil` if no such batch exists or is not yet published. Used by the public
+  GraphQL field when a frontend navigates via the cursor returned in a previous
+  response.
+  """
+  @spec get_published_batch_at(String.t(), Date.t()) :: TopicBatch.t() | nil
+  def get_published_batch_at(granularity, %Date{} = interval_start) do
+    from(b in TopicBatch,
+      where:
+        b.state == ^@published and b.granularity == ^granularity and
+          b.interval_start == ^interval_start,
+      order_by: [desc: b.inserted_at, desc: b.id],
+      limit: 1
+    )
+    |> Repo.one()
+    |> preload_active_topics()
+  end
+
+  @doc """
+  `interval_start` of the immediately-preceding published batch of the same
+  granularity, or `nil` when none exists. Used as the `previousIntervalStart`
+  cursor in the public GraphQL response.
+  """
+  @spec previous_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
+  def previous_published_interval_start(granularity, %Date{} = current_start) do
+    from(b in TopicBatch,
+      where:
+        b.state == ^@published and b.granularity == ^granularity and
+          b.interval_start < ^current_start,
+      order_by: [desc: b.interval_start, desc: b.id],
+      limit: 1,
+      select: b.interval_start
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  `interval_start` of the immediately-following published batch of the same
+  granularity, or `nil` when the given batch is already the latest.
+  """
+  @spec next_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
+  def next_published_interval_start(granularity, %Date{} = current_start) do
+    from(b in TopicBatch,
+      where:
+        b.state == ^@published and b.granularity == ^granularity and
+          b.interval_start > ^current_start,
+      order_by: [asc: b.interval_start, asc: b.id],
+      limit: 1,
+      select: b.interval_start
+    )
+    |> Repo.one()
+  end
+
+  defp preload_active_topics(nil), do: nil
+
+  defp preload_active_topics(%TopicBatch{} = batch) do
+    Repo.preload(batch,
+      topics:
+        from(t in MajorTopic,
+          where: t.is_removed == false,
+          order_by: [asc: t.position, asc: t.id]
         )
-    end
+    )
   end
 
   @spec get_topic!(integer()) :: MajorTopic.t()
@@ -89,6 +144,7 @@ defmodule Sanbase.MajorTopics do
                 interval_end: interval_end,
                 version: version,
                 type: payload[:type] || derive_type(payload),
+                granularity: payload[:granularity] || @default_granularity,
                 state: @draft,
                 fetched_at: now
               }

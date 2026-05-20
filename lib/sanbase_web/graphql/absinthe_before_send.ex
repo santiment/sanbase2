@@ -94,8 +94,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       #   do_not_cache_query flag in the process dictionary
       case do_not_cache? or error_queries != [] do
         true -> :ok
-        # The pre_override_queries are the getMetric and getSignal query names
-        # before they got renamed to getMetric|<metric> and getSignal|<signal>
+        # The pre_override_queries are the getMetric query names
+        # before they got renamed to getMetric|<metric>
         false -> maybe_cache_result(query_metadata.queries, blueprint)
       end
     end
@@ -312,9 +312,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp get_query_and_selector({:get_metric, _alias, metric, selector, version}),
     do: {"getMetric|#{metric}", selector, version}
 
-  defp get_query_and_selector({:get_signal, _alias, signal, selector}),
-    do: {"getSignal|#{signal}", selector, nil}
-
   defp get_query_and_selector(query), do: {query, nil, nil}
 
   defp remote_ip(blueprint) do
@@ -408,18 +405,17 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          %Absinthe.Blueprint{} = blueprint
        )
        when is_map(alias_to_query_name_map) do
-    # The TransformResolution middleware is used in getMetric and getSignal APIs
-    # to enrich them so we can export also the name of the metric/signal that has been queried.
+    # The TransformResolution middleware is used in getMetric API
+    # to enrich it so we can export also the name of the metric that has been queried.
     # This allows us to better see what exactly has been called -- instead of just seeing
-    # `getMetric`, we enrich it with some of the arguments that have been passed to it -- meric name and selector.
+    # `getMetric`, we enrich it with some of the arguments that have been passed to it -- metric name and selector.
     # Additionally, this middleware also records the GraphQL alias provided by the user,
     # which is later used to resolve aliases to query names.
 
     # Get a map where the values are one of:
     # - {:get_metric, alias, metric, selector, version} |
-    # - {:get_signal, alias, signal, selector} |
     # These will replace the `alias: getMetric` seen in the queries list in order
-    # to enrich them with the metric/signal that has been queried by the user
+    # to enrich them with the metric that has been queried by the user
     #
     # and the keys are the alias itself.
     alias_to_get_query_tuple_map =
@@ -427,12 +423,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       |> Map.new(fn
         {:get_metric, alias, _metric, _selector, _version} = tuple ->
           {Sanbase.Utils.Inflect.camelize(alias, :lower), tuple}
-
-        {:get_signal, alias, _signal, _selector} = tuple ->
-          {Sanbase.Utils.Inflect.camelize(alias, :lower), tuple}
       end)
 
-    # Rename aliases to the query name itself, or in case of getMetric and getSignal -- the whole tuple.
+    # Rename aliases to the query name itself, or in case of getMetric -- the whole tuple.
     # The tuple is used in export_api_call_data/1 to construct the query name (like getMetric|price_usd) and
     # the selector that has been provided (like {"slugs": ["bitcoin", "ethereum"]})
     rename_mapper = fn list ->

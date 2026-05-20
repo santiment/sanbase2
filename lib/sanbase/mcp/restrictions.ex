@@ -72,14 +72,20 @@ defmodule Sanbase.MCP.Restrictions do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Plan, Product, Subscription}
 
+  # FIXME: do not apply the big free-plan restrictions yet — keeping the
+  # tighter target values commented so we can switch back easily.
   @global %{
-    free: %{minute: 15, hour: 30, day: 50, month: 50},
+    # free: %{minute: 15, hour: 30, day: 50, month: 50},
+    free: %{minute: 25, hour: 100, day: 500, month: 2_000},
     pro: %{minute: 30, hour: 250, day: 600, month: 2_000},
     max: %{minute: 60, hour: 600, day: 2_000, month: 10_000}
   }
 
+  # FIXME: do not apply the big free-plan restrictions yet — keeping the
+  # tighter target values commented so we can switch back easily.
   @combined_trends %{
-    free: %{minute: 2, hour: 5, day: 10, month: 10},
+    # free: %{minute: 2, hour: 5, day: 10, month: 10},
+    free: %{minute: 3, hour: 20, day: 50, month: 100},
     pro: %{minute: 5, hour: 40, day: 150, month: 300},
     max: %{minute: 10, hour: 80, day: 400, month: 800}
   }

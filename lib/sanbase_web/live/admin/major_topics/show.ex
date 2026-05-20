@@ -192,11 +192,8 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
           <tbody>
             <tr
               :for={topic <- @batch.topics}
-              class={[
-                topic.is_removed && "opacity-40 line-through",
-                MapSet.member?(@red_ids, topic.id) && "bg-error/10",
-                MapSet.member?(@yellow_ids, topic.id) && "bg-warning/10"
-              ]}
+              class={[topic.is_removed && "opacity-40 line-through"]}
+              style={row_highlight_style(topic, @red_ids, @yellow_ids)}
             >
               <td class="text-xs text-base-content/60 align-top">{topic.position}</td>
               <td class="align-top">
@@ -307,4 +304,12 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
   defp state_badge("published"), do: "badge-success"
   defp state_badge("draft"), do: "badge-warning"
   defp state_badge(_), do: "badge-neutral"
+
+  defp row_highlight_style(topic, red_ids, yellow_ids) do
+    cond do
+      MapSet.member?(red_ids, topic.id) -> "background-color: #fecaca;"
+      MapSet.member?(yellow_ids, topic.id) -> "background-color: #fef08a;"
+      true -> nil
+    end
+  end
 end

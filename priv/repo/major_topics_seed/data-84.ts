@@ -1,0 +1,270 @@
+export const NARRATIVES = {
+  labels: [
+    '07.08.25',
+    '08.08.25',
+    '08.08.25',
+    '08.08.25',
+    '08.08.25',
+    '08.08.25',
+    '08.08.25',
+    '08.08.25',
+    '09.08.25',
+    '09.08.25',
+    '09.08.25',
+    '09.08.25',
+    '09.08.25',
+    '09.08.25',
+    '09.08.25',
+    '09.08.25',
+    '10.08.25',
+    '10.08.25',
+    '10.08.25',
+    '10.08.25',
+    '10.08.25',
+    '10.08.25',
+    '10.08.25',
+    '10.08.25',
+    '11.08.25',
+    '11.08.25',
+    '11.08.25',
+    '11.08.25',
+    '11.08.25',
+    '11.08.25',
+    '11.08.25',
+    '11.08.25',
+    '12.08.25',
+    '12.08.25',
+    '12.08.25',
+    '12.08.25',
+    '12.08.25',
+    '12.08.25',
+    '12.08.25',
+    '12.08.25',
+    '13.08.25',
+    '13.08.25',
+    '13.08.25',
+    '13.08.25',
+    '13.08.25',
+    '13.08.25',
+    '13.08.25',
+    '13.08.25',
+    '14.08.25',
+    '14.08.25',
+    '14.08.25',
+    '14.08.25',
+    '14.08.25',
+    '14.08.25',
+    '14.08.25',
+  ],
+  datasets: [
+    {
+      label: 'ETH price',
+      topics: '4000,4400,4500,4k,4300',
+      description:
+        "The key topic currently discussed in the crypto industry on social media platforms such as Twitter includes the significant price increase of Ethereum (ETH). Users are excited about ETH breaking above $4,000 and reaching new all-time highs. There is speculation about ETH potentially reaching $13,000, with discussions about resistance zones and potential pullbacks. Traders are turning bullish on ETH, with mentions of altseason being activated. Some users are cautioning against overly optimistic price predictions, warning against potential losses for inexperienced traders. Overall, there is a sense of anticipation and excitement surrounding ETH's price movements and the possibility of a new ATH in the near future.",
+      data: [
+        14, 11, 8, 18, 5, 2, 34, 15, 7, 14, 9, 11, 7, 6, 7, 90, 303, 220, 9, 22, 8, 4, 7, 12, 40, 7,
+        8, 7, 8, 8, 7, 18, 8, 15, 9, 6, 5, 20, 5, 14, 10, 7, 10, 10, 10, 5, 10, 12, 16, 15, 1, 6, 8,
+        13, 9,
+      ],
+    },
+    {
+      label: 'BTC',
+      topics: 'btcnewsalerts,meetup,btcforfreedom,adam3us,roxomtv',
+      description:
+        "The key topic currently discussed in the messages from twitter, twitter_news, and twitter_nft is Bitcoin. The messages mention various aspects of Bitcoin, such as its potential as an opportunity, its code quality, the importance of understanding cryptography in the Bitcoin ecosystem, and the impact of Bitcoin on people's lives. Additionally, there are references to Bitcoin-related books, events, and communities. Overall, the sentiment towards Bitcoin in these messages appears to be positive and supportive.",
+      data: [
+        16, 15, 22, 21, 32, 33, 4, 14, 13, 17, 16, 28, 14, 22, 12, 21, 0, 8, 28, 26, 16, 29, 24, 24,
+        13, 14, 11, 15, 17, 21, 25, 18, 15, 19, 16, 18, 25, 24, 15, 14, 18, 27, 15, 13, 21, 12, 24,
+        9, 24, 19, 19, 19, 15, 28, 14,
+      ],
+    },
+    {
+      label: 'Art',
+      topics: 'artists,artist,painting,canvas,gallery',
+      description:
+        'The key topic discussed in the messages from the social media accounts is the appreciation and promotion of various forms of art, including paintings, photography, and digital collage. There is a focus on the value and uniqueness of art pieces, with mentions of art collections, art styles, and the emotional impact of creating and viewing art. Additionally, there is a mention of NFTs (Non-Fungible Tokens) in relation to art, highlighting the trend of investing in digital assets. Overall, the conversation revolves around the beauty and significance of art in various forms.',
+      data: [
+        19, 11, 195, 17, 3, 13, 1, 7, 17, 13, 25, 20, 18, 19, 19, 9, 0, 11, 19, 22, 13, 19, 20, 16,
+        9, 23, 16, 9, 9, 7, 28, 19, 17, 28, 20, 14, 26, 16, 14, 13, 14, 17, 4, 16, 13, 14, 17, 19,
+        18, 6, 11, 18, 12, 8, 25,
+      ],
+    },
+    {
+      label: 'SOL',
+      topics: 'solanas,sol,lagging,solana,hong',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media platforms include Solana (SOL) lagging behind, Ethereum (ETH) gaining momentum against SOL, and Bitcoin (BTC) remaining flat. There is speculation about whether SOL can hold above $200 and if BTC can reclaim $120k. Additionally, there is excitement about altseason, with mentions of other cryptocurrencies such as Avalanche, Link, Aave, and UNI being good investments. There is also discussion about the unique features of building on Solana and the potential for SOL/BTC and SOL/USD trading pairs. Overall, the sentiment seems positive towards SOL and ETH, with anticipation for potential price movements in the market.',
+      data: [
+        5, 5, 11, 14, 9, 9, 17, 14, 14, 14, 23, 15, 11, 16, 8, 16, 34, 12, 16, 18, 13, 25, 14, 22,
+        23, 14, 16, 16, 16, 15, 24, 21, 10, 25, 14, 20, 11, 21, 19, 10, 7, 12, 7, 16, 56, 24, 17,
+        16, 23, 15, 10, 15, 15, 10, 9,
+      ],
+    },
+    {
+      label: 'Israel and Palestine',
+      topics: 'israel,journalist,killed,west,al',
+      description:
+        "The messages from the social media accounts twitter, twitter_news, and twitter_nft primarily focus on the ongoing conflict in Gaza involving Israel and Palestine. The messages discuss the killing of journalists reporting on the conflict, the complicity of Arab states, the establishment of settlements in the West Bank, and the use of spy planes in the region. There are also mentions of attacks on Jewish students and the importance of verifying information before sharing it. The overall sentiment in these messages is critical of Israel's actions and calls for accountability and justice.",
+      data: [
+        21, 17, 16, 16, 3, 6, 31, 6, 14, 7, 9, 16, 6, 16, 12, 9, 0, 3, 16, 18, 8, 8, 8, 8, 10, 21,
+        37, 43, 9, 14, 11, 11, 6, 17, 17, 14, 17, 9, 16, 7, 19, 14, 22, 10, 13, 12, 11, 13, 6, 8, 7,
+        8, 15, 3, 12,
+      ],
+    },
+    {
+      label: 'AI',
+      topics: 'assistant,ainative,agi,humans,llms',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media include the intersection of AI and crypto, the potential risks of AI systems to humanity, the importance of privacy and security in AI development, the rise of decentralized AI, and the impact of AI on various industries such as consulting and blockchain technology. There is also a focus on building AI agents that can control assets on a blockchain and the need for adaptation and innovation in the AI age. Additionally, there is discussion about the development of AI-native research bases and the potential for AI to act autonomously. Overall, the conversation highlights the growing importance and impact of AI technology in the crypto industry.',
+      data: [
+        20, 78, 12, 9, 5, 6, 6, 15, 8, 10, 11, 14, 10, 10, 7, 12, 0, 11, 8, 8, 10, 15, 14, 10, 11,
+        14, 26, 7, 6, 8, 5, 10, 14, 13, 12, 9, 17, 19, 14, 17, 12, 22, 6, 5, 13, 10, 8, 10, 14, 9,
+        8, 12, 7, 7, 5,
+      ],
+    },
+    {
+      label: 'DOG',
+      topics: 'dog,krakenfx,runes,army,rune',
+      description:
+        'The key topics currently discussed in the messages from twitter, twitter_news, and twitter_nft are related to the cryptocurrency $DOG. The messages mention the excitement and bullish sentiment surrounding $DOG, its connection to Bitcoin, its potential to reach all-time highs, and its unique position in the meme coin market. Additionally, there are mentions of contests, promotions, and new tokens related to $DOG, such as the DOGWALK Token and CCDOG. Overall, the $DOG community seems to be active and enthusiastic about the future of the cryptocurrency.',
+      data: [
+        7, 3, 9, 10, 14, 8, 5, 7, 11, 14, 12, 12, 8, 19, 102, 5, 1, 1, 9, 17, 6, 8, 9, 9, 6, 9, 9,
+        14, 14, 24, 9, 17, 16, 13, 5, 10, 15, 4, 9, 7, 14, 18, 5, 9, 13, 6, 14, 13, 6, 12, 12, 4,
+        13, 7, 6,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'buildonbob,defi,bob,defis,katana',
+      description:
+        "The key topics currently discussed in the messages from twitter, twitter_news, and twitter_nft are related to DeFi (Decentralized Finance) and its various aspects. Some of the specific topics mentioned include:\n- The growth and evolution of DeFi, with references to its Gartner hype cycle and how it has become more mainstream over the years.\n- Specific projects and platforms within the DeFi space, such as ParaVerseNet, NetworkNoya, BENQI, Manyu swap, and MorphoLabs.\n- The integration of traditional finance markets, such as Asia's $20 trillion credit market, with DeFi to provide more accessible and transparent yield opportunities.\n- The use of data and analytics in DeFi, with mentions of companies like Nomis providing on-chain data for lending protocols.\n- The concept of yield farming and staking in DeFi, with references to earning rewards through various DeFi activities.\n- The potential for DeFi to revolutionize finance and provide new opportunities for investors and users.\n\nOverall, the messages highlight the continued growth and innovation within the DeFi space, as well as the increasing interest and adoption of decentralized financial solutions.",
+      data: [
+        10, 10, 10, 10, 7, 6, 2, 14, 8, 6, 6, 10, 14, 48, 6, 11, 1, 9, 14, 19, 18, 7, 12, 7, 9, 12,
+        17, 11, 13, 15, 5, 9, 9, 10, 13, 9, 9, 13, 15, 13, 7, 10, 15, 6, 17, 11, 11, 14, 7, 18, 9,
+        16, 9, 10, 20,
+      ],
+    },
+    {
+      label: 'Bitcoin vs Fiat',
+      topics: 'economics,fixes,fiat,bitcoiners,sovereignty',
+      description:
+        "The key topics discussed in the messages from twitter, twitter_news, and twitter_nft are:\n1. The importance of staying intolerant towards the fiat system and embracing Bitcoin as a way to disrupt traditional financial systems.\n2. The belief that insurance companies will eventually realize the need for Bitcoin, even if they don't currently understand its value.\n3. The idea that Bitcoin provides clarity and insight into how the world truly works, which is difficult to grasp with a fiat mindset.\n4. The discussion around the invention and purpose of Bitcoin, Ethereum, and Solana, with conspiracy theories about their origins and intentions.\n5. The importance of staying paid at all costs in business, with a focus on using Bitcoin for secure payment processing to avoid hold-ups and financial risks.",
+      data: [
+        8, 2, 8, 13, 58, 62, 1, 7, 21, 10, 8, 8, 5, 6, 3, 11, 0, 3, 6, 16, 14, 7, 13, 12, 7, 6, 14,
+        11, 7, 10, 8, 7, 9, 6, 6, 13, 17, 9, 3, 7, 9, 4, 6, 10, 20, 13, 8, 8, 24, 4, 8, 8, 7, 3, 9,
+      ],
+    },
+    {
+      label: 'GPT-5',
+      topics: 'gpt5,gpt,openai,chatgpt,rollout',
+      description:
+        'The key topics currently being discussed on social media accounts related to the crypto industry include the launch of GPT-5, its performance compared to previous models like GPT-4 and GPT-3, concerns about its reliability and automatic switching between models, and the removal of older models. There is also discussion about AI security issues, the use of GPT-5 for medical questions, and the rising mental health challenges in India. Additionally, there is excitement about the release of a new AI model called "Recall Predict" by the Recall community.',
+      data: [
+        11, 11, 14, 10, 2, 0, 2, 2, 2, 30, 4, 7, 6, 3, 7, 7, 0, 1, 16, 9, 6, 9, 37, 9, 8, 10, 13, 7,
+        8, 10, 10, 7, 11, 11, 9, 34, 12, 9, 11, 12, 14, 8, 5, 3, 11, 7, 13, 9, 13, 4, 9, 20, 4, 16,
+        11,
+      ],
+    },
+    {
+      label: 'Ukraine - Russia',
+      topics: 'putin,ukraine,russian,russia,meeting',
+      description:
+        'The key topics discussed in the messages are related to the ongoing conflict between Russia and Ukraine, with mentions of President Trump, President Putin, and the situation in Ukraine. There is also a mention of the Digital Hryvnia and Sl8 integrating a central bank digital currency. The messages also touch on the US constitution and potential war on the US population.',
+      data: [
+        11, 9, 8, 6, 1, 1, 29, 11, 2, 3, 7, 12, 6, 10, 6, 4, 0, 6, 10, 6, 4, 5, 8, 3, 6, 9, 3, 8,
+        12, 6, 7, 23, 6, 7, 6, 7, 5, 11, 4, 3, 13, 16, 12, 9, 7, 2, 7, 16, 7, 6, 62, 5, 9, 0, 6,
+      ],
+    },
+    {
+      label: 'CPI and inflation',
+      topics: 'ppi,yoy,cpi,02,27',
+      description:
+        'The messages from the Twitter accounts suggest that inflation metrics are accelerating, with the US CPI month-over-month (m/m) coming in at 0.2% as forecasted. Despite this, the sentiment is that inflation is now under control, leading to calls for rate cuts. There are mentions of core goods and services inflation, with some surprises in the data such as PPI inflation coming in higher than expected. The overall tone is one of concern and scrutiny over inflation data, especially in light of recent events such as the firing of BLS officials. The topic of inflation is being closely monitored and analyzed by analysts and investors in the crypto industry.',
+      data: [
+        6, 9, 11, 4, 5, 0, 14, 0, 6, 2, 11, 19, 10, 4, 7, 6, 0, 1, 16, 11, 1, 5, 6, 11, 2, 5, 122,
+        7, 7, 2, 7, 6, 5, 4, 6, 2, 3, 12, 6, 9, 7, 12, 3, 2, 5, 4, 5, 4, 6, 9, 8, 7, 2, 11, 13,
+      ],
+    },
+    {
+      label: 'NFTs',
+      topics: 'nfts,nft,collections,collection,nathanheadphoto',
+      description:
+        "The key topics currently being discussed in the crypto industry on social media accounts include the soaring NFT market cap, the upcoming NFT wave from Injective, the excitement around Base NFT support, and the impact of various NFT collections such as RENGA_inc and Schmrypto's saints collection. There is also discussion about the changing reputation of 3D NFT collections, the growth of NFT market cap to over $7 billion, and the use of AlloPass staking xp to purchase NFTs. Additionally, there is anticipation for the NFT bull market and the upcoming Art Renaissance on the Flare Network.",
+      data: [
+        7, 2, 7, 6, 5, 3, 2, 10, 11, 5, 15, 4, 7, 8, 5, 2, 2, 1, 13, 7, 12, 11, 3, 8, 8, 12, 2, 17,
+        4, 3, 19, 16, 7, 6, 58, 5, 14, 11, 8, 8, 8, 9, 8, 2, 5, 4, 4, 7, 13, 9, 0, 10, 7, 7, 10,
+      ],
+    },
+    {
+      label: 'ETFs and institutional adoption',
+      topics: 'inflow,etha,inflows,net,etfs',
+      description:
+        "The key topic currently being discussed in the crypto industry is the significant inflows into Ethereum ETFs, with over $1 billion flowing in on August 11th. This marks the largest daily net inflows since the launch of Ethereum ETFs. Institutional interest in Ethereum seems to be surging, with BlackRock's spot ETH ETF seeing massive demand. Fidelity also had a record inflow into their ether ETF. Ethereum ETFs are outperforming Bitcoin in terms of institutional inflows, narrowing the gap between the two cryptocurrencies. Despite a recent dip in price, Ethereum continues to attract significant investment from institutions.",
+      data: [
+        21, 4, 2, 1, 6, 2, 7, 10, 9, 0, 1, 3, 8, 6, 0, 12, 49, 37, 1, 14, 0, 0, 1, 0, 4, 11, 27, 1,
+        2, 1, 1, 8, 4, 16, 2, 2, 0, 1, 4, 15, 0, 0, 15, 1, 3, 29, 0, 6, 3, 8, 0, 10, 4, 5, 13,
+      ],
+    },
+    {
+      label: 'GameFi',
+      topics: 'gamers,othersidemeta,tournament,games,gaming',
+      description:
+        'The key topics currently discussed in the messages from twitter, twitter_news, and twitter_nft include gaming, game updates, community events, new game releases, game simulations, GameFi, NFT characters in games, earning opportunities in gaming, and upcoming gaming panels at events like New York Comic Con. There is also a mention of a new game maker platform called MagicCraft offering real earnings for creativity in game design. Additionally, there is a reference to a specific game called ChibiClash winning a hackathon prize and a game called Castle of Blackwater being played during a game night event.',
+      data: [
+        9, 4, 9, 5, 2, 4, 0, 3, 6, 10, 3, 6, 4, 11, 2, 1, 0, 5, 4, 8, 44, 9, 2, 4, 4, 7, 1, 13, 7,
+        4, 8, 6, 7, 6, 16, 4, 17, 3, 1, 9, 11, 11, 3, 7, 5, 9, 7, 6, 5, 7, 8, 5, 6, 7, 4,
+      ],
+    },
+    {
+      label: 'AI and robotics',
+      topics: 'programmed,jobs,roles,workers,replaced',
+      description:
+        'The key topics currently discussed in the messages from twitter, twitter_news, and twitter_nft are AI, robotics, commercial use cases for AI, multi model verification, challenges in AI development, autonomous cars, running AI models from your own machine, AI decision-making under pressure, and the future of AI agents. There is also a mention of a project called The Bless Network that aims to change the game for AI and computing by creating a global supercomputer accessible to everyone. Additionally, there is an exclusive interview with Michael Sena, Co-Founder of Recall Labs, discussing the real future of AI agents.',
+      data: [
+        8, 41, 9, 7, 0, 1, 1, 5, 3, 6, 5, 3, 5, 8, 2, 6, 0, 1, 6, 4, 11, 12, 6, 10, 1, 6, 7, 9, 5,
+        2, 5, 5, 4, 6, 2, 6, 10, 8, 3, 8, 7, 8, 3, 7, 7, 4, 2, 7, 8, 4, 5, 6, 5, 10, 11,
+      ],
+    },
+    {
+      label: 'Whales accumulating ETH',
+      topics: 'whale,whales,accumulated,mysterious,scooped',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media platforms include:\n1. Whales and market makers influencing the market, with mentions of large purchases of ETH and BTC by whales.\n2. Ethereum whales accumulating ETH and buying from sceptical retail traders.\n3. The impact of whales on the Solana market, with retail holders selling to them.\n4. The growth and potential of certain cryptocurrencies like $WAVES and $SPX6900.\n5. The use of AI in the crypto industry, particularly in cloud computing and market analysis.\n6. New projects and tokens like NUKE clicker on @UnitsNetwork and $CHILL $WHALE with low market caps.\n7. Speculation on price targets for Bitcoin, with mentions of $125k or $112k next.\n8. Discussions on the potential for bullish or bearish trends in the market.\nOverall, the focus seems to be on the activities and influence of whales, market trends, and the potential for growth in various cryptocurrencies.',
+      data: [
+        10, 1, 3, 6, 8, 7, 24, 8, 19, 3, 6, 2, 3, 1, 4, 0, 5, 11, 3, 2, 4, 3, 4, 3, 4, 6, 5, 2, 0,
+        3, 6, 9, 3, 15, 4, 8, 2, 1, 3, 3, 1, 2, 5, 8, 1, 3, 0, 0, 2, 6, 1, 5, 1, 75, 4,
+      ],
+    },
+    {
+      label: 'DEX',
+      topics: 'dex,dexs,coinbases,rolling,ny',
+      description:
+        "The key topics currently being discussed in the crypto industry on social media platforms include the integration of DEX trading on Coinbase, with the ability for millions of users to hold various tokens on the platform. Projects like Synthetix and Reflect are being highlighted for their privacy features and selection for Coinbase's retail DEX integration. Additionally, partnerships with Aerodrome and AukiNetwork are being announced, expanding the range of assets available on Coinbase. The focus is on providing a seamless trading experience for users, with support for a wide range of assets and protocols. Gas fees, token launches, and new DEX protocols are also being discussed, showcasing the innovation and growth within the industry. Overall, the crypto community is excited about the developments in DEX trading and the increasing accessibility of onchain markets through platforms like Coinbase.",
+      data: [
+        10, 5, 12, 10, 2, 0, 2, 6, 5, 5, 34, 2, 4, 26, 4, 5, 0, 9, 3, 2, 4, 5, 1, 3, 2, 4, 7, 5, 9,
+        1, 7, 2, 6, 4, 7, 8, 4, 7, 5, 5, 2, 7, 2, 1, 6, 6, 5, 6, 8, 15, 1, 7, 10, 4, 0,
+      ],
+    },
+    {
+      label: 'Federal law enforcement in DC',
+      topics: 'dc,guard,washington,enforcement,crime',
+      description:
+        "The key topics currently being discussed in the messages from twitter, twitter_news, and twitter_nft include:\n1. President Trump's announcement of the activation of hundreds of DC National Guard troops and his commitment to restoring law and order in America.\n2. Parallels between tactics used by the Tories and Reform and Donald Trump's attacks on Democrat-run cities in America.\n3. Speculation about the possibility of martial law being implemented.\n4. Public opinion on Trump's approach to crime and law enforcement.\n5. Extradition of cartel associates from Mexico to the US.\n6. Federalization of DC law enforcement and the justification for it.\n7. Criticism of the USA PATRIOT ACT and its implications.\n8. Controversy surrounding Donald Trump's pick to lead the BLS and his involvement in the Capitol riot.\n9. Trump's review of the Smithsonian museums and their tunnel network.\n10. Trump's efforts to enforce federal law enforcement in DC to prevent crime and ensure safety, including the creation of a cryptocurrency called $bigballs.",
+      data: [
+        3, 9, 7, 7, 0, 0, 27, 3, 7, 4, 1, 8, 6, 12, 2, 4, 0, 0, 12, 6, 2, 3, 9, 2, 10, 0, 5, 1, 8,
+        2, 4, 7, 2, 6, 3, 7, 4, 10, 5, 4, 6, 6, 4, 1, 6, 3, 3, 7, 2, 1, 52, 0, 6, 6, 2,
+      ],
+    },
+    {
+      label: 'WLFI',
+      topics: 'wlfi,worldlibertyfi,liberty,usd1,15b',
+      description:
+        "The key topics currently discussed in the messages from twitter, twitter_news, and twitter_nft are related to the cryptocurrency $WLFI, $ETH, $BLOCK, Alt5 Sigma, World Liberty Financial, Donald Trump's family, Nasdaq listing, stablecoins, DeFi, traditional finance, Islamic crypto capital, Fasset_official, Plume, RWA chain, digital-asset treasury firms, and big investors. There is also mention of a surge expected in $ETH after $WLFI goes online for trading. Additionally, there is discussion about a plan for World Liberty Financial to set up a publicly listed company to hold its WLFI tokens.",
+      data: [
+        0, 7, 2, 7, 9, 8, 15, 6, 2, 2, 3, 7, 1, 5, 2, 4, 1, 0, 2, 8, 4, 3, 5, 6, 9, 4, 7, 1, 11, 13,
+        3, 7, 2, 0, 7, 7, 1, 9, 7, 6, 2, 3, 2, 1, 3, 3, 2, 3, 4, 9, 19, 3, 5, 9, 40,
+      ],
+    },
+  ],
+}

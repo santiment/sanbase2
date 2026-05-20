@@ -1,0 +1,266 @@
+export const NARRATIVES = {
+  labels: [
+    '06.02.25',
+    '07.02.25',
+    '07.02.25',
+    '07.02.25',
+    '07.02.25',
+    '07.02.25',
+    '07.02.25',
+    '07.02.25',
+    '08.02.25',
+    '08.02.25',
+    '08.02.25',
+    '08.02.25',
+    '08.02.25',
+    '08.02.25',
+    '08.02.25',
+    '08.02.25',
+    '09.02.25',
+    '09.02.25',
+    '09.02.25',
+    '09.02.25',
+    '09.02.25',
+    '09.02.25',
+    '09.02.25',
+    '09.02.25',
+    '10.02.25',
+    '10.02.25',
+    '10.02.25',
+    '10.02.25',
+    '10.02.25',
+    '10.02.25',
+    '10.02.25',
+    '10.02.25',
+    '11.02.25',
+    '11.02.25',
+    '11.02.25',
+    '11.02.25',
+    '11.02.25',
+    '11.02.25',
+    '11.02.25',
+    '11.02.25',
+    '12.02.25',
+    '12.02.25',
+    '12.02.25',
+    '12.02.25',
+    '12.02.25',
+    '12.02.25',
+    '12.02.25',
+    '12.02.25',
+    '13.02.25',
+    '13.02.25',
+    '13.02.25',
+    '13.02.25',
+    '13.02.25',
+    '13.02.25',
+    '13.02.25',
+  ],
+  datasets: [
+    {
+      label: 'BTC',
+      topics: 'bitcoin,fiat,money,freedom,currency',
+      description:
+        "The key topics currently discussed in the messages from twitter about the crypto industry are:\n1. Bitcoin being accessible to everyone, including children.\n2. The debate about Bitcoin's security criteria.\n3. The early stage of Bitcoin adoption.\n4. The idea of buying Bitcoin as a form of self-love and financial security.\n5. The shift from altcoins to Bitcoin.\n6. Quotes from Jack Mallers and Robert F. Kennedy Jr. about the benefits of saving and living on a Bitcoin standard.\n7. Speculation on short signals for Bitcoin trading.\n8. Humorous references to Bitcoin maximalists and the idea of hodling Bitcoin for a 2-year-old nephew.",
+      data: [
+        13, 7, 7, 13, 92, 65, 9, 18, 8, 14, 14, 15, 12, 10, 6, 13, 8, 22, 18, 10, 6, 23, 16, 12, 8,
+        14, 21, 13, 11, 14, 17, 8, 24, 5, 7, 18, 9, 10, 7, 22, 21, 18, 19, 14, 10, 18, 15, 17, 11,
+        13, 15, 12, 16, 16, 14,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'meme,memecoin,memecoins,coins,memes',
+      description:
+        'The key topic discussed in the messages from Twitter is meme coins within the crypto industry. The messages mention various meme coins such as BTFD Coin, Dogecoin, Pepe Coin, Shiba Inu, Floki, and Dogwifhat, as well as the potential ROI, staking rewards, and market trends related to meme coins. There is also discussion about the resilience of meme coin communities, the impact of influencers on meme coin investments, and the comparison of meme tokens to NFTs. Additionally, there are mentions of specific incidents such as an attack on Four_Meme leading to a loss of $183K and the plunge of celebrity meme tokens from their all-time highs. Overall, the messages highlight the popularity, volatility, and potential profitability of meme coins in the crypto market.',
+      data: [
+        8, 9, 7, 12, 8, 6, 3, 15, 11, 16, 8, 10, 14, 17, 8, 5, 8, 14, 10, 3, 8, 27, 9, 8, 11, 12,
+        13, 14, 13, 18, 7, 157, 17, 14, 11, 14, 18, 7, 10, 11, 13, 10, 12, 7, 15, 10, 5, 16, 11, 14,
+        7, 7, 4, 6, 3,
+      ],
+    },
+    {
+      label: 'BTC Price',
+      topics: 'btc,range,low,close,weekly',
+      description:
+        "The key topics currently being discussed in the crypto industry on Twitter include:\n- Bitcoin's all-time high (ATH) being printed on Trump's inauguration day\n- Bitcoin's price movement, including a potential quadruple bottom and the possibility of retesting previous lows\n- Bearish momentum in the market and the potential for a bearish head-and-shoulders pattern\n- Bitcoin's weekly analysis and potential price targets\n- Bitcoin's current trading range and the anticipation of a big price move\n- Bitcoin's price cycles and the challenge of achieving percentage gains from previous cycles\n- Technical analysis indicators such as the Rainbow Price Chart, trendline support, and reversal candles\n- The importance of independent decision-making in trading and managing capital\n\nOverall, the sentiment on Twitter seems to be cautious and focused on analyzing Bitcoin's price movements and potential future trends.",
+      data: [
+        10, 11, 5, 10, 46, 33, 51, 10, 10, 12, 24, 11, 25, 8, 5, 3, 9, 15, 12, 7, 8, 1, 12, 13, 6,
+        6, 6, 5, 13, 15, 20, 9, 11, 14, 5, 4, 10, 14, 20, 21, 13, 8, 17, 6, 7, 21, 10, 3, 6, 10, 3,
+        25, 9, 22, 3,
+      ],
+    },
+    {
+      label: 'AI',
+      topics: 'ai,agents,agent,human,data',
+      description:
+        'The key topics discussed in the messages from twitter include the replacement of computers by AI in the age of AI, the impact of paywalls and closed data APIs on civilizational progress, the need for fairness in AI, the metaphor of "AI as the engine, humans as the steering wheel" in AI DAOs, the relationship between improved intelligence and utility in AI, the hope for better dialogue between citizens and local government enabled by AI, the potential divergence in benefits for AI handlers, the energy consumption of AI and its impact on the environment, the potential of decentralized AI as the next big crypto revolution, the importance of AI in DAOs amplifying human intent rather than replacing it, and the latest news in AI and Web3 technologies.',
+      data: [
+        22, 73, 10, 7, 6, 3, 4, 10, 8, 5, 9, 11, 6, 11, 2, 4, 11, 5, 3, 12, 9, 5, 9, 9, 6, 8, 16,
+        10, 7, 6, 10, 3, 14, 5, 16, 7, 4, 11, 8, 12, 8, 12, 11, 3, 13, 8, 16, 20, 5, 7, 7, 10, 9, 4,
+        10,
+      ],
+    },
+    {
+      label: 'SOL',
+      topics: 'solana,sol,solanas,tvl,virtual',
+      description:
+        "The key topics currently being discussed in the crypto industry on Twitter include:\n1. Solana's explosive growth, surpassing Ethereum in 30 days\n2. Solana's new DeFi primitives and the first official state rug on SOL\n3. Bullish divergence on Solana's $SOL chart\n4. Memecoins from Solana with the best liquidity in crypto\n5. Loopring DeFi in Portal allowing for trading directly from self-custody Ethereum wallets\n6. Bitcoin topping Layer-1 social rankings with 147M interactions\n7. ValeriaStudios Land Before the War Season 1 success with over 20 million transactions on XAI\n8. SolvBTC as a Bitcoin staking platform with $2.5B+ in TVL and a campaign offering up to 30% APY in $SOLV tokens.",
+      data: [
+        9, 0, 7, 5, 5, 7, 6, 13, 5, 9, 3, 4, 5, 11, 12, 6, 13, 7, 13, 7, 6, 9, 3, 15, 6, 5, 3, 10,
+        10, 7, 7, 7, 10, 10, 5, 4, 5, 19, 10, 12, 9, 10, 12, 30, 11, 8, 7, 4, 8, 12, 7, 10, 16, 10,
+        7,
+      ],
+    },
+    {
+      label: 'Inflation',
+      topics: 'inflation,cpi,expectations,rate,january',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media platforms such as Twitter include:\n- US inflation rising unexpectedly to 3%\n- Concerns about the impact of inflation on the economy and society\n- UK consumer spending and sentiment data\n- Stagflation fears and lack of contingency plans\n- US Producer Prices rising significantly\n- US Core CPI above 3% for an extended period\n- Monthly inflation rates in Argentina decreasing steadily\n- Market reactions in Asia, with Chinese stocks gaining and Indian markets seeing a dip\n\nOverall, the focus is on inflation rates, economic data, and market trends in various regions, with a mix of concern and analysis regarding the potential impact on the crypto market.',
+      data: [
+        4, 3, 6, 7, 1, 1, 17, 1, 3, 3, 19, 8, 5, 2, 3, 4, 8, 4, 2, 2, 4, 5, 7, 8, 77, 5, 5, 0, 1, 3,
+        16, 1, 6, 1, 4, 2, 1, 6, 2, 7, 7, 1, 6, 3, 3, 3, 5, 3, 8, 5, 8, 4, 1, 3, 8,
+      ],
+    },
+    {
+      label: 'Super Bowl',
+      topics: 'bowl,super,superbowl,game,sunday',
+      description:
+        'The key topics currently being discussed on Twitter in relation to the crypto industry and the Super Bowl include:\n- Mention of a new coin called "Trump Coin" for sports gamblers\n- Discussion about the Super Bowl game and controversial calls made by officials\n- Excitement for Mahomes and predictions for the game\n- Super Bowl commercials and betting opportunities\n- Comparison of past Super Bowl plays and NFL playoff history\n- Mention of Elon Musk\'s DOGE spots during the Super Bowl\n- Predictions for the Super Bowl game, including the favorite color for the Gatorade shower celebration\n- Information about the U.S. Marines using V-22 Osprey and F-35 fighter jets for a flyover at the Super Bowl\n- Mention of a Michigan State freshman basketball player and a beginner-friendly game protocol\n- Promotion of opportunities for players in the football industry\n- Discussion about a crypto coin called "Chiefs 3Peat" and its performance leading up to the Super Bowl.',
+      data: [
+        6, 2, 2, 5, 3, 7, 3, 3, 4, 18, 5, 3, 3, 1, 12, 0, 3, 6, 12, 14, 10, 10, 7, 3, 4, 4, 5, 5, 1,
+        8, 8, 3, 7, 2, 6, 4, 6, 4, 5, 6, 3, 6, 2, 1, 2, 31, 6, 7, 3, 2, 1, 3, 0, 19, 3,
+      ],
+    },
+    {
+      label: 'BTC Reserve',
+      topics: 'reserve,state,states,strategic,north',
+      description:
+        'The key topic discussed in the messages from twitter is the potential investment of US states in Bitcoin and digital assets. Several states, including North Carolina, Wisconsin, Missouri, Kentucky, Arizona, Utah, Oklahoma, and Wyoming, are considering or have already introduced bills to create strategic reserves of Bitcoin. Investment management firm VanEck analyzed 20 state-level bills proposing the inclusion of Bitcoin in state reserves, estimating that collectively, states could buy approximately 247,000 BTC or $23 billion. The potential for massive adoption of cryptocurrency by US states is highlighted, with the possibility of up to $23 billion being poured into Bitcoin if strategic reserve bills are approved. Lawmakers are also showing bipartisan support for blockchain and digital assets, emphasizing the need for the US to lead in this space to avoid falling behind. The discussion also touches on the potential impact on the market if pension funds were to also invest in Bitcoin.',
+      data: [
+        6, 2, 2, 2, 4, 4, 23, 12, 0, 0, 5, 1, 3, 1, 0, 2, 3, 5, 2, 0, 3, 1, 6, 4, 3, 38, 12, 7, 1,
+        1, 6, 3, 6, 16, 1, 4, 3, 13, 7, 2, 0, 4, 0, 0, 25, 25, 1, 3, 3, 0, 1, 9, 1, 2, 7,
+      ],
+    },
+    {
+      label: 'ETH',
+      topics: 'eth,ethereum,short,shorts,positions',
+      description:
+        "The key topics currently discussed on Twitter regarding Ethereum ($ETH) include:\n- Speculators building the largest Ethereum short position in history\n- Ethereum derivatives outflows signaling reduced selling pressure and bullish potential ahead\n- Sentiment at peak FUD (fear, uncertainty, doubt) with few believers, but anticipation of a legendary comeback\n- Technical analysis indicating a short-term trend shift with the clearing of the 4H 20EMA and first higher low in place\n- Anticipation of Ethereum Improvement Proposal (EIP) 1559 potentially impacting the price movement\n- Potential for a short squeeze as shorts pile in and the gap from last weekend's liquidation cascade remains unfilled\n- Discussion of Ethereum's price decline potentially signaling an imminent rebound due to oversold territory according to technical indicators\n\nOverall, the sentiment on Twitter seems mixed with some anticipating bullish movements while others remain cautious about potential downside risks.",
+      data: [
+        5, 1, 6, 3, 0, 1, 1, 11, 6, 3, 4, 2, 2, 0, 3, 43, 42, 8, 2, 6, 7, 1, 5, 9, 3, 1, 5, 4, 2, 7,
+        5, 4, 2, 1, 3, 4, 3, 9, 2, 5, 2, 3, 9, 0, 6, 4, 3, 4, 2, 6, 1, 6, 2, 8, 6,
+      ],
+    },
+    {
+      label: 'DOGE',
+      topics: 'dogecoin,doge,elonmusk,lol,wanna',
+      description:
+        'The key topics currently being discussed on Twitter regarding Dogecoin include its valuation, potential impact on portfolios, the launch of the official government website, jokes and memes about Dogecoin, the recent surge in its value, and the importance of being part of the right crypto community. Additionally, there is mention of a website related to Dogecoin being available for purchase and the importance of owning a .COM domain with the word "DOGE." There is also a reference to the recent increase in plane crashes and a joke about leaving something "doge" behind when inspecting chemical tankers. Overall, the sentiment towards Dogecoin seems positive and optimistic.',
+      data: [
+        4, 3, 6, 7, 1, 1, 0, 1, 1, 1, 1, 5, 2, 0, 43, 4, 1, 6, 4, 10, 4, 3, 7, 6, 4, 3, 4, 7, 5, 5,
+        7, 3, 8, 4, 1, 3, 1, 3, 4, 1, 4, 5, 4, 3, 4, 5, 14, 13, 5, 2, 2, 2, 6, 9, 6,
+      ],
+    },
+    {
+      label: 'Kanye West',
+      topics: 'ye,west,launch,promote,coin',
+      description:
+        "The key topics currently being discussed in the crypto industry on social media include Kanye West's recent behavior and mental health struggles, the launch of a potential memecoin on Solana, criticism of Kanye's actions and statements, comparisons between Kanye and other artists like Kendrick Lamar, speculation about Kanye's mental illness and social media presence, and the controversy surrounding Dave Chappelle's comedy and his representation of black people. There is also mention of a presale ending soon and the idea of revolution and skepticism in the industry. Overall, the discussions seem to be centered around the behavior and actions of prominent figures in the music and entertainment industry, as well as the impact of mental health on social media presence.",
+      data: [
+        1, 0, 2, 2, 1, 2, 7, 1, 2, 5, 4, 4, 3, 6, 2, 1, 3, 3, 2, 7, 5, 5, 6, 1, 1, 2, 3, 5, 2, 6, 2,
+        6, 4, 4, 7, 6, 3, 2, 4, 6, 7, 5, 2, 1, 6, 3, 2, 5, 3, 4, 11, 1, 2, 1, 17,
+      ],
+    },
+    {
+      label: 'Layer 2',
+      topics: 'ethereum,l2s,l2,classic,eth',
+      description:
+        'The key topics discussed in the messages from Twitter about Ethereum and crypto industry include:\n- The need for more Memecoins like Ethereum and more Layer 2 solutions\n- The dilemma of holding ETH and the challenges faced by Ethereum in terms of scalability and user experience\n- The debate around using Layer 2 solutions that could potentially freeze assets\n- The marketing challenges Ethereum faces in being considered a "boomer chain" and the consequences of alienating certain user groups\n- The issue of fake metrics and scams in Ethereum Layer 2 deployments\n- Concerns about fees being bridged off of Layer 2 solutions to centralized exchanges like Coinbase\n- The profitability and financial transactions of Base and Ethereum\n\nOverall, the discussions highlight the complexities and challenges faced by Ethereum and the crypto industry as a whole, including scalability, user experience, marketing, and potential scams.',
+      data: [
+        1, 1, 3, 3, 0, 2, 4, 2, 2, 5, 7, 1, 1, 5, 1, 38, 19, 7, 4, 5, 0, 5, 5, 6, 3, 2, 7, 9, 1, 6,
+        1, 2, 7, 0, 4, 0, 1, 1, 3, 1, 1, 2, 3, 0, 0, 3, 2, 6, 2, 2, 3, 1, 0, 4, 2,
+      ],
+    },
+    {
+      label: 'OpenSea',
+      topics: 'opensea,sea,airdrop,token,kyc',
+      description:
+        "The key topics currently being discussed in the crypto industry on social media platforms such as Twitter include the launch of NFT brand Doodles' Solana-based token called DOOD, the release of OpenSea's OS2 NFT platform in beta with a teaser of the SEA token airdrop, speculation about the potential impact of launching a token on liquidity and NFT holders, the announcement of Doodles launching an official $DOOD token with a future bridge to Base, the rollout of OS2 open beta by OpenSea with cross-chain NFT trading and confirmation of the SEA token airdrop, the introduction of OpenSea's native token $SEA ahead of the OS2 public release, and discussions about the involvement of individuals like @dfinzer in the industry. Users are also expressing their thoughts on the bullish outlook for OS2 and the implementation of Solana by OpenSea. Overall, the community seems excited about the developments in the NFT and crypto space, particularly with regards to new tokens, platforms, and ecosystem expansions.",
+      data: [
+        0, 7, 11, 0, 1, 2, 3, 1, 0, 1, 7, 3, 4, 5, 15, 2, 4, 7, 3, 2, 6, 3, 3, 7, 1, 3, 0, 9, 3, 6,
+        1, 0, 1, 5, 10, 3, 3, 3, 0, 3, 6, 14, 5, 3, 0, 1, 5, 1, 3, 3, 0, 5, 3, 0, 2,
+      ],
+    },
+    {
+      label: 'BNB',
+      topics: 'bnb,chain,bnbchain,cz,floki',
+      description:
+        'Based on the messages from Twitter, it seems that there is a lot of discussion about BNB (Binance Coin) and its recent performance in the crypto market. Some key points mentioned include:\n\n- BNB looks bottomed on the higher time frame (HTF).\n- BNB has flipped SOL (Solana) and secured the #5 spot with a $100B+ market cap.\n- CZ (Changpeng Zhao) is making strategic moves to push BNB and its ecosystem projects.\n- There is optimism about BNB reaching $800.\n- The CaptainBNB meme coin is gaining popularity and could see significant growth.\n- BNB Chain is seeing a lot of activity with new tokens launching.\n- There is a reference to BNB season in 2021 and the potential for a similar trend to occur again.\n\nOverall, it appears that there is a bullish sentiment surrounding BNB and its ecosystem, with many users expressing excitement and anticipation for potential price increases and new developments.',
+      data: [
+        0, 0, 3, 3, 2, 19, 3, 2, 36, 2, 2, 2, 4, 2, 0, 2, 7, 1, 4, 1, 2, 2, 6, 5, 4, 0, 3, 4, 2, 6,
+        0, 3, 6, 2, 3, 2, 4, 2, 5, 5, 3, 2, 4, 4, 0, 2, 1, 2, 1, 1, 2, 2, 1, 2, 3,
+      ],
+    },
+    {
+      label: 'MSTR',
+      topics: 'microstrategy,saylor,mstr,strategy,michael',
+      description:
+        "The key topic discussed in the messages from twitter is MicroStrategy's continued acquisition of Bitcoin. They have recently purchased another 7,633 BTC for $742 million, bringing their total holdings to 478,740 BTC. This move has resulted in significant gains for shareholders, with a 2600% return since August 2020. The company's strategy of investing in Bitcoin has outpaced traditional investments and redefined corporate finance. Shareholders have been rewarded handsomely, and the company's stock price has seen significant fluctuations based on their Bitcoin holdings. This trend of large-scale Bitcoin acquisitions by corporate entities like MicroStrategy is not unique to them, as other entities are also following suit.",
+      data: [
+        11, 0, 2, 0, 4, 1, 5, 10, 0, 1, 3, 1, 3, 2, 1, 1, 2, 5, 5, 2, 3, 4, 2, 0, 1, 1, 2, 0, 1, 4,
+        2, 16, 4, 4, 2, 2, 1, 1, 2, 3, 1, 12, 0, 3, 1, 40, 2, 2, 3, 0, 1, 4, 0, 1, 4,
+      ],
+    },
+    {
+      label: 'BTC Mining',
+      topics: 'mining,miner,miners,mined,energy',
+      description:
+        "The key topics currently discussed in the messages from twitter about the crypto industry include:\n1. Bitcoin mining efficiency and sustainability\n2. Bitcoin miner activity and potential price movements\n3. CleanSpark's quarterly revenue report and Bitcoin mining\n4. Bitcoin miners' impact on energy consumption and emissions\n5. Hash ribbon signaling miner capitulation and potential price surge\n6. Illegal Bitcoin mining operations and energy theft\n7. Misconceptions about Bitcoin mining and its environmental impact\n8. Future of mining rewards and advancements in technology\n\nThese topics reflect the ongoing discussions and developments in the crypto industry, particularly related to Bitcoin mining and its implications on the environment, energy consumption, and market dynamics.",
+      data: [
+        4, 0, 2, 2, 22, 6, 7, 3, 0, 3, 2, 3, 2, 3, 3, 3, 3, 2, 3, 0, 1, 7, 6, 8, 4, 2, 1, 0, 1, 1,
+        1, 21, 3, 7, 3, 2, 0, 4, 1, 1, 5, 2, 6, 0, 3, 0, 0, 2, 1, 1, 0, 4, 2, 3, 1,
+      ],
+    },
+    {
+      label: 'TSLA',
+      topics: 'tesla,tsla,elonmusk,holdings,stock',
+      description:
+        "Based on the messages from Twitter, key topics currently discussed in the crypto industry include:\n- Tesla's COGS per vehicle reaching an all-time low in Q4 2024 despite high inflation\n- Ford losing billions on electric cars in 2025, with a $5.1 billion loss in 2024\n- Tesla's plans to launch autonomous ride hailing in Austin in June and expand to other cities in America by the end of the year\n- Alibaba leading a global stock surge and hitting its highest share price since 2022\n- Lyft being sued over allegations of being fat-phobic and racist\n\nOverall, the discussions on Twitter highlight the ongoing developments and challenges in the electric vehicle industry, as well as the performance of major tech companies like Tesla and Alibaba.",
+      data: [
+        3, 0, 2, 2, 1, 2, 2, 3, 0, 5, 1, 1, 1, 2, 4, 1, 4, 3, 2, 0, 3, 2, 2, 7, 3, 2, 5, 5, 2, 3, 1,
+        3, 2, 2, 2, 1, 6, 0, 3, 1, 6, 5, 1, 2, 1, 7, 4, 23, 1, 0, 22, 3, 3, 0, 4,
+      ],
+    },
+    {
+      label: 'GameFi',
+      topics: 'gaming,games,web3,game,players',
+      description:
+        "The key topics currently discussed in the crypto industry on Twitter include:\n\n1. Orbler partnering with Gamerge to revolutionize Web3 gaming with immersive play-to-earn experiences, crypto rewards, and advanced GameFi experience.\n2. Introduction of Open Game Protocol (OGP) for earning any token by playing any game, anywhere.\n3. Xai Play enabling real distribution at scale for Web2 and Web3 games, with the entire Steam library onboarded to $XAI.\n4. Mythical Games powering the next generation of gaming on Polkadot, with Ronin's Gaming Empire receiving numerous awards.\n5. Azuki Gaming launching new games, including Best Mobile Game winner Fableborne, and expanding into gaming.\n6. Immutable launching promising titles in Q1 2025 to bring more players onchain.\n7. Updates and new features in Classic and MagicCraft games, including meme-coin skins and a community-powered battle arena.\n8. Proof of Skill and Xai Play incentivizing over 100 million Steam users to onboard into Web3.\n9. MagicCraft Tournament semi-final games and upcoming Chinese panel on the future of player-centric game economies.\n10. MapleStory's approach to Web3 gaming and the perception of Web3 gaming among gamers.",
+      data: [
+        3, 1, 1, 1, 1, 3, 0, 3, 4, 2, 0, 1, 0, 1, 1, 4, 2, 0, 3, 36, 1, 4, 1, 0, 4, 4, 2, 4, 1, 3,
+        1, 2, 1, 2, 1, 1, 3, 3, 2, 3, 4, 1, 3, 1, 3, 5, 3, 1, 2, 4, 2, 6, 2, 6, 3,
+      ],
+    },
+    {
+      label: 'APE',
+      topics: 'apechain,ape,nfts,home,mint',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media platforms such as Twitter include:\n- ApeCoin Spotlight and the Bored Ape Yacht Club\n- Diamond Fleece Mint Pass holders\n- ApeChain and the Ape laboratory\n- PixelChain NFTs\n- Issues with Jungles on Magic Eden\n- AbstractChain minting experience\n- Thriving communities on ApeChain such as OKINA LABS, CHUMPZ, GEEZ, and RILLAZ\n- ApeCoin DAO and Made By Apes Snapshot\n- Active NFT communities with a PvE mindset\n- Collaboration between ApeCoin, MagicEden, and other NFT projects\n- Novel Labs events and collaborations with Bored Ape Yacht Club, MutantHounds, Mutant Cartel, CryptoPunks, and artist Vinnie Hager.',
+      data: [
+        2, 0, 14, 5, 1, 4, 0, 6, 2, 3, 0, 1, 8, 0, 1, 3, 1, 2, 2, 3, 2, 1, 3, 8, 3, 1, 4, 1, 2, 6,
+        1, 4, 4, 10, 4, 0, 2, 1, 2, 1, 2, 1, 3, 0, 7, 3, 1, 1, 6, 6, 0, 0, 0, 3, 1,
+      ],
+    },
+    {
+      label: 'Whales',
+      topics: 'whales,whale,buying,retail,activity',
+      description:
+        'Based on the messages from Twitter, it is evident that there is a lot of discussion about whales in the crypto industry. Whales are large players who are accumulating significant amounts of Bitcoin and Ethereum. The emergence of new whales, such as (Micro)Strategy and BTC ETFs, is seen as a significant development in the market. These new whales are dominating the current cycle compared to old whales, indicating a influx of fresh capital into Bitcoin.\n\nThere is also mention of the psychology of retail investors in relation to whales, with a focus on using logic over emotions when making investment decisions. Additionally, there is discussion about the buying and selling behavior of different categories of investors, such as sharks (100-1k BTC) and shrimps (<1BTC).\n\nOverall, the presence and actions of whales in the crypto market are closely monitored and analyzed by investors and analysts alike.',
+      data: [
+        2, 0, 0, 1, 3, 6, 1, 3, 4, 1, 0, 3, 0, 0, 1, 0, 8, 1, 1, 1, 3, 3, 0, 2, 0, 4, 2, 0, 0, 4, 3,
+        0, 4, 5, 7, 3, 2, 1, 0, 1, 4, 0, 1, 0, 2, 0, 0, 0, 1, 2, 0, 2, 2, 35, 1,
+      ],
+    },
+  ],
+}

@@ -1,0 +1,289 @@
+export const NARRATIVES = {
+  labels: [
+    '22.01.26',
+    '23.01.26',
+    '23.01.26',
+    '23.01.26',
+    '23.01.26',
+    '23.01.26',
+    '23.01.26',
+    '23.01.26',
+    '24.01.26',
+    '24.01.26',
+    '24.01.26',
+    '24.01.26',
+    '24.01.26',
+    '24.01.26',
+    '24.01.26',
+    '24.01.26',
+    '25.01.26',
+    '25.01.26',
+    '25.01.26',
+    '25.01.26',
+    '25.01.26',
+    '25.01.26',
+    '25.01.26',
+    '25.01.26',
+    '26.01.26',
+    '26.01.26',
+    '26.01.26',
+    '26.01.26',
+    '26.01.26',
+    '26.01.26',
+    '26.01.26',
+    '26.01.26',
+    '27.01.26',
+    '27.01.26',
+    '27.01.26',
+    '27.01.26',
+    '27.01.26',
+    '27.01.26',
+    '27.01.26',
+    '27.01.26',
+    '28.01.26',
+    '28.01.26',
+    '28.01.26',
+    '28.01.26',
+    '28.01.26',
+    '28.01.26',
+    '28.01.26',
+    '28.01.26',
+    '29.01.26',
+    '29.01.26',
+    '29.01.26',
+    '29.01.26',
+    '29.01.26',
+    '29.01.26',
+    '29.01.26',
+  ],
+  datasets: [
+    {
+      label: 'AI',
+      topics: 'ais,agentic,bottleneck,artificial,models',
+      description:
+        'The key topics discussed in the messages from twitter include the integration of AI with cryptocurrency, the impact of AI on job markets, the advancement of AI technology, the use of AI agents in economic activities, the adoption of AI in the workplace, the potential for AI to exploit cyber vulnerabilities, the role of open source in AI development, and the challenges and opportunities presented by AI in various industries.',
+      data: [
+        28, 114, 44, 42, 41, 22, 48, 30, 27, 69, 28, 31, 27, 30, 51, 29, 25, 43, 35, 21, 31, 25, 28,
+        62, 40, 41, 25, 26, 26, 35, 25, 35, 42, 22, 46, 35, 54, 43, 29, 30, 31, 35, 29, 30, 23, 32,
+        34, 49, 32, 36, 43, 19, 29, 39, 33,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Clawdbot',
+      topics: 'moltbot,clawd,clawdbot,lobster,bankr',
+      description:
+        'The messages from twitter discuss the rise and fall of Clawdbot, a popular AI project that faced security issues and was exploited by scammers. Users are warned about potential security risks and advised on how to protect their data when using Clawdbot. Despite its flaws, some users praise Clawdbot for its capabilities and potential for consumer products. The messages also mention the development of new AI projects like AGNT and the potential for a new AI called "Lobster General Intelligence" (LGI) to emerge in the future. Overall, the discussion highlights the excitement and risks associated with AI technology in the crypto industry.',
+      data: [
+        19, 17, 13, 28, 7, 18, 20, 14, 160, 15, 16, 15, 13, 16, 15, 14, 18, 27, 18, 27, 25, 22, 17,
+        40, 16, 10, 19, 15, 9, 9, 19, 12, 14, 25, 18, 10, 21, 11, 17, 15, 25, 20, 27, 20, 14, 10,
+        20, 26, 23, 17, 31, 24, 9, 19, 16,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Trading discipline',
+      topics: 'emotions,revenge,trader,emotional,psychology',
+      description:
+        'The key topics discussed in the messages from twitter include the importance of trading execution over effort, the misconception that trading is about being right all the time, the need for emotional discipline in trading, the significance of learning from losses, the benefits of prop trading firms, and the impact of mindset on trading success. Additionally, the messages emphasize the importance of knowing when to close the laptop and avoid burnout, as well as the value of letting probability work in trading rather than feeding the ego by always needing to be right. The messages also touch on the concept of harvesting Time Decay in trading and the benefits of exploiting short-term urgency compared to long-term patience.',
+      data: [
+        5, 6, 11, 12, 32, 10, 5, 10, 2, 17, 17, 11, 11, 13, 10, 10, 8, 9, 4, 15, 11, 13, 7, 9, 12,
+        5, 11, 7, 23, 39, 10, 19, 8, 6, 21, 19, 7, 9, 16, 14, 11, 8, 8, 20, 12, 26, 21, 19, 71, 65,
+        10, 10, 14, 4, 8,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'BTC price',
+      topics: '84k,90k,ltf,80k,85k',
+      description:
+        'The key topic currently being discussed on twitter is that Bitcoin (BTC) has hit a new low, trading below $86k. There are concerns about whether BTC can hold this level and speculation about potential further downside to $76k or lower. The market sentiment seems to be bearish, with resistance at $90.3k and support at $80.6k and 84.5k. There is also discussion about the importance of BTC staying above the $90,000 level to avoid a potential sweep down to $85,000-$86,000. Overall, the market is currently "Seller dominant" until BTC can break and close a daily candle above the $90,000 zone.',
+      data: [
+        15, 7, 6, 10, 10, 29, 15, 13, 13, 16, 5, 10, 11, 24, 6, 19, 15, 3, 11, 9, 5, 16, 16, 9, 8,
+        3, 23, 15, 23, 8, 2, 13, 8, 5, 7, 11, 28, 14, 25, 11, 7, 6, 17, 9, 14, 19, 14, 10, 7, 15,
+        29, 5, 10, 8, 8,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Bitcoin is the future of finance',
+      topics: 'bitcoiners,bitcoiner,bip,grifters,pleb',
+      description:
+        'The messages from twitter discuss various aspects of Bitcoin, including its potential as a form of passive income, criticisms from skeptics, the importance of self-custody, and the role of Bitcoin in disrupting traditional financial systems. There is also mention of the development of Bitcoin credit markets, the use of Bitcoin for financial infrastructure, and its impact on global financial systems. Overall, the messages convey a sense of optimism and hope for the future of Bitcoin and its potential to bring about positive change for humanity.',
+      data: [
+        9, 7, 11, 9, 37, 6, 12, 20, 5, 13, 13, 11, 17, 11, 18, 12, 13, 9, 6, 6, 15, 10, 9, 16, 17,
+        5, 14, 15, 8, 14, 10, 19, 16, 5, 27, 8, 16, 9, 11, 11, 9, 11, 6, 14, 10, 11, 11, 13, 7, 14,
+        20, 13, 12, 15, 7,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Elon Musk, Tesla, SpaceX',
+      topics: 'spacex,tesla,tsla,fsd,xai',
+      description:
+        "The messages from twitter are discussing Elon Musk's statement that $TSLA is garbage and that Tesla is not just a car company. There is also mention of SpaceX merging with Twitter, as well as speculation about Tesla's future in achieving level 5 autonomy. Additionally, there is excitement about Optimus robot factories and the potential for trillionaires to be created through AI. The discussion also touches on Elon Musk's massive increase in net worth and the value of Tesla and SpaceX in the global economy. Overall, the sentiment seems to be mixed with some skepticism and some excitement about the future of Tesla and Elon Musk's ventures.",
+      data: [
+        13, 10, 19, 10, 9, 10, 11, 9, 4, 29, 11, 8, 14, 27, 11, 9, 9, 16, 3, 5, 10, 15, 3, 10, 22,
+        11, 6, 7, 9, 5, 20, 5, 3, 19, 0, 10, 18, 9, 24, 23, 36, 12, 9, 10, 8, 12, 12, 9, 8, 10, 19,
+        5, 3, 4, 9,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'BTC vs Gold - which is the real SoV',
+      topics: 'rotates,oz,ounces,golds,outperformed',
+      description:
+        'The messages from twitter suggest that there is a debate about whether Bitcoin or Gold is a better store of value. Some believe that Bitcoin is superior to Gold due to its finite supply and potential for growth, while others argue that Gold has a longer history as a store of value. There is also discussion about the potential for Bitcoin to catch up to Gold in terms of value in the future. Additionally, there is mention of the volatility of both Bitcoin and Gold, with some suggesting that Bitcoin has outperformed Gold historically over longer holding periods. Overall, the messages highlight the ongoing comparison and competition between Bitcoin and Gold as assets for investment and store of value.',
+      data: [
+        8, 11, 12, 7, 30, 9, 12, 6, 5, 7, 7, 3, 10, 5, 4, 5, 6, 9, 14, 59, 6, 9, 11, 3, 8, 8, 8, 5,
+        7, 11, 6, 11, 5, 21, 15, 8, 12, 13, 16, 11, 21, 5, 27, 8, 6, 11, 4, 7, 11, 9, 6, 34, 3, 9,
+        11,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'PENGUIN',
+      topics: '8jx8aahj86wbqgutjguj6gttl5ps3cqxkrtvpajapump,pengu,100m,nietzschean,pve',
+      description:
+        'The main topic discussed in the messages from twitter is the rapid rise of the cryptocurrency $PENGUIN, which has seen its market cap increase from $16.5k to over $170 million in a short period of time. Many users are discussing the potential for $PENGUIN to reach a $1 billion market cap in the future, while others are cautioning about the risks of FOMO (fear of missing out) and the importance of playing smartly in the market. Overall, there is a mix of excitement and caution surrounding the $PENGUIN cryptocurrency and its potential for further growth.',
+      data: [
+        21, 4, 7, 6, 12, 11, 11, 16, 7, 10, 12, 1, 5, 8, 3, 5, 8, 8, 15, 10, 6, 13, 21, 10, 4, 7,
+        13, 3, 14, 12, 18, 8, 5, 8, 73, 10, 8, 17, 12, 5, 10, 10, 8, 7, 8, 6, 9, 19, 6, 10, 5, 5, 8,
+        9, 12,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Memecoins',
+      topics: 'memecoins,memes,memecoin,meme,wojak',
+      description:
+        'The messages from twitter discuss the resurgence of memecoins and the potential for them to serve as valuable assets. There is a focus on the power of memes in driving direction and value in the crypto industry. The messages also touch on the importance of utility and technology in the space, as well as the need to weed out scam founders in order for real products to thrive. Additionally, there is mention of the influence of memetics and the potential for memecoins to create joy and unity within the community. The messages also highlight the idea of creating influencer memecoins and the potential for them to infiltrate the crypto space. Overall, the messages convey a sense of excitement and opportunity surrounding memecoins in the crypto industry.',
+      data: [
+        4, 9, 7, 8, 15, 6, 12, 12, 13, 5, 6, 6, 8, 4, 7, 9, 6, 11, 9, 7, 9, 6, 10, 8, 6, 13, 13, 4,
+        6, 5, 126, 17, 8, 5, 2, 6, 6, 9, 6, 8, 3, 10, 4, 6, 3, 9, 10, 12, 9, 12, 10, 4, 2, 5, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'SOL price',
+      topics: 'solanas,145,solana,tomato,sol',
+      description:
+        "The key topics currently being discussed in the crypto community on Solana include:\n1. The high on-chain yield on Solana, making it a popular choice for investors.\n2. The emergence of zk-powered perps on Solana, indicating advancements in technology on the platform.\n3. The need for open coordination in open world foundation models, suggesting a collaborative approach to development.\n4. The comparison between Solana and Ethereum, with a focus on prop AMMs and potential challenges in the EVM architecture.\n5. The potential for Solana to replace the US dollar as a preferred currency.\n6. The positive outlook on Solana's future, with discussions on potential price increases and market cap growth.\n7. The reliability and uptime of Solana compared to other networks like Ethereum.\n8. The growth of DeFi on Solana, with projects like SolCtrl offering rewards for holding SOL.\n9. Updates on Solana's performance in the market, including price movements and TVL.\n10. Opportunities for capital efficiency and staking rewards on Solana, such as with BGSOL.\nOverall, the sentiment towards Solana appears to be positive, with discussions focusing on its potential for growth and innovation in the crypto industry.",
+      data: [
+        12, 1, 6, 7, 11, 8, 14, 14, 7, 6, 9, 6, 7, 6, 11, 6, 13, 4, 5, 3, 4, 8, 10, 11, 4, 8, 17, 6,
+        15, 6, 7, 2, 7, 4, 7, 12, 13, 8, 14, 5, 5, 8, 7, 37, 14, 11, 8, 7, 18, 11, 17, 6, 6, 7, 13,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Canada - US relations tighten',
+      topics: 'canada,canadian,tariff,impose,threatens',
+      description:
+        "The key topics discussed in the messages from twitter are:\n1. Missile exchange with Canada expected to begin imminently\n2. President Trump threatening 100% tariffs on Canadian goods if Ottawa signs a deal with China\n3. Concerns about Mark Carney's actions and impact on Canada\n4. International student arrivals hitting a low point\n5. Capital rushing into Canada according to Mark Carney, but reality disagrees\n6. Brain drain from Canada to the U.S. due to regulatory chaos\n7. Asylum claims and abuse in the system\n8. French Canadian separatists potentially aligning with Trump and MAGA\n9. Views on President Trump's actions being beneficial for Canada and other countries with current account surplus.",
+      data: [
+        4, 11, 8, 4, 4, 5, 14, 3, 4, 8, 6, 5, 8, 5, 6, 6, 6, 3, 7, 5, 9, 6, 7, 15, 9, 5, 9, 9, 11,
+        4, 7, 4, 5, 5, 5, 8, 2, 12, 11, 12, 25, 42, 3, 7, 6, 15, 17, 30, 12, 7, 4, 3, 18, 10, 6,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Gaming',
+      topics: 'gaming,gamefi,games,gameplay,mario',
+      description:
+        'The key topic currently discussed in the crypto gaming community on Twitter is the development of a new video game on the Solana blockchain. The game is described as a next-gen strategy simulation game in the Factory Battle Hybrid genre, being built by @EtherForge_io. The community is excited about the progress of the game, with one user noting that it is coming together quickly despite starting with only a binary file. The discussion also touches on the anti-fragility of crypto gaming teams, emphasizing the importance of user and revenue growth for success. Additionally, there is mention of the challenges faced by Web3 gaming, particularly in terms of storytelling and the use of crypto jargon. Overall, the community is focused on creating immersive and engaging gaming experiences within the crypto space.',
+      data: [
+        6, 2, 7, 12, 10, 8, 15, 11, 5, 8, 12, 5, 8, 7, 5, 12, 7, 70, 6, 4, 8, 5, 5, 11, 8, 7, 9, 5,
+        14, 6, 5, 6, 20, 4, 7, 20, 1, 9, 7, 4, 3, 3, 5, 10, 9, 7, 2, 8, 5, 4, 7, 8, 10, 4, 11,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Extreme weather in the USA',
+      topics: 'snow,winter,storm,roads,weather',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media include:\n1. Historic snowfalls and extreme cold in the United States, leading to power outages and flight cancellations.\n2. Winter weather causing dangerous conditions, with reports of deaths and warnings to stay off the roads.\n3. Smartphone weather apps versus human expertise in forecasting during severe winter storms.\n4. Preparation for winter storms, including stocking up on supplies and staying safe.\n5. Winter trading rally promotions and opportunities in the crypto market.\n6. Personal experiences and activities during the winter weather, such as making ice cream in the snow and playing video games indoors.\n7. Speculation and humor about the weather, including jokes about being the "snow storm" and driving in bad weather conditions.\n8. Financial advice related to surviving market volatility during the winter season.',
+      data: [
+        3, 2, 8, 7, 6, 4, 6, 8, 5, 4, 6, 11, 4, 6, 5, 9, 11, 10, 7, 9, 6, 8, 8, 9, 11, 2, 5, 6, 9,
+        13, 7, 4, 6, 3, 5, 4, 9, 1, 5, 9, 5, 5, 8, 57, 21, 4, 5, 5, 5, 4, 10, 1, 21, 21, 2,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Moonbirds and BIRB',
+      topics: 'birb,moonbirds,spencer,tokenomics,fdv',
+      description:
+        "The messages from twitter are discussing the $BIRB token and its recent developments. It seems that there is excitement and speculation surrounding the token, with mentions of its trading value, airdrop eligibility, and potential listing on Coinbase. There are also discussions about the token's distribution, utility, and potential token sinks. Additionally, there are references to Moonbirds and SBT holders, as well as the upcoming TGE (Token Generation Event) for $BIRB. Overall, it appears that there is a lot of activity and interest in the $BIRB token within the crypto community.",
+      data: [
+        12, 7, 9, 9, 40, 3, 2, 4, 22, 8, 2, 9, 3, 3, 6, 2, 4, 10, 6, 6, 10, 4, 6, 3, 6, 25, 9, 22,
+        1, 6, 2, 11, 5, 9, 4, 3, 8, 5, 2, 1, 5, 3, 1, 8, 5, 5, 6, 8, 13, 7, 3, 1, 2, 9, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Hyperliquid',
+      topics: 'hype,hyperliquid,hip3,downtrend,reclaims',
+      description:
+        "The key topic discussed in the messages from twitter is the cryptocurrency $HYPE. It is mentioned that $HYPE has been trading below $30 but is now making moves and accelerating, with eyes on reaching $50. There is speculation about $HYPE reaching $100 and it being a good long-term buy. The recent pump in $HYPE is attributed to it being natively on @solana and powered by Wormhole. There is also discussion about $HYPE's price targets, trading strategies, and support levels. Overall, there is a lot of excitement and optimism surrounding $HYPE in the crypto community.",
+      data: [
+        12, 3, 9, 4, 4, 17, 6, 8, 7, 6, 4, 9, 1, 7, 4, 6, 7, 5, 6, 8, 6, 4, 32, 5, 4, 4, 7, 13, 8,
+        7, 1, 8, 2, 4, 9, 6, 9, 9, 9, 5, 4, 2, 9, 4, 10, 12, 5, 6, 5, 2, 5, 6, 1, 1, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Nietzschean penguin memes',
+      topics: 'penguins,pengu,pudgy,embrace,wings',
+      description:
+        'The messages from twitter are discussing the concept of being a penguin, with references to embracing the penguin, understanding the penguin, and being the penguin you were meant to be. There are also mentions of penguin market makers, penguin cults, and penguins loving CUBEs. Additionally, there are references to penguins in relation to other animals like polar bears, hippos, and leopards. The messages also touch on the idea of standing out from the crowd and choosing your own path, symbolized by being a penguin. Overall, the theme of embracing individuality and uniqueness, represented by the penguin, is prevalent in the messages.',
+      data: [
+        4, 2, 7, 4, 6, 3, 5, 7, 0, 2, 5, 6, 2, 9, 5, 5, 5, 2, 5, 4, 6, 6, 4, 8, 4, 8, 11, 9, 5, 5,
+        4, 3, 3, 3, 92, 5, 0, 5, 1, 6, 5, 6, 3, 3, 6, 5, 10, 9, 2, 5, 4, 5, 6, 7, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Cooking',
+      topics: 'chicken,bread,beef,butter,breakfast',
+      description:
+        "The messages from twitter mainly revolve around cooking and food. There are mentions of British cuisine, cooking pancakes, impressive kitchen design, fries, salad, cheese toastie, steak and potato, dried fruit, meat stuck in throat, ribeye steak, McDonald's, salmon, lemon, garlic, olive oil, crinkle cut fries, and bone-in ribeye. Additionally, there are references to specific ingredients and cooking techniques such as dry brining, basting with butter, and using specific seasonings. The overall tone is casual and enthusiastic about cooking and food.",
+      data: [
+        4, 4, 5, 16, 6, 8, 4, 8, 2, 21, 9, 5, 11, 20, 6, 2, 7, 12, 3, 9, 7, 3, 12, 4, 3, 8, 5, 5, 3,
+        6, 4, 4, 1, 2, 2, 7, 6, 4, 7, 6, 4, 4, 4, 5, 8, 1, 6, 6, 4, 6, 4, 2, 3, 8, 4,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Superbowl',
+      topics: 'bowl,patriots,rams,nfl,championship',
+      description:
+        'The key topics discussed in the messages from twitter are:\n1. Excitement and anticipation for the Super Bowl, with mentions of the Patriots and Seahawks.\n2. Reactions to the NFC Championship game and predictions for the Super Bowl outcome.\n3. References to specific players and their performances, such as Tom Brady and Sam Darnold.\n4. Mention of a prediction market for the Super Bowl outcome on Axiom Protocol.\n5. Congratulations to the New England Patriots for their win and advancement to the Super Bowl.\n6. Humorous and emotional reactions to the games and outcomes.\n7. References to specific plays and moments in the games, such as interceptions and fumbles.\n8. Appreciation for the support and community within the crypto industry, with mentions of $MASK fam and NikCenturioHodl.',
+      data: [
+        13, 2, 2, 8, 13, 9, 2, 4, 3, 6, 4, 3, 5, 11, 3, 14, 3, 6, 12, 7, 7, 8, 4, 9, 4, 0, 9, 3, 5,
+        4, 3, 1, 3, 11, 7, 5, 8, 3, 9, 3, 10, 12, 4, 3, 4, 4, 2, 6, 6, 6, 7, 7, 7, 6, 8,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Art',
+      topics: 'painting,artist,artists,art,masterpiece',
+      description:
+        'The messages from twitter mainly focus on the topic of art in the crypto industry. The discussions revolve around the value of art, the importance of preserving art through platforms like Ethereum, and the tokenization of cultural assets. There is also mention of specific artworks, artists, and platforms like OAK and LiveArt. Overall, the messages highlight the intersection of art and technology within the crypto space.',
+      data: [
+        2, 0, 49, 5, 4, 5, 4, 9, 1, 11, 9, 4, 6, 7, 9, 4, 5, 5, 5, 1, 6, 2, 5, 7, 0, 3, 6, 2, 6, 7,
+        4, 4, 5, 8, 15, 8, 4, 8, 5, 5, 4, 5, 3, 1, 2, 8, 10, 3, 3, 3, 4, 3, 6, 9, 4,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Mac Mini surge in popularity',
+      topics: 'minis,mac,mini,vps,apple',
+      description:
+        'The messages from twitter suggest that there is a lot of discussion about Mac minis and their usage in relation to Clawdbot. Some users are considering buying Mac minis for running bots, while others are questioning the necessity of owning multiple Mac minis. There is also mention of the potential future price increase of Mac Minis and other Apple products. Overall, it seems that Mac minis are a popular choice for running Clawdbots and other tasks in the crypto community.',
+      data: [
+        3, 6, 2, 6, 5, 17, 21, 1, 13, 7, 3, 2, 3, 4, 4, 5, 2, 8, 5, 13, 3, 1, 10, 4, 3, 1, 2, 5, 24,
+        0, 20, 5, 5, 7, 7, 2, 2, 6, 5, 4, 9, 5, 2, 6, 2, 5, 2, 3, 6, 3, 6, 4, 9, 6, 2,
+      ],
+      infofi: false,
+    },
+  ],
+}

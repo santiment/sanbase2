@@ -1,0 +1,252 @@
+export const NARRATIVES = {
+  labels: [
+    '22.08.24',
+    '23.08.24',
+    '23.08.24',
+    '23.08.24',
+    '23.08.24',
+    '23.08.24',
+    '23.08.24',
+    '23.08.24',
+    '24.08.24',
+    '24.08.24',
+    '24.08.24',
+    '24.08.24',
+    '24.08.24',
+    '24.08.24',
+    '24.08.24',
+    '24.08.24',
+    '25.08.24',
+    '25.08.24',
+    '25.08.24',
+    '25.08.24',
+    '25.08.24',
+    '25.08.24',
+    '25.08.24',
+    '25.08.24',
+    '26.08.24',
+    '26.08.24',
+    '26.08.24',
+    '26.08.24',
+    '26.08.24',
+    '26.08.24',
+    '26.08.24',
+    '26.08.24',
+    '27.08.24',
+    '27.08.24',
+    '27.08.24',
+    '27.08.24',
+    '27.08.24',
+    '27.08.24',
+    '27.08.24',
+    '27.08.24',
+    '28.08.24',
+    '28.08.24',
+    '28.08.24',
+    '28.08.24',
+    '28.08.24',
+    '28.08.24',
+    '28.08.24',
+    '28.08.24',
+    '29.08.24',
+    '29.08.24',
+    '29.08.24',
+    '29.08.24',
+    '29.08.24',
+    '29.08.24',
+    '29.08.24',
+  ],
+  datasets: [
+    {
+      label: 'BTC',
+      topics: 'bitcoin,money,fiat,bitcoiners,understand',
+      description:
+        "The key topics currently discussed on Twitter regarding Bitcoin include:\n1. Bitcoin as the foundational cryptocurrency\n2. Speculation on Bitcoin's price movement\n3. Bitcoin adoption and its potential impact on the financial system\n4. Bitcoin maximalism and its proponents\n5. Education and advocacy for Bitcoin\n6. Bitcoin as a solution to fiat-based monetary systems\n7. Community engagement and support for Bitcoin\n8. Comparison of Bitcoin to other cryptocurrencies\n9. Humorous takes on Bitcoin culture\n10. Encouragement for long-term holding of Bitcoin",
+      data: [
+        11, 8, 8, 12, 83, 66, 5, 10, 10, 10, 5, 16, 14, 10, 10, 15, 13, 12, 19, 19, 12, 12, 25, 12,
+        19, 7, 15, 12, 16, 14, 13, 12, 20, 3, 7, 10, 10, 14, 10, 11, 5, 25, 10, 14, 18, 17, 9, 24,
+        9, 13, 31, 10, 11, 11, 10,
+      ],
+    },
+    {
+      label: 'ETF Inflows',
+      topics: 'etfs,etf,inflows,net,blackrock',
+      description:
+        'The key topic discussed in the Twitter messages is the performance and impact of Bitcoin and Ethereum ETFs. The messages mention positive inflows and outflows, as well as the overall market impact of these ETFs. There is also discussion about the potential approval of Bitcoin ETFs and how it could bring more institutional money into the crypto market. Additionally, there are mentions of specific ETFs such as Grayscale and Vaneck, as well as the total net asset value of Ethereum ETFs. Overall, the messages highlight the ongoing interest and activity surrounding ETFs in the crypto industry.',
+      data: [
+        13, 2, 9, 10, 25, 22, 7, 7, 8, 2, 2, 10, 7, 2, 2, 0, 69, 6, 10, 1, 0, 8, 5, 9, 9, 19, 11, 1,
+        3, 2, 6, 2, 13, 9, 6, 6, 2, 2, 8, 2, 2, 7, 22, 6, 53, 8, 7, 1, 3, 16, 0, 2, 1, 11, 12,
+      ],
+    },
+    {
+      label: "Durov's arrest",
+      topics: 'durov,pavel,telegram,france,arrest',
+      description:
+        "The key topics currently being discussed in the crypto industry on social media platforms such as Twitter include:\n1. The arrest of Telegram founder Pavel Durov on 12 criminal counts, leading to a loss for crypto gamblers and speculation about his motives and actions.\n2. The implications of Durov's arrest on the future of Telegram and the potential censorship of information on the platform.\n3. Speculation about Durov's French citizenship and his interactions with French authorities, including his detention and bail conditions.\n4. Concerns about government censorship and authoritarianism, with references to Bitcoin as censorship-resistant money and the need to protect free speech and privacy.\n5. The arrest of influencer Andrew Tate on trafficking and rape charges, and the confiscation of luxury cars from his residence by Romanian authorities.\n6. The impact of Durov's arrest on the cryptocurrency market, including a liquidity provider removing $2 million dollars of LP and dumping tokens.\n7. Rumors and speculation about the charges against Durov, including complicity in illegal transactions and refusal to cooperate with authorities.\n8. The broader implications of Durov's arrest on the crypto industry, including a decline in Toncoin value and the SEC charging Abra for unregistered crypto offerings.",
+      data: [
+        8, 4, 30, 12, 0, 0, 16, 3, 9, 12, 2, 6, 8, 14, 2, 11, 0, 9, 6, 59, 4, 4, 11, 5, 4, 5, 10, 9,
+        6, 7, 4, 4, 5, 1, 8, 55, 5, 10, 14, 5, 6, 9, 8, 2, 2, 4, 8, 16, 9, 4, 8, 7, 6, 5, 4,
+      ],
+    },
+    {
+      label: 'AI',
+      topics: 'ai,models,data,future,intelligence',
+      description:
+        'The messages from twitter discuss various topics related to AI, crypto, and technology. Some key points mentioned include the use of AI tools for designing user interfaces, the importance of AI in revolutionizing research, the performance of AI tools in coding, the collaboration for fair AI development, the unveiling of a new image generation model by Google, the regulation of AI, and the dominance of Silicon Valley in tech innovation. Additionally, there is a mention of a project called Nodepay that allows users to earn points through AI farming. The overall tone of the messages is positive towards AI advancements and the potential for regulation in the industry.',
+      data: [
+        13, 53, 16, 10, 0, 1, 4, 3, 4, 9, 5, 13, 7, 11, 7, 6, 4, 13, 8, 3, 17, 6, 5, 8, 12, 12, 3,
+        6, 6, 4, 4, 4, 12, 6, 10, 8, 6, 10, 1, 9, 17, 8, 3, 8, 2, 5, 14, 8, 10, 7, 9, 8, 10, 6, 5,
+      ],
+    },
+    {
+      label: 'GameFi',
+      topics: 'gaming,game,games,web3,metaverse',
+      description:
+        'The key topics currently discussed in the crypto industry on social media platforms such as Twitter include:\n- GameFi and the excitement around finding a GameFi gem\n- Speculation about Elon Musk trying out BlackMythGame\n- Web3 gaming and its potential impact on the industry\n- Criticism of certain games like Warzone for unfair advantages\n- Public Playtest 3 and anticipation for the event\n- Bitget launchpool and the opportunity to win USDT\n- Partnerships between different metaverses for game nights\n- Enjin Gaming Multiverse and its upcoming launch\n\nOverall, the crypto community on social media is actively engaged in discussions about various aspects of the gaming and crypto industries, including new games, partnerships, and technological advancements.',
+      data: [
+        5, 2, 10, 9, 0, 1, 6, 3, 3, 7, 6, 6, 5, 6, 7, 11, 4, 5, 10, 6, 62, 9, 5, 6, 5, 10, 9, 3, 14,
+        5, 3, 14, 9, 12, 6, 16, 31, 6, 3, 9, 4, 4, 5, 7, 4, 5, 6, 7, 2, 1, 5, 4, 4, 14, 9,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'meme,memecoin,memes,memecoins,coin',
+      description:
+        'The messages from Twitter discuss various topics related to meme coins in the crypto industry. Some key points mentioned include:\n- The importance of differentiating between real and fake meme coins\n- The potential for meme coins to outperform traditional investments\n- The risks associated with investing in meme coins, as they can experience significant volatility\n- The cultural significance of meme art and its evolution over time\n- The launch of a new meme coin launchpad with innovative features\n- The perception of meme coins as a pump-and-dump scheme by some individuals\n\nOverall, the messages highlight the growing popularity and potential opportunities in the meme coin market, while also emphasizing the need for caution and due diligence when investing in these assets.',
+      data: [
+        8, 9, 3, 9, 0, 3, 6, 2, 12, 6, 5, 15, 6, 2, 7, 9, 1, 4, 12, 2, 4, 6, 9, 4, 10, 10, 10, 9, 2,
+        9, 8, 87, 9, 5, 5, 6, 8, 6, 4, 5, 6, 8, 3, 9, 4, 4, 4, 8, 7, 6, 4, 1, 4, 5, 3,
+      ],
+    },
+    {
+      label: 'Tron Memecoins ',
+      topics: 'tron,sun,trx,sundog,meme',
+      description:
+        'The key topics currently discussed in the crypto industry on Twitter include:\n- Memecoins on Tron gaining attention and popularity\n- Specific memecoins like $TURBO, $FOFAR, $PONKE, $BUTT, $TBEER, and $SUNWUKONG being highlighted for their performance and potential\n- Tronkey being mentioned as one of the top memes on TRON\n- Speculation about TRONKEY being listed on a centralized exchange (CEX)\n- Use of GIFs related to Ponke being widely viewed and shared\n- Interest in Solana memecoins, particularly $BUTT and $TBEER\n- Discussion about the potential value and growth of $SUN as a dex token\n- Excitement about the revenue potential and buyback plans of SunPump and its impact on $SUN token value\n\nOverall, the sentiment on Twitter seems to be positive and enthusiastic about various memecoins and their potential for growth in the crypto industry.',
+      data: [
+        2, 6, 3, 4, 0, 1, 2, 3, 13, 1, 7, 6, 7, 6, 7, 8, 2, 8, 6, 1, 5, 7, 6, 5, 3, 0, 7, 8, 3, 4,
+        6, 24, 4, 9, 4, 3, 5, 7, 8, 5, 5, 4, 9, 5, 2, 20, 22, 3, 3, 27, 10, 1, 4, 3, 2,
+      ],
+    },
+    {
+      label: 'DOGE',
+      topics: 'dogecoin,doge,presale,floor,coin',
+      description:
+        "The key topics currently discussed in the crypto industry on Twitter include Dogecoin, MoonBag, TapDaDoge, BabyDoge PAWS, potential rivals to Dogecoin such as SHIB, PEPE, FLOKI, WIF, and BONK, as well as a scam alert regarding $digi. There is also mention of a potential 500% gain with MoonBag, a Tap-To-Earn Game called TapDaDoge, and the milestone of 5,000,000 users playing BabyDoge PAWS. Additionally, there is speculation about the strength of Dogecoin's monopoly and moats compared to Bitcoin, as well as the potential for significant rallies in the meme coin market.",
+      data: [
+        4, 1, 3, 5, 0, 1, 2, 5, 0, 2, 1, 0, 1, 10, 106, 5, 1, 4, 10, 7, 1, 7, 8, 6, 2, 3, 3, 4, 6,
+        5, 8, 3, 5, 0, 1, 2, 5, 4, 8, 4, 3, 5, 3, 3, 9, 7, 8, 7, 2, 3, 3, 2, 4, 1, 7,
+      ],
+    },
+    {
+      label: 'DOGS listing',
+      topics: 'dogs,dog,deposit,listing,airdrop',
+      description:
+        'The key topics discussed in the messages from Twitter are related to the cryptocurrency meme coin $DOGS, including its price analysis, trading competitions, deposit contests, giveaways, and upcoming events. The messages also mention trading strategies on platforms like Binance and Bybit, as well as the concept of narratives in the crypto industry. Additionally, there are references to community engagement activities such as sharing memes, participating in bounty hunting, and inviting friends to join in on the rewards. Overall, the focus is on the popularity and potential profitability of $DOGS within the crypto community.',
+      data: [
+        6, 3, 0, 3, 1, 5, 3, 5, 10, 1, 5, 4, 0, 2, 97, 4, 0, 5, 1, 2, 3, 6, 7, 2, 0, 3, 8, 10, 7, 3,
+        2, 6, 3, 11, 5, 4, 3, 9, 4, 3, 4, 1, 4, 2, 4, 2, 4, 3, 7, 6, 1, 2, 4, 4, 4,
+      ],
+    },
+    {
+      label: 'Art',
+      topics: 'art,artist,artists,piece,collection',
+      description:
+        'The key topics currently discussed in the crypto industry on social media include the debate on whether human-made art is considered real art, the rise of digital art on the blockchain, the popularity of NFTs (non-fungible tokens) in the art world, and the emergence of new artists utilizing technology such as 3D scanning tools. Artists like XCOPY are gaining recognition for their unique and innovative approach to creating art, while events like the Tezos art event #redcollage are showcasing the intersection of art and technology. Additionally, the mainstream potential of collaborations between artists like Pharrell, Lil Wayne, Lil Yachty, and Kyle Richh in the world of digital art is being highlighted. Overall, the crypto industry is witnessing a shift towards embracing digital art and exploring new ways of creating and collecting art through blockchain technology.',
+      data: [
+        7, 3, 52, 5, 1, 1, 4, 3, 1, 4, 6, 5, 3, 1, 1, 5, 2, 5, 7, 4, 6, 4, 3, 2, 6, 3, 1, 4, 7, 9,
+        4, 2, 3, 5, 3, 7, 2, 3, 7, 5, 2, 5, 4, 6, 3, 6, 4, 4, 6, 1, 2, 1, 4, 3, 10,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'defi,finance,protocols,safe,yield',
+      description:
+        'The key topics currently discussed in the crypto industry on social media platforms include DeFi (Decentralized Finance), the convergence of traditional finance (TradFi) and DeFi, tokenization of Real-World Assets (RWAs), the importance of transparency and accountability in the financial system, the integration of diverse participants and assets in DeFi and Wall Street, the potential slippage in DeFi trading, the partnership between projects like PERI Finance and NendFi to expand DeFi possibilities, the need for non-speculative DeFi loan use cases, the acceleration of the dyad flywheel in DeFi projects, the launch of decentralized order book exchanges like DeXter on Radix, and the introduction of stablecoins like USDz with high APY rewards. Overall, the discussions highlight the innovation, growth, and challenges within the DeFi space and its impact on the future of finance.',
+      data: [
+        4, 6, 3, 5, 0, 0, 1, 2, 1, 3, 12, 7, 3, 19, 5, 3, 8, 4, 10, 4, 4, 3, 4, 1, 6, 10, 7, 2, 4,
+        3, 2, 4, 3, 6, 1, 4, 1, 2, 14, 9, 4, 11, 8, 4, 4, 12, 2, 5, 3, 5, 2, 4, 0, 6, 1,
+      ],
+    },
+    {
+      label: 'NFT',
+      topics: 'nft,nfts,pfp,art,projects',
+      description:
+        'The key topics currently discussed in the crypto industry on social media include NFTs, NFT sales bots, new NFT strategies, NFT art, hybrid versions of NFTs x memecoins, NFT standards, NFT documentation, specific NFT information, NFT collections, bidding on NFTs, and the impact of NFTs on the art world. There is also mention of specific NFT projects such as creature cubes and Fidenzas, as well as discussions about using NFTs for building and developing tools. Overall, the sentiment seems positive with excitement for the fall season and experimentation with new NFT designs.',
+      data: [
+        3, 1, 6, 6, 0, 1, 2, 5, 4, 3, 7, 1, 3, 4, 7, 3, 4, 3, 9, 9, 2, 5, 1, 7, 6, 5, 0, 2, 1, 6, 3,
+        7, 5, 22, 5, 1, 4, 5, 9, 4, 3, 5, 3, 4, 2, 5, 0, 5, 5, 5, 3, 1, 2, 3, 6,
+      ],
+    },
+    {
+      label: 'BTC Mining',
+      topics: 'mining,miners,energy,pools,power',
+      description:
+        "The key topics currently discussed in the crypto industry on social media include:\n- Bitcoin mining and the impact on energy consumption\n- Sentiment around Bitcoin mining post-halving\n- Accessibility of Bitcoin mining to hobbyists through USB miners\n- Amanda Fabiano's role in the crypto industry\n- Rhodium Bitcoin miner going bust and implications for the industry\n- TeraWulf launching a new Bitcoin mining facility and potential tech partnerships\n- Concerns about potential price drops due to high Bitcoin miners' reserves\n- Importance of working with nature for optimal Bitcoin mining operations\n- Use of small USB mining devices for Bitcoin mining\n- Nation State mining and advances in waste management for mining facilities\n- Electricity costs and profitability of Bitcoin mining\n- Staking rewards and strategies for maximizing returns in the crypto market.",
+      data: [
+        6, 7, 2, 2, 23, 8, 5, 2, 4, 1, 3, 3, 4, 4, 3, 0, 17, 3, 3, 3, 2, 5, 0, 5, 0, 2, 2, 5, 2, 4,
+        4, 15, 4, 4, 3, 6, 8, 3, 3, 5, 9, 3, 2, 3, 11, 3, 5, 1, 1, 1, 1, 1, 2, 2, 2,
+      ],
+    },
+    {
+      label: 'OpenSea & SEC',
+      topics: 'opensea,wells,sec,notice,nfts',
+      description:
+        "The key topic discussed in the messages from twitter is the SEC issuing a Wells notice to OpenSea, a popular NFT marketplace, regarding the classification of NFTs as securities. The community is divided on whether NFTs should be regulated by the SEC, with some criticizing the move as unnecessary government intervention, while others see it as a necessary step to protect investors. OpenSea's CEO has responded to the notice by pledging $5 million to defend creators against the SEC. Overall, there is a mix of support and criticism towards OpenSea and the SEC's actions in the crypto industry.",
+      data: [
+        4, 3, 2, 1, 0, 2, 13, 0, 2, 6, 4, 5, 0, 4, 2, 3, 0, 9, 1, 2, 4, 7, 3, 6, 3, 3, 7, 4, 0, 1,
+        6, 5, 3, 3, 14, 3, 4, 3, 4, 23, 1, 5, 8, 2, 3, 4, 3, 6, 2, 0, 3, 1, 9, 1, 1,
+      ],
+    },
+    {
+      label: 'Soneium',
+      topics: 'sony,layer2,labs,blockchain,l2',
+      description:
+        "The key topic discussed in the messages from Twitter is the launch of Sony's new blockchain called Soneium, which is an Ethereum Layer 2 focused on mainstream adoption. Sony has partnered with Startale Labs to create this blockchain, using Optimism technology on top of Ethereum. The goal is to bring entertainment, gaming, and finance content into the world of web3 applications. This move by Sony signifies a significant step towards mainstream adoption of blockchain technology and the development of the metaverse. Additionally, there is mention of Apple releasing a blockchain and partnering with Chainlink, indicating a growing trend of tech giants entering the blockchain space.",
+      data: [
+        0, 3, 3, 3, 0, 2, 15, 3, 3, 4, 5, 3, 0, 0, 3, 0, 6, 8, 0, 0, 4, 1, 5, 1, 2, 2, 4, 19, 0, 1,
+        1, 0, 2, 6, 1, 2, 2, 1, 1, 0, 0, 1, 0, 0, 10, 1, 2, 4, 3, 1, 3, 0, 0, 4, 0,
+      ],
+    },
+    {
+      label: 'PEPE',
+      topics: 'pepe,mcap,frens,render,presale',
+      description:
+        "Based on the messages from Twitter, it seems that the key topics currently being discussed in the crypto industry include:\n\n1. The rise in price of $PEPE by 25% in a week, with the Pepe Unchained Presale passing the $10.5M mark.\n2. The potential price predictions for $PEPE in 2025, with discussions on whether holding 100 million tokens could make someone a millionaire.\n3. The movement of Klaytn Pepe (KEPE) and the excitement around its return.\n4. The comparison of an AI-powered token set to surpass PEPE and Polygon (MATIC) in market dominance by 2025.\n5. The contemplative Pepe artwork by @ApolloDoge at Lake Como as a tribute to @CozomoMedici's purchase of another 1/1 from the same collection.\n6. The discussion around bullish and bearish breakout scenarios for the #PEPE coin price.\n7. The trading strategies involving $PEPE, such as longing at a specific price and setting stop loss and take profit levels.\n8. The mention of other meme coins like $apu and the preference for a quiet $pepe town.\n9. The significant exit of 1.48 trillion #PEPE from Binance in an epic whale shift.\n10. The general sentiment and excitement around $PEPE within the crypto community.\n\nOverall, it appears that $PEPE is a popular topic of discussion on Twitter within the crypto industry, with various aspects of its price, trading strategies, artwork, and future potential being highlighted.",
+      data: [
+        1, 1, 6, 2, 0, 0, 1, 3, 4, 3, 5, 0, 3, 2, 2, 2, 0, 4, 4, 9, 7, 2, 3, 2, 5, 1, 3, 2, 2, 3, 3,
+        1, 2, 1, 3, 23, 0, 1, 1, 1, 4, 1, 1, 2, 1, 1, 1, 1, 1, 1, 3, 1, 4, 4, 1,
+      ],
+    },
+    {
+      label: 'TON',
+      topics: 'ton,tonblockchain,production,network,toncoin',
+      description:
+        'The key topics discussed in the messages from Twitter regarding the TON blockchain include:\n1. The TON blockchain experiencing downtime and block production halts.\n2. The TON community expressing solidarity with Pavel Durov in the fight for free speech and decentralization.\n3. The TON blockchain being back online after outages caused by a DOGS memecoin airdrop.\n4. Assurance from the TON Foundation that all crypto transactions would be processed and no assets lost during block production disruptions.\n5. Telegram Wallet developers stating that the TON network has been restored after failures in block production due to heavy load of minting DOGS tokens.\n6. The TON community reaffirming its support for decentralization and freedom of speech.\n7. Speculation and concerns about the stability and speculation on the TON blockchain.\n8. Clarification on the reasons behind the block production halts and the possibility of bugs causing the issues.\n\nOverall, the messages reflect a mix of technical issues, community support, and speculation surrounding the TON blockchain and its operations.',
+      data: [
+        1, 1, 1, 2, 0, 0, 6, 1, 0, 4, 5, 1, 2, 0, 1, 2, 0, 2, 2, 2, 0, 2, 1, 1, 4, 1, 0, 2, 4, 0, 3,
+        0, 2, 3, 13, 1, 0, 2, 0, 2, 0, 0, 1, 1, 0, 1, 0, 0, 30, 32, 0, 2, 2, 0, 1,
+      ],
+    },
+    {
+      label: 'CAT',
+      topics: 'cat,cats,bnb,win,dog',
+      description:
+        'The messages from Twitter are discussing various topics related to cryptocurrency, specifically focusing on the $CAT token. Users are sharing their opinions on different cat-themed tokens, such as TronCat and Simons Cat, and discussing potential milestones for $CAT to reach by September 29th. Additionally, there is a mention of a bounty program for the $CAT token, where users can earn rewards by trading and depositing the token. Overall, the conversation revolves around the trading and potential growth of cat-themed cryptocurrencies in the market.',
+      data: [
+        1, 1, 1, 1, 1, 1, 0, 0, 31, 2, 2, 0, 2, 2, 0, 0, 1, 6, 0, 1, 3, 3, 0, 1, 1, 1, 4, 4, 1, 1,
+        1, 6, 3, 3, 1, 3, 1, 6, 1, 4, 0, 1, 1, 2, 1, 1, 7, 1, 1, 0, 1, 2, 2, 2, 0,
+      ],
+    },
+    {
+      label: 'Whales',
+      topics: 'whale,whales,wif,loss,million',
+      description:
+        'The key topics currently discussed in the crypto industry on social media platforms like Twitter include:\n\n1. Whales accumulating Bitcoin and Ethereum: There are mentions of large investors, known as whales, actively buying and selling significant amounts of Bitcoin and Ethereum. This activity is closely monitored by the community.\n\n2. Altcoins and investment strategies: Discussions about various altcoins, including Toncoin, Uniswap, and Lido, are taking place. There are also mentions of investment strategies, such as Fibonacci levels, and predictions about price movements.\n\n3. Impact of whales on the market: The role of whales in influencing the market sentiment and prices of cryptocurrencies like Bitcoin, Ethereum, and XRP is being analyzed. There are also mentions of bearish sentiments and their potential impact on certain stocks like Palantir.\n\n4. Subscription price changes and promotions: Updates on subscription price changes for services like Unusual Whales are being shared, along with promotions and sales to attract new users.\n\n5. Trading options and bonuses: Information about trading options, bonuses, and deposit bonuses for platforms like tastytrade are being shared, encouraging users to start trading various stocks and options contracts.\n\nOverall, the discussions on social media platforms reflect a mix of market analysis, investment strategies, whale activity, and promotional offers in the crypto industry.',
+      data: [
+        5, 7, 0, 5, 1, 11, 0, 4, 1, 1, 0, 0, 1, 1, 0, 1, 9, 1, 1, 1, 0, 0, 0, 1, 0, 2, 2, 0, 0, 1,
+        2, 1, 2, 2, 1, 1, 1, 2, 0, 2, 1, 4, 5, 4, 2, 1, 0, 0, 2, 4, 2, 1, 1, 21, 3,
+      ],
+    },
+  ],
+}

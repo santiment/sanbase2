@@ -1,0 +1,268 @@
+export const NARRATIVES = {
+  labels: [
+    '08.01.26',
+    '09.01.26',
+    '09.01.26',
+    '09.01.26',
+    '09.01.26',
+    '09.01.26',
+    '09.01.26',
+    '09.01.26',
+    '10.01.26',
+    '10.01.26',
+    '10.01.26',
+    '10.01.26',
+    '10.01.26',
+    '10.01.26',
+    '10.01.26',
+    '10.01.26',
+    '11.01.26',
+    '11.01.26',
+    '11.01.26',
+    '11.01.26',
+    '11.01.26',
+    '11.01.26',
+    '11.01.26',
+    '11.01.26',
+    '12.01.26',
+    '12.01.26',
+    '12.01.26',
+    '12.01.26',
+    '12.01.26',
+    '12.01.26',
+    '12.01.26',
+    '12.01.26',
+    '13.01.26',
+    '13.01.26',
+    '13.01.26',
+    '13.01.26',
+    '13.01.26',
+    '13.01.26',
+    '13.01.26',
+    '13.01.26',
+    '14.01.26',
+    '14.01.26',
+    '14.01.26',
+    '14.01.26',
+    '14.01.26',
+    '14.01.26',
+    '14.01.26',
+    '14.01.26',
+    '15.01.26',
+    '15.01.26',
+    '15.01.26',
+    '15.01.26',
+    '15.01.26',
+    '15.01.26',
+    '15.01.26',
+  ],
+  datasets: [
+    {
+      label: 'BTC price',
+      topics: '94k,liquidated,95k,liquidations,shorts',
+      description:
+        'The key topic currently discussed in the crypto community on Twitter is the potential breakout attempt of Bitcoin this Sunday. Traders are analyzing various indicators such as resistance levels, MACD crossovers, and historical price patterns to determine if Bitcoin will break above key levels such as $100,000 or if it will face a rejection. There is optimism among traders, with some pointing out bullish signs such as higher lows, spot buying driving the price action, and a potential inverse head and shoulders pattern forming. Overall, the sentiment is positive, with many expecting Bitcoin to continue its upward trajectory and potentially reach new all-time highs.',
+      data: [
+        53, 16, 28, 27, 23, 109, 58, 45, 62, 53, 32, 47, 40, 32, 33, 30, 37, 16, 23, 23, 22, 89, 38,
+        21, 32, 15, 78, 69, 37, 23, 35, 30, 24, 34, 27, 32, 51, 63, 58, 54, 18, 40, 89, 41, 41, 49,
+        51, 37, 43, 33, 46, 22, 60, 10, 31,
+      ],
+    },
+    {
+      label: 'CLARITY act',
+      topics: 'markup,senate,armstrong,bipartisan,senators',
+      description:
+        'The messages from twitter highlight the ongoing discussions and debates surrounding regulatory clarity in the crypto industry. There are mixed opinions on the proposed Clarity Act, with some seeing it as a positive step towards clearer rules and long-awaited regulatory clarity, while others criticize it for potentially restricting innovation and giving too much power to regulatory bodies like the SEC.\n\nCoinbase CEO Brian Armstrong has expressed concerns about the current draft of the bill, stating that it may do more harm than good. However, other major players in the industry, such as Kraken, Ripple, Paradigm, and Circle, are still backing the bill and pushing for its passage.\n\nOverall, the industry is eagerly awaiting regulatory clarity to provide confidence and stability for institutions and investors. The Clarity Act is seen as a crucial step towards achieving this goal, despite the ongoing debates and disagreements within the community.',
+      data: [
+        7, 13, 15, 7, 14, 3, 16, 22, 30, 16, 45, 11, 26, 14, 14, 7, 14, 7, 5, 7, 8, 8, 5, 32, 7, 21,
+        4, 8, 11, 31, 9, 10, 8, 9, 4, 18, 9, 31, 32, 15, 40, 38, 10, 5, 14, 17, 8, 6, 1, 7, 16, 23,
+        13, 14, 2,
+      ],
+    },
+    {
+      label: 'Precious metals',
+      topics: 'precious,silver,metals,copper,metal',
+      description:
+        'The key topics currently discussed in the crypto industry on social media include the surge in silver prices, with predictions of it potentially reaching infinity and hitting new all-time highs. There is also discussion about gold hitting record highs and the potential for a final melt-up move in silver to reach $200. Additionally, there is speculation about the impact of global uncertainty on precious metals and the potential for a great reset. Traders are also discussing the performance of silver mining stocks and the overall strong performance of precious metals in recent history. Some are cautioning about click bait targets and the importance of knowing when to exit trades. Overall, there is a mix of excitement and caution surrounding the current trends in the precious metals market.',
+      data: [
+        14, 8, 9, 8, 10, 22, 16, 8, 6, 20, 11, 7, 6, 4, 6, 8, 9, 4, 12, 30, 5, 58, 7, 4, 6, 6, 7, 4,
+        15, 16, 11, 11, 8, 26, 4, 9, 43, 20, 13, 8, 3, 9, 56, 21, 14, 25, 7, 17, 18, 3, 5, 6, 7, 4,
+        11,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'mememaxfi,mememax,memes,memecoins,meme',
+      description:
+        'The messages from twitter mainly focus on the discussion of meme coins in the crypto industry. There is a lot of excitement and interest in trading meme coins, with mentions of specific meme coins like FARTCOIN and PUMP. The concept of meme coins being profitable is also discussed, with questions about their potential profitability in the current market. Additionally, there is a comparison between memes and NFTs in terms of their impact on the crypto industry. The messages also touch on the idea of holding meme coins until 2027 and the potential for meme coins to be replaced by more fundamental aspects of the market. Overall, the sentiment towards meme coins in the messages is positive, with a focus on their potential for high returns and the excitement surrounding meme coin trading.',
+      data: [
+        5, 10, 4, 8, 16, 9, 7, 8, 19, 2, 6, 9, 7, 9, 5, 21, 9, 14, 9, 17, 4, 12, 6, 6, 13, 5, 11,
+        13, 9, 169, 9, 13, 11, 10, 10, 16, 9, 12, 6, 5, 5, 14, 12, 9, 8, 4, 10, 15, 11, 12, 12, 10,
+        6, 9, 10,
+      ],
+    },
+    {
+      label: 'XMR',
+      topics: 'monero,xmr,privacyfocused,520,xom',
+      description:
+        "The key topics discussed in the messages from twitter regarding Monero ($XMR) include:\n1. Monero surpassing its all-time low of $0.216 a few years ago and reaching a record high of $642.\n2. Monero's price increase of 3x since September.\n3. Monero being referred to as a privacy coin and a digital financial protest.\n4. Speculation on Monero's price potential, with predictions ranging from $700 to $900.\n5. Monero being described as the ultimate unicorn asset with utility, privacy, and potential for significant upside.\n6. The excitement and momentum surrounding Monero's price discovery and potential for further growth.\n7. The success and resilience of Monero as a project, remaining private and un-trackable despite challenges faced by other privacy coins.\n8. Calls for using newfound wealth from Monero investments for good purposes.\n9. Personal anecdotes and experiences of individuals benefiting financially from investing in Monero.\n10. Recommendations to actively research and analyze crypto market trends for profitable trading opportunities.",
+      data: [
+        9, 8, 5, 11, 13, 25, 10, 12, 22, 13, 14, 5, 12, 9, 11, 17, 13, 5, 10, 8, 6, 32, 3, 7, 9, 7,
+        9, 14, 9, 10, 26, 17, 10, 7, 10, 3, 30, 21, 9, 10, 7, 5, 11, 14, 10, 21, 7, 16, 9, 7, 8, 11,
+        8, 5, 20,
+      ],
+    },
+    {
+      label: 'AI',
+      topics: 'bottleneck,replace,productivity,humans,perceptronntwk',
+      description:
+        'The messages from twitter discuss various aspects of AI in the crypto industry. Some key topics mentioned include the evolution of AI from traditional to synthetic intelligence, the role of AI in system design and development, the potential impact of AI on job displacement, and the importance of human input in refining AI-generated content. Additionally, there is a mention of AI-driven insight in HR compliance and the potential for AI to be connected to the human brain. The messages also touch on the idea of AI being a decentralizing force and the need for businesses to be prepared for AI transformation. Overall, the discussions highlight the complex and evolving relationship between AI and the crypto industry.',
+      data: [
+        9, 44, 12, 11, 20, 9, 6, 6, 5, 15, 11, 10, 13, 7, 16, 4, 6, 8, 8, 10, 10, 5, 17, 18, 14, 11,
+        13, 9, 8, 5, 9, 16, 4, 12, 16, 13, 13, 7, 13, 21, 9, 14, 6, 3, 4, 16, 16, 13, 10, 4, 14, 4,
+        5, 14, 10,
+      ],
+    },
+    {
+      label: 'Trump',
+      topics: 'mortgage,fannie,affordability,housing,bonds',
+      description:
+        "The messages from twitter discuss various aspects related to Donald Trump and his impact on the economy, housing market, and cryptocurrency industry. Trump is portrayed as making bold statements and taking actions that could potentially have significant effects on various sectors. Some of the key points mentioned include Trump's desire to lower interest rates, his plans to ban large institutional investors from buying single-family homes, his family's involvement in the crypto industry, and his stance on Bitcoin. Additionally, there are discussions about Trump's impact on the financial industrial complex, his potential influence on monetary policy, and his approach to geopolitics. Overall, the messages reflect a mix of opinions on Trump's policies and their potential implications.",
+      data: [
+        5, 7, 14, 17, 13, 5, 7, 8, 4, 10, 16, 8, 16, 13, 11, 12, 13, 1, 12, 10, 9, 10, 8, 6, 13, 8,
+        11, 9, 9, 14, 10, 7, 6, 10, 4, 15, 17, 3, 6, 9, 35, 13, 9, 6, 8, 16, 12, 15, 2, 28, 6, 16,
+        9, 10, 11,
+      ],
+    },
+    {
+      label: 'Claude Cowork',
+      topics: 'cowork,claude,installed,code,opus',
+      description:
+        'Summary:\nThe messages from twitter discuss the popularity and versatility of Claude Code in the crypto industry. People are impressed with its uses and capabilities, with some even joking about replacing programmers with Claude Code. There are mentions of using Claude Code for trading bots and the success of Claude Code in generating revenue. Overall, Claude Code seems to be a highly valued tool in the crypto community.',
+      data: [
+        4, 6, 6, 10, 10, 6, 14, 5, 78, 1, 20, 5, 7, 5, 6, 8, 4, 12, 3, 10, 10, 10, 8, 15, 3, 13, 4,
+        7, 10, 6, 5, 10, 9, 9, 5, 7, 11, 5, 2, 11, 3, 4, 9, 9, 6, 13, 13, 8, 4, 8, 22, 7, 7, 3, 9,
+      ],
+    },
+    {
+      label: 'Food',
+      topics: 'protein,eggs,beef,meat,sugar',
+      description:
+        'The messages from twitter mainly focus on food and cooking, with discussions about various dishes, ingredients, and cooking techniques. There are mentions of omelettes, potato chips, tomato pesto, bread, chicken with glaze, and even a comparison between Ronald McDonald and the Colonel. Additionally, there are references to different cuisines such as Korean, Mexican, and Chinese. The messages also touch on health and nutrition, with mentions of yogurt, granola, and government food recommendations. Overall, the conversations revolve around food, cooking, and culinary experiences.',
+      data: [
+        3, 4, 7, 19, 8, 12, 11, 11, 8, 41, 3, 7, 16, 27, 5, 11, 8, 6, 5, 8, 14, 8, 11, 7, 5, 5, 11,
+        3, 10, 10, 7, 8, 6, 10, 10, 8, 4, 8, 8, 11, 6, 4, 5, 11, 11, 7, 7, 1, 3, 8, 10, 6, 9, 6, 3,
+      ],
+    },
+    {
+      label: 'Twitter banned InfoFi',
+      topics: 'infofi,fi,cookie,api,spam',
+      description:
+        'The messages from twitter suggest that InfoFi is officially dead, with many users celebrating its demise. The end of InfoFi is seen as a positive development, with some users glad to see it go due to issues with bots and low-quality content. The decision to ban InfoFi platforms from rewarding users for posting has caused a significant impact on the industry, leading to speculation about the future of similar platforms. Some users are already looking towards new opportunities and ways to monetize their content without relying on InfoFi. Overall, the general sentiment is that the end of InfoFi is a step in the right direction towards promoting quality content and real creators on social media platforms.',
+      data: [
+        4, 9, 14, 14, 6, 1, 3, 9, 3, 9, 4, 13, 8, 16, 5, 10, 7, 10, 4, 10, 13, 4, 7, 39, 21, 5, 10,
+        8, 4, 8, 5, 3, 15, 5, 6, 7, 8, 8, 7, 19, 6, 1, 7, 15, 3, 3, 7, 11, 6, 4, 7, 2, 6, 4, 3,
+      ],
+    },
+    {
+      label: 'Twitter algo outrage',
+      topics: 'ct,nikita,rage,bait,fk',
+      description:
+        'The messages from twitter suggest that there is a lot of discussion and controversy surrounding CT (Crypto Twitter) and its current state. Some key points mentioned include:\n\n- There is a call for the revival of CT, with some users expressing disappointment in its current state.\n- There are mixed opinions on Nikita, with some praising him for fixing CT and others criticizing him for the changes made.\n- There is frustration with the algorithm manipulation on CT, leading to decreased engagement and viewership.\n- Some users feel that CT is no longer as fun or engaging as it used to be, with concerns about the content and layout.\n- There are accusations of racism and rage bait on CT, with users expressing disappointment in the current state of the platform.\n- There is a call for recognition based on merit rather than popularity on CT.\n- Some users are critical of the boosting of certain posts on CT, particularly those related to Zcash.\n- Overall, there seems to be a sense of disillusionment and frustration among users regarding the current state of CT.',
+      data: [
+        3, 18, 4, 7, 7, 7, 8, 2, 6, 4, 23, 18, 2, 7, 4, 12, 8, 5, 6, 8, 11, 6, 10, 6, 17, 4, 8, 4,
+        13, 8, 4, 8, 32, 7, 8, 7, 4, 7, 6, 8, 13, 7, 3, 4, 8, 6, 7, 9, 4, 10, 10, 5, 5, 4, 3,
+      ],
+    },
+    {
+      label: 'Gaming',
+      topics: 'gaming,games,chess,studios,gameplay',
+      description:
+        'The Checkmate Masterclass chess match is not mentioned in the messages provided from twitter.',
+      data: [
+        5, 4, 0, 5, 11, 5, 12, 15, 7, 4, 12, 5, 9, 5, 9, 6, 5, 47, 6, 7, 6, 7, 3, 4, 3, 4, 4, 4, 11,
+        5, 6, 6, 9, 7, 5, 24, 8, 3, 7, 4, 4, 1, 5, 3, 6, 7, 5, 3, 4, 5, 9, 4, 14, 3, 6,
+      ],
+    },
+    {
+      label: 'Jerome Powell investigation',
+      topics: 'jerome,subpoenas,powells,powell,prosecutors',
+      description:
+        "Chair Powell's response to the criminal investigation opened by Federal prosecutors seems to be focused on defending the independence of the Federal Reserve. He stated that the threat of criminal charges is a consequence of the Fed setting rates based on what will serve the public best, rather than following political preferences. This response indicates that Powell is standing firm in his position and is not willing to bow to political pressure, particularly from President Trump. The investigation has drawn backlash from former Federal Reserve and Treasury officials, as well as current members of Congress, highlighting the importance of maintaining the Fed's independence in setting monetary policy based on economic conditions rather than political influence.",
+      data: [
+        7, 10, 2, 7, 1, 3, 2, 13, 2, 6, 14, 4, 5, 2, 3, 10, 3, 6, 4, 3, 6, 2, 5, 17, 12, 4, 4, 2, 5,
+        6, 2, 3, 8, 7, 8, 8, 20, 7, 3, 14, 24, 12, 7, 2, 7, 11, 6, 16, 1, 7, 4, 10, 7, 3, 3,
+      ],
+    },
+    {
+      label: 'Extreme winter',
+      topics: 'winter,snow,sun,cold,mountains',
+      description:
+        'The messages from twitter cover a wide range of topics related to weather, nature, and extreme conditions. There are mentions of snow, ice, rain, extreme heat, and cold temperatures. The messages also touch on cultural celebrations related to the winter solstice and the changing of seasons.\n\nOne key theme that emerges is the contrast between different weather conditions and how they impact daily life, from snow causing chaos in Scotland to extreme heat in Rio de Janeiro. The messages also highlight the beauty of nature, such as the aurora glass igloo in Lapland and the suns appearing on the horizon due to a sundog.\n\nOverall, the messages reflect a fascination with the natural world and how different cultures and communities experience and adapt to various weather phenomena.',
+      data: [
+        8, 3, 3, 4, 5, 13, 5, 7, 17, 5, 7, 8, 7, 2, 4, 5, 3, 8, 3, 2, 3, 5, 15, 6, 3, 6, 5, 4, 9, 2,
+        6, 11, 7, 9, 9, 5, 6, 13, 6, 4, 2, 8, 10, 16, 6, 18, 3, 4, 6, 1, 1, 3, 8, 17, 6,
+      ],
+    },
+    {
+      label: 'WhiteWhale memecoin',
+      topics: 'whitewhale,whale,200m,010,150m',
+      description:
+        "The key topics discussed in the messages from twitter about $whitewhale include:\n- The significant increase in market cap to 140m and 200m, leading to discussions about its potential and success in 2026.\n- Concerns about supply control and the risk of a total crash due to one wallet holding a large percentage of the supply.\n- Speculation about the future performance of $whitewhale on different exchanges and potential gains.\n- Comparisons to other tokens and discussions about the success and potential of $whitewhale in the crypto market.\n- Calls for caution and warnings about potential risks and the need for a deep dive into the token's background and narrative.\n- Excitement and anticipation about potential gains and opportunities for investors in $whitewhale.\n- Discussions about the impact of whales and large holders on the token's price and market dynamics.\n- Speculation about the future performance and growth potential of $whitewhale in the crypto industry.",
+      data: [
+        16, 3, 7, 4, 9, 5, 5, 5, 5, 4, 4, 1, 4, 4, 3, 4, 6, 3, 4, 2, 9, 12, 4, 2, 5, 9, 7, 9, 6, 9,
+        5, 7, 8, 5, 6, 5, 6, 6, 6, 7, 5, 9, 10, 7, 3, 6, 4, 4, 11, 10, 6, 5, 6, 30, 5,
+      ],
+    },
+    {
+      label: 'Bitcoin is the future',
+      topics: 'bitcoiners,fiat,scarce,fixes,monetary',
+      description:
+        'The messages from twitter highlight the importance and value of Bitcoin as "freedom money" and a powerful asset. Bitcoin is portrayed as a solution to the issues of fiat currency and government control. The messages emphasize the benefits of owning and investing in Bitcoin, as well as the potential for financial growth and empowerment. The community surrounding Bitcoin is described as dedicated and patient, with a strong belief in the value and potential of the cryptocurrency. Overall, the messages convey a sense of optimism and confidence in Bitcoin as a revolutionary financial tool.',
+      data: [
+        1, 3, 4, 9, 8, 27, 5, 4, 2, 9, 12, 6, 4, 4, 6, 11, 16, 6, 2, 5, 6, 4, 6, 7, 9, 3, 2, 2, 3,
+        5, 10, 7, 7, 3, 11, 7, 6, 6, 4, 5, 3, 9, 4, 8, 5, 3, 3, 6, 2, 14, 6, 8, 7, 5, 0,
+      ],
+    },
+    {
+      label: 'ICE violent incidents',
+      topics: 'officer,gun,car,weapon,vehicle',
+      description:
+        'The messages from twitter are discussing a controversial incident involving law enforcement officers and a civilian in a car. The messages touch on topics such as police brutality, self-defense against law enforcement, and the use of deadly force. There is also mention of conflicting orders given by officers during the incident, as well as the legal implications of using a car as a deadly weapon. The messages highlight the need for a fair investigation into the incident and raise questions about the actions of both the officers and the civilian involved. Overall, the messages reflect a heated debate surrounding law enforcement practices and the rights of individuals in interactions with the police.',
+      data: [
+        5, 5, 4, 9, 3, 6, 8, 14, 7, 11, 2, 7, 10, 10, 5, 7, 3, 5, 2, 3, 7, 9, 6, 7, 6, 5, 7, 3, 6,
+        6, 1, 5, 16, 7, 6, 12, 8, 5, 4, 6, 6, 5, 7, 3, 9, 4, 2, 7, 2, 5, 4, 9, 5, 8, 3,
+      ],
+    },
+    {
+      label: 'Privacy in crypto',
+      topics: 'confidential,privacy,encryption,anonymity,0xmiden',
+      description:
+        'The key topic discussed in the messages from twitter is privacy in the crypto industry. The messages highlight the importance of privacy in the digital world, the risks of lack of privacy, and the need for privacy tools and protocols in blockchain transactions. The messages also touch upon the difference between privacy and secrecy, the challenges of maintaining privacy in public blockchains, and the significance of privacy as a feature rather than a niche. Overall, the messages emphasize the power and necessity of privacy in the crypto industry.',
+      data: [
+        7, 9, 6, 3, 4, 7, 6, 3, 7, 6, 11, 5, 7, 5, 7, 2, 3, 5, 2, 3, 3, 5, 5, 4, 13, 4, 4, 5, 8, 7,
+        3, 4, 3, 3, 8, 5, 57, 1, 4, 2, 5, 7, 11, 1, 3, 5, 3, 8, 8, 2, 7, 1, 8, 5, 4,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'defi,katana,lending,heyelsaai,alturax',
+      description:
+        'The key topics currently discussed in the messages from twitter are:\n\n1. DeFi infrastructure and its importance for the growth of the industry\n2. The role of aggregators in DeFi and their impact on yield\n3. The evolution and progress of DeFi since 2021\n4. The challenges and complexities of managing multiple DeFi platforms and transactions\n5. The emergence of new DeFi projects and platforms, such as AeroNavigator, Lombard Finance, JumperExchange, and Aborean\n6. The need for automation and simplification in DeFi processes\n7. The interconnected nature of the DeFi ecosystem and the importance of a strong foundation for its success\n\nOverall, the messages highlight the ongoing innovation and development within the DeFi industry, as well as the challenges and opportunities that come with it.',
+      data: [
+        1, 1, 6, 4, 6, 4, 6, 5, 4, 5, 3, 11, 8, 2, 7, 11, 5, 5, 2, 9, 8, 6, 7, 7, 11, 7, 8, 10, 11,
+        7, 3, 10, 7, 7, 10, 9, 10, 4, 6, 6, 1, 8, 7, 3, 2, 3, 6, 6, 3, 4, 12, 3, 3, 6, 7,
+      ],
+    },
+    {
+      label: 'AFC championship',
+      topics: 'playoff,nfl,patriots,chargers,eagles',
+      description:
+        "The key topics discussed in the messages from twitter are:\n1. AFC Championship game predictions and matchups\n2. New England Patriots' success in the Super Bowl\n3. Potential outcomes of the Packers vs. Bears game\n4. Betting on NFL games and teams\n5. Impact of the 49ers' performance on the AFC teams\n6. Wild Card finale matchups and predictions\n7. Tailgating and drink options for game watching.",
+      data: [
+        17, 2, 4, 12, 4, 7, 3, 5, 4, 3, 2, 7, 2, 10, 3, 12, 5, 8, 5, 11, 13, 0, 5, 5, 5, 0, 2, 5, 4,
+        6, 6, 6, 5, 6, 6, 8, 2, 4, 2, 4, 7, 5, 3, 2, 3, 8, 9, 6, 3, 3, 1, 8, 3, 12, 6,
+      ],
+    },
+  ],
+}

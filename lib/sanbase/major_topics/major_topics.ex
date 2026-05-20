@@ -24,7 +24,7 @@ defmodule Sanbase.MajorTopics do
     page_size = Keyword.get(opts, :page_size, 50) |> max(1)
 
     from(b in TopicBatch,
-      order_by: [desc: b.fetched_at, desc: b.id],
+      order_by: [desc: b.interval_start, desc: b.id],
       limit: ^page_size,
       offset: ^((page - 1) * page_size)
     )

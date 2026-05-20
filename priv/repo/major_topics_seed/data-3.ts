@@ -1,0 +1,212 @@
+export const NARRATIVES = {
+  labels: [
+    '18.01.24',
+    '19.01.24',
+    '19.01.24',
+    '19.01.24',
+    '19.01.24',
+    '19.01.24',
+    '19.01.24',
+    '19.01.24',
+    '20.01.24',
+    '20.01.24',
+    '20.01.24',
+    '20.01.24',
+    '20.01.24',
+    '20.01.24',
+    '20.01.24',
+    '20.01.24',
+    '21.01.24',
+    '21.01.24',
+    '21.01.24',
+    '21.01.24',
+    '21.01.24',
+    '21.01.24',
+    '21.01.24',
+    '21.01.24',
+    '22.01.24',
+    '22.01.24',
+    '22.01.24',
+    '22.01.24',
+    '22.01.24',
+    '22.01.24',
+    '22.01.24',
+    '22.01.24',
+    '23.01.24',
+    '23.01.24',
+    '23.01.24',
+    '23.01.24',
+    '23.01.24',
+    '23.01.24',
+    '23.01.24',
+    '23.01.24',
+    '24.01.24',
+    '24.01.24',
+    '24.01.24',
+    '24.01.24',
+    '24.01.24',
+    '24.01.24',
+    '24.01.24',
+    '24.01.24',
+    '25.01.24',
+    '25.01.24',
+    '25.01.24',
+    '25.01.24',
+    '25.01.24',
+    '25.01.24',
+    '25.01.24',
+    '25.01.24',
+  ],
+  datasets: [
+    {
+      label: 'GameFi and Web3',
+      topics: 'gaming,game,games,gamefi,play',
+      description:
+        "The messages from twitter_crypto mention several key topics related to gaming and GameFi projects. Some of the mentioned projects include Palworld, Treeverse, Capsule Heroes, and the One Piece Card Game. There is also a mention of the AI and GameFi combination, which promises next-level gameplay where NPCs can predict players' moves. Additionally, the messages discuss the launch of the @web3war_game IDO on @DaoMaker, enabling the activation of the #Skill2Earn system. Another game mentioned is the free-to-play FPS @exverse_io, which has received incubation from @SeedifyFund and has VC backing from multiple firms. There is also a discussion about a potential Pokemon ripoff mod for Palworld and the possibility of legal action or interoperability being the future. Lastly, there is a mention of the cooperation between @ElfinGames and DEGO in the Bitcoin ecosystem for gaming and the metaverse. Overall, these messages highlight various GameFi projects and the excitement surrounding the gaming industry.",
+      data: [
+        4, 1, 7, 2, 0, 1, 6, 6, 4, 6, 6, 6, 6, 2, 6, 4, 3, 12, 5, 6, 56, 6, 8, 9, 2, 7, 10, 13, 13,
+        2, 8, 5, 4, 5, 6, 8, 17, 7, 1, 8, 5, 6, 8, 4, 6, 5, 5, 6, 11, 9, 4, 4, 6, 4, 4, 5,
+      ],
+    },
+    {
+      label: 'Bitcoin general',
+      topics: 'bitcoin,bitcoiner,does,screenshot,explanation',
+      description:
+        'The key topics discussed in the messages from twitter_crypto related to the given set of words are:\n\n1. #Bitcoin: The messages mention the hashtag #Bitcoin multiple times, indicating that the topic of Bitcoin is being discussed.\n\n2. #BTC: The hashtag #BTC is not explicitly mentioned in the messages, but since it is related to Bitcoin, it can be inferred that the discussions are also about BTC.\n\n3. Send it!: The phrase "Send it!" is mentioned in the messages, which could be related to sending Bitcoin or making transactions.\n\n4. Bitcoiner: The term "Bitcoiner" is not mentioned in the messages.\n\n5. Does: The word "Does" is mentioned in one of the messages, but it is not clear what it refers to without further context.\n\n6. Screenshot: The word "screenshot" is mentioned in one of the messages, asking people to comment with a screenshot if they have it. It is unclear what the screenshot is related to.\n\n7. Explanation: The messages mention a "really good explanation of Bittensor" but do not provide further details about it.\n\n8. Fix: The word "fix" is not mentioned in the messages.\n\n9. Simple: The messages mention that the user experience for Bitcoin should be better than any banking app and that the on-chain peer-to-peer function of Bitcoin is simple and easy to explain.\n\n10. Best: The messages mention a "preferred business" related to Bitcoin, but it is not clear what it refers to.\n\n11. Adoption: The messages mention that mass adoption of Bitcoin requires simplicity.\n\n12. Scale: The messages do not mention anything about scaling Bitcoin.\n\nOverall, the key topics discussed in the messages from twitter_crypto related to the given set of words are Bitcoin, sending transactions, simplicity, and adoption.',
+      data: [
+        2, 1, 2, 8, 0, 0, 4, 0, 0, 2, 5, 2, 1, 4, 0, 2, 0, 1, 3, 4, 4, 6, 5, 11, 1, 2, 2, 4, 3, 9,
+        2, 5, 2, 5, 1, 2, 8, 2, 2, 6, 2, 1, 5, 1, 2, 2, 5, 1, 4, 7, 5, 8, 0, 6, 14, 6,
+      ],
+    },
+    {
+      label: 'Grayscale Bitcoin Trust',
+      topics: 'grayscale,grayscales,coinbase,sent,prime',
+      description:
+        "According to messages from twitter_crypto, it has been reported that Grayscale Bitcoin Trust (GBTC) has been experiencing daily outflows of around $1 billion. The official Bitcoin held by Grayscale is currently at 566,973, with approximately 15% of Grayscale BTC leaving. Grayscale has transferred significant amounts of BTC to Coinbase Prime Deposit, with recent transfers totaling 19,260 BTC and another 15,560 BTC. The balance of Grayscale Bitcoin Trust has seen a 12% reduction, possibly due to the FTX bankruptcy, resulting in a $3.5 billion outflow. It is unclear how much of this BTC is being sold on the market or through over-the-counter (OTC) transactions. There are rumors of $600 million worth of Bitcoin being dumped through Grayscale, and some whales are reportedly buying large amounts of BTC. It is suggested that once Grayscale is done selling, Bitcoin may experience a significant price increase. Grayscale's BTC sell-off is attributed to the end of a 40% discount and a high 1.5% management fee, causing investors to leave GBTC. Today, 950 BTC worth $36 million has been sent out by GBTC, which could potentially impact market sentiment and movements. There is a call for Grayscale to lower its fees, as the current 1.5% fee is deemed unsustainable and unfair. Other institutions, such as iShares (BlackRock), Fidelity, Bitwise, ARK21, Invesco Galaxy, VanEck, and Valkyrie, also hold significant amounts of BTC.",
+      data: [
+        3, 3, 3, 3, 46, 3, 3, 0, 3, 2, 2, 7, 12, 6, 3, 4, 1, 1, 3, 1, 1, 1, 2, 14, 4, 1, 0, 5, 4, 0,
+        0, 3, 2, 3, 3, 1, 3, 3, 1, 0, 4, 5, 1, 3, 3, 1, 3, 1, 0, 0, 0, 1, 0, 6, 2, 1,
+      ],
+    },
+    {
+      label: 'Bitcoin prices',
+      topics: 'range,low,correction,wave,level',
+      description:
+        "Based on the messages from twitter_crypto and the set of words provided, here is a summary of the key topics being discussed about $BTC:\n\n- The price of $BTC is currently testing the same price area for the third time, with very low volume.\n- There is speculation about whether there will be volatility or if bears are hesitant.\n- There is a mention of a potential bullish divergence in the 4-hour chart of Bitcoin.\n- The GBTC sell pressure is being monitored, and there are specific zones of interest for $BTC.\n- The recent pullback in price is around 20%, similar to previous corrections in this cycle.\n- Some analysts believe that the bottom is in and expect a strong close for the day.\n- The 2022 yearly open is seen as an interesting spot where $BTC is bouncing off.\n- There is a question about whether the price of Bitcoin may drop to around or under thirty thousand Federal Reserve notes by February 7th.\n- The relationship between BTC and ETH charts is being discussed, with some noting similarities and BTC being forced to follow ETH's direction.\n- Technical analysis suggests the possibility of breaking a down channel and potentially moving up to the bottom of the cloud.\n- Alts (alternative cryptocurrencies) are expected to perform well if BTC's price increases.\n- The dominance of BTC is gaining strength again, and the ETH/BTC chart closed under TRN ADXVMA on the daily timeframe.\n- There is a mention of sweeps and the importance of being defensive in trading.\n- The weekly chart of BTC shows potential support levels at 39,329, 37,000, and 36,000, with the latter being considered a whale buys zone.\n- The ongoing correction in BTC is noted, which is currently around 21%.\n- There are speculations about the potential price movements, including a reversal from 40k, an impulsive drop to the CME gap, or a loss of the current range.\n- The offloading of BTC by Grayscale is being monitored, with speculation about its impact on price.\n- There is anticipation about whether BTC will hit a low and be bearish or bounce back and be bullish.",
+      data: [
+        3, 1, 4, 3, 0, 0, 1, 1, 2, 2, 6, 4, 1, 2, 1, 4, 1, 3, 2, 3, 5, 2, 1, 1, 7, 3, 5, 4, 1, 2, 1,
+        7, 12, 3, 7, 2, 2, 1, 4, 6, 2, 3, 4, 9, 4, 3, 5, 5, 5, 4, 2, 4, 3, 6, 4, 1,
+      ],
+    },
+    {
+      label: 'AI and ML',
+      topics: 'ai,aipowered,davos,machine,intelligence',
+      description:
+        "The messages from twitter_crypto mention various topics related to AI and the crypto industry. Some key points include:\n\n- The discussion about AI being the new matrix and the idea that AI is integrating with humans in the near future.\n- The introduction of a new AI derivative by @shrimpgangsol.\n- Mention of different coding AI assistants such as chatGPT, replit, cursor, and copilot.\n- The AI trend involving multitasking that is important to follow.\n- ChainGPT introducing an AI-powered crypto trading platform.\n- OpenAI's pledge to combat election disinformation with ChatGPT.\n- The claim by researchers at MIT that AI can currently only replace 23% of workers in computer vision tasks.\n- The debut of an AI that can answer multi-step questions.\n- The use of AI to benefit from trading cryptocurrencies like Solana, SEI, MYRO, and Bitcoin.\n- A conversation about AI taking over and its potential to be stopped.\n- The mention of @ParallelTCG, a game related to AI.\n- The perspective that AI is a powerful tool for the ruling class and can be used without explanation.\n\nOverall, the messages highlight the intersection of AI and the crypto industry, discussing its potential, applications, and implications.",
+      data: [
+        6, 2, 0, 0, 0, 0, 0, 2, 1, 0, 2, 1, 3, 0, 79, 3, 0, 0, 3, 1, 0, 5, 4, 2, 3, 1, 0, 1, 4, 1,
+        2, 4, 3, 3, 2, 1, 3, 0, 1, 2, 2, 4, 0, 2, 3, 2, 2, 1, 3, 4, 1, 4, 4, 1, 3, 1,
+      ],
+    },
+    {
+      label: 'Tesla',
+      topics: 'tesla,tsla,earnings,q4,cloud',
+      description:
+        "The messages from twitter_crypto discuss various topics related to the crypto industry. One message mentions that Barry isn't selling any ETH, which could be significant information for the market. Another message highlights the strong performance of $ASML. There is also news about Tesla's cybertruck production and deliveries ramping up throughout the year. Additionally, it is mentioned that Tesla maintains its holdings of Bitcoin at $184 million for the fifth consecutive quarter. \n\nThere is a sentiment view on $PLTR (Palantir) that the author agrees with, as seen on their pinned post. The author also discusses a bearish scenario for $TSLA (Tesla) based on sentiment, volume, and global liquidity, although they find it less likely. They mention that they don't see any sales and that it's a hunt for liquidity in Bitcoin. \n\nThe message also touches on the topic of fewer cars on the road and the benefits of using public transportation. It is noted that Tesla didn't sell any Bitcoin in Q4 and currently holds 9,720 Bitcoin worth over $389 million. \n\nThere is a quote from TSLA regarding their expectations of hardware-related profits being accompanied by an acceleration of AI, software, and fleet-based profits. The author recommends reading an article about Walmart's dominant logistics operation and why its trucks make more than other drivers. \n\nThere is a mention of $PROPC potentially having a bullish Gartley 1D chart and the anticipation of three more major CEX (Centralized Exchanges) in Q1. The author highlights the importance of a working product, low market cap, and burning mechanism for $PROPC. \n\nThe author expresses their emotions and plans regarding $TSLA, stating that they will stop getting emotional about it and stick to their plan. They mention having exposure to $TSLA and being prepared to increase exposure if it drops further. \n\nLastly, there is a discussion about the price of #Ethereum, with the author expressing happiness about being able to buy it for less than $3,000 for another 2 months. They mention the Tenken🔴crossing stream with Kijun🔵and crossing above the monthly Ichimoku cloud as potential future events.",
+      data: [
+        2, 4, 0, 1, 0, 1, 0, 2, 2, 9, 3, 2, 2, 6, 4, 2, 1, 1, 1, 1, 2, 3, 1, 2, 2, 0, 1, 2, 5, 4, 2,
+        3, 4, 5, 5, 1, 2, 5, 8, 1, 0, 2, 3, 3, 22, 3, 2, 1, 2, 1, 3, 3, 2, 3, 6, 2,
+      ],
+    },
+    {
+      label: 'Manta and other alt coins',
+      topics: 'manta,tia,myro,trending,coins',
+      description:
+        "The messages from twitter_crypto mention several key topics related to the crypto industry. Here is a summary of the information:\n\n1. Top 20 #CMC #Crypto #SaitaChain #STC: The messages mention a list of the most influential accounts on a platform called X. It is unclear what platform X refers to.\n\n2. Top 5 Altcoins Under $0.00001 to Watch: The messages highlight a list of altcoins with low prices that are worth keeping an eye on.\n\n3. Top Token's Unlocking Status This Week: The messages ask about popular tokens that will be unlocked during the current week.\n\n4. Top 5 Gainers on #BiKingToday: The messages mention the top-performing tokens on the BiKing platform.\n\n5. Bottom 3 on Lumenswap: The messages provide information about the three worst-performing tokens on the Lumenswap platform.\n\n6. Project performance listed on a website: The messages encourage readers to check the performance of various projects listed on a specific website.\n\n7. Top 5 Gainers on WazirX: The messages highlight the top-performing tokens on the WazirX platform.\n\n8. Top Trending Coins (Today): The messages list several coins that are currently trending.\n\n9. Top 10 Daily Gainers: The messages mention the top-performing coins based on their price increase in the last 24 hours.\n\n10. Top 5 Coins by AltRank™: The messages list the top coins based on their AltRank™ score on LunarCrush.\n\n11. Top Gainers in #Inscription Tokens on #BitMart: The messages highlight the top-performing tokens in the Inscriptions market on BitMart.\n\n12. Alt Coin Switch: The messages mention several altcoins, including XRP, VRA, Dogecoin, and Quant.\n\n13. Accumulating for 2024: The messages ask readers which altcoin industries they are accumulating for in 2024, mentioning AI & ML, DeFi, Infra, Ad-fraud, and Computing.\n\n14. Best Altcoins set to DOMINATE diff. sector in 2024: The messages list several altcoins categorized by different sectors, including RWA, AI, Privacy, and Layer 1.\n\nOverall, the messages cover a range of topics related to popular tokens, top gainers, trending coins, and altcoin industries.",
+      data: [
+        4, 1, 4, 4, 2, 1, 25, 4, 1, 0, 1, 3, 1, 1, 3, 0, 13, 2, 0, 1, 1, 1, 1, 2, 11, 7, 5, 0, 4, 1,
+        1, 2, 1, 1, 1, 3, 5, 0, 0, 6, 2, 1, 8, 5, 1, 1, 0, 3, 1, 0, 1, 2, 0, 0, 1, 0,
+      ],
+    },
+    {
+      label: 'Bitcoin halving',
+      topics: 'halving,april,days,event,rate',
+      description:
+        "The key topics discussed in the messages from twitter_crypto related to the given set of words are:\n\n1. Bitcoin Halving: The messages mention the upcoming Bitcoin Halving event, which is expected to occur in about 87 days. It is highlighted that the mining rewards will be halved from 6.25 to 3.125, reducing the inflation rate to sub 1% for the first time in history. The significance and impact of the halving on Bitcoin's price and market are discussed.\n\n2. Bitcoin Dumping: The messages mention the dumping of Bitcoin and discuss the reasons behind it. It is suggested that institutions and whales are booking profits after accumulating Bitcoin at a cheap price. Additionally, investors of Grayscale's Bitcoin ETF are said to be dumping their Bitcoin for high fees. The selling of Bitcoins by miners is also mentioned as a contributing factor.\n\n3. Bitcoin Price and Performance: The messages highlight the current performance of Bitcoin and compare it to previous halving cycles. It is mentioned that Bitcoin is moving faster this cycle and that the previous all-time high after the 2016 halving was $19,497.40. The price of Bitcoin is also discussed in relation to its ATH (All-Time High) and its percentage below ATH during different halving cycles.\n\nOverall, the messages provide insights into the upcoming Bitcoin Halving event, its potential impact on Bitcoin's price and market, and the factors influencing Bitcoin's current performance and dumping.",
+      data: [
+        6, 5, 10, 13, 22, 25, 4, 2, 1, 10, 5, 4, 5, 5, 5, 9, 3, 7, 10, 9, 5, 5, 5, 4, 3, 9, 5, 9, 3,
+        3, 4, 2, 5, 10, 2, 10, 13, 8, 5, 7, 5, 10, 6, 8, 9, 5, 6, 5, 3, 3, 4, 7, 5, 5, 6, 4,
+      ],
+    },
+    {
+      label: 'NFT',
+      topics: 'nft,nfts,collection,sei,mint',
+      description:
+        'Based on the given messages from twitter_crypto and the set of words related to NFTs, it is evident that NFTs are being discussed in the crypto community. However, there is no specific mention of the year when the financial analyst bought their first NFT. The messages mainly focus on the value and potential of NFTs, as well as the activities happening in the NFT marketplace and communities.',
+      data: [
+        0, 2, 0, 0, 0, 0, 1, 1, 6, 3, 1, 1, 1, 0, 2, 1, 38, 2, 2, 0, 0, 1, 0, 1, 5, 2, 0, 2, 1, 1,
+        4, 0, 1, 1, 5, 1, 5, 1, 4, 1, 4, 3, 0, 4, 5, 3, 2, 2, 2, 1, 2, 2, 2, 1, 1, 1,
+      ],
+    },
+    {
+      label: 'DOGE Musk and X',
+      topics: 'doge,dogecoin,xpayments,payments,elon',
+      description:
+        "The messages from twitter_crypto suggest that there is a lot of excitement and discussion about Dogecoin (#Dogecoin) and its potential integration into X payments. Many users believe that Dogecoin is heading towards success and refer to it as a \"life time opportunity.\" Elon Musk's involvement is also mentioned, with speculation about whether he will integrate Bitcoin or Dogecoin into X payments first. The recent announcement of X payments has caused a 10% jump in Dogecoin's price. Some users are urging others to buy the dip in Dogecoin and remain bullish on its future. However, there are also critics who believe that Elon Musk's influence on Dogecoin has negatively impacted its value and that it will never return to its previous levels. Overall, the integration of Dogecoin into X payments is seen as a potential game-changer for the cryptocurrency and could further boost its prominence in the market.",
+      data: [
+        6, 1, 1, 7, 9, 2, 5, 5, 0, 0, 2, 0, 3, 5, 0, 0, 7, 3, 1, 1, 0, 2, 2, 0, 5, 1, 0, 1, 0, 0, 0,
+        1, 0, 4, 4, 3, 0, 1, 0, 5, 6, 1, 2, 0, 0, 21, 1, 1, 1, 0, 7, 1, 0, 2, 0, 0,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'meme,memes,memecoin,memecoins,coins',
+      description:
+        'The messages from twitter_crypto discuss various topics related to memes and memecoins in the crypto industry. The users express their excitement and interest in meme coins, sharing their favorite ones and even offering to share early contract addresses. They also mention specific meme coin collections, such as the $trolleyproblem meme collection. The users highlight the creativity and entertainment value of memecoins, emphasizing their popularity and trading activity. Additionally, there is a mention of a new memecoin called HUG, which has captured the interest of top crypto influencers. The users compare the success of meme coins to the potential of utility-based cryptocurrencies like Cardano. Finally, there is a link to an article recommending the best meme coins to buy for potential gains. Overall, the messages reflect the enthusiasm and engagement surrounding memecoins in the crypto community.',
+      data: [
+        0, 1, 2, 1, 17, 2, 0, 2, 2, 3, 3, 1, 0, 1, 0, 1, 18, 4, 3, 1, 3, 0, 0, 2, 2, 0, 4, 1, 1, 1,
+        1, 0, 0, 4, 1, 2, 1, 2, 2, 1, 2, 4, 8, 1, 1, 1, 1, 2, 3, 2, 3, 2, 2, 3, 1, 3,
+      ],
+    },
+    {
+      label: 'Solana',
+      topics: 'solana,sol,degen,tg,surge',
+      description:
+        'The messages from twitter_crypto suggest that there is a downside scenario in play for $SOL. There is also a discussion about the price prediction of $SOL and its potential to outperform $ETH amid the current crypto market doldrums. One user mentions closing a $SOL long position with a loss of $50, while another user mentions a profitable $ETH long position. There is a suggestion to reset the $SOL long position at $88.2 if there is a re-test, in order to mitigate risk. \n\nThe messages also highlight the steady growth of Solana, which is challenging Ethereum in the stablecoin market share. There are mentions of other projects on Solana, such as $SRM and #BigBenisClub, with users expressing excitement about their potential for growth. \n\nHowever, there is also negative sentiment towards $SOL, with a mention of $102 million in losses going towards paying lawyers and validators. The messages also discuss a recent market downturn that led to over $100 million being liquidated in just 24 hours. \n\nDespite these challenges, there is a positive development mentioned from the Solana Foundation, which has led to an 11% increase in the price of $SOL. There is also a mention of a new crypto prop related to $SOL on the @BundlesBets site, where users can predict whether $SOL will close February above or below $82. \n\nLastly, there are mentions of a new miner on Solana called @MilkParadiseSOL, with users expressing interest in their upcoming token and NFTs. There is also a mention of the significant price increase of $SOL from its all-time low, as well as a discussion about other cryptocurrencies like $HBAR. \n\nOverall, the messages indicate a mix of positive and negative sentiment towards $SOL, with discussions about its price performance, potential projects on Solana, and recent market events.',
+      data: [
+        1, 7, 1, 7, 1, 15, 0, 0, 1, 2, 1, 0, 8, 4, 2, 0, 6, 2, 2, 2, 0, 0, 1, 4, 1, 2, 1, 1, 0, 1,
+        1, 4, 1, 4, 1, 1, 1, 1, 0, 3, 5, 0, 0, 0, 0, 3, 2, 3, 1, 1, 1, 1, 1, 2, 17, 0,
+      ],
+    },
+    {
+      label: 'Shiba Inu',
+      topics: 'shiba,inu,shib,burn,rate',
+      description:
+        "The messages from twitter_crypto discuss various topics related to the crypto industry, particularly focusing on Shiba Inu. Some key points mentioned in the messages include:\n\n1. Shiba Inu becoming the third-largest holding on Robinhood Crypto.\n2. Shibarium experiencing a significant increase of 140% in transaction activity.\n3. Speculation about the possibility of Shiba Inu reaching a price of $0.00005 soon.\n4. Whales' activity strengthening the bullish case for Shiba Inu.\n5. Kaspa and InQubeta eyeing exponential profit potential in Shiba Inu.\n6. Jump Trading, the crypto arm of Robinhood exchange, being a market maker for Dogecoin.\n7. Dogecoin being listed on a major Indian crypto exchange.\n8. Robinhood accumulating 371 billion Shiba Inu and dropping $19 million worth of Bitcoin.\n9. Shiba Inu forming a falling wedge bullish pattern on the weekly chart.\n10. Shiba Inu's burn rate skyrocketing by 543% in the past 24 hours.\n11. A giveaway of AI Shiba (AISHIBA) tokens on LATOKEN.\n\nOverall, the messages highlight the popularity and activity surrounding Shiba Inu, as well as its potential for growth and investment opportunities.",
+      data: [
+        2, 1, 3, 1, 0, 0, 3, 0, 1, 6, 2, 10, 3, 2, 2, 1, 0, 2, 7, 1, 0, 2, 0, 8, 1, 1, 1, 3, 6, 1,
+        0, 1, 0, 0, 2, 1, 0, 0, 0, 1, 1, 5, 3, 0, 0, 0, 0, 1, 0, 4, 0, 2, 4, 2, 0, 0,
+      ],
+    },
+    {
+      label: 'Policy and regulations',
+      topics: 'law,government,political,criminal,american',
+      description:
+        "The message from twitter_crypto discusses various topics related to law, government, politics, and criminal activities. It mentions the non-negotiable nature of women's human rights and criticizes law enforcement for being above the law and causing havoc on society. The message also highlights the broken system and the cancellation of the debt limit in the US, which limits politicians' ability to force compromise. It mentions the principle of local autonomy and questions if law enforcement will ever get involved in certain situations. The message also touches on corruption, criminal organizations, and the role of tech innovation and social media in bringing about change. Additionally, it mentions libertarians, the American experiment in self-sovereignty, and the current state of participatory fascism. The message concludes with a mention of the US government's debt and the declaration of the US and UK governments as \"global terrorist\" networks by the Parliament of Yemen.",
+      data: [
+        4, 3, 3, 3, 15, 13, 6, 20, 2, 5, 1, 5, 8, 0, 4, 6, 1, 2, 7, 3, 1, 3, 4, 6, 5, 5, 3, 3, 6, 5,
+        11, 3, 8, 6, 1, 2, 6, 5, 4, 5, 6, 6, 3, 8, 4, 2, 6, 11, 3, 5, 0, 5, 5, 4, 8, 2,
+      ],
+    },
+    {
+      label: 'Coinbase & SEC',
+      topics: 'sec,judge,vs,court,securities',
+      description:
+        "The messages from twitter_crypto discuss various updates and developments related to the ongoing legal battle between Coinbase and the SEC. The messages mention that Binance has attempted to argue for the dismissal of charges during a court hearing. The judge in the Coinbase/SEC lawsuit is expected to make a decision within the next three months, according to an analyst. Attorney John Deaton criticizes the SEC's legal representatives in the Coinbase lawsuit. The judge also criticized both Binance and the SEC during a recent court hearing. The messages highlight that the case between Coinbase and the SEC is significant in defining the classification of cryptocurrencies as securities. Coinbase compared buying cryptocurrencies to collecting Beanie Babies during a recent hearing, raising questions in the legal battle. The messages also mention a recent hearing between Binance and the SEC, where the Binance lawyer criticized the SEC's approach to crypto tokens. The fallout from the Binance vs SEC hearing resulted in a plunge in Bitcoin and Cardano prices. The messages also mention that the analyst believes Coinbase will win the case and that the US will eventually implement a regulatory regime for virtual asset service providers. The long-awaited hearing between the SEC and Coinbase concluded without a ruling from the judge, with no significant highlights during the five-hour hearing.",
+      data: [
+        2, 6, 1, 1, 0, 0, 0, 2, 7, 3, 4, 4, 0, 1, 1, 1, 5, 3, 4, 7, 1, 5, 1, 4, 2, 1, 12, 36, 4, 1,
+        3, 1, 10, 6, 6, 2, 3, 5, 2, 4, 4, 2, 1, 3, 4, 5, 3, 0, 2, 10, 1, 4, 0, 4, 1, 3,
+      ],
+    },
+  ],
+}

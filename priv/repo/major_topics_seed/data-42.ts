@@ -1,0 +1,263 @@
+export const NARRATIVES = {
+  labels: [
+    '17.10.24',
+    '18.10.24',
+    '18.10.24',
+    '18.10.24',
+    '18.10.24',
+    '18.10.24',
+    '18.10.24',
+    '18.10.24',
+    '19.10.24',
+    '19.10.24',
+    '19.10.24',
+    '19.10.24',
+    '19.10.24',
+    '19.10.24',
+    '19.10.24',
+    '19.10.24',
+    '20.10.24',
+    '20.10.24',
+    '20.10.24',
+    '20.10.24',
+    '20.10.24',
+    '20.10.24',
+    '20.10.24',
+    '20.10.24',
+    '21.10.24',
+    '21.10.24',
+    '21.10.24',
+    '21.10.24',
+    '21.10.24',
+    '21.10.24',
+    '21.10.24',
+    '21.10.24',
+    '22.10.24',
+    '22.10.24',
+    '22.10.24',
+    '22.10.24',
+    '22.10.24',
+    '22.10.24',
+    '22.10.24',
+    '22.10.24',
+    '23.10.24',
+    '23.10.24',
+    '23.10.24',
+    '23.10.24',
+    '23.10.24',
+    '23.10.24',
+    '23.10.24',
+    '23.10.24',
+    '24.10.24',
+    '24.10.24',
+    '24.10.24',
+    '24.10.24',
+    '24.10.24',
+    '24.10.24',
+    '24.10.24',
+  ],
+  datasets: [
+    {
+      label: 'AI',
+      topics: 'agents,agent,humans,training,pivot',
+      description:
+        "The messages from Twitter discuss a variety of topics related to AI in the crypto industry. Some key points include the potential for AI to help onboard more collectors, concerns about the rise of AI scams, predictions about an AI government run by quantum computers in the future, debates about the future of AI coins and mascots, criticism of Cloud AI as a disaster waiting to happen, the hiring of a Chief Economist at OpenAI to study the economic impact of AI, discussions about trust and verification of AI models in critical fields like finance and healthcare, and the launch of AI-related projects such as Cryptify AI and the 0G Foundation's AI Alignment Node Sale. Overall, the messages reflect a mix of excitement, skepticism, and curiosity about the role of AI in the crypto industry.",
+      data: [
+        28, 92, 13, 4, 5, 0, 8, 4, 5, 6, 14, 8, 12, 6, 9, 13, 7, 11, 7, 5, 17, 19, 10, 14, 9, 13,
+        14, 12, 11, 3, 10, 7, 9, 10, 10, 10, 7, 13, 11, 10, 13, 15, 5, 13, 10, 9, 10, 18, 4, 7, 12,
+        7, 10, 8, 15,
+      ],
+    },
+    {
+      label: 'SOL',
+      topics: 'solana,sol,strength,bitget,ex',
+      description:
+        "The key topics discussed in the messages from twitter regarding $GOLDIE on SOL include:\n- Speculation about launching wsol on eth\n- Comparison between holding SOL and participating in meme coin wars\n- Potential launch of SOL when BTC and ETH stop selling off\n- Analysis of SOL/USD on TradingView\n- Launch of tokenized mineral rights investment fund on Solana by Elmnts\n- Altcoins like ETH, SUI, and SOL gaining momentum following support from Bitcoin\n- Solana outperforming Cardano in key performance metrics\n- Solana meme coin manufacturing going wrong\n- Predictions about Solana winning the current cycle\n- Speculation about Solana's potential major reversal in price\n- Emerging cryptocurrencies like SOL, DOGE, and SUI set to outpace Bitcoin's recovery\n- Discussion about whether to invest in Solana or SUI token during the bull run\n- Swing trade strategy for investing in SOL and SUI tokens\n- Success of dollar-cost averaging (DCA) buying Bitcoin\n\nOverall, the discussions revolve around the performance, potential, and comparison of various cryptocurrencies, with a focus on Solana and its potential in the current market cycle.",
+      data: [
+        7, 9, 9, 10, 3, 1, 6, 12, 14, 6, 19, 8, 6, 10, 7, 12, 12, 9, 15, 13, 10, 2, 4, 9, 11, 10, 8,
+        8, 16, 11, 9, 14, 6, 8, 10, 13, 9, 16, 10, 6, 5, 16, 9, 6, 74, 10, 5, 4, 10, 18, 5, 7, 12,
+        9, 2,
+      ],
+    },
+    {
+      label: 'ECB and Fed write anti-bitcoin papers',
+      topics: 'ecb,fiat,european,paper,central',
+      description:
+        'The messages from Twitter highlight the belief that Bitcoin is a symbol of freedom and a way to escape the control of centralized institutions like the ECB, IMF, and World Bank. There is a strong sentiment that Bitcoin is a form of "Fuck You" money that allows individuals to have financial independence and moral courage. \n\nThere is also criticism towards the ECB for failing to understand Bitcoin\'s true nature as digital Gold and for misrepresenting its volatility and utility. The messages suggest that Bitcoin is a tool for survival in a collapsing state and a way to combat institutionalized debt slavery.\n\nOverall, the messages reflect a strong belief in Bitcoin as a revolutionary technology that challenges traditional financial systems and empowers individuals to take control of their own wealth.',
+      data: [
+        6, 2, 3, 15, 20, 29, 7, 4, 6, 18, 6, 10, 5, 2, 6, 23, 7, 7, 16, 12, 6, 6, 10, 7, 8, 15, 11,
+        7, 7, 6, 9, 12, 12, 11, 5, 22, 31, 8, 11, 9, 4, 6, 4, 3, 5, 5, 6, 9, 8, 3, 19, 6, 8, 8, 12,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'supercycle,giga,memes,memecoins,memecoin',
+      description:
+        "The current discussion on social media platforms like Twitter revolves around the hype and potential collapse of memecoins. Users are sharing their experiences with memecoins, discussing which ones to buy, and even participating in meme contests. There is also a mention of using platforms like Bullx for trading memecoins and the prediction that some memecoins could surpass Dogecoin's market cap. Additionally, there is a conversation about the evolution of memes, from animal memes to AI memes, suggesting a progression towards more complex and intelligent content. Overall, the sentiment seems to be a mix of excitement, humor, and speculation about the future of memecoins in the crypto industry.",
+      data: [
+        4, 2, 4, 13, 6, 0, 5, 4, 8, 6, 14, 6, 8, 2, 4, 9, 3, 8, 4, 6, 8, 5, 17, 8, 4, 10, 7, 12, 6,
+        13, 9, 82, 46, 11, 8, 2, 12, 3, 7, 10, 6, 8, 9, 2, 8, 3, 9, 9, 9, 6, 8, 4, 2, 8, 2,
+      ],
+    },
+    {
+      label: 'APE',
+      topics: 'apes,apechain,apecoin,ape,bored',
+      description:
+        'The EVM team at Magic Eden is making waves in the crypto industry with the launch of ApeChain, the REAL FIRST MEME on ApeChain $FAFO. The price of APE has surged 86% in just seven days following the launch of Ape Chain Layer 3. ApeChain is setting itself apart with its unique approach to NFTs and gaming, creating a casino-like experience for users. The community is buzzing with excitement as ApeChain continues to grow and expand, with new features being added and a focus on memecoin culture. Users are actively participating in the ecosystem, staking their assets and earning passive income in $APE. The launch of ApeChain has sparked investor interest, with the price of ApeCoin increasing by over 100% in just two days. Magic Eden has become the go-to platform for trading ApeChain NFTs, with over 5 billion mints and 400k+ APE traded. The future looks bright for ApeChain and its community of dedicated apes.',
+      data: [
+        12, 3, 104, 7, 0, 0, 8, 12, 5, 6, 8, 5, 1, 5, 1, 2, 4, 7, 7, 8, 6, 8, 9, 8, 7, 5, 2, 3, 12,
+        12, 12, 7, 8, 8, 9, 5, 8, 2, 3, 4, 4, 4, 5, 8, 2, 4, 4, 2, 11, 4, 0, 5, 6, 4, 2,
+      ],
+    },
+    {
+      label: 'BTC',
+      topics: 'align,cup,fixes,hash,orange',
+      description:
+        'The messages from Twitter show a variety of opinions and sentiments about Bitcoin. Some users express excitement and optimism about Bitcoin, referring to it as "the way" and highlighting its potential to revolutionize the financial system. Others mention specific events, such as the SEC\'s involvement with Bitcoin, and emphasize the importance of educating children about money and Bitcoin.\n\nThere are also mentions of Bitcoin being a force for positive change in the world, with references to love, light, and reorganizing society. On the other hand, there are also negative comments, such as Bitcoin making someone sad.\n\nOverall, the messages reflect a diverse range of perspectives on Bitcoin, from enthusiastic support to skepticism and criticism. The topic of Bitcoin is clearly a popular and dynamic discussion point within the crypto community on social media.',
+      data: [
+        6, 1, 3, 5, 34, 49, 6, 2, 6, 4, 3, 6, 4, 3, 3, 7, 4, 5, 11, 9, 11, 4, 6, 8, 2, 12, 3, 5, 9,
+        5, 7, 3, 4, 8, 2, 6, 3, 1, 6, 4, 6, 8, 5, 7, 14, 8, 7, 4, 4, 7, 7, 1, 5, 9, 8,
+      ],
+    },
+    {
+      label: 'Art',
+      topics: 'artists,art,artist,collectors,piece',
+      description:
+        'The messages from Twitter discuss various aspects of art, including different genres like pop art, op art, and the new genre of $SLOP ART driven by memetics and AI. There is also mention of an AI-powered robot artist that has gained attention in the art world for producing unique original paintings. Additionally, there are personal reflections on the creative process, with one individual sharing their series titled "Surrendered to the line" and another expressing their passion for creating art every day.\n\nOverall, the Twitter messages highlight the diverse and evolving nature of art, with discussions ranging from traditional art projects to innovative AI-driven creations. The crypto community is also mentioned in the hashtags, indicating a potential intersection between art and cryptocurrency in the online discourse.',
+      data: [
+        7, 4, 60, 10, 1, 0, 1, 3, 5, 5, 5, 8, 6, 3, 9, 8, 2, 4, 10, 6, 3, 8, 8, 5, 4, 6, 5, 6, 6, 6,
+        10, 3, 4, 4, 4, 7, 11, 4, 6, 6, 6, 5, 4, 8, 5, 3, 7, 6, 7, 4, 0, 4, 4, 3, 9,
+      ],
+    },
+    {
+      label: 'GameFi',
+      topics: 'gaming,games,gamefi,grid,champions',
+      description:
+        'The messages from Twitter suggest that there is a lot of excitement and activity surrounding gaming in the crypto industry. Specifically, there is mention of $SON gaming on #Kucoin, with a potential parabolic gaming pump loading. Additionally, there are discussions about Web3 gaming, with mentions of games like Age of Empires Mobile and Exverse. The importance of play-to-earn models in gaming is also highlighted, along with the need for AAA games to be multi-platform for developers to make a return on investment. Overall, it seems that the gaming community is buzzing with new releases, partnerships, and opportunities in the crypto space.',
+      data: [
+        2, 5, 3, 4, 4, 0, 3, 4, 0, 7, 3, 3, 4, 4, 4, 6, 6, 4, 4, 7, 66, 4, 15, 6, 2, 8, 2, 2, 10, 2,
+        14, 5, 4, 8, 2, 3, 23, 4, 3, 6, 5, 4, 3, 7, 3, 4, 5, 4, 5, 3, 7, 1, 8, 7, 6,
+      ],
+    },
+    {
+      label: 'DOGE',
+      topics: 'dogecoin,doge,projection,overbought,cents',
+      description:
+        'The messages from Twitter suggest that Dogecoin ($DOGE) is experiencing a surge in activity and price, with potential for further growth. There is discussion about the strength and future potential of Dogecoin as an onchain asset, as well as comparisons to other cryptocurrencies like Bellscoin. Some users are bullish on Dogecoin and believe in its potential for a parabolic surge. There is also mention of potential profit-taking opportunities and technical analysis indicating a bullish trend for Dogecoin. Additionally, there is speculation about the price of Dogecoin reaching $5 and the potential for a surge in WallitIQ ($WLTQ). Overall, the sentiment surrounding Dogecoin on Twitter appears positive and optimistic.',
+      data: [
+        3, 3, 0, 4, 3, 0, 4, 1, 3, 2, 0, 4, 3, 5, 66, 67, 0, 0, 4, 1, 3, 5, 5, 5, 3, 2, 6, 3, 7, 7,
+        8, 4, 0, 2, 3, 5, 5, 8, 4, 4, 4, 6, 2, 4, 3, 6, 4, 3, 7, 3, 1, 2, 6, 2, 4,
+      ],
+    },
+    {
+      label: 'ETF Flows',
+      topics: 'inflow,inflows,net,etfs,flows',
+      description:
+        'The key topics currently discussed in the crypto industry on social media include the success of Bitcoin ETFs in terms of inflows, with significant amounts of money flowing into these funds. There is also discussion about the comparison between Bitcoin ETF inflows and Gold ETF inflows, highlighting the rapid growth of Bitcoin ETFs. Additionally, there is mention of hedge funds cashing in on the Bitcoin rally and the overall momentum in the crypto market. Other topics include the total number of wallets created on BitTorrent Speed and the total number of TRON addresses. Overall, the focus seems to be on the performance and growth of Bitcoin ETFs, as well as general market trends and developments.',
+      data: [
+        4, 2, 3, 3, 34, 3, 6, 3, 8, 1, 2, 2, 8, 4, 0, 1, 33, 2, 6, 3, 4, 6, 5, 3, 7, 13, 2, 5, 0, 2,
+        2, 3, 1, 14, 7, 0, 1, 0, 2, 3, 1, 1, 2, 1, 35, 5, 9, 1, 3, 4, 1, 4, 1, 5, 3,
+      ],
+    },
+    {
+      label: 'GOAT',
+      topics: 'goat,gnon,truthterminal,mc,listings',
+      description:
+        "The key topics currently being discussed on Twitter in the crypto industry include the surge in the price of the meme token $GOAT, which has seen a 156% increase in the last two days. There is also discussion about the potential profitability of investing in $GOAT, $DOGE, $SHIB, and $SOLANA, with the possibility of turning $100,000 into $1.5 million in 60 days. Additionally, there is excitement surrounding the AI+Memecoin meta trend, with mentions of new coins like $GOATAI and discussions about the potential for massive growth in the AI sector. Elon Musk's potential involvement in buying GOAT for his balance sheet is also mentioned. Overall, there is a lot of hype and speculation surrounding AI and meme coins in the crypto space.",
+      data: [
+        3, 5, 2, 6, 3, 0, 2, 4, 8, 7, 6, 8, 3, 1, 1, 6, 2, 0, 3, 3, 5, 11, 7, 4, 5, 2, 1, 6, 6, 6,
+        4, 4, 2, 6, 6, 3, 3, 6, 7, 6, 0, 4, 3, 7, 4, 3, 4, 12, 3, 3, 7, 2, 2, 9, 5,
+      ],
+    },
+    {
+      label: 'AI Memecoins',
+      topics: 'pumpfun,memecoins,meta,animal,kols',
+      description:
+        'The current trend in the crypto industry is the rise of AI memecoins, which are seen as speculative investments. While utility projects focus on fundamentals, AI memecoins combine both speculation and utility. However, there are concerns about the environmental impact of trading AI memecoins, as server farms consume significant resources. Despite the unknown nature of these investments, individuals are actively seeking out the best opportunities in AI memecoins. Some believe that AI memecoins are the new big thing, with $SOL leading the charge. Traders are advised to stay vigilant and not miss out on potential opportunities in this emerging market.',
+      data: [
+        7, 28, 3, 3, 3, 0, 3, 0, 6, 1, 3, 8, 9, 1, 3, 2, 2, 2, 1, 3, 2, 3, 5, 5, 3, 2, 4, 2, 4, 3,
+        8, 10, 19, 4, 3, 2, 5, 1, 5, 3, 2, 5, 5, 5, 3, 0, 1, 4, 9, 1, 1, 3, 0, 2, 1,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'defi,oracle,renaissance,mainstream,tradfi',
+      description:
+        "The messages from Twitter indicate that there is a growing interest in DeFi (Decentralized Finance) within the crypto community. Users are exploring DeFi platforms such as ParaSwap and DeFiSaver to access the best prices and manage their assets across multiple protocols. Liquidity farming, also known as yield farming, is a popular concept in DeFi that allows individuals to earn rewards by providing liquidity to DeFi platforms.\n\nThere is a focus on innovation and resilience in the DeFi space, with projects like FIVA Protocol and Aptos & Ondo aiming to redefine DeFi using real-world assets. Additionally, there is discussion about the potential of AI to transform DeFi, with Allora Network's Nick Emmons exploring the intersection of AI and DeFi in an upcoming podcast episode.\n\nOverall, the messages suggest that DeFi is seen as the future of finance, offering new opportunities for users to break free from traditional financial systems and take control of their assets. The complexity of DeFi compared to the simplicity of Bitcoin is highlighted, indicating a shift towards more advanced financial tools and technologies in the crypto industry.",
+      data: [
+        3, 6, 4, 1, 2, 3, 0, 4, 0, 5, 5, 4, 0, 4, 9, 0, 1, 5, 9, 7, 6, 1, 6, 1, 1, 4, 5, 7, 3, 3, 2,
+        1, 6, 5, 2, 6, 1, 5, 5, 5, 8, 5, 0, 2, 6, 2, 4, 3, 5, 9, 6, 2, 4, 3, 7,
+      ],
+    },
+    {
+      label: 'TSLA',
+      topics: 'tsla,tesla,earnings,cars,260',
+      description:
+        "The key topics discussed in the messages from twitter regarding Tesla include:\n1. New cheaper Tesla models confirmed, with 240+ expected tomorrow.\n2. Tesla's earnings report for Q3 2024, with earnings per share and revenue figures.\n3. Tesla's stock jumping 12% during the earnings call.\n4. AST SpaceMobile securing a contract with the Space Development Agency.\n5. Tesla's Robotaxi and induction charging technology.\n6. Tesla's advancements in autonomy with the Cybercab.\n7. Electric vehicles stealing the spotlight at the Paris Motor Show.\n8. CLS stock ripping to new all-time highs on earnings.\n9. Tesla's stock jumping 15% after earnings, with some skepticism about the planned nature of the earnings.\n10. Discussion about Tesla's fast charge technology rollout and future plans for stationary storage.",
+      data: [
+        0, 1, 3, 2, 1, 0, 2, 1, 4, 0, 6, 3, 2, 1, 1, 9, 5, 3, 5, 4, 1, 1, 1, 2, 3, 1, 7, 1, 0, 3, 1,
+        1, 4, 2, 2, 3, 2, 0, 1, 0, 4, 4, 1, 11, 5, 3, 1, 37, 2, 3, 25, 0, 0, 1, 5,
+      ],
+    },
+    {
+      label: 'Election',
+      topics: 'voters,votes,elections,candidates,election',
+      description:
+        'The key topics discussed in the messages from twitter include the upcoming election, the firing of Gary Gensler, cryptocurrency, the influence of billionaires in politics, the importance of crypto policies for voters, and the Moldovan election and referendum on EU adhesion. There is also mention of election fraud, tax policies, and the On-Chain Election hosted by Eldarune. Overall, the messages highlight the intersection of politics, cryptocurrency, and voter engagement in the current social media discussions.',
+      data: [
+        4, 0, 3, 3, 1, 0, 1, 1, 0, 0, 3, 3, 7, 8, 1, 2, 17, 1, 1, 3, 3, 2, 3, 2, 2, 4, 6, 0, 1, 1,
+        3, 3, 0, 2, 2, 2, 2, 5, 3, 4, 5, 0, 2, 0, 1, 3, 3, 3, 0, 2, 2, 4, 21, 3, 1,
+      ],
+    },
+    {
+      label: 'Michael Saylor',
+      topics: 'saylor,michael,saylors,humanity,hes',
+      description:
+        "The messages from Twitter discuss various opinions about Michael Saylor in the crypto industry. Some users praise Saylor for his contributions to Bitcoin and his onboarding of institutions, while others criticize him for his views on self-custody and his support for traditional banks. There is a debate about whether Saylor's approach to Bitcoin aligns with the original anarchist principles of the cryptocurrency. Overall, the discussion highlights the polarizing effect Saylor has on the community, with some seeing him as a key player in Bitcoin's growth and others viewing him as a threat to its core values.",
+      data: [
+        3, 3, 2, 4, 2, 2, 2, 2, 2, 0, 4, 2, 0, 2, 2, 3, 1, 2, 3, 2, 0, 3, 2, 4, 1, 4, 2, 2, 1, 1, 4,
+        0, 0, 1, 2, 2, 3, 2, 1, 1, 5, 18, 11, 1, 0, 3, 0, 3, 1, 0, 2, 1, 1, 2, 3,
+      ],
+    },
+    {
+      label: 'MSTR',
+      topics: 'mstr,microstrategy,bonds,strategy,acquire',
+      description:
+        "The messages from Twitter suggest that MicroStrategy ($MSTR) is expected to make many millionaires next year, with hodlers currently benefiting from the increase in value. The company's strategy involving Bitcoin has been successful, outperforming companies in the S&P index. There is anticipation for a new all-time high for Bitcoin, with potential for significant growth in both $MSTR and the S&P 500. Despite some skepticism, MicroStrategy's Bitcoin scheme is seen as driving scarcity for BTC. The company's shares have surged significantly since 2020, and there is optimism for further growth in market cap. Discussions also touch on the potential for $MSTR to reach $1000/share and $1T in market cap over time. Overall, there is a positive outlook on the future of MicroStrategy and its relationship with Bitcoin.",
+      data: [
+        2, 0, 1, 2, 2, 0, 3, 2, 0, 0, 2, 3, 1, 4, 0, 0, 1, 2, 2, 2, 1, 5, 3, 3, 4, 5, 0, 1, 3, 2, 2,
+        1, 14, 8, 0, 3, 1, 4, 1, 3, 4, 0, 5, 4, 3, 2, 2, 1, 1, 1, 1, 0, 2, 1, 1,
+      ],
+    },
+    {
+      label: 'Elon Musk',
+      topics: 'musk,speech,elon,censorship,electric',
+      description:
+        "The key topics discussed in the messages from Twitter include Elon Musk's latest remarks on XRP, his America PAC under fire for a $1 million giveaway, freedom of speech, fighting communism, Elon Musk's views on abortion and the national debt, and his thoughts on ridiculous regulations. The messages also touch on political opinions, loyalty to Elon Musk, and potential security concerns for Elon Musk. Overall, the messages reflect a mix of political, social, and economic discussions within the crypto industry and beyond.",
+      data: [
+        4, 3, 2, 5, 2, 0, 1, 0, 2, 0, 0, 2, 2, 1, 4, 1, 0, 2, 2, 5, 1, 2, 4, 0, 1, 4, 1, 3, 10, 1,
+        1, 3, 1, 5, 1, 1, 4, 5, 3, 4, 4, 3, 0, 2, 2, 3, 3, 2, 1, 2, 1, 0, 2, 1, 2,
+      ],
+    },
+    {
+      label: 'CPI',
+      topics: 'inflation,caused,bond,rates,cuts',
+      description:
+        "Inflation and hyperinflation are hot topics in the crypto community, with discussions about the impact on purchasing power and the potential for government intervention. The recent example of Zimbabwe's hyperinflation serves as a cautionary tale, with their currency losing significant value. The Federal Reserve's policies are also under scrutiny, with claims that they have devalued the U.S. Dollar over the past century. Overall, there is concern about the potential for high inflation rates and the negative effects it could have on economies and individuals.",
+      data: [
+        1, 0, 1, 3, 0, 0, 0, 0, 0, 5, 1, 3, 2, 2, 3, 2, 0, 3, 1, 4, 0, 5, 3, 5, 1, 15, 3, 1, 2, 1,
+        2, 0, 4, 2, 2, 1, 1, 4, 2, 2, 4, 6, 1, 2, 3, 2, 1, 2, 3, 1, 1, 1, 0, 1, 3,
+      ],
+    },
+    {
+      label: 'SCR',
+      topics: 'scroll,airdrop,rollup,layer2,800',
+      description:
+        'The key topics currently being discussed in the crypto community on Twitter include the listing of Scroll ($SCR) on various platforms such as Binance, Bybit, OKX, KuCoin, Bitget, MEXC, Gate, and others. Scroll is a native zkEVM Layer 2 for Ethereum, utilizing zero-knowledge proofs for security. There are also discussions about the Scroll governance token launch falling short of expectations due to token allocation issues. Additionally, there is excitement about the upcoming listing of Scroll on the Tapbit exchange and the collaboration with Bitget for listing on their platform. Users can participate in the Scroll TGE campaign and win rewards by completing quests on the Galxe page. Overall, the community is actively engaged in discussions about Scroll and its developments.',
+      data: [
+        2, 6, 1, 0, 1, 0, 3, 0, 0, 1, 3, 0, 1, 3, 4, 3, 2, 4, 1, 0, 0, 0, 0, 1, 0, 2, 2, 2, 2, 3, 0,
+        1, 0, 0, 4, 2, 1, 0, 1, 5, 2, 0, 31, 1, 5, 1, 1, 0, 0, 3, 0, 0, 1, 1, 1,
+      ],
+    },
+  ],
+}

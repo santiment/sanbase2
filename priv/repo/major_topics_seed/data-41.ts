@@ -1,0 +1,262 @@
+export const NARRATIVES = {
+  labels: [
+    '10.10.24',
+    '11.10.24',
+    '11.10.24',
+    '11.10.24',
+    '11.10.24',
+    '11.10.24',
+    '11.10.24',
+    '11.10.24',
+    '12.10.24',
+    '12.10.24',
+    '12.10.24',
+    '12.10.24',
+    '12.10.24',
+    '12.10.24',
+    '12.10.24',
+    '12.10.24',
+    '13.10.24',
+    '13.10.24',
+    '13.10.24',
+    '13.10.24',
+    '13.10.24',
+    '13.10.24',
+    '13.10.24',
+    '13.10.24',
+    '14.10.24',
+    '14.10.24',
+    '14.10.24',
+    '14.10.24',
+    '14.10.24',
+    '14.10.24',
+    '14.10.24',
+    '14.10.24',
+    '15.10.24',
+    '15.10.24',
+    '15.10.24',
+    '15.10.24',
+    '15.10.24',
+    '15.10.24',
+    '15.10.24',
+    '15.10.24',
+    '16.10.24',
+    '16.10.24',
+    '16.10.24',
+    '16.10.24',
+    '16.10.24',
+    '16.10.24',
+    '16.10.24',
+    '16.10.24',
+    '17.10.24',
+    '17.10.24',
+    '17.10.24',
+    '17.10.24',
+    '17.10.24',
+    '17.10.24',
+    '17.10.24',
+  ],
+  datasets: [
+    {
+      label: 'BTC',
+      topics: 'freedom,fiat,bitcoiners,cash,understand',
+      description:
+        "The messages from Twitter discuss various aspects of Bitcoin, including its ability to transcend barriers such as race and economic class, its potential to be a decentralized bank, and its role in empowering individuals to take back financial sovereignty. There is also mention of the importance of valuing wealth in Bitcoin over traditional currencies like the USD. Additionally, the messages touch on the organic growth of Bitcoin's brand awareness and its status as a store of value. The topic of Bitcoiners and their motivations is also brought up, highlighting the diverse range of individuals involved in the cryptocurrency space. Overall, the messages convey a sense of optimism and empowerment surrounding Bitcoin and its potential impact on the financial world.",
+      data: [
+        15, 2, 6, 14, 62, 41, 6, 7, 8, 12, 13, 16, 5, 12, 12, 8, 7, 3, 13, 14, 5, 7, 9, 9, 20, 13,
+        12, 8, 12, 13, 9, 8, 16, 9, 10, 20, 13, 19, 12, 11, 8, 18, 12, 6, 9, 12, 8, 17, 5, 16, 18,
+        10, 10, 9, 13,
+      ],
+    },
+    {
+      label: 'MSTR',
+      topics: 'microstrategy,mstr,michael,saylor,premium',
+      description:
+        "The messages from Twitter indicate a negative divergence in $MSTR stock, with some users suggesting it may be a blow-off top. There is discussion about MicroStrategy's stock hitting new highs, potential downturns, and the influence of Michael Saylor on investments. Some users caution against falling for the leveraged MSTR trap and warn against getting too caught up in the hype. Overall, there is a mix of excitement, skepticism, and caution surrounding $MSTR and its relationship with Bitcoin. Additionally, there is mention of an upcoming event in Malta related to AI and blockchain, as well as comparisons between Bitcoin and other assets in terms of YTD returns.",
+      data: [
+        6, 12, 2, 10, 7, 3, 7, 4, 4, 3, 8, 9, 6, 2, 9, 5, 4, 10, 4, 6, 5, 7, 7, 11, 5, 11, 12, 10,
+        2, 8, 5, 8, 40, 28, 7, 17, 5, 9, 4, 4, 14, 22, 5, 9, 3, 12, 3, 8, 6, 8, 10, 4, 11, 2, 8,
+      ],
+    },
+    {
+      label: 'TSLA',
+      topics: 'tsla,tesla,robots,musk,cars',
+      description:
+        "The key topics discussed in the messages from Twitter are:\n1. Robots buying all the turbo on the open market\n2. Tesla's advancements in robotics and AI\n3. Elon Musk's presentation at the Tesla Robotaxi event\n4. Tesla's new innovations such as the Robovan and Cybercab\n5. Speculation about Tether's AI division\n6. TRON and Justin Sun's potential comeback in the crypto industry\n\nOverall, the messages highlight the excitement and speculation surrounding Tesla's advancements in robotics, AI, and autonomous vehicles, as well as the potential impact of AI in the crypto industry.",
+      data: [
+        4, 6, 12, 3, 0, 0, 1, 5, 5, 4, 7, 8, 5, 3, 5, 12, 9, 5, 7, 9, 7, 5, 8, 3, 6, 7, 13, 7, 5,
+        12, 4, 4, 4, 3, 10, 10, 8, 8, 5, 9, 13, 29, 6, 11, 3, 5, 14, 30, 12, 1, 41, 5, 9, 5, 7,
+      ],
+    },
+    {
+      label: 'AI',
+      topics: 'models,agents,training,compute,agent',
+      description:
+        'The messages from Twitter suggest that the crypto industry is increasingly being dominated by discussions and advancements in artificial intelligence (AI). From the development of AI-powered hospitals to the integration of AI in creating virtual worlds and enhancing online content creation, it is clear that AI is becoming a key player in the industry. Companies like Fraction AI and Simplismart are leveraging AI to improve performance and access to data, while others are using AI assistants and models to enhance user experiences and create innovative solutions. The narrative seems to indicate a shift towards AI-driven technologies and solutions in the crypto industry.',
+      data: [
+        46, 37, 10, 9, 1, 0, 1, 9, 2, 4, 3, 8, 4, 16, 2, 8, 7, 4, 4, 15, 3, 7, 17, 10, 6, 6, 6, 7,
+        7, 2, 6, 9, 7, 8, 6, 7, 5, 6, 11, 8, 10, 11, 2, 6, 4, 8, 13, 12, 3, 3, 6, 1, 8, 7, 9,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'cults,cult,memes,memecoin,memecoins',
+      description:
+        'The key topic discussed in the messages from Twitter is the rise of meme coins in the crypto industry. While some people dismiss meme coins as "ultra trash" and "normie fuel," others believe that meme coins are driving the prices up and could potentially succeed in the future. There is a debate between utility plays on ETH and meme coins, with some suggesting that meme coins could be insider pump and dumps. Additionally, there is a comparison between meme coins and cultcoins, with some believing that cultcoins have more potential. Overall, the discussion highlights the speculative nature of meme coins and the potential for significant gains for those who can hold onto winning trades for a long time.',
+      data: [
+        4, 1, 3, 5, 1, 1, 1, 2, 7, 8, 6, 6, 8, 2, 4, 6, 4, 1, 2, 6, 4, 10, 3, 6, 7, 6, 7, 3, 3, 5,
+        5, 95, 4, 11, 13, 7, 10, 4, 3, 6, 4, 5, 6, 2, 3, 4, 1, 3, 3, 7, 10, 3, 10, 7, 4,
+      ],
+    },
+    {
+      label: 'Art',
+      topics: 'art,artist,artists,piece,pixel',
+      description:
+        "The messages from Twitter discuss various aspects of art, including the appreciation of art, the impact of AI on art, and the practical aspects of art such as printing and graphic design. There is also a mention of a new art collection called 'Alius' and the importance of supporting artists. Additionally, there is a message expressing admiration for a literary figure. Overall, the messages highlight the diverse and vibrant world of art and creativity on social media platforms like Twitter.",
+      data: [
+        7, 5, 57, 3, 0, 1, 0, 4, 8, 2, 11, 6, 3, 3, 7, 4, 2, 7, 12, 5, 4, 4, 7, 4, 3, 5, 4, 5, 5, 7,
+        4, 3, 4, 6, 3, 5, 5, 7, 3, 0, 6, 6, 4, 5, 7, 2, 8, 4, 4, 0, 5, 2, 4, 1, 9,
+      ],
+    },
+    {
+      label: 'DOGE',
+      topics: 'dogecoin,doge,babydoge,69,department',
+      description:
+        'The messages from Twitter suggest that Dogecoin is gaining momentum and attention in the crypto community. There is excitement about the potential rise of Dogecoin and its impact on the market. Some users believe that Dogecoin is a safe investment and could lead to a memecoin run. Additionally, there is a comparison between Dogecoin and other meme coins like SHIB and PEPE. The idea of the "DOGE" narrative and the potential for growth in the Dogecoin market is also discussed. Overall, it seems that Dogecoin is a topic of interest and discussion among crypto enthusiasts on social media.',
+      data: [
+        3, 1, 1, 2, 1, 0, 4, 4, 3, 1, 3, 4, 1, 5, 123, 3, 0, 0, 3, 4, 3, 10, 2, 2, 4, 2, 2, 3, 4, 3,
+        2, 2, 6, 4, 3, 5, 6, 5, 2, 3, 4, 6, 4, 6, 5, 2, 5, 6, 3, 1, 2, 0, 3, 7, 6,
+      ],
+    },
+    {
+      label: 'BTC Price',
+      topics: '67000,65000,70000,65k,66000',
+      description:
+        "The key topics currently being discussed in the crypto community on Twitter include the price of Bitcoin breaking $65,000 and potentially reaching $66,000 this week. There is excitement over Bitcoin's recent rally, with the price crossing $68,000 for the first time since July. There is also discussion about the impact of ETF inflows and BlackRock's endorsement on the price of Bitcoin. Some analysts are predicting a massive parabolic rally for Bitcoin, with price targets ranging from $147,600 to $184,500. Overall, there is a bullish sentiment surrounding Bitcoin's price movement and potential for further gains in the near future.",
+      data: [
+        1, 1, 4, 5, 26, 21, 19, 6, 2, 3, 4, 5, 5, 4, 1, 4, 4, 3, 10, 1, 2, 9, 1, 16, 3, 1, 3, 1, 4,
+        9, 5, 1, 1, 3, 2, 0, 3, 7, 2, 7, 3, 5, 4, 3, 5, 4, 5, 5, 2, 5, 2, 13, 6, 2, 3,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'renaissance,tradfi,defi,strategies,lending',
+      description:
+        'The messages from twitter discuss various topics related to the DeFi (Decentralized Finance) industry. Some key points mentioned include:\n\n1. The need for an infrastructure overhaul in DeFi to challenge traditional finance dominance.\n2. The importance of DeFi in supporting blockchain adoption and reimagining ownership and commerce.\n3. The introduction of new technologies and platforms like Injective for finance.\n4. The potential for DeFi to revolutionize finance through intelligent AI outputs triggering smart contract executions.\n5. Projects and platforms within the DeFi ecosystem such as Goldilocks, Honeypot, and Ooga Booga DEX aggregator.\n6. Opportunities for funding and development in cross-chain DeFi, RWA tokenization, and social platforms.\n7. Integration of IOTA EVM with FireblocksHQ for secure asset management.\n8. The discussion on institutional strategies in DeFi, the value of mature DeFi protocols, and the importance of risk in yield farming.\n9. The launch of DEXTPad in collaboration with ChainGPT_Labs for discovering, evaluating, and investing in DeFi projects.\n\nOverall, the messages highlight the growth and innovation happening within the DeFi industry, with a focus on technology advancements, ecosystem development, and investment opportunities.',
+      data: [
+        2, 5, 1, 4, 0, 0, 3, 2, 2, 3, 6, 0, 0, 12, 6, 4, 2, 6, 4, 5, 3, 3, 4, 1, 3, 0, 4, 5, 8, 4,
+        2, 0, 2, 2, 6, 5, 2, 2, 11, 4, 4, 4, 3, 1, 6, 4, 6, 0, 2, 7, 4, 1, 1, 2, 6,
+      ],
+    },
+    {
+      label: 'Whales',
+      topics: 'whale,whales,accumulation,15m,aave',
+      description:
+        "The model that has predicted a monetary sea change in the crypto industry is the behavior of Bitcoin whales. The messages from Twitter indicate that new Bitcoin whales are emerging and accumulating large amounts of BTC, potentially signaling price gains on the horizon. The surge in whale wallets and their significant purchases during price dips have historically been associated with the start of bull runs in the market. This trend is reminiscent of what happened in 2020 before Bitcoin exploded in value. Additionally, the increase in whale transactions and the growth of young whale populations suggest a positive outlook for Bitcoin's price in the near future. Overall, the behavior of Bitcoin whales is seen as a key indicator of potential market shifts and significant price movements in the crypto industry.",
+      data: [
+        6, 6, 0, 4, 1, 8, 3, 7, 6, 1, 1, 0, 2, 0, 2, 4, 8, 3, 2, 0, 2, 1, 1, 0, 0, 2, 3, 3, 0, 3, 3,
+        1, 2, 7, 2, 3, 3, 4, 1, 2, 0, 0, 1, 4, 2, 1, 3, 2, 3, 1, 5, 0, 2, 25, 1,
+      ],
+    },
+    {
+      label: 'Layer 2',
+      topics: 'l2s,l1,vision,failing,zones',
+      description:
+        'The key topics discussed in the messages from Twitter regarding Ethereum and Layer 2 solutions include:\n\n1. The potential for Ethereum to double in price by focusing on user-friendly language instead of technical jargon.\n2. The shift towards using Ethereum for sustainable projects, such as Zupass.\n3. The emergence of "Economic Zones" as a new trend in the Ethereum community.\n4. The debate over the necessity of tokens for Layer 2 solutions like Arbitrum.\n5. Criticisms of Ethereum\'s lack of resulting in better applications.\n6. Analogies comparing Ethereum to the British Empire and its colonies, with Layer 2 solutions being the colonies declaring independence.\n7. The importance of aligning incentives between Ethereum and Layer 2 solutions for mutual success.\n8. The challenges of balancing decentralization and scalability in Ethereum\'s development.\n9. The potential for different chains, such as Celestia, to compete with Ethereum in the finance sector.\n10. The evolving perception of Layer 2 solutions from skepticism to optimism in the Ethereum community.',
+      data: [
+        1, 8, 1, 1, 0, 0, 1, 2, 0, 4, 1, 4, 0, 1, 2, 3, 37, 1, 3, 2, 0, 1, 2, 2, 0, 2, 4, 10, 3, 3,
+        3, 3, 5, 5, 2, 0, 2, 4, 1, 0, 3, 0, 2, 1, 3, 2, 6, 1, 5, 1, 3, 0, 1, 0, 3,
+      ],
+    },
+    {
+      label: 'Tesla moves BTC',
+      topics: 'moved,unknown,transferred,tesla,wallets',
+      description:
+        "The key topics being discussed on Twitter regarding Tesla and Bitcoin include speculation about whether Tesla is selling or just moving their Bitcoin holdings, Elon Musk potentially buying more Bitcoin, the impact of Tesla's Bitcoin movements on the market, comparisons to other entities moving Bitcoin, and the potential implications for Tesla's stock price. There is also mention of Elon Musk's Tesla moving a significant amount of Bitcoin to unknown wallets, with some sources suggesting that it may not necessarily indicate selling. Overall, the sentiment expressed in the messages is mixed, with some expressing frustration or skepticism towards Tesla and Elon Musk, while others are discussing potential investment strategies and market movements.",
+      data: [
+        3, 1, 0, 0, 1, 1, 9, 0, 4, 1, 2, 2, 1, 0, 0, 2, 0, 4, 1, 1, 1, 0, 0, 0, 0, 0, 1, 3, 2, 0, 2,
+        2, 14, 14, 4, 0, 0, 1, 0, 2, 2, 1, 7, 2, 1, 1, 0, 30, 2, 7, 2, 2, 0, 1, 6,
+      ],
+    },
+    {
+      label: 'SUI',
+      topics: 'sui,sei,suinetwork,120,flagship',
+      description:
+        'The key topics currently being discussed on Twitter in relation to the crypto industry include the significant rise in DEX volume for $SUI, the price increase of nearly 19% after bouncing off the POC, speculation on whether the price of $SUI could double again, comparisons of market capitalization with other cryptocurrencies like $NEAR and $DOT, the launch of native USDC on the Sui network via #NAVI, and warnings against selling or shorting $SUI due to potential violent price movements. Additionally, there is discussion about $SUI products being marketed to the masses, updates from the $SULLY team, and the potential listing of Pulse $PLS on Binance. Overall, there is a mix of excitement, speculation, and caution surrounding the $SUI cryptocurrency on social media platforms.',
+      data: [
+        0, 3, 1, 2, 0, 1, 0, 1, 1, 3, 1, 3, 0, 6, 0, 4, 2, 7, 6, 2, 1, 4, 2, 4, 5, 3, 0, 4, 2, 0, 0,
+        3, 1, 2, 1, 4, 2, 10, 1, 7, 2, 2, 3, 1, 1, 5, 6, 1, 1, 5, 1, 2, 5, 0, 2,
+      ],
+    },
+    {
+      label: 'ETH',
+      topics: 'formation,inverse,triangle,oi,loses',
+      description:
+        'The messages from Twitter suggest that there is a mix of bullish and bearish sentiment surrounding Ethereum ($ETH). Some users believe that Ethereum is undervalued and could potentially see a significant price rally, with price targets ranging from $10k to $15k. Others are more cautious, predicting a potential drop in price before retesting major support levels.\n\nThere is also discussion about potential market volatility and the possibility of a sell-off in Ethereum. Some analysts are pointing out key metrics that signal a potential downturn, while others are optimistic about a potential price increase.\n\nOverall, it seems that the crypto community on Twitter is divided on the future of Ethereum, with some expecting a bullish supercycle while others are more cautious about potential market risks. Investors are encouraged to carefully consider their strategies and risk tolerance in navigating the current market conditions.',
+      data: [
+        1, 3, 0, 1, 1, 0, 5, 1, 1, 1, 1, 2, 2, 0, 0, 2, 55, 1, 2, 1, 0, 5, 0, 4, 1, 1, 3, 0, 1, 1,
+        2, 1, 2, 0, 1, 0, 1, 7, 0, 7, 4, 1, 2, 1, 3, 2, 0, 1, 0, 1, 0, 2, 0, 1, 0,
+      ],
+    },
+    {
+      label: 'PEPE',
+      topics: 'pepe,apu,frens,gambling,bonk',
+      description:
+        'The key topics currently being discussed in the crypto community on Twitter include the rise of $PEPE as a popular cryptocurrency, with some users believing it will have strong upside potential. There is also mention of Mpeppe (MPEPE) and its potential for decentralized gambling utility and long-term gains, attracting investors. Additionally, there is speculation about $PORK flipping $PEPE again soon, and the comparison of $KLAUS to Pepe the Frog as a potential meme coin. Overall, the sentiment towards $PEPE and related cryptocurrencies seems positive and optimistic.',
+      data: [
+        1, 3, 2, 2, 0, 0, 4, 0, 0, 2, 7, 4, 3, 2, 1, 1, 1, 1, 3, 6, 2, 3, 2, 1, 6, 0, 0, 3, 0, 0, 1,
+        5, 3, 6, 4, 2, 24, 3, 4, 1, 1, 0, 4, 2, 0, 0, 4, 0, 2, 0, 1, 1, 1, 1, 0,
+      ],
+    },
+    {
+      label: 'China',
+      topics: 'china,chinese,measures,minister,bloomberg',
+      description:
+        "The key topics currently being discussed on social media regarding China's big stimulus reveal include:\n- The impact of China's $58,888 \"Good Luck\" higher low on Bitcoin\n- USDT facing pressure as investors pivot to stocks in China\n- China potentially dumping $1.3 billion in ETH from PlusToken seizure\n- China looking to tax ultra-rich individuals overseas\n- China issuing 2.3 trillion Yuan in special bonds to boost economy\n- Speculation about a 2-3 trillion Yuan stimulus package on the horizon\n- Positive impact on the crypto asset class due to expanding liquidity in China\n- Market disappointment over lack of concrete additional stimulus from China's Finance Ministry\n- Security concerns for Chinese personnel in Pakistan following a suicide bomb attack\n\nOverall, the discussions highlight the significant influence of China's economic policies and stimulus measures on global markets, particularly in the cryptocurrency and financial sectors.",
+      data: [
+        4, 2, 2, 1, 1, 1, 4, 2, 1, 8, 1, 2, 2, 2, 1, 1, 1, 7, 1, 1, 1, 3, 1, 3, 0, 7, 6, 3, 1, 3, 6,
+        1, 1, 1, 1, 3, 6, 2, 2, 1, 4, 2, 1, 1, 2, 7, 6, 2, 1, 1, 1, 1, 0, 2, 0,
+      ],
+    },
+    {
+      label: 'SOL',
+      topics: 'ethena,sol,solanas,150,solana',
+      description:
+        'Based on the messages from Twitter, it seems that there is a lot of discussion and excitement surrounding the cryptocurrency $SOL (Solana). Some key points mentioned include the rapid changes in the metas of $SOL "shitcoins", the potential for $SOL to reach $300, and the comparison of $SOL to other cryptocurrencies like $ETH (Ethereum) and $BTC (Bitcoin).\n\nThere is also mention of upcoming launches and developments within the Solana ecosystem, such as the launch of @Yeve_fi and the potential for $SOL to outperform other cryptocurrencies in the future. Additionally, there is speculation about the price of $SOL potentially reaching $1000 and the impact of political events, such as the potential for $SOL to increase in price if Trump wins the election.\n\nOverall, it seems that there is a lot of optimism and bullish sentiment surrounding $SOL within the crypto community, with discussions about potential price movements, partnerships, and developments within the Solana ecosystem.',
+      data: [
+        1, 3, 1, 0, 0, 0, 1, 2, 1, 0, 5, 3, 0, 1, 0, 1, 4, 3, 3, 2, 0, 1, 0, 7, 2, 2, 1, 2, 1, 7, 2,
+        0, 1, 0, 1, 2, 0, 6, 3, 8, 2, 3, 0, 11, 13, 2, 4, 0, 1, 1, 3, 2, 4, 3, 1,
+      ],
+    },
+    {
+      label: 'CPI',
+      topics: 'inflation,cpi,yoy,expectations,fed',
+      description:
+        'Inflation is a hot topic on social media, with discussions ranging from the impact on consumer purchasing power to its effect on political decisions. People are expressing concern about rising inflation rates and the potential consequences for the economy. Some are turning to alternative assets like Bitcoin as a hedge against inflation. Overall, the sentiment towards inflation seems to be one of caution and uncertainty.',
+      data: [
+        1, 1, 3, 2, 0, 1, 1, 3, 1, 2, 0, 4, 0, 4, 1, 2, 3, 3, 4, 1, 1, 3, 1, 1, 2, 28, 1, 2, 0, 0,
+        2, 0, 0, 2, 3, 2, 3, 2, 2, 2, 1, 1, 0, 2, 3, 2, 3, 1, 2, 2, 2, 3, 1, 7, 3,
+      ],
+    },
+    {
+      label: 'ETF Flows',
+      topics: 'inflow,inflows,net,etfs,fbtc',
+      description:
+        'The key topic discussed in the messages from Twitter is the significant increase in inflows into U.S. spot Bitcoin ETFs. The messages highlight the large amounts of money flowing into these ETFs, with one message mentioning nearly $1 billion flowing in over just two days. The messages also compare the inflows into Bitcoin ETFs versus Ethereum ETFs, noting the disparity in amounts. Additionally, there is mention of potential market implications, such as the possibility of a local top when Bitcoin ETF inflows peak. Overall, the messages indicate a strong interest and investment in Bitcoin ETFs, with some suggesting this could be a game changer for the crypto landscape.',
+      data: [
+        1, 1, 0, 4, 18, 3, 3, 4, 1, 2, 0, 0, 3, 1, 1, 1, 7, 1, 0, 0, 1, 0, 1, 0, 1, 3, 0, 1, 0, 0,
+        5, 0, 0, 4, 1, 2, 0, 0, 0, 1, 0, 2, 4, 2, 28, 2, 0, 0, 1, 5, 0, 3, 0, 2, 5,
+      ],
+    },
+    {
+      label: 'SHIB',
+      topics: 'shiba,inu,shib,shibainu,anticipated',
+      description:
+        'The key topics currently discussed on Twitter in the crypto industry include the rivalry between Shiba Inu ($SHIB) and Dogecoin ($DOGE), with mentions of Tesla backing Dogecoin and DeLorean Motors potentially supporting Shiba Inu. There is also discussion about the arrest of the Saitama Inu dev and the potential impact on other meme coins like Hokkaidu Inu, Kendu Inu, Kishu Inu, and more. Additionally, there are predictions about the future targets for cryptocurrencies like Pepe ($PEPE) and Arbitrum ($ARB) in 2024. Overall, the crypto community on Twitter is actively engaged in discussing these various topics and developments in the industry.',
+      data: [
+        0, 1, 0, 1, 0, 0, 3, 5, 1, 1, 2, 0, 0, 0, 1, 0, 2, 2, 0, 0, 1, 0, 0, 3, 1, 1, 26, 4, 2, 1,
+        0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 0, 0, 0, 19, 1, 0, 1, 0, 3, 0, 0, 1, 0, 2, 0,
+      ],
+    },
+  ],
+}

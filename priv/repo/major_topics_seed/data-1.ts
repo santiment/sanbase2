@@ -1,0 +1,111 @@
+export const NARRATIVES = {
+  labels: [
+    'Jul 28, 20:54',
+    'Jul 29, 01:10',
+    'Jul 29, 05:20',
+    'Jul 29, 09:31',
+    'Jul 29, 13:41',
+    'Jul 29, 17:52',
+    'Jul 30, 22:02',
+    'Jul 30, 02:12',
+    'Jul 30, 06:23',
+    'Jul 30, 10:33',
+    'Jul 30, 14:44',
+    'Jul 30, 18:54',
+    'Jul 31, 23:05',
+    'Jul 31, 03:15',
+    'Jul 31, 07:25',
+    'Jul 31, 11:36',
+    'Jul 31, 15:46',
+    'Jul 31, 19:57',
+    'Aug 01, 00:07',
+    'Aug 01, 04:17',
+    'Aug 01, 08:28',
+    'Aug 01, 12:38',
+    'Aug 01, 16:49',
+  ],
+
+  datasets: [
+    {
+      // 10
+      label: 'Curve and Vyper exploit',
+      topics: 'exploit,vyper,curv,pool,vulner',
+      data: [25, 15, 10, 6, 12, 16, 5, 15, 15, 11, 12, 14, 24, 4, 24, 2, 14, 14, 11, 4, 28, 16, 11],
+      description: `BNB Smart Chain exploit: There is an ongoing discussion about an exploit on the BNB Smart Chain, which is attributed to a flaw in the Vyper programming language. This is compared to previous security breaches on Ethereum. `,
+    },
+    {
+      // 12
+      label: 'Cardano',
+      topics: 'xrp,ada,rippl,cardano,xlm',
+      data: [
+        18, 10, 7, 13, 7, 13, 13, 12, 13, 18, 10, 10, 12, 12, 12, 10, 14, 8, 13, 12, 16, 7, 12,
+      ],
+      description: `Based on the messages from social media, it appears that there is a lot of discussion and interest in ADA (Cardano) within the crypto community. The messages mention various hashtags related to ADA, such as #ADA, #ADAUSD, and #ADAUSDT, indicating that there is active trading and speculation surrounding the cryptocurrency. One message highlights a crypto analyst''s expectation that Cardano will "absolutely explode" in the next bull market, suggesting a positive outlook for ADA''s future performance. Additionally, there are mentions of significant amounts of ADA being moved to Single Pool Operators (SPF0) from Multi-Pool Operators, which is seen as a positive development for the network''s decentralization and the value proposition of ADA. Overall, the messages indicate a positive sentiment towards ADA, with discussions focusing on its potential for growth and its role within the Cardano community.`,
+    },
+    {
+      // 22
+      label: 'NFT',
+      topics: 'nfts,nft,litit,skelaz,web',
+      data: [9, 5, 12, 9, 10, 5, 6, 11, 8, 8, 10, 7, 10, 4, 5, 6, 4, 5, 12, 7, 8, 7, 9],
+      description: `From analyzing social media accounts and communities related to the crypto industry, the key topics currently being discussed include Web3, Crypto, and NFTs. When people hear the word NFT, they think about various things such as litit, skelaz, web, aiart, neon, collect, art, and nftcommun. Additionally, there is a question about what true leadership looks like to individuals.`,
+    },
+    {
+      // 24
+      label: "Curve founder's loan",
+      topics: 'crv,curv,loan,egorov,founder',
+      data: [5, 15, 8, 2, 7, 5, 5, 8, 10, 6, 10, 8, 8, 5, 12, 3, 1, 15, 3, 5, 14, 10, 8],
+      description: `According to the messages from various social media platforms, there are discussions about the cryptocurrency $CRV and its founder''s involvement in taking loans. It is mentioned that the founder of Curve, the protocol associated with $CRV, has taken loans with AAVE, which puts both AAVE and $CRV at risk. However, it is noted that AAVE has a security fund that is sufficient to remain solvent, so the main risk lies with $CRV. The founder has reportedly cashed out after selling $CRV to eager buyers and has repaid $9.2 million in Aave loans. Despite this repayment, there are still concerns and risks associated with the loan renegotiation and potential interest liability. `,
+    },
+    {
+      // 25
+      label: 'Litecoin halving',
+      topics: 'halv,litecoin,ltc,litecoinhalv,countdown',
+      data: [12, 7, 6, 5, 5, 5, 9, 10, 13, 8, 7, 5, 5, 9, 8, 6, 12, 7, 8, 7, 3, 7, 7],
+      description: `The Litecoin halving is scheduled to occur in 3 days, and there is speculation about whether it will lead to a small bull run. The halving refers to the reduction in block rewards given to miners or pools when a Litecoin block is solved. This event is predetermined in the Litecoin protocol. In other crypto news, there have been halvings for Litecoin (LTC) and HNT, as well as updates on Steam Exchange, BabyDogeCoin token burn, and more. Overall, there is anticipation and excitement surrounding the upcoming Litecoin halving, and it is being discussed in various social media platforms such as Twitter.`,
+    },
+    {
+      // 27
+      label: 'BASE and meme coins',
+      topics: 'bald,meme,pepemo,memecoin,base',
+      data: [9, 7, 7, 2, 5, 9, 4, 12, 7, 8, 4, 12, 8, 10, 5, 2, 6, 7, 6, 3, 8, 9, 9],
+      description: `Based on the messages provided, there are several key topics being discussed in the crypto industry: 1. "Base" - There is a mention of "Base chain" and a reference to "BuildOnBase." It seems that there are interesting developments happening with Base, possibly related to the launch of a decentralized exchange (DEX) by SushiSwap. 2. Meme Coins - The messages mention meme coins and question whether they are good or bad. There is also a video suggested to learn about what people have been doing wrong with meme coins, indicating that people may be losing money on them. 3. Buying the Dip - There is a mention of waiting for the dip before buying, suggesting a strategy of purchasing assets when their prices are lower. 4. Interesting Developments - The messages hint at interesting developments happening with Base and SushiSwap, possibly related to the launch of a DEX. Overall, the messages indicate a focus on investment opportunities, particularly in relation to Base, meme coins, and potential ticker symbols. There is also a suggestion to watch a video to learn more about investing in meme coins.`,
+    },
+    {
+      // 2
+      label: 'SEC: Ripple and Terraform Labs',
+      topics: 'sec,coinbas,richard,heart,delist',
+      data: [32, 32, 19, 6, 13, 27, 11, 9, 22, 28, 12, 23, 31, 7, 31, 6, 11, 24, 9, 8, 30, 34, 28],
+      description: `The ruling found that crypto "falls far short" of having the significance needed for Congress to review regulation. This ruling is considered to have a high impact on the crypto industry. The judge presiding over the SEC/Terraform Labs case rejected the approach taken in the Ripple ruling. There is speculation about whether Ripple actually won the SEC lawsuit and if there is clarity with XRP. A bankruptcy judge has signed off on an order allowing Terraform Labs to subpoena FTX entities. U.S. Judge Jed Rakoff rejects the SEC''s Ripple approach in the Terraform Labs case. Gary Gensler, the SEC chairman, remains ignorant of cryptocurrency but raises some valid points. There is a lawsuit against a biotech company regarding the unauthorized use of a sample taken from Henrietta Lacks. Gary Gensler, dodging a response to the Ripple judgment, chose a different narrative. There have been two major crypto bills that have had success in the US Congress. The SEC has sued a crypto founder for using funds on luxury purchases. There is a bankruptcy tussle between crypto firms FTX and Genesis that is nearing resolution.`,
+    },
+    {
+      // 30
+      label: 'SHIB perspectives',
+      topics: 'shibarium,shib,shiba,inu,bone',
+      data: [3, 2, 5, 12, 8, 2, 13, 4, 8, 5, 2, 6, 10, 7, 7, 12, 3, 8, 7, 9, 6, 2, 8],
+      description: `Based on the given messages and the set of words, it appears that the key topics being discussed are the burning of $SHIB tokens, and the potential growth of $SHIB in comparison to other cryptocurrencies like $BTC and $ETH. The burning of $SHIB tokens is highlighted, with a mention of a 2 billion $SHIB burn in July. This burning process seems to have positively impacted the profitability of $SHIB, as it has gained more than 8% in the last 7 days, outperforming $BTC and $ETH. The message also raises the question of whether $SHIB, as the second biggest memecoin, will be able to enter the top 10 club soon. This suggests that there is speculation and interest in the potential growth and success of $SHIB. Overall, the key topics discussed in the social media messages revolve around the burning of $SHIB tokens, and the potential growth of $SHIB in the cryptocurrency market.`,
+    },
+    {
+      // 31
+      label: 'HEX and Richard Heart',
+      topics: 'pulsechain,hex,pls,plsx,hexican',
+      data: [4, 12, 8, 3, 4, 5, 6, 5, 10, 9, 1, 10, 7, 5, 13, 3, 3, 11, 1, 2, 7, 7, 12],
+      description: `The social media messages analyzed include discussions about the crypto industry, specifically focusing on topics related to PulseChain, HEX, PLS, PLSX, HEXican, RichardHeart, PulseX, Puls, dip, and ehex. Additionally, there is a mention of an upcoming discussion about RichardHeart, HEX, and PulseChain on a big screen at RegalMovies.`,
+    },
+    {
+      // 34
+      label: 'Trump, DeSantis and GOP',
+      topics: 'trump,desanti,gop,candid,ron',
+      data: [2, 4, 12, 4, 5, 3, 2, 5, 5, 12, 9, 11, 7, 2, 3, 2, 2, 8, 5, 7, 5, 12, 10],
+      description: `Based on the given messages from social media platforms, here are the key topics discussed: 1. Republican candidate wants to end President Biden''s supposed ''war on Bitcoin'' if elected: Gov. Ron DeSantis (R-FL) expressed his intention to end President Biden''s perceived negative stance on Bitcoin and cryptocurrency if he becomes president. 2. #DonaldTrump indicted for his attempts to overturn the 2020 presidential election: There are allegations and claims suggesting that former President Donald Trump was involved in and instructed attempts to defraud the 2020 presidential election. 3. Republicans are very unserious: There is a statement implying that Republicans are not serious or lack seriousness in their actions or approach. 4. Republicans stay 🚩: The use of an emoji suggests that Republicans are being watched or monitored closely. 5. Republicans = Russians 🚩: There is an insinuation or claim that Republicans are equivalent to Russians, possibly implying a connection or similarity between the two. 6. Insider: Perry Johnson giving out gas cards to get on GOP debate stage: There is a report about Republican presidential candidate Perry Johnson distributing gas cards as a means to secure a place on the GOP debate stage. Overall, the discussions revolve around Republican candidates, their stance on Bitcoin, allegations against former President Donald Trump, and some negative perceptions or claims about Republicans in general.`,
+    },
+    {
+      // 36
+      label: 'BALD being rugged',
+      topics: 'bald,rug,shitcoin,pull,hair',
+      data: [4, 11, 3, 1, 5, 4, 3, 8, 9, 3, 3, 8, 14, 4, 5, 3, 5, 8, 6, 6, 6, 5, 9],
+      description: `The social media messages analyzed include discussions about a cryptocurrency called Bald ($BALD). There is mention of the coin being rugged, possibly created by @SBF_FTX, and speculation about it being a direct shot at someone''s bad hair. There is also a brief description of Bald as a stablecoin launched in 2022, designed to be tied to an external value like gold or the US dollar, and the recent disturbances it has faced.`,
+    },
+  ].map((v, i) => {
+    return { ...v, i }
+  }),
+}

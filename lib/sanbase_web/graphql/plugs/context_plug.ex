@@ -35,6 +35,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       |> Map.put(:rate_limiting_enabled, Config.module_get(__MODULE__, :rate_limiting_enabled))
       |> Map.put(:device_data, SanbaseWeb.Guardian.device_data(conn))
       |> Map.put(:jwt_tokens, conn_to_jwt_tokens(conn))
+      |> Map.put(:request_context, conn.assigns[:request_context])
       |> Map.delete(:new_access_token)
 
     put_private(conn, :absinthe, %{context: context})

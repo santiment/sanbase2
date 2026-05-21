@@ -11,14 +11,18 @@ defmodule Sanbase.Accounts do
   entries are masked or suppressed. Used to honor NDAs with privacy-
   sensitive customers (e.g. hedge funds).
   """
+  # Hot path: `privacy_protected?/1` is invoked on every cache key, every
+  # ClickHouse query, every Kafka api_call export, every MCP tool call.
+  # Build the MapSet once at compile time so each check is a single
+  # `MapSet.member?/2` with no per-call allocation.
+  @protected_user_ids MapSet.new(1..10)
+
   @spec privacy_protected_user_ids() :: MapSet.t(non_neg_integer())
-  def privacy_protected_user_ids do
-    1..10 |> Enum.to_list() |> MapSet.new()
-  end
+  def privacy_protected_user_ids, do: @protected_user_ids
 
   @spec privacy_protected?(non_neg_integer() | nil) :: boolean()
   def privacy_protected?(user_id) when is_integer(user_id) do
-    MapSet.member?(privacy_protected_user_ids(), user_id)
+    MapSet.member?(@protected_user_ids, user_id)
   end
 
   def privacy_protected?(_), do: false

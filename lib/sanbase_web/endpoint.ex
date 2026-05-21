@@ -66,6 +66,7 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   plug(Plug.RequestId)
+  plug(SanbaseWeb.Plug.RequestContextPlug)
   plug(Plug.Logger)
 
   # This plug should be placed before Plug.Parsers because it is reading the

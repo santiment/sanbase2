@@ -7,8 +7,11 @@ defmodule Sanbase.Clickhouse.Query do
   the ClickHouse specific SETTINGS to the query.
   """
   alias Sanbase.Clickhouse.Query.Environment
+  alias Sanbase.RequestContext
 
-  defstruct [:sql, :parameters, :log_comment, :leading_comments, :environment]
+  require Logger
+
+  defstruct [:sql, :parameters, :log_comment, :leading_comments, :environment, :context]
 
   @type sql :: String.t()
   @type parameters :: Map.t()
@@ -18,7 +21,8 @@ defmodule Sanbase.Clickhouse.Query do
           parameters: parameters(),
           log_comment: map() | nil,
           leading_comments: [],
-          environment: Environment.t()
+          environment: Environment.t(),
+          context: RequestContext.t() | nil
         }
 
   @doc ~s"""
@@ -45,7 +49,8 @@ defmodule Sanbase.Clickhouse.Query do
       parameters: parameters,
       log_comment: Keyword.get(opts, :log_comment, %{}),
       environment: Keyword.get(opts, :environment, Environment.empty()),
-      leading_comments: Keyword.get(opts, :leading_comments, [])
+      leading_comments: Keyword.get(opts, :leading_comments, []),
+      context: Keyword.get(opts, :context)
     }
   end
 
@@ -220,10 +225,20 @@ defmodule Sanbase.Clickhouse.Query do
     %{query | sql: new_sql}
   end
 
-  defp add_settings(%{sql: sql, log_comment: log_comment} = query) do
+  defp add_settings(%{context: %RequestContext{} = ctx} = query) do
+    apply_settings(query, ctx.user_id, RequestContext.protected?(ctx))
+  end
+
+  defp add_settings(%{context: nil} = query) do
     user_id = current_user_id()
     hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
 
+    if hide_activity?, do: log_legacy_fallback()
+
+    apply_settings(query, user_id, hide_activity?)
+  end
+
+  defp apply_settings(%{sql: sql, log_comment: log_comment} = query, user_id, hide_activity?) do
     log_comment =
       cond do
         hide_activity? ->
@@ -257,15 +272,19 @@ defmodule Sanbase.Clickhouse.Query do
         parts -> "\nSETTINGS" <> Enum.join(parts, ",")
       end
 
-    sql = sql <> settings_str
-
-    %{query | sql: sql}
+    %{query | sql: sql <> settings_str}
   end
 
-  # The conn process puts the current user id in the Process dictionary via
-  # `SanbaseWeb.Graphql.AuthPlug`. Resolvers and inline absinthe code run
-  # in that same process so this works. Dataloader batches and any other
-  # spawned Task run in a *different* process, so they must seed the key
-  # explicitly — see `SanbaseWeb.Graphql.SanbaseDataloader.wrap_kv_fun/2`.
+  # Dataloader batches run in a fresh Task so the conn-process dict is
+  # not inherited. See `SanbaseWeb.Graphql.SanbaseDataloader.wrap_kv_fun/2`
+  # for the re-seed.
   defp current_user_id, do: Process.get(:__graphql_query_current_user_id__)
+
+  # 1% sampled, identity-free — must never include `user_id`, SQL, or
+  # any `Process.get/1` interpolation.
+  defp log_legacy_fallback do
+    if :rand.uniform(100) == 1 do
+      Logger.warning("Sanbase.Clickhouse.Query: add_settings legacy process-dict fallback hit")
+    end
+  end
 end

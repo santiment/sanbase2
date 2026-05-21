@@ -18,31 +18,36 @@ defmodule Sanbase.Logger.HideProtectedActivityFilter do
 
   def filter(_event, _extra), do: :ignore
 
-  defp absinthe_document_log?({:string, iodata}) do
-    starts_with_absinthe?(iodata)
-  end
+  defp absinthe_document_log?({:string, iodata}), do: iodata_starts_with_absinthe?(iodata)
 
   defp absinthe_document_log?({:report, %{report_cb: cb} = report}) when is_function(cb, 1) do
     case cb.(report) do
-      {format, args} when is_list(args) ->
-        starts_with_absinthe?(:io_lib.format(format, args))
-
-      _ ->
-        false
+      {format, args} when is_list(args) -> formatted_starts_with_absinthe?(format, args)
+      _ -> false
     end
   rescue
     _ -> false
   end
 
-  defp absinthe_document_log?({format, args}) when is_list(args) do
-    starts_with_absinthe?(:io_lib.format(format, args))
+  defp absinthe_document_log?({format, args}) when is_list(args),
+    do: formatted_starts_with_absinthe?(format, args)
+
+  defp absinthe_document_log?(_), do: false
+
+  defp formatted_starts_with_absinthe?(format, args) do
+    iodata_starts_with_absinthe?(:io_lib.format(format, args))
   rescue
     _ -> false
   end
 
-  defp absinthe_document_log?(_), do: false
+  # Most Absinthe log payloads are already a binary or a `[binary | _]`
+  # iodata starting with "ABSINTHE", so peek at the head before paying
+  # for a full `IO.iodata_to_binary/1` flatten.
+  defp iodata_starts_with_absinthe?("ABSINTHE" <> _), do: true
+  defp iodata_starts_with_absinthe?(bin) when is_binary(bin), do: false
+  defp iodata_starts_with_absinthe?(["ABSINTHE" <> _ | _]), do: true
 
-  defp starts_with_absinthe?(iodata) do
+  defp iodata_starts_with_absinthe?(iodata) do
     case IO.iodata_to_binary(iodata) do
       "ABSINTHE" <> _ -> true
       _ -> false

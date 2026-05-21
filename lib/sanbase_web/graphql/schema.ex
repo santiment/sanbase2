@@ -147,12 +147,11 @@ defmodule SanbaseWeb.Graphql.Schema do
   def context(ctx) do
     user_id =
       case ctx do
-        %{auth: %{current_user: %{id: id}}} -> id
+        %{request_context: %Sanbase.RequestContext{user_id: id}} -> id
         _ -> nil
       end
 
-    ctx
-    |> Map.put(:loader, dataloader(user_id))
+    Map.put(ctx, :loader, dataloader(user_id))
   end
 
   def plugins do

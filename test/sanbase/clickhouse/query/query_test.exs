@@ -5,6 +5,7 @@ defmodule Sanbase.Clickhouse.QueryTest do
 
   alias Sanbase.Accounts
   alias Sanbase.Clickhouse.Query
+  alias Sanbase.RequestContext
 
   @current_user_id_key :__graphql_query_current_user_id__
 
@@ -78,6 +79,75 @@ defmodule Sanbase.Clickhouse.QueryTest do
 
     test "anonymous user: user_id=0 in log_comment, no log_queries=0" do
       query = Query.new("SELECT 1", %{}, log_comment: %{some: "thing"})
+
+      {:ok, %{sql: sql}} = Query.get_sql_args(query)
+
+      refute sql =~ "log_queries=0"
+      assert sql =~ "\"user_id\":0"
+    end
+  end
+
+  describe "get_sql_args with explicit RequestContext" do
+    test "protected ctx wins even when process-dict says non-protected" do
+      # Process dict holds a non-protected user; explicit ctx says protected.
+      # The struct must take precedence — no consultation of the process
+      # dict on this code path.
+      Process.put(@current_user_id_key, 999_999)
+      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+
+      ctx = %RequestContext{
+        origin: :graphql,
+        user_id: protected_id,
+        privacy_protected: true
+      }
+
+      query =
+        Query.new("SELECT 1", %{},
+          context: ctx,
+          log_comment: %{stacktrace: ["a"], graphql_request_log_id: 1, keep_me: "ok"}
+        )
+
+      {:ok, %{sql: sql}} = Query.get_sql_args(query)
+
+      assert sql =~ "log_queries=0"
+      assert sql =~ "\"user_id\":#{protected_id}"
+      assert sql =~ "\"keep_me\":\"ok\""
+      refute sql =~ "stacktrace"
+      refute sql =~ "graphql_request_log_id"
+    end
+
+    test "non-protected ctx wins even when process-dict says protected" do
+      # Process dict holds a protected user; explicit ctx says safe. The
+      # struct must take precedence — this is the failure mode the
+      # migration exists to fix (stale Cowboy worker state).
+      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+      Process.put(@current_user_id_key, protected_id)
+
+      ctx = %RequestContext{
+        origin: :graphql,
+        user_id: 42_000,
+        privacy_protected: false
+      }
+
+      query =
+        Query.new("SELECT 1", %{},
+          context: ctx,
+          log_comment: %{stacktrace: ["a"], graphql_request_log_id: 1}
+        )
+
+      {:ok, %{sql: sql}} = Query.get_sql_args(query)
+
+      refute sql =~ "log_queries=0"
+      assert sql =~ "\"user_id\":42000"
+      assert sql =~ "stacktrace"
+    end
+
+    test "anonymous ctx (user_id nil) → user_id=0, no log_queries=0" do
+      query =
+        Query.new("SELECT 1", %{},
+          context: RequestContext.anonymous(:graphql),
+          log_comment: %{some: "thing"}
+        )
 
       {:ok, %{sql: sql}} = Query.get_sql_args(query)
 

@@ -42,6 +42,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Chart.Configuration.SharedAccessToken
+  alias Sanbase.RequestContext
   alias Sanbase.Utils.Config
 
   defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
@@ -75,40 +76,36 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   def init(opts), do: opts
 
   def call(conn, _) do
-    # Cowboy worker processes are reused across requests. Clear request-
-    # scoped state from the previous request before authenticating the new
-    # one, otherwise the privacy filter / log_comment / log_queries=0 path
-    # could read a stale `user_id` belonging to the previous caller.
-    Process.delete(:__graphql_query_current_user_id__)
-    Logger.metadata(user_id: nil, hide_user_activity: nil)
-
     conn = conn |> put_private(:origin_url_map, get_origin(conn))
 
     case authenticate(conn, @authentication_methods) do
       {:ok, %AuthStruct{} = auth_struct} ->
         auth_struct = augment_auth(auth_struct, conn)
+        conn = put_private(conn, :san_authentication, Map.from_struct(auth_struct))
+        ctx = RequestContext.from_conn(conn)
 
         case auth_struct do
           %{auth: %{current_user: %{id: user_id}}} ->
             Process.put(:__graphql_query_current_user_id__, user_id)
-            Logger.metadata(user_id: user_id)
-            # Populate Sentry user context so the `before_send` scrubber can
-            # detect protected users and strip the GraphQL document /
-            # variables that `Sentry.PlugContext` captured before this plug
-            # ran. See `Sanbase.Sentry.Scrubber`.
+            # Sentry user context drives `Sanbase.Sentry.Scrubber` —
+            # `Sentry.PlugContext` captured the raw body before this plug
+            # ran, so the scrubber needs the user id to decide whether
+            # to mask the GraphQL document at send time.
             Sentry.Context.set_user_context(%{id: user_id})
 
-            if Sanbase.Accounts.privacy_protected?(user_id) do
-              Logger.metadata(hide_user_activity: true)
-            end
+            Logger.metadata(
+              user_id: user_id,
+              request_context: ctx,
+              hide_user_activity: RequestContext.protected?(ctx) || nil
+            )
 
           _ ->
-            Logger.metadata(user_id: "anonymous")
+            Logger.metadata(user_id: "anonymous", request_context: ctx)
         end
 
         conn
         |> maybe_put_new_access_token(auth_struct)
-        |> put_private(:san_authentication, Map.from_struct(auth_struct))
+        |> assign(:request_context, ctx)
 
       {:error, error_msg} ->
         conn

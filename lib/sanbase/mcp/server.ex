@@ -178,11 +178,6 @@ defmodule Sanbase.MCP.Server do
     client_info = frame.context.client_info
     %{user_agent: ua, session_id: sid, client: client} = request_context(headers, client_info)
 
-    # `Sanbase.MCP.Privacy.mask_attrs/1` later replaces tool_name / params /
-    # error_message / user_agent / client with the masked sentinel (or nil)
-    # for users in the privacy-protected set. The shape of activity
-    # (counts, durations, success flag) is preserved so we can still bill
-    # / rate-limit / measure usage without revealing what was queried.
     %{
       user_id: if(user, do: user.id),
       tool_name: tool_name,

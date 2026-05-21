@@ -271,12 +271,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
   end
 
-  @doc false
-  # Public for tests only. Builds the per-query records that are exported
-  # to the `api_call_exporter` Kafka topic. For users in
-  # `Sanbase.Accounts.privacy_protected_user_ids/0` the GraphQL query
-  # name, selector and version fields are replaced with the masked
-  # sentinel so the exported data does not reveal what was queried.
+  @doc """
+  Builds the per-query records exported to the `api_call_exporter` Kafka
+  topic. For privacy-protected users the GraphQL query name, selector,
+  and version are replaced with `Sanbase.Accounts.masked_sentinel/0`.
+  """
   def build_export_records(query_metadata) do
     user_id = query_metadata.caller_data.user_id
     hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)

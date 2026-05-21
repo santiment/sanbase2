@@ -13,29 +13,32 @@ defmodule Sanbase.Sentry.Scrubber do
 
   alias Sanbase.Accounts
   alias Sentry.Event
-  alias Sentry.Interfaces.{Breadcrumb, Request}
+  alias Sentry.Interfaces.Request
 
-  @scrubbed_request_keys ~w(query variables operationName operation_name)
+  # Pre-interned at compile time. Sentry events can carry GraphQL
+  # request fields under either string or atom keys depending on which
+  # body parser produced them; we mask both forms without ever calling
+  # `String.to_atom/1` on runtime input.
+  @scrubbed_request_keys [
+    {"query", :query},
+    {"variables", :variables},
+    {"operationName", :operationName},
+    {"operation_name", :operation_name}
+  ]
 
   @spec before_send(Event.t()) :: Event.t()
   def before_send(%Event{} = event) do
-    case protected_user_id(event) do
-      nil -> event
-      _id -> scrub(event)
-    end
+    if protected?(event), do: scrub(event), else: event
   end
 
-  defp protected_user_id(%Event{user: user}) when is_map(user) do
+  defp protected?(%Event{user: %{} = user}) do
     case Map.get(user, :id) || Map.get(user, "id") do
-      id when is_integer(id) ->
-        if Accounts.privacy_protected?(id), do: id, else: nil
-
-      _ ->
-        nil
+      id when is_integer(id) -> Accounts.privacy_protected?(id)
+      _ -> false
     end
   end
 
-  defp protected_user_id(_), do: nil
+  defp protected?(_), do: false
 
   defp scrub(%Event{} = event) do
     %{
@@ -54,10 +57,10 @@ defmodule Sanbase.Sentry.Scrubber do
   defp scrub_request_data(data) do
     masked = Accounts.masked_sentinel()
 
-    Enum.reduce(@scrubbed_request_keys, data, fn key, acc ->
+    Enum.reduce(@scrubbed_request_keys, data, fn {string_key, atom_key}, acc ->
       cond do
-        Map.has_key?(acc, key) -> Map.put(acc, key, masked)
-        Map.has_key?(acc, String.to_atom(key)) -> Map.put(acc, String.to_atom(key), masked)
+        Map.has_key?(acc, string_key) -> Map.put(acc, string_key, masked)
+        Map.has_key?(acc, atom_key) -> Map.put(acc, atom_key, masked)
         true -> acc
       end
     end)
@@ -68,9 +71,6 @@ defmodule Sanbase.Sentry.Scrubber do
   end
 
   defp scrub_breadcrumbs(other), do: other
-
-  defp absinthe_breadcrumb?(%Breadcrumb{message: msg}) when is_binary(msg),
-    do: String.starts_with?(msg, "ABSINTHE")
 
   defp absinthe_breadcrumb?(%{message: msg}) when is_binary(msg),
     do: String.starts_with?(msg, "ABSINTHE")

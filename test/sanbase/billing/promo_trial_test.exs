@@ -5,6 +5,7 @@ defmodule Sanbase.Billing.PromoTrialTest do
   import Mock
 
   alias Sanbase.Billing.Subscription.PromoTrial
+  alias Sanbase.Repo
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
 
@@ -43,6 +44,10 @@ defmodule Sanbase.Billing.PromoTrialTest do
       assert is_integer(args.trial_end)
       assert args.cancel_at == args.trial_end - 60
       assert args.customer == "cus_test_promo"
+
+      promo_trial = Repo.get_by(PromoTrial, user_id: context.user.id)
+      assert promo_trial.trial_days == 14
+      assert promo_trial.plans == ["Sanbase by Santiment / PRO (month)"]
     end
 
     test "passes cancel_at 60s before trial_end for single plan_id variant", context do
@@ -57,6 +62,10 @@ defmodule Sanbase.Billing.PromoTrialTest do
 
       assert_receive {:stripe_create_subscription, args}
       assert args.cancel_at == args.trial_end - 60
+
+      promo_trial = Repo.get_by(PromoTrial, user_id: context.user.id)
+      assert promo_trial.trial_days == 7
+      assert promo_trial.plans == ["Sanbase by Santiment / PRO (month)"]
     end
 
     test "string-keyed params variant also sets cancel_at 60s before trial_end", context do
@@ -71,6 +80,31 @@ defmodule Sanbase.Billing.PromoTrialTest do
 
       assert_receive {:stripe_create_subscription, args}
       assert args.cancel_at == args.trial_end - 60
+
+      promo_trial = Repo.get_by(PromoTrial, user_id: context.user.id)
+      assert promo_trial.trial_days == 30
+      assert promo_trial.plans == ["Sanbase by Santiment / PRO (month)"]
+    end
+
+    test "persists one promo_trials row for multiple plans", context do
+      sanbase_plan = context.plans.plan_pro_sanbase
+      api_plan = context.plans.plan_pro
+
+      assert {:ok, subscriptions} =
+               PromoTrial.create_promo_trial(%{
+                 user_id: context.user.id,
+                 plans: [sanbase_plan.id, api_plan.id],
+                 trial_days: 14
+               })
+
+      assert length(subscriptions) == 2
+      assert Repo.aggregate(PromoTrial, :count, :id) == 1
+
+      promo_trial = Repo.get_by(PromoTrial, user_id: context.user.id)
+      assert promo_trial.trial_days == 14
+      assert length(promo_trial.plans) == 2
+      assert "Sanbase by Santiment / PRO (month)" in promo_trial.plans
+      assert "Sanapi by Santiment / PRO (month)" in promo_trial.plans
     end
 
     test "trial_end timestamp roughly matches requested trial_days", context do

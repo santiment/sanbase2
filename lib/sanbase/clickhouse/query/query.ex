@@ -278,11 +278,11 @@ defmodule Sanbase.Clickhouse.Query do
   # Dataloader batches run in a fresh Task so the conn-process dict is
   # not inherited. See `SanbaseWeb.Graphql.SanbaseDataloader.wrap_kv_fun/2`
   # for the re-seed.
-  defp current_user_id, do: Process.get(:__graphql_query_current_user_id__)
+  defp current_user_id(), do: Process.get(:__graphql_query_current_user_id__)
 
   # 1% sampled, identity-free — must never include `user_id`, SQL, or
   # any `Process.get/1` interpolation.
-  defp log_legacy_fallback do
+  defp log_legacy_fallback() do
     if :rand.uniform(100) == 1 do
       Logger.warning("Sanbase.Clickhouse.Query: add_settings legacy process-dict fallback hit")
     end

@@ -261,6 +261,29 @@ defmodule Sanbase.MajorTopicsTest do
     end
   end
 
+  describe "previous/next_published_interval_start cursors with overlapping rolling windows" do
+    test "jumps ~7 days for week granularity instead of adjacent daily windows" do
+      user = insert(:user)
+
+      publish = fn interval ->
+        {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload_for(interval))
+        {:ok, _} = MajorTopics.publish_batch(batch, user.id)
+      end
+
+      publish.("2026-04-30T00:00:00/2026-05-07T00:00:00")
+      publish.("2026-05-07T00:00:00/2026-05-14T00:00:00")
+      publish.("2026-05-08T00:00:00/2026-05-15T00:00:00")
+
+      assert MajorTopics.previous_published_interval_start("week", ~D[2026-05-08]) ==
+               ~D[2026-04-30]
+
+      assert MajorTopics.previous_published_interval_start("week", ~D[2026-05-07]) ==
+               ~D[2026-04-30]
+
+      assert MajorTopics.next_published_interval_start("week", ~D[2026-05-07]) == ~D[2026-05-08]
+    end
+  end
+
   describe "BatchSerializer.to_payload/1,2" do
     test "produces labels + datasets shape aligned on the union of dts" do
       user = insert(:user)

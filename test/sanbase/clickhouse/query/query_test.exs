@@ -1,9 +1,10 @@
 defmodule Sanbase.Clickhouse.QueryTest do
   # Not async — these tests manipulate the process-dictionary user-id key
   # that production code also consults to apply privacy SETTINGS.
-  use ExUnit.Case, async: false
+  use Sanbase.DataCase, async: false
 
-  alias Sanbase.Accounts
+  import Sanbase.Factory
+
   alias Sanbase.Clickhouse.Query
   alias Sanbase.RequestContext
 
@@ -12,7 +13,12 @@ defmodule Sanbase.Clickhouse.QueryTest do
   setup do
     Process.delete(@current_user_id_key)
     on_exit(fn -> Process.delete(@current_user_id_key) end)
-    :ok
+
+    protected = insert(:user)
+    unprotected = insert(:user)
+    Sanbase.PrivacyCacheSeed.seed!([protected.id])
+
+    {:ok, protected: protected, unprotected: unprotected}
   end
 
   test "interpolate replaces named placeholders from params map" do
@@ -38,9 +44,9 @@ defmodule Sanbase.Clickhouse.QueryTest do
   end
 
   describe "get_sql_args privacy settings" do
-    test "appends log_queries=0 and strips stacktrace / graphql_request_log_id for protected users" do
-      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
-      Process.put(@current_user_id_key, protected_id)
+    test "appends log_queries=0 and strips stacktrace / graphql_request_log_id for protected users",
+         %{protected: user} do
+      Process.put(@current_user_id_key, user.id)
 
       query =
         Query.new("SELECT 1", %{},
@@ -56,15 +62,13 @@ defmodule Sanbase.Clickhouse.QueryTest do
       assert sql =~ "log_queries=0"
       assert sql =~ "log_comment="
       assert sql =~ "\"keep_me\":\"ok\""
-      assert sql =~ "\"user_id\":#{protected_id}"
+      assert sql =~ "\"user_id\":#{user.id}"
       refute sql =~ "stacktrace"
       refute sql =~ "graphql_request_log_id"
     end
 
-    test "non-protected user: keeps log_comment as-is, no log_queries=0" do
-      protected = Accounts.activity_traces_hidden_user_ids()
-      outside = Enum.find(1_000..2_000, fn id -> not MapSet.member?(protected, id) end)
-      Process.put(@current_user_id_key, outside)
+    test "non-protected user: keeps log_comment as-is, no log_queries=0", %{unprotected: user} do
+      Process.put(@current_user_id_key, user.id)
 
       query =
         Query.new("SELECT 1", %{}, log_comment: %{stacktrace: ["a"], graphql_request_log_id: 7})
@@ -72,7 +76,7 @@ defmodule Sanbase.Clickhouse.QueryTest do
       {:ok, %{sql: sql}} = Query.get_sql_args(query)
 
       refute sql =~ "log_queries=0"
-      assert sql =~ "\"user_id\":#{outside}"
+      assert sql =~ "\"user_id\":#{user.id}"
       assert sql =~ "stacktrace"
       assert sql =~ "graphql_request_log_id"
     end
@@ -88,16 +92,18 @@ defmodule Sanbase.Clickhouse.QueryTest do
   end
 
   describe "get_sql_args with explicit RequestContext" do
-    test "protected ctx wins even when process-dict says non-protected" do
+    test "protected ctx wins even when process-dict says non-protected", %{
+      protected: protected,
+      unprotected: unprotected
+    } do
       # Process dict holds a non-protected user; explicit ctx says protected.
       # The struct must take precedence — no consultation of the process
       # dict on this code path.
-      Process.put(@current_user_id_key, 999_999)
-      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
+      Process.put(@current_user_id_key, unprotected.id)
 
       ctx = %RequestContext{
         origin: :graphql,
-        user_id: protected_id,
+        user_id: protected.id,
         activity_traces_hidden: true
       }
 
@@ -110,22 +116,24 @@ defmodule Sanbase.Clickhouse.QueryTest do
       {:ok, %{sql: sql}} = Query.get_sql_args(query)
 
       assert sql =~ "log_queries=0"
-      assert sql =~ "\"user_id\":#{protected_id}"
+      assert sql =~ "\"user_id\":#{protected.id}"
       assert sql =~ "\"keep_me\":\"ok\""
       refute sql =~ "stacktrace"
       refute sql =~ "graphql_request_log_id"
     end
 
-    test "non-protected ctx wins even when process-dict says protected" do
+    test "non-protected ctx wins even when process-dict says protected", %{
+      protected: protected,
+      unprotected: unprotected
+    } do
       # Process dict holds a protected user; explicit ctx says safe. The
       # struct must take precedence — this is the failure mode the
       # migration exists to fix (stale Cowboy worker state).
-      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
-      Process.put(@current_user_id_key, protected_id)
+      Process.put(@current_user_id_key, protected.id)
 
       ctx = %RequestContext{
         origin: :graphql,
-        user_id: 42_000,
+        user_id: unprotected.id,
         activity_traces_hidden: false
       }
 
@@ -138,7 +146,7 @@ defmodule Sanbase.Clickhouse.QueryTest do
       {:ok, %{sql: sql}} = Query.get_sql_args(query)
 
       refute sql =~ "log_queries=0"
-      assert sql =~ "\"user_id\":42000"
+      assert sql =~ "\"user_id\":#{unprotected.id}"
       assert sql =~ "stacktrace"
     end
 

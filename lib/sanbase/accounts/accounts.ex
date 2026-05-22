@@ -11,7 +11,7 @@ defmodule Sanbase.Accounts do
   `Sanbase.Accounts.ProtectedUser` for cache mechanics.
   """
   @spec activity_traces_hidden_user_ids() :: MapSet.t(non_neg_integer())
-  defdelegate activity_traces_hidden_user_ids, to: ProtectedUser
+  defdelegate activity_traces_hidden_user_ids(), to: ProtectedUser
 
   @spec activity_traces_hidden?(non_neg_integer() | nil) :: boolean()
   defdelegate activity_traces_hidden?(user_id), to: ProtectedUser
@@ -23,7 +23,7 @@ defmodule Sanbase.Accounts do
   recognize a masked row with a single equality check.
   """
   @spec masked_sentinel() :: String.t()
-  def masked_sentinel, do: "<masked>"
+  def masked_sentinel(), do: "<masked>"
 
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)

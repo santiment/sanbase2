@@ -20,7 +20,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
         :is_superuser,
         :san_balance,
         :metric_access_level,
-        :is_mcp_banned
+        :is_mcp_banned,
+        :are_activity_traces_hidden
       ],
       edit_fields: [
         :is_superuser,
@@ -198,6 +199,20 @@ defmodule SanbaseWeb.GenericAdmin.User do
           %{field_name: "mcp_banned_reason", data: user.mcp_banned_reason || "-"}
         ],
         actions: if(user.is_mcp_banned, do: [:mcp_unban_user], else: [:mcp_ban_user])
+      },
+      %{
+        name: "Activity Traces (NDA Privacy)",
+        fields: [
+          %{
+            field_name: "are_activity_traces_hidden",
+            data: inspect(user.are_activity_traces_hidden)
+          }
+        ],
+        actions:
+          if(user.are_activity_traces_hidden,
+            do: [:unhide_activity_traces_user],
+            else: [:hide_activity_traces_user]
+          )
       }
     ]
   end
@@ -234,6 +249,18 @@ defmodule SanbaseWeb.GenericAdmin.User do
   def mcp_unban_user(conn, %{id: id}) do
     {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
     User.mcp_unban!(user)
+    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
+  end
+
+  def hide_activity_traces_user(conn, %{id: id}) do
+    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
+    User.hide_activity_traces!(user)
+    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
+  end
+
+  def unhide_activity_traces_user(conn, %{id: id}) do
+    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
+    User.unhide_activity_traces!(user)
     GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
   end
 

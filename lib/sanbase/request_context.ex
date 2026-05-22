@@ -6,9 +6,9 @@ defmodule Sanbase.RequestContext do
 
   An instance is built once per request at the edge (HTTP `AuthPlug`,
   MCP `handle_invocation`, Oban worker entry) and threaded explicitly
-  through the call graph as a `:context` option. The `privacy_protected`
+  through the call graph as a `:context` option. The `activity_traces_hidden`
   flag is decided once at construction by calling
-  `Sanbase.Accounts.privacy_protected?/1`; downstream code never
+  `Sanbase.Accounts.activity_traces_hidden?/1`; downstream code never
   re-decides.
 
   See `PLAN.md` for the full migration. The struct is intentionally
@@ -21,7 +21,7 @@ defmodule Sanbase.RequestContext do
   defstruct [
     :origin,
     user_id: nil,
-    privacy_protected: false,
+    activity_traces_hidden: false,
     auth_method: nil,
     product_code: nil,
     request_id: nil,
@@ -31,7 +31,7 @@ defmodule Sanbase.RequestContext do
   @type origin :: :graphql | :mcp | :oban | :script | :system | :anonymous
   @type t :: %__MODULE__{
           user_id: non_neg_integer() | nil,
-          privacy_protected: boolean(),
+          activity_traces_hidden: boolean(),
           auth_method: atom() | nil,
           product_code: String.t() | nil,
           request_id: String.t() | nil,
@@ -39,9 +39,9 @@ defmodule Sanbase.RequestContext do
           origin: origin()
         }
 
-  @spec protected?(t() | term()) :: boolean()
-  def protected?(%__MODULE__{privacy_protected: v}), do: v
-  def protected?(_), do: false
+  @spec activity_traces_hidden?(t() | term()) :: boolean()
+  def activity_traces_hidden?(%__MODULE__{activity_traces_hidden: v}), do: v
+  def activity_traces_hidden?(_), do: false
 
   @spec from_conn(Plug.Conn.t()) :: t()
   def from_conn(%Plug.Conn{} = conn) do
@@ -52,7 +52,7 @@ defmodule Sanbase.RequestContext do
     %__MODULE__{
       origin: :graphql,
       user_id: user_id,
-      privacy_protected: Sanbase.Accounts.privacy_protected?(user_id),
+      activity_traces_hidden: Sanbase.Accounts.activity_traces_hidden?(user_id),
       auth_method: Map.get(auth, :auth_method),
       product_code: Map.get(auth_struct, :product_code),
       request_id: request_id_from_conn(conn),
@@ -66,24 +66,26 @@ defmodule Sanbase.RequestContext do
 
   @spec from_mcp_frame(map()) :: t()
   def from_mcp_frame(frame) do
-    user = get_in(frame, [Access.key(:assigns), :current_user])
+    assigns = Map.get(frame, :assigns, %{}) || %{}
+    context = Map.get(frame, :context, %{}) || %{}
+    headers = Map.get(context, :headers, []) || []
+    user = Map.get(assigns, :current_user)
     user_id = user && Map.get(user, :id)
-    headers = get_in(frame, [Access.key(:context), :headers]) || []
 
     %__MODULE__{
       origin: :mcp,
       user_id: user_id,
-      privacy_protected: Sanbase.Accounts.privacy_protected?(user_id),
+      activity_traces_hidden: Sanbase.Accounts.activity_traces_hidden?(user_id),
       auth_method: mcp_auth_method(headers),
       product_code: "SANAPI",
       request_id: mcp_request_id(headers),
-      remote_ip: nil
+      remote_ip: Map.get(context, :remote_ip) |> remote_ip_to_string()
     }
   end
 
   @spec anonymous(origin()) :: t()
   def anonymous(origin) when is_atom(origin) do
-    %__MODULE__{origin: origin, user_id: nil, privacy_protected: false}
+    %__MODULE__{origin: origin, user_id: nil, activity_traces_hidden: false}
   end
 
   @spec system(origin(), String.t()) :: t()
@@ -91,7 +93,7 @@ defmodule Sanbase.RequestContext do
     %__MODULE__{
       origin: origin,
       user_id: nil,
-      privacy_protected: false,
+      activity_traces_hidden: false,
       auth_method: :system,
       product_code: reason
     }

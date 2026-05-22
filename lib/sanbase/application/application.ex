@@ -47,7 +47,7 @@ defmodule Sanbase.Application do
     })
 
     # Drop GraphQL document logs (Absinthe.Logger.log_run/2 output) for users
-    # with NDA-protected activity. See Sanbase.Accounts.privacy_protected_user_ids/0.
+    # with NDA-protected activity. See Sanbase.Accounts.activity_traces_hidden_user_ids/0.
     :logger.add_primary_filter(
       :sanbase_hide_protected_activity,
       {&Sanbase.Logger.HideProtectedActivityFilter.filter/2, []}

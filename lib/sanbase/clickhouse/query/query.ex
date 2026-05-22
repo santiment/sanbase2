@@ -226,12 +226,12 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   defp add_settings(%{context: %RequestContext{} = ctx} = query) do
-    apply_settings(query, ctx.user_id, RequestContext.protected?(ctx))
+    apply_settings(query, ctx.user_id, RequestContext.activity_traces_hidden?(ctx))
   end
 
   defp add_settings(%{context: nil} = query) do
     user_id = current_user_id()
-    hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
+    hide_activity? = Sanbase.Accounts.activity_traces_hidden?(user_id)
 
     if hide_activity?, do: log_legacy_fallback()
 

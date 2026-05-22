@@ -8,8 +8,8 @@ defmodule Sanbase.RequestContextTest do
     test "builds a non-protected ctx tagged with the given origin" do
       ctx = RequestContext.anonymous(:graphql)
 
-      assert %RequestContext{origin: :graphql, user_id: nil, privacy_protected: false} = ctx
-      refute RequestContext.protected?(ctx)
+      assert %RequestContext{origin: :graphql, user_id: nil, activity_traces_hidden: false} = ctx
+      refute RequestContext.activity_traces_hidden?(ctx)
     end
 
     test "supports every documented origin" do
@@ -30,21 +30,24 @@ defmodule Sanbase.RequestContextTest do
                product_code: "backfill_job"
              } = ctx
 
-      refute RequestContext.protected?(ctx)
+      refute RequestContext.activity_traces_hidden?(ctx)
     end
   end
 
-  describe "protected?/1" do
-    test "true only for ctx with privacy_protected: true" do
-      assert RequestContext.protected?(%RequestContext{origin: :graphql, privacy_protected: true})
-
-      refute RequestContext.protected?(%RequestContext{
+  describe "activity_traces_hidden?/1" do
+    test "true only for ctx with activity_traces_hidden: true" do
+      assert RequestContext.activity_traces_hidden?(%RequestContext{
                origin: :graphql,
-               privacy_protected: false
+               activity_traces_hidden: true
              })
 
-      refute RequestContext.protected?(nil)
-      refute RequestContext.protected?(%{privacy_protected: true})
+      refute RequestContext.activity_traces_hidden?(%RequestContext{
+               origin: :graphql,
+               activity_traces_hidden: false
+             })
+
+      refute RequestContext.activity_traces_hidden?(nil)
+      refute RequestContext.activity_traces_hidden?(%{activity_traces_hidden: true})
     end
   end
 
@@ -65,7 +68,7 @@ defmodule Sanbase.RequestContextTest do
       assert ctx.auth_method == :apikey
       assert ctx.product_code == "SANAPI"
       assert ctx.remote_ip == "127.0.0.1"
-      refute ctx.privacy_protected
+      refute ctx.activity_traces_hidden
     end
 
     test "anonymous conn (no san_authentication) returns nil user_id, non-protected" do
@@ -74,11 +77,11 @@ defmodule Sanbase.RequestContextTest do
 
       assert ctx.origin == :graphql
       assert ctx.user_id == nil
-      refute ctx.privacy_protected
+      refute ctx.activity_traces_hidden
     end
 
-    test "privacy_protected set when user_id matches the protected set" do
-      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+    test "activity_traces_hidden set when user_id matches the protected set" do
+      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
 
       conn =
         Plug.Test.conn(:post, "/graphql")
@@ -90,8 +93,8 @@ defmodule Sanbase.RequestContextTest do
       ctx = RequestContext.from_conn(conn)
 
       assert ctx.user_id == protected_id
-      assert ctx.privacy_protected
-      assert RequestContext.protected?(ctx)
+      assert ctx.activity_traces_hidden
+      assert RequestContext.activity_traces_hidden?(ctx)
     end
 
     test "reads request_id from x-request-id resp header set by Plug.RequestId" do
@@ -130,7 +133,7 @@ defmodule Sanbase.RequestContextTest do
       assert ctx.origin == :mcp
       assert ctx.user_id == 77
       assert ctx.product_code == "SANAPI"
-      refute ctx.privacy_protected
+      refute ctx.activity_traces_hidden
     end
 
     test "anonymous (no current_user) → nil user_id, non-protected" do
@@ -139,17 +142,17 @@ defmodule Sanbase.RequestContextTest do
 
       assert ctx.origin == :mcp
       assert ctx.user_id == nil
-      refute ctx.privacy_protected
+      refute ctx.activity_traces_hidden
     end
 
-    test "privacy_protected for protected user_id" do
-      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+    test "activity_traces_hidden for protected user_id" do
+      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
       frame = %{assigns: %{current_user: %{id: protected_id}}, context: %{headers: []}}
 
       ctx = RequestContext.from_mcp_frame(frame)
 
       assert ctx.user_id == protected_id
-      assert ctx.privacy_protected
+      assert ctx.activity_traces_hidden
     end
 
     test "reads request_id from x-request-id / mcp-session-id headers" do

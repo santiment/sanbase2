@@ -104,6 +104,8 @@ defmodule Sanbase.Accounts.User do
     field(:mcp_banned_at, :utc_datetime)
     field(:mcp_banned_reason, :string)
 
+    field(:are_activity_traces_hidden, :boolean, default: false)
+
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
     has_one(:user_onboarding, UserOnboarding, on_delete: :delete_all)
 
@@ -186,7 +188,8 @@ defmodule Sanbase.Accounts.User do
       :twitter_handle,
       :is_mcp_banned,
       :mcp_banned_at,
-      :mcp_banned_reason
+      :mcp_banned_reason,
+      :are_activity_traces_hidden
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
@@ -264,6 +267,20 @@ defmodule Sanbase.Accounts.User do
       true -> true
       _ -> false
     end
+  end
+
+  def hide_activity_traces!(%__MODULE__{} = user) do
+    user
+    |> cast(%{are_activity_traces_hidden: true}, [:are_activity_traces_hidden])
+    |> Repo.update!()
+    |> tap(fn _ -> Sanbase.Accounts.ProtectedUser.refresh() end)
+  end
+
+  def unhide_activity_traces!(%__MODULE__{} = user) do
+    user
+    |> cast(%{are_activity_traces_hidden: false}, [:are_activity_traces_hidden])
+    |> Repo.update!()
+    |> tap(fn _ -> Sanbase.Accounts.ProtectedUser.refresh() end)
   end
 
   def atomic_update_registration_state(user_id, old_state, new_state, _opts \\ []) do

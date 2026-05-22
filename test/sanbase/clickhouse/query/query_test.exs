@@ -39,7 +39,7 @@ defmodule Sanbase.Clickhouse.QueryTest do
 
   describe "get_sql_args privacy settings" do
     test "appends log_queries=0 and strips stacktrace / graphql_request_log_id for protected users" do
-      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
       Process.put(@current_user_id_key, protected_id)
 
       query =
@@ -62,7 +62,7 @@ defmodule Sanbase.Clickhouse.QueryTest do
     end
 
     test "non-protected user: keeps log_comment as-is, no log_queries=0" do
-      protected = Accounts.privacy_protected_user_ids()
+      protected = Accounts.activity_traces_hidden_user_ids()
       outside = Enum.find(1_000..2_000, fn id -> not MapSet.member?(protected, id) end)
       Process.put(@current_user_id_key, outside)
 
@@ -93,12 +93,12 @@ defmodule Sanbase.Clickhouse.QueryTest do
       # The struct must take precedence — no consultation of the process
       # dict on this code path.
       Process.put(@current_user_id_key, 999_999)
-      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
 
       ctx = %RequestContext{
         origin: :graphql,
         user_id: protected_id,
-        privacy_protected: true
+        activity_traces_hidden: true
       }
 
       query =
@@ -120,13 +120,13 @@ defmodule Sanbase.Clickhouse.QueryTest do
       # Process dict holds a protected user; explicit ctx says safe. The
       # struct must take precedence — this is the failure mode the
       # migration exists to fix (stale Cowboy worker state).
-      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
       Process.put(@current_user_id_key, protected_id)
 
       ctx = %RequestContext{
         origin: :graphql,
         user_id: 42_000,
-        privacy_protected: false
+        activity_traces_hidden: false
       }
 
       query =

@@ -2,7 +2,7 @@ defmodule Sanbase.Sentry.Scrubber do
   @moduledoc """
   Sentry `before_send` callback that scrubs GraphQL document/variables and
   Absinthe breadcrumbs for users whose activity is privacy-protected
-  (see `Sanbase.Accounts.privacy_protected?/1`).
+  (see `Sanbase.Accounts.activity_traces_hidden?/1`).
 
   `Sentry.PlugContext` captures the raw HTTP request body before
   `SanbaseWeb.Graphql.AuthPlug` knows who the caller is, so the request
@@ -33,7 +33,7 @@ defmodule Sanbase.Sentry.Scrubber do
 
   defp protected?(%Event{user: %{} = user}) do
     case Map.get(user, :id) || Map.get(user, "id") do
-      id when is_integer(id) -> Accounts.privacy_protected?(id)
+      id when is_integer(id) -> Accounts.activity_traces_hidden?(id)
       _ -> false
     end
   end

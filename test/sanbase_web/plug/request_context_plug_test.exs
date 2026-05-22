@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Plug.RequestContextPlugTest do
     conn = Plug.Test.conn(:post, "/graphql")
     conn = RequestContextPlug.call(conn, [])
 
-    assert %RequestContext{origin: :graphql, user_id: nil, privacy_protected: false} =
+    assert %RequestContext{origin: :graphql, user_id: nil, activity_traces_hidden: false} =
              conn.assigns.request_context
   end
 end

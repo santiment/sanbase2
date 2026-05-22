@@ -1,7 +1,7 @@
 defmodule Sanbase.Logger.HideProtectedActivityFilter do
   @moduledoc """
   `:logger` filter that suppresses log entries containing the raw GraphQL
-  document for users in `Sanbase.Accounts.privacy_protected_user_ids/0`.
+  document for users in `Sanbase.Accounts.activity_traces_hidden_user_ids/0`.
 
   The filter is keyed on the `hide_user_activity` Logger metadata flag
   (set by `SanbaseWeb.Graphql.AuthPlug` for protected users) combined

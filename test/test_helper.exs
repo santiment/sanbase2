@@ -29,3 +29,12 @@ ExUnit.start()
 Faker.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(Sanbase.Repo, :manual)
+
+# Seed the privacy-masking cache with the legacy 1..10 range so existing tests
+# that `insert(:user, id: 1)` and then assert protection still work without
+# touching the DB. Individual tests that exercise the DB→cache path call
+# `Sanbase.Accounts.ProtectedUser.refresh/0` and restore this seed in on_exit.
+:persistent_term.put(
+  Sanbase.Accounts.ProtectedUser.cache_key(),
+  {MapSet.new(1..10), System.monotonic_time(:second)}
+)

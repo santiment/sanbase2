@@ -1,6 +1,6 @@
 defmodule Sanbase.Clickhouse.QueryTest do
-  # Not async — these tests manipulate the process-dictionary user-id key
-  # that production code also consults to apply privacy SETTINGS.
+  # Not async — these tests manipulate Logger.metadata that production code
+  # also consults to apply privacy SETTINGS.
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
@@ -8,11 +8,9 @@ defmodule Sanbase.Clickhouse.QueryTest do
   alias Sanbase.Clickhouse.Query
   alias Sanbase.RequestContext
 
-  @current_user_id_key :__graphql_query_current_user_id__
-
   setup do
-    Process.delete(@current_user_id_key)
-    on_exit(fn -> Process.delete(@current_user_id_key) end)
+    Logger.reset_metadata([])
+    on_exit(fn -> Logger.reset_metadata([]) end)
 
     protected = insert(:user)
     unprotected = insert(:user)
@@ -43,10 +41,16 @@ defmodule Sanbase.Clickhouse.QueryTest do
     assert Query.interpolate(sql, [42, "bitcoin", [1, 2]]) == "SELECT 42, 'bitcoin', [1,2]"
   end
 
-  describe "get_sql_args privacy settings" do
-    test "appends log_queries=0 and strips stacktrace / graphql_request_log_id for protected users",
+  describe "get_sql_args ambient context (Logger.metadata fallback)" do
+    test "protected user ctx in Logger.metadata triggers log_queries=0 and strips stacktrace / graphql_request_log_id",
          %{protected: user} do
-      Process.put(@current_user_id_key, user.id)
+      Logger.metadata(
+        request_context: %RequestContext{
+          origin: :graphql,
+          user_id: user.id,
+          activity_traces_hidden: true
+        }
+      )
 
       query =
         Query.new("SELECT 1", %{},
@@ -67,8 +71,15 @@ defmodule Sanbase.Clickhouse.QueryTest do
       refute sql =~ "graphql_request_log_id"
     end
 
-    test "non-protected user: keeps log_comment as-is, no log_queries=0", %{unprotected: user} do
-      Process.put(@current_user_id_key, user.id)
+    test "non-protected ctx in Logger.metadata: keeps log_comment as-is, no log_queries=0",
+         %{unprotected: user} do
+      Logger.metadata(
+        request_context: %RequestContext{
+          origin: :graphql,
+          user_id: user.id,
+          activity_traces_hidden: false
+        }
+      )
 
       query =
         Query.new("SELECT 1", %{}, log_comment: %{stacktrace: ["a"], graphql_request_log_id: 7})
@@ -81,7 +92,7 @@ defmodule Sanbase.Clickhouse.QueryTest do
       assert sql =~ "graphql_request_log_id"
     end
 
-    test "anonymous user: user_id=0 in log_comment, no log_queries=0" do
+    test "no ambient context: user_id=0 in log_comment, no log_queries=0" do
       query = Query.new("SELECT 1", %{}, log_comment: %{some: "thing"})
 
       {:ok, %{sql: sql}} = Query.get_sql_args(query)
@@ -92,14 +103,20 @@ defmodule Sanbase.Clickhouse.QueryTest do
   end
 
   describe "get_sql_args with explicit RequestContext" do
-    test "protected ctx wins even when process-dict says non-protected", %{
+    test "protected explicit ctx wins even when Logger.metadata says non-protected", %{
       protected: protected,
       unprotected: unprotected
     } do
-      # Process dict holds a non-protected user; explicit ctx says protected.
-      # The struct must take precedence — no consultation of the process
-      # dict on this code path.
-      Process.put(@current_user_id_key, unprotected.id)
+      # Logger.metadata holds a non-protected user; explicit ctx says protected.
+      # The struct must take precedence — no consultation of the ambient
+      # source on this code path.
+      Logger.metadata(
+        request_context: %RequestContext{
+          origin: :graphql,
+          user_id: unprotected.id,
+          activity_traces_hidden: false
+        }
+      )
 
       ctx = %RequestContext{
         origin: :graphql,
@@ -122,14 +139,19 @@ defmodule Sanbase.Clickhouse.QueryTest do
       refute sql =~ "graphql_request_log_id"
     end
 
-    test "non-protected ctx wins even when process-dict says protected", %{
+    test "non-protected explicit ctx wins even when Logger.metadata says protected", %{
       protected: protected,
       unprotected: unprotected
     } do
-      # Process dict holds a protected user; explicit ctx says safe. The
-      # struct must take precedence — this is the failure mode the
-      # migration exists to fix (stale Cowboy worker state).
-      Process.put(@current_user_id_key, protected.id)
+      # Logger.metadata holds a protected user; explicit ctx says safe.
+      # The struct must take precedence.
+      Logger.metadata(
+        request_context: %RequestContext{
+          origin: :graphql,
+          user_id: protected.id,
+          activity_traces_hidden: true
+        }
+      )
 
       ctx = %RequestContext{
         origin: :graphql,

@@ -9,8 +9,6 @@ defmodule Sanbase.Clickhouse.Query do
   alias Sanbase.Clickhouse.Query.Environment
   alias Sanbase.RequestContext
 
-  require Logger
-
   defstruct [:sql, :parameters, :log_comment, :leading_comments, :environment, :context]
 
   @type sql :: String.t()
@@ -230,12 +228,8 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   defp add_settings(%{context: nil} = query) do
-    user_id = current_user_id()
-    hide_activity? = Sanbase.Accounts.activity_traces_hidden?(user_id)
-
-    if hide_activity?, do: log_legacy_fallback()
-
-    apply_settings(query, user_id, hide_activity?)
+    ctx = RequestContext.current()
+    apply_settings(query, ctx.user_id, RequestContext.activity_traces_hidden?(ctx))
   end
 
   defp apply_settings(%{sql: sql, log_comment: log_comment} = query, user_id, hide_activity?) do
@@ -273,18 +267,5 @@ defmodule Sanbase.Clickhouse.Query do
       end
 
     %{query | sql: sql <> settings_str}
-  end
-
-  # Dataloader batches run in a fresh Task so the conn-process dict is
-  # not inherited. See `SanbaseWeb.Graphql.SanbaseDataloader.wrap_kv_fun/2`
-  # for the re-seed.
-  defp current_user_id(), do: Process.get(:__graphql_query_current_user_id__)
-
-  # 1% sampled, identity-free — must never include `user_id`, SQL, or
-  # any `Process.get/1` interpolation.
-  defp log_legacy_fallback() do
-    if :rand.uniform(100) == 1 do
-      Logger.warning("Sanbase.Clickhouse.Query: add_settings legacy process-dict fallback hit")
-    end
   end
 end

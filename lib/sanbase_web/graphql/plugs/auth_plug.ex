@@ -86,7 +86,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
         case auth_struct do
           %{auth: %{current_user: %{id: user_id}}} ->
-            Process.put(:__graphql_query_current_user_id__, user_id)
             # Sentry user context drives `Sanbase.Sentry.Scrubber` —
             # `Sentry.PlugContext` captured the raw body before this plug
             # ran, so the scrubber needs the user id to decide whether
@@ -96,7 +95,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
             Logger.metadata(
               user_id: user_id,
               request_context: ctx,
-              hide_user_activity: RequestContext.activity_traces_hidden?(ctx) || nil
+              hide_user_activity_traces: RequestContext.activity_traces_hidden?(ctx) || nil
             )
 
           _ ->

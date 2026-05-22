@@ -94,34 +94,20 @@ defmodule Sanbase.MCP.Server do
 
   defp with_request_context(frame, fun) do
     ctx = RequestContext.from_mcp_frame(frame)
-    old_user_id = Process.get(:__graphql_query_current_user_id__)
     old_metadata = Logger.metadata()
-
-    set_mcp_process_user_id(ctx.user_id)
 
     Logger.metadata(
       user_id: ctx.user_id || "anonymous",
       request_context: ctx,
-      hide_user_activity: RequestContext.activity_traces_hidden?(ctx) || nil
+      hide_user_activity_traces: RequestContext.activity_traces_hidden?(ctx) || nil
     )
 
     try do
       fun.()
     after
-      restore_mcp_process_user_id(old_user_id)
       restore_logger_metadata(old_metadata)
     end
   end
-
-  defp set_mcp_process_user_id(nil), do: Process.delete(:__graphql_query_current_user_id__)
-
-  defp set_mcp_process_user_id(user_id),
-    do: Process.put(:__graphql_query_current_user_id__, user_id)
-
-  defp restore_mcp_process_user_id(nil), do: Process.delete(:__graphql_query_current_user_id__)
-
-  defp restore_mcp_process_user_id(user_id),
-    do: Process.put(:__graphql_query_current_user_id__, user_id)
 
   defp restore_logger_metadata(old_metadata) do
     old_keys = Keyword.keys(old_metadata)

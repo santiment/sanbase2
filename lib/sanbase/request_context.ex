@@ -1,15 +1,15 @@
 defmodule Sanbase.RequestContext do
   @moduledoc """
-  Explicit per-request state that replaces the ad-hoc
-  `Process.put(:__graphql_query_current_user_id__, …)` and related Logger /
-  Sentry side-channels used by the privacy-masking pipeline.
+  Explicit per-request state for the privacy-masking pipeline.
 
   An instance is built once per request at the edge (HTTP `AuthPlug`,
-  MCP `handle_invocation`, Oban worker entry) and threaded explicitly
-  through the call graph as a `:context` option. The `activity_traces_hidden`
-  flag is decided once at construction by calling
-  `Sanbase.Accounts.activity_traces_hidden?/1`; downstream code never
-  re-decides.
+  MCP `with_request_context`) and stored in `Logger.metadata` under
+  `:request_context`. Code that has the conn / frame should thread it
+  explicitly as a `:context` option to `Sanbase.Clickhouse.Query.new/3`;
+  code that does not falls back to `current/0` (Logger.metadata read).
+  The `activity_traces_hidden` flag is decided once at construction by
+  calling `Sanbase.Accounts.activity_traces_hidden?/1`; downstream code
+  never re-decides.
 
   See `PLAN.md` for the full migration. The struct is intentionally
   narrow — anything specific to one origin (e.g. Oban job args, AI-chat
@@ -42,6 +42,24 @@ defmodule Sanbase.RequestContext do
   @spec activity_traces_hidden?(t() | term()) :: boolean()
   def activity_traces_hidden?(%__MODULE__{activity_traces_hidden: v}), do: v
   def activity_traces_hidden?(_), do: false
+
+  @doc """
+  Ambient request context for code paths that haven't been migrated to thread
+  `:context` explicitly. Read from `Logger.metadata()[:request_context]` —
+  populated at the edge (AuthPlug, MCP `with_request_context`) and cleared by
+  `SanbaseWeb.Plug.RequestContextPlug` on the next Cowboy request, so worker
+  reuse can't leak a stale value into a different request.
+
+  Always returns a struct: falls back to `anonymous(:internal)` outside any
+  request scope (background jobs, Oban, scripts).
+  """
+  @spec current() :: t()
+  def current() do
+    case Logger.metadata()[:request_context] do
+      %__MODULE__{} = ctx -> ctx
+      _ -> anonymous(:internal)
+    end
+  end
 
   @spec from_conn(Plug.Conn.t()) :: t()
   def from_conn(%Plug.Conn{} = conn) do

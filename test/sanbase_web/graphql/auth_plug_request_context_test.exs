@@ -14,15 +14,11 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
   alias SanbaseWeb.Graphql.{AuthPlug, ContextPlug}
   alias SanbaseWeb.Plug.RequestContextPlug
 
-  @legacy_key :__graphql_query_current_user_id__
-
   setup do
-    Process.delete(@legacy_key)
     Logger.reset_metadata([])
     Sentry.Context.clear_all()
 
     on_exit(fn ->
-      Process.delete(@legacy_key)
       Logger.reset_metadata([])
       Sentry.Context.clear_all()
     end)
@@ -88,7 +84,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
 
     assert conn.assigns.request_context.user_id == user.id
     assert conn.assigns.request_context.activity_traces_hidden
-    assert Keyword.get(Logger.metadata(), :hide_user_activity) == true
+    assert Keyword.get(Logger.metadata(), :hide_user_activity_traces) == true
     assert Sentry.Context.get_all().user == %{id: user.id}
   end
 
@@ -106,7 +102,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
         |> run_pipeline()
 
       assert conn_a.assigns.request_context.activity_traces_hidden
-      assert Process.get(@legacy_key) == protected_user.id
+      assert Keyword.get(Logger.metadata(), :request_context).user_id == protected_user.id
       assert Sentry.Context.get_all().user == %{id: protected_user.id}
 
       # Same process runs request B — non-protected. The clearing
@@ -120,8 +116,8 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
 
       assert conn_b.assigns.request_context.user_id == safe_user.id
       refute conn_b.assigns.request_context.activity_traces_hidden
-      assert Process.get(@legacy_key) == safe_user.id
-      assert Keyword.get(Logger.metadata(), :hide_user_activity) == nil
+      assert Keyword.get(Logger.metadata(), :request_context).user_id == safe_user.id
+      assert Keyword.get(Logger.metadata(), :hide_user_activity_traces) == nil
       assert Sentry.Context.get_all().user == %{id: safe_user.id}
     end
 
@@ -145,8 +141,8 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
 
       assert conn_b.assigns.request_context.user_id == nil
       refute conn_b.assigns.request_context.activity_traces_hidden
-      assert Process.get(@legacy_key) == nil
-      assert Keyword.get(Logger.metadata(), :hide_user_activity) == nil
+      assert Keyword.get(Logger.metadata(), :request_context).user_id == nil
+      assert Keyword.get(Logger.metadata(), :hide_user_activity_traces) == nil
       assert Sentry.Context.get_all().user == %{}
     end
   end

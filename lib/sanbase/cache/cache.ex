@@ -23,83 +23,12 @@ defmodule Sanbase.Cache do
 
   @impl Sanbase.Cache.Behaviour
   def hash(data) do
-    data = if contains_request_context?(data), do: strip_request_context(data), else: data
-
-    :crypto.hash(:sha256, :erlang.term_to_binary(data))
+    data
+    |> Sanbase.Cache.RequestContextStripper.strip()
+    |> :erlang.term_to_binary()
+    |> then(&:crypto.hash(:sha256, &1))
     |> Base.encode64()
   end
-
-  # `Sanbase.RequestContext` is threaded as a `:context` keyword option
-  # through data-layer call sites for privacy masking. The context's
-  # presence must not change cache keys, otherwise every protected vs
-  # non-protected user would miss the cache for the same query. Walk
-  # the input tree and drop only `:context` values that actually contain
-  # `%RequestContext{}` instances before hashing.
-  # Other structs are preserved as-is — rewriting them as plain maps
-  # would change every existing cache key on deploy.
-  #
-  # Hot-path: `Cache.hash/1` runs on every cache key. The `:context` opt
-  # is added only on migrated call sites, so the common case is a tree
-  # with neither `:context` keyword pairs nor nested `%RequestContext{}`
-  # structs. `contains_request_context?/1` is a walk-without-allocate
-  # probe; only when it returns true do we rebuild the tree.
-  defp contains_request_context?(%Sanbase.RequestContext{}), do: true
-
-  defp contains_request_context?(list) when is_list(list) do
-    Enum.any?(list, &contains_request_context?/1)
-  end
-
-  defp contains_request_context?(%_{}), do: false
-
-  defp contains_request_context?(tuple) when is_tuple(tuple) do
-    contains_request_context_in_tuple?(tuple, tuple_size(tuple), 0)
-  end
-
-  defp contains_request_context?(map) when is_map(map) do
-    Enum.any?(map, fn {_k, v} -> contains_request_context?(v) end)
-  end
-
-  defp contains_request_context?(_), do: false
-
-  defp contains_request_context_in_tuple?(_tuple, size, size), do: false
-
-  defp contains_request_context_in_tuple?(tuple, size, idx) do
-    contains_request_context?(:erlang.element(idx + 1, tuple)) or
-      contains_request_context_in_tuple?(tuple, size, idx + 1)
-  end
-
-  defp strip_request_context(%Sanbase.RequestContext{}), do: :_request_context
-
-  defp strip_request_context(list) when is_list(list) do
-    if Keyword.keyword?(list) do
-      Enum.flat_map(list, fn
-        {:context, %Sanbase.RequestContext{}} -> []
-        {key, value} -> [{key, strip_request_context(value)}]
-      end)
-    else
-      Enum.map(list, &strip_request_context/1)
-    end
-  end
-
-  defp strip_request_context(%_{} = struct), do: struct
-
-  defp strip_request_context(tuple) when is_tuple(tuple) do
-    tuple
-    |> Tuple.to_list()
-    |> Enum.map(&strip_request_context/1)
-    |> List.to_tuple()
-  end
-
-  defp strip_request_context(map) when is_map(map) do
-    map
-    |> Enum.flat_map(fn
-      {:context, %Sanbase.RequestContext{}} -> []
-      {k, v} -> [{k, strip_request_context(v)}]
-    end)
-    |> Map.new()
-  end
-
-  defp strip_request_context(other), do: other
 
   def name, do: @cache_name
 

@@ -167,14 +167,6 @@ defmodule Sanbase.Billing do
     end
   end
 
-  # ──────────────────────────────────────────────────────────────────
-  # Stripe-facing operations
-  #
-  # The web/resolver layer should call these wrappers rather than
-  # `Sanbase.StripeApi` directly. Each wrapper hides Stripe.* structs
-  # from callers and returns plain maps or already-mapped errors.
-  # ──────────────────────────────────────────────────────────────────
-
   @doc ~s"""
   Fetch the latest Stripe state for the user's subscription and sync the local
   record (used when the UI needs the freshest payment-intent client secret).

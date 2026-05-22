@@ -21,12 +21,16 @@ defmodule Sanbase.AI.ContentCandidates do
   @spec list(entity_type(), non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
           {list(), non_neg_integer()}
   def list(type, user_id, page, page_size) do
-    limit = page_size
     offset = (page - 1) * page_size
 
-    base = list_query(type, user_id)
-    count = Repo.aggregate(base, :count, :id)
-    entities = Repo.all(from(q in base, limit: ^limit, offset: ^offset))
+    count = Repo.aggregate(count_query(type, user_id), :count, :id)
+
+    entities =
+      list_query(type, user_id)
+      |> limit(^page_size)
+      |> offset(^offset)
+      |> Repo.all()
+
     {entities, count}
   end
 

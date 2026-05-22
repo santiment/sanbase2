@@ -111,17 +111,13 @@ defmodule Sanbase.Accounts.Auth do
     args = %{login_origin: :email, origin_url: origin_url}
     rand_id = :crypto.strong_rand_bytes(8) |> Base.encode32(case: :lower) |> binary_part(0, 10)
 
-    with _ <-
-           Logger.info(
-             "[EmailLoginVerify][#{rand_id}] Start verification for #{email} with token #{String.slice(token, 0..5)}"
-           ),
-         {:ok, user} <- User.find_or_insert_by(:email, email),
+    Logger.info(
+      "[EmailLoginVerify][#{rand_id}] Start verification for #{email} with token #{String.slice(token, 0..5)}"
+    )
+
+    with {:ok, user} <- User.find_or_insert_by(:email, email),
          _ <- Logger.info("[EmailLoginVerify][#{rand_id}] Found user with email #{email}"),
          first_login? <- User.RegistrationState.first_login?(user, "email_login_verify"),
-         _ <-
-           Logger.info(
-             "[EmailLoginVerify][#{rand_id}] Start verification for #{email} with token #{String.slice(token, 0..5)}"
-           ),
          true <- User.Email.email_token_valid?(user, token),
          _ <-
            Logger.info(
@@ -161,7 +157,7 @@ defmodule Sanbase.Accounts.Auth do
     with :ok <- EmailLoginAttempt.check_attempt_limit(user, remote_ip),
          {:ok, user} <- User.Email.update_email_candidate(user, email_candidate),
          {:ok, _user} <- User.Email.send_verify_email(user),
-         {:ok, %AccessAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
+         {:ok, _} <- EmailLoginAttempt.create(user, remote_ip) do
       {:ok, %{success: true}}
     else
       {:error, error} ->
@@ -188,8 +184,8 @@ defmodule Sanbase.Accounts.Auth do
     end
   end
 
-  defp allowed_origin?(["santiment", "net"] = _hosted_parts, _origin_url), do: true
-  defp allowed_origin?([_origin_app, "santiment", "net"] = _hosted_parts, _origin_url), do: true
+  defp allowed_origin?(["santiment", "net"], _origin_url), do: true
+  defp allowed_origin?([_origin_app, "santiment", "net"], _origin_url), do: true
 
   defp allowed_origin?(_hosted_parts, origin_url),
     do: {:error, "Origin header #{origin_url} is not supported."}
@@ -197,9 +193,10 @@ defmodule Sanbase.Accounts.Auth do
   defp allowed_email_domain?(email) do
     domain = String.split(email, "@") |> Enum.at(1)
 
-    case domain in @blocked_domains do
-      true -> {:error, "Email not supported."}
-      false -> true
+    if domain in @blocked_domains do
+      {:error, "Email not supported."}
+    else
+      true
     end
   end
 

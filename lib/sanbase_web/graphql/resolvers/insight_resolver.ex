@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias Sanbase.Comments.EntityComment
 
   @list_opt_keys [:is_pulse, :is_paywall_required, :from, :to]
-  @list_opt_keys_with_categories [:is_pulse, :is_paywall_required, :categories, :from, :to]
 
   def popular_insight_authors(_root, _args, _resolution), do: Insights.popular_authors()
 
@@ -131,16 +130,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def create_chart_event(_root, args, %{context: %{auth: %{current_user: user}}}),
     do: Insights.create_chart_event(user.id, args)
 
-  defp list_opts(args, page, page_size, :categories) do
-    args
-    |> Map.take(@list_opt_keys_with_categories)
-    |> Map.to_list()
-    |> Keyword.merge(page: page, page_size: page_size)
-  end
+  defp list_opts(args, page, page_size, extra_keys \\ [])
 
-  defp list_opts(args, page, page_size) do
+  defp list_opts(args, page, page_size, :categories),
+    do: list_opts(args, page, page_size, [:categories])
+
+  defp list_opts(args, page, page_size, extra_keys) when is_list(extra_keys) do
     args
-    |> Map.take(@list_opt_keys)
+    |> Map.take(@list_opt_keys ++ extra_keys)
     |> Map.to_list()
     |> Keyword.merge(page: page, page_size: page_size)
   end

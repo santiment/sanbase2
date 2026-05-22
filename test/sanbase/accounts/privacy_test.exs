@@ -1,24 +1,24 @@
 defmodule Sanbase.Accounts.PrivacyTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Sanbase.Accounts
 
-  describe "privacy_protected?/1" do
-    test "returns true for ids in the protected set" do
-      [id | _] = Accounts.privacy_protected_user_ids() |> Enum.to_list()
-      assert Accounts.privacy_protected?(id)
+  describe "activity_traces_hidden?/1" do
+    test "returns true for ids in the seeded protected set" do
+      [id | _] = Accounts.activity_traces_hidden_user_ids() |> Enum.to_list()
+      assert Accounts.activity_traces_hidden?(id)
     end
 
     test "returns false for ids outside the set" do
-      protected = Accounts.privacy_protected_user_ids()
+      protected = Accounts.activity_traces_hidden_user_ids()
       outside = Enum.find(1..10_000, fn id -> not MapSet.member?(protected, id) end)
-      refute Accounts.privacy_protected?(outside)
+      refute Accounts.activity_traces_hidden?(outside)
     end
 
     test "returns false for nil and non-integer inputs" do
-      refute Accounts.privacy_protected?(nil)
-      refute Accounts.privacy_protected?("1")
-      refute Accounts.privacy_protected?(:foo)
+      refute Accounts.activity_traces_hidden?(nil)
+      refute Accounts.activity_traces_hidden?("1")
+      refute Accounts.activity_traces_hidden?(:foo)
     end
   end
 

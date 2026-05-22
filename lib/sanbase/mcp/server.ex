@@ -8,6 +8,7 @@ defmodule Sanbase.MCP.Server do
 
   alias Sanbase.Accounts.User
   alias Sanbase.MCP.{Auth, Restrictions, ToolInvocation}
+  alias Sanbase.RequestContext
 
   @banned_message "Your account is banned from the Santiment MCP server. Contact support."
 
@@ -72,11 +73,13 @@ defmodule Sanbase.MCP.Server do
 
     case mcp_access_check(frame, name) do
       :ok ->
-        start_time = System.monotonic_time(:millisecond)
-        result = Anubis.Server.Handlers.handle(request, __MODULE__, frame)
-        duration_ms = System.monotonic_time(:millisecond) - start_time
-        track_invocation(result, frame, name, params, duration_ms, kind)
-        result
+        with_request_context(frame, fn ->
+          start_time = System.monotonic_time(:millisecond)
+          result = Anubis.Server.Handlers.handle(request, __MODULE__, frame)
+          duration_ms = System.monotonic_time(:millisecond) - start_time
+          track_invocation(result, frame, name, params, duration_ms, kind)
+          result
+        end)
 
       {:banned, frame} ->
         record_banned_attempt(frame, name, params, kind)
@@ -87,6 +90,49 @@ defmodule Sanbase.MCP.Server do
         track_invocation(result, frame, name, params, 0, kind)
         result
     end
+  end
+
+  defp with_request_context(frame, fun) do
+    ctx = RequestContext.from_mcp_frame(frame)
+    old_user_id = Process.get(:__graphql_query_current_user_id__)
+    old_metadata = Logger.metadata()
+
+    set_mcp_process_user_id(ctx.user_id)
+
+    Logger.metadata(
+      user_id: ctx.user_id || "anonymous",
+      request_context: ctx,
+      hide_user_activity: RequestContext.activity_traces_hidden?(ctx) || nil
+    )
+
+    try do
+      fun.()
+    after
+      restore_mcp_process_user_id(old_user_id)
+      restore_logger_metadata(old_metadata)
+    end
+  end
+
+  defp set_mcp_process_user_id(nil), do: Process.delete(:__graphql_query_current_user_id__)
+
+  defp set_mcp_process_user_id(user_id),
+    do: Process.put(:__graphql_query_current_user_id__, user_id)
+
+  defp restore_mcp_process_user_id(nil), do: Process.delete(:__graphql_query_current_user_id__)
+
+  defp restore_mcp_process_user_id(user_id),
+    do: Process.put(:__graphql_query_current_user_id__, user_id)
+
+  defp restore_logger_metadata(old_metadata) do
+    old_keys = Keyword.keys(old_metadata)
+
+    reset_metadata =
+      Logger.metadata()
+      |> Keyword.keys()
+      |> Enum.reject(&(&1 in old_keys))
+      |> Enum.map(&{&1, nil})
+
+    Logger.metadata(reset_metadata ++ old_metadata)
   end
 
   defp error_response(message) do

@@ -33,8 +33,8 @@ defmodule Sanbase.Cache do
   # through data-layer call sites for privacy masking. The context's
   # presence must not change cache keys, otherwise every protected vs
   # non-protected user would miss the cache for the same query. Walk
-  # the input tree and drop `:context` keyword pairs and collapse
-  # `%RequestContext{}` instances to a constant sentinel before hashing.
+  # the input tree and drop only `:context` values that actually contain
+  # `%RequestContext{}` instances before hashing.
   # Other structs are preserved as-is — rewriting them as plain maps
   # would change every existing cache key on deploy.
   #
@@ -46,8 +46,7 @@ defmodule Sanbase.Cache do
   defp contains_request_context?(%Sanbase.RequestContext{}), do: true
 
   defp contains_request_context?(list) when is_list(list) do
-    (Keyword.keyword?(list) and List.keymember?(list, :context, 0)) or
-      Enum.any?(list, &contains_request_context?/1)
+    Enum.any?(list, &contains_request_context?/1)
   end
 
   defp contains_request_context?(%_{}), do: false
@@ -57,8 +56,7 @@ defmodule Sanbase.Cache do
   end
 
   defp contains_request_context?(map) when is_map(map) do
-    Map.has_key?(map, :context) or
-      Enum.any?(map, fn {_k, v} -> contains_request_context?(v) end)
+    Enum.any?(map, fn {_k, v} -> contains_request_context?(v) end)
   end
 
   defp contains_request_context?(_), do: false
@@ -73,12 +71,14 @@ defmodule Sanbase.Cache do
   defp strip_request_context(%Sanbase.RequestContext{}), do: :_request_context
 
   defp strip_request_context(list) when is_list(list) do
-    list =
-      if Keyword.keyword?(list) and List.keymember?(list, :context, 0),
-        do: Keyword.delete(list, :context),
-        else: list
-
-    Enum.map(list, &strip_request_context/1)
+    if Keyword.keyword?(list) do
+      Enum.flat_map(list, fn
+        {:context, %Sanbase.RequestContext{}} -> []
+        {key, value} -> [{key, strip_request_context(value)}]
+      end)
+    else
+      Enum.map(list, &strip_request_context/1)
+    end
   end
 
   defp strip_request_context(%_{} = struct), do: struct
@@ -92,8 +92,11 @@ defmodule Sanbase.Cache do
 
   defp strip_request_context(map) when is_map(map) do
     map
-    |> Map.delete(:context)
-    |> Map.new(fn {k, v} -> {k, strip_request_context(v)} end)
+    |> Enum.flat_map(fn
+      {:context, %Sanbase.RequestContext{}} -> []
+      {k, v} -> [{k, strip_request_context(v)}]
+    end)
+    |> Map.new()
   end
 
   defp strip_request_context(other), do: other

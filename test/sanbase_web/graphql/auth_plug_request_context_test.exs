@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
     ctx = conn.assigns.request_context
     assert %RequestContext{origin: :graphql, auth_method: :user_token} = ctx
     assert ctx.user_id == user.id
-    refute ctx.privacy_protected
+    refute ctx.activity_traces_hidden
 
     assert conn.private.absinthe.context.request_context == ctx
     assert Keyword.get(Logger.metadata(), :request_context) == ctx
@@ -64,15 +64,15 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
       |> run_pipeline()
 
     ctx = conn.assigns.request_context
-    assert %RequestContext{origin: :graphql, user_id: nil, privacy_protected: false} = ctx
-    refute RequestContext.protected?(ctx)
+    assert %RequestContext{origin: :graphql, user_id: nil, activity_traces_hidden: false} = ctx
+    refute RequestContext.activity_traces_hidden?(ctx)
 
     # Absinthe context bridge populated
     assert conn.private.absinthe.context.request_context == ctx
   end
 
   test "protected user → request_context flagged protected and Sentry user is set", %{conn: conn} do
-    protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+    protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
     user = insert(:user, id: protected_id)
 
     conn =
@@ -82,17 +82,17 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
       |> run_pipeline()
 
     assert conn.assigns.request_context.user_id == protected_id
-    assert conn.assigns.request_context.privacy_protected
+    assert conn.assigns.request_context.activity_traces_hidden
     assert Keyword.get(Logger.metadata(), :hide_user_activity) == true
     assert Sentry.Context.get_all().user == %{id: protected_id}
   end
 
   describe "Cowboy worker reuse" do
     test "protected user A → non-protected user B: no state from A survives" do
-      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
       protected_user = insert(:user, id: protected_id)
       safe_user = insert(:user)
-      refute Accounts.privacy_protected?(safe_user.id)
+      refute Accounts.activity_traces_hidden?(safe_user.id)
 
       # Request A — protected
       conn_a =
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
         |> setup_jwt_auth(protected_user)
         |> run_pipeline()
 
-      assert conn_a.assigns.request_context.privacy_protected
+      assert conn_a.assigns.request_context.activity_traces_hidden
       assert Process.get(@legacy_key) == protected_id
       assert Sentry.Context.get_all().user == %{id: protected_id}
 
@@ -115,14 +115,14 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
         |> run_pipeline()
 
       assert conn_b.assigns.request_context.user_id == safe_user.id
-      refute conn_b.assigns.request_context.privacy_protected
+      refute conn_b.assigns.request_context.activity_traces_hidden
       assert Process.get(@legacy_key) == safe_user.id
       assert Keyword.get(Logger.metadata(), :hide_user_activity) == nil
       assert Sentry.Context.get_all().user == %{id: safe_user.id}
     end
 
     test "protected user A → anonymous request B: B is anonymous, not stuck on A" do
-      protected_id = Accounts.privacy_protected_user_ids() |> Enum.at(0)
+      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
       protected_user = insert(:user, id: protected_id)
 
       # Request A — protected
@@ -132,7 +132,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
         |> setup_jwt_auth(protected_user)
         |> run_pipeline()
 
-      assert conn_a.assigns.request_context.privacy_protected
+      assert conn_a.assigns.request_context.activity_traces_hidden
 
       # Request B — no auth header
       conn_b =
@@ -141,7 +141,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
         |> run_pipeline()
 
       assert conn_b.assigns.request_context.user_id == nil
-      refute conn_b.assigns.request_context.privacy_protected
+      refute conn_b.assigns.request_context.activity_traces_hidden
       assert Process.get(@legacy_key) == nil
       assert Keyword.get(Logger.metadata(), :hide_user_activity) == nil
       assert Sentry.Context.get_all().user == %{}

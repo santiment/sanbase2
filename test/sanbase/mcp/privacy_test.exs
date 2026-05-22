@@ -4,11 +4,11 @@ defmodule Sanbase.MCP.PrivacyTest do
   alias Sanbase.Accounts
   alias Sanbase.MCP.Privacy
 
-  defp protected_id, do: Accounts.privacy_protected_user_ids() |> Enum.at(0)
+  defp protected_id, do: Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
 
   defp unprotected_id do
     Enum.find(10_000..20_000, fn id ->
-      not MapSet.member?(Accounts.privacy_protected_user_ids(), id)
+      not MapSet.member?(Accounts.activity_traces_hidden_user_ids(), id)
     end)
   end
 

@@ -96,7 +96,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
             Logger.metadata(
               user_id: user_id,
               request_context: ctx,
-              hide_user_activity: RequestContext.protected?(ctx) || nil
+              hide_user_activity: RequestContext.activity_traces_hidden?(ctx) || nil
             )
 
           _ ->

@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
   end
 
   describe "majorTopicsBatch" do
-    test "returns nil when nothing is published for that granularity", %{conn: conn} do
+    test "returns nil when nothing is published", %{conn: conn} do
       assert execute_query(conn, batch_query(granularity: "WEEK"), "majorTopicsBatch") == nil
       assert execute_query(conn, batch_query(granularity: "DAY"), "majorTopicsBatch") == nil
     end
@@ -62,16 +62,34 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
       assert result == nil
     end
 
-    test "isolates by granularity — DAY does not pick up WEEK batches", %{
+    test "granularity affects pagination step only, not which batch is returned", %{
       conn: conn,
       user: user
     } do
-      publish(payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"), user.id)
+      publish(payload_for("2026-04-30T00:00:00/2026-05-07T00:00:00"), user.id)
+      publish(payload_for("2026-05-07T00:00:00/2026-05-14T00:00:00"), user.id)
+      publish(payload_for("2026-05-08T00:00:00/2026-05-15T00:00:00"), user.id)
 
-      assert execute_query(conn, batch_query(granularity: "DAY"), "majorTopicsBatch") == nil
+      week =
+        execute_query(
+          conn,
+          batch_query(granularity: "WEEK", interval_start: "2026-05-08"),
+          "majorTopicsBatch"
+        )
 
-      week = execute_query(conn, batch_query(granularity: "WEEK"), "majorTopicsBatch")
+      day =
+        execute_query(
+          conn,
+          batch_query(granularity: "DAY", interval_start: "2026-05-08"),
+          "majorTopicsBatch"
+        )
+
+      assert week["intervalStart"] == "2026-05-08"
+      assert day["intervalStart"] == "2026-05-08"
       assert week["granularity"] == "WEEK"
+      assert day["granularity"] == "DAY"
+      assert week["previousIntervalStart"] == "2026-04-30"
+      assert day["previousIntervalStart"] == "2026-05-07"
     end
 
     test "carries the {labels, datasets} payload", %{conn: conn, user: user} do

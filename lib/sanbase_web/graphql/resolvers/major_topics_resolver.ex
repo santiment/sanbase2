@@ -19,14 +19,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MajorTopicsResolver do
   end
 
   defp fetch_and_wrap(granularity, nil) do
-    granularity
-    |> MajorTopics.latest_published_batch()
+    MajorTopics.latest_published_batch()
     |> wrap_with_cursors(granularity)
   end
 
   defp fetch_and_wrap(granularity, %Date{} = interval_start) do
-    granularity
-    |> MajorTopics.get_published_batch_at(interval_start)
+    MajorTopics.get_published_batch_at(interval_start)
     |> wrap_with_cursors(granularity)
   end
 
@@ -34,6 +32,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MajorTopicsResolver do
 
   defp wrap_with_cursors(batch, granularity) do
     cursors = [
+      granularity: granularity,
       previous_interval_start:
         MajorTopics.previous_published_interval_start(granularity, batch.interval_start),
       next_interval_start:

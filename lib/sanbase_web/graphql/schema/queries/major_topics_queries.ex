@@ -16,14 +16,15 @@ defmodule SanbaseWeb.Graphql.Schema.MajorTopicsQueries do
 
     Frontend pagination flow:
       1. First load — call with `granularity` only; the latest published batch
-         for that granularity is returned.
+         is returned.
       2. Each response carries `previousIntervalStart` and `nextIntervalStart`
          cursors. To navigate, pass either as the `intervalStart` argument on
-         the next call.
+         the next call. `granularity` controls the pagination step (±7 days for
+         WEEK, ±1 day for DAY) and is echoed in the response; it is not stored
+         per batch.
 
-    Returns `null` when no batch exists for the given `(granularity,
-    intervalStart)` pair, or when nothing has been published yet for the
-    requested granularity.
+    Returns `null` when no batch exists for the given `intervalStart`, or when
+    nothing has been published yet.
     """
     field :major_topics_batch, :major_topics_batch do
       arg(:granularity, non_null(:topic_granularity))

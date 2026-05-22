@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict fDSPEfXTY6hfipT8Yqtsa2cyR5IXUS5rkS4ScEQkOgpj4bvZQQ7IMjraOid3hZ7
+\restrict 7IzzKeqEp41S6bFJl67CbKPPKmlHnPua82BFuDubZ2i68y3zCAhK9HgFusOeqdg
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -872,8 +872,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -4960,8 +4960,7 @@ CREATE TABLE public.topic_batches (
     published_by_id bigint,
     fetched_at timestamp(0) without time zone NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    granularity character varying(255) DEFAULT 'week'::character varying NOT NULL
+    updated_at timestamp without time zone NOT NULL
 );
 
 
@@ -9730,17 +9729,17 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 
 
 --
--- Name: topic_batches_granularity_state_interval_start_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX topic_batches_granularity_state_interval_start_index ON public.topic_batches USING btree (granularity, state, interval_start);
-
-
---
 -- Name: topic_batches_source_interval_text_version_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX topic_batches_source_interval_text_version_index ON public.topic_batches USING btree (source, interval_text, version);
+
+
+--
+-- Name: topic_batches_state_interval_start_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX topic_batches_state_interval_start_index ON public.topic_batches USING btree (state, interval_start);
 
 
 --
@@ -11638,7 +11637,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fDSPEfXTY6hfipT8Yqtsa2cyR5IXUS5rkS4ScEQkOgpj4bvZQQ7IMjraOid3hZ7
+\unrestrict 7IzzKeqEp41S6bFJl67CbKPPKmlHnPua82BFuDubZ2i68y3zCAhK9HgFusOeqdg
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12210,3 +12209,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260511112644);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);
 INSERT INTO public."schema_migrations" (version) VALUES (20260515075234);
 INSERT INTO public."schema_migrations" (version) VALUES (20260519151900);
+INSERT INTO public."schema_migrations" (version) VALUES (20260522100000);

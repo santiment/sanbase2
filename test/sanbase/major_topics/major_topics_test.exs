@@ -140,11 +140,9 @@ defmodule Sanbase.MajorTopicsTest do
     end
   end
 
-  describe "latest_published_batch/1" do
+  describe "latest_published_batch/0" do
     test "returns nil when nothing is published" do
       assert MajorTopics.latest_published_batch() == nil
-      assert MajorTopics.latest_published_batch("week") == nil
-      assert MajorTopics.latest_published_batch("day") == nil
     end
 
     test "returns the most recent published batch and excludes removed topics" do
@@ -168,45 +166,26 @@ defmodule Sanbase.MajorTopicsTest do
       assert hd(latest.topics).is_removed == false
       refute latest.id == b1.id
     end
-
-    test "isolates by granularity — daily lookup does not return weekly batches" do
-      user = insert(:user)
-      {:ok, weekly} = MajorTopics.upsert_batch_from_payload(sample_payload())
-      {:ok, _} = MajorTopics.publish_batch(weekly, user.id)
-
-      assert MajorTopics.latest_published_batch("week").id == weekly.id
-      assert MajorTopics.latest_published_batch("day") == nil
-    end
   end
 
-  describe "get_published_batch_at/2" do
+  describe "get_published_batch_at/1" do
     test "returns nil for a non-existent interval_start" do
-      assert MajorTopics.get_published_batch_at("week", ~D[2026-05-04]) == nil
+      assert MajorTopics.get_published_batch_at(~D[2026-05-04]) == nil
     end
 
-    test "returns the published batch keyed by (granularity, interval_start)" do
+    test "returns the published batch keyed by interval_start" do
       user = insert(:user)
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(sample_payload())
       {:ok, _} = MajorTopics.publish_batch(batch, user.id)
 
-      result = MajorTopics.get_published_batch_at("week", ~D[2026-05-04])
+      result = MajorTopics.get_published_batch_at(~D[2026-05-04])
       assert result.id == batch.id
-      # active topics are preloaded
       assert length(result.topics) == 2
     end
 
     test "returns nil if the batch is still in draft" do
       {:ok, _batch} = MajorTopics.upsert_batch_from_payload(sample_payload())
-      assert MajorTopics.get_published_batch_at("week", ~D[2026-05-04]) == nil
-    end
-
-    test "filters by granularity — same interval_start, different granularity" do
-      user = insert(:user)
-      {:ok, weekly} = MajorTopics.upsert_batch_from_payload(sample_payload())
-      {:ok, _} = MajorTopics.publish_batch(weekly, user.id)
-
-      # No daily batch at the same date.
-      assert MajorTopics.get_published_batch_at("day", ~D[2026-05-04]) == nil
+      assert MajorTopics.get_published_batch_at(~D[2026-05-04]) == nil
     end
   end
 
@@ -246,9 +225,11 @@ defmodule Sanbase.MajorTopicsTest do
       assert MajorTopics.next_published_interval_start("week", ~D[2026-05-18]) == nil
     end
 
-    test "does not cross granularities" do
-      assert MajorTopics.previous_published_interval_start("day", ~D[2026-05-25]) == nil
-      assert MajorTopics.next_published_interval_start("day", ~D[2026-05-04]) == nil
+    test "day granularity uses 1-day pagination step" do
+      assert MajorTopics.previous_published_interval_start("day", ~D[2026-05-25]) ==
+               ~D[2026-05-18]
+
+      assert MajorTopics.next_published_interval_start("day", ~D[2026-05-04]) == ~D[2026-05-11]
     end
 
     test "skips draft batches" do
@@ -282,6 +263,28 @@ defmodule Sanbase.MajorTopicsTest do
 
       assert MajorTopics.next_published_interval_start("week", ~D[2026-05-07]) == ~D[2026-05-08]
     end
+
+    test "granularity affects pagination step only, not batch lookup" do
+      user = insert(:user)
+
+      publish = fn interval ->
+        {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload_for(interval))
+        {:ok, _} = MajorTopics.publish_batch(batch, user.id)
+      end
+
+      publish.("2026-04-30T00:00:00/2026-05-07T00:00:00")
+      publish.("2026-05-07T00:00:00/2026-05-14T00:00:00")
+      publish.("2026-05-08T00:00:00/2026-05-15T00:00:00")
+
+      batch = MajorTopics.get_published_batch_at(~D[2026-05-08])
+      assert batch.id
+
+      assert MajorTopics.previous_published_interval_start("week", ~D[2026-05-08]) ==
+               ~D[2026-04-30]
+
+      assert MajorTopics.previous_published_interval_start("day", ~D[2026-05-08]) ==
+               ~D[2026-05-07]
+    end
   end
 
   describe "BatchSerializer.to_payload/1,2" do
@@ -290,7 +293,8 @@ defmodule Sanbase.MajorTopicsTest do
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(sample_payload())
       {:ok, _} = MajorTopics.publish_batch(batch, user.id)
 
-      payload = batch |> Sanbase.Repo.preload(:topics) |> BatchSerializer.to_payload()
+      payload =
+        batch |> Sanbase.Repo.preload(:topics) |> BatchSerializer.to_payload(granularity: "week")
 
       # 3 distinct dts across the two topics
       assert payload.labels == ["04.05.26", "05.05.26", "06.05.26"]
@@ -312,7 +316,7 @@ defmodule Sanbase.MajorTopicsTest do
 
       payload =
         MajorTopics.get_batch!(batch.id)
-        |> BatchSerializer.to_payload()
+        |> BatchSerializer.to_payload(granularity: "week")
 
       assert length(payload.datasets) == 1
       assert hd(payload.datasets).label == "Whale Token Activity Alerts"
@@ -324,6 +328,7 @@ defmodule Sanbase.MajorTopicsTest do
 
       payload =
         BatchSerializer.to_payload(batch,
+          granularity: "week",
           previous_interval_start: ~D[2026-04-27],
           next_interval_start: ~D[2026-05-11]
         )

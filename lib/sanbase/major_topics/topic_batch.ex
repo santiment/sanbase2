@@ -12,7 +12,6 @@ defmodule Sanbase.MajorTopics.TopicBatch do
 
   @day "day"
   @week "week"
-  @granularities [@day, @week]
 
   def draft_state, do: @draft
   def published_state, do: @published
@@ -20,7 +19,6 @@ defmodule Sanbase.MajorTopics.TopicBatch do
 
   def day_granularity, do: @day
   def week_granularity, do: @week
-  def granularities, do: @granularities
 
   schema "topic_batches" do
     field(:source, :string)
@@ -29,7 +27,6 @@ defmodule Sanbase.MajorTopics.TopicBatch do
     field(:interval_end, :date)
     field(:version, :integer, default: 1)
     field(:type, :string)
-    field(:granularity, :string, default: @week)
     field(:state, :string, default: @draft)
     field(:published_at, :utc_datetime)
     field(:fetched_at, :utc_datetime)
@@ -49,7 +46,6 @@ defmodule Sanbase.MajorTopics.TopicBatch do
       :interval_end,
       :version,
       :type,
-      :granularity,
       :state,
       :fetched_at
     ])
@@ -59,12 +55,10 @@ defmodule Sanbase.MajorTopics.TopicBatch do
       :interval_start,
       :interval_end,
       :version,
-      :granularity,
       :state,
       :fetched_at
     ])
     |> validate_inclusion(:state, @states)
-    |> validate_inclusion(:granularity, @granularities)
     |> unique_constraint([:source, :interval_text, :version])
   end
 

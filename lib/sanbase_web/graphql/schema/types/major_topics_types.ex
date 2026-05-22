@@ -34,15 +34,17 @@ defmodule SanbaseWeb.Graphql.MajorTopicsTypes do
     field(:datasets, non_null(list_of(non_null(:major_topic_dataset))))
 
     @desc """
-    `intervalStart` of the immediately-preceding published batch of the same
-    granularity. `null` when no earlier batch is available. Pass it back as
-    `intervalStart` to navigate one step into the past.
+    `intervalStart` of the published batch whose start is nearest to one
+    pagination step before the current batch. Step size depends on `granularity`
+    (7 days for WEEK, 1 day for DAY). `null` when no earlier batch is available.
+    Pass it back as `intervalStart` to navigate one step into the past.
     """
     field(:previous_interval_start, :date)
 
     @desc """
-    `intervalStart` of the immediately-following published batch of the same
-    granularity. `null` when the current batch is the latest one.
+    `intervalStart` of the published batch whose start is nearest to one
+    pagination step after the current batch. Step size depends on `granularity`.
+    `null` when the current batch is the latest one.
     """
     field(:next_interval_start, :date)
   end

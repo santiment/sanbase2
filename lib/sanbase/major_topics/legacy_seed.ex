@@ -21,7 +21,6 @@ defmodule Sanbase.MajorTopics.LegacySeed do
   alias Sanbase.Repo
 
   @source "legacy-frontend"
-  @granularity TopicBatch.week_granularity()
 
   # Files using "MMM DD, HH:MM" labels don't encode the year. Determined by
   # matching neighboring files' weeks.
@@ -108,7 +107,6 @@ defmodule Sanbase.MajorTopics.LegacySeed do
         interval_end: parsed.interval_end,
         version: version,
         type: "legacy",
-        granularity: @granularity,
         state: TopicBatch.published_state(),
         fetched_at: now
       }

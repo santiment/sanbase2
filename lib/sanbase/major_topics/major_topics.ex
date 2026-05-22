@@ -16,7 +16,6 @@ defmodule Sanbase.MajorTopics do
 
   @draft TopicBatch.draft_state()
   @published TopicBatch.published_state()
-  @default_granularity TopicBatch.week_granularity()
 
   @spec list_batches(keyword()) :: [TopicBatch.t()]
   def list_batches(opts \\ []) do
@@ -43,10 +42,10 @@ defmodule Sanbase.MajorTopics do
     |> Repo.preload(topics: from(t in MajorTopic, order_by: [asc: t.position, asc: t.id]))
   end
 
-  @spec latest_published_batch(String.t()) :: TopicBatch.t() | nil
-  def latest_published_batch(granularity \\ @default_granularity) do
+  @spec latest_published_batch() :: TopicBatch.t() | nil
+  def latest_published_batch do
     from(b in TopicBatch,
-      where: b.state == ^@published and b.granularity == ^granularity,
+      where: b.state == ^@published,
       order_by: [desc: b.interval_start, desc: b.id],
       limit: 1
     )
@@ -55,17 +54,13 @@ defmodule Sanbase.MajorTopics do
   end
 
   @doc """
-  Fetch the published batch at the given `(granularity, interval_start)`. Returns
-  `nil` if no such batch exists or is not yet published. Used by the public
-  GraphQL field when a frontend navigates via the cursor returned in a previous
-  response.
+  Fetch the published batch at the given `interval_start`. Returns `nil` if no
+  such batch exists or is not yet published.
   """
-  @spec get_published_batch_at(String.t(), Date.t()) :: TopicBatch.t() | nil
-  def get_published_batch_at(granularity, %Date{} = interval_start) do
+  @spec get_published_batch_at(Date.t()) :: TopicBatch.t() | nil
+  def get_published_batch_at(%Date{} = interval_start) do
     from(b in TopicBatch,
-      where:
-        b.state == ^@published and b.granularity == ^granularity and
-          b.interval_start == ^interval_start,
+      where: b.state == ^@published and b.interval_start == ^interval_start,
       order_by: [desc: b.inserted_at, desc: b.id],
       limit: 1
     )
@@ -75,17 +70,15 @@ defmodule Sanbase.MajorTopics do
 
   @doc """
   `interval_start` of the published batch whose start is closest to one step
-  before `current_start` (7 days for week, 1 day for day granularity), among
-  batches with an earlier start. Used as the `previousIntervalStart` cursor.
+  before `current_start`. Step size is 7 days when `granularity` is `"week"`,
+  1 day when `"day"`. Used as the `previousIntervalStart` cursor.
   """
   @spec previous_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
   def previous_published_interval_start(granularity, %Date{} = current_start) do
     target = Date.add(current_start, -pagination_step_days(granularity))
 
     from(b in TopicBatch,
-      where:
-        b.state == ^@published and b.granularity == ^granularity and
-          b.interval_start < ^current_start,
+      where: b.state == ^@published and b.interval_start < ^current_start,
       order_by: [
         asc: fragment("abs(? - ?)", b.interval_start, ^target),
         desc: b.interval_start,
@@ -107,9 +100,7 @@ defmodule Sanbase.MajorTopics do
     target = Date.add(current_start, pagination_step_days(granularity))
 
     from(b in TopicBatch,
-      where:
-        b.state == ^@published and b.granularity == ^granularity and
-          b.interval_start > ^current_start,
+      where: b.state == ^@published and b.interval_start > ^current_start,
       order_by: [
         asc: fragment("abs(? - ?)", b.interval_start, ^target),
         asc: b.interval_start,
@@ -160,7 +151,6 @@ defmodule Sanbase.MajorTopics do
                 interval_end: interval_end,
                 version: version,
                 type: payload[:type] || derive_type(payload),
-                granularity: payload[:granularity] || @default_granularity,
                 state: @draft,
                 fetched_at: now
               }

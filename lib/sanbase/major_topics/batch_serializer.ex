@@ -45,7 +45,7 @@ defmodule Sanbase.MajorTopics.BatchSerializer do
       |> Enum.map(&topic_to_dataset(&1, dts))
 
     %{
-      granularity: batch.granularity,
+      granularity: Keyword.fetch!(opts, :granularity),
       interval_start: batch.interval_start,
       interval_end: batch.interval_end,
       published_at: batch.published_at,

@@ -21,10 +21,10 @@ defmodule Sanbase.Accounts.ProtectedUser do
   @ttl_seconds 30 * 60
 
   @spec cache_key() :: atom()
-  def cache_key, do: @key
+  def cache_key(), do: @key
 
   @spec activity_traces_hidden_user_ids() :: MapSet.t(non_neg_integer())
-  def activity_traces_hidden_user_ids do
+  def activity_traces_hidden_user_ids() do
     now = System.monotonic_time(:second)
 
     case :persistent_term.get(@key, nil) do
@@ -41,9 +41,9 @@ defmodule Sanbase.Accounts.ProtectedUser do
   def activity_traces_hidden?(_), do: false
 
   @spec refresh() :: MapSet.t(non_neg_integer())
-  def refresh, do: compute_and_store()
+  def refresh(), do: compute_and_store()
 
-  defp compute_and_store do
+  defp compute_and_store() do
     ids =
       from(u in User, where: u.are_activity_traces_hidden == true, select: u.id)
       |> Repo.all()

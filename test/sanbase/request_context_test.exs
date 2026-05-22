@@ -1,8 +1,15 @@
 defmodule Sanbase.RequestContextTest do
-  use ExUnit.Case, async: true
+  use Sanbase.DataCase, async: false
 
-  alias Sanbase.Accounts
+  import Sanbase.Factory
+
   alias Sanbase.RequestContext
+
+  setup do
+    protected = insert(:user)
+    Sanbase.PrivacyCacheSeed.seed!([protected.id])
+    {:ok, protected: protected}
+  end
 
   describe "anonymous/1" do
     test "builds a non-protected ctx tagged with the given origin" do
@@ -80,19 +87,17 @@ defmodule Sanbase.RequestContextTest do
       refute ctx.activity_traces_hidden
     end
 
-    test "activity_traces_hidden set when user_id matches the protected set" do
-      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
-
+    test "activity_traces_hidden set when user_id matches the protected set", %{protected: user} do
       conn =
         Plug.Test.conn(:post, "/graphql")
         |> Plug.Conn.put_private(:san_authentication, %{
-          auth: %{auth_method: :user_token, current_user: %{id: protected_id}},
+          auth: %{auth_method: :user_token, current_user: %{id: user.id}},
           product_code: "SANBASE"
         })
 
       ctx = RequestContext.from_conn(conn)
 
-      assert ctx.user_id == protected_id
+      assert ctx.user_id == user.id
       assert ctx.activity_traces_hidden
       assert RequestContext.activity_traces_hidden?(ctx)
     end
@@ -145,13 +150,12 @@ defmodule Sanbase.RequestContextTest do
       refute ctx.activity_traces_hidden
     end
 
-    test "activity_traces_hidden for protected user_id" do
-      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
-      frame = %{assigns: %{current_user: %{id: protected_id}}, context: %{headers: []}}
+    test "activity_traces_hidden for protected user_id", %{protected: user} do
+      frame = %{assigns: %{current_user: %{id: user.id}}, context: %{headers: []}}
 
       ctx = RequestContext.from_mcp_frame(frame)
 
-      assert ctx.user_id == protected_id
+      assert ctx.user_id == user.id
       assert ctx.activity_traces_hidden
     end
 

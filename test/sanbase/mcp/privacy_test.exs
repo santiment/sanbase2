@@ -1,15 +1,16 @@
 defmodule Sanbase.MCP.PrivacyTest do
-  use ExUnit.Case, async: true
+  use Sanbase.DataCase, async: false
+
+  import Sanbase.Factory
 
   alias Sanbase.Accounts
   alias Sanbase.MCP.Privacy
 
-  defp protected_id, do: Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
-
-  defp unprotected_id do
-    Enum.find(10_000..20_000, fn id ->
-      not MapSet.member?(Accounts.activity_traces_hidden_user_ids(), id)
-    end)
+  setup do
+    protected = insert(:user)
+    unprotected = insert(:user)
+    Sanbase.PrivacyCacheSeed.seed!([protected.id])
+    {:ok, protected: protected, unprotected: unprotected}
   end
 
   defp base_attrs(user_id) do
@@ -30,9 +31,9 @@ defmodule Sanbase.MCP.PrivacyTest do
   end
 
   describe "mask_attrs/1" do
-    test "masks tool_name, params, user_agent and client for protected users" do
+    test "masks tool_name, params, user_agent and client for protected users", %{protected: user} do
       masked = Accounts.masked_sentinel()
-      attrs = base_attrs(protected_id())
+      attrs = base_attrs(user.id)
 
       out = Privacy.mask_attrs(attrs)
 
@@ -49,18 +50,18 @@ defmodule Sanbase.MCP.PrivacyTest do
       assert out.kind == "tool"
     end
 
-    test "masks error_message when present, leaves nil as nil" do
+    test "masks error_message when present, leaves nil as nil", %{protected: user} do
       masked = Accounts.masked_sentinel()
 
       assert %{error_message: ^masked} =
-               Privacy.mask_attrs(%{base_attrs(protected_id()) | error_message: "boom"})
+               Privacy.mask_attrs(%{base_attrs(user.id) | error_message: "boom"})
 
       assert %{error_message: nil} =
-               Privacy.mask_attrs(%{base_attrs(protected_id()) | error_message: nil})
+               Privacy.mask_attrs(%{base_attrs(user.id) | error_message: nil})
     end
 
-    test "non-protected user: attrs pass through unchanged" do
-      attrs = base_attrs(unprotected_id())
+    test "non-protected user: attrs pass through unchanged", %{unprotected: user} do
+      attrs = base_attrs(user.id)
       assert Privacy.mask_attrs(attrs) == attrs
     end
 

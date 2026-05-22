@@ -33,6 +33,8 @@ defmodule Sanbase.Sentry.Scrubber do
 
   defp protected?(%Event{user: %{} = user}) do
     case Map.get(user, :id) || Map.get(user, "id") do
+      # activity_traces_hidden? for user_id is fast because the
+      # user ids are stored in persistent term and are very fast to access.
       id when is_integer(id) -> Accounts.activity_traces_hidden?(id)
       _ -> false
     end

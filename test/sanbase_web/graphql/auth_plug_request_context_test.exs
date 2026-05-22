@@ -30,6 +30,12 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
     :ok
   end
 
+  defp seed_protected_user() do
+    user = insert(:user)
+    Sanbase.PrivacyCacheSeed.seed!([user.id])
+    user
+  end
+
   defp run_pipeline(conn) do
     conn
     |> RequestContextPlug.call([])
@@ -72,8 +78,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
   end
 
   test "protected user → request_context flagged protected and Sentry user is set", %{conn: conn} do
-    protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
-    user = insert(:user, id: protected_id)
+    user = seed_protected_user()
 
     conn =
       conn
@@ -81,16 +86,15 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
       |> setup_jwt_auth(user)
       |> run_pipeline()
 
-    assert conn.assigns.request_context.user_id == protected_id
+    assert conn.assigns.request_context.user_id == user.id
     assert conn.assigns.request_context.activity_traces_hidden
     assert Keyword.get(Logger.metadata(), :hide_user_activity) == true
-    assert Sentry.Context.get_all().user == %{id: protected_id}
+    assert Sentry.Context.get_all().user == %{id: user.id}
   end
 
   describe "Cowboy worker reuse" do
     test "protected user A → non-protected user B: no state from A survives" do
-      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
-      protected_user = insert(:user, id: protected_id)
+      protected_user = seed_protected_user()
       safe_user = insert(:user)
       refute Accounts.activity_traces_hidden?(safe_user.id)
 
@@ -102,8 +106,8 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
         |> run_pipeline()
 
       assert conn_a.assigns.request_context.activity_traces_hidden
-      assert Process.get(@legacy_key) == protected_id
-      assert Sentry.Context.get_all().user == %{id: protected_id}
+      assert Process.get(@legacy_key) == protected_user.id
+      assert Sentry.Context.get_all().user == %{id: protected_user.id}
 
       # Same process runs request B — non-protected. The clearing
       # invariant lives in RequestContextPlug; everything from A must
@@ -122,8 +126,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
     end
 
     test "protected user A → anonymous request B: B is anonymous, not stuck on A" do
-      protected_id = Accounts.activity_traces_hidden_user_ids() |> Enum.at(0)
-      protected_user = insert(:user, id: protected_id)
+      protected_user = seed_protected_user()
 
       # Request A — protected
       conn_a =

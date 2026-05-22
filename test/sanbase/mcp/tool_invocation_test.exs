@@ -7,8 +7,6 @@ defmodule Sanbase.MCP.ToolInvocationTest do
   alias Sanbase.Accounts
   alias Sanbase.MCP.ToolInvocation
 
-  @current_user_id_key :__graphql_query_current_user_id__
-
   setup do
     user = insert(:user, username: "mcp_tracking_user", email: "mcp_tracking@example.com")
     bearer_token = Sanbase.TestHelpers.setup_mcp_oauth_client(user)
@@ -98,7 +96,8 @@ defmodule Sanbase.MCP.ToolInvocationTest do
       Sanbase.Metric,
       :timeseries_data,
       fn _metric, _selector, _from, _to, _interval ->
-        send(test_pid, {:mcp_process_user_id, Process.get(@current_user_id_key)})
+        ctx = Sanbase.RequestContext.current()
+        send(test_pid, {:mcp_request_context, ctx})
 
         {:ok, [%{datetime: ~U[2020-01-01 00:00:00Z], value: 1.5}]}
       end
@@ -117,8 +116,9 @@ defmodule Sanbase.MCP.ToolInvocationTest do
         )
 
       assert {:ok, %Anubis.MCP.Response{is_error: false}} = result
-      assert_receive {:mcp_process_user_id, user_id}, 500
-      assert user_id == context.user.id
+      assert_receive {:mcp_request_context, %Sanbase.RequestContext{} = ctx}, 500
+      assert ctx.user_id == context.user.id
+      assert ctx.activity_traces_hidden
 
       invocations = ToolInvocation.list_invocations([])
       inv = Enum.find(invocations, &(&1.user_id == context.user.id))

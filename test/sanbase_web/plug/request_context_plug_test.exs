@@ -1,31 +1,26 @@
 defmodule SanbaseWeb.Plug.RequestContextPlugTest do
-  # Manipulates Logger.metadata, Process dict, and Sentry.Context — must
-  # be serial.
+  # Manipulates Logger.metadata and Sentry.Context — must be serial.
   use ExUnit.Case, async: false
 
   alias Sanbase.RequestContext
   alias SanbaseWeb.Plug.RequestContextPlug
 
-  @legacy_key :__graphql_query_current_user_id__
-
   setup do
     on_exit(fn ->
       Logger.reset_metadata([])
-      Process.delete(@legacy_key)
       Sentry.Context.clear_all()
     end)
 
     :ok
   end
 
-  test "clears stale Logger metadata, Process dict, and Sentry.Context" do
+  test "clears stale Logger metadata and Sentry.Context" do
     Logger.metadata(
       request_context: %RequestContext{origin: :graphql, user_id: 1},
-      hide_user_activity: true,
+      hide_user_activity_traces: true,
       user_id: 1
     )
 
-    Process.put(@legacy_key, 1)
     Sentry.Context.set_user_context(%{id: 1})
 
     conn = Plug.Test.conn(:post, "/graphql")
@@ -33,9 +28,8 @@ defmodule SanbaseWeb.Plug.RequestContextPlugTest do
 
     meta = Logger.metadata()
     assert Keyword.get(meta, :request_context) == nil
-    assert Keyword.get(meta, :hide_user_activity) == nil
+    assert Keyword.get(meta, :hide_user_activity_traces) == nil
     assert Keyword.get(meta, :user_id) == nil
-    assert Process.get(@legacy_key) == nil
     assert Sentry.Context.get_all().user == %{}
   end
 

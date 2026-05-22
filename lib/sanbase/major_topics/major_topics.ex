@@ -74,17 +74,23 @@ defmodule Sanbase.MajorTopics do
   end
 
   @doc """
-  `interval_start` of the immediately-preceding published batch of the same
-  granularity, or `nil` when none exists. Used as the `previousIntervalStart`
-  cursor in the public GraphQL response.
+  `interval_start` of the published batch whose start is closest to one step
+  before `current_start` (7 days for week, 1 day for day granularity), among
+  batches with an earlier start. Used as the `previousIntervalStart` cursor.
   """
   @spec previous_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
   def previous_published_interval_start(granularity, %Date{} = current_start) do
+    target = Date.add(current_start, -pagination_step_days(granularity))
+
     from(b in TopicBatch,
       where:
         b.state == ^@published and b.granularity == ^granularity and
           b.interval_start < ^current_start,
-      order_by: [desc: b.interval_start, desc: b.id],
+      order_by: [
+        asc: fragment("abs(? - ?)", b.interval_start, ^target),
+        desc: b.interval_start,
+        desc: b.id
+      ],
       limit: 1,
       select: b.interval_start
     )
@@ -92,21 +98,31 @@ defmodule Sanbase.MajorTopics do
   end
 
   @doc """
-  `interval_start` of the immediately-following published batch of the same
-  granularity, or `nil` when the given batch is already the latest.
+  `interval_start` of the published batch whose start is closest to one step
+  after `current_start` (7 days for week, 1 day for day granularity), among
+  batches with a later start. Used as the `nextIntervalStart` cursor.
   """
   @spec next_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
   def next_published_interval_start(granularity, %Date{} = current_start) do
+    target = Date.add(current_start, pagination_step_days(granularity))
+
     from(b in TopicBatch,
       where:
         b.state == ^@published and b.granularity == ^granularity and
           b.interval_start > ^current_start,
-      order_by: [asc: b.interval_start, asc: b.id],
+      order_by: [
+        asc: fragment("abs(? - ?)", b.interval_start, ^target),
+        asc: b.interval_start,
+        asc: b.id
+      ],
       limit: 1,
       select: b.interval_start
     )
     |> Repo.one()
   end
+
+  defp pagination_step_days("week"), do: 7
+  defp pagination_step_days("day"), do: 1
 
   defp preload_active_topics(nil), do: nil
 

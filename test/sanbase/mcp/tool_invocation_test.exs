@@ -4,7 +4,10 @@ defmodule Sanbase.MCP.ToolInvocationTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers, only: [try_few_times: 2, wait_for_mcp_initialization: 0]
 
+  alias Sanbase.Accounts
   alias Sanbase.MCP.ToolInvocation
+
+  @current_user_id_key :__graphql_query_current_user_id__
 
   setup do
     user = insert(:user, username: "mcp_tracking_user", email: "mcp_tracking@example.com")
@@ -74,6 +77,53 @@ defmodule Sanbase.MCP.ToolInvocationTest do
       assert inv.slugs == ["bitcoin"]
       assert inv.params["metric"] == "price_usd"
       assert inv.params["slugs"] == ["bitcoin"]
+    end)
+  end
+
+  test "protected MCP tool call seeds user context while executing the tool", context do
+    key = Sanbase.Accounts.ProtectedUser.cache_key()
+    original = :persistent_term.get(key, nil)
+    :persistent_term.put(key, {MapSet.new([context.user.id]), System.monotonic_time(:second)})
+
+    on_exit(fn ->
+      case original do
+        nil -> :persistent_term.erase(key)
+        value -> :persistent_term.put(key, value)
+      end
+    end)
+
+    test_pid = self()
+
+    Sanbase.Mock.prepare_mock(
+      Sanbase.Metric,
+      :timeseries_data,
+      fn _metric, _selector, _from, _to, _interval ->
+        send(test_pid, {:mcp_process_user_id, Process.get(@current_user_id_key)})
+
+        {:ok, [%{datetime: ~U[2020-01-01 00:00:00Z], value: 1.5}]}
+      end
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        try_few_times(
+          fn ->
+            Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+              slugs: ["bitcoin"],
+              metric: "price_usd"
+            })
+          end,
+          attempts: 3,
+          sleep: 250
+        )
+
+      assert {:ok, %Anubis.MCP.Response{is_error: false}} = result
+      assert_receive {:mcp_process_user_id, user_id}, 500
+      assert user_id == context.user.id
+
+      invocations = ToolInvocation.list_invocations([])
+      inv = Enum.find(invocations, &(&1.user_id == context.user.id))
+      assert inv.tool_name == Accounts.masked_sentinel()
+      assert inv.params == %{}
     end)
   end
 

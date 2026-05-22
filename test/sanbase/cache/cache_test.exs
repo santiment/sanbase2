@@ -13,12 +13,12 @@ defmodule Sanbase.CacheTest do
     end
 
     test "two different RequestContexts hash the same when threaded as :context" do
-      protected_ctx = %RequestContext{origin: :graphql, user_id: 1, privacy_protected: true}
+      protected_ctx = %RequestContext{origin: :graphql, user_id: 1, activity_traces_hidden: true}
 
       non_protected_ctx = %RequestContext{
         origin: :graphql,
         user_id: 9_999,
-        privacy_protected: false
+        activity_traces_hidden: false
       }
 
       args_a = [slug: "ethereum", context: protected_ctx]
@@ -54,12 +54,26 @@ defmodule Sanbase.CacheTest do
       refute Cache.hash(a) == Cache.hash(c)
     end
 
-    test ":context inside a plain map is stripped" do
+    test ":context inside a plain map is stripped only when it is a RequestContext" do
       ctx = RequestContext.anonymous(:graphql)
       a = %{slug: "bitcoin", context: ctx}
       b = %{slug: "bitcoin"}
 
       assert Cache.hash(a) == Cache.hash(b)
+    end
+
+    test "non-RequestContext :context map values still differentiate cache keys" do
+      a = %{slug: "bitcoin", context: %{window: "7d"}}
+      b = %{slug: "bitcoin", context: %{window: "30d"}}
+
+      refute Cache.hash(a) == Cache.hash(b)
+    end
+
+    test "non-RequestContext :context keyword values still differentiate cache keys" do
+      a = [slug: "bitcoin", context: "headline"]
+      b = [slug: "bitcoin", context: "body"]
+
+      refute Cache.hash(a) == Cache.hash(b)
     end
   end
 end

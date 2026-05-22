@@ -278,7 +278,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
   def build_export_records(query_metadata) do
     user_id = query_metadata.caller_data.user_id
-    hide_activity? = Sanbase.Accounts.privacy_protected?(user_id)
+    hide_activity? = Sanbase.Accounts.activity_traces_hidden?(user_id)
 
     Enum.map(query_metadata.success_queries, fn query ->
       {query, selector, version} =

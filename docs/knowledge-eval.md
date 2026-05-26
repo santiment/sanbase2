@@ -2,9 +2,9 @@
 
 Offline harness for measuring `Sanbase.Knowledge` retrieval quality across
 FAQ, Academy, and Insight sources. Run it before and after any change to
-the embedding model, similarity threshold, chunking, prompt, or retrieval
-logic. Diff the numbers to decide whether the change shipped a win or a
-regression.
+the embedding model, similarity threshold, chunking, prompt, retrieval
+logic, or reranker. Diff the numbers to decide whether the change shipped
+a win or a regression.
 
 ## What it measures
 
@@ -28,23 +28,30 @@ still contribute their top-1 similarity — useful for off-topic sentinels
 | `lib/sanbase/knowledge/eval.ex` | scoring + orchestration (`run/1`, `score_hits/3`, `summarize/2`) |
 | `lib/mix/tasks/knowledge_eval.ex` | `mix knowledge_eval` CLI |
 | `priv/knowledge/eval/golden_set.exs` | golden Q-set with expected ids |
+| `lib/sanbase/knowledge/reranker.ex` | behavior + dispatcher with input-order fallback |
+| `lib/sanbase/knowledge/reranker/openai.ex` | listwise reranker against `gpt-5-nano`, JSON output |
+| `lib/sanbase/knowledge/reranker/noop.ex` | identity reranker (`--no-rerank` baseline, default in tests) |
 | `test/sanbase/knowledge/eval_test.exs` | unit tests for scoring math |
 
 ## Running it
 
-Requires `OPENAI_API_KEY` (one embedding per golden question) and a
-Postgres connection with FAQ / Academy / Insight embeddings populated.
+Requires `OPENAI_API_KEY` (one embedding per golden question, plus one
+rerank call per source per question) and a Postgres connection with FAQ /
+Academy / Insight embeddings populated.
 
 ```sh
-# Full eval, all sources
+# Full eval, all sources, with reranker (the production path)
 mix knowledge_eval
 
 # One source at a time
 mix knowledge_eval --source faq
 mix knowledge_eval --source faq,academy
 
-# Baseline JSON dump for run-to-run diffing
-mix knowledge_eval --source faq --json /tmp/eval-baseline.json
+# Coarse-retrieval baseline (no rerank) — useful for measuring lift
+mix knowledge_eval --source faq --no-rerank --json /tmp/eval-baseline.json
+
+# Same set with rerank, for direct comparison
+mix knowledge_eval --source faq --json /tmp/eval-reranked.json
 
 # Per-question rank breakdown
 mix knowledge_eval --source faq --verbose
@@ -162,6 +169,33 @@ Empty by default. To add coverage:
 3. `mix knowledge_eval --source faq --json /tmp/after.json`.
 4. Diff the `summary` sections of both JSON files. If `hit@K` or `MRR`
    regress, the change does not ship.
+
+## Reranker
+
+By default `Sanbase.Knowledge` retrieves `top_k=20` per source from
+pgvector, then reorders with a listwise reranker (`gpt-5-nano`) and
+truncates to `top_n=5` for the prompt. The reranker re-reads candidate
+text jointly with the query and disambiguates topical clusters that
+cosine alone cannot — e.g. several "Sanbase Max" FAQs all scoring high
+for "what does the Sanbase Max plan include?".
+
+Configured via:
+
+```elixir
+# config/config.exs
+config :sanbase, Sanbase.Knowledge.Reranker,
+  default: Sanbase.Knowledge.Reranker.OpenAI
+```
+
+Swap the `:default` to drop in a different backend (Cohere, local
+cross-encoder, …) without touching call sites. Each backend implements
+the `Sanbase.Knowledge.Reranker` behavior; the dispatcher in
+`call/3` falls back to the input order if `rerank/3` returns
+`{:error, _}`, so a flaky backend never breaks the user-facing path.
+
+Eval honors the reranker config too. Use `--no-rerank` to measure pure
+cosine retrieval and compare against the reranked numbers — that's how
+we decide whether a reranker change is shipping a real win.
 
 ## Unit tests
 

@@ -11,10 +11,10 @@ defmodule Sanbase.Knowledge.Eval do
   from IEx.
   """
 
-  alias Sanbase.Knowledge.{Academy, Faq}
+  alias Sanbase.Knowledge.{Academy, Faq, Reranker}
   alias Sanbase.Insight.Post
 
-  @default_top_k 10
+  @default_top_k 20
   @all_sources [:faq, :academy, :insights]
 
   @type item :: %{
@@ -32,7 +32,8 @@ defmodule Sanbase.Knowledge.Eval do
           file: String.t() | nil,
           sources: [atom()],
           top_k: pos_integer(),
-          limit: pos_integer() | nil
+          limit: pos_integer() | nil,
+          reranker: module() | nil
         ]
 
   @doc """
@@ -48,8 +49,9 @@ defmodule Sanbase.Knowledge.Eval do
 
     top_k = Keyword.get(opts, :top_k, @default_top_k)
     sources = Keyword.get(opts, :sources, @all_sources)
+    reranker = Keyword.get(opts, :reranker)
 
-    results = Enum.map(items, &evaluate_item(&1, top_k, sources))
+    results = Enum.map(items, &evaluate_item(&1, top_k, sources, reranker))
     summary = summarize(results, sources)
 
     %{items: results, summary: summary}
@@ -112,14 +114,14 @@ defmodule Sanbase.Knowledge.Eval do
 
   # Private functions
 
-  defp evaluate_item(item, top_k, sources) do
+  defp evaluate_item(item, top_k, sources, reranker) do
     base = %{id: item.id, question: item.question, tags: Map.get(item, :tags, [])}
 
     case Sanbase.AI.Embedding.generate_embeddings([item.question], 1536) do
       {:ok, [embedding]} ->
         per_source =
           sources
-          |> Enum.map(fn src -> {src, eval_source(src, item, embedding, top_k)} end)
+          |> Enum.map(fn src -> {src, eval_source(src, item, embedding, top_k, reranker)} end)
           |> Map.new()
 
         Map.merge(base, per_source)
@@ -129,9 +131,10 @@ defmodule Sanbase.Knowledge.Eval do
     end
   end
 
-  defp eval_source(:faq, item, embedding, top_k) do
+  defp eval_source(:faq, item, embedding, top_k, reranker) do
     case Faq.find_most_similar_faqs(embedding, top_k) do
       {:ok, hits} ->
+        hits = apply_reranker(hits, item.question, :faq, reranker, top_k)
         expected = get_in(item, [:expected, :faq_ids]) || []
         score_hits(hits, expected, & &1.id)
 
@@ -140,9 +143,10 @@ defmodule Sanbase.Knowledge.Eval do
     end
   end
 
-  defp eval_source(:academy, item, embedding, top_k) do
+  defp eval_source(:academy, item, embedding, top_k, reranker) do
     case Academy.search_chunks(embedding, top_k) do
       {:ok, hits} ->
+        hits = apply_reranker(hits, item.question, :academy, reranker, top_k)
         expected = get_in(item, [:expected, :academy_paths]) || []
         score_hits(hits, expected, & &1.github_path)
 
@@ -151,16 +155,78 @@ defmodule Sanbase.Knowledge.Eval do
     end
   end
 
-  defp eval_source(:insights, item, embedding, top_k) do
+  defp eval_source(:insights, item, embedding, top_k, reranker) do
     case Post.find_most_similar_insight_chunks(embedding, top_k) do
       {:ok, hits} ->
         hits = Enum.uniq_by(hits, & &1.post_id)
+        hits = apply_reranker(hits, item.question, :insight, reranker, top_k)
         expected = get_in(item, [:expected, :insight_post_ids]) || []
         score_hits(hits, expected, & &1.post_id)
 
       {:error, reason} ->
         %{error: inspect(reason), top1_similarity: nil}
     end
+  end
+
+  # Reranks `hits` against `question` using the provided reranker (or the
+  # application default). The eval never truncates — passes `top_n: top_k`
+  # so scoring can still measure hit@10 in the reordered list.
+  defp apply_reranker([], _question, _source, _reranker, _top_k), do: []
+
+  defp apply_reranker(hits, question, source, reranker, top_k) do
+    opts =
+      [source: source, top_n: top_k]
+      |> maybe_put(:reranker, reranker)
+
+    hits
+    |> to_candidates(source)
+    |> Reranker.call(question, opts)
+    |> Enum.map(& &1.metadata)
+  end
+
+  defp maybe_put(opts, _key, nil), do: opts
+  defp maybe_put(opts, key, value), do: Keyword.put(opts, key, value)
+
+  defp to_candidates(entries, :faq) do
+    Enum.map(entries, fn e ->
+      %{
+        id: e.id,
+        text: "Q: #{e.question}\n\nA: #{e.answer_markdown}",
+        similarity: e.similarity,
+        source: :faq,
+        metadata: e
+      }
+    end)
+  end
+
+  defp to_candidates(entries, :academy) do
+    Enum.map(entries, fn e ->
+      title = Map.get(e, :title, "")
+      body = Map.get(e, :chunk) || Map.get(e, :content_markdown) || ""
+
+      %{
+        id: Map.get(e, :github_path) || Map.get(e, :id),
+        text: "#{title}\n\n#{body}",
+        similarity: e.similarity,
+        source: :academy,
+        metadata: e
+      }
+    end)
+  end
+
+  defp to_candidates(entries, :insight) do
+    Enum.map(entries, fn e ->
+      title = Map.get(e, :post_title) || Map.get(e, :title) || ""
+      body = Map.get(e, :text_chunk) || Map.get(e, :text) || ""
+
+      %{
+        id: Map.get(e, :post_id) || Map.get(e, :id),
+        text: "#{title}\n\n#{body}",
+        similarity: e.similarity,
+        source: :insight,
+        metadata: e
+      }
+    end)
   end
 
   defp summarize_source(results, src) do

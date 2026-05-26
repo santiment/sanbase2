@@ -211,6 +211,10 @@ config :sanbase, Sanbase.MCP.Restrictions,
 # Configure test environment for OpenAI client mocking
 config :sanbase, :openai_client, Sanbase.AI.MockOpenAIClient
 
+# Tests must never hit OpenAI for retrieval reranking. Tests that exercise
+# rerank semantics should inject a stub reranker via opts.
+config :sanbase, Sanbase.Knowledge.Reranker, default: Sanbase.Knowledge.Reranker.Noop
+
 if(File.exists?("config/test.secret.exs")) do
   import_config "test.secret.exs"
 end

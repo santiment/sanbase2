@@ -36,7 +36,7 @@ defmodule Sanbase.Knowledge.AcademyArticle do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(article, attrs) do
     article
-    |> cast(attrs, [:github_path, :academy_url, :title, :content_sha, :is_stale])
+    |> cast(attrs, [:github_path, :academy_url, :title, :content_sha, :index_version, :is_stale])
     |> validate_required([:github_path, :academy_url, :title, :content_sha])
     |> validate_format(:academy_url, ~r/^https?:\/\//)
     |> unique_constraint(:github_path)

@@ -1,6 +1,14 @@
 defmodule Sanbase.Knowledge do
+  alias Sanbase.Knowledge.Reranker
+
   @default_min_similarity 0.35
   @no_answer_message "I don't have enough information in the available Santiment FAQ, Academy, or Insights content to answer this question. Please contact Santiment Support for further assistance."
+
+  # Coarse retrieval fans out beyond what the prompt can hold so the
+  # reranker has headroom to reorder. The reranker truncates back to
+  # @prompt_top_n before prompt assembly.
+  @retrieval_top_k 20
+  @prompt_top_n 5
 
   def answer_question(user_input, options \\ []) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
@@ -18,9 +26,10 @@ defmodule Sanbase.Knowledge do
     min_sim = min_similarity(options)
 
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
-         {:ok, faq_entries} <- maybe_find_most_similar_faqs(embedding, options),
-         {:ok, academy_articles} <- maybe_find_most_similar_academy_articles(embedding, options),
-         {:ok, insights} <- maybe_find_most_similar_insights(embedding, options) do
+         {:ok, faq_entries} <- maybe_find_most_similar_faqs(user_input, embedding, options),
+         {:ok, academy_articles} <-
+           maybe_find_most_similar_academy_articles(user_input, embedding, options),
+         {:ok, insights} <- maybe_find_most_similar_insights(user_input, embedding, options) do
       filtered_faqs = filter_by_similarity(faq_entries, min_sim)
       filtered_academy = filter_by_similarity(academy_articles, min_sim)
       filtered_insights = filter_by_similarity(insights, min_sim)
@@ -80,19 +89,22 @@ defmodule Sanbase.Knowledge do
 
     with {:ok, prompt} <- generate_initial_prompt(user_input),
          {:ok, prompt, faq_found?} <-
-           maybe_add_similar_faqs(prompt, embedding, options, min_sim),
+           maybe_add_similar_faqs(prompt, user_input, embedding, options, min_sim),
          {:ok, prompt, insights_found?} <-
-           maybe_add_similar_insight_chunks(prompt, embedding, options, min_sim),
+           maybe_add_similar_insight_chunks(prompt, user_input, embedding, options, min_sim),
          {:ok, prompt, academy_found?} <-
-           maybe_add_similar_academy_chunks(prompt, embedding, options, min_sim) do
+           maybe_add_similar_academy_chunks(prompt, user_input, embedding, options, min_sim) do
       {:ok, prompt, faq_found? or insights_found? or academy_found?}
     end
   end
 
-  defp maybe_add_similar_faqs(prompt, embedding, options, min_sim) do
+  defp maybe_add_similar_faqs(prompt, user_input, embedding, options, min_sim) do
     if Keyword.get(options, :faq, true) do
-      with {:ok, faq_entries} <- find_most_similar_faqs(embedding, 5) do
-        faq_entries = filter_by_similarity(faq_entries, min_sim)
+      with {:ok, raw_entries} <- find_most_similar_faqs(embedding, @retrieval_top_k) do
+        faq_entries =
+          raw_entries
+          |> filter_by_similarity(min_sim)
+          |> rerank(user_input, :faq, options, top_n: @prompt_top_n)
 
         if faq_entries == [] do
           {:ok, prompt, false}
@@ -125,9 +137,11 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp maybe_find_most_similar_faqs(embedding, options) do
+  defp maybe_find_most_similar_faqs(user_input, embedding, options) do
     if Keyword.get(options, :faq, true) do
-      find_most_similar_faqs(embedding, 5)
+      with {:ok, raw} <- find_most_similar_faqs(embedding, @retrieval_top_k) do
+        {:ok, rerank(raw, user_input, :faq, options, top_n: @prompt_top_n)}
+      end
     else
       {:ok, []}
     end
@@ -155,9 +169,11 @@ defmodule Sanbase.Knowledge do
     Sanbase.Insight.Post.find_most_similar_insight_chunks(embedding, size)
   end
 
-  defp maybe_find_most_similar_insights(embedding, options) do
+  defp maybe_find_most_similar_insights(user_input, embedding, options) do
     if Keyword.get(options, :insights, true) do
-      find_most_similar_insights(embedding, 5)
+      with {:ok, raw} <- find_most_similar_insights(embedding, @retrieval_top_k) do
+        {:ok, rerank(raw, user_input, :insight, options, top_n: @prompt_top_n)}
+      end
     else
       {:ok, []}
     end
@@ -167,10 +183,13 @@ defmodule Sanbase.Knowledge do
     Sanbase.Insight.Post.find_most_similar_insights(embedding, size)
   end
 
-  defp maybe_add_similar_insight_chunks(prompt, embedding, options, min_sim) do
+  defp maybe_add_similar_insight_chunks(prompt, user_input, embedding, options, min_sim) do
     if Keyword.get(options, :insights, true) do
-      with {:ok, post_embeddings} <- find_most_similar_insight_chunks(embedding, 5) do
-        post_embeddings = filter_by_similarity(post_embeddings, min_sim)
+      with {:ok, raw_chunks} <- find_most_similar_insight_chunks(embedding, @retrieval_top_k) do
+        post_embeddings =
+          raw_chunks
+          |> filter_by_similarity(min_sim)
+          |> rerank(user_input, :insight, options, top_n: @prompt_top_n)
 
         if post_embeddings == [] do
           {:ok, prompt, false}
@@ -202,19 +221,24 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp maybe_find_most_similar_academy_articles(embedding, options) do
+  defp maybe_find_most_similar_academy_articles(user_input, embedding, options) do
     if Keyword.get(options, :academy, true) do
-      Sanbase.Knowledge.Academy.search_articles(embedding, 5)
+      with {:ok, raw} <- Sanbase.Knowledge.Academy.search_articles(embedding, @retrieval_top_k) do
+        {:ok, rerank(raw, user_input, :academy, options, top_n: @prompt_top_n)}
+      end
     else
       {:ok, []}
     end
   end
 
-  defp maybe_add_similar_academy_chunks(prompt, embedding, options, min_sim) do
+  defp maybe_add_similar_academy_chunks(prompt, user_input, embedding, options, min_sim) do
     if Keyword.get(options, :academy, true) do
-      case Sanbase.Knowledge.Academy.search_chunks(embedding, 5) do
-        {:ok, academy_chunks} ->
-          academy_chunks = filter_by_similarity(academy_chunks, min_sim)
+      case Sanbase.Knowledge.Academy.search_chunks(embedding, @retrieval_top_k) do
+        {:ok, raw_chunks} ->
+          academy_chunks =
+            raw_chunks
+            |> filter_by_similarity(min_sim)
+            |> rerank(user_input, :academy, options, top_n: @prompt_top_n)
 
           if academy_chunks == [] do
             {:ok, prompt, false}
@@ -246,6 +270,71 @@ defmodule Sanbase.Knowledge do
       {:ok, prompt, false}
     end
   end
+
+  defp rerank([], _user_input, _source, _options, _opts), do: []
+
+  defp rerank(entries, user_input, source, options, opts) do
+    rerank_opts =
+      opts
+      |> Keyword.put(:source, source)
+      |> maybe_put_reranker(options)
+
+    entries
+    |> to_candidates(source)
+    |> Reranker.call(user_input, rerank_opts)
+    |> from_candidates()
+  end
+
+  defp maybe_put_reranker(opts, options) do
+    case Keyword.get(options, :reranker) do
+      nil -> opts
+      mod -> Keyword.put(opts, :reranker, mod)
+    end
+  end
+
+  defp to_candidates(entries, :faq) do
+    Enum.map(entries, fn e ->
+      %{
+        id: e.id,
+        text: "Q: #{e.question}\n\nA: #{e.answer_markdown}",
+        similarity: e.similarity,
+        source: :faq,
+        metadata: e
+      }
+    end)
+  end
+
+  defp to_candidates(entries, :academy) do
+    Enum.map(entries, fn e ->
+      title = Map.get(e, :title, "")
+      body = Map.get(e, :chunk) || Map.get(e, :content_markdown) || ""
+
+      %{
+        id: Map.get(e, :id) || Map.get(e, :url),
+        text: "#{title}\n\n#{body}",
+        similarity: e.similarity,
+        source: :academy,
+        metadata: e
+      }
+    end)
+  end
+
+  defp to_candidates(entries, :insight) do
+    Enum.map(entries, fn e ->
+      title = Map.get(e, :post_title) || Map.get(e, :title) || ""
+      body = Map.get(e, :text_chunk) || Map.get(e, :short_desc) || Map.get(e, :text) || ""
+
+      %{
+        id: Map.get(e, :post_id) || Map.get(e, :id),
+        text: "#{title}\n\n#{body}",
+        similarity: e.similarity,
+        source: :insight,
+        metadata: e
+      }
+    end)
+  end
+
+  defp from_candidates(candidates), do: Enum.map(candidates, & &1.metadata)
 
   defp generate_initial_prompt(question) do
     prompt = """

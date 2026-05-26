@@ -18,8 +18,10 @@ defmodule Mix.Tasks.KnowledgeEval do
     * `--source` - comma-separated subset of `faq,academy,insights`; defaults to all
     * `--file`   - path to a golden set; defaults to `priv/knowledge/eval/golden_set.exs`
     * `--json`   - dump full results (per-item + summary) as JSON to this path
-    * `--top-k`  - top-K to retrieve per source (default 10)
+    * `--top-k`  - top-K to retrieve per source (default 20)
     * `--limit`  - cap the number of golden items evaluated
+    * `--no-rerank` - skip reranking (force the Noop reranker). Use to capture
+      a coarse-retrieval baseline and compare against the reranked run.
     * `--verbose` / `-v` - print per-question rank breakdown
   """
 
@@ -39,7 +41,8 @@ defmodule Mix.Tasks.KnowledgeEval do
           json: :string,
           verbose: :boolean,
           top_k: :integer,
-          limit: :integer
+          limit: :integer,
+          no_rerank: :boolean
         ],
         aliases: [v: :verbose]
       )
@@ -64,9 +67,15 @@ defmodule Mix.Tasks.KnowledgeEval do
     |> maybe_put(:file, opts[:file])
     |> maybe_put(:top_k, opts[:top_k])
     |> maybe_put(:limit, opts[:limit])
+    |> maybe_put_reranker(opts[:no_rerank])
   end
 
   @allowed_sources ~w(faq academy insights)
+
+  defp maybe_put_reranker(opts, true),
+    do: Keyword.put(opts, :reranker, Sanbase.Knowledge.Reranker.Noop)
+
+  defp maybe_put_reranker(opts, _), do: opts
 
   defp parse_sources(nil), do: [:faq, :academy, :insights]
   defp parse_sources("all"), do: [:faq, :academy, :insights]

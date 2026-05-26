@@ -36,6 +36,7 @@ defmodule Sanbase.OpenAI.Tracing do
   @doc """
   Returns true when Langfuse SDK has host + keys configured.
   """
+  @spec enabled?() :: boolean()
   def enabled?() do
     cfg = Application.get_all_env(:langfuse_sdk)
 

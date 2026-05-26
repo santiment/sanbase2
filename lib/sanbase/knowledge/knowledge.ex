@@ -99,8 +99,10 @@ defmodule Sanbase.Knowledge do
         else
           entries_text =
             Enum.map(faq_entries, fn faq_entry ->
+              url = "#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{faq_entry.id}"
+
               """
-              Source: [FAQ:#{faq_entry.id}]
+              Source marker: [FAQ ##{faq_entry.id}](#{url})
               Question: #{faq_entry.question}
               Answer: #{faq_entry.answer_markdown}
               """
@@ -175,8 +177,10 @@ defmodule Sanbase.Knowledge do
         else
           text_chunks =
             Enum.map(post_embeddings, fn chunk ->
+              url = SanbaseWeb.Endpoint.insight_url(chunk.post_id)
+
               """
-              Source: [Insight:#{chunk.post_id}] "#{chunk.post_title}"
+              Source marker: [#{chunk.post_title}](#{url})
               #{chunk.text_chunk}
               """
             end)
@@ -218,8 +222,7 @@ defmodule Sanbase.Knowledge do
             academy_text_chunks =
               Enum.map(academy_chunks, fn academy_chunk ->
                 """
-                Source: [Academy:#{academy_chunk.url}]
-                Article title: #{academy_chunk.title}
+                Source marker: [#{academy_chunk.title}](#{academy_chunk.url})
                 Most relevant chunk from article: #{academy_chunk.chunk}
                 """
               end)
@@ -265,9 +268,12 @@ defmodule Sanbase.Knowledge do
     8. If the user's question is unclear or ambiguous, politely ask for clarification using only the information provided.
     9. Prioritize accuracy and transparency—if there is any uncertainty, clearly communicate the limitations of the available information.
     10. When possible, summarize key points or actionable steps to help the user resolve their issue efficiently.
-    11. Cite every claim with the source markers exactly as provided: `[FAQ:<id>]`, `[Academy:<url>]`, or `[Insight:<id>]`.
-        Place the marker inline immediately after the sentence or bullet it supports. Do not invent markers and do not omit them.
-    12. End the answer with a `Sources` section listing each unique cited marker on its own bullet.
+    11. Every provided context block has a `Source marker:` line containing a markdown link `[label](url)`.
+        Cite every claim by reproducing that markdown link VERBATIM (brackets, label, parentheses, and URL — all preserved).
+        Place the marker inline immediately after the sentence or bullet it supports.
+        Do not invent markers, do not omit them, do not rewrite the label or URL, and do not convert links to plain text.
+    12. End the answer with a `Sources` section listing each unique cited marker on its own bullet,
+        reproducing the same `[label](url)` markdown link verbatim (one per unique source).
     </Instructions>
 
     <User_Input>

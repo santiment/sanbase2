@@ -20,7 +20,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           hard_deprecate_after: DateTime.t() | nil,
           docs: list(String.t()),
           available_selectors: list(atom()),
-          required_selectors: list(list(atom()))
+          required_selectors: list(list(atom())),
+          default_aggregation: atom() | nil
         }
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
@@ -189,6 +190,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           docs: metadata.docs,
           available_selectors: metadata.available_selectors,
           required_selectors: metadata.required_selectors,
+          default_aggregation: metadata.default_aggregation,
           status: metadata.status
         }
 

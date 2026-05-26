@@ -133,6 +133,7 @@ defmodule Sanbase.Insight.Post do
         e in PostEmbedding,
         inner_join: p in Post,
         on: e.post_id == p.id,
+        where: p.ready_state == ^@published and p.state == ^@approved and p.is_deleted != true,
         select: %{
           post_id: e.post_id,
           post_title: p.title,

@@ -2,14 +2,15 @@
 -- PostgreSQL database dump
 --
 
-\restrict 7IzzKeqEp41S6bFJl67CbKPPKmlHnPua82BFuDubZ2i68y3zCAhK9HgFusOeqdg
+\restrict dalSdsXayHjmL1tHzss4bkhgnm2EZy4TlFWaeBpIcxrMBHhdiEez1oYhlfEeY3H
 
--- Dumped from database version 15.15 (Homebrew)
--- Dumped by pg_dump version 15.15 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -306,7 +307,8 @@ CREATE TABLE public.academy_articles (
     content_sha character varying(255) NOT NULL,
     is_stale boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    index_version integer DEFAULT 0 NOT NULL
 );
 
 
@@ -872,8 +874,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -11637,7 +11639,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7IzzKeqEp41S6bFJl67CbKPPKmlHnPua82BFuDubZ2i68y3zCAhK9HgFusOeqdg
+\unrestrict dalSdsXayHjmL1tHzss4bkhgnm2EZy4TlFWaeBpIcxrMBHhdiEez1oYhlfEeY3H
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12210,3 +12212,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);
 INSERT INTO public."schema_migrations" (version) VALUES (20260515075234);
 INSERT INTO public."schema_migrations" (version) VALUES (20260519151900);
 INSERT INTO public."schema_migrations" (version) VALUES (20260522100000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260526093118);

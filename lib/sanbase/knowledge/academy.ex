@@ -134,17 +134,19 @@ defmodule Sanbase.Knowledge.Academy do
 
   defp perform_dry_run(branch) do
     with {:ok, tree_entries} <- fetch_repo_markdown_list(branch),
-         {:ok, _articles} <- process_markdown_entries(tree_entries, branch, true) do
+         {:ok, _result} <- process_markdown_entries(tree_entries, branch, true) do
       :ok
     end
   end
 
   defp do_reindex(branch) do
     with {:ok, tree_entries} <- fetch_repo_markdown_list(branch),
-         {:ok, articles} <- process_markdown_entries(tree_entries, branch, false) do
+         {:ok, %{to_index: to_index, unchanged: unchanged}} <-
+           process_markdown_entries(tree_entries, branch, false) do
       Repo.transaction(fn ->
         mark_all_articles_stale()
-        finalize_indexing(articles)
+        clear_stale_for_unchanged(unchanged)
+        finalize_indexing(to_index)
       end)
       |> case do
         {:ok, :ok} -> :ok
@@ -205,17 +207,24 @@ defmodule Sanbase.Knowledge.Academy do
 
   defp process_markdown_entries(entries, branch, dry_run?) do
     total = length(entries)
+    init_acc = %{to_index: [], unchanged: []}
 
     result =
       entries
       |> Enum.with_index()
-      |> Enum.reduce_while({:ok, []}, fn {entry, index}, {:ok, acc} ->
-        with {:ok, article_attrs, chunks_attrs} <-
-               fetch_and_prepare_article(entry, branch, dry_run?) do
-          log_progress(index + 1, total, entry.path)
+      |> Enum.reduce_while({:ok, init_acc}, fn {entry, index}, {:ok, acc} ->
+        case fetch_and_prepare_article(entry, branch, dry_run?) do
+          {:ok, article_attrs, chunks_attrs} ->
+            log_progress(index + 1, total, entry.path)
 
-          {:cont, {:ok, [%{article: article_attrs, chunks: chunks_attrs} | acc]}}
-        else
+            {:cont,
+             {:ok,
+              %{acc | to_index: [%{article: article_attrs, chunks: chunks_attrs} | acc.to_index]}}}
+
+          {:unchanged, article_id} ->
+            log_progress(index + 1, total, "#{entry.path} (unchanged, sha match)")
+            {:cont, {:ok, %{acc | unchanged: [article_id | acc.unchanged]}}}
+
           {:ignore, _reason} ->
             {:cont, {:ok, acc}}
 
@@ -225,8 +234,11 @@ defmodule Sanbase.Knowledge.Academy do
       end)
 
     case result do
-      {:ok, articles} -> {:ok, Enum.reverse(articles)}
-      error -> error
+      {:ok, %{to_index: to_index, unchanged: unchanged}} ->
+        {:ok, %{to_index: Enum.reverse(to_index), unchanged: unchanged}}
+
+      error ->
+        error
     end
   end
 
@@ -235,7 +247,29 @@ defmodule Sanbase.Knowledge.Academy do
     repo_owner = Map.get(entry, :repo_owner, @github_repo_owner)
     repo_name = Map.get(entry, :repo_name, @github_repo_name)
     ref = Map.get(entry, :ref, branch)
+    github_path = Map.get(entry, :github_path, path)
+    incoming_sha = entry[:sha]
 
+    case maybe_use_cached(github_path, incoming_sha, dry_run?) do
+      {:unchanged, article_id} ->
+        {:unchanged, article_id}
+
+      :no_cache ->
+        do_fetch_and_prepare_article(entry, path, ref, repo_owner, repo_name, dry_run?)
+    end
+  end
+
+  defp maybe_use_cached(_github_path, nil, _dry_run?), do: :no_cache
+  defp maybe_use_cached(_github_path, _sha, true), do: :no_cache
+
+  defp maybe_use_cached(github_path, incoming_sha, false) do
+    case Repo.get_by(AcademyArticle, github_path: github_path) do
+      %AcademyArticle{content_sha: ^incoming_sha, id: id} -> {:unchanged, id}
+      _ -> :no_cache
+    end
+  end
+
+  defp do_fetch_and_prepare_article(entry, path, ref, repo_owner, repo_name, dry_run?) do
     case fetch_file_contents(path, ref, repo_owner, repo_name) do
       {:ok, %{content: markdown, sha: fetched_sha}} ->
         content_sha =
@@ -408,6 +442,22 @@ defmodule Sanbase.Knowledge.Academy do
     end)
 
     delete_stale_records()
+    :ok
+  end
+
+  defp clear_stale_for_unchanged([]), do: :ok
+
+  defp clear_stale_for_unchanged(article_ids) when is_list(article_ids) do
+    Repo.update_all(
+      from(a in AcademyArticle, where: a.id in ^article_ids),
+      set: [is_stale: false]
+    )
+
+    Repo.update_all(
+      from(c in AcademyArticleChunk, where: c.article_id in ^article_ids),
+      set: [is_stale: false]
+    )
+
     :ok
   end
 

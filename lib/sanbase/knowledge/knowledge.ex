@@ -1,19 +1,33 @@
 defmodule Sanbase.Knowledge do
+  @default_min_similarity 0.35
+  @no_answer_message "I don't have enough information in the available Santiment FAQ, Academy, or Insights content to answer this question. Please contact Santiment Support for further assistance."
+
   def answer_question(user_input, options \\ []) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
-         {:ok, prompt} <- build_question_answer_prompt(user_input, embedding, options),
-         {:ok, answer} <- Sanbase.OpenAI.Question.ask(prompt) do
-      {:ok, answer}
+         {:ok, prompt, sources_found?} <-
+           build_question_answer_prompt(user_input, embedding, options) do
+      if sources_found? do
+        Sanbase.OpenAI.Question.ask(prompt)
+      else
+        {:ok, @no_answer_message}
+      end
     end
   end
 
   def smart_search(user_input, options) do
+    min_sim = min_similarity(options)
+
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
          {:ok, faq_entries} <- maybe_find_most_similar_faqs(embedding, options),
          {:ok, academy_articles} <- maybe_find_most_similar_academy_articles(embedding, options),
          {:ok, insights} <- maybe_find_most_similar_insights(embedding, options),
          {:ok, answer} <-
-           build_smart_search_result(faq_entries, academy_articles, insights, options) do
+           build_smart_search_result(
+             filter_by_similarity(faq_entries, min_sim),
+             filter_by_similarity(academy_articles, min_sim),
+             filter_by_similarity(insights, min_sim),
+             options
+           ) do
       {:ok, answer}
     end
   end
@@ -61,41 +75,49 @@ defmodule Sanbase.Knowledge do
   end
 
   defp build_question_answer_prompt(user_input, embedding, options) do
+    min_sim = min_similarity(options)
+
     with {:ok, prompt} <- generate_initial_prompt(user_input),
-         {:ok, prompt} <- maybe_add_similar_faqs(prompt, embedding, options),
-         {:ok, prompt} <- maybe_add_similar_insight_chunks(prompt, embedding, options),
-         {:ok, prompt} <- maybe_add_similar_academy_chunks(prompt, embedding, options) do
-      {:ok, prompt}
-    else
-      unexpected ->
-        raise(ArgumentError, "Got #{unexpected}")
+         {:ok, prompt, faq_found?} <-
+           maybe_add_similar_faqs(prompt, embedding, options, min_sim),
+         {:ok, prompt, insights_found?} <-
+           maybe_add_similar_insight_chunks(prompt, embedding, options, min_sim),
+         {:ok, prompt, academy_found?} <-
+           maybe_add_similar_academy_chunks(prompt, embedding, options, min_sim) do
+      {:ok, prompt, faq_found? or insights_found? or academy_found?}
     end
   end
 
-  def maybe_add_similar_faqs(prompt, embedding, options) do
+  defp maybe_add_similar_faqs(prompt, embedding, options, min_sim) do
     if Keyword.get(options, :faq, true) do
       {:ok, faq_entries} = find_most_similar_faqs(embedding, 5)
+      faq_entries = filter_by_similarity(faq_entries, min_sim)
 
-      entries_text =
-        Enum.map(faq_entries, fn faq_entry ->
-          """
-          Question: #{faq_entry.question}
-          Answer: #{faq_entry.answer_markdown}
-          """
-        end)
-        |> Enum.join("\n")
+      if faq_entries == [] do
+        {:ok, prompt, false}
+      else
+        entries_text =
+          Enum.map(faq_entries, fn faq_entry ->
+            """
+            Source: [FAQ:#{faq_entry.id}]
+            Question: #{faq_entry.question}
+            Answer: #{faq_entry.answer_markdown}
+            """
+          end)
+          |> Enum.join("\n")
 
-      prompt =
-        prompt <>
-          """
-          <Similar_FAQ_Entries>
-          #{entries_text}
-          </Similar_FAQ_Entries>
-          """
+        prompt =
+          prompt <>
+            """
+            <Similar_FAQ_Entries>
+            #{entries_text}
+            </Similar_FAQ_Entries>
+            """
 
-      {:ok, prompt}
+        {:ok, prompt, true}
+      end
     else
-      {:ok, prompt}
+      {:ok, prompt, false}
     end
   end
 
@@ -105,6 +127,20 @@ defmodule Sanbase.Knowledge do
     else
       {:ok, []}
     end
+  end
+
+  defp min_similarity(options) do
+    Keyword.get(options, :min_similarity, @default_min_similarity)
+  end
+
+  defp filter_by_similarity(entries, min_sim) do
+    Enum.filter(entries, fn entry ->
+      case Map.get(entry, :similarity) do
+        nil -> false
+        sim when is_number(sim) -> sim >= min_sim
+        _ -> false
+      end
+    end)
   end
 
   defp find_most_similar_faqs(embedding, size) do
@@ -127,23 +163,36 @@ defmodule Sanbase.Knowledge do
     Sanbase.Insight.Post.find_most_similar_insights(embedding, size)
   end
 
-  def maybe_add_similar_insight_chunks(prompt, embedding, options) do
+  defp maybe_add_similar_insight_chunks(prompt, embedding, options, min_sim) do
     if Keyword.get(options, :insights, true) do
       with {:ok, post_embeddings} <- find_most_similar_insight_chunks(embedding, 5) do
-        text_chunks = Enum.map(post_embeddings, & &1.text_chunk) |> Enum.join("\n\n")
+        post_embeddings = filter_by_similarity(post_embeddings, min_sim)
 
-        prompt =
-          prompt <>
-            """
-            <Most_Similar_Santiment_Insight_Chunks>
-            #{text_chunks}
-            </Most_Similar_Santiment_Insight_Chunks>
-            """
+        if post_embeddings == [] do
+          {:ok, prompt, false}
+        else
+          text_chunks =
+            Enum.map(post_embeddings, fn chunk ->
+              """
+              Source: [Insight:#{chunk.post_id}] "#{chunk.post_title}"
+              #{chunk.text_chunk}
+              """
+            end)
+            |> Enum.join("\n\n")
 
-        {:ok, prompt}
+          prompt =
+            prompt <>
+              """
+              <Most_Similar_Santiment_Insight_Chunks>
+              #{text_chunks}
+              </Most_Similar_Santiment_Insight_Chunks>
+              """
+
+          {:ok, prompt, true}
+        end
       end
     else
-      {:ok, prompt}
+      {:ok, prompt, false}
     end
   end
 
@@ -155,35 +204,41 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  def maybe_add_similar_academy_chunks(prompt, embedding, options \\ []) do
+  defp maybe_add_similar_academy_chunks(prompt, embedding, options, min_sim) do
     if Keyword.get(options, :academy, true) do
       case Sanbase.Knowledge.Academy.search_chunks(embedding, 5) do
         {:ok, academy_chunks} ->
-          academy_text_chunks =
-            Enum.map(academy_chunks, fn academy_chunk ->
-              """
-              Article title: #{academy_chunk.title}
-              Article URL: #{academy_chunk.url}
-              Most relevant chunk from article: #{academy_chunk.chunk}
-              """
-            end)
-            |> Enum.join("\n")
+          academy_chunks = filter_by_similarity(academy_chunks, min_sim)
 
-          prompt =
-            prompt <>
-              """
-              <Academy_Content>
-              #{academy_text_chunks}
-              </Academy_Content>
-              """
+          if academy_chunks == [] do
+            {:ok, prompt, false}
+          else
+            academy_text_chunks =
+              Enum.map(academy_chunks, fn academy_chunk ->
+                """
+                Source: [Academy:#{academy_chunk.url}]
+                Article title: #{academy_chunk.title}
+                Most relevant chunk from article: #{academy_chunk.chunk}
+                """
+              end)
+              |> Enum.join("\n")
 
-          {:ok, prompt}
+            prompt =
+              prompt <>
+                """
+                <Academy_Content>
+                #{academy_text_chunks}
+                </Academy_Content>
+                """
+
+            {:ok, prompt, true}
+          end
 
         _ ->
-          {:ok, prompt}
+          {:ok, prompt, false}
       end
     else
-      {:ok, prompt}
+      {:ok, prompt, false}
     end
   end
 
@@ -208,6 +263,9 @@ defmodule Sanbase.Knowledge do
     8. If the user's question is unclear or ambiguous, politely ask for clarification using only the information provided.
     9. Prioritize accuracy and transparency—if there is any uncertainty, clearly communicate the limitations of the available information.
     10. When possible, summarize key points or actionable steps to help the user resolve their issue efficiently.
+    11. Cite every claim with the source markers exactly as provided: `[FAQ:<id>]`, `[Academy:<url>]`, or `[Insight:<id>]`.
+        Place the marker inline immediately after the sentence or bullet it supports. Do not invent markers and do not omit them.
+    12. End the answer with a `Sources` section listing each unique cited marker on its own bullet.
     </Instructions>
 
     <User_Input>

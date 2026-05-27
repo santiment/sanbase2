@@ -91,6 +91,12 @@ defmodule Sanbase.Knowledge.Reranker.OpenAITest do
       assert body["response_format"] == %{"type" => "json_object"}
     end
 
+    test "caps max_completion_tokens for latency" do
+      body = OpenAI.build_request_body("q", candidates())
+      assert is_integer(body["max_completion_tokens"]) and body["max_completion_tokens"] > 0
+      refute Map.has_key?(body, "reasoning_effort")
+    end
+
     test "embeds query and candidates in user message" do
       body = OpenAI.build_request_body("how do I get an API key", candidates())
       [_system, user] = body["messages"]

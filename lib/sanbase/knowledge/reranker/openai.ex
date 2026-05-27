@@ -8,7 +8,7 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
   format constrains output so even a candidate that contains adversarial
   text cannot derail the reranker into emitting prose.
 
-  Defaults to `gpt-5-nano`. Candidate text is truncated to
+  Defaults to `gpt-4o-mini`. Candidate text is truncated to
   `@max_candidate_chars` to keep prompt size bounded regardless of how
   long an Academy article or Insight chunk happens to be.
 
@@ -23,9 +23,13 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
   require Logger
 
   @base_url "https://api.openai.com/v1/chat/completions"
-  @model "gpt-5-nano"
-  @default_timeout_ms 30_000
+  @model "gpt-4o-mini"
+  @default_timeout_ms 10_000
+  @default_max_retries 2
   @max_candidate_chars 600
+
+  @doc "Declares the candidate-text format style this backend wants."
+  def style(), do: :llm_listwise
 
   @impl true
   def rerank(_query, [], _opts), do: {:ok, []}
@@ -34,6 +38,7 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
     http_post = Keyword.get(opts, :http_post, &default_http_post/2)
     model = Keyword.get(opts, :model, @model)
     timeout_ms = Keyword.get(opts, :timeout_ms, @default_timeout_ms)
+    max_retries = Keyword.get(opts, :max_retries, @default_max_retries)
     api_key = Keyword.get(opts, :api_key, openai_apikey())
 
     body = build_request_body(query, candidates, model)
@@ -45,7 +50,15 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
 
     started_at = System.monotonic_time(:millisecond)
 
-    case http_post.(@base_url, json: body, headers: headers, receive_timeout: timeout_ms) do
+    req_opts = [
+      json: body,
+      headers: headers,
+      receive_timeout: timeout_ms,
+      retry: :transient,
+      max_retries: max_retries
+    ]
+
+    case http_post.(@base_url, req_opts) do
       {:ok, %{status: 200, body: response}} ->
         elapsed = System.monotonic_time(:millisecond) - started_at
 
@@ -82,6 +95,7 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
   def build_request_body(query, candidates, model \\ @model) do
     %{
       "model" => model,
+      "max_completion_tokens" => 256,
       "response_format" => %{"type" => "json_object"},
       "messages" => [
         %{"role" => "system", "content" => system_prompt()},

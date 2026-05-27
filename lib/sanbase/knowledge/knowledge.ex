@@ -1,5 +1,6 @@
 defmodule Sanbase.Knowledge do
   alias Sanbase.Knowledge.Reranker
+  alias Sanbase.Knowledge.Reranker.CandidateFormatter
 
   @default_min_similarity 0.35
   @no_answer_message "I don't have enough information in the available Santiment FAQ, Academy, or Insights content to answer this question. Please contact Santiment Support for further assistance."
@@ -274,14 +275,16 @@ defmodule Sanbase.Knowledge do
   defp rerank([], _user_input, _source, _options, _opts), do: []
 
   defp rerank(entries, user_input, source, options, opts) do
+    reranker_mod = Keyword.get(options, :reranker) || default_reranker_module()
+
     rerank_opts =
       opts
       |> Keyword.put(:source, source)
       |> maybe_put_reranker(options)
 
     entries
-    |> to_candidates(source)
-    |> Reranker.call(user_input, rerank_opts)
+    |> CandidateFormatter.to_candidates(source, reranker_mod)
+    |> then(&Reranker.call(user_input, &1, rerank_opts))
     |> from_candidates()
   end
 
@@ -292,46 +295,10 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp to_candidates(entries, :faq) do
-    Enum.map(entries, fn e ->
-      %{
-        id: e.id,
-        text: "Q: #{e.question}\n\nA: #{e.answer_markdown}",
-        similarity: e.similarity,
-        source: :faq,
-        metadata: e
-      }
-    end)
-  end
-
-  defp to_candidates(entries, :academy) do
-    Enum.map(entries, fn e ->
-      title = Map.get(e, :title, "")
-      body = Map.get(e, :chunk) || Map.get(e, :content_markdown) || ""
-
-      %{
-        id: Map.get(e, :id) || Map.get(e, :url),
-        text: "#{title}\n\n#{body}",
-        similarity: e.similarity,
-        source: :academy,
-        metadata: e
-      }
-    end)
-  end
-
-  defp to_candidates(entries, :insight) do
-    Enum.map(entries, fn e ->
-      title = Map.get(e, :post_title) || Map.get(e, :title) || ""
-      body = Map.get(e, :text_chunk) || Map.get(e, :short_desc) || Map.get(e, :text) || ""
-
-      %{
-        id: Map.get(e, :post_id) || Map.get(e, :id),
-        text: "#{title}\n\n#{body}",
-        similarity: e.similarity,
-        source: :insight,
-        metadata: e
-      }
-    end)
+  defp default_reranker_module() do
+    :sanbase
+    |> Application.get_env(Reranker, [])
+    |> Keyword.get(:default, Sanbase.Knowledge.Reranker.Noop)
   end
 
   defp from_candidates(candidates), do: Enum.map(candidates, & &1.metadata)

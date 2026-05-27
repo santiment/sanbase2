@@ -175,7 +175,14 @@
     %{
       id: "faq-trial-cancel-keep-access",
       question: "If I cancel during the trial, do I keep access until day 14?",
-      expected: %{faq_ids: ["fda2a882-150f-41cd-a73a-6a62b47ddcc7"]},
+      expected: %{
+        faq_ids: [
+          "fda2a882-150f-41cd-a73a-6a62b47ddcc7",
+          # "Can I cancel my paid subscription anytime?" also covers the
+          # underlying principle (access retained until end of billing period).
+          "81825cb9-e07a-413e-b788-70edd9e25fe2"
+        ]
+      },
       tags: ["subscription", "trial", "cancel"]
     },
     %{
@@ -205,7 +212,14 @@
     %{
       id: "faq-refund-forgot-cancel",
       question: "I forgot to cancel the trial and got charged — can I get my money back?",
-      expected: %{faq_ids: ["0532b553-f28e-4db9-9b8f-9ce9a47a1147"]},
+      expected: %{
+        faq_ids: [
+          "0532b553-f28e-4db9-9b8f-9ce9a47a1147",
+          # General refund policy explicitly covers "charged unexpectedly"
+          # and instructs to contact support — also a correct answer.
+          "5661aa7e-54d5-40a7-ac56-d8ff140f0587"
+        ]
+      },
       tags: ["subscription", "refund", "trial"]
     },
     %{
@@ -235,7 +249,14 @@
     %{
       id: "faq-api-allowance-per-plan",
       question: "How many API calls per month does each plan give me?",
-      expected: %{faq_ids: ["d937c65f-8e54-45e0-8d6f-5179b1b18691"]},
+      expected: %{
+        faq_ids: [
+          "d937c65f-8e54-45e0-8d6f-5179b1b18691",
+          # "Could you help me understand the difference between your plans?"
+          # explicitly lists per-plan API-call counts (1k / 300k / 600k).
+          "11b2433a-82de-4c4d-bcee-24b6f3caa032"
+        ]
+      },
       tags: ["api", "subscription", "billing"]
     },
 

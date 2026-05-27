@@ -12,9 +12,11 @@ defmodule Sanbase.Knowledge.Eval do
   """
 
   alias Sanbase.Knowledge.{Academy, Faq, Reranker}
+  alias Sanbase.Knowledge.Reranker.CandidateFormatter
   alias Sanbase.Insight.Post
 
   @default_top_k 20
+  @default_concurrency 4
   @all_sources [:faq, :academy, :insights]
 
   @type item :: %{
@@ -33,6 +35,9 @@ defmodule Sanbase.Knowledge.Eval do
           sources: [atom()],
           top_k: pos_integer(),
           limit: pos_integer() | nil,
+          random: boolean(),
+          seed: integer() | nil,
+          concurrency: pos_integer(),
           reranker: module() | nil
         ]
 
@@ -45,13 +50,24 @@ defmodule Sanbase.Knowledge.Eval do
       opts
       |> Keyword.get(:file)
       |> load_items()
+      |> maybe_shuffle(opts[:random], opts[:seed])
       |> maybe_limit(opts[:limit])
 
     top_k = Keyword.get(opts, :top_k, @default_top_k)
     sources = Keyword.get(opts, :sources, @all_sources)
     reranker = Keyword.get(opts, :reranker)
+    concurrency = Keyword.get(opts, :concurrency, @default_concurrency)
 
-    results = Enum.map(items, &evaluate_item(&1, top_k, sources, reranker))
+    results =
+      items
+      |> Task.async_stream(
+        fn item -> evaluate_item(item, top_k, sources, reranker) end,
+        max_concurrency: concurrency,
+        timeout: :infinity,
+        ordered: true
+      )
+      |> Enum.map(fn {:ok, result} -> result end)
+
     summary = summarize(results, sources)
 
     %{items: results, summary: summary}
@@ -174,60 +190,27 @@ defmodule Sanbase.Knowledge.Eval do
   defp apply_reranker([], _question, _source, _reranker, _top_k), do: []
 
   defp apply_reranker(hits, question, source, reranker, top_k) do
+    reranker_mod = reranker || default_reranker_module()
+
     opts =
       [source: source, top_n: top_k]
       |> maybe_put(:reranker, reranker)
 
-    hits
-    |> to_candidates(source)
-    |> Reranker.call(question, opts)
+    candidates = CandidateFormatter.to_candidates(hits, source, reranker_mod)
+
+    question
+    |> Reranker.call(candidates, opts)
     |> Enum.map(& &1.metadata)
+  end
+
+  defp default_reranker_module() do
+    :sanbase
+    |> Application.get_env(Reranker, [])
+    |> Keyword.get(:default, Sanbase.Knowledge.Reranker.Noop)
   end
 
   defp maybe_put(opts, _key, nil), do: opts
   defp maybe_put(opts, key, value), do: Keyword.put(opts, key, value)
-
-  defp to_candidates(entries, :faq) do
-    Enum.map(entries, fn e ->
-      %{
-        id: e.id,
-        text: "Q: #{e.question}\n\nA: #{e.answer_markdown}",
-        similarity: e.similarity,
-        source: :faq,
-        metadata: e
-      }
-    end)
-  end
-
-  defp to_candidates(entries, :academy) do
-    Enum.map(entries, fn e ->
-      title = Map.get(e, :title, "")
-      body = Map.get(e, :chunk) || Map.get(e, :content_markdown) || ""
-
-      %{
-        id: Map.get(e, :github_path) || Map.get(e, :id),
-        text: "#{title}\n\n#{body}",
-        similarity: e.similarity,
-        source: :academy,
-        metadata: e
-      }
-    end)
-  end
-
-  defp to_candidates(entries, :insight) do
-    Enum.map(entries, fn e ->
-      title = Map.get(e, :post_title) || Map.get(e, :title) || ""
-      body = Map.get(e, :text_chunk) || Map.get(e, :text) || ""
-
-      %{
-        id: Map.get(e, :post_id) || Map.get(e, :id),
-        text: "#{title}\n\n#{body}",
-        similarity: e.similarity,
-        source: :insight,
-        metadata: e
-      }
-    end)
-  end
 
   defp summarize_source(results, src) do
     scored =
@@ -277,6 +260,14 @@ defmodule Sanbase.Knowledge.Eval do
   defp maybe_limit(_items, n) do
     raise ArgumentError, "limit must be a positive integer, got: #{inspect(n)}"
   end
+
+  defp maybe_shuffle(items, true, seed) when is_integer(seed) do
+    :rand.seed(:exsss, seed)
+    Enum.shuffle(items)
+  end
+
+  defp maybe_shuffle(items, true, _seed), do: Enum.shuffle(items)
+  defp maybe_shuffle(items, _random, _seed), do: items
 
   defp load_items(nil), do: load_items(default_golden_set_path())
 

@@ -20,6 +20,7 @@ defmodule Mix.Tasks.KnowledgeEval do
     * `--json`   - dump full results (per-item + summary) as JSON to this path
     * `--top-k`  - top-K to retrieve per source (default 20)
     * `--limit`  - cap the number of golden items evaluated
+    * `--concurrency` - parallel items in flight (default 4)
     * `--no-rerank` - skip reranking (force the Noop reranker). Use to capture
       a coarse-retrieval baseline and compare against the reranked run.
     * `--verbose` / `-v` - print per-question rank breakdown
@@ -42,6 +43,7 @@ defmodule Mix.Tasks.KnowledgeEval do
           verbose: :boolean,
           top_k: :integer,
           limit: :integer,
+          concurrency: :integer,
           no_rerank: :boolean
         ],
         aliases: [v: :verbose]
@@ -67,6 +69,7 @@ defmodule Mix.Tasks.KnowledgeEval do
     |> maybe_put(:file, opts[:file])
     |> maybe_put(:top_k, opts[:top_k])
     |> maybe_put(:limit, opts[:limit])
+    |> maybe_put(:concurrency, opts[:concurrency])
     |> maybe_put_reranker(opts[:no_rerank])
   end
 

@@ -7,7 +7,7 @@ defmodule Sanbase.Knowledge.Eval do
   per source. The metrics are meant to be diffed across runs to gate
   changes to the embedding model, threshold, chunking, or retrieval logic.
 
-  Designed to be called from `mix knowledge.eval` but also usable directly
+  Designed to be called from `mix knowledge_eval` but also usable directly
   from IEx.
   """
 
@@ -113,33 +113,54 @@ defmodule Sanbase.Knowledge.Eval do
   # Private functions
 
   defp evaluate_item(item, top_k, sources) do
-    {:ok, [embedding]} = Sanbase.AI.Embedding.generate_embeddings([item.question], 1536)
+    base = %{id: item.id, question: item.question, tags: Map.get(item, :tags, [])}
 
-    per_source =
-      sources
-      |> Enum.map(fn src -> {src, eval_source(src, item, embedding, top_k)} end)
-      |> Map.new()
+    case Sanbase.AI.Embedding.generate_embeddings([item.question], 1536) do
+      {:ok, [embedding]} ->
+        per_source =
+          sources
+          |> Enum.map(fn src -> {src, eval_source(src, item, embedding, top_k)} end)
+          |> Map.new()
 
-    Map.merge(%{id: item.id, question: item.question, tags: Map.get(item, :tags, [])}, per_source)
+        Map.merge(base, per_source)
+
+      {:error, reason} ->
+        Map.put(base, :error, inspect(reason))
+    end
   end
 
   defp eval_source(:faq, item, embedding, top_k) do
-    {:ok, hits} = Faq.find_most_similar_faqs(embedding, top_k)
-    expected = get_in(item, [:expected, :faq_ids]) || []
-    score_hits(hits, expected, & &1.id)
+    case Faq.find_most_similar_faqs(embedding, top_k) do
+      {:ok, hits} ->
+        expected = get_in(item, [:expected, :faq_ids]) || []
+        score_hits(hits, expected, & &1.id)
+
+      {:error, reason} ->
+        %{error: inspect(reason), top1_similarity: nil}
+    end
   end
 
   defp eval_source(:academy, item, embedding, top_k) do
-    {:ok, hits} = Academy.search_chunks(embedding, top_k)
-    expected = get_in(item, [:expected, :academy_paths]) || []
-    score_hits(hits, expected, & &1.github_path)
+    case Academy.search_chunks(embedding, top_k) do
+      {:ok, hits} ->
+        expected = get_in(item, [:expected, :academy_paths]) || []
+        score_hits(hits, expected, & &1.github_path)
+
+      {:error, reason} ->
+        %{error: inspect(reason), top1_similarity: nil}
+    end
   end
 
   defp eval_source(:insights, item, embedding, top_k) do
-    {:ok, hits} = Post.find_most_similar_insight_chunks(embedding, top_k)
-    hits = Enum.uniq_by(hits, & &1.post_id)
-    expected = get_in(item, [:expected, :insight_post_ids]) || []
-    score_hits(hits, expected, & &1.post_id)
+    case Post.find_most_similar_insight_chunks(embedding, top_k) do
+      {:ok, hits} ->
+        hits = Enum.uniq_by(hits, & &1.post_id)
+        expected = get_in(item, [:expected, :insight_post_ids]) || []
+        score_hits(hits, expected, & &1.post_id)
+
+      {:error, reason} ->
+        %{error: inspect(reason), top1_similarity: nil}
+    end
   end
 
   defp summarize_source(results, src) do
@@ -167,6 +188,7 @@ defmodule Sanbase.Knowledge.Eval do
 
   defp skipped_or_nil?(nil), do: true
   defp skipped_or_nil?(%{skipped: true}), do: true
+  defp skipped_or_nil?(%{error: _}), do: true
   defp skipped_or_nil?(_), do: false
 
   defp average(list, fun) do
@@ -185,6 +207,10 @@ defmodule Sanbase.Knowledge.Eval do
 
   defp maybe_limit(items, nil), do: items
   defp maybe_limit(items, n) when is_integer(n) and n > 0, do: Enum.take(items, n)
+
+  defp maybe_limit(_items, n) do
+    raise ArgumentError, "limit must be a positive integer, got: #{inspect(n)}"
+  end
 
   defp load_items(nil), do: load_items(default_golden_set_path())
 

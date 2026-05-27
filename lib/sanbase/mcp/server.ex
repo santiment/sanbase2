@@ -4,7 +4,7 @@ defmodule Sanbase.MCP.Server do
   use Anubis.Server,
     name: "sanbase-metrics",
     version: "1.0.0",
-    capabilities: [:tools, :prompts]
+    capabilities: [:tools, :prompts, :resources]
 
   alias Sanbase.Accounts.User
   alias Sanbase.MCP.{Auth, ToolInvocation}
@@ -43,6 +43,9 @@ defmodule Sanbase.MCP.Server do
   # Register our social data tools
   component(Sanbase.MCP.TrendingStoriesTool)
   component(Sanbase.MCP.CombinedTrendsTool)
+
+  # Register MCP App UI resources
+  component(Sanbase.MCP.SocialTrendsUI)
 
   # Register Screener tool
   component(Sanbase.MCP.AssetsByMetricTool)

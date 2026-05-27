@@ -78,10 +78,15 @@ defmodule Sanbase.MCP.AuthPlug do
 
   defp reject(conn, description) do
     body = Jason.encode!(%{error: "unauthorized", error_description: description})
+    backend_url = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, :backend_url)
+    resource_metadata_url = "#{backend_url}/.well-known/oauth-protected-resource"
 
     conn
     |> put_resp_content_type("application/json")
-    |> put_resp_header("www-authenticate", "Bearer")
+    |> put_resp_header(
+      "www-authenticate",
+      ~s(Bearer resource_metadata="#{resource_metadata_url}")
+    )
     |> send_resp(401, body)
     |> halt()
   end

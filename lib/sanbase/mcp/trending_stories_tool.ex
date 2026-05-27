@@ -45,6 +45,11 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
     }
   end
 
+  @impl true
+  def meta do
+    %{"ui" => %{"resourceUri" => "ui://santiment/social-trends"}}
+  end
+
   schema do
     field(:time_period, :string,
       required: false,
@@ -87,14 +92,56 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
         total_time_periods: length(stories_data)
       }
 
-      {:reply, Response.json(Response.tool(), response_data), frame}
+      {:reply, Response.structured(Response.tool(), response_data), frame}
     else
       {:error, reason} ->
         {:reply, Response.error(Response.tool(), reason), frame}
     end
   end
 
+  # TODO(temporary): mock branch + mock_stories/0 exist so the MCP App widget
+  # can be exercised locally without ClickHouse access. Drop both once dev
+  # ClickHouse credentials are wired up everywhere.
   defp fetch_trending_stories(from_datetime, to_datetime, size) do
+    if Application.get_env(:sanbase, :mcp_use_mocks, false) do
+      {:ok, mock_stories()}
+    else
+      fetch_real_trending_stories(from_datetime, to_datetime, size)
+    end
+  end
+
+  # TODO(temporary): fixture data for MCP_USE_MOCKS=true. Remove with the
+  # ENV gate in fetch_trending_stories/3 above.
+  defp mock_stories do
+    [
+      %{
+        datetime: DateTime.to_iso8601(DateTime.utc_now()),
+        top_stories: [
+          %{
+            title: "Bitcoin ETF inflows hit record $1.2B in a single day",
+            summary:
+              "Institutional demand surges as spot Bitcoin ETFs see unprecedented capital inflows.",
+            bearish_sentiment_ratio: 0.12,
+            bullish_sentiment_ratio: 0.88,
+            score: 97.4,
+            query: "bitcoin etf inflows record",
+            related_tokens: ["BTC_bitcoin", "ETH_ethereum"]
+          },
+          %{
+            title: "Solana network congestion sparks debate over validator incentives",
+            summary: "A wave of meme coin launches caused network slowdowns.",
+            bearish_sentiment_ratio: 0.61,
+            bullish_sentiment_ratio: 0.31,
+            score: 76.8,
+            query: "solana network congestion validators",
+            related_tokens: ["SOL_solana"]
+          }
+        ]
+      }
+    ]
+  end
+
+  defp fetch_real_trending_stories(from_datetime, to_datetime, size) do
     # Use the interval based on the time period
     interval = determine_interval(from_datetime, to_datetime)
 

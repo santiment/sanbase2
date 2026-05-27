@@ -93,3 +93,5 @@ PLAN.md
 PLAN_PROGRESS.md
 .mix/
 .hex/
+dev_tunnel.sh
+docker-compose.override.yaml

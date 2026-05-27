@@ -36,13 +36,15 @@ defmodule Sanbase.MajorTopics.BatchSerializer do
   @spec to_payload(TopicBatch.t(), keyword()) :: payload()
   def to_payload(%TopicBatch{topics: topics} = batch, opts \\ []) when is_list(topics) do
     active = Enum.reject(topics, & &1.is_removed)
-    dts = collect_dts(active)
-    labels = Enum.map(dts, &Calendar.strftime(&1, @label_format))
 
-    datasets =
+    limited =
       active
       |> Enum.sort_by(& &1.position)
-      |> Enum.map(&topic_to_dataset(&1, dts))
+      |> take_topics(Keyword.get(opts, :limit))
+
+    dts = collect_dts(limited)
+    labels = Enum.map(dts, &Calendar.strftime(&1, @label_format))
+    datasets = Enum.map(limited, &topic_to_dataset(&1, dts))
 
     %{
       granularity: Keyword.fetch!(opts, :granularity),
@@ -55,6 +57,13 @@ defmodule Sanbase.MajorTopics.BatchSerializer do
       next_interval_start: Keyword.get(opts, :next_interval_start)
     }
   end
+
+  defp take_topics(topics, nil), do: topics
+
+  defp take_topics(topics, limit) when is_integer(limit) and limit > 0,
+    do: Enum.take(topics, limit)
+
+  defp take_topics(topics, _), do: topics
 
   defp collect_dts(topics) do
     topics

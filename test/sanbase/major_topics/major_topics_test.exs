@@ -336,12 +336,66 @@ defmodule Sanbase.MajorTopicsTest do
       assert payload.previous_interval_start == ~D[2026-04-27]
       assert payload.next_interval_start == ~D[2026-05-11]
     end
+
+    test "returns all topics when limit is omitted" do
+      {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload_with_topic_count(25))
+      batch = MajorTopics.get_batch!(batch.id)
+
+      payload = BatchSerializer.to_payload(batch, granularity: "week")
+
+      assert length(payload.datasets) == 25
+    end
+
+    test "limits datasets by position" do
+      {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload_with_topic_count(25))
+      batch = MajorTopics.get_batch!(batch.id)
+
+      payload = BatchSerializer.to_payload(batch, granularity: "week", limit: 20)
+
+      assert length(payload.datasets) == 20
+      assert Enum.map(payload.datasets, & &1.label) == Enum.map(0..19, &"Topic #{&1}")
+    end
+
+    test "honors explicit limit below default" do
+      {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload_with_topic_count(25))
+      batch = MajorTopics.get_batch!(batch.id)
+
+      payload = BatchSerializer.to_payload(batch, granularity: "week", limit: 5)
+
+      assert length(payload.datasets) == 5
+      assert Enum.map(payload.datasets, & &1.label) == Enum.map(0..4, &"Topic #{&1}")
+    end
   end
 
   describe "schema state helpers" do
     test "states/0 lists draft and published" do
       assert TopicBatch.states() == ["draft", "published"]
     end
+  end
+
+  defp payload_with_topic_count(count) do
+    interval = "2026-05-04T00:00:00/2026-05-11T00:00:00"
+
+    topics =
+      Enum.map(0..(count - 1), fn idx ->
+        %{
+          ch_id: "1;#{idx};twitter_crypto;#{interval};bertopic",
+          topic_id: idx,
+          title: "Topic #{idx}",
+          summary: "Summary #{idx}.",
+          top_words: "word#{idx}",
+          is_crypto_relevant: true,
+          type: "bertopic",
+          values: [%{dt: ~U[2026-05-04 00:00:00Z], value: idx * 1.0}]
+        }
+      end)
+
+    %{
+      source: "twitter_crypto",
+      version: 1,
+      interval: interval,
+      topics: topics
+    }
   end
 
   defp sample_payload do

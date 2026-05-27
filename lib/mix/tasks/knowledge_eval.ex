@@ -31,7 +31,7 @@ defmodule Mix.Tasks.KnowledgeEval do
   def run(args) do
     Mix.Task.run("app.start")
 
-    {opts, _rest, _invalid} =
+    {opts, rest, invalid} =
       OptionParser.parse(args,
         strict: [
           source: :string,
@@ -43,6 +43,9 @@ defmodule Mix.Tasks.KnowledgeEval do
         ],
         aliases: [v: :verbose]
       )
+
+    if invalid != [], do: Mix.raise("Invalid flags: #{inspect(invalid)}")
+    if rest != [], do: Mix.raise("Unexpected arguments: #{inspect(rest)}")
 
     eval_opts = build_eval_opts(opts)
     %{items: results, summary: summary} = Sanbase.Knowledge.Eval.run(eval_opts)
@@ -63,6 +66,8 @@ defmodule Mix.Tasks.KnowledgeEval do
     |> maybe_put(:limit, opts[:limit])
   end
 
+  @allowed_sources ~w(faq academy insights)
+
   defp parse_sources(nil), do: [:faq, :academy, :insights]
   defp parse_sources("all"), do: [:faq, :academy, :insights]
 
@@ -70,7 +75,15 @@ defmodule Mix.Tasks.KnowledgeEval do
     str
     |> String.split(",", trim: true)
     |> Enum.map(&String.trim/1)
-    |> Enum.map(&String.to_existing_atom/1)
+    |> Enum.map(fn
+      src when src in @allowed_sources ->
+        String.to_existing_atom(src)
+
+      other ->
+        Mix.raise(
+          "Unsupported --source #{inspect(other)}. Allowed: #{Enum.join(@allowed_sources, ",")}"
+        )
+    end)
   end
 
   defp maybe_put(opts, _key, nil), do: opts
@@ -104,10 +117,17 @@ defmodule Mix.Tasks.KnowledgeEval do
       IO.puts("")
       IO.puts("#{r.id}: #{r.question}")
 
+      if err = Map.get(r, :error) do
+        IO.puts("  error=#{err}")
+      end
+
       Enum.each(sources, fn src ->
         case Map.get(r, src) do
           nil ->
             :ok
+
+          %{error: err} ->
+            IO.puts("  [#{src}] error=#{err}")
 
           %{skipped: true, top1_similarity: sim} ->
             IO.puts("  [#{src}] (no expected) top1=#{fmt(sim)}")

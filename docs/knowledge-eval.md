@@ -132,7 +132,7 @@ Empty by default. To add coverage:
 
 ## Interpreting results
 
-```
+```text
 [faq] evaluated=63
   hit@1   0.730
   hit@3   0.905

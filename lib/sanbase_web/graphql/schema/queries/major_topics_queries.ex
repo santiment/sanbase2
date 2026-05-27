@@ -23,6 +23,9 @@ defmodule SanbaseWeb.Graphql.Schema.MajorTopicsQueries do
          WEEK, ±1 day for DAY) and is echoed in the response; it is not stored
          per batch.
 
+    Use `limit` to cap how many topic `datasets` are returned (by moderator
+    `position`, default 20). `labels` are derived only from the returned topics.
+
     Returns `null` when no batch exists for the given `intervalStart`, or when
     nothing has been published yet.
     """
@@ -31,6 +34,9 @@ defmodule SanbaseWeb.Graphql.Schema.MajorTopicsQueries do
 
       @desc "Optional `intervalStart` cursor. Omit to fetch the latest published batch."
       arg(:interval_start, :date)
+
+      @desc "Max number of topic datasets to return (by moderator position). Default 20."
+      arg(:limit, :integer, default_value: 20)
 
       meta(access: :free)
 

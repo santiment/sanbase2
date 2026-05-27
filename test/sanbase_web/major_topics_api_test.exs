@@ -104,6 +104,30 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
       assert d1["data"] == [1.0, 3.0, 0.0]
       assert d2["data"] == [0.0, 2.0, 4.0]
     end
+
+    test "defaults limit to 20 datasets", %{conn: conn, user: user} do
+      publish(payload_with_topic_count(25, "2026-05-04T00:00:00/2026-05-11T00:00:00"), user.id)
+
+      result = execute_query(conn, batch_query(granularity: "WEEK"), "majorTopicsBatch")
+
+      assert length(result["datasets"]) == 20
+      assert hd(result["datasets"])["label"] == "Topic 0"
+      assert List.last(result["datasets"])["label"] == "Topic 19"
+    end
+
+    test "accepts explicit limit", %{conn: conn, user: user} do
+      publish(payload_with_topic_count(25, "2026-05-04T00:00:00/2026-05-11T00:00:00"), user.id)
+
+      result =
+        execute_query(
+          conn,
+          batch_query(granularity: "WEEK", limit: 5),
+          "majorTopicsBatch"
+        )
+
+      assert length(result["datasets"]) == 5
+      assert Enum.map(result["datasets"], & &1["label"]) == Enum.map(0..4, &"Topic #{&1}")
+    end
   end
 
   describe "getLatestMajorTopics (deprecated)" do
@@ -126,6 +150,29 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
     {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload)
     {:ok, batch} = MajorTopics.publish_batch(batch, user_id)
     batch
+  end
+
+  defp payload_with_topic_count(count, interval) do
+    topics =
+      Enum.map(0..(count - 1), fn idx ->
+        %{
+          ch_id: "1;#{idx};twitter_crypto;#{interval};bertopic",
+          topic_id: idx,
+          title: "Topic #{idx}",
+          summary: "Summary #{idx}.",
+          top_words: "word#{idx}",
+          is_crypto_relevant: true,
+          type: "bertopic",
+          values: [%{dt: ~U[2026-05-04 00:00:00Z], value: idx * 1.0}]
+        }
+      end)
+
+    %{
+      source: "twitter_crypto",
+      version: 1,
+      interval: interval,
+      topics: topics
+    }
   end
 
   defp payload_for(interval) do
@@ -167,6 +214,7 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
   defp batch_query(opts) do
     granularity = Keyword.fetch!(opts, :granularity)
     interval_start = Keyword.get(opts, :interval_start)
+    limit = Keyword.get(opts, :limit)
 
     args =
       ["granularity: #{granularity}"]
@@ -174,6 +222,12 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
         case interval_start do
           nil -> acc
           v -> acc ++ [~s|intervalStart: "#{v}"|]
+        end
+      end)
+      |> then(fn acc ->
+        case limit do
+          nil -> acc
+          v -> acc ++ ["limit: #{v}"]
         end
       end)
       |> Enum.join(", ")

@@ -56,7 +56,7 @@ config :sanbase,
 # in `lib/sanbase/application/web.ex`.
 config :sanbase, :use_rehydrating_cache, true
 
-config :sanbase, Sanbase.PromEx,
+config :sanbase, SanbaseWeb.Prometheus,
   disabled: false,
   manual_metrics_start_delay: :no_delay,
   drop_metrics_groups: [],

@@ -9,6 +9,8 @@ import Config
 config :phoenix_live_view, debug_heex_annotations: true
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", "https://app-stage.santiment.net"}
 
+config :sanbase, SanbaseWeb.Prometheus, disabled: true
+
 port = String.to_integer(System.get_env("PORT") || "4000")
 
 config :sanbase, SanbaseWeb.Endpoint,

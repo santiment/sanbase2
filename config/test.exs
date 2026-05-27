@@ -23,6 +23,8 @@ config :sanbase, Sanbase.EventBus,
 
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 
+config :sanbase, SanbaseWeb.Prometheus, disabled: true
+
 test_port =
   case System.get_env("MIX_TEST_PARTITION") do
     nil -> 4001

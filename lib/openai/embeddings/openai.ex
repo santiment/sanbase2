@@ -145,7 +145,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
             params: request.options
           }
 
-          Logger.warning("OpenAI Embedding Request: #{inspect(request_debug)}")
+          Logger.debug("OpenAI Embedding Request: #{inspect(request_debug)}")
           request
         end
       )
@@ -156,7 +156,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
             headers: extract_debugging_headers(response.headers)
           }
 
-          Logger.warning("OpenAI Embedding Response: #{inspect(response_debug)}")
+          Logger.debug("OpenAI Embedding Response: #{inspect(response_debug)}")
           {request, response}
         end
       )

@@ -12,6 +12,7 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
     field(:is_successful, :boolean)
     field(:errors, :string)
     field(:question_type, :string)
+    field(:reranker, :string)
 
     belongs_to(:user, Sanbase.Accounts.User)
 
@@ -28,7 +29,8 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
       :user_id,
       :is_successful,
       :errors,
-      :question_type
+      :question_type,
+      :reranker
     ])
     |> validate_required([:question, :answer, :is_successful, :source, :question_type])
     |> validate_inclusion(:question_type, ["ask_ai", "smart_search"])

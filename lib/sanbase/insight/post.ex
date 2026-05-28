@@ -144,7 +144,7 @@ defmodule Sanbase.Insight.Post do
         limit: ^size
       )
 
-    result = Sanbase.Repo.all(query)
+    result = Sanbase.Repo.VectorQuery.all(query)
     {:ok, result}
   end
 
@@ -165,7 +165,7 @@ defmodule Sanbase.Insight.Post do
         limit: ^size
       )
 
-    result = Sanbase.Repo.all(query)
+    result = Sanbase.Repo.VectorQuery.all(query)
     {:ok, result}
   end
 

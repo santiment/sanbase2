@@ -185,6 +185,7 @@ defmodule SanbaseWeb.AskLive do
 
   defp log_async(question_type, current_user, question, answer, sources, is_successful, errors) do
     self = self()
+    reranker = Sanbase.Knowledge.Reranker.label(Sanbase.Knowledge.Reranker.default_impl())
 
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
       with {:ok, struct} <-
@@ -195,7 +196,8 @@ defmodule SanbaseWeb.AskLive do
                source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
                is_successful: is_successful,
                user_id: current_user && current_user.id,
-               errors: inspect(errors)
+               errors: inspect(errors),
+               reranker: reranker
              }) do
         url = Path.join([SanbaseWeb.Endpoint.admin_url(), "admin", "faq", "history", struct.id])
         send(self, {:populate_answer_log_link, url})

@@ -11,6 +11,8 @@ defmodule Sanbase.Knowledge.Reranker do
   `AcademyArticleChunk`, or insight chunks.
   """
 
+  require Logger
+
   @type candidate :: %{
           required(:id) => term(),
           required(:text) => String.t(),
@@ -42,19 +44,67 @@ defmodule Sanbase.Knowledge.Reranker do
   def call(query, candidates, opts \\ []) do
     impl = Keyword.get(opts, :reranker, default_impl())
     top_n = Keyword.get(opts, :top_n)
+    source = Keyword.get(opts, :source, :unknown)
+    backend = label(impl)
+    candidate_count = length(candidates)
+    prompt_bytes = candidates_byte_size(candidates)
 
-    case impl.rerank(query, candidates, opts) do
-      {:ok, reranked} -> maybe_take(reranked, top_n)
-      {:error, _reason} -> maybe_take(candidates, top_n)
-    end
+    Logger.debug(
+      "Reranker start: source=#{source} backend=#{backend} candidates=#{candidate_count} prompt_bytes=#{prompt_bytes}"
+    )
+
+    start_mono = System.monotonic_time()
+    result = impl.rerank(query, candidates, opts)
+
+    took_ms =
+      System.convert_time_unit(System.monotonic_time() - start_mono, :native, :millisecond)
+
+    {outcome, reranked} =
+      case result do
+        {:ok, list} ->
+          {:ok, maybe_take(list, top_n)}
+
+        {:error, reason} ->
+          Logger.warning(
+            "Reranker fallback: backend=#{backend} source=#{source} reason=#{inspect(reason)}"
+          )
+
+          {:fallback, maybe_take(candidates, top_n)}
+      end
+
+    Logger.debug(
+      "Reranker done:  source=#{source} backend=#{backend} outcome=#{outcome} took_ms=#{took_ms} candidates_in=#{candidate_count} candidates_out=#{length(reranked)}"
+    )
+
+    reranked
   end
 
-  defp maybe_take(list, nil), do: list
-  defp maybe_take(list, n) when is_integer(n) and n >= 0, do: Enum.take(list, n)
+  defp candidates_byte_size(candidates) do
+    Enum.reduce(candidates, 0, fn %{text: t}, acc -> acc + byte_size(t) end)
+  end
 
-  defp default_impl() do
+  @doc """
+  The reranker module that will be used when no `:reranker` override is
+  passed to `call/3`. Falls back to `Sanbase.Knowledge.Reranker.Noop`
+  when unconfigured.
+  """
+  @spec default_impl() :: module()
+  def default_impl() do
     :sanbase
     |> Application.get_env(__MODULE__, [])
     |> Keyword.get(:default, Sanbase.Knowledge.Reranker.Noop)
   end
+
+  @doc """
+  Short, human-readable label for a reranker module — the last segment
+  of its module name (e.g. `Sanbase.Knowledge.Reranker.OpenAI` ->
+  `"OpenAI"`).
+  """
+  @spec label(module()) :: String.t()
+  def label(mod) when is_atom(mod) do
+    mod |> Module.split() |> List.last()
+  end
+
+  defp maybe_take(list, nil), do: list
+  defp maybe_take(list, n) when is_integer(n) and n >= 0, do: Enum.take(list, n)
 end

@@ -1,4 +1,6 @@
 defmodule Sanbase.Knowledge do
+  require Logger
+
   alias Sanbase.Knowledge.Reranker
   alias Sanbase.Knowledge.Reranker.CandidateFormatter
 
@@ -12,34 +14,102 @@ defmodule Sanbase.Knowledge do
   @prompt_top_n 5
 
   def answer_question(user_input, options \\ []) do
-    with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
-         {:ok, prompt, sources_found?} <-
-           build_question_answer_prompt(user_input, embedding, options) do
-      if sources_found? do
-        Sanbase.OpenAI.Question.ask(prompt)
-      else
-        {:ok, @no_answer_message}
+    reranker = Reranker.label(Keyword.get(options, :reranker) || Reranker.default_impl())
+    preview = question_preview(user_input)
+
+    Logger.info(
+      "answer_question start: question=#{preview} question_len=#{byte_size(user_input)} reranker=#{reranker}"
+    )
+
+    start_mono = System.monotonic_time()
+
+    result =
+      with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
+           {:ok, prompt, sources_found?} <-
+             build_question_answer_prompt(user_input, embedding, options) do
+        if sources_found? do
+          Sanbase.OpenAI.Question.ask(prompt)
+        else
+          {:ok, @no_answer_message}
+        end
       end
+
+    took_ms =
+      System.convert_time_unit(System.monotonic_time() - start_mono, :native, :millisecond)
+
+    case result do
+      {:ok, _} ->
+        Logger.info(
+          "answer_question done: question=#{preview} outcome=ok took_ms=#{took_ms} reranker=#{reranker}"
+        )
+
+      {:error, reason} ->
+        Logger.info(
+          "answer_question done: question=#{preview} outcome=error took_ms=#{took_ms} reranker=#{reranker} reason=#{inspect(reason)}"
+        )
     end
+
+    result
   end
 
   def smart_search(user_input, options) do
     min_sim = min_similarity(options)
+    reranker = Reranker.label(Keyword.get(options, :reranker) || Reranker.default_impl())
+    preview = question_preview(user_input)
 
-    with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
-         {:ok, faq_entries} <- maybe_find_most_similar_faqs(user_input, embedding, options),
-         {:ok, academy_articles} <-
-           maybe_find_most_similar_academy_articles(user_input, embedding, options),
-         {:ok, insights} <- maybe_find_most_similar_insights(user_input, embedding, options) do
-      filtered_faqs = filter_by_similarity(faq_entries, min_sim)
-      filtered_academy = filter_by_similarity(academy_articles, min_sim)
-      filtered_insights = filter_by_similarity(insights, min_sim)
+    sources =
+      options
+      |> Keyword.take([:faq, :academy, :insights])
+      |> Enum.filter(fn {_k, v} -> v end)
+      |> Enum.map(fn {k, _} -> k end)
 
-      if filtered_faqs == [] and filtered_academy == [] and filtered_insights == [] do
-        {:ok, @no_answer_message}
-      else
-        build_smart_search_result(filtered_faqs, filtered_academy, filtered_insights, options)
+    Logger.info(
+      "smart_search start: question=#{preview} question_len=#{byte_size(user_input)} reranker=#{reranker} sources=#{inspect(sources)}"
+    )
+
+    start_mono = System.monotonic_time()
+
+    result =
+      with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
+           {:ok, faq_entries} <- maybe_find_most_similar_faqs(user_input, embedding, options),
+           {:ok, academy_articles} <-
+             maybe_find_most_similar_academy_articles(user_input, embedding, options),
+           {:ok, insights} <- maybe_find_most_similar_insights(user_input, embedding, options) do
+        filtered_faqs = filter_by_similarity(faq_entries, min_sim)
+        filtered_academy = filter_by_similarity(academy_articles, min_sim)
+        filtered_insights = filter_by_similarity(insights, min_sim)
+
+        counts = %{
+          faqs: length(filtered_faqs),
+          academy: length(filtered_academy),
+          insights: length(filtered_insights)
+        }
+
+        if filtered_faqs == [] and filtered_academy == [] and filtered_insights == [] do
+          {{:ok, @no_answer_message}, counts, true}
+        else
+          {build_smart_search_result(filtered_faqs, filtered_academy, filtered_insights, options),
+           counts, false}
+        end
       end
+
+    took_ms =
+      System.convert_time_unit(System.monotonic_time() - start_mono, :native, :millisecond)
+
+    case result do
+      {{:ok, _} = ret, counts, no_answer?} ->
+        Logger.info(
+          "smart_search done: question=#{preview} outcome=ok took_ms=#{took_ms} reranker=#{reranker} faqs=#{counts.faqs} academy=#{counts.academy} insights=#{counts.insights} no_answer=#{no_answer?}"
+        )
+
+        ret
+
+      {:error, reason} = ret ->
+        Logger.info(
+          "smart_search done: question=#{preview} outcome=error took_ms=#{took_ms} reranker=#{reranker} reason=#{inspect(reason)}"
+        )
+
+        ret
     end
   end
 
@@ -150,6 +220,21 @@ defmodule Sanbase.Knowledge do
 
   defp min_similarity(options) do
     Keyword.get(options, :min_similarity, @default_min_similarity)
+  end
+
+  @question_preview_chars 40
+
+  defp question_preview(user_input) when is_binary(user_input) do
+    flat = user_input |> String.replace(~r/\s+/, " ") |> String.trim()
+
+    truncated =
+      if String.length(flat) > @question_preview_chars do
+        String.slice(flat, 0, @question_preview_chars) <> "…"
+      else
+        flat
+      end
+
+    inspect(truncated)
   end
 
   defp filter_by_similarity(entries, min_sim) do
@@ -275,7 +360,7 @@ defmodule Sanbase.Knowledge do
   defp rerank([], _user_input, _source, _options, _opts), do: []
 
   defp rerank(entries, user_input, source, options, opts) do
-    reranker_mod = Keyword.get(options, :reranker) || default_reranker_module()
+    reranker_mod = Keyword.get(options, :reranker) || Reranker.default_impl()
 
     rerank_opts =
       opts
@@ -293,12 +378,6 @@ defmodule Sanbase.Knowledge do
       nil -> opts
       mod -> Keyword.put(opts, :reranker, mod)
     end
-  end
-
-  defp default_reranker_module() do
-    :sanbase
-    |> Application.get_env(Reranker, [])
-    |> Keyword.get(:default, Sanbase.Knowledge.Reranker.Noop)
   end
 
   defp from_candidates(candidates), do: Enum.map(candidates, & &1.metadata)

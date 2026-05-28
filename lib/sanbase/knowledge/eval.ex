@@ -38,7 +38,8 @@ defmodule Sanbase.Knowledge.Eval do
           random: boolean(),
           seed: integer() | nil,
           concurrency: pos_integer(),
-          reranker: module() | nil
+          reranker: module() | nil,
+          progress: boolean()
         ]
 
   @doc """
@@ -57,11 +58,16 @@ defmodule Sanbase.Knowledge.Eval do
     sources = Keyword.get(opts, :sources, @all_sources)
     reranker = Keyword.get(opts, :reranker)
     concurrency = Keyword.get(opts, :concurrency, @default_concurrency)
+    progress = progress_tracker(opts[:progress], length(items))
 
     results =
       items
       |> Task.async_stream(
-        fn item -> evaluate_item(item, top_k, sources, reranker) end,
+        fn item ->
+          result = evaluate_item(item, top_k, sources, reranker)
+          tick_progress(progress, item)
+          result
+        end,
         max_concurrency: concurrency,
         timeout: :infinity,
         ordered: true
@@ -211,6 +217,16 @@ defmodule Sanbase.Knowledge.Eval do
 
   defp maybe_put(opts, _key, nil), do: opts
   defp maybe_put(opts, key, value), do: Keyword.put(opts, key, value)
+
+  defp progress_tracker(true, total) when total > 0, do: {:atomics.new(1, []), total}
+  defp progress_tracker(_, _), do: nil
+
+  defp tick_progress(nil, _item), do: :ok
+
+  defp tick_progress({counter, total}, item) do
+    n = :atomics.add_get(counter, 1, 1)
+    IO.puts("[#{n}/#{total}] #{item.id}")
+  end
 
   defp summarize_source(results, src) do
     scored =

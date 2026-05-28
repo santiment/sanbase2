@@ -115,7 +115,7 @@ defmodule Sanbase.Knowledge.Academy do
           heading: chunk.heading
         }
       )
-      |> Repo.all()
+      |> Sanbase.Repo.VectorQuery.all()
 
     {:ok, chunks}
   end
@@ -150,7 +150,7 @@ defmodule Sanbase.Knowledge.Academy do
         order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
         limit: ^top_k
       )
-      |> Repo.all()
+      |> Sanbase.Repo.VectorQuery.all()
 
     {:ok, articles}
   end

@@ -29,7 +29,7 @@ defmodule Sanbase.Knowledge.Reranker.LocalBge do
   require Logger
 
   @default_url "http://localhost:8000/rerank"
-  @default_timeout_ms 5_000
+  @default_timeout_ms 30_000
   @default_max_retries 1
   @max_candidate_chars 600
 

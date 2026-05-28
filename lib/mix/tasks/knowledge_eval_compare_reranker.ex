@@ -109,7 +109,7 @@ defmodule Mix.Tasks.KnowledgeEvalCompareReranker do
   defp build_base_opts(opts) do
     {random?, seed} = resolve_random(opts[:random], opts[:seed])
 
-    [sources: parse_sources(opts[:source])]
+    [sources: parse_sources(opts[:source]), progress: true]
     |> maybe_put(:file, opts[:file])
     |> maybe_put(:top_k, opts[:top_k])
     |> maybe_put(:limit, opts[:limit])

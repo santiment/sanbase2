@@ -490,7 +490,7 @@ defmodule Sanbase.Entity do
           )
           |> paginate(opts)
 
-        db_result = Sanbase.Repo.all(query)
+        db_result = Sanbase.Repo.VectorQuery.all(query)
         result = Fetcher.fetch_entities_by_ids(db_result)
         pruned_result = Fetcher.prune_similarity_result(db_result, result, similarity_threshold)
 
@@ -515,7 +515,7 @@ defmodule Sanbase.Entity do
             order_by: [desc: entity.similarity, desc: entity.entity_id]
           )
 
-        db_result = Sanbase.Repo.all(query)
+        db_result = Sanbase.Repo.VectorQuery.all(query)
         result = Fetcher.fetch_entities_by_ids(db_result)
         pruned_result = Fetcher.prune_similarity_result(db_result, result, similarity_threshold)
 

@@ -65,7 +65,7 @@ defmodule Mix.Tasks.KnowledgeEval do
   defp build_eval_opts(opts) do
     sources = parse_sources(opts[:source])
 
-    [sources: sources]
+    [sources: sources, progress: true]
     |> maybe_put(:file, opts[:file])
     |> maybe_put(:top_k, opts[:top_k])
     |> maybe_put(:limit, opts[:limit])

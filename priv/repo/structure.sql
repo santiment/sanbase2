@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict Wts28AQzFYvAyzswg77lC38fJbfwaaj5MHDsJpZsnagPXeIk09YWFGBfm7jiEvT
+\restrict KEIhW5GiEbpWoUoGUmubcId6Xro9MTIegaYZgEUvlsF64UbjEtuhO7RuwbJ2qVw
 
--- Dumped from database version 17.10 (Homebrew)
--- Dumped by pg_dump version 17.10 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -4018,7 +4018,8 @@ CREATE TABLE public.question_answer_logs (
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    question_type character varying(255)
+    question_type character varying(255),
+    reranker character varying(255)
 );
 
 
@@ -11639,7 +11640,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Wts28AQzFYvAyzswg77lC38fJbfwaaj5MHDsJpZsnagPXeIk09YWFGBfm7jiEvT
+\unrestrict KEIhW5GiEbpWoUoGUmubcId6Xro9MTIegaYZgEUvlsF64UbjEtuhO7RuwbJ2qVw
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12213,3 +12214,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260515075234);
 INSERT INTO public."schema_migrations" (version) VALUES (20260519151900);
 INSERT INTO public."schema_migrations" (version) VALUES (20260522100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260526093118);
+INSERT INTO public."schema_migrations" (version) VALUES (20260528120000);

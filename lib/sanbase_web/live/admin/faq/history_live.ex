@@ -82,6 +82,10 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
                   ]}>
                     {String.replace(entry.question_type, "_", " ")}
                   </span>
+                  <span :if={entry.reranker}>•</span>
+                  <span :if={entry.reranker} class="badge badge-sm badge-neutral">
+                    reranker: {entry.reranker}
+                  </span>
                   <span :if={!entry.is_successful}>•</span>
                   <span :if={!entry.is_successful} class="badge badge-sm badge-error">Failed</span>
                 </div>

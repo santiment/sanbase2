@@ -27,12 +27,12 @@ defmodule Sanbase.Knowledge.Reranker.OpenAITest do
       post = stub_post(~s({"order": [3, 1, 2]}))
 
       assert {:ok, [%{id: "c"}, %{id: "a"}, %{id: "b"}]} =
-               OpenAI.rerank("any query", candidates(), http_post: post)
+               OpenAI.rerank("any query", candidates(), http_post: post, api_key: "test")
     end
 
     test "empty candidate list short-circuits without an HTTP call" do
       post = fn _url, _opts -> raise "should not be called" end
-      assert {:ok, []} = OpenAI.rerank("q", [], http_post: post)
+      assert {:ok, []} = OpenAI.rerank("q", [], http_post: post, api_key: "test")
     end
   end
 
@@ -66,22 +66,30 @@ defmodule Sanbase.Knowledge.Reranker.OpenAITest do
   describe "rerank/3 error fallback semantics" do
     test "malformed json content surfaces an error" do
       post = stub_post("not json at all")
-      assert {:error, {:json_decode, _}} = OpenAI.rerank("q", candidates(), http_post: post)
+
+      assert {:error, {:json_decode, _}} =
+               OpenAI.rerank("q", candidates(), http_post: post, api_key: "test")
     end
 
     test "missing order key surfaces an error" do
       post = stub_post(~s({"something_else": 1}))
-      assert {:error, {:missing_order_key, _}} = OpenAI.rerank("q", candidates(), http_post: post)
+
+      assert {:error, {:missing_order_key, _}} =
+               OpenAI.rerank("q", candidates(), http_post: post, api_key: "test")
     end
 
     test "non-200 status surfaces an error" do
       post = fn _url, _opts -> {:ok, %{status: 500, body: %{"error" => "boom"}}} end
-      assert {:error, {:http_status, 500}} = OpenAI.rerank("q", candidates(), http_post: post)
+
+      assert {:error, {:http_status, 500}} =
+               OpenAI.rerank("q", candidates(), http_post: post, api_key: "test")
     end
 
     test "transport error surfaces an error" do
       post = fn _url, _opts -> {:error, %Mint.TransportError{reason: :timeout}} end
-      assert {:error, %Mint.TransportError{}} = OpenAI.rerank("q", candidates(), http_post: post)
+
+      assert {:error, %Mint.TransportError{}} =
+               OpenAI.rerank("q", candidates(), http_post: post, api_key: "test")
     end
   end
 

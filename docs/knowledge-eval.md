@@ -173,7 +173,7 @@ Empty by default. To add coverage:
 ## Reranker
 
 By default `Sanbase.Knowledge` retrieves `top_k=20` per source from
-pgvector, then reorders with a listwise reranker (`gpt-5-nano`) and
+pgvector, then reorders with a listwise reranker (`gpt-4o-mini`) and
 truncates to `top_n=5` for the prompt. The reranker re-reads candidate
 text jointly with the query and disambiguates topical clusters that
 cosine alone cannot — e.g. several "Sanbase Max" FAQs all scoring high

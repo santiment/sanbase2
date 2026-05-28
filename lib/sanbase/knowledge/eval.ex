@@ -58,6 +58,12 @@ defmodule Sanbase.Knowledge.Eval do
     sources = Keyword.get(opts, :sources, @all_sources)
     reranker = Keyword.get(opts, :reranker)
     concurrency = Keyword.get(opts, :concurrency, @default_concurrency)
+
+    if not (is_integer(concurrency) and concurrency > 0) do
+      raise ArgumentError,
+            "concurrency must be a positive integer, got: #{inspect(concurrency)}"
+    end
+
     progress = progress_tracker(opts[:progress], length(items))
 
     results =

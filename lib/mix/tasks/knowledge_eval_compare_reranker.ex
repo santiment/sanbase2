@@ -126,12 +126,19 @@ defmodule Mix.Tasks.KnowledgeEvalCompareReranker do
   defp resolve_module(nil, default), do: default
 
   defp resolve_module(str, _default) when is_binary(str) do
-    mod =
+    mod_name =
       str
       |> String.trim()
       |> String.trim_leading("Elixir.")
       |> then(&("Elixir." <> &1))
-      |> String.to_atom()
+
+    mod =
+      try do
+        String.to_existing_atom(mod_name)
+      rescue
+        ArgumentError ->
+          Mix.raise("Reranker module #{inspect(mod_name)} is not loaded")
+      end
 
     if !Code.ensure_loaded?(mod) do
       Mix.raise("Reranker module #{inspect(mod)} could not be loaded")

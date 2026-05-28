@@ -44,7 +44,7 @@ defmodule Sanbase.Knowledge.Academy do
                     "src/docs/content/changelog/index.md"
                   ])
 
-  @excluded_path_prefixes ["scripts/"]
+  @excluded_path_prefixes ["scripts/", "static/"]
   @excluded_basenames ["README.md", "GUIDE.md", "CONTRIBUTING.md", "CHANGELOG.md"]
 
   @type index_options :: [branch: String.t(), dry_run: boolean()]
@@ -171,6 +171,9 @@ defmodule Sanbase.Knowledge.Academy do
       Repo.transaction(fn ->
         mark_all_articles_stale()
         clear_stale_for_unchanged(unchanged)
+        # Prune stale rows before upserting so their academy_url/github_path
+        # do not block new inserts via the unique constraints.
+        delete_stale_records()
         finalize_indexing(to_index)
       end)
       |> case do
@@ -482,7 +485,6 @@ defmodule Sanbase.Knowledge.Academy do
       upsert_article_with_chunks(article_attrs, chunks_attrs)
     end)
 
-    delete_stale_records()
     :ok
   end
 

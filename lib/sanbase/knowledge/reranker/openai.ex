@@ -41,6 +41,14 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
     max_retries = Keyword.get(opts, :max_retries, @default_max_retries)
     api_key = Keyword.get(opts, :api_key, openai_apikey())
 
+    if is_nil(api_key) or api_key == "" do
+      {:error, :missing_openai_api_key}
+    else
+      do_rerank(query, candidates, opts, http_post, model, timeout_ms, max_retries, api_key)
+    end
+  end
+
+  defp do_rerank(query, candidates, opts, http_post, model, timeout_ms, max_retries, api_key) do
     body = build_request_body(query, candidates, model)
 
     headers = [

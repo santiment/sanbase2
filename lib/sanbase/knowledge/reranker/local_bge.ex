@@ -34,9 +34,11 @@ defmodule Sanbase.Knowledge.Reranker.LocalBge do
   @max_candidate_chars 600
 
   @doc "Declares the candidate-text format style this backend wants."
+  @spec style() :: :cross_encoder
   def style(), do: :cross_encoder
 
   @impl true
+  @spec rerank(String.t(), [map()], keyword()) :: {:ok, [map()]} | {:error, term()}
   def rerank(_query, [], _opts), do: {:ok, []}
 
   def rerank(query, candidates, opts) when is_binary(query) and is_list(candidates) do
@@ -94,6 +96,7 @@ defmodule Sanbase.Knowledge.Reranker.LocalBge do
   candidate and we can return the full reordered list. `return_documents`
   is false because we already have them locally.
   """
+  @spec build_request_body(String.t(), [map()]) :: map()
   def build_request_body(query, candidates) do
     documents = Enum.map(candidates, fn c -> truncate(c.text) end)
 
@@ -115,6 +118,7 @@ defmodule Sanbase.Knowledge.Reranker.LocalBge do
 
   Public for testing.
   """
+  @spec apply_results([map()], [map()]) :: [map()]
   def apply_results(candidates, results) when is_list(candidates) and is_list(results) do
     indexed = Enum.with_index(candidates)
     max_idx = length(candidates) - 1

@@ -70,11 +70,14 @@ defmodule Sanbase.Knowledge do
     start_mono = System.monotonic_time()
 
     result =
-      with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
-           {:ok, faq_entries} <- maybe_find_most_similar_faqs(user_input, embedding, options),
+      with {:ok, [embedding]} <-
+             Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
+           {:ok, faq_entries} <-
+             maybe_find_most_similar_faqs(user_input, embedding, options, min_sim),
            {:ok, academy_articles} <-
-             maybe_find_most_similar_academy_articles(user_input, embedding, options),
-           {:ok, insights} <- maybe_find_most_similar_insights(user_input, embedding, options) do
+             maybe_find_most_similar_academy_articles(user_input, embedding, options, min_sim),
+           {:ok, insights} <-
+             maybe_find_most_similar_insights(user_input, embedding, options, min_sim) do
         filtered_faqs = filter_by_similarity(faq_entries, min_sim)
         filtered_academy = filter_by_similarity(academy_articles, min_sim)
         filtered_insights = filter_by_similarity(insights, min_sim)
@@ -208,10 +211,13 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp maybe_find_most_similar_faqs(user_input, embedding, options) do
+  defp maybe_find_most_similar_faqs(user_input, embedding, options, min_sim) do
     if Keyword.get(options, :faq, true) do
       with {:ok, raw} <- find_most_similar_faqs(embedding, @retrieval_top_k) do
-        {:ok, rerank(raw, user_input, :faq, options, top_n: @prompt_top_n)}
+        {:ok,
+         raw
+         |> filter_by_similarity(min_sim)
+         |> rerank(user_input, :faq, options, top_n: @prompt_top_n)}
       end
     else
       {:ok, []}
@@ -255,10 +261,13 @@ defmodule Sanbase.Knowledge do
     Sanbase.Insight.Post.find_most_similar_insight_chunks(embedding, size)
   end
 
-  defp maybe_find_most_similar_insights(user_input, embedding, options) do
+  defp maybe_find_most_similar_insights(user_input, embedding, options, min_sim) do
     if Keyword.get(options, :insights, true) do
       with {:ok, raw} <- find_most_similar_insights(embedding, @retrieval_top_k) do
-        {:ok, rerank(raw, user_input, :insight, options, top_n: @prompt_top_n)}
+        {:ok,
+         raw
+         |> filter_by_similarity(min_sim)
+         |> rerank(user_input, :insight, options, top_n: @prompt_top_n)}
       end
     else
       {:ok, []}
@@ -307,10 +316,13 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp maybe_find_most_similar_academy_articles(user_input, embedding, options) do
+  defp maybe_find_most_similar_academy_articles(user_input, embedding, options, min_sim) do
     if Keyword.get(options, :academy, true) do
       with {:ok, raw} <- Sanbase.Knowledge.Academy.search_articles(embedding, @retrieval_top_k) do
-        {:ok, rerank(raw, user_input, :academy, options, top_n: @prompt_top_n)}
+        {:ok,
+         raw
+         |> filter_by_similarity(min_sim)
+         |> rerank(user_input, :academy, options, top_n: @prompt_top_n)}
       end
     else
       {:ok, []}

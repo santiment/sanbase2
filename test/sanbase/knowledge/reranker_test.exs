@@ -1,5 +1,5 @@
 defmodule Sanbase.Knowledge.RerankerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Sanbase.Knowledge.Reranker
   alias Sanbase.Knowledge.Reranker.Noop

@@ -54,7 +54,7 @@ defmodule Sanbase.Knowledge.Reranker do
     )
 
     start_mono = System.monotonic_time()
-    result = impl.rerank(query, candidates, opts)
+    result = safe_rerank(impl, query, candidates, opts)
 
     took_ms =
       System.convert_time_unit(System.monotonic_time() - start_mono, :native, :millisecond)
@@ -105,6 +105,19 @@ defmodule Sanbase.Knowledge.Reranker do
     mod |> Module.split() |> List.last()
   end
 
+  defp safe_rerank(impl, query, candidates, opts) do
+    if is_atom(impl) and Code.ensure_loaded?(impl) and function_exported?(impl, :rerank, 3) do
+      try do
+        impl.rerank(query, candidates, opts)
+      rescue
+        e -> {:error, {:reranker_crash, e}}
+      end
+    else
+      {:error, {:invalid_reranker, impl}}
+    end
+  end
+
   defp maybe_take(list, nil), do: list
   defp maybe_take(list, n) when is_integer(n) and n >= 0, do: Enum.take(list, n)
+  defp maybe_take(list, _invalid), do: list
 end

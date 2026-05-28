@@ -26,7 +26,10 @@ defmodule Sanbase.Knowledge.Reranker.OpenRouterCohereTest do
         ])
 
       assert {:ok, [%{id: "c"}, %{id: "a"}, %{id: "b"}]} =
-               OpenRouterCohere.rerank("any query", candidates(), http_post: post)
+               OpenRouterCohere.rerank("any query", candidates(),
+                 http_post: post,
+                 api_key: "test"
+               )
     end
 
     test "scores returned out of order still produce descending output" do
@@ -38,12 +41,12 @@ defmodule Sanbase.Knowledge.Reranker.OpenRouterCohereTest do
         ])
 
       assert {:ok, [%{id: "b"}, %{id: "c"}, %{id: "a"}]} =
-               OpenRouterCohere.rerank("q", candidates(), http_post: post)
+               OpenRouterCohere.rerank("q", candidates(), http_post: post, api_key: "test")
     end
 
     test "empty candidate list short-circuits without an HTTP call" do
       post = fn _url, _opts -> raise "should not be called" end
-      assert {:ok, []} = OpenRouterCohere.rerank("q", [], http_post: post)
+      assert {:ok, []} = OpenRouterCohere.rerank("q", [], http_post: post, api_key: "test")
     end
   end
 
@@ -110,21 +113,21 @@ defmodule Sanbase.Knowledge.Reranker.OpenRouterCohereTest do
       post = fn _url, _opts -> {:ok, %{status: 200, body: %{"something_else" => 1}}} end
 
       assert {:error, {:malformed_response, _}} =
-               OpenRouterCohere.rerank("q", candidates(), http_post: post)
+               OpenRouterCohere.rerank("q", candidates(), http_post: post, api_key: "test")
     end
 
     test "non-200 status surfaces an error" do
       post = fn _url, _opts -> {:ok, %{status: 401, body: %{"error" => "no key"}}} end
 
       assert {:error, {:http_status, 401}} =
-               OpenRouterCohere.rerank("q", candidates(), http_post: post)
+               OpenRouterCohere.rerank("q", candidates(), http_post: post, api_key: "test")
     end
 
     test "transport error surfaces an error" do
       post = fn _url, _opts -> {:error, %Mint.TransportError{reason: :timeout}} end
 
       assert {:error, %Mint.TransportError{}} =
-               OpenRouterCohere.rerank("q", candidates(), http_post: post)
+               OpenRouterCohere.rerank("q", candidates(), http_post: post, api_key: "test")
     end
   end
 

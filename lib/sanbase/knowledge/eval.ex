@@ -11,7 +11,7 @@ defmodule Sanbase.Knowledge.Eval do
   from IEx.
   """
 
-  alias Sanbase.Knowledge.{Academy, Faq, Reranker}
+  alias Sanbase.Knowledge.{Academy, Context, Faq, Reranker}
   alias Sanbase.Knowledge.Reranker.CandidateFormatter
   alias Sanbase.Insight.Post
 
@@ -27,6 +27,10 @@ defmodule Sanbase.Knowledge.Eval do
             optional(:academy_paths) => [String.t()],
             optional(:insight_post_ids) => [integer()]
           },
+          # Short verbatim-ish phrases the answer depends on. Used to measure
+          # context recall: the fraction present in the assembled prompt
+          # context. Items without `answer_facts` skip recall scoring.
+          optional(:answer_facts) => [String.t()],
           optional(:tags) => [String.t()]
         }
 
@@ -34,6 +38,7 @@ defmodule Sanbase.Knowledge.Eval do
           file: String.t() | nil,
           sources: [atom()],
           top_k: pos_integer(),
+          prompt_top_n: pos_integer(),
           limit: pos_integer() | nil,
           random: boolean(),
           seed: integer() | nil,
@@ -55,6 +60,8 @@ defmodule Sanbase.Knowledge.Eval do
       |> maybe_limit(opts[:limit])
 
     top_k = Keyword.get(opts, :top_k, @default_top_k)
+    # Measure context over the same prompt window the live answer path uses.
+    prompt_top_n = Keyword.get(opts, :prompt_top_n, Sanbase.Knowledge.prompt_top_n())
     sources = Keyword.get(opts, :sources, @all_sources)
     reranker = Keyword.get(opts, :reranker)
     concurrency = Keyword.get(opts, :concurrency, @default_concurrency)
@@ -70,7 +77,7 @@ defmodule Sanbase.Knowledge.Eval do
       items
       |> Task.async_stream(
         fn item ->
-          result = evaluate_item(item, top_k, sources, reranker)
+          result = evaluate_item(item, top_k, prompt_top_n, sources, reranker)
           tick_progress(progress, item)
           result
         end,
@@ -129,30 +136,69 @@ defmodule Sanbase.Knowledge.Eval do
   end
 
   @doc """
+  Fraction of `facts` present in `context_text`.
+
+  Both sides are normalized (downcased, punctuation stripped, whitespace
+  collapsed) before a substring check, so facts should be short phrases
+  copied near-verbatim from the source. Returns `nil` when there are no
+  facts, so the item is skipped in recall aggregation.
+
+  Public so it can be unit-tested without the DB or embedding API.
+  """
+  @spec context_recall(String.t(), [String.t()]) ::
+          %{recall: float(), matched: non_neg_integer(), total: pos_integer()} | nil
+  def context_recall(_context_text, []), do: nil
+
+  def context_recall(context_text, facts) when is_binary(context_text) and is_list(facts) do
+    normalized = normalize(context_text)
+    matched = Enum.count(facts, fn fact -> String.contains?(normalized, normalize(fact)) end)
+    total = length(facts)
+
+    %{recall: matched / total, matched: matched, total: total}
+  end
+
+  @doc """
   Aggregate per-item scores into mean metrics per source.
+
+  Adds a `:context` section with mean context recall and mean context size
+  across items that carry `answer_facts`.
 
   Public for testing.
   """
   @spec summarize([map()], [atom()]) :: map()
   def summarize(results, sources \\ @all_sources) do
-    Enum.reduce(sources, %{}, fn src, acc ->
+    sources
+    |> Enum.reduce(%{}, fn src, acc ->
       Map.put(acc, src, summarize_source(results, src))
     end)
+    |> Map.put(:context, summarize_context(results))
   end
 
   # Private functions
 
-  defp evaluate_item(item, top_k, sources, reranker) do
+  defp evaluate_item(item, top_k, prompt_top_n, sources, reranker) do
     base = %{id: item.id, question: item.question, tags: Map.get(item, :tags, [])}
 
     case Sanbase.AI.Embedding.generate_embeddings([item.question], 1536) do
       {:ok, [embedding]} ->
+        # Each source returns {score_map, ranked_hits}: the score map feeds
+        # the per-source hit@K/MRR metrics, the ranked hits (already reranked,
+        # same order that's scored) feed context assembly.
         per_source =
-          sources
-          |> Enum.map(fn src -> {src, eval_source(src, item, embedding, top_k, reranker)} end)
+          Enum.map(sources, fn src ->
+            {src, eval_source(src, item, embedding, top_k, reranker)}
+          end)
+
+        scores =
+          per_source
+          |> Enum.map(fn {src, {score, _hits}} -> {src, score} end)
           |> Map.new()
 
-        Map.merge(base, per_source)
+        context = assemble_item_context(per_source, prompt_top_n)
+
+        base
+        |> Map.merge(scores)
+        |> Map.put(:context, score_context(context, Map.get(item, :answer_facts, [])))
 
       {:error, reason} ->
         Map.put(base, :error, inspect(reason))
@@ -164,10 +210,10 @@ defmodule Sanbase.Knowledge.Eval do
       {:ok, hits} ->
         hits = apply_reranker(hits, item.question, :faq, reranker, top_k)
         expected = get_in(item, [:expected, :faq_ids]) || []
-        score_hits(hits, expected, & &1.id)
+        {score_hits(hits, expected, & &1.id), hits}
 
       {:error, reason} ->
-        %{error: inspect(reason), top1_similarity: nil}
+        {%{error: inspect(reason), top1_similarity: nil}, []}
     end
   end
 
@@ -176,10 +222,10 @@ defmodule Sanbase.Knowledge.Eval do
       {:ok, hits} ->
         hits = apply_reranker(hits, item.question, :academy, reranker, top_k)
         expected = get_in(item, [:expected, :academy_paths]) || []
-        score_hits(hits, expected, & &1.github_path)
+        {score_hits(hits, expected, & &1.github_path), hits}
 
       {:error, reason} ->
-        %{error: inspect(reason), top1_similarity: nil}
+        {%{error: inspect(reason), top1_similarity: nil}, []}
     end
   end
 
@@ -189,12 +235,31 @@ defmodule Sanbase.Knowledge.Eval do
         hits = Enum.uniq_by(hits, & &1.post_id)
         hits = apply_reranker(hits, item.question, :insight, reranker, top_k)
         expected = get_in(item, [:expected, :insight_post_ids]) || []
-        score_hits(hits, expected, & &1.post_id)
+        {score_hits(hits, expected, & &1.post_id), hits}
 
       {:error, reason} ->
-        %{error: inspect(reason), top1_similarity: nil}
+        {%{error: inspect(reason), top1_similarity: nil}, []}
     end
   end
+
+  # Assemble the prompt-window context across all sources for one item, using
+  # the same Context builder the live prompt uses. Only the top prompt_top_n
+  # reranked hits per source reach the prompt, so recall is measured on those.
+  defp assemble_item_context(per_source, prompt_top_n) do
+    per_source
+    |> Enum.map(fn {src, {_score, hits}} ->
+      hits
+      |> Enum.take(prompt_top_n)
+      |> Context.assemble(context_source(src))
+    end)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.join("\n\n")
+  end
+
+  # The eval source list uses `:insights` (plural); Context speaks the live
+  # source atoms. Normalize here so the alias never leaks into Context.
+  defp context_source(:insights), do: :insight
+  defp context_source(other), do: other
 
   # Reranks `hits` against `question` using the provided reranker (or the
   # application default). The eval never truncates — passes `top_n: top_k`
@@ -232,6 +297,39 @@ defmodule Sanbase.Knowledge.Eval do
   defp tick_progress({counter, total}, item) do
     n = :atomics.add_get(counter, 1, 1)
     IO.puts("[#{n}/#{total}] #{item.id}")
+  end
+
+  defp score_context(context_text, facts) do
+    base = %{text_chars: String.length(context_text)}
+
+    case context_recall(context_text, facts) do
+      nil -> Map.put(base, :recall, nil)
+      recall -> Map.merge(base, recall)
+    end
+  end
+
+  defp normalize(text) do
+    text
+    |> String.downcase()
+    |> String.replace(~r/[^\p{L}\p{N}\s]/u, " ")
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+  end
+
+  defp summarize_context(results) do
+    scored = for %{context: %{recall: r} = ctx} <- results, is_number(r), do: ctx
+
+    evaluated = length(scored)
+
+    if evaluated == 0 do
+      %{evaluated: 0}
+    else
+      %{
+        evaluated: evaluated,
+        mean_recall: average(scored, & &1.recall),
+        mean_chars: average(scored, &(&1.text_chars * 1.0))
+      }
+    end
   end
 
   defp summarize_source(results, src) do

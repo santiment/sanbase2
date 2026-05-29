@@ -19,6 +19,8 @@ defmodule Mix.Tasks.KnowledgeEval do
     * `--file`   - path to a golden set; defaults to `priv/knowledge/eval/golden_set.exs`
     * `--json`   - dump full results (per-item + summary) as JSON to this path
     * `--top-k`  - top-K to retrieve per source (default 20)
+    * `--prompt-top-n` - reranked hits per source that reach the prompt;
+      context recall is measured over this window (default 5)
     * `--limit`  - cap the number of golden items evaluated
     * `--concurrency` - parallel items in flight (default 4)
     * `--no-rerank` - skip reranking (force the Noop reranker). Use to capture
@@ -42,6 +44,7 @@ defmodule Mix.Tasks.KnowledgeEval do
           json: :string,
           verbose: :boolean,
           top_k: :integer,
+          prompt_top_n: :integer,
           limit: :integer,
           concurrency: :integer,
           no_rerank: :boolean
@@ -68,6 +71,7 @@ defmodule Mix.Tasks.KnowledgeEval do
     [sources: sources, progress: true]
     |> maybe_put(:file, opts[:file])
     |> maybe_put(:top_k, opts[:top_k])
+    |> maybe_put(:prompt_top_n, opts[:prompt_top_n])
     |> maybe_put(:limit, opts[:limit])
     |> maybe_put(:concurrency, opts[:concurrency])
     |> maybe_put_reranker(opts[:no_rerank])
@@ -105,7 +109,9 @@ defmodule Mix.Tasks.KnowledgeEval do
     IO.puts("")
     IO.puts("=== Knowledge Eval Summary (#{total_items} item(s)) ===")
 
-    Enum.each(summary, fn {source, metrics} ->
+    {context, per_source} = Map.pop(summary, :context)
+
+    Enum.each(per_source, fn {source, metrics} ->
       IO.puts("")
       IO.puts("[#{source}] evaluated=#{metrics.evaluated}")
 
@@ -119,7 +125,23 @@ defmodule Mix.Tasks.KnowledgeEval do
       end
     end)
 
+    print_context(context)
+
     IO.puts("")
+  end
+
+  defp print_context(nil), do: :ok
+
+  defp print_context(%{evaluated: 0}) do
+    IO.puts("")
+    IO.puts("[context] no items with answer_facts — recall not measured")
+  end
+
+  defp print_context(%{evaluated: n} = ctx) do
+    IO.puts("")
+    IO.puts("[context] evaluated=#{n}")
+    IO.puts("  mean recall #{fmt(ctx.mean_recall)}")
+    IO.puts("  mean chars  #{round(ctx.mean_chars)}")
   end
 
   defp print_per_item(results, sources) do
@@ -148,10 +170,18 @@ defmodule Mix.Tasks.KnowledgeEval do
             IO.puts("  [#{src}] rank=#{rank} mrr=#{fmt(mrr)} top1=#{fmt(sim)}")
         end
       end)
+
+      print_item_context(Map.get(r, :context))
     end)
 
     IO.puts("")
   end
+
+  defp print_item_context(%{recall: r, matched: m, total: t}) when is_number(r) do
+    IO.puts("  [context] recall=#{fmt(r)} (#{m}/#{t})")
+  end
+
+  defp print_item_context(_), do: :ok
 
   defp write_json(path, results, summary) do
     File.mkdir_p!(Path.dirname(path))

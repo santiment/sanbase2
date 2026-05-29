@@ -1,6 +1,7 @@
 defmodule Sanbase.Knowledge do
   require Logger
 
+  alias Sanbase.Knowledge.Context
   alias Sanbase.Knowledge.Reranker
   alias Sanbase.Knowledge.Reranker.CandidateFormatter
 
@@ -12,6 +13,12 @@ defmodule Sanbase.Knowledge do
   # @prompt_top_n before prompt assembly.
   @retrieval_top_k 20
   @prompt_top_n 5
+
+  @doc """
+  Number of reranked hits per source that reach the answer prompt. Exposed so
+  the eval harness measures context over the same window the live prompt uses.
+  """
+  def prompt_top_n(), do: @prompt_top_n
 
   def answer_question(user_input, options \\ []) do
     reranker = Reranker.label(Keyword.get(options, :reranker) || Reranker.default_impl())
@@ -208,17 +215,7 @@ defmodule Sanbase.Knowledge do
         if faq_entries == [] do
           {:ok, prompt, false}
         else
-          entries_text =
-            Enum.map(faq_entries, fn faq_entry ->
-              url = "#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{faq_entry.id}"
-
-              """
-              Source marker: [FAQ ##{faq_entry.id}](#{url})
-              Question: #{faq_entry.question}
-              Answer: #{faq_entry.answer_markdown}
-              """
-            end)
-            |> Enum.join("\n")
+          entries_text = Context.assemble(faq_entries, :faq)
 
           prompt =
             prompt <>
@@ -314,16 +311,7 @@ defmodule Sanbase.Knowledge do
         if post_embeddings == [] do
           {:ok, prompt, false}
         else
-          text_chunks =
-            Enum.map(post_embeddings, fn chunk ->
-              url = SanbaseWeb.Endpoint.insight_url(chunk.post_id)
-
-              """
-              Source marker: [#{chunk.post_title}](#{url})
-              #{chunk.text_chunk}
-              """
-            end)
-            |> Enum.join("\n\n")
+          text_chunks = Context.assemble(post_embeddings, :insight)
 
           prompt =
             prompt <>
@@ -366,14 +354,7 @@ defmodule Sanbase.Knowledge do
           if academy_chunks == [] do
             {:ok, prompt, false}
           else
-            academy_text_chunks =
-              Enum.map(academy_chunks, fn academy_chunk ->
-                """
-                Source marker: [#{academy_chunk.title}](#{academy_chunk.url})
-                Most relevant chunk from article: #{academy_chunk.chunk}
-                """
-              end)
-              |> Enum.join("\n")
+            academy_text_chunks = Context.assemble(academy_chunks, :academy)
 
             prompt =
               prompt <>

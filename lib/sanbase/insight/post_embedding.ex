@@ -11,6 +11,8 @@ defmodule Sanbase.Insight.PostEmbedding do
   schema "posts_embeddings" do
     field(:embedding, Pgvector.Ecto.Vector)
     field(:text_chunk, :string)
+    field(:start_byte, :integer)
+    field(:end_byte, :integer)
     belongs_to(:post, Post)
 
     timestamps()
@@ -19,7 +21,7 @@ defmodule Sanbase.Insight.PostEmbedding do
   @doc false
   def changeset(post_embedding, attrs) do
     post_embedding
-    |> cast(attrs, [:post_id, :embedding, :text_chunk])
+    |> cast(attrs, [:post_id, :embedding, :text_chunk, :start_byte, :end_byte])
     |> validate_required([:post_id, :embedding, :text_chunk])
   end
 
@@ -78,11 +80,18 @@ defmodule Sanbase.Insight.PostEmbedding do
           #{String.trim(chunk.text)}
           """
 
-          {post.id, text_chunk}
+          # Offsets index into `Htmd.convert!(post.text)`, re-derived at read
+          # time, so the Unchunker can slice the exact source span.
+          %{
+            post_id: post.id,
+            text_chunk: text_chunk,
+            start_byte: chunk.start_byte,
+            end_byte: chunk.end_byte
+          }
         end)
       end)
 
-    chunk_texts = Enum.map(chunks, fn {_post_id, text} -> text end)
+    chunk_texts = Enum.map(chunks, fn %{text_chunk: text} -> text end)
 
     {:ok, embeddings} =
       Sanbase.AI.Embedding.generate_embeddings(chunk_texts, 1536)
@@ -91,11 +100,13 @@ defmodule Sanbase.Insight.PostEmbedding do
     Sanbase.Repo.delete_all(from(pe in __MODULE__, where: pe.post_id in ^post_ids))
 
     data =
-      Enum.zip_with(chunks, embeddings, fn {post_id, text_chunk}, embedding ->
+      Enum.zip_with(chunks, embeddings, fn chunk, embedding ->
         %{
           embedding: embedding,
-          post_id: post_id,
-          text_chunk: text_chunk,
+          post_id: chunk.post_id,
+          text_chunk: chunk.text_chunk,
+          start_byte: chunk.start_byte,
+          end_byte: chunk.end_byte,
           inserted_at: NaiveDateTime.utc_now(:second),
           updated_at: NaiveDateTime.utc_now(:second)
         }

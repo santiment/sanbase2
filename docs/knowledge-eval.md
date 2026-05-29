@@ -21,17 +21,48 @@ Items with empty `expected.*_ids` are **skipped** for hit-rate scoring but
 still contribute their top-1 similarity — useful for off-topic sentinels
 (e.g. "weather tomorrow?") where you only care that nothing scores high.
 
+### Context recall
+
+Hit@K/MRR measure *retrieval* — the rank of the matched chunk. They are
+blind to **what text the LLM actually receives**, so they cannot detect a
+change that keeps the same hit but feeds it more (or less) surrounding
+context. Context expansion (pulling neighbor chunks / the parent article
+around a match) is exactly such a change.
+
+To measure it, an item may carry `answer_facts` — short phrases a correct
+answer depends on:
+
+| Metric | Meaning |
+|---|---|
+| `context recall` | fraction of an item's `answer_facts` present in the assembled prompt context (top `prompt_top_n` reranked hits per source) |
+| `mean chars` | mean size of the assembled context — the cost side; expansion must not blow the window |
+
+Matching is case- and punctuation-insensitive substring containment, so
+facts should be short and distinctive, copied near-verbatim from the
+source. Items without `answer_facts` skip recall scoring.
+
+The assembled context is built by `Sanbase.Knowledge.Context`, the *same*
+module the live prompt uses — so the eval never drifts from production,
+and any future expansion that enriches the hits is measured automatically.
+
+**Gating a context-expansion change:** capture a baseline, ship expansion,
+re-run. Keep it only if `context recall` rises while `mean chars` stays
+within budget and hit@K does not regress. Tag the relevant items
+`needs-context` and slice on that subset, where the effect is visible.
+
 ## Pieces
 
 | Path | Role |
 |---|---|
-| `lib/sanbase/knowledge/eval.ex` | scoring + orchestration (`run/1`, `score_hits/3`, `summarize/2`) |
+| `lib/sanbase/knowledge/eval.ex` | scoring + orchestration (`run/1`, `score_hits/3`, `context_recall/2`, `summarize/2`) |
+| `lib/sanbase/knowledge/context.ex` | per-source prompt context assembly, shared by live + eval |
 | `lib/mix/tasks/knowledge_eval.ex` | `mix knowledge_eval` CLI |
-| `priv/knowledge/eval/golden_set.exs` | golden Q-set with expected ids |
+| `priv/knowledge/eval/golden_set.exs` | golden Q-set with expected ids + optional `answer_facts` |
 | `lib/sanbase/knowledge/reranker.ex` | behavior + dispatcher with input-order fallback |
 | `lib/sanbase/knowledge/reranker/openai.ex` | listwise reranker against `gpt-5-nano`, JSON output |
 | `lib/sanbase/knowledge/reranker/noop.ex` | identity reranker (`--no-rerank` baseline, default in tests) |
-| `test/sanbase/knowledge/eval_test.exs` | unit tests for scoring math |
+| `test/sanbase/knowledge/eval_test.exs` | unit tests for scoring math + context recall |
+| `test/sanbase/knowledge/context_test.exs` | unit tests for context assembly |
 
 ## Running it
 

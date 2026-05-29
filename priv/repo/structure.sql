@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict KEIhW5GiEbpWoUoGUmubcId6Xro9MTIegaYZgEUvlsF64UbjEtuhO7RuwbJ2qVw
+\restrict GelIov5lFvnGho054t4sqNzOkkpdaeYshQkYK4KfZnyW4oQB426Xy46a3YFzY2Q
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -272,7 +272,9 @@ CREATE TABLE public.academy_article_chunks (
     embedding public.vector(1536) NOT NULL,
     is_stale boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    start_byte integer,
+    end_byte integer
 );
 
 
@@ -308,7 +310,8 @@ CREATE TABLE public.academy_articles (
     is_stale boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    index_version integer DEFAULT 0 NOT NULL
+    index_version integer DEFAULT 0 NOT NULL,
+    markdown text
 );
 
 
@@ -3270,7 +3273,9 @@ CREATE TABLE public.posts_embeddings (
     embedding public.vector(1536) NOT NULL,
     text_chunk text NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    start_byte integer,
+    end_byte integer
 );
 
 
@@ -11640,7 +11645,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict KEIhW5GiEbpWoUoGUmubcId6Xro9MTIegaYZgEUvlsF64UbjEtuhO7RuwbJ2qVw
+\unrestrict GelIov5lFvnGho054t4sqNzOkkpdaeYshQkYK4KfZnyW4oQB426Xy46a3YFzY2Q
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12215,3 +12220,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260519151900);
 INSERT INTO public."schema_migrations" (version) VALUES (20260522100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260526093118);
 INSERT INTO public."schema_migrations" (version) VALUES (20260528120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260529120000);

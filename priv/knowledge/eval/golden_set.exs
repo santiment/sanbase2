@@ -10,6 +10,17 @@
 # still contribute to mean top-1 similarity. Use them to track drift on
 # questions where you only care about a non-zero best-match score.
 #
+# Optionally add `answer_facts`: a list of short phrases (copied
+# near-verbatim from the source) that a correct answer depends on. The
+# eval measures CONTEXT RECALL — the fraction of these phrases present in
+# the assembled prompt context. Matching is case-insensitive and
+# punctuation-insensitive, so keep facts short and distinctive. This is
+# the metric to watch for context-expansion work: if pulling neighbor
+# chunks / the parent article around a match helps, recall goes up while
+# hit@K stays flat. Items without `answer_facts` skip recall scoring.
+# Tag such items `needs-context` when the fact deliberately lives outside
+# the single best-matching chunk — that subset is where expansion pays off.
+#
 # Tags are free-form labels for slicing future per-tag reports.
 #
 # FAQ items below were derived from the live FAQ table on 2026-05-26.
@@ -42,6 +53,10 @@
       id: "faq-api-transport",
       question: "Is your API REST or GraphQL?",
       expected: %{faq_ids: ["451e38e0-38d1-4eba-b48a-d0ef04c82bbd"]},
+      # Example of answer_facts. Verify these phrases appear verbatim in the
+      # source before trusting the recall number — fabricated facts read as
+      # a false 0. Copy distinctive phrases from the actual FAQ/article text.
+      answer_facts: ["GraphQL"],
       tags: ["api"]
     },
     %{

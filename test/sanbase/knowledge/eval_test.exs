@@ -81,6 +81,62 @@ defmodule Sanbase.Knowledge.EvalTest do
     end
   end
 
+  describe "context_recall/2" do
+    test "returns nil when there are no facts" do
+      assert Eval.context_recall("anything", []) == nil
+    end
+
+    test "full recall when every fact is present" do
+      ctx = "MVRV above 3 historically signals overvaluation."
+      facts = ["MVRV above 3", "overvaluation"]
+
+      assert %{recall: 1.0, matched: 2, total: 2} = Eval.context_recall(ctx, facts)
+    end
+
+    test "partial recall counts only present facts" do
+      ctx = "Realized value is the price at which each coin last moved."
+      facts = ["realized value", "thermocap ratio"]
+
+      assert %{recall: recall, matched: 1, total: 2} = Eval.context_recall(ctx, facts)
+      assert_in_delta recall, 0.5, 1.0e-9
+    end
+
+    test "matching ignores case and punctuation" do
+      ctx = "The API speaks GraphQL, not REST."
+      facts = ["graphql"]
+
+      assert %{recall: 1.0, matched: 1} = Eval.context_recall(ctx, facts)
+    end
+
+    test "zero recall when no fact matches" do
+      assert %{recall: +0.0, matched: 0, total: 1} =
+               Eval.context_recall("unrelated text", ["missing phrase"])
+    end
+  end
+
+  describe "summarize/2 context section" do
+    test "averages recall and chars over items with facts" do
+      results = [
+        %{id: "a", context: %{recall: 1.0, matched: 2, total: 2, text_chars: 100}},
+        %{id: "b", context: %{recall: 0.5, matched: 1, total: 2, text_chars: 200}},
+        # no facts → skipped
+        %{id: "c", context: %{recall: nil, text_chars: 50}}
+      ]
+
+      %{context: context} = Eval.summarize(results, [:faq])
+
+      assert context.evaluated == 2
+      assert_in_delta context.mean_recall, 0.75, 1.0e-9
+      assert_in_delta context.mean_chars, 150.0, 1.0e-9
+    end
+
+    test "evaluated=0 when no item carries facts" do
+      results = [%{id: "a", context: %{recall: nil, text_chars: 10}}]
+
+      assert %{context: %{evaluated: 0}} = Eval.summarize(results, [:faq])
+    end
+  end
+
   describe "summarize/2" do
     test "skips items with no expected ids" do
       results = [

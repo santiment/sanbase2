@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Plug.RequestContextPlug do
   def call(conn, _opts) do
     # Selective clears — `Logger.reset_metadata/0` would wipe `:request_id`
     # that `Plug.RequestId` set one plug earlier.
-    Logger.metadata(request_context: nil, hide_user_activity_traces: nil, user_id: nil)
+    Logger.metadata(request_context: nil, user_id: nil)
     Sentry.Context.clear_all()
 
     Plug.Conn.assign(conn, :request_context, RequestContext.anonymous(:graphql))

@@ -92,15 +92,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
             # to mask the GraphQL document at send time.
             Sentry.Context.set_user_context(%{id: user_id})
 
-            Logger.metadata(
-              user_id: user_id,
-              request_context: ctx,
-              hide_user_activity_traces: RequestContext.activity_traces_hidden?(ctx) || nil
-            )
-
           _ ->
-            Logger.metadata(user_id: "anonymous", request_context: ctx)
+            :ok
         end
+
+        RequestContext.put_logger_metadata(ctx)
 
         conn
         |> maybe_put_new_access_token(auth_struct)

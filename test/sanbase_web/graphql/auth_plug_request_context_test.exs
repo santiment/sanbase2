@@ -84,7 +84,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
 
     assert conn.assigns.request_context.user_id == user.id
     assert conn.assigns.request_context.activity_traces_hidden
-    assert Keyword.get(Logger.metadata(), :hide_user_activity_traces) == true
+    assert Keyword.get(Logger.metadata(), :request_context).activity_traces_hidden
     assert Sentry.Context.get_all().user == %{id: user.id}
   end
 
@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
       assert conn_b.assigns.request_context.user_id == safe_user.id
       refute conn_b.assigns.request_context.activity_traces_hidden
       assert Keyword.get(Logger.metadata(), :request_context).user_id == safe_user.id
-      assert Keyword.get(Logger.metadata(), :hide_user_activity_traces) == nil
+      refute Keyword.get(Logger.metadata(), :request_context).activity_traces_hidden
       assert Sentry.Context.get_all().user == %{id: safe_user.id}
     end
 
@@ -142,7 +142,7 @@ defmodule SanbaseWeb.Graphql.AuthPlugRequestContextTest do
       assert conn_b.assigns.request_context.user_id == nil
       refute conn_b.assigns.request_context.activity_traces_hidden
       assert Keyword.get(Logger.metadata(), :request_context).user_id == nil
-      assert Keyword.get(Logger.metadata(), :hide_user_activity_traces) == nil
+      refute Keyword.get(Logger.metadata(), :request_context).activity_traces_hidden
       assert Sentry.Context.get_all().user == %{}
     end
   end

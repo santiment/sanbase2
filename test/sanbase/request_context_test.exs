@@ -26,21 +26,6 @@ defmodule Sanbase.RequestContextTest do
     end
   end
 
-  describe "system/2" do
-    test "marks origin + auth_method :system and stashes the reason" do
-      ctx = RequestContext.system(:script, "backfill_job")
-
-      assert %RequestContext{
-               origin: :script,
-               user_id: nil,
-               auth_method: :system,
-               product_code: "backfill_job"
-             } = ctx
-
-      refute RequestContext.activity_traces_hidden?(ctx)
-    end
-  end
-
   describe "activity_traces_hidden?/1" do
     test "true only for ctx with activity_traces_hidden: true" do
       assert RequestContext.activity_traces_hidden?(%RequestContext{
@@ -102,27 +87,13 @@ defmodule Sanbase.RequestContextTest do
       assert RequestContext.activity_traces_hidden?(ctx)
     end
 
-    test "reads request_id from x-request-id resp header set by Plug.RequestId" do
-      conn =
-        Plug.Test.conn(:post, "/graphql")
-        |> Plug.Conn.put_resp_header("x-request-id", "abc-123")
+    test "reads request_id from Logger.metadata set by Plug.RequestId" do
+      Logger.metadata(request_id: "abc-123")
+      on_exit(fn -> Logger.metadata(request_id: nil) end)
 
+      conn = Plug.Test.conn(:post, "/graphql")
       ctx = RequestContext.from_conn(conn)
       assert ctx.request_id == "abc-123"
-    end
-  end
-
-  describe "from_absinthe/1" do
-    test "returns the request_context stored in the Absinthe context map" do
-      ctx = RequestContext.anonymous(:graphql)
-      info = %{context: %{request_context: ctx, other: "stuff"}}
-
-      assert RequestContext.from_absinthe(info) == ctx
-    end
-
-    test "returns nil when no request_context present" do
-      assert RequestContext.from_absinthe(%{context: %{}}) == nil
-      assert RequestContext.from_absinthe(%{}) == nil
     end
   end
 

@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Schema.HyperliquidQueries do
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Middlewares.UserAuth
+
   object :hyperliquid_queries do
     @desc ~s"""
     Entry point for Hyperliquid BBO (best bid / best offer) data.
@@ -12,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Schema.HyperliquidQueries do
     field :hyperliquid_bbo_prices, :hyperliquid_bbo_data do
       meta(access: :free)
 
+      middleware(UserAuth)
       resolve(fn _root, _args, _resolution -> {:ok, %{__source__: :hyperliquid_bbo_prices}} end)
     end
   end

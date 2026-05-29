@@ -44,7 +44,11 @@ defmodule Sanbase.AI.AcademyAIService do
     chat_history = if chat_id, do: build_chat_history(chat_id), else: []
 
     with {:ok, chunks} <- Academy.search_chunks(question, @retrieval_top_k),
-         reranked_chunks = rerank_chunks(question, chunks),
+         reranked_chunks =
+           Knowledge.rerank_entries(question, chunks, :academy,
+             top_n: @prompt_top_k,
+             max_retries: @rerank_max_retries
+           ),
          {:ok, answer, sources} <-
            generate_answer(question, reranked_chunks, chat_history, user_id, session_id) do
       suggestions =
@@ -174,13 +178,6 @@ defmodule Sanbase.AI.AcademyAIService do
 
   defp ai_server_url do
     System.get_env("AI_SERVER_URL") || "http://aiserver.production.san:31080"
-  end
-
-  defp rerank_chunks(question, chunks) do
-    Knowledge.rerank_entries(question, chunks, :academy,
-      top_n: @prompt_top_k,
-      max_retries: @rerank_max_retries
-    )
   end
 
   defp generate_answer(question, chunks, chat_history, user_id, session_id) do

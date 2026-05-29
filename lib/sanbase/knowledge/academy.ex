@@ -37,7 +37,12 @@ defmodule Sanbase.Knowledge.Academy do
   # run. The source SHA still short-circuits the GitHub content fetch for
   # articles whose markdown has not changed *and* whose pipeline version
   # matches the current one.
-  @index_version 1
+  #
+  # v2: `to_academy_url/1` now strips the `ai-toolkit/` root section, fixing
+  # academy_url for ai-toolkit articles that previously 404'd. Existing rows
+  # have unchanged markdown, so without this bump the SHA-cache would keep the
+  # stale URLs instead of re-deriving them.
+  @index_version 2
 
   @excluded_paths MapSet.new([
                     "pull_request_template.md",
@@ -639,13 +644,20 @@ defmodule Sanbase.Knowledge.Academy do
     end
   end
 
+  # The academy site derives a doc's public URL by stripping the first path
+  # segment when it is a "root section" (see `ROOT_SECTIONS` in the academy
+  # repo's src/config/navigation.ts -> src/modules/navigation/paths.ts).
+  # This list MUST stay in sync with that config; a missing entry produces URLs
+  # with an extra leading segment that 404 (e.g. /ai-toolkit/mcp-connector/
+  # instead of /mcp-connector/).
   defp to_academy_url(path) do
     path
     |> String.trim_leading("src/content/docs/")
     |> String.trim_leading("src/docs/")
+    |> String.trim_leading("getting-started/")
     |> String.trim_leading("guides/")
     |> String.trim_leading("resources/")
-    |> String.trim_leading("getting-started/")
+    |> String.trim_leading("ai-toolkit/")
     |> String.trim_trailing("/index.mdx")
     |> String.trim_trailing("/index.md")
     |> String.replace_suffix(".md", "")

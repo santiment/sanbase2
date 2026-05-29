@@ -5,6 +5,7 @@ defmodule Sanbase.AI.AcademyAIService do
   """
 
   require Logger
+  alias Sanbase.Knowledge
   alias Sanbase.Knowledge.{Academy, Faq}
   alias Sanbase.OpenAI.Question
   alias Sanbase.AI.AcademyTracing, as: Tracing
@@ -14,6 +15,25 @@ defmodule Sanbase.AI.AcademyAIService do
   @model "gpt-5-nano"
   @suggestions_model "gpt-5-nano"
   @similarity_threshold 0.5
+
+  # Coarse cosine retrieval fans out beyond what the answer prompt holds so
+  # the reranker has headroom to reorder; `rerank_chunks/2` then truncates the
+  # reranked list back to @prompt_top_k before prompt assembly. Same
+  # retrieve-then-rerank pattern as `Sanbase.Knowledge`, but the prompt cap
+  # here is 10 (vs its @prompt_top_n of 5) to preserve this service's prior
+  # behavior of feeding 10 chunks to the answer prompt.
+  @retrieval_top_k 20
+  @prompt_top_k 10
+
+  # This runs synchronously inside the `sendChatMessage` mutation, so rerank
+  # latency lands directly on the user's request. The reranker is a best-effort
+  # reordering that falls back to cosine order on any error, so on this
+  # interactive path we disable retries: one slow attempt should degrade to
+  # cosine order rather than multiplying the wait. The per-attempt timeout is
+  # deliberately left to the backend, which knows its own latency profile (a
+  # cross-encoder is sub-second; an LLM listwise reranker needs several seconds)
+  # — hardcoding one here would break whichever backend it doesn't fit.
+  @rerank_max_retries 0
 
   @doc """
   Generates an Academy Q&A response using local database and OpenAI.
@@ -34,9 +54,10 @@ defmodule Sanbase.AI.AcademyAIService do
     session_id = Tracing.generate_session_id(chat_id, user_id)
     chat_history = if chat_id, do: build_chat_history(chat_id), else: []
 
-    with {:ok, chunks} <- Academy.search_chunks(question, 10),
+    with {:ok, chunks} <- Academy.search_chunks(question, @retrieval_top_k),
+         reranked_chunks = rerank_chunks(question, chunks),
          {:ok, answer, sources} <-
-           generate_answer(question, chunks, chat_history, user_id, session_id) do
+           generate_answer(question, reranked_chunks, chat_history, user_id, session_id) do
       suggestions =
         if include_suggestions and answer != @dont_know_message do
           case generate_suggestions(question, answer, sources, user_id, session_id) do
@@ -164,6 +185,18 @@ defmodule Sanbase.AI.AcademyAIService do
 
   defp ai_server_url do
     System.get_env("AI_SERVER_URL") || "http://aiserver.production.san:31080"
+  end
+
+  # Reorders the coarse cosine-retrieved chunks with the configured reranker
+  # and keeps the top @prompt_top_k for the answer prompt. Delegates to the
+  # shared `Sanbase.Knowledge.rerank_entries/4`, which falls back to the input
+  # order if the backend errors — so this never fails the request and can only
+  # improve chunk ordering.
+  defp rerank_chunks(question, chunks) do
+    Knowledge.rerank_entries(question, chunks, :academy,
+      top_n: @prompt_top_k,
+      max_retries: @rerank_max_retries
+    )
   end
 
   defp generate_answer(question, chunks, chat_history, user_id, session_id) do

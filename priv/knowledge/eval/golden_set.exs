@@ -447,6 +447,138 @@
       tags: ["product"]
     },
 
+    # === Academy: metrics, anomalies, on-chain concepts ===
+    # Derived from live academy_article content on 2026-05-29. Questions are
+    # paraphrased; answer_facts are short phrases copied from the article text.
+    %{
+      id: "academy-mvrv-danger-zone",
+      question: "When does the MVRV overvaluation (danger) zone anomaly fire?",
+      expected: %{
+        academy_paths: ["src/content/docs/resources/data-anomaly/mvrv-danger-zone/index.mdx"]
+      },
+      answer_facts: [
+        "overvalued",
+        "potential risk of market correction",
+        "exceeds the upper threshold"
+      ],
+      tags: ["academy", "mvrv", "anomaly"]
+    },
+    %{
+      id: "academy-mvrv-opportunity-zone",
+      question: "What does the MVRV undervaluation (opportunity) zone indicate?",
+      expected: %{
+        academy_paths: ["src/content/docs/resources/data-anomaly/mvrv-opportunity-zone/index.mdx"]
+      },
+      answer_facts: [
+        "undervalued",
+        "favorable entry point for long-term investors",
+        "falls below the lower threshold"
+      ],
+      tags: ["academy", "mvrv", "anomaly"]
+    },
+    %{
+      id: "academy-nrpl-mvrv-bottoms",
+      question: "Which metric combination helps spot macro cycle bottoms?",
+      expected: %{
+        academy_paths: [
+          "src/content/docs/guides/education-and-use-cases/case-study-nrpl-mvrv/index.mdx"
+        ]
+      },
+      answer_facts: ["3 year MVRV", "Network Realized Profit Loss", "once per macro cycle"],
+      tags: ["academy", "mvrv", "case-study"]
+    },
+    %{
+      id: "academy-social-volume-top",
+      question: "Which metrics did the case study use to spot a market top?",
+      expected: %{
+        academy_paths: [
+          "src/content/docs/guides/education-and-use-cases/case-study-social-volume/index.mdx"
+        ]
+      },
+      answer_facts: ["Social Volume", "Weighted Sentiment"],
+      tags: ["academy", "social", "case-study"]
+    },
+    %{
+      id: "academy-token-age-consumed",
+      question: "What does Token Age Consumed measure and what do its spikes mean?",
+      expected: %{
+        academy_paths: [
+          "src/content/docs/guides/education-and-use-cases/timing-market-volatility-with-token-age-consumed/index.mdx"
+        ]
+      },
+      answer_facts: ["Token Age Consumed", "dormant"],
+      tags: ["academy", "age-consumed"]
+    },
+    %{
+      id: "academy-daa-definition",
+      question: "What are daily active addresses (DAA)?",
+      expected: %{
+        academy_paths: [
+          "src/content/docs/guides/education-and-use-cases/price-to-daily-addresses-divergence-guide/index.mdx"
+        ]
+      },
+      answer_facts: ["number of unique crypto addresses", "network activity"],
+      tags: ["academy", "daa", "on-chain"]
+    },
+    %{
+      id: "academy-binance-funding-rate",
+      question: "What does the Binance funding rate anomaly tell traders?",
+      expected: %{
+        academy_paths: ["src/content/docs/resources/data-anomaly/binance-funding-rate/index.mdx"]
+      },
+      answer_facts: ["perpetual futures", "extreme market sentiment"],
+      tags: ["academy", "funding-rate", "anomaly"]
+    },
+    # No answer_facts: chunk 0 is mostly an embedded video / TOC, so only
+    # retrieval rank is scored here, not context recall.
+    %{
+      id: "academy-whale-monitoring",
+      question: "How can monitoring whale wallets help predict market moves?",
+      expected: %{
+        academy_paths: [
+          "src/content/docs/guides/education-and-use-cases/whale-monitoring-to-predict-market-moves/index.mdx"
+        ]
+      },
+      tags: ["academy", "whales"]
+    },
+    %{
+      id: "academy-metric-versions",
+      question: "How do I query a specific version of a Santiment metric?",
+      expected: %{
+        academy_paths: ["src/content/docs/guides/sanapi/metric-versions/index.mdx"]
+      },
+      tags: ["academy", "api", "metrics"]
+    },
+
+    # === Insights: evergreen guidance + on-chain analyses ===
+    %{
+      id: "insight-how-to-use-traders",
+      question: "How should traders get started with writing Insights?",
+      expected: %{insight_post_ids: [33]},
+      answer_facts: ["journaling", "plan your trades"],
+      tags: ["insights", "onboarding"]
+    },
+    %{
+      id: "insight-how-to-use-researchers",
+      question: "What should a researcher include when covering a project in an Insight?",
+      expected: %{insight_post_ids: [34]},
+      answer_facts: ["objective coverage", "Token economy", "Regulatory aspects"],
+      tags: ["insights", "research"]
+    },
+    # News-style insights: time-bound, so only retrieval rank is scored.
+    %{
+      id: "insight-btc-mvrv-longterm",
+      question: "What is Bitcoin's long-term MVRV suggesting about the outlook?",
+      expected: %{insight_post_ids: [10667]},
+      tags: ["insights", "mvrv", "bitcoin"]
+    },
+    %{
+      id: "insight-coins-leaving-exchanges",
+      question: "Are top-cap assets holding fewer coins on their top exchange wallets?",
+      expected: %{insight_post_ids: [7900]},
+      tags: ["insights", "exchange", "supply"]
+    },
+
     # === Should-not-answer sentinels (track no-info fallback / drift) ===
     %{
       id: "off-topic-football",

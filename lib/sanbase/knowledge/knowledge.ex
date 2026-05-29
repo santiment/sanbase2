@@ -66,7 +66,7 @@ defmodule Sanbase.Knowledge do
 
     sources =
       options
-      |> Keyword.take([:faq, :academy, :insights])
+      |> Keyword.take([:faq, :academy, :insight])
       |> Enum.filter(fn {_k, v} -> v end)
       |> Enum.map(fn {k, _} -> k end)
 
@@ -92,7 +92,7 @@ defmodule Sanbase.Knowledge do
         counts = %{
           faqs: length(filtered_faqs),
           academy: length(filtered_academy),
-          insights: length(filtered_insights)
+          insight: length(filtered_insights)
         }
 
         if filtered_faqs == [] and filtered_academy == [] and filtered_insights == [] do
@@ -109,7 +109,7 @@ defmodule Sanbase.Knowledge do
     case result do
       {{:ok, _} = ret, counts, no_answer?} ->
         Logger.info(
-          "smart_search done: question=#{preview} outcome=ok took_ms=#{took_ms} reranker=#{reranker} faqs=#{counts.faqs} academy=#{counts.academy} insights=#{counts.insights} no_answer=#{no_answer?}"
+          "smart_search done: question=#{preview} outcome=ok took_ms=#{took_ms} reranker=#{reranker} faqs=#{counts.faqs} academy=#{counts.academy} insight=#{counts.insight} no_answer=#{no_answer?}"
         )
 
         ret
@@ -183,7 +183,7 @@ defmodule Sanbase.Knowledge do
 
     answer = """
     #{if options[:faq], do: faqs_text}
-    #{if options[:insights], do: insights_text}
+    #{if options[:insight], do: insights_text}
     #{if options[:academy], do: academy_text}
     """
 
@@ -284,7 +284,7 @@ defmodule Sanbase.Knowledge do
   end
 
   defp maybe_find_most_similar_insights(user_input, embedding, options, min_sim) do
-    if Keyword.get(options, :insights, true) do
+    if Keyword.get(options, :insight, true) do
       with {:ok, raw} <- find_most_similar_insights(embedding, @retrieval_top_k) do
         {:ok,
          raw
@@ -301,7 +301,7 @@ defmodule Sanbase.Knowledge do
   end
 
   defp maybe_add_similar_insight_chunks(prompt, user_input, embedding, options, min_sim) do
-    if Keyword.get(options, :insights, true) do
+    if Keyword.get(options, :insight, true) do
       with {:ok, raw_chunks} <- find_most_similar_insight_chunks(embedding, @retrieval_top_k) do
         post_embeddings =
           raw_chunks

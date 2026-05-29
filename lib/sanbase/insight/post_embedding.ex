@@ -67,10 +67,8 @@ defmodule Sanbase.Insight.PostEmbedding do
       |> Enum.flat_map(fn post ->
         markdown = Htmd.convert!(post.text)
 
-        chunks =
-          TextChunker.split(markdown, chunk_size: 2000, chunk_overlap: 200, format: :markdown)
-
-        chunks
+        markdown
+        |> TextChunker.split(chunk_size: 2000, chunk_overlap: 200, format: :markdown)
         |> Enum.with_index()
         |> Enum.map(fn {chunk, chunk_index} ->
           text_chunk = """

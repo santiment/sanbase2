@@ -11,13 +11,12 @@ defmodule Sanbase.Knowledge.Eval do
   from IEx.
   """
 
-  alias Sanbase.Knowledge.{Academy, Context, Faq, Reranker}
-  alias Sanbase.Knowledge.Reranker.CandidateFormatter
+  alias Sanbase.Knowledge.{Academy, Context, Faq}
   alias Sanbase.Insight.Post
 
   @default_top_k 20
   @default_concurrency 4
-  @all_sources [:faq, :academy, :insights]
+  @all_sources [:faq, :academy, :insight]
 
   @type item :: %{
           required(:id) => String.t(),
@@ -229,7 +228,7 @@ defmodule Sanbase.Knowledge.Eval do
     end
   end
 
-  defp eval_source(:insights, item, embedding, top_k, reranker) do
+  defp eval_source(:insight, item, embedding, top_k, reranker) do
     case Post.find_most_similar_insight_chunks(embedding, top_k) do
       {:ok, hits} ->
         hits = Enum.uniq_by(hits, & &1.post_id)
@@ -250,40 +249,18 @@ defmodule Sanbase.Knowledge.Eval do
     |> Enum.map(fn {src, {_score, hits}} ->
       hits
       |> Enum.take(prompt_top_n)
-      |> Context.assemble(context_source(src))
+      |> Context.assemble(src)
     end)
     |> Enum.reject(&(&1 == ""))
     |> Enum.join("\n\n")
   end
 
-  # The eval source list uses `:insights` (plural); Context speaks the live
-  # source atoms. Normalize here so the alias never leaks into Context.
-  defp context_source(:insights), do: :insight
-  defp context_source(other), do: other
-
-  # Reranks `hits` against `question` using the provided reranker (or the
-  # application default). The eval never truncates — passes `top_n: top_k`
-  # so scoring can still measure hit@10 in the reordered list.
-  defp apply_reranker([], _question, _source, _reranker, _top_k), do: []
-
+  # Reranks `hits` against `question` via the same seam the live answer path
+  # uses. Passes `top_n: top_k` (no truncation) so scoring can still measure
+  # hit@10 in the reordered list.
   defp apply_reranker(hits, question, source, reranker, top_k) do
-    reranker_mod = reranker || default_reranker_module()
-
-    opts =
-      [source: source, top_n: top_k]
-      |> maybe_put(:reranker, reranker)
-
-    candidates = CandidateFormatter.to_candidates(hits, source, reranker_mod)
-
-    question
-    |> Reranker.call(candidates, opts)
-    |> Enum.map(& &1.metadata)
-  end
-
-  defp default_reranker_module() do
-    :sanbase
-    |> Application.get_env(Reranker, [])
-    |> Keyword.get(:default, Sanbase.Knowledge.Reranker.Noop)
+    opts = [top_n: top_k] |> maybe_put(:reranker, reranker)
+    Sanbase.Knowledge.rerank_entries(question, hits, source, opts)
   end
 
   defp maybe_put(opts, _key, nil), do: opts
@@ -300,12 +277,8 @@ defmodule Sanbase.Knowledge.Eval do
   end
 
   defp score_context(context_text, facts) do
-    base = %{text_chars: String.length(context_text)}
-
-    case context_recall(context_text, facts) do
-      nil -> Map.put(base, :recall, nil)
-      recall -> Map.merge(base, recall)
-    end
+    recall = context_recall(context_text, facts) || %{recall: nil}
+    Map.merge(%{text_chars: String.length(context_text)}, recall)
   end
 
   defp normalize(text) do
@@ -327,7 +300,7 @@ defmodule Sanbase.Knowledge.Eval do
       %{
         evaluated: evaluated,
         mean_recall: average(scored, & &1.recall),
-        mean_chars: average(scored, &(&1.text_chars * 1.0))
+        mean_chars: average(scored, & &1.text_chars)
       }
     end
   end

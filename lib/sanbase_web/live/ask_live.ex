@@ -7,7 +7,7 @@ defmodule SanbaseWeb.AskLive do
      assign(socket,
        question: "",
        answer: "",
-       sources: %{faq: true, academy: true, insights: true},
+       sources: %{faq: true, academy: true, insight: true},
        answer_log_link: nil
      )}
   end
@@ -125,10 +125,10 @@ defmodule SanbaseWeb.AskLive do
               <input
                 type="checkbox"
                 phx-click="toggle_source"
-                phx-value-source="insights"
-                name="insights"
+                phx-value-source="insight"
+                name="insight"
                 value="true"
-                checked={@sources.insights}
+                checked={@sources.insight}
                 class="checkbox checkbox-sm checkbox-primary"
               />
               <span class="text-sm font-medium">Insights</span>

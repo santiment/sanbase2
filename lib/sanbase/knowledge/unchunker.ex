@@ -84,12 +84,12 @@ defmodule Sanbase.Knowledge.Unchunker do
   defp scan_words(_a_tail, _b_head, _k), do: 0
 
   # Drop the first `k` whitespace-delimited words from `b`, slicing the
-  # original string at the word boundary so the remainder keeps its exact
-  # formatting. The cut lands right after a word (before whitespace), which is
-  # an ASCII boundary, so it is UTF-8 safe.
+  # original string right after the k-th word so the remainder keeps its exact
+  # formatting (the cut lands before the following whitespace). The boundary is
+  # after a word, an ASCII whitespace position, so it is UTF-8 safe.
   defp drop_leading_words(b, k) do
-    case Regex.run(~r/^\s*(?:\S+\s+){#{k - 1}}\S+/u, b, return: :index) do
-      [{0, len}] -> binary_part(b, len, byte_size(b) - len)
+    case Enum.at(Regex.scan(~r/\S+/u, b, return: :index), k - 1) do
+      [{start, len}] -> binary_part(b, start + len, byte_size(b) - start - len)
       _ -> ""
     end
   end

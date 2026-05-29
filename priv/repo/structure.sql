@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict nQ39PEZ3GFGFALxEaTsiDoTx2sXBTc2slb828nd7VkaSz8Ky37e1hXh9b4l6VAW
+\restrict LEttgqY316E4IFuP3OvVL5LAg3yhkNTJVFudiNYWDt4wA1z7d4T5s1X7jcitB0B
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -272,9 +272,7 @@ CREATE TABLE public.academy_article_chunks (
     embedding public.vector(1536) NOT NULL,
     is_stale boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    start_byte integer,
-    end_byte integer
+    updated_at timestamp without time zone NOT NULL
 );
 
 
@@ -310,8 +308,7 @@ CREATE TABLE public.academy_articles (
     is_stale boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    index_version integer DEFAULT 0 NOT NULL,
-    markdown text
+    index_version integer DEFAULT 0 NOT NULL
 );
 
 
@@ -3274,8 +3271,7 @@ CREATE TABLE public.posts_embeddings (
     text_chunk text NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    start_byte integer,
-    end_byte integer
+    chunk_index integer
 );
 
 
@@ -11645,7 +11641,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict nQ39PEZ3GFGFALxEaTsiDoTx2sXBTc2slb828nd7VkaSz8Ky37e1hXh9b4l6VAW
+\unrestrict LEttgqY316E4IFuP3OvVL5LAg3yhkNTJVFudiNYWDt4wA1z7d4T5s1X7jcitB0B
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

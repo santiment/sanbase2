@@ -185,14 +185,37 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     end
   end
 
-  defp format_search_sources(sources) do
-    sources = sources |> Enum.map(fn link -> "<#{link}>" end) |> Enum.join("\n")
-    "Sources: \n#{sources}"
+  defp format_search_sources(nil), do: ""
+  defp format_search_sources([]), do: ""
+  defp format_search_sources(""), do: ""
+
+  defp format_search_sources(sources) when is_list(sources) do
+    sources
+    |> Enum.reject(&(&1 == "" or is_nil(&1)))
+    |> Enum.map(fn link -> "<#{link}>" end)
+    |> Enum.join("\n")
+    |> then(fn
+      "" -> ""
+      s -> "Sources: \n#{s}"
+    end)
   end
 
+  defp format_academy_sources(nil), do: ""
+  defp format_academy_sources([]), do: ""
   defp format_academy_sources(""), do: ""
 
-  defp format_academy_sources(sources) do
+  defp format_academy_sources(sources) when is_list(sources) do
+    sources
+    |> Enum.reject(&(&1 == "" or is_nil(&1)))
+    |> Enum.map(fn link -> "<#{link}>" end)
+    |> Enum.join("\n")
+    |> then(fn
+      "" -> ""
+      s -> "Sources: \n#{s}"
+    end)
+  end
+
+  defp format_academy_sources(sources) when is_binary(sources) do
     sources =
       sources
       |> extract_filenames_or_links_from_string()
@@ -210,7 +233,10 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       end)
       |> Enum.join("\n")
 
-    "Sources: \n#{sources}"
+    case sources do
+      "" -> ""
+      s -> "Sources: \n#{s}"
+    end
   end
 
   defp extract_filenames_or_links_from_string(string) do

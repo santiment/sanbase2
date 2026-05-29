@@ -116,6 +116,31 @@ defmodule Sanbase.Knowledge do
     end
   end
 
+  @doc """
+  Rerank `entries` for `source` against `query`, returning the original maps
+  reordered by relevance (truncated to `:top_n` if given). Falls back to input
+  order on backend error. Options other than `:reranker`/`:top_n` are forwarded
+  to the backend.
+  """
+  @spec rerank_entries(String.t(), [map()], CandidateFormatter.source(), keyword()) :: [map()]
+  def rerank_entries(query, entries, source, opts \\ [])
+
+  def rerank_entries(_query, [], _source, _opts), do: []
+
+  def rerank_entries(query, entries, source, opts) do
+    reranker_mod = Keyword.get(opts, :reranker) || Reranker.default_impl()
+
+    rerank_opts =
+      opts
+      |> Keyword.put(:source, source)
+      |> Keyword.put_new(:reranker, reranker_mod)
+
+    entries
+    |> CandidateFormatter.to_candidates(source, reranker_mod)
+    |> then(&Reranker.call(query, &1, rerank_opts))
+    |> Enum.map(& &1.metadata)
+  end
+
   # Private functions
 
   defp build_smart_search_result(faq_entries, academy_articles, insights, options) do
@@ -369,20 +394,8 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp rerank([], _user_input, _source, _options, _opts), do: []
-
   defp rerank(entries, user_input, source, options, opts) do
-    reranker_mod = Keyword.get(options, :reranker) || Reranker.default_impl()
-
-    rerank_opts =
-      opts
-      |> Keyword.put(:source, source)
-      |> maybe_put_reranker(options)
-
-    entries
-    |> CandidateFormatter.to_candidates(source, reranker_mod)
-    |> then(&Reranker.call(user_input, &1, rerank_opts))
-    |> from_candidates()
+    rerank_entries(user_input, entries, source, maybe_put_reranker(opts, options))
   end
 
   defp maybe_put_reranker(opts, options) do
@@ -391,8 +404,6 @@ defmodule Sanbase.Knowledge do
       mod -> Keyword.put(opts, :reranker, mod)
     end
   end
-
-  defp from_candidates(candidates), do: Enum.map(candidates, & &1.metadata)
 
   defp generate_initial_prompt(question) do
     prompt = """

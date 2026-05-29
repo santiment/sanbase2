@@ -5,6 +5,7 @@ defmodule Sanbase.AI.AcademyAIService do
   """
 
   require Logger
+  alias Sanbase.Knowledge
   alias Sanbase.Knowledge.{Academy, Faq}
   alias Sanbase.OpenAI.Question
   alias Sanbase.AI.AcademyTracing, as: Tracing
@@ -14,6 +15,14 @@ defmodule Sanbase.AI.AcademyAIService do
   @model "gpt-5-nano"
   @suggestions_model "gpt-5-nano"
   @similarity_threshold 0.5
+
+  # Retrieve wide, rerank, keep top_k for the prompt.
+  @retrieval_top_k 20
+  @prompt_top_k 10
+
+  # Runs synchronously in the sendChatMessage mutation; don't retry a
+  # best-effort rerank on the user's request path.
+  @rerank_max_retries 0
 
   @doc """
   Generates an Academy Q&A response using local database and OpenAI.
@@ -34,9 +43,14 @@ defmodule Sanbase.AI.AcademyAIService do
     session_id = Tracing.generate_session_id(chat_id, user_id)
     chat_history = if chat_id, do: build_chat_history(chat_id), else: []
 
-    with {:ok, chunks} <- Academy.search_chunks(question, 10),
+    with {:ok, chunks} <- Academy.search_chunks(question, @retrieval_top_k),
+         reranked_chunks =
+           Knowledge.rerank_entries(question, chunks, :academy,
+             top_n: @prompt_top_k,
+             max_retries: @rerank_max_retries
+           ),
          {:ok, answer, sources} <-
-           generate_answer(question, chunks, chat_history, user_id, session_id) do
+           generate_answer(question, reranked_chunks, chat_history, user_id, session_id) do
       suggestions =
         if include_suggestions and answer != @dont_know_message do
           case generate_suggestions(question, answer, sources, user_id, session_id) do

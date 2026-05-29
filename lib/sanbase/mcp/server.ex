@@ -68,39 +68,34 @@ defmodule Sanbase.MCP.Server do
 
   defp handle_invocation(request, frame, kind) do
     frame = assign_current_user(frame)
+    ctx = RequestContext.from_mcp_frame(frame)
     name = get_in(request, ["params", "name"])
     params = get_in(request, ["params", "arguments"]) || %{}
 
     case mcp_access_check(frame, name) do
       :ok ->
-        with_request_context(frame, fn ->
+        with_logger_metadata(ctx, fn ->
           start_time = System.monotonic_time(:millisecond)
           result = Anubis.Server.Handlers.handle(request, __MODULE__, frame)
           duration_ms = System.monotonic_time(:millisecond) - start_time
-          track_invocation(result, frame, name, params, duration_ms, kind)
+          track_invocation(result, ctx, name, params, duration_ms, kind)
           result
         end)
 
       {:banned, frame} ->
-        record_banned_attempt(frame, name, params, kind)
+        record_banned_attempt(ctx, name, params, kind)
         {:reply, error_response(@banned_message), frame}
 
       {:rate_limited, error_message} ->
         result = {:reply, error_response(error_message), frame}
-        track_invocation(result, frame, name, params, 0, kind)
+        track_invocation(result, ctx, name, params, 0, kind)
         result
     end
   end
 
-  defp with_request_context(frame, fun) do
-    ctx = RequestContext.from_mcp_frame(frame)
+  defp with_logger_metadata(%RequestContext{} = ctx, fun) do
     old_metadata = Logger.metadata()
-
-    Logger.metadata(
-      user_id: ctx.user_id || "anonymous",
-      request_context: ctx,
-      hide_user_activity_traces: RequestContext.activity_traces_hidden?(ctx) || nil
-    )
+    RequestContext.put_logger_metadata(ctx)
 
     try do
       fun.()
@@ -159,7 +154,7 @@ defmodule Sanbase.MCP.Server do
     end
   end
 
-  defp track_invocation(result, frame, tool_name, params, duration_ms, kind) do
+  defp track_invocation(result, ctx, tool_name, params, duration_ms, kind) do
     {is_successful, error_message, response_size_bytes} =
       case result do
         {:reply, %{"isError" => true, "content" => content}, _frame} ->
@@ -186,7 +181,7 @@ defmodule Sanbase.MCP.Server do
       end
 
     persist_tool_invocation(
-      build_attrs(frame, tool_name, params, duration_ms, kind, %{
+      build_attrs(ctx, tool_name, params, duration_ms, kind, %{
         is_successful: is_successful,
         error_message: error_message,
         response_size_bytes: response_size_bytes
@@ -194,9 +189,9 @@ defmodule Sanbase.MCP.Server do
     )
   end
 
-  defp record_banned_attempt(frame, tool_name, params, kind) do
+  defp record_banned_attempt(ctx, tool_name, params, kind) do
     persist_tool_invocation(
-      build_attrs(frame, tool_name, params, 0, kind, %{
+      build_attrs(ctx, tool_name, params, 0, kind, %{
         is_successful: false,
         error_message: "banned",
         response_size_bytes: nil
@@ -204,57 +199,22 @@ defmodule Sanbase.MCP.Server do
     )
   end
 
-  defp build_attrs(frame, tool_name, params, duration_ms, kind, outcome) do
-    user = frame.assigns[:current_user]
-    headers = frame.context.headers || []
-    client_info = frame.context.client_info
-    %{user_agent: ua, session_id: sid, client: client} = request_context(headers, client_info)
-
+  defp build_attrs(%RequestContext{} = ctx, tool_name, params, duration_ms, kind, outcome) do
     %{
-      user_id: if(user, do: user.id),
+      user_id: ctx.user_id,
       tool_name: tool_name,
       params: params,
       is_successful: outcome.is_successful,
       error_message: outcome.error_message,
       response_size_bytes: outcome.response_size_bytes,
       duration_ms: duration_ms,
-      auth_method: Auth.get_auth_method(headers),
-      user_agent: ua,
-      client: client,
-      session_id: sid,
+      auth_method: ctx.auth_method && Atom.to_string(ctx.auth_method),
+      user_agent: ctx.user_agent,
+      client: ctx.client,
+      session_id: ctx.request_id,
       kind: kind
     }
     |> Sanbase.MCP.Privacy.mask_attrs()
-  end
-
-  # Many MCP clients don't send a User-Agent header (CLI/SDK wrappers, some
-  # transports), so fall back to the MCP `clientInfo` sent during the
-  # `initialize` handshake. Anubis exposes it at `frame.context.client_info`
-  # and it's set for every MCP client.
-  defp request_context(headers, client_info) do
-    ua_header =
-      case Auth.get_header(headers, "user-agent") do
-        {_, value} -> value
-        _ -> nil
-      end
-
-    sid =
-      case Auth.get_header(headers, "mcp-session-id") do
-        {_, value} ->
-          value
-
-        _ ->
-          case Auth.get_header(headers, "x-request-id") do
-            {_, value} -> value
-            _ -> nil
-          end
-      end
-
-    %{
-      user_agent: ua_header || ToolInvocation.user_agent_from_client_info(client_info),
-      session_id: sid,
-      client: ToolInvocation.derive_client(ua_header, client_info)
-    }
   end
 
   # In test, Ecto SQL Sandbox ties DB connections to the test process.

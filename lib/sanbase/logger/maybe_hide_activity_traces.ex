@@ -3,16 +3,21 @@ defmodule Sanbase.Logger.MaybeHideActivityTraces do
   `:logger` filter that suppresses log entries containing the raw GraphQL
   document for users in `Sanbase.Accounts.activity_traces_hidden_user_ids/0`.
 
-  The filter is keyed on the `hide_user_activity_traces` Logger metadata flag
-  (set by `SanbaseWeb.Graphql.AuthPlug` for protected users) combined
-  with the message starting with `"ABSINTHE"` — the prefix emitted by
+  Keyed on the `:request_context` Logger metadata struct set at every
+  request edge (`AuthPlug`, MCP `with_logger_metadata`) combined with the
+  message starting with `"ABSINTHE"` — the prefix emitted by
   `Absinthe.Logger.log_run/2` for every incoming GraphQL document.
 
   Returns `:stop` to drop the event, `:ignore` to leave it untouched.
   """
 
+  alias Sanbase.RequestContext
+
   @spec filter(:logger.log_event(), term()) :: :logger.filter_return()
-  def filter(%{meta: %{hide_user_activity_traces: true}, msg: msg}, _extra) do
+  def filter(
+        %{meta: %{request_context: %RequestContext{activity_traces_hidden: true}}, msg: msg},
+        _extra
+      ) do
     if absinthe_document_log?(msg), do: :stop, else: :ignore
   end
 

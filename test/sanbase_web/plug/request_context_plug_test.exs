@@ -16,8 +16,7 @@ defmodule SanbaseWeb.Plug.RequestContextPlugTest do
 
   test "clears stale Logger metadata and Sentry.Context" do
     Logger.metadata(
-      request_context: %RequestContext{origin: :graphql, user_id: 1},
-      hide_user_activity_traces: true,
+      request_context: %RequestContext{origin: :graphql, user_id: 1, activity_traces_hidden: true},
       user_id: 1
     )
 
@@ -28,7 +27,6 @@ defmodule SanbaseWeb.Plug.RequestContextPlugTest do
 
     meta = Logger.metadata()
     assert Keyword.get(meta, :request_context) == nil
-    assert Keyword.get(meta, :hide_user_activity_traces) == nil
     assert Keyword.get(meta, :user_id) == nil
     assert Sentry.Context.get_all().user == %{}
   end

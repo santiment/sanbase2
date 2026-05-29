@@ -24,7 +24,7 @@ defmodule Mix.Tasks.KnowledgeEvalCompareReranker do
 
   ## Options
 
-    * `--source`    - comma-separated subset of `faq,academy,insights`; defaults to all
+    * `--source`    - comma-separated subset of `faq,academy,insight`; defaults to all
     * `--file`      - path to a golden set; defaults to the bundled `priv/knowledge/eval/golden_set.exs`
     * `--limit`     - cap the number of golden items evaluated (recommended for compare runs)
     * `--random`    - shuffle items before applying `--limit` so the sample isn't always the first N
@@ -44,7 +44,7 @@ defmodule Mix.Tasks.KnowledgeEvalCompareReranker do
 
   @shortdoc "Compare retrieval metrics with vs without reranker"
 
-  @allowed_sources ~w(faq academy insights)
+  @allowed_sources ~w(faq academy insight)
   @metric_rows [
     {:hit_at_1, "hit@1"},
     {:hit_at_3, "hit@3"},
@@ -157,8 +157,8 @@ defmodule Mix.Tasks.KnowledgeEvalCompareReranker do
     |> Keyword.get(:default, Sanbase.Knowledge.Reranker.Noop)
   end
 
-  defp parse_sources(nil), do: [:faq, :academy, :insights]
-  defp parse_sources("all"), do: [:faq, :academy, :insights]
+  defp parse_sources(nil), do: [:faq, :academy, :insight]
+  defp parse_sources("all"), do: [:faq, :academy, :insight]
 
   defp parse_sources(str) when is_binary(str) do
     str

@@ -8,7 +8,7 @@ a win or a regression.
 
 ## What it measures
 
-Per source (`faq` / `academy` / `insights`):
+Per source (`faq` / `academy` / `insight`):
 
 | Metric | Meaning |
 |---|---|

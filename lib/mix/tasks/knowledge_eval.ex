@@ -15,7 +15,7 @@ defmodule Mix.Tasks.KnowledgeEval do
 
   ## Options
 
-    * `--source` - comma-separated subset of `faq,academy,insights`; defaults to all
+    * `--source` - comma-separated subset of `faq,academy,insight`; defaults to all
     * `--file`   - path to a golden set; defaults to `priv/knowledge/eval/golden_set.exs`
     * `--json`   - dump full results (per-item + summary) as JSON to this path
     * `--top-k`  - top-K to retrieve per source (default 20)
@@ -77,15 +77,15 @@ defmodule Mix.Tasks.KnowledgeEval do
     |> maybe_put_reranker(opts[:no_rerank])
   end
 
-  @allowed_sources ~w(faq academy insights)
+  @allowed_sources ~w(faq academy insight)
 
   defp maybe_put_reranker(opts, true),
     do: Keyword.put(opts, :reranker, Sanbase.Knowledge.Reranker.Noop)
 
   defp maybe_put_reranker(opts, _), do: opts
 
-  defp parse_sources(nil), do: [:faq, :academy, :insights]
-  defp parse_sources("all"), do: [:faq, :academy, :insights]
+  defp parse_sources(nil), do: [:faq, :academy, :insight]
+  defp parse_sources("all"), do: [:faq, :academy, :insight]
 
   defp parse_sources(str) when is_binary(str) do
     str

@@ -30,9 +30,11 @@ defmodule Sanbase.Knowledge.Context do
   def assemble([], _source), do: ""
 
   def assemble(hits, :faq) do
+    admin_url = SanbaseWeb.Endpoint.admin_url()
+
     hits
     |> Enum.map(fn entry ->
-      url = "#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{entry.id}"
+      url = "#{admin_url}/admin/faq/#{entry.id}"
 
       """
       Source marker: [FAQ ##{entry.id}](#{url})

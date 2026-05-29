@@ -117,25 +117,10 @@ defmodule Sanbase.Knowledge do
   end
 
   @doc """
-  Rerank coarse-retrieval `entries` for `source` against `query` and return
-  the original entry maps re-ordered by relevance (optionally truncated to
-  `:top_n`).
-
-  `entries` are the raw retrieval maps for the source (FAQ rows, Academy
-  chunks, Insight chunks). They are normalized to reranker candidates via
-  `CandidateFormatter`, reranked by the configured backend, and unwrapped
-  back to the same maps — so callers get their input shape back, only
-  reordered and (optionally) shortened.
-
-  Options:
-
-    * `:reranker` — reranker module override; defaults to
-      `Reranker.default_impl/0`.
-    * `:top_n` — truncate the reranked list to this many entries.
-
-  Any other option is forwarded to the backend. On a backend error the
-  dispatcher falls back to input order (truncated to `:top_n`), so this
-  never raises or fails the caller — it can only improve ordering.
+  Rerank `entries` for `source` against `query`, returning the original maps
+  reordered by relevance (truncated to `:top_n` if given). Falls back to input
+  order on backend error. Options other than `:reranker`/`:top_n` are forwarded
+  to the backend.
   """
   @spec rerank_entries(String.t(), [map()], CandidateFormatter.source(), keyword()) :: [map()]
   def rerank_entries(query, entries, source, opts \\ [])

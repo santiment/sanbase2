@@ -42,9 +42,7 @@ defmodule Sanbase.Knowledge.Academy do
   # academy_url for ai-toolkit articles that previously 404'd. Existing rows
   # have unchanged markdown, so without this bump the SHA-cache would keep the
   # stale URLs instead of re-deriving them.
-  # v3: store chunk byte offsets (start_byte/end_byte) + the source markdown
-  # on the article, so the Unchunker can reconstruct overlap-free spans.
-  @index_version 3
+  @index_version 2
 
   @excluded_paths MapSet.new([
                     "pull_request_template.md",
@@ -341,7 +339,6 @@ defmodule Sanbase.Knowledge.Academy do
           academy_url: academy_url,
           title: title,
           content_sha: content_sha,
-          markdown: markdown,
           is_stale: false
         }
 
@@ -408,10 +405,6 @@ defmodule Sanbase.Knowledge.Academy do
           chunk_index: index,
           heading: extract_heading(chunk_text),
           content: chunk_text,
-          # Offsets index into the original (untrimmed) markdown stored on
-          # the article, so the Unchunker can slice the exact source span.
-          start_byte: chunk.start_byte,
-          end_byte: chunk.end_byte,
           is_stale: false
         }
       end)

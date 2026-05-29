@@ -1,132 +1,96 @@
 defmodule Sanbase.Knowledge.Unchunker do
   @moduledoc """
-  Reconstructs original document spans from a set of picked chunks.
+  Reassembles overlapping chunks into continuous text using only the chunk
+  texts themselves — no original document required.
 
-  Chunks produced by `TextChunker` overlap (e.g. chunk_size 2000, overlap
-  200), so concatenating their stored text duplicates the overlap regions.
-  Instead, each chunk carries the byte offsets (`start_byte`/`end_byte`) of
-  where it sits in the source markdown. To "unchunk" we simply slice the
-  source between the first picked chunk's start and the last picked chunk's
-  end — the original text, with overlaps and trimming undone for free.
+  `TextChunker` emits chunks that overlap (chunk_size 2000, overlap 200): the
+  tail of one chunk repeats at the head of the next. `merge/2` stitches an
+  ordered list of chunk texts by finding, for each adjacent pair, the longest
+  run of words that is both a suffix of the left chunk and a prefix of the
+  right chunk, then dropping that duplicated run from the right chunk. When no
+  overlap is found — non-adjacent chunks, or a clean chunk-size boundary — the
+  chunks are joined with a separator so unrelated regions are not silently
+  glued together.
 
-  Picked chunks that are not contiguous (a gap between one chunk's end and
-  the next chunk's start) are reconstructed as separate spans so unrelated
-  regions of the document are not silently glued together.
+  Overlap is matched at WORD granularity, not character: it is cheaper (a few
+  dozen token comparisons instead of re-slicing graphemes for every candidate
+  length) and more robust, since `String.trim` leaves slightly different
+  whitespace at the two seams while chunk boundaries themselves fall on
+  whitespace. The duplicated run is then removed from the *original* right
+  chunk by slicing at the word boundary, so the remainder keeps its exact
+  markdown formatting (newlines, lists, code blocks).
 
-  All offsets are byte offsets and slicing uses `binary_part/3`, matching
-  how `TextChunker` measures. Chunk boundaries are valid UTF-8 codepoint
-  boundaries, so the slices are always valid strings.
+  Working on the chunks alone, rather than slicing the source document by byte
+  offset, means reconstruction can never diverge from what was indexed: there
+  is no parent entity to re-fetch or re-derive, so a post edited or an article
+  reformatted after indexing cannot yield mismatched text. The tradeoff is
+  that the result is the stored (already trimmed) chunk text, not a byte-exact
+  copy of the original.
+
+  Callers pass chunk texts in document order (e.g. sorted by `chunk_index`)
+  and, for insights, with the repeated title template already stripped.
   """
 
-  @type chunk :: %{
-          optional(any()) => any(),
-          required(:start_byte) => non_neg_integer() | nil,
-          required(:end_byte) => non_neg_integer() | nil
-        }
+  @default_separator "\n\n[…]\n\n"
+
+  # The real overlap can't exceed the chunker's overlap setting (~200 chars,
+  # a few dozen words); cap the search window past it to absorb slack. Require
+  # a minimum run so a single coincidental shared word ("the") is not mistaken
+  # for the overlap region.
+  @max_overlap_words 80
+  @min_overlap_words 2
 
   @doc """
-  Reconstruct the source span(s) covered by `chunks` from `source`.
+  Merge an ordered list of chunk texts into one string, de-duplicating the
+  overlap between adjacent chunks.
 
-  Returns a list of strings in document order — one per contiguous group of
-  picked chunks. Chunks missing offsets are ignored. Returns `[]` when no
-  chunk has usable offsets (the caller should then fall back to stored
-  chunk text).
-
-  If a span's offsets cut a multibyte codepoint (stale offsets, e.g. an
-  insight edited after embedding), only the misaligned bytes at the span's
-  edges are trimmed — the valid interior is kept. A byte slice of valid
-  UTF-8 can only be broken at its two endpoints, never in the middle, so
-  this preserves all but a few boundary bytes. A span that trims to empty
-  is dropped. Slicing the exact source the offsets came from is always
-  codepoint-aligned, so trimming is a no-op on the common path.
+  Blank entries are dropped. Returns `""` for an empty list.
   """
-  @spec spans(String.t(), [chunk()]) :: [String.t()]
-  def spans(source, chunks) when is_binary(source) and is_list(chunks) do
-    chunks
-    |> Enum.filter(&valid_offsets?(&1, source))
-    |> Enum.sort_by(& &1.start_byte)
-    |> group_contiguous()
-    |> Enum.map(fn group -> source |> slice_group(group) |> repair_utf8() end)
-    |> Enum.reject(&(&1 == ""))
-  end
+  @spec merge([String.t()], keyword()) :: String.t()
+  def merge(texts, opts \\ []) when is_list(texts) do
+    separator = Keyword.get(opts, :separator, @default_separator)
 
-  @doc """
-  Reconstruct and join all spans into a single string.
-
-  Separate (non-contiguous) spans are joined with `separator`, which
-  defaults to a marker making the gap visible to the reader/LLM. Returns
-  `nil` when nothing can be reconstructed, so callers can fall back.
-  """
-  @spec unchunk(String.t(), [chunk()], keyword()) :: String.t() | nil
-  def unchunk(source, chunks, opts \\ [])
-
-  def unchunk(source, chunks, opts) when is_binary(source) and is_list(chunks) do
-    separator = Keyword.get(opts, :separator, "\n\n[…]\n\n")
-
-    case spans(source, chunks) do
-      [] -> nil
-      spans -> Enum.join(spans, separator)
+    texts
+    |> Enum.map(&to_string/1)
+    |> Enum.reject(&(String.trim(&1) == ""))
+    |> case do
+      [] -> ""
+      [first | rest] -> Enum.reduce(rest, first, &stitch(&2, &1, separator))
     end
   end
 
-  def unchunk(_source, _chunks, _opts), do: nil
-
-  # A chunk's offsets are usable only when both are present, ordered, and
-  # within the source. Guards against stale offsets after a source edit.
-  defp valid_offsets?(%{start_byte: s, end_byte: e}, source)
-       when is_integer(s) and is_integer(e) and s >= 0 and e > s do
-    e <= byte_size(source)
-  end
-
-  defp valid_offsets?(_chunk, _source), do: false
-
-  # Group sorted chunks into contiguous `{start_byte, end_byte}` bounds. A
-  # new group starts when a chunk begins past the end already covered by the
-  # current group.
-  defp group_contiguous([]), do: []
-
-  defp group_contiguous([first | rest]) do
-    {closed, {gs, ge}} =
-      Enum.reduce(rest, {[], {first.start_byte, first.end_byte}}, fn c, {closed, {gs, ge}} ->
-        if c.start_byte <= ge do
-          {closed, {gs, max(ge, c.end_byte)}}
-        else
-          {[{gs, ge} | closed], {c.start_byte, c.end_byte}}
-        end
-      end)
-
-    Enum.reverse([{gs, ge} | closed])
-  end
-
-  defp slice_group(source, {start_byte, end_byte}) do
-    binary_part(source, start_byte, end_byte - start_byte)
-  end
-
-  # Trim only the misaligned bytes at the edges of a slice, keeping the valid
-  # interior. Fast-path: a correctly-aligned slice is already valid and is
-  # returned untouched.
-  defp repair_utf8(binary) do
-    if String.valid?(binary) do
-      binary
-    else
-      binary |> drop_leading_continuation() |> take_valid_prefix()
+  defp stitch(acc, next, separator) do
+    case overlap_words(acc, next) do
+      0 -> acc <> separator <> next
+      k -> acc <> drop_leading_words(next, k)
     end
   end
 
-  # A slice that starts mid-codepoint begins with UTF-8 continuation bytes
-  # (0b10xxxxxx, i.e. 0x80..0xBF); drop them until a codepoint start.
-  defp drop_leading_continuation(<<byte, rest::binary>>) when byte in 0x80..0xBF,
-    do: drop_leading_continuation(rest)
+  # Largest k in [@min_overlap_words, window] such that the last k words of `a`
+  # equal the first k words of `b`. Tokenize once, compare within the bounded
+  # word windows so the work is proportional to the overlap, not the chunk.
+  defp overlap_words(a, b) do
+    a_tail = a |> String.split() |> Enum.take(-@max_overlap_words)
+    b_head = b |> String.split() |> Enum.take(@max_overlap_words)
+    scan_words(a_tail, b_head, min(length(a_tail), length(b_head)))
+  end
 
-  defp drop_leading_continuation(binary), do: binary
+  defp scan_words(a_tail, b_head, k) when k >= @min_overlap_words do
+    if Enum.take(a_tail, -k) == Enum.take(b_head, k),
+      do: k,
+      else: scan_words(a_tail, b_head, k - 1)
+  end
 
-  # Keep the longest valid UTF-8 prefix, discarding an incomplete trailing
-  # codepoint left by a slice that ends mid-codepoint.
-  defp take_valid_prefix(binary) do
-    case :unicode.characters_to_binary(binary) do
-      valid when is_binary(valid) -> valid
-      {:incomplete, valid, _rest} -> valid
-      {:error, valid, _rest} -> valid
+  defp scan_words(_a_tail, _b_head, _k), do: 0
+
+  # Drop the first `k` whitespace-delimited words from `b`, slicing the
+  # original string at the word boundary so the remainder keeps its exact
+  # formatting. The cut lands right after a word (before whitespace), which is
+  # an ASCII boundary, so it is UTF-8 safe.
+  defp drop_leading_words(b, k) do
+    case Regex.run(~r/^\s*(?:\S+\s+){#{k - 1}}\S+/u, b, return: :index) do
+      [{0, len}] -> binary_part(b, len, byte_size(b) - len)
+      _ -> ""
     end
   end
 end

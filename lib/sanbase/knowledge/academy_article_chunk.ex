@@ -9,8 +9,6 @@ defmodule Sanbase.Knowledge.AcademyArticleChunk do
     field(:chunk_index, :integer)
     field(:heading, :string)
     field(:content, :string)
-    field(:start_byte, :integer)
-    field(:end_byte, :integer)
     field(:embedding, Pgvector.Ecto.Vector)
     field(:is_stale, :boolean, default: false)
 
@@ -25,8 +23,6 @@ defmodule Sanbase.Knowledge.AcademyArticleChunk do
           chunk_index: integer() | nil,
           heading: String.t() | nil,
           content: String.t() | nil,
-          start_byte: integer() | nil,
-          end_byte: integer() | nil,
           embedding: Pgvector.Ecto.Vector.t() | nil,
           is_stale: boolean() | nil,
           inserted_at: NaiveDateTime.t() | nil,
@@ -39,16 +35,7 @@ defmodule Sanbase.Knowledge.AcademyArticleChunk do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(chunk, attrs) do
     chunk
-    |> cast(attrs, [
-      :article_id,
-      :chunk_index,
-      :heading,
-      :content,
-      :start_byte,
-      :end_byte,
-      :embedding,
-      :is_stale
-    ])
+    |> cast(attrs, [:article_id, :chunk_index, :heading, :content, :embedding, :is_stale])
     |> validate_required([:article_id, :chunk_index, :content, :embedding])
     |> foreign_key_constraint(:article_id)
     |> unique_constraint([:article_id, :chunk_index])

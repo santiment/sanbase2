@@ -11,8 +11,7 @@ defmodule Sanbase.Insight.PostEmbedding do
   schema "posts_embeddings" do
     field(:embedding, Pgvector.Ecto.Vector)
     field(:text_chunk, :string)
-    field(:start_byte, :integer)
-    field(:end_byte, :integer)
+    field(:chunk_index, :integer)
     belongs_to(:post, Post)
 
     timestamps()
@@ -21,7 +20,7 @@ defmodule Sanbase.Insight.PostEmbedding do
   @doc false
   def changeset(post_embedding, attrs) do
     post_embedding
-    |> cast(attrs, [:post_id, :embedding, :text_chunk, :start_byte, :end_byte])
+    |> cast(attrs, [:post_id, :embedding, :text_chunk, :chunk_index])
     |> validate_required([:post_id, :embedding, :text_chunk])
   end
 
@@ -71,7 +70,9 @@ defmodule Sanbase.Insight.PostEmbedding do
         chunks =
           TextChunker.split(markdown, chunk_size: 2000, chunk_overlap: 200, format: :markdown)
 
-        Enum.map(chunks, fn chunk ->
+        chunks
+        |> Enum.with_index()
+        |> Enum.map(fn {chunk, chunk_index} ->
           text_chunk = """
           Insight Title:
           #{post.title}
@@ -80,14 +81,9 @@ defmodule Sanbase.Insight.PostEmbedding do
           #{String.trim(chunk.text)}
           """
 
-          # Offsets index into `Htmd.convert!(post.text)`, re-derived at read
-          # time, so the Unchunker can slice the exact source span.
-          %{
-            post_id: post.id,
-            text_chunk: text_chunk,
-            start_byte: chunk.start_byte,
-            end_byte: chunk.end_byte
-          }
+          # chunk_index records document order so the Unchunker can reassemble
+          # adjacent chunks of the same post.
+          %{post_id: post.id, text_chunk: text_chunk, chunk_index: chunk_index}
         end)
       end)
 
@@ -105,8 +101,7 @@ defmodule Sanbase.Insight.PostEmbedding do
           embedding: embedding,
           post_id: chunk.post_id,
           text_chunk: chunk.text_chunk,
-          start_byte: chunk.start_byte,
-          end_byte: chunk.end_byte,
+          chunk_index: chunk.chunk_index,
           inserted_at: NaiveDateTime.utc_now(:second),
           updated_at: NaiveDateTime.utc_now(:second)
         }

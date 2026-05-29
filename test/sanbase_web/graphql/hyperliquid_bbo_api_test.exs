@@ -7,7 +7,12 @@ defmodule SanbaseWeb.Graphql.HyperliquidBboApiTest do
   alias Sanbase.Hyperliquid.Bbo.BboPrices
 
   setup do
+    user = insert(:user)
+    conn = setup_jwt_auth(build_conn(), user)
+
     %{
+      conn: conn,
+      user: user,
       slug: "bitcoin",
       from: ~U[2026-05-07 00:00:00Z],
       to: ~U[2026-05-07 00:05:00Z],

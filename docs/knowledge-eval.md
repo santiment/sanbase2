@@ -239,3 +239,9 @@ mix test test/sanbase/knowledge/eval_test.exs
 
 Touch them whenever scoring semantics change (new metric, new edge
 case).
+
+## Related
+
+- `docs/knowledge-indexing.md` — (re)building the embedding indexes with
+  `Sanbase.Knowledge.Indexer`, and copying production FAQs to a local DB with
+  `Sanbase.Knowledge.FaqSync`.

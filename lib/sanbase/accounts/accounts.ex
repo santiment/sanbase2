@@ -5,14 +5,11 @@ defmodule Sanbase.Accounts do
   alias Sanbase.Accounts.ProtectedUser
 
   @doc """
-  IDs of users whose activity (GraphQL queries, MCP tool calls, ClickHouse
-  query metadata, application logs) must not be persisted in detail. Used
-  to honor NDAs with privacy-sensitive customers (e.g. hedge funds). See
-  `Sanbase.Accounts.ProtectedUser` for cache mechanics.
+  True when this user has activity-traces hidden (NDA-protected). Used by
+  the privacy-masking pipeline to short-circuit logging, ClickHouse system
+  query persistence, Kafka api_call_data exports, and MCP tool-invocation
+  analytics. The decision is cached in `Sanbase.Accounts.ProtectedUser`.
   """
-  @spec activity_traces_hidden_user_ids() :: MapSet.t(non_neg_integer())
-  defdelegate activity_traces_hidden_user_ids(), to: ProtectedUser
-
   @spec activity_traces_hidden?(non_neg_integer() | nil) :: boolean()
   defdelegate activity_traces_hidden?(user_id), to: ProtectedUser
 

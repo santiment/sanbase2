@@ -43,6 +43,22 @@ defmodule Sanbase.Accounts.ProtectedUser do
   @spec refresh() :: MapSet.t(non_neg_integer())
   def refresh(), do: compute_and_store()
 
+  if Mix.env() == :test do
+    @doc false
+    @spec expire_cache_for_test!() :: :ok
+    def expire_cache_for_test!() do
+      case :persistent_term.get(@key, nil) do
+        {%MapSet{} = ids, _added_at} ->
+          :persistent_term.put(@key, {ids, System.monotonic_time(:second) - @ttl_seconds - 60})
+
+        _ ->
+          :ok
+      end
+
+      :ok
+    end
+  end
+
   defp compute_and_store() do
     ids =
       from(u in User, where: u.are_activity_traces_hidden == true, select: u.id)

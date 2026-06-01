@@ -26,6 +26,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
 
   alias SanbaseWeb.Graphql.Cache
+  alias Sanbase.RequestContext
   alias Sanbase.Utils.IP
 
   @compile inline: [
@@ -125,6 +126,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     queries = success_queries ++ error_queries
 
+    hide_activity? =
+      RequestContext.activity_traces_hidden?(blueprint.execution.context[:request_context])
+
     %{
       request_id: generate_id(),
       timestamp: DateTime.utc_now() |> DateTime.to_unix(:second),
@@ -139,7 +143,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       result_sizes: result_sizes,
       caller_data: caller_data,
       remote_ip: remote_ip(blueprint),
-      partial_context: partial_context
+      partial_context: partial_context,
+      hide_activity?: hide_activity?
     }
   end
 
@@ -273,12 +278,14 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   @doc """
   Builds the per-query records exported to the `api_call_exporter` Kafka
-  topic. For privacy-protected users the GraphQL query name, selector,
-  and version are replaced with `Sanbase.Accounts.masked_sentinel/0`.
+  topic. For users with `activity_traces_hidden` the GraphQL query name,
+  selector, version, api_token, remote_ip, and user_agent are nilled or
+  replaced with `Sanbase.Accounts.masked_sentinel/0`. `user_id` is kept
+  so the row can still be used for billing reconciliation.
   """
   def build_export_records(query_metadata) do
     user_id = query_metadata.caller_data.user_id
-    hide_activity? = Sanbase.Accounts.activity_traces_hidden?(user_id)
+    hide_activity? = query_metadata.hide_activity?
 
     Enum.map(query_metadata.success_queries, fn query ->
       {query, selector, version} =
@@ -299,9 +306,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         user_id: user_id,
         san_tokens: query_metadata.caller_data.san_balance,
         auth_method: query_metadata.caller_data.auth_method,
-        api_token: query_metadata.caller_data.api_token,
-        remote_ip: query_metadata.remote_ip,
-        user_agent: query_metadata.user_agent,
+        api_token: if(hide_activity?, do: nil, else: query_metadata.caller_data.api_token),
+        remote_ip: if(hide_activity?, do: nil, else: query_metadata.remote_ip),
+        user_agent: if(hide_activity?, do: nil, else: query_metadata.user_agent),
         duration_ms: query_metadata.duration_ms,
         response_size_byte: query_metadata.result_sizes.byte_size,
         compressed_response_size_byte: query_metadata.result_sizes.compressed_byte_size

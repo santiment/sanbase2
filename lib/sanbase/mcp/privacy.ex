@@ -1,13 +1,15 @@
 defmodule Sanbase.MCP.Privacy do
   @moduledoc """
-  Applies the privacy mask to `tool_invocations` attributes before they are
-  persisted. For users in `Sanbase.Accounts.activity_traces_hidden_user_ids/0`
-  the call is recorded with `<masked>` placeholders so the existence and
-  shape of activity (counts, durations, success flag) can still be measured
-  without revealing what was queried or which client was used.
+  Applies the privacy mask to `tool_invocations` attributes before they
+  are persisted. The caller decides whether masking applies — usually by
+  reading `activity_traces_hidden` off the per-request
+  `Sanbase.RequestContext` struct — so the decision is made once at the
+  edge and not re-queried here.
 
-  Kept separate from `Sanbase.MCP.Server` so the masking decision can be
-  unit-tested without spinning up an MCP frame.
+  When masking applies, the row is recorded with `<masked>` placeholders
+  so the existence and shape of activity (counts, durations, success
+  flag) can still be measured without revealing what was queried or
+  which client was used.
   """
 
   alias Sanbase.Accounts
@@ -22,21 +24,19 @@ defmodule Sanbase.MCP.Privacy do
           optional(atom()) => term()
         }
 
-  @spec mask_attrs(attrs()) :: attrs()
-  def mask_attrs(%{user_id: user_id} = attrs) do
-    if Accounts.activity_traces_hidden?(user_id) do
-      masked = Accounts.masked_sentinel()
+  @spec mask_attrs(attrs(), boolean()) :: attrs()
+  def mask_attrs(attrs, false), do: attrs
 
-      %{
-        attrs
-        | tool_name: masked,
-          params: %{},
-          error_message: if(attrs.error_message, do: masked, else: nil),
-          user_agent: nil,
-          client: nil
-      }
-    else
+  def mask_attrs(attrs, true) do
+    masked = Accounts.masked_sentinel()
+
+    %{
       attrs
-    end
+      | tool_name: masked,
+        params: %{},
+        error_message: if(attrs.error_message, do: masked, else: nil),
+        user_agent: nil,
+        client: nil
+    }
   end
 end

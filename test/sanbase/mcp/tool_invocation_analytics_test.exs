@@ -6,39 +6,39 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
   alias Sanbase.MCP.ToolInvocation
   alias Sanbase.Repo
 
-  describe "derive_client_from_user_agent/1" do
+  describe "derive_client/2 (User-Agent-only paths)" do
     test "nil input returns nil" do
-      assert ToolInvocation.derive_client_from_user_agent(nil) == nil
+      assert ToolInvocation.derive_client(nil, nil) == nil
     end
 
     test "matches Claude" do
-      assert ToolInvocation.derive_client_from_user_agent("Claude-User/1.0 (+https://claude.ai)") ==
+      assert ToolInvocation.derive_client("Claude-User/1.0 (+https://claude.ai)", nil) ==
                "claude"
     end
 
     test "matches ChatGPT" do
-      assert ToolInvocation.derive_client_from_user_agent("ChatGPT-User/1.0") == "chatgpt"
-      assert ToolInvocation.derive_client_from_user_agent("OpenAI/1.2.3") == "chatgpt"
+      assert ToolInvocation.derive_client("ChatGPT-User/1.0", nil) == "chatgpt"
+      assert ToolInvocation.derive_client("OpenAI/1.2.3", nil) == "chatgpt"
     end
 
     test "matches openai / chatgpt regardless of case and embedded substrings" do
-      assert ToolInvocation.derive_client_from_user_agent("openai") == "chatgpt"
-      assert ToolInvocation.derive_client_from_user_agent("OPENAI") == "chatgpt"
-      assert ToolInvocation.derive_client_from_user_agent("openai-mcp/0.1") == "chatgpt"
-      assert ToolInvocation.derive_client_from_user_agent("chatgpt") == "chatgpt"
+      assert ToolInvocation.derive_client("openai", nil) == "chatgpt"
+      assert ToolInvocation.derive_client("OPENAI", nil) == "chatgpt"
+      assert ToolInvocation.derive_client("openai-mcp/0.1", nil) == "chatgpt"
+      assert ToolInvocation.derive_client("chatgpt", nil) == "chatgpt"
     end
 
     test "matches Cursor" do
-      assert ToolInvocation.derive_client_from_user_agent("Cursor/0.42 mcp") == "cursor"
+      assert ToolInvocation.derive_client("Cursor/0.42 mcp", nil) == "cursor"
     end
 
     test "unknown UA falls back to raw UA string" do
-      assert ToolInvocation.derive_client_from_user_agent("curl/8.4.0") == "curl/8.4.0"
+      assert ToolInvocation.derive_client("curl/8.4.0", nil) == "curl/8.4.0"
     end
 
     test "raw UA fallback is truncated to the column size" do
       long = String.duplicate("a", 64)
-      assert ToolInvocation.derive_client_from_user_agent(long) == String.duplicate("a", 32)
+      assert ToolInvocation.derive_client(long, nil) == String.duplicate("a", 32)
     end
   end
 
@@ -114,7 +114,7 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
           is_successful: true,
           duration_ms: 10,
           user_agent: long_ua,
-          client: ToolInvocation.derive_client_from_user_agent("Claude-User/1.0"),
+          client: ToolInvocation.derive_client("Claude-User/1.0", nil),
           session_id: "session-abc"
         })
 

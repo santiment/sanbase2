@@ -1,5 +1,12 @@
 defmodule Sanbase.Logger.MaybeHideActivityTracesTest do
-  use ExUnit.Case, async: true
+  # async: false — manipulates Logger.metadata; the application-installed
+  # `:logger.primary_filter` is shared across the BEAM, so concurrent
+  # tests changing :request_context could interfere with each other.
+  use ExUnit.Case, async: false
+
+  require Logger
+
+  import ExUnit.CaptureLog
 
   alias Sanbase.Logger.MaybeHideActivityTraces, as: Filter
   alias Sanbase.RequestContext
@@ -56,6 +63,66 @@ defmodule Sanbase.Logger.MaybeHideActivityTracesTest do
     test "leaves events alone when request_context says not protected" do
       ev = event({:string, "ABSINTHE schema=foo"}, safe_meta())
       assert Filter.filter(ev, []) == :ignore
+    end
+  end
+
+  describe "primary filter installed at application startup" do
+    setup do
+      # Ensure no leakage from other tests.
+      Logger.reset_metadata([])
+      on_exit(fn -> Logger.reset_metadata([]) end)
+
+      # Re-installing isn't ideal under async, but we run async: false. We
+      # also tolerate the filter being absent in cases where the test was
+      # invoked without the full app supervisor — re-add idempotently.
+      _ =
+        :logger.add_primary_filter(
+          :sanbase_maybe_hide_activity_traces,
+          {&Filter.filter/2, []}
+        )
+
+      :ok
+    end
+
+    test "protected user: ABSINTHE log line is dropped end-to-end" do
+      Logger.metadata(
+        request_context: %RequestContext{
+          origin: :graphql,
+          user_id: 1,
+          activity_traces_hidden: true
+        }
+      )
+
+      log =
+        capture_log(fn ->
+          Logger.info("ABSINTHE schema=Sanbase op=Sensitive")
+        end)
+
+      refute log =~ "ABSINTHE"
+      refute log =~ "Sensitive"
+    end
+
+    test "non-protected user: ABSINTHE log line passes through" do
+      Logger.metadata(
+        request_context: %RequestContext{
+          origin: :graphql,
+          user_id: 2,
+          activity_traces_hidden: false
+        }
+      )
+
+      log =
+        capture_log(fn ->
+          Logger.info("ABSINTHE schema=Sanbase op=Public")
+        end)
+
+      assert log =~ "ABSINTHE"
+      assert log =~ "Public"
+    end
+
+    test "no request_context: ABSINTHE log line passes through" do
+      log = capture_log(fn -> Logger.info("ABSINTHE schema=Sanbase op=Anon") end)
+      assert log =~ "ABSINTHE"
     end
   end
 end

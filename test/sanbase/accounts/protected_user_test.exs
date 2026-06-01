@@ -53,10 +53,7 @@ defmodule Sanbase.Accounts.ProtectedUserTest do
     test "expired entry triggers a fresh DB read on next call" do
       protected_user = insert(:user, are_activity_traces_hidden: true)
       ProtectedUser.refresh()
-
-      key = ProtectedUser.cache_key()
-      {ids, _ts} = :persistent_term.get(key)
-      :persistent_term.put(key, {ids, System.monotonic_time(:second) - 31 * 60})
+      ProtectedUser.expire_cache_for_test!()
 
       Repo.update_all(
         from(u in User, where: u.id == ^protected_user.id),

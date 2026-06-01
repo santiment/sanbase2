@@ -102,14 +102,11 @@ defmodule Sanbase.Clickhouse.QueryTest do
     end
   end
 
-  describe "get_sql_args with explicit RequestContext" do
+  describe "get_sql_args with explicit RequestContext (preferred)" do
     test "protected explicit ctx wins even when Logger.metadata says non-protected", %{
       protected: protected,
       unprotected: unprotected
     } do
-      # Logger.metadata holds a non-protected user; explicit ctx says protected.
-      # The struct must take precedence — no consultation of the ambient
-      # source on this code path.
       Logger.metadata(
         request_context: %RequestContext{
           origin: :graphql,
@@ -143,8 +140,6 @@ defmodule Sanbase.Clickhouse.QueryTest do
       protected: protected,
       unprotected: unprotected
     } do
-      # Logger.metadata holds a protected user; explicit ctx says safe.
-      # The struct must take precedence.
       Logger.metadata(
         request_context: %RequestContext{
           origin: :graphql,
@@ -172,7 +167,7 @@ defmodule Sanbase.Clickhouse.QueryTest do
       assert sql =~ "stacktrace"
     end
 
-    test "anonymous ctx (user_id nil) → user_id=0, no log_queries=0" do
+    test "anonymous explicit ctx (user_id nil) → user_id=0, no log_queries=0" do
       query =
         Query.new("SELECT 1", %{},
           context: RequestContext.anonymous(:graphql),

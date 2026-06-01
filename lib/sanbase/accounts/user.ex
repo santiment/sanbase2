@@ -188,8 +188,7 @@ defmodule Sanbase.Accounts.User do
       :twitter_handle,
       :is_mcp_banned,
       :mcp_banned_at,
-      :mcp_banned_reason,
-      :are_activity_traces_hidden
+      :mcp_banned_reason
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])

@@ -2,11 +2,20 @@ defmodule Sanbase.RequestContext do
   @moduledoc """
   Explicit per-request state for the privacy-masking pipeline.
 
-  An instance is built once per request at the edge (HTTP `AuthPlug`,
-  MCP `with_request_context`) and stored in `Logger.metadata` under
-  `:request_context`. Code that has the conn / frame should thread it
-  explicitly as a `:context` option to `Sanbase.Clickhouse.Query.new/3`;
-  code that does not falls back to `current/0` (Logger.metadata read).
+  Built once per request at the edge (HTTP `AuthPlug`, MCP
+  `MCP.Server.with_logger_metadata`) and threaded explicitly to call
+  sites that have it — most importantly via the `:context` option to
+  `Sanbase.Clickhouse.Query.new/3`. Explicit threading is preferred: it
+  makes the masking decision visible at the call site, removes a hidden
+  cross-process dependency, and survives process boundaries (`Task`,
+  `Dataloader.KV`, `Sanbase.Parallel`) without depending on metadata
+  re-seeding.
+
+  Call sites that haven't been migrated yet fall back to `current/0`,
+  which reads `Logger.metadata[:request_context]` seeded at the edge.
+  The fallback is transitional — aim to remove it once every CH-issuing
+  path threads the struct.
+
   The `activity_traces_hidden` flag is decided once at construction by
   calling `Sanbase.Accounts.activity_traces_hidden?/1`; downstream code
   never re-decides.
@@ -20,6 +29,7 @@ defmodule Sanbase.RequestContext do
     auth_method: nil,
     product_code: nil,
     request_id: nil,
+    session_id: nil,
     remote_ip: nil,
     user_agent: nil,
     client: nil
@@ -32,6 +42,7 @@ defmodule Sanbase.RequestContext do
           auth_method: atom() | nil,
           product_code: String.t() | nil,
           request_id: String.t() | nil,
+          session_id: String.t() | nil,
           remote_ip: String.t() | nil,
           user_agent: String.t() | nil,
           client: String.t() | nil,
@@ -104,7 +115,8 @@ defmodule Sanbase.RequestContext do
       activity_traces_hidden: Sanbase.Accounts.activity_traces_hidden?(user_id),
       auth_method: mcp_auth_method(headers),
       product_code: "SANAPI",
-      request_id: mcp_request_id(headers),
+      request_id: header_value(headers, "x-request-id"),
+      session_id: header_value(headers, "mcp-session-id"),
       remote_ip: Map.get(context, :remote_ip) |> remote_ip_to_string(),
       user_agent:
         ua_header || Sanbase.MCP.ToolInvocation.user_agent_from_client_info(client_info),
@@ -112,8 +124,10 @@ defmodule Sanbase.RequestContext do
     }
   end
 
+  @origins [:graphql, :mcp, :oban, :script, :system, :anonymous]
+
   @spec anonymous(origin()) :: t()
-  def anonymous(origin) when is_atom(origin) do
+  def anonymous(origin) when origin in @origins do
     %__MODULE__{origin: origin, user_id: nil, activity_traces_hidden: false}
   end
 
@@ -131,10 +145,6 @@ defmodule Sanbase.RequestContext do
       "oauth" -> :oauth
       _ -> nil
     end
-  end
-
-  defp mcp_request_id(headers) do
-    header_value(headers, "mcp-session-id") || header_value(headers, "x-request-id")
   end
 
   defp header_value(headers, name) do

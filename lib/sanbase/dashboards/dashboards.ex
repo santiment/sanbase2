@@ -1073,7 +1073,7 @@ defmodule Sanbase.Dashboards do
          querying_user_id
        )
        when query_owner_user_id != querying_user_id do
-    %{query | sql_query_text: "<masked>", sql_query_parameters: %{}}
+    %{query | sql_query_text: Sanbase.Accounts.masked_sentinel(), sql_query_parameters: %{}}
   end
 
   defp mask_query_not_viewable_parts(query, _dashboard_owner_user_id), do: query

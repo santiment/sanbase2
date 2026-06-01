@@ -3,9 +3,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Project
   alias Sanbase.Metric
 
-  def data(), do: Dataloader.KV.new(&query/2)
-
-  def query(:project_info, args) do
+  def query(:project_info, args, _ctx) do
     args
     |> Enum.to_list()
     |> Clickhouse.Project.projects_info()
@@ -15,7 +13,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     end
   end
 
-  def query(:aggregated_metric, args) do
+  def query(:aggregated_metric, args, ctx) do
     args_list = args |> Enum.to_list()
 
     args_list
@@ -34,12 +32,13 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
         {selector, data}
       end,
       timeout: 60_000,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Map.new()
   end
 
-  def query(:average_daily_active_addresses, args) do
+  def query(:average_daily_active_addresses, args, ctx) do
     args
     |> Enum.to_list()
     |> Enum.group_by(fn %{from: from, to: to} -> {from, to} end)
@@ -48,7 +47,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
         {{from, to}, average_daily_active_addresses(group, from, to)}
       end,
       timeout: 60_000,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Map.new()
   end
@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   # The `days` key points to a map of results or to an {:error, error} tuple.
   # The map of results has github organizations as key and their average activity
   # as value.
-  def query(:average_dev_activity, args) do
+  def query(:average_dev_activity, args, ctx) do
     args = Enum.to_list(args)
 
     Enum.group_by(args, fn %{days: days} -> days end)
@@ -75,7 +75,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       fn {days, group} ->
         {days, average_dev_activity(group, days)}
       end,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Map.new()
   end
@@ -85,20 +86,21 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   # The map value is either `{:ok, value}` or `{:nocache, {:ok, value}}`.
   # The :nocache value is returned if some problems were encountered while calculating the
   # ethereum spent and the value won't be put in the cache.
-  def query(:eth_spent, args) do
+  def query(:eth_spent, args, ctx) do
     args = Enum.to_list(args)
 
     Enum.group_by(args, fn %{days: days} -> days end)
     |> Sanbase.Parallel.map(
       fn {days, group} ->
-        {days, eth_spent_for_days_group(group |> Enum.map(& &1.project), days)}
+        {days, eth_spent_for_days_group(group |> Enum.map(& &1.project), days, ctx)}
       end,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Map.new()
   end
 
-  def query(:available_metric_versions, _data) do
+  def query(:available_metric_versions, _data, _ctx) do
     {:ok, versions_map} = Metric.available_versions()
     versions_map
   end
@@ -154,7 +156,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     end
   end
 
-  defp eth_spent_for_days_group(projects, days) do
+  defp eth_spent_for_days_group(projects, days, ctx) do
     from = Timex.shift(Timex.now(), days: -days)
     to = Timex.now()
 
@@ -164,7 +166,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       |> Sanbase.Parallel.map(&eth_spent(&1, from, to),
         map_type: :flat_map,
         max_concurrency: 8,
-        ordered: false
+        ordered: false,
+        request_context: ctx
       )
       |> Map.new()
 

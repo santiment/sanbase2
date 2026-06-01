@@ -18,6 +18,14 @@ defmodule Sanbase.Parallel do
     on_timeout = Keyword.get(opts, :on_timeout) || :exit
     map_type = Keyword.get(opts, :map_type) || :map
 
+    # `Task.Supervisor` workers do NOT inherit `Logger.metadata`. Callers
+    # that need the per-request `Sanbase.RequestContext` (for ClickHouse
+    # masking SETTINGS, the OTP logger filter, etc.) must pass it
+    # explicitly via the `:request_context` option — we do the
+    # cross-process re-seed inside each worker. No `:request_context`
+    # means no propagation; the workers run with empty metadata.
+    func = wrap_with_request_context(func, Keyword.get(opts, :request_context))
+
     stream =
       Task.Supervisor.async_stream(
         Sanbase.TaskSupervisor,
@@ -57,5 +65,14 @@ defmodule Sanbase.Parallel do
   def reject(collection, func, opts \\ []) when is_function(func, 1) do
     reject_func = fn x -> not func.(x) end
     filter(collection, reject_func, opts)
+  end
+
+  defp wrap_with_request_context(func, nil), do: func
+
+  defp wrap_with_request_context(func, %Sanbase.RequestContext{} = ctx) do
+    fn x ->
+      Sanbase.RequestContext.put_logger_metadata(ctx)
+      func.(x)
+    end
   end
 end

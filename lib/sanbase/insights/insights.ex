@@ -25,7 +25,6 @@ defmodule Sanbase.Insights do
   defdelegate user_voted_insights(user_id, opts), to: Post, as: :all_insights_user_voted_for
 
   defdelegate related_projects(post), to: Post
-  defdelegate pulse?(post), to: Post
 
   @doc "Pulse insights expose their text via this field; non-pulse insights get nil."
   @spec pulse_text(Post.t()) :: {:ok, String.t() | nil}

@@ -11,20 +11,22 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
   @spec data(Sanbase.RequestContext.t() | nil) :: Dataloader.KV.t()
   def data(request_context \\ nil) do
-    Dataloader.KV.new(wrap_kv_fun(&query/2, request_context))
+    Dataloader.KV.new(make_kv_fun(request_context))
   end
 
-  # Dataloader.KV runs each batch in a fresh `Task`, so `Logger.metadata`
-  # set by `SanbaseWeb.Graphql.AuthPlug` in the conn process does not
-  # carry over. Re-seed `request_context` at the top of each batch so
-  # downstream ClickHouse queries (issued via `ClickhouseDataloader`) can
-  # apply the privacy mask + `SETTINGS log_queries=0` for protected users.
-  defp wrap_kv_fun(fun, nil), do: fun
+  # `Dataloader.KV` runs each batch in a fresh `Task`. Its callback is
+  # fixed to `(batch_key, args) -> result`, so we cannot pass ctx as a
+  # third arg through the library — instead we close over it. Inside the
+  # spawned task we (a) re-seed `Logger.metadata` once as the explicit
+  # process-boundary hop (transitional, for callers that still read ctx
+  # via `RequestContext.current/0`) and (b) thread ctx into our own
+  # `query/3` so downstream code can take it as an explicit argument.
+  defp make_kv_fun(nil), do: fn batch_key, args -> query(batch_key, args, nil) end
 
-  defp wrap_kv_fun(fun, %Sanbase.RequestContext{} = ctx) do
+  defp make_kv_fun(%Sanbase.RequestContext{} = ctx) do
     fn batch_key, args ->
-      Logger.metadata(request_context: ctx)
-      fun.(batch_key, args)
+      Sanbase.RequestContext.put_logger_metadata(ctx)
+      query(batch_key, args, ctx)
     end
   end
 
@@ -117,10 +119,10 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   @postgres_dataloader MapSet.new(@postgres_dataloader)
   @clickhouse_dataloader MapSet.new(@clickhouse_dataloader)
 
-  def query(queryable, args) do
+  def query(queryable, args, request_context) do
     cond do
       queryable in @clickhouse_dataloader ->
-        ClickhouseDataloader.query(queryable, args)
+        ClickhouseDataloader.query(queryable, args, request_context)
 
       queryable in @postgres_dataloader ->
         PostgresDataloader.query(queryable, args)

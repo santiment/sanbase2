@@ -223,10 +223,14 @@ defmodule Sanbase.Clickhouse.Query do
     %{query | sql: new_sql}
   end
 
+  # Explicit context threaded by the caller wins — preferred path.
   defp add_settings(%{context: %RequestContext{} = ctx} = query) do
     apply_settings(query, ctx.user_id, RequestContext.activity_traces_hidden?(ctx))
   end
 
+  # Transitional fallback for call sites that haven't been migrated to
+  # thread `:context` yet. Reads from `Logger.metadata` seeded at the
+  # edge. Aim to remove once every CH-issuing path passes ctx explicitly.
   defp add_settings(%{context: nil} = query) do
     ctx = RequestContext.current()
     apply_settings(query, ctx.user_id, RequestContext.activity_traces_hidden?(ctx))

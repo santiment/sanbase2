@@ -130,12 +130,22 @@ defmodule Sanbase.RequestContextTest do
       assert ctx.activity_traces_hidden
     end
 
-    test "reads request_id from x-request-id / mcp-session-id headers" do
-      frame = %{assigns: %{}, context: %{headers: [{"x-request-id", "rid-42"}]}}
-      assert RequestContext.from_mcp_frame(frame).request_id == "rid-42"
+    test "splits request_id (x-request-id, per-call) and session_id (mcp-session-id, per-session)" do
+      frame = %{
+        assigns: %{},
+        context: %{headers: [{"x-request-id", "rid-42"}, {"mcp-session-id", "sid-7"}]}
+      }
 
-      frame2 = %{assigns: %{}, context: %{headers: [{"mcp-session-id", "sid-7"}]}}
-      assert RequestContext.from_mcp_frame(frame2).request_id == "sid-7"
+      ctx = RequestContext.from_mcp_frame(frame)
+      assert ctx.request_id == "rid-42"
+      assert ctx.session_id == "sid-7"
+    end
+
+    test "request_id and session_id default to nil when headers absent" do
+      frame = %{assigns: %{}, context: %{headers: []}}
+      ctx = RequestContext.from_mcp_frame(frame)
+      assert ctx.request_id == nil
+      assert ctx.session_id == nil
     end
   end
 end

@@ -1,7 +1,7 @@
 defmodule Sanbase.Logger.MaybeHideActivityTraces do
   @moduledoc """
   `:logger` filter that suppresses log entries containing the raw GraphQL
-  document for users in `Sanbase.Accounts.activity_traces_hidden_user_ids/0`.
+  document for users with `activity_traces_hidden` (NDA-protected).
 
   Keyed on the `:request_context` Logger metadata struct set at every
   request edge (`AuthPlug`, MCP `with_logger_metadata`) combined with the

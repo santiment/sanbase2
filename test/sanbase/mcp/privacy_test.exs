@@ -1,17 +1,8 @@
 defmodule Sanbase.MCP.PrivacyTest do
-  use Sanbase.DataCase, async: false
-
-  import Sanbase.Factory
+  use ExUnit.Case, async: true
 
   alias Sanbase.Accounts
   alias Sanbase.MCP.Privacy
-
-  setup do
-    protected = insert(:user)
-    unprotected = insert(:user)
-    Sanbase.PrivacyCacheSeed.seed!([protected.id])
-    {:ok, protected: protected, unprotected: unprotected}
-  end
 
   defp base_attrs(user_id) do
     %{
@@ -30,19 +21,18 @@ defmodule Sanbase.MCP.PrivacyTest do
     }
   end
 
-  describe "mask_attrs/1" do
-    test "masks tool_name, params, user_agent and client for protected users", %{protected: user} do
+  describe "mask_attrs/2" do
+    test "hide_activity? = true: masks tool_name/params/user_agent/client; keeps counters" do
       masked = Accounts.masked_sentinel()
-      attrs = base_attrs(user.id)
+      attrs = base_attrs(7)
 
-      out = Privacy.mask_attrs(attrs)
+      out = Privacy.mask_attrs(attrs, true)
 
       assert out.tool_name == masked
       assert out.params == %{}
       assert out.user_agent == nil
       assert out.client == nil
-      # Non-sensitive counters/flags survive so we can still bill and measure.
-      assert out.user_id == attrs.user_id
+      assert out.user_id == 7
       assert out.is_successful == true
       assert out.duration_ms == 42
       assert out.response_size_bytes == 123
@@ -50,24 +40,19 @@ defmodule Sanbase.MCP.PrivacyTest do
       assert out.kind == "tool"
     end
 
-    test "masks error_message when present, leaves nil as nil", %{protected: user} do
+    test "hide_activity? = true: masks non-nil error_message, leaves nil as nil" do
       masked = Accounts.masked_sentinel()
 
       assert %{error_message: ^masked} =
-               Privacy.mask_attrs(%{base_attrs(user.id) | error_message: "boom"})
+               Privacy.mask_attrs(%{base_attrs(7) | error_message: "boom"}, true)
 
       assert %{error_message: nil} =
-               Privacy.mask_attrs(%{base_attrs(user.id) | error_message: nil})
+               Privacy.mask_attrs(%{base_attrs(7) | error_message: nil}, true)
     end
 
-    test "non-protected user: attrs pass through unchanged", %{unprotected: user} do
-      attrs = base_attrs(user.id)
-      assert Privacy.mask_attrs(attrs) == attrs
-    end
-
-    test "nil user_id (unauthenticated): attrs pass through unchanged" do
-      attrs = base_attrs(nil)
-      assert Privacy.mask_attrs(attrs) == attrs
+    test "hide_activity? = false: attrs pass through unchanged" do
+      attrs = base_attrs(7)
+      assert Privacy.mask_attrs(attrs, false) == attrs
     end
   end
 end

@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSendPrivacyTest do
     {:ok, protected: protected, unprotected: unprotected}
   end
 
-  defp metadata(user_id, queries) do
+  defp metadata(user_id, queries, hide_activity?) do
     %{
       request_id: "req-1",
       timestamp: 1_700_000_000,
@@ -32,48 +32,61 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSendPrivacyTest do
         api_token: "tok"
       },
       remote_ip: "127.0.0.1",
-      partial_context: %{}
+      partial_context: %{},
+      hide_activity?: hide_activity?
     }
   end
 
   describe "build_export_records/1" do
-    test "masks query/selector/version for protected users; keeps user_id", %{protected: user} do
+    test "masks query/selector/version + api_token/remote_ip/user_agent for protected users; keeps user_id",
+         %{protected: user} do
       masked = Accounts.masked_sentinel()
 
       meta =
-        metadata(user.id, [
-          {:get_metric, "myAlias", "price_usd", %{slug: "bitcoin"}, "v1"},
-          "allProjects"
-        ])
+        metadata(
+          user.id,
+          [
+            {:get_metric, "myAlias", "price_usd", %{slug: "bitcoin"}, "v1"},
+            "allProjects"
+          ],
+          true
+        )
 
       [r1, r2] = AbsintheBeforeSend.build_export_records(meta)
 
-      assert r1.query == masked
-      assert r1.selector == Jason.encode!(nil)
-      assert r1.version == nil
-      assert r1.user_id == user.id
-
-      assert r2.query == masked
-      assert r2.selector == Jason.encode!(nil)
-      assert r2.version == nil
+      for r <- [r1, r2] do
+        assert r.query == masked
+        assert r.selector == Jason.encode!(nil)
+        assert r.version == nil
+        # user_id kept for billing reconciliation
+        assert r.user_id == user.id
+        # NDA-sensitive identifiers must not leak
+        assert r.api_token == nil
+        assert r.remote_ip == nil
+        assert r.user_agent == nil
+      end
     end
 
-    test "non-protected user: getMetric expands to getMetric|<metric> with selector", %{
-      unprotected: user
-    } do
+    test "non-protected user: getMetric expands to getMetric|<metric>, identifiers preserved",
+         %{unprotected: user} do
       meta =
-        metadata(user.id, [
-          {:get_metric, "alias", "price_usd", %{slug: "bitcoin"}, "v2"}
-        ])
+        metadata(
+          user.id,
+          [{:get_metric, "alias", "price_usd", %{slug: "bitcoin"}, "v2"}],
+          false
+        )
 
       [r] = AbsintheBeforeSend.build_export_records(meta)
       assert r.query == "getMetric|price_usd"
       assert r.selector == Jason.encode!(%{slug: "bitcoin"})
       assert r.version == "v2"
+      assert r.api_token == "tok"
+      assert r.remote_ip == "127.0.0.1"
+      assert r.user_agent == "test/1.0"
     end
 
     test "non-protected user: plain query string passes through", %{unprotected: user} do
-      meta = metadata(user.id, ["allProjects"])
+      meta = metadata(user.id, ["allProjects"], false)
       [r] = AbsintheBeforeSend.build_export_records(meta)
       assert r.query == "allProjects"
       assert r.selector == Jason.encode!(nil)
@@ -81,7 +94,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSendPrivacyTest do
     end
 
     test "anonymous (nil user_id): plain query passes through" do
-      meta = metadata(nil, ["allProjects"])
+      meta = metadata(nil, ["allProjects"], false)
       [r] = AbsintheBeforeSend.build_export_records(meta)
       assert r.query == "allProjects"
       assert r.user_id == nil

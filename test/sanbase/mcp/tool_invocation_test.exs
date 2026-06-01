@@ -124,6 +124,8 @@ defmodule Sanbase.MCP.ToolInvocationTest do
       inv = Enum.find(invocations, &(&1.user_id == context.user.id))
       assert inv.tool_name == Accounts.masked_sentinel()
       assert inv.params == %{}
+      assert inv.user_agent == nil
+      assert inv.client == nil
     end)
   end
 

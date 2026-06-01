@@ -181,6 +181,7 @@ defmodule Sanbase.MCP.Server do
       end
 
     persist_tool_invocation(
+      ctx,
       build_attrs(ctx, tool_name, params, duration_ms, kind, %{
         is_successful: is_successful,
         error_message: error_message,
@@ -191,6 +192,7 @@ defmodule Sanbase.MCP.Server do
 
   defp record_banned_attempt(ctx, tool_name, params, kind) do
     persist_tool_invocation(
+      ctx,
       build_attrs(ctx, tool_name, params, 0, kind, %{
         is_successful: false,
         error_message: "banned",
@@ -211,10 +213,10 @@ defmodule Sanbase.MCP.Server do
       auth_method: ctx.auth_method && Atom.to_string(ctx.auth_method),
       user_agent: ctx.user_agent,
       client: ctx.client,
-      session_id: ctx.request_id,
+      session_id: ctx.session_id,
       kind: kind
     }
-    |> Sanbase.MCP.Privacy.mask_attrs()
+    |> Sanbase.MCP.Privacy.mask_attrs(RequestContext.activity_traces_hidden?(ctx))
   end
 
   # In test, Ecto SQL Sandbox ties DB connections to the test process.
@@ -222,12 +224,17 @@ defmodule Sanbase.MCP.Server do
   # causing Postgrex disconnect errors. Run synchronously in test.
   @env Application.compile_env(:sanbase, :env)
   if @env == :test do
-    defp persist_tool_invocation(attrs) do
+    defp persist_tool_invocation(_ctx, attrs) do
       ToolInvocation.create(attrs)
     end
   else
-    defp persist_tool_invocation(attrs) do
+    # Re-seed `Logger.metadata` inside the spawned Task so any incidental
+    # logging or ClickHouse activity in `ToolInvocation.create/1` still
+    # carries the request's privacy flag. `Task.Supervisor.start_child/2`
+    # does not inherit Logger metadata from the caller.
+    defp persist_tool_invocation(%RequestContext{} = ctx, attrs) do
       Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+        RequestContext.put_logger_metadata(ctx)
         ToolInvocation.create(attrs)
       end)
     end

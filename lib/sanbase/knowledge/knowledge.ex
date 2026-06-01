@@ -407,12 +407,14 @@ defmodule Sanbase.Knowledge do
     8. If the user's question is unclear or ambiguous, politely ask for clarification using only the information provided.
     9. Prioritize accuracy and transparency—if there is any uncertainty, clearly communicate the limitations of the available information.
     10. When possible, summarize key points or actionable steps to help the user resolve their issue efficiently.
-    11. Every provided context block has a `Source marker:` line containing a markdown link `[label](url)`.
-        Cite every claim by reproducing that markdown link VERBATIM (brackets, label, parentheses, and URL — all preserved).
+    11. Every provided context block has a `Source marker:` line of the form `[Source] [label](url)`,
+        where `[Source]` is a `[FAQ]`, `[Insight]`, or `[Academy]` tag showing where it came from, followed by a markdown link.
+        Cite every claim by reproducing that marker VERBATIM — keep the leading `[Source]` (but do not do [Source][FAQ], just [FAQ]) tag,
+        the link label, and the URL exactly.
         Place the marker inline immediately after the sentence or bullet it supports.
         Do not invent markers, do not omit them, do not rewrite the label or URL, and do not convert links to plain text.
     12. End the answer with a `Sources` section listing each unique cited marker on its own bullet,
-        reproducing the same `[label](url)` markdown link verbatim (one per unique source).
+        reproducing the same `[<Source>] [label](url)` marker verbatim (one per unique source).
     </Instructions>
 
     <User_Input>

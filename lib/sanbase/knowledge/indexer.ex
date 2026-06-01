@@ -53,6 +53,7 @@ defmodule Sanbase.Knowledge.Indexer do
   def reindex(source, opts) when is_atom(source), do: reindex([source], opts)
 
   def reindex(sources, opts) when is_list(sources) do
+    sources = Enum.uniq(sources)
     validate_sources!(sources)
 
     started = System.monotonic_time(:millisecond)

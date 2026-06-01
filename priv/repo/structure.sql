@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict LEttgqY316E4IFuP3OvVL5LAg3yhkNTJVFudiNYWDt4wA1z7d4T5s1X7jcitB0B
+\restrict fmJ0bwtSTCbDR0i1pwcHZ9wObyZ4NodEmDkKr1TQQUfEjZSqvO7S7FLQOMqb9an
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -3271,7 +3271,8 @@ CREATE TABLE public.posts_embeddings (
     text_chunk text NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    chunk_index integer
+    chunk_index integer,
+    CONSTRAINT posts_embeddings_chunk_index_non_negative CHECK (((chunk_index IS NULL) OR (chunk_index >= 0)))
 );
 
 
@@ -9334,6 +9335,13 @@ CREATE INDEX post_images_post_id_index ON public.post_images USING btree (post_i
 
 
 --
+-- Name: posts_embeddings_post_id_chunk_index_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX posts_embeddings_post_id_chunk_index_index ON public.posts_embeddings USING btree (post_id, chunk_index) WHERE (chunk_index IS NOT NULL);
+
+
+--
 -- Name: posts_embeddings_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11641,7 +11649,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict LEttgqY316E4IFuP3OvVL5LAg3yhkNTJVFudiNYWDt4wA1z7d4T5s1X7jcitB0B
+\unrestrict fmJ0bwtSTCbDR0i1pwcHZ9wObyZ4NodEmDkKr1TQQUfEjZSqvO7S7FLQOMqb9an
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

@@ -75,7 +75,8 @@ defmodule Sanbase.Knowledge.FaqSync do
   def import_from_file(path) do
     ensure_not_prod!()
 
-    %{"faqs" => faqs} = path |> File.read!() |> Jason.decode!()
+    %{"version" => version, "faqs" => faqs} = path |> File.read!() |> Jason.decode!()
+    ensure_supported_version!(version)
 
     tally =
       Enum.reduce(faqs, %{inserted: 0, updated: 0, failed: 0}, fn faq, acc ->
@@ -121,6 +122,15 @@ defmodule Sanbase.Knowledge.FaqSync do
   defp log_failure(faq, reason, acc) do
     Logger.error("[FaqSync] failed to import FAQ id=#{faq["id"]}: #{inspect(reason)}")
     Map.update!(acc, :failed, &(&1 + 1))
+  end
+
+  # Fail fast on an incompatible dump rather than partially importing a format
+  # this loader does not understand.
+  defp ensure_supported_version!(@export_version), do: :ok
+
+  defp ensure_supported_version!(version) do
+    raise ArgumentError,
+          "Unsupported FAQ export version #{inspect(version)}. Expected #{@export_version}."
   end
 
   # Refuse to write to a production database. Mirrors `mix database_safety`:

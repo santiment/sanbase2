@@ -37,7 +37,7 @@ defmodule Sanbase.Knowledge.Context do
       url = "#{admin_url}/admin/faq/#{entry.id}"
 
       """
-      Source marker: [FAQ ##{entry.id}](#{url})
+      Source marker: [FAQ] [#{faq_label(entry.question)}](#{url})
       Question: #{entry.question}
       Answer: #{entry.answer_markdown}
       """
@@ -51,7 +51,7 @@ defmodule Sanbase.Knowledge.Context do
       url = SanbaseWeb.Endpoint.insight_url(chunk.post_id)
 
       """
-      Source marker: [#{chunk.post_title}](#{url})
+      Source marker: [Insight] [#{chunk.post_title}](#{url})
       #{chunk.text_chunk}
       """
     end)
@@ -62,10 +62,23 @@ defmodule Sanbase.Knowledge.Context do
     hits
     |> Enum.map(fn chunk ->
       """
-      Source marker: [#{chunk.title}](#{chunk.url})
+      Source marker: [Academy] [#{chunk.title}](#{chunk.url})
       Most relevant chunk from article: #{chunk.chunk}
       """
     end)
     |> Enum.join("\n")
+  end
+
+  # The model cites the marker label verbatim, so a FAQ links via its question
+  # (its title) rather than the opaque id. Truncated to keep citations short.
+  @faq_label_max 100
+  defp faq_label(question) do
+    question = String.trim(question || "")
+
+    if String.length(question) > @faq_label_max do
+      String.slice(question, 0, @faq_label_max) <> "…"
+    else
+      question
+    end
   end
 end

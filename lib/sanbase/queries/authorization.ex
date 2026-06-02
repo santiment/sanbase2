@@ -46,18 +46,35 @@ defmodule Sanbase.Queries.Authorization do
   end
 
   @doc ~s"""
-  Check if the user has credits left to run a computation.
+  Check if the user is allowed to run a computation.
 
-  Each query has a cost in credits. The cost is computed based on the query
-  profiling details - how much RAM memory it used, how much data it read from
-  the disk, how big is the result, etc.
+  Running queries requires an active subscription. Anonymous users (blocked
+  earlier by the auth middleware) and free-plan users cannot run queries.
+
+  When the user does have access, each query has a cost in credits. The cost is
+  computed based on the query profiling details - how much RAM memory it used,
+  how much data it read from the disk, how big is the result, etc.
   """
-  @spec user_can_execute_query(%User{}, String.t(), String.t()) :: :ok | {:error, String.t()}
+  @spec user_can_execute_query(%User{}, String.t() | nil, String.t() | nil) ::
+          :ok | {:error, String.t()}
   def user_can_execute_query(user, product_code, plan_name) do
-    if user_has_limits?(user) do
-      check_user_limits(user.id, product_code, plan_name)
-    else
-      :ok
+    cond do
+      # Santiment employees bypass both the subscription and the rate-limit checks.
+      not user_has_limits?(user) ->
+        :ok
+
+      # A nil plan corresponds to internal basic-auth requests, which have full access.
+      is_nil(plan_name) ->
+        :ok
+
+      # Running queries requires an active subscription. Anonymous and free-plan
+      # users have the "FREE" plan and are not allowed to execute queries.
+      plan_name == "FREE" ->
+        {:error,
+         "Running queries requires an active subscription. Free and anonymous users cannot run queries. Please upgrade your plan to run queries."}
+
+      true ->
+        check_user_limits(user.id, product_code, plan_name)
     end
   end
 

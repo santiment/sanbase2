@@ -29,8 +29,8 @@ defmodule Sanbase.Accounts.PrivacyTest do
   end
 
   describe "masked_sentinel/0" do
-    test "is a stable string" do
-      assert Accounts.masked_sentinel() == "<masked>"
+    test "is a stable string downstream consumers can equality-check on" do
+      assert Accounts.masked_sentinel() == "<activity_traces_hidden>"
     end
   end
 end

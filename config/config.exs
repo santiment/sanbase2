@@ -182,7 +182,6 @@ config :sentry,
   environment_name: Mix.env(),
   enable_source_code_context: true,
   root_source_code_path: File.cwd!(),
-  before_send: {Sanbase.Sentry.Scrubber, :before_send},
   integrations: [
     oban: [
       # Capture errors:

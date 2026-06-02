@@ -59,6 +59,17 @@ defmodule Sanbase.Queries.QueryExecution do
     result_gb: 2000
   }
 
+  # Users with `activity_traces_hidden` set log_queries=0 in their
+  # ClickHouse SETTINGS, so `system.query_log` has no row for them and
+  # the full per-execution stats are unavailable. We fall back to the
+  # subset of metrics in the driver's HTTP summary (read_rows /
+  # read_bytes / result_rows / result_bytes / elapsed_ns) and multiply
+  # by this factor to cover the missing memory_usage_gb +
+  # cpu_time_microseconds + read_compressed_gb terms AND act as a
+  # privacy premium baked into their enterprise contract.
+  @activity_traces_hidden_multiplier 2
+  @bytes_per_gb 1_073_741_824
+
   @timestamps_opts [type: :utc_datetime]
   schema "clickhouse_query_executions" do
     belongs_to(:user, User)
@@ -155,13 +166,19 @@ defmodule Sanbase.Queries.QueryExecution do
   @spec store_execution(Result.t(), user_id, non_neg_integer()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def store_execution(query_result, user_id, wait_fetching_details_ms, attempts_left \\ 3) do
-    # The query_log needs 7.5 seconds to be flushed to disk. Trying to
-    # read the data before that can result in an empty result. The wait_fetching_details_ms
-    # can be changed in tests to speed up the tests
-    Process.sleep(wait_fetching_details_ms)
-
     %{credits_cost: credits_cost, execution_details: execution_details} =
-      compute_credits_cost(query_result)
+      if Sanbase.Accounts.activity_traces_hidden?(user_id) do
+        # `system.query_log` has no row for this user (log_queries=0),
+        # so skip the flush wait + lookup entirely and compute from the
+        # driver's HTTP summary instead.
+        compute_credits_cost_from_summary(query_result)
+      else
+        # The query_log needs 7.5 seconds to be flushed to disk. Trying to
+        # read the data before that can result in an empty result. The wait_fetching_details_ms
+        # can be changed in tests to speed up the tests
+        Process.sleep(wait_fetching_details_ms)
+        compute_credits_cost(query_result)
+      end
 
     credits_cost = [credits_cost, 1] |> Enum.max() |> Kernel.trunc()
 
@@ -267,6 +284,66 @@ defmodule Sanbase.Queries.QueryExecution do
   end
 
   # Private functions
+
+  # Credits cost for an `activity_traces_hidden` user. The driver's HTTP
+  # `summary` map gives us 5 of the 8 fields the regular formula uses;
+  # the remaining 3 (memory_usage_gb, cpu_time_microseconds,
+  # read_compressed_gb) are covered by `@activity_traces_hidden_multiplier`.
+  defp compute_credits_cost_from_summary(%Result{summary: %{} = summary}) do
+    read_rows = summary_int(summary, "read_rows")
+    read_bytes = summary_int(summary, "read_bytes")
+    result_rows = summary_int(summary, "result_rows")
+    result_bytes = summary_int(summary, "result_bytes")
+    elapsed_ns = summary_int(summary, "elapsed_ns")
+
+    read_gb = read_bytes / @bytes_per_gb
+    result_gb = result_bytes / @bytes_per_gb
+    query_duration_ms = elapsed_ns / 1_000_000
+
+    partial_cost =
+      read_rows * @credit_cost_weights.read_rows +
+        read_gb * @credit_cost_weights.read_gb +
+        result_rows * @credit_cost_weights.result_rows +
+        result_gb * @credit_cost_weights.result_gb +
+        query_duration_ms * @credit_cost_weights.query_duration_ms
+
+    credits_cost =
+      (partial_cost * @activity_traces_hidden_multiplier)
+      |> Float.round()
+      |> trunc()
+      |> max(1)
+
+    execution_details = %{
+      read_rows: read_rows,
+      read_gb: Float.round(read_gb, 6),
+      result_rows: result_rows,
+      result_gb: Float.round(result_gb, 6),
+      query_duration_ms: Float.round(query_duration_ms, 3),
+      source: "summary_only",
+      multiplier: @activity_traces_hidden_multiplier
+    }
+
+    %{credits_cost: credits_cost, execution_details: execution_details}
+  end
+
+  defp summary_int(summary, key) do
+    case Map.get(summary, key) do
+      n when is_integer(n) ->
+        n
+
+      n when is_float(n) ->
+        trunc(n)
+
+      s when is_binary(s) ->
+        case Integer.parse(s) do
+          {n, _} -> n
+          :error -> 0
+        end
+
+      _ ->
+        0
+    end
+  end
 
   defp compute_credits_cost(args) do
     %{

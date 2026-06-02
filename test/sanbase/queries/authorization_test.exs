@@ -70,4 +70,25 @@ defmodule Sanbase.Queries.AuthorizationTest do
                Sanbase.ClickhouseRepo.BusinessProUser
     end
   end
+
+  describe "user_can_execute_query/3" do
+    test "Santiment employees can run queries even on the free plan" do
+      # The users built by `insert(:user)` have @santiment.net emails and are
+      # treated as Santiment employees, which bypass the subscription check.
+      employee = insert(:user)
+      assert Authorization.user_can_execute_query(employee, "SANBASE", "FREE") == :ok
+    end
+
+    test "free users without an active subscription cannot run queries" do
+      user = insert(:user, email: "regular-user@example.com")
+
+      assert {:error, error_msg} = Authorization.user_can_execute_query(user, "SANBASE", "FREE")
+      assert error_msg =~ "Running queries requires an active subscription"
+    end
+
+    test "internal basic-auth requests (nil plan) can run queries" do
+      user = insert(:user, email: "regular-user@example.com")
+      assert Authorization.user_can_execute_query(user, nil, nil) == :ok
+    end
+  end
 end

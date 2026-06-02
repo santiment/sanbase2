@@ -86,10 +86,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
         case auth_struct do
           %{auth: %{current_user: %{id: user_id}}} ->
-            # Sentry user context drives `Sanbase.Sentry.Scrubber` —
-            # `Sentry.PlugContext` captured the raw body before this plug
-            # ran, so the scrubber needs the user id to decide whether
-            # to mask the GraphQL document at send time.
+            # Tag Sentry events with the user id so exceptions are
+            # attributable to a specific request without having to
+            # cross-reference Logger metadata. `RequestContextPlug`
+            # clears this between requests so Cowboy worker reuse
+            # cannot leak the previous user's id into a new event.
             Sentry.Context.set_user_context(%{id: user_id})
 
           _ ->

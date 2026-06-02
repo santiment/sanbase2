@@ -16,11 +16,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
         :id,
         :username,
         :email,
-        :twitter_id,
         :is_superuser,
-        :san_balance,
         :metric_access_level,
-        :is_mcp_banned,
         :are_activity_traces_hidden
       ],
       edit_fields: [
@@ -31,7 +28,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
         :metric_access_level,
         :feature_access_level,
         :available_metrics_lookback_days,
-        :is_mcp_banned
+        :is_mcp_banned,
+        :are_activity_traces_hidden
       ],
       fields_override: %{
         metric_access_level: %{
@@ -58,6 +56,21 @@ defmodule SanbaseWeb.GenericAdmin.User do
         }
       }
     }
+  end
+
+  @doc """
+  GenericAdmin hook called after a successful create/update. When the
+  admin edit form flipped `:are_activity_traces_hidden`, fan the cache
+  refresh out to the rest of the cluster so the change applies
+  immediately on every web pod instead of waiting up to 30 minutes for
+  the TTL.
+  """
+  def after_filter(%Sanbase.Accounts.User{}, %Ecto.Changeset{} = changeset, _changes) do
+    if Map.has_key?(changeset.changes, :are_activity_traces_hidden) do
+      Sanbase.Accounts.ProtectedUser.refresh()
+    end
+
+    :ok
   end
 
   def has_many(user) do

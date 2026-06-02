@@ -6,10 +6,11 @@ defmodule Sanbase.MCP.Privacy do
   `Sanbase.RequestContext` struct — so the decision is made once at the
   edge and not re-queried here.
 
-  When masking applies, the row is recorded with `<masked>` placeholders
-  so the existence and shape of activity (counts, durations, success
-  flag) can still be measured without revealing what was queried or
-  which client was used.
+  When masking applies, the row is recorded with
+  `Sanbase.Accounts.masked_sentinel/0` (`<activity_traces_hidden>`)
+  placeholders so the existence and shape of activity (counts,
+  durations, success flag) can still be measured without revealing what
+  was queried or which client was used.
   """
 
   alias Sanbase.Accounts

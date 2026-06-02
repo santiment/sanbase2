@@ -323,8 +323,13 @@ defmodule Sanbase.ClickhouseRepo do
         # In dev env, if the PRINT_CLICKHOUSE_SQL env var is set to true/1
         # the interpolated query  is printed to the console.
         # This makes it much easier to copy/paste the query and share it
-        # with other people, or directly run it for debugging purposes
-        if System.get_env("PRINT_INTERPOLATED_CLICKHOUSE_SQL") in ["true", "1"] do
+        # with other people, or directly run it for debugging purposes.
+        #
+        # Skipped for users with `activity_traces_hidden` even in dev — the
+        # interpolated SQL contains the same slugs/metrics/params we mask
+        # everywhere else.
+        if System.get_env("PRINT_INTERPOLATED_CLICKHOUSE_SQL") in ["true", "1"] and
+             not Sanbase.RequestContext.activity_traces_hidden?(Sanbase.RequestContext.current()) do
           IO.puts(
             IO.ANSI.format([
               :light_blue,

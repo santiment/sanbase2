@@ -10,7 +10,9 @@ defmodule SanbaseWeb.AskLive do
        question: "",
        answer: "",
        sources: %{faq: true, academy: true, insight: true},
-       answer_log_link: nil
+       answer_log_link: nil,
+       loading: nil,
+       ask_meta: nil
      )}
   end
 
@@ -18,50 +20,29 @@ defmodule SanbaseWeb.AskLive do
   def handle_event(event, _params, socket) when event in ["ask_ai", "smart_search"] do
     question = socket.assigns.question
     sources = socket.assigns.sources
-    current_user = socket.assigns.current_user
 
-    if Map.values(sources) |> Enum.any?(&(&1 == true)) do
-      function = if event == "ask_ai", do: :answer_question, else: :smart_search
+    cond do
+      socket.assigns.loading != nil ->
+        {:noreply, socket}
 
-      socket =
-        case apply(Sanbase.Knowledge, function, [question, Keyword.new(sources)]) do
-          {:ok, formatted_answer} ->
-            log_async(
-              _question_type = event,
-              current_user,
-              question,
-              formatted_answer,
-              sources,
-              _is_successful = true,
-              _errors = ""
-            )
+      Enum.any?(Map.values(sources), &(&1 == true)) ->
+        function = if event == "ask_ai", do: :answer_question, else: :smart_search
 
-            socket
-            |> assign(:answer, formatted_answer)
+        # Run the (slow) retrieval/LLM call off the LiveView process. Blocking it
+        # here makes the socket miss heartbeats on long answers, so the client
+        # reconnects and remounts to a fresh state, losing the answer.
+        {:noreply,
+         socket
+         |> assign(:loading, event)
+         |> assign(:answer, "")
+         |> assign(:answer_log_link, nil)
+         |> assign(:ask_meta, %{event: event, question: question, sources: sources})
+         |> start_async(:ask_question, fn ->
+           apply(Sanbase.Knowledge, function, [question, Keyword.new(sources)])
+         end)}
 
-          {:error, error} ->
-            log_async(
-              _question_type = event,
-              current_user,
-              question,
-              "<no answer> ",
-              sources,
-              _is_successful = false,
-              _errors = error
-            )
-
-            require Logger
-            Logger.debug("Ask error: #{inspect(error)}")
-
-            socket
-            |> assign(:answer, "Can't answer. Please try again.")
-        end
-
-      {:noreply, socket}
-    else
-      {:noreply,
-       socket
-       |> put_flash(:error, "Please select at least one source of information")}
+      true ->
+        {:noreply, put_flash(socket, :error, "Please select at least one source of information")}
     end
   end
 
@@ -146,20 +127,23 @@ defmodule SanbaseWeb.AskLive do
 
           <div class="flex gap-4">
             <button
-              type="submit"
+              type="button"
               phx-click="smart_search"
               class="btn btn-success btn-lg flex-1"
-              phx-disable-with="Searching..."
+              disabled={@loading != nil}
             >
-              Smart Search
+              <span :if={@loading == "smart_search"} class="loading loading-spinner loading-sm">
+              </span>
+              {if @loading == "smart_search", do: "Searching...", else: "Smart Search"}
             </button>
             <button
-              type="submit"
+              type="button"
               phx-click="ask_ai"
               class="btn btn-primary btn-lg flex-1"
-              phx-disable-with="Answering..."
+              disabled={@loading != nil}
             >
-              Ask Santiment AI
+              <span :if={@loading == "ask_ai"} class="loading loading-spinner loading-sm"></span>
+              {if @loading == "ask_ai", do: "Answering...", else: "Ask Santiment AI"}
             </button>
           </div>
         </form>
@@ -183,6 +167,37 @@ defmodule SanbaseWeb.AskLive do
       </div>
     </div>
     """
+  end
+
+  @impl true
+  def handle_async(:ask_question, {:ok, result}, socket) do
+    %{event: event, question: question, sources: sources} = socket.assigns.ask_meta
+    current_user = socket.assigns.current_user
+
+    socket =
+      case result do
+        {:ok, formatted_answer} ->
+          log_async(event, current_user, question, formatted_answer, sources, true, "")
+          assign(socket, :answer, formatted_answer)
+
+        {:error, error} ->
+          log_async(event, current_user, question, "<no answer> ", sources, false, error)
+          require Logger
+          Logger.debug("Ask error: #{inspect(error)}")
+          assign(socket, :answer, "Can't answer. Please try again.")
+      end
+
+    {:noreply, assign(socket, :loading, nil)}
+  end
+
+  def handle_async(:ask_question, {:exit, reason}, socket) do
+    require Logger
+    Logger.error("Ask crashed: #{inspect(reason)}")
+
+    {:noreply,
+     socket
+     |> assign(:answer, "Can't answer. Please try again.")
+     |> assign(:loading, nil)}
   end
 
   @impl true

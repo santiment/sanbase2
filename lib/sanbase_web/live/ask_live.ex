@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.AskLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.Admin.FaqLive.Nav, only: [nav: 1]
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -81,8 +83,15 @@ defmodule SanbaseWeb.AskLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen flex flex-col items-center justify-center">
+    <.nav active={:ask} />
+    <div class="flex flex-col items-center px-4">
       <div class="w-full max-w-3xl flex flex-col items-center mt-10">
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-bold">Ask the Knowledge Base</h1>
+          <p class="mt-1 text-sm text-base-content/60">
+            Search or get an AI answer from FAQ, Academy and Insights.
+          </p>
+        </div>
         <form class="w-full">
           <input
             name="question"

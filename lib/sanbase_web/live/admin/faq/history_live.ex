@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
   use SanbaseWeb, :live_view
 
   alias Sanbase.Knowledge.QuestionAnswerLog
+  import SanbaseWeb.Admin.FaqLive.Nav, only: [nav: 1]
 
   @default_page_size 10
 
@@ -46,8 +47,12 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
 
   def render(assigns) do
     ~H"""
-    <h1 class="text-3xl font-bold">FAQ Question/Answer History</h1>
-    <div class="p-6 max-w-7xl">
+    <.nav active={:history} />
+    <div class="p-6 max-w-7xl mx-auto">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Question &amp; Answer History</h1>
+        <p class="mt-1 text-sm text-base-content/60">Logged Ask and Smart Search queries.</p>
+      </div>
       <.history_pager
         page={@page}
         page_size={@page_size}

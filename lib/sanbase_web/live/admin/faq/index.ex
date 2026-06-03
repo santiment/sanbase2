@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
 
   alias Sanbase.Knowledge.Faq
   import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
+  import SanbaseWeb.Admin.FaqLive.Nav, only: [nav: 1]
 
   @default_page_size 10
 
@@ -54,17 +55,15 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
 
   def render(assigns) do
     ~H"""
-    <h1 class="text-3xl font-bold">FAQ Management</h1>
-    <div class="p-6 max-w-7xl">
-      <div class="flex items-start gap-x-2 mb-6">
-        <.link navigate={~p"/admin/faq/history"} class="btn btn-sm btn-secondary">
-          History
-        </.link>
+    <.nav active={:index} />
+    <div class="p-6 max-w-7xl mx-auto">
+      <div class="flex items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-2xl font-bold">FAQ Entries</h1>
+          <p class="mt-1 text-sm text-base-content/60">Manage the knowledge base entries.</p>
+        </div>
         <.link navigate={~p"/admin/faq/new"} class="btn btn-sm btn-primary">
-          New FAQ Entry
-        </.link>
-        <.link navigate={~p"/admin/faq/ask"} class="btn btn-sm btn-warning">
-          Ask
+          <.icon name="hero-plus" class="size-4" /> New Entry
         </.link>
       </div>
       <.pagination

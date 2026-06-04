@@ -11,7 +11,7 @@ defmodule Sanbase.AI.AcademyAIService do
   alias Sanbase.AI.AcademyTracing, as: Tracing
 
   @dont_know_answer "DK"
-  @dont_know_message "This one's not in my shell of knowledge yet 🐢📚. I only know what's written in the Academy scrolls, you can rephrase and try again — or swim over to Discord to chat with the humans\n👉 Ask on Discord: https://discord.gg/EJrZR8GHZU"
+  @dont_know_message "Sorry, I can’t seem to find anything in the Academy on that right now.\n\nTry rephrasing your question — or head over to Discord for help from other users & the Santiment team!\n\n👉 https://discord.gg/EJrZR8GHZU"
   @model "gpt-5-nano"
   @suggestions_model "gpt-5-nano"
   @similarity_threshold 0.5
@@ -43,12 +43,7 @@ defmodule Sanbase.AI.AcademyAIService do
     session_id = Tracing.generate_session_id(chat_id, user_id)
     chat_history = if chat_id, do: build_chat_history(chat_id), else: []
 
-    with {:ok, chunks} <- Academy.search_chunks(question, @retrieval_top_k),
-         reranked_chunks =
-           Knowledge.rerank_entries(question, chunks, :academy,
-             top_n: @prompt_top_k,
-             max_retries: @rerank_max_retries
-           ),
+    with {:ok, reranked_chunks} <- semantic_search(question),
          {:ok, answer, sources} <-
            generate_answer(question, reranked_chunks, chat_history, user_id, session_id) do
       suggestions =
@@ -70,6 +65,40 @@ defmodule Sanbase.AI.AcademyAIService do
       {:error, reason} ->
         Logger.error("Local Academy AI request failed: #{inspect(reason)}")
         {:error, "Failed to generate Academy response"}
+    end
+  end
+
+  @doc """
+  Run the Academy semantic search pipeline (vector retrieval + rerank) WITHOUT
+  the LLM synthesis step.
+
+  This is the retrieval half of `generate_local_response/4`, exposed on its own
+  so callers that want to run their own LLM (e.g. the AI server) can reuse
+  Santiment's Academy index and reranking instead of reproducing the pipeline.
+
+  Returns the reranked chunks ordered by relevance. Each chunk is a map with
+  keys such as `:title`, `:url`, `:heading`, `:chunk` (the chunk text) and
+  `:similarity`.
+
+  ## Options
+
+    * `:top_k` - number of chunks to return after reranking (default: #{@prompt_top_k})
+    * `:retrieval_top_k` - number of candidate chunks pulled from the vector
+      store before reranking. Coerced up to at least `:top_k` (default: #{@retrieval_top_k})
+  """
+  @spec semantic_search(String.t(), keyword()) :: {:ok, list(map())} | {:error, term()}
+  def semantic_search(question, opts \\ []) when is_binary(question) do
+    top_k = Keyword.get(opts, :top_k, @prompt_top_k)
+    retrieval_top_k = max(Keyword.get(opts, :retrieval_top_k, @retrieval_top_k), top_k)
+
+    with {:ok, chunks} <- Academy.search_chunks(question, retrieval_top_k) do
+      reranked_chunks =
+        Knowledge.rerank_entries(question, chunks, :academy,
+          top_n: top_k,
+          max_retries: @rerank_max_retries
+        )
+
+      {:ok, reranked_chunks}
     end
   end
 

@@ -1,44 +1,17 @@
-defmodule Sanbase.AI.AcademyAIServiceTest do
-  use Sanbase.DataCase, async: false
+defmodule SanbaseWeb.Graphql.AcademySearchApiTest do
+  use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.Factory
+  @moduletag :capture_log
 
-  alias Sanbase.AI.AcademyAIService
-  alias Sanbase.Chat
+  import SanbaseWeb.Graphql.TestHelpers
+
   alias Sanbase.Knowledge.{AcademyArticle, AcademyArticleChunk}
   alias Sanbase.Repo
 
   @embedding_size 1536
 
-  setup do
-    user = insert(:user)
-
-    {:ok, chat} =
-      Chat.create_chat(%{
-        title: "Academy Test Chat",
-        user_id: user.id,
-        type: "academy_qa"
-      })
-
-    # Add some chat history
-    {:ok, _msg1} = Chat.add_message_to_chat(chat.id, "What is DeFi?", :user, %{})
-
-    {:ok, _msg2} =
-      Chat.add_message_to_chat(
-        chat.id,
-        "DeFi stands for Decentralized Finance...",
-        :assistant,
-        %{}
-      )
-
-    %{
-      user: user,
-      chat: chat
-    }
-  end
-
-  describe "semantic_search/2" do
-    test "returns the matching academy chunks ordered by relevance, without LLM synthesis" do
+  describe "academySearch query" do
+    test "returns the most relevant academy chunks without LLM synthesis" do
       article =
         insert_article(
           title: "MVRV Guide",
@@ -46,8 +19,6 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
           github_path: "src/metrics/mvrv.md"
         )
 
-      # The relevant chunk shares the query embedding (similarity ~1); the other
-      # is orthogonal (similarity ~0), so vector search ranks the relevant one first.
       insert_chunk(article,
         chunk_index: 0,
         heading: "MVRV",
@@ -62,22 +33,36 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
         embedding: unit_vector(5)
       )
 
+      query = """
+      {
+        academySearch(query: "what is mvrv", topK: 5) {
+          title
+          url
+          content
+          heading
+          similarity
+        }
+      }
+      """
+
       with_query_embedding(unit_vector(0), fn ->
-        assert {:ok, [first, second]} = AcademyAIService.semantic_search("what is mvrv", top_k: 5)
+        # academySearch is public, no auth needed.
+        result = execute_query(build_conn(), query, "academySearch")
 
-        assert first.title == "MVRV Guide"
-        assert first.url == "https://academy.santiment.net/metrics/mvrv/"
-        assert first.heading == "MVRV"
-        assert first.chunk == "MVRV compares market value to realized value."
-        assert is_number(first.similarity)
+        assert [first, second] = result
 
-        # The orthogonal chunk is still returned but ranks lower.
-        assert second.heading == "Unrelated"
-        assert first.similarity >= second.similarity
+        assert first["title"] == "MVRV Guide"
+        assert first["url"] == "https://academy.santiment.net/metrics/mvrv/"
+        assert first["heading"] == "MVRV"
+        assert first["content"] == "MVRV compares market value to realized value."
+        assert is_number(first["similarity"])
+
+        assert second["heading"] == "Unrelated"
+        assert first["similarity"] >= second["similarity"]
       end)
     end
 
-    test "respects the :top_k option" do
+    test "respects the topK argument" do
       article = insert_article()
 
       for index <- 0..4 do
@@ -88,15 +73,17 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
         )
       end
 
-      with_query_embedding(unit_vector(0), fn ->
-        assert {:ok, results} = AcademyAIService.semantic_search("query", top_k: 2)
-        assert length(results) == 2
-      end)
-    end
+      query = """
+      {
+        academySearch(query: "query", topK: 2) {
+          content
+        }
+      }
+      """
 
-    test "returns an empty list when there are no academy chunks" do
       with_query_embedding(unit_vector(0), fn ->
-        assert {:ok, []} = AcademyAIService.semantic_search("query")
+        result = execute_query(build_conn(), query, "academySearch")
+        assert length(result) == 2
       end)
     end
   end
@@ -132,9 +119,6 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
     |> Repo.insert!()
   end
 
-  # A unit vector with 1.0 at `index` and zeros elsewhere. Two unit vectors at
-  # the same index are identical (cosine similarity 1); at different indices
-  # they are orthogonal (cosine similarity 0).
   defp unit_vector(index) do
     List.duplicate(0.0, @embedding_size) |> List.replace_at(index, 1.0)
   end

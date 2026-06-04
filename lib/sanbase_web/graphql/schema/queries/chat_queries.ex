@@ -44,6 +44,20 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
 
       resolve(&ChatResolver.academy_autocomplete_questions/3)
     end
+
+    @desc """
+    Semantic search over Santiment Academy content. Embeds the query, runs a
+    vector search over the Academy index and reranks the hits, returning the
+    most relevant chunks WITHOUT any LLM synthesis.
+    """
+    field :academy_search, list_of(:academy_search_result) do
+      meta(access: :free)
+
+      arg(:query, non_null(:string))
+      arg(:top_k, :integer, default_value: 10)
+
+      resolve(&ChatResolver.academy_search/3)
+    end
   end
 
   object :chat_mutations do

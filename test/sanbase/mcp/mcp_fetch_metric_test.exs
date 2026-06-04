@@ -553,6 +553,18 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "supports_many_slugs" => true
                },
                %{
+                 "description" =>
+                   "Network Realized Profit/Loss (NRPL) in USD — the aggregate profit or loss realized by all coins that moved on-chain, valuing each coin at the price when it last moved versus its current price. Positive values indicate net realized profit, negative values net realized loss",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/network-profit-loss"}
+                 ],
+                 "name" => "network_profit_loss",
+                 "unit" => "USD",
+                 "default_aggregation" => "sum",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => true
+               },
+               %{
                  "description" => "Amount of tokens held on exchange addresses",
                  "documentation_urls" => [
                    %{
@@ -598,6 +610,18 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "unit" => "USD",
                  "default_aggregation" => "sum",
                  "min_interval" => "5m",
+                 "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
+                   "Number of unique addresses that deposited tokens into exchange wallets, a proxy for potential sell-side pressure",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/daily-active-deposits"}
+                 ],
+                 "name" => "active_deposits",
+                 "unit" => "count",
+                 "default_aggregation" => "avg",
+                 "min_interval" => "1d",
                  "supports_many_slugs" => true
                },
                %{
@@ -650,6 +674,42 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                },
                %{
                  "description" =>
+                   "Age Consumed (Token Age Consumed) — the number of tokens that changed addresses multiplied by the number of days since those tokens last moved. Spikes indicate long-dormant coins moving, often around major market turning points",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/age-consumed"}
+                 ],
+                 "name" => "age_destroyed",
+                 "unit" => "token-days",
+                 "default_aggregation" => "sum",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
+                   "Circulation — the amount of distinct tokens that were transacted on-chain at least once over the period, reflecting real economic throughput rather than raw transaction volume",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/circulation"}
+                 ],
+                 "name" => "circulation",
+                 "unit" => "tokens",
+                 "default_aggregation" => "last",
+                 "min_interval" => "1d",
+                 "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
+                   "Stock-to-Flow ratio — current circulating supply (stock) divided by the new supply issued per year (flow); a higher ratio indicates greater scarcity",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/stock-to-flow"}
+                 ],
+                 "name" => "stock_to_flow",
+                 "unit" => "ratio",
+                 "default_aggregation" => "last",
+                 "min_interval" => "1d",
+                 "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
                    "Aggregated funding rate across all exchanges for a given asset, reflecting overall market sentiment in perpetual futures",
                  "documentation_urls" => [
                    %{"url" => "https://academy.santiment.net/metrics/funding-rates-aggregated"}
@@ -659,9 +719,21 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "default_aggregation" => "last",
                  "min_interval" => "5m",
                  "supports_many_slugs" => false
+               },
+               %{
+                 "description" =>
+                   "Total open interest in USD across tracked derivatives exchanges — the aggregate notional value of outstanding perpetual and futures positions for the asset",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/open-interest"}
+                 ],
+                 "name" => "total_open_interest",
+                 "unit" => "USD",
+                 "default_aggregation" => "last",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => false
                }
              ],
-             "metrics_count" => 39
+             "metrics_count" => 45
            } = result
 
     result

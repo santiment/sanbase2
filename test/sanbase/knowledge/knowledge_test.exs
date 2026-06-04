@@ -25,4 +25,33 @@ defmodule Sanbase.KnowledgeTest do
       assert result == [Enum.at(entries, 2), Enum.at(entries, 1)]
     end
   end
+
+  describe "diversify_by_document/3" do
+    defp hit(doc, idx), do: %{doc: doc, idx: idx}
+    defp idxs(hits), do: Enum.map(hits, & &1.idx)
+
+    test "round-robins distinct documents before backfilling later chunks" do
+      # reranked order interleaves three documents; round 1 should surface one
+      # chunk per document (a, b, c) before any second chunk is added.
+      hits = [hit(:a, 1), hit(:a, 2), hit(:b, 3), hit(:a, 4), hit(:c, 5)]
+
+      assert idxs(Knowledge.diversify_by_document(hits, & &1.doc, 5)) == [1, 3, 5, 2, 4]
+    end
+
+    test "maximises distinct documents when the limit is smaller than the candidates" do
+      hits = [hit(:a, 1), hit(:a, 2), hit(:b, 3), hit(:a, 4), hit(:c, 5)]
+
+      assert idxs(Knowledge.diversify_by_document(hits, & &1.doc, 3)) == [1, 3, 5]
+    end
+
+    test "backfills from a single document rather than under-filling the prompt" do
+      hits = [hit(:a, 1), hit(:a, 2), hit(:a, 3)]
+
+      assert idxs(Knowledge.diversify_by_document(hits, & &1.doc, 5)) == [1, 2, 3]
+    end
+
+    test "returns an empty list for no hits" do
+      assert Knowledge.diversify_by_document([], & &1.doc, 5) == []
+    end
+  end
 end

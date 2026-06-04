@@ -137,6 +137,7 @@ defmodule Sanbase.Insight.Post do
         select: %{
           post_id: e.post_id,
           post_title: p.title,
+          published_at: p.published_at,
           text_chunk: e.text_chunk,
           chunk_index: e.chunk_index,
           similarity: fragment("1 - (embedding <=> ?)", ^embedding)

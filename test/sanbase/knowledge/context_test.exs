@@ -121,5 +121,39 @@ defmodule Sanbase.Knowledge.ContextTest do
       refute marker =~ "[Academy]"
       refute marker =~ "[["
     end
+
+    # Labels are user-controlled (post/article titles, FAQ questions). A crafted
+    # title with markdown link delimiters must NOT be able to close the label
+    # early and inject a different link target — otherwise a forged/phishing URL
+    # could surface in a citation. The delimiters are escaped so the title stays
+    # inert text inside the original link, which still points at the real URL.
+    test "a malicious title cannot break out of the link or inject another target" do
+      hits = [
+        %{
+          title: "Click here](https://phishing.example) and [more",
+          url: "https://academy.santiment.net/mvrv",
+          chunk: "body"
+        }
+      ]
+
+      marker =
+        hits
+        |> Context.assemble(:academy)
+        |> String.split("\n", trim: true)
+        |> Enum.find(&String.starts_with?(&1, "Source marker: "))
+        |> String.replace_leading("Source marker: ", "")
+
+      # The injected delimiters are escaped, so the phishing URL stays inert text
+      # inside the label rather than becoming a second link target.
+      assert marker =~ "\\]\\(https://phishing.example\\)"
+      assert marker =~ "\\[more"
+
+      html = Earmark.as_html!(marker)
+
+      # Exactly one link, pointing at the real URL — the phishing URL is never an href.
+      assert html =~ ~s(href="https://academy.santiment.net/mvrv")
+      refute html =~ ~s(href="https://phishing.example")
+      assert length(Regex.scan(~r/<a /, html)) == 1
+    end
   end
 end

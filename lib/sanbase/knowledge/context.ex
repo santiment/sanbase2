@@ -44,7 +44,7 @@ defmodule Sanbase.Knowledge.Context do
       url = "#{admin_url}/admin/faq/#{entry.id}"
 
       """
-      Source marker: [FAQ: #{faq_label(entry.question)}](#{url})
+      Source marker: [FAQ: #{escape_marker_label(faq_label(entry.question))}](#{url})
       Question: #{entry.question}
       Answer: #{entry.answer_markdown}
       """
@@ -58,7 +58,7 @@ defmodule Sanbase.Knowledge.Context do
       url = SanbaseWeb.Endpoint.insight_url(chunk.post_id)
 
       """
-      Source marker: [Insight: #{chunk.post_title}](#{url})
+      Source marker: [Insight: #{escape_marker_label(chunk.post_title)}](#{url})
       Published: #{published_on(chunk)}
       #{chunk.text_chunk}
       """
@@ -70,7 +70,7 @@ defmodule Sanbase.Knowledge.Context do
     hits
     |> Enum.map(fn chunk ->
       """
-      Source marker: [Academy: #{chunk.title}](#{chunk.url})
+      Source marker: [Academy: #{escape_marker_label(chunk.title)}](#{chunk.url})
       Most relevant chunk from article: #{chunk.chunk}
       """
     end)
@@ -114,5 +114,23 @@ defmodule Sanbase.Knowledge.Context do
     else
       question
     end
+  end
+
+  # Labels (post/article titles, FAQ questions) are user-controlled and get
+  # interpolated raw into the `[label](url)` markdown link. Without escaping, a
+  # crafted title like `x](https://phish)` closes the label early and injects a
+  # different target — the model would then cite a forged/phishing link. Escape
+  # the markdown link delimiters (and the backslash itself, first, so we don't
+  # double-escape) and fold newlines, so the label can only ever be inert text
+  # inside the link.
+  defp escape_marker_label(label) do
+    label
+    |> to_string()
+    |> String.replace(~r/[\r\n]+/u, " ")
+    |> String.replace("\\", "\\\\")
+    |> String.replace("[", "\\[")
+    |> String.replace("]", "\\]")
+    |> String.replace("(", "\\(")
+    |> String.replace(")", "\\)")
   end
 end

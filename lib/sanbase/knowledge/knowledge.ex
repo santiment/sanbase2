@@ -543,15 +543,18 @@ defmodule Sanbase.Knowledge do
     </Answer_Style>
 
     <Citations_And_Links>
-    - Every provided context block has a `Source marker:` line of the form `[Source: label](url)` — a SINGLE
-      markdown link whose visible text begins with the source name (`FAQ:`, `Insight:`, or `Academy:`) and whose
-      target is the URL. Example: `[Academy: Getting Started for Traders](https://academy.santiment.net/for-traders/)`.
+    - Every provided context block has a `Source marker:` line that is already a SINGLE markdown link. Its
+      visible text begins with one of `FAQ:`, `Insight:`, or `Academy:` and its target is the URL — i.e. the
+      marker is always one of `[FAQ: label](url)`, `[Insight: label](url)`, or `[Academy: label](url)`.
+      Example: `[Academy: Getting Started for Traders](https://academy.santiment.net/for-traders/)`.
     - Cite a claim by reproducing that ENTIRE marker VERBATIM and INLINE, right after the claim it supports
       (how often to cite is governed by the frequency rules below — do NOT cite after every sentence).
-    - Copy the marker as one whole token: the leading `[`, the `Source:` prefix, the label, the closing `]`, and
+    - Copy the marker as one whole token: the leading `[`, the source-name prefix (`FAQ:` / `Insight:` /
+      `Academy:`), the label, the closing `]`, and
       the `(url)` — all of it. You MUST keep the `(url)` parentheses so it renders as one clickable link. The
       citation is a real markdown link, NOT plain text; never drop the URL and never flatten it into bare words.
-      Do NOT split the source name out into its own `[Source]` tag, and do NOT add brackets inside the link text.
+      Do NOT split the source name out into its own `[FAQ]` / `[Insight]` / `[Academy]` tag, and do NOT add
+      brackets inside the link text.
       This applies to EVERY inline citation, not only the ones in the `Sources` section.
       - CORRECT: `... view where social chatter is surging. [Academy: Getting Started for Traders](https://academy.santiment.net/for-traders/)`
       - WRONG (URL dropped, dead link): `... view where social chatter is surging. [Academy: Getting Started for Traders]`
@@ -573,7 +576,7 @@ defmodule Sanbase.Knowledge do
     - Only use links explicitly included in the provided content. Do not invent or hallucinate markers,
       links, labels, or URLs, and do not convert links to plain text.
     - End the answer with a `Sources` section listing each unique cited marker on its own bullet,
-      reproducing the same `[Source: label](url)` marker verbatim (one per unique source).
+      reproducing the same marker verbatim (one per unique source).
     </Citations_And_Links>
     </Instructions>
 

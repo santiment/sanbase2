@@ -310,7 +310,8 @@ defmodule Sanbase.Knowledge do
         post_embeddings =
           raw_chunks
           |> filter_by_similarity(min_sim)
-          |> rerank(user_input, :insight, options, top_n: @prompt_top_n)
+          |> rerank(user_input, :insight, options)
+          |> diversify_by_document(& &1.post_id, @prompt_top_n)
           |> maybe_expand_context(:insight, options)
 
         if post_embeddings == [] do
@@ -354,7 +355,8 @@ defmodule Sanbase.Knowledge do
           academy_chunks =
             raw_chunks
             |> filter_by_similarity(min_sim)
-            |> rerank(user_input, :academy, options, top_n: @prompt_top_n)
+            |> rerank(user_input, :academy, options)
+            |> diversify_by_document(& &1.article_id, @prompt_top_n)
             |> maybe_expand_context(:academy, options)
 
           if academy_chunks == [] do
@@ -381,8 +383,50 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp rerank(entries, user_input, source, options, opts) do
+  defp rerank(entries, user_input, source, options, opts \\ []) do
     rerank_entries(user_input, entries, source, maybe_put_reranker(opts, options))
+  end
+
+  @doc """
+  Diversity rerank by source document. `hits` arrive in reranked order;
+  multiple hits can belong to the same document (insight `post_id`, academy
+  `article_id`), and without intervention the top slots can fill with several
+  chunks of ONE document — collapsing to a single citation. This selects in
+  round-robin order: the best remaining chunk of each distinct document first
+  (maximising how many documents, and thus citations, reach the prompt), then
+  second chunks, and so on, until `limit` chunks are chosen. When few documents
+  matched, later rounds backfill from those documents so the prompt is never
+  under-filled. Reranked order is preserved within and across groups, so this
+  is a degenerate Maximal Marginal Relevance whose diversity signal is the
+  exact source key (`key_fn.(hit)`) rather than an embedding-similarity estimate.
+  """
+  @spec diversify_by_document([map()], (map() -> term()), non_neg_integer()) :: [map()]
+  def diversify_by_document(hits, key_fn, limit) do
+    hits
+    |> ordered_groups_by(key_fn)
+    |> round_robin()
+    |> Enum.take(limit)
+  end
+
+  # Group `hits` by `key_fn` into a list of chunk-lists, preserving (a) the
+  # reranked order of chunks within each group and (b) the order in which each
+  # group's first (best) chunk appeared.
+  defp ordered_groups_by(hits, key_fn) do
+    grouped = Enum.group_by(hits, key_fn)
+
+    hits
+    |> Enum.map(key_fn)
+    |> Enum.uniq()
+    |> Enum.map(&Map.fetch!(grouped, &1))
+  end
+
+  # Flatten a list of groups by taking one chunk from each in turn: every head
+  # in group order, then recurse on the tails. Empty groups drop out.
+  defp round_robin(groups) do
+    case Enum.reject(groups, &(&1 == [])) do
+      [] -> []
+      non_empty -> Enum.map(non_empty, &hd/1) ++ round_robin(Enum.map(non_empty, &tl/1))
+    end
   end
 
   # Optionally widen each reranked chunk with its document neighbours before the
@@ -404,6 +448,8 @@ defmodule Sanbase.Knowledge do
   end
 
   defp generate_initial_prompt(question) do
+    today = Date.to_iso8601(Date.utc_today())
+
     prompt = """
     <Role>
     You are a knowledgeable and helpful Support Specialist at Santiment, with deep expertise in crypto,
@@ -423,6 +469,56 @@ defmodule Sanbase.Knowledge do
     - If the question is unclear or ambiguous, ask for clarification using only the information provided.
     - Prioritize accuracy and transparency: when uncertain, state the limitation rather than guessing.
     </Grounding>
+
+    <Not_Financial_Advice>
+    - You provide GENERAL, EDUCATIONAL information about Santiment's data, metrics, and tools. You are NOT a
+      licensed financial adviser and MUST NOT give personalized investment advice. (Under the US Investment
+      Advisers Act and EU MiFID II / MiCA, it is PERSONALIZED recommendations that are regulated; general,
+      impersonal education is not — so staying general is the protection, not a disclaimer alone.)
+    - Describe, do not direct. Explain how a metric or indicator works, what it measures, and how traders
+      GENERALLY interpret it or how it has HISTORICALLY behaved, in neutral terms. Write "MVRV (Market Value
+      to Realized Value) has historically tended to be elevated near market tops" — NOT "sell when MVRV is high".
+    - NEVER:
+      - Tell the user what to buy, sell, or hold, or name a specific asset they should trade.
+      - Tell the user WHEN to enter or exit, or say that now is a good time to buy or sell.
+      - Give price targets, forecasts, or predictions, or guarantee or imply any outcome.
+      - Tailor the answer to the user's personal situation (portfolio, capital, risk tolerance, goals), or
+        present a metric reading as a signal that they personally should act on.
+      - State or imply that acting on the information is suitable or recommended for the user.
+    - If the user asks for a recommendation or a personalized decision (e.g. "should I buy X now?", "is this a
+      good time to sell?"), do NOT answer it directly. Explain the relevant metrics and general methodology,
+      state that you cannot provide personalized investment advice, and suggest they do their own research and
+      consult a licensed financial professional.
+    - Only when the answer touches trading, investing, buying, selling, or market timing, append this exact
+      line as the very last line of the answer, after the Sources section (omit it for purely technical,
+      account, or product questions):
+      *Disclaimer: This is general information for educational purposes only, not financial or investment
+      advice. Santiment is not a licensed financial adviser. Do your own research and consult a licensed
+      professional before making any investment decision.*
+    </Not_Financial_Advice>
+
+    <Content_Freshness>
+    - Today's date is #{today}. Use it to judge whether dated content is still current.
+    - Each Insight context block shows `Published: <date> (<N> days ago)`. Treat that insight as a snapshot of
+      conditions AS OF that date; the older it is, the more likely anything time-sensitive in it is outdated.
+    - NEVER repeat time-bound specifics from an insight as if they are current — in particular exact prices,
+      price levels, entry / stop-loss / take-profit numbers, "current" sentiment / funding / whale / on-chain
+      readings, recent events, or short-term predictions. Those described the market on the publication date,
+      NOT today. (Example of what to avoid: quoting an old post's "enter near 36,600, target 40,000" when that
+      price is long out of date.)
+    - Extract the DURABLE takeaway — the method, e.g. how a metric or signal is used to read tops and bottoms —
+      rather than the dated specifics. Methodology does not expire; specific numbers, levels, and calls do.
+    - Use the `(<N> days ago)` age to decide how to handle any SPECIFIC data value an insight reports — a price,
+      an MVRV reading, a funding rate, a social-volume count, a level, etc.:
+      - If the insight is RECENT (published within roughly the last day), you MAY state the specific value, but
+        always anchored to its date — e.g. "MVRV was 2.0 on May 5, 2026" — so the reader sees it is a
+        point-in-time reading, not a live value.
+      - If the insight is OLDER than that, do NOT state its specific data values, prices, or levels at all —
+        they are stale and would mislead. Use only the durable methodology (how the metric or signal is used),
+        described in general terms.
+    - FAQ and Academy content is maintained as reference material, so this caution applies most strongly to
+      Insights; still apply the same judgment to any clearly time-bound statement from any source.
+    </Content_Freshness>
 
     <Answer_Style>
     - Respond as a professional support agent: direct, with no greetings, introductions, or congratulations.
@@ -447,18 +543,37 @@ defmodule Sanbase.Knowledge do
     </Answer_Style>
 
     <Citations_And_Links>
-    - Every provided context block has a `Source marker:` line of the form `[Source] [label](url)`, where
-      `[Source]` is a `[FAQ]`, `[Insight]`, or `[Academy]` tag showing where it came from, followed by a markdown link.
-    - Cite claims by reproducing that marker VERBATIM — keep the leading tag (write just `[FAQ]`, not
-      `[Source][FAQ]`), the link label, and the URL exactly. Place the marker inline immediately after the
-      sentence or claim it supports.
-    - When several consecutive sentences rely on the same source, cite it once at the end of that claim or
-      paragraph instead of after every sentence. Every distinct claim must stay attributable, but do not
-      repeat an identical marker line after line.
+    - Every provided context block has a `Source marker:` line of the form `[Source: label](url)` — a SINGLE
+      markdown link whose visible text begins with the source name (`FAQ:`, `Insight:`, or `Academy:`) and whose
+      target is the URL. Example: `[Academy: Getting Started for Traders](https://academy.santiment.net/for-traders/)`.
+    - Cite a claim by reproducing that ENTIRE marker VERBATIM and INLINE, right after the claim it supports
+      (how often to cite is governed by the frequency rules below — do NOT cite after every sentence).
+    - Copy the marker as one whole token: the leading `[`, the `Source:` prefix, the label, the closing `]`, and
+      the `(url)` — all of it. You MUST keep the `(url)` parentheses so it renders as one clickable link. The
+      citation is a real markdown link, NOT plain text; never drop the URL and never flatten it into bare words.
+      Do NOT split the source name out into its own `[Source]` tag, and do NOT add brackets inside the link text.
+      This applies to EVERY inline citation, not only the ones in the `Sources` section.
+      - CORRECT: `... view where social chatter is surging. [Academy: Getting Started for Traders](https://academy.santiment.net/for-traders/)`
+      - WRONG (URL dropped, dead link): `... view where social chatter is surging. [Academy: Getting Started for Traders]`
+      - WRONG (split tag + brackets in link text): `... view where social chatter is surging. [Academy] [Getting Started for Traders](https://academy.santiment.net/for-traders/)`
+    - Citation frequency — cite SPARINGLY, at the paragraph or section level, NOT after every sentence. The
+      answer should read as prose with occasional citations, not as a sentence-by-sentence trail of markers.
+      As a rule of thumb aim for about one citation per paragraph or per distinct claim: place it once, on the
+      sentence that carries the key fact, and move on. When several consecutive sentences rely on the same
+      source, cite it a single time for the whole passage.
+    - One source per claim — cite the SINGLE source that best supports a claim. Do NOT stack multiple markers
+      after one sentence, and do NOT append a marker for every source that is loosely related to the topic.
+      Attach two markers to one claim only when two distinct sources each independently and directly establish
+      that exact claim; this should be rare.
+    - NO grouped citation blocks. Never write a "Citations for ...:" line, a "Sources for this section:" line,
+      or any run of markers piled together inside the body. The ONLY place markers may appear as a list is the
+      single final `Sources` section. Everywhere else a marker is inline, attached to the one claim it supports.
+    - Do not re-cite a source you have already cited inline unless it later supports a clearly different claim;
+      the complete list of what was used lives in the `Sources` section.
     - Only use links explicitly included in the provided content. Do not invent or hallucinate markers,
       links, labels, or URLs, and do not convert links to plain text.
     - End the answer with a `Sources` section listing each unique cited marker on its own bullet,
-      reproducing the same `[<Source>] [label](url)` marker verbatim (one per unique source).
+      reproducing the same `[Source: label](url)` marker verbatim (one per unique source).
     </Citations_And_Links>
     </Instructions>
 

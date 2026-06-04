@@ -81,7 +81,7 @@ defmodule Sanbase.Knowledge.ContextExpansion do
   # Insight chunk text is stored wrapped with a title preamble; keep only what
   # follows the writer's marker so neighbours stitch without repeating the title.
   defp insight_body(text) do
-    marker = PostEmbedding.chunk_text_marker() <> "\n"
+    marker = PostEmbedding.chunk_text_marker()
 
     case String.split(text || "", marker, parts: 2) do
       [_, body] -> String.trim(body)

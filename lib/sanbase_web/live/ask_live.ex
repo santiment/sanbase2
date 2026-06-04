@@ -73,20 +73,23 @@ defmodule SanbaseWeb.AskLive do
 
   @impl true
   def handle_event("toggle_source", %{"source" => source}, socket) do
-    sources = socket.assigns.sources
-
-    updated_sources =
-      Map.update!(sources, String.to_existing_atom(source), &(!&1))
-
-    {:noreply, assign(socket, :sources, updated_sources)}
+    {:noreply, assign(socket, :sources, toggle_flag(socket.assigns.sources, source))}
   end
 
   @impl true
   def handle_event("toggle_feature", %{"feature" => feature}, socket) do
-    features =
-      Map.update!(socket.assigns.features, String.to_existing_atom(feature), &(!&1))
+    {:noreply, assign(socket, :features, toggle_flag(socket.assigns.features, feature))}
+  end
 
-    {:noreply, assign(socket, :features, features)}
+  # Flip the boolean under the map key whose name matches `name`. `name` comes
+  # from the client, so match it against the existing keys instead of
+  # String.to_existing_atom/1 — an unknown value is ignored rather than crashing
+  # the LiveView.
+  defp toggle_flag(map, name) do
+    case Enum.find(Map.keys(map), &(to_string(&1) == name)) do
+      nil -> map
+      key -> Map.update!(map, key, &(not &1))
+    end
   end
 
   @impl true

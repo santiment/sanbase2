@@ -138,6 +138,7 @@ defmodule Sanbase.Insight.Post do
           post_id: e.post_id,
           post_title: p.title,
           text_chunk: e.text_chunk,
+          chunk_index: e.chunk_index,
           similarity: fragment("1 - (embedding <=> ?)", ^embedding)
         },
         order_by: [desc: fragment("1 - (embedding <=> ?)", ^embedding)],

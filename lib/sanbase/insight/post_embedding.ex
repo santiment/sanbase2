@@ -8,6 +8,14 @@ defmodule Sanbase.Insight.PostEmbedding do
 
   require(Logger)
 
+  # Marker line separating the title preamble from the chunk body in the stored
+  # `text_chunk`. Exposed so context expansion strips the preamble with the same
+  # constant the writer uses, instead of re-declaring the literal string.
+  @chunk_text_marker "Chunk text from the insight:"
+
+  @doc false
+  def chunk_text_marker(), do: @chunk_text_marker
+
   schema "posts_embeddings" do
     field(:embedding, Pgvector.Ecto.Vector)
     field(:text_chunk, :string)
@@ -56,6 +64,20 @@ defmodule Sanbase.Insight.PostEmbedding do
     |> Sanbase.Repo.delete_all()
   end
 
+  @doc """
+  Fetch the chunks of `post_id` whose `chunk_index` is in `indices`, ordered by
+  `chunk_index`. Used by context expansion to pull the neighbours around a
+  matched chunk.
+  """
+  def fetch_chunks(post_id, indices) when is_integer(post_id) and is_list(indices) do
+    from(pe in __MODULE__,
+      where: pe.post_id == ^post_id and pe.chunk_index in ^indices,
+      order_by: [asc: pe.chunk_index],
+      select: %{chunk_index: pe.chunk_index, text_chunk: pe.text_chunk}
+    )
+    |> Sanbase.Repo.all()
+  end
+
   def embed_post(%Sanbase.Insight.Post{} = post) do
     embed_posts_batch([post])
   end
@@ -75,7 +97,7 @@ defmodule Sanbase.Insight.PostEmbedding do
           Insight Title:
           #{post.title}
 
-          Chunk text from the insight:
+          #{@chunk_text_marker}
           #{String.trim(chunk.text)}
           """
 

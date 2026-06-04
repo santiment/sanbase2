@@ -117,7 +117,9 @@ defmodule Sanbase.Knowledge.Academy do
           title: article.title,
           url: article.academy_url,
           github_path: article.github_path,
-          heading: chunk.heading
+          heading: chunk.heading,
+          article_id: chunk.article_id,
+          chunk_index: chunk.chunk_index
         }
       )
       |> Sanbase.Repo.VectorQuery.all()

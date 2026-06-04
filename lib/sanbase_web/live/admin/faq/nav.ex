@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Nav do
     <nav class="border-b border-base-300 bg-base-100">
       <div class="max-w-7xl mx-auto px-6 h-14 flex items-center gap-6">
         <span class="font-semibold tracking-tight text-base-content/90 whitespace-nowrap">
-          FAQ Knowledge Base
+          Knowledge Base
         </span>
         <div class="flex items-center gap-1">
           <.nav_link navigate={~p"/admin/faq"} icon="hero-document-text" active={@active == :index}>

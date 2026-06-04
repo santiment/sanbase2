@@ -82,6 +82,10 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
                   <span :if={entry.reranker} class="badge badge-sm badge-neutral">
                     reranker: {entry.reranker}
                   </span>
+                  <span :if={entry.context_expansion}>•</span>
+                  <span :if={entry.context_expansion} class="badge badge-sm badge-neutral">
+                    context expansion
+                  </span>
                   <span :if={!entry.is_successful}>•</span>
                   <span :if={!entry.is_successful} class="badge badge-sm badge-error">Failed</span>
                 </div>

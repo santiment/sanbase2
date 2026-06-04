@@ -183,6 +183,13 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
         supports_many_slugs: true
       },
       %{
+        name: "network_profit_loss",
+        description:
+          "Network Realized Profit/Loss (NRPL) in USD — the aggregate profit or loss realized by all coins that moved on-chain, valuing each coin at the price when it last moved versus its current price. Positive values indicate net realized profit, negative values net realized loss",
+        unit: "USD",
+        supports_many_slugs: true
+      },
+      %{
         name: "supply_on_exchanges",
         description: "Amount of tokens held on exchange addresses",
         unit: "tokens",
@@ -205,6 +212,13 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
         name: "exchange_outflow_usd",
         description: "USD value of tokens withdrawn from exchange addresses",
         unit: "USD",
+        supports_many_slugs: true
+      },
+      %{
+        name: "active_deposits",
+        description:
+          "Number of unique addresses that deposited tokens into exchange wallets, a proxy for potential sell-side pressure",
+        unit: "count",
         supports_many_slugs: true
       },
       %{
@@ -234,6 +248,27 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
           "Mean dollar invested age — average number of days each dollar has been invested in the asset",
         unit: "days",
         supports_many_slugs: true
+      },
+      %{
+        name: "age_destroyed",
+        description:
+          "Age Consumed (Token Age Consumed) — the number of tokens that changed addresses multiplied by the number of days since those tokens last moved. Spikes indicate long-dormant coins moving, often around major market turning points",
+        unit: "token-days",
+        supports_many_slugs: true
+      },
+      %{
+        name: "circulation",
+        description:
+          "Circulation — the amount of distinct tokens that were transacted on-chain at least once over the period, reflecting real economic throughput rather than raw transaction volume",
+        unit: "tokens",
+        supports_many_slugs: true
+      },
+      %{
+        name: "stock_to_flow",
+        description:
+          "Stock-to-Flow ratio — current circulating supply (stock) divided by the new supply issued per year (flow); a higher ratio indicates greater scarcity",
+        unit: "ratio",
+        supports_many_slugs: true
       }
     ]
   end
@@ -245,6 +280,13 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
         description:
           "Aggregated funding rate across all exchanges for a given asset, reflecting overall market sentiment in perpetual futures",
         unit: "rate",
+        supports_many_slugs: false
+      },
+      %{
+        name: "total_open_interest",
+        description:
+          "Total open interest in USD across tracked derivatives exchanges — the aggregate notional value of outstanding perpetual and futures positions for the asset",
+        unit: "USD",
         supports_many_slugs: false
       }
     ]

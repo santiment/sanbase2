@@ -55,7 +55,8 @@ defmodule SanbaseWeb.AskLive do
            event: event,
            question: question,
            sources: sources,
-           reranker_mod: reranker_mod
+           reranker_mod: reranker_mod,
+           context_expansion: features.context_expansion
          })
          |> start_async(:ask_question, fn ->
            apply(Sanbase.Knowledge, function, [question, options])
@@ -249,8 +250,13 @@ defmodule SanbaseWeb.AskLive do
 
   @impl true
   def handle_async(:ask_question, {:ok, result}, socket) do
-    %{event: event, question: question, sources: sources, reranker_mod: reranker_mod} =
-      socket.assigns.ask_meta
+    %{
+      event: event,
+      question: question,
+      sources: sources,
+      reranker_mod: reranker_mod,
+      context_expansion: context_expansion
+    } = socket.assigns.ask_meta
 
     current_user = socket.assigns.current_user
 
@@ -265,7 +271,8 @@ defmodule SanbaseWeb.AskLive do
             sources,
             true,
             "",
-            reranker_mod
+            reranker_mod,
+            context_expansion
           )
 
           assign(socket, :answer, formatted_answer)
@@ -279,7 +286,8 @@ defmodule SanbaseWeb.AskLive do
             sources,
             false,
             error,
-            reranker_mod
+            reranker_mod,
+            context_expansion
           )
 
           Logger.debug("Ask error: #{inspect(error)}")
@@ -313,7 +321,8 @@ defmodule SanbaseWeb.AskLive do
          sources,
          is_successful,
          errors,
-         reranker_mod
+         reranker_mod,
+         context_expansion
        ) do
     self = self()
     reranker = Sanbase.Knowledge.Reranker.label(reranker_mod)
@@ -328,7 +337,8 @@ defmodule SanbaseWeb.AskLive do
                is_successful: is_successful,
                user_id: current_user && current_user.id,
                errors: inspect(errors),
-               reranker: reranker
+               reranker: reranker,
+               context_expansion: context_expansion
              }) do
         url = Path.join([SanbaseWeb.Endpoint.admin_url(), "admin", "faq", "history", struct.id])
         send(self, {:populate_answer_log_link, url})

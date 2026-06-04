@@ -2,6 +2,7 @@ defmodule Sanbase.Knowledge do
   require Logger
 
   alias Sanbase.Knowledge.Context
+  alias Sanbase.Knowledge.ContextExpansion
   alias Sanbase.Knowledge.Reranker
   alias Sanbase.Knowledge.Reranker.CandidateFormatter
 
@@ -60,6 +61,9 @@ defmodule Sanbase.Knowledge do
   end
 
   def smart_search(user_input, options) do
+    # NOTE: `:context_expansion` is intentionally not applied here. Neighbour
+    # expansion only enriches the answer prompt (see `answer_question/2`); smart
+    # search returns links, so the option is a no-op on this path.
     min_sim = min_similarity(options)
     reranker = Reranker.label(Keyword.get(options, :reranker) || Reranker.default_impl())
     preview = question_preview(user_input)
@@ -307,6 +311,7 @@ defmodule Sanbase.Knowledge do
           raw_chunks
           |> filter_by_similarity(min_sim)
           |> rerank(user_input, :insight, options, top_n: @prompt_top_n)
+          |> maybe_expand_context(:insight, options)
 
         if post_embeddings == [] do
           {:ok, prompt, false}
@@ -350,6 +355,7 @@ defmodule Sanbase.Knowledge do
             raw_chunks
             |> filter_by_similarity(min_sim)
             |> rerank(user_input, :academy, options, top_n: @prompt_top_n)
+            |> maybe_expand_context(:academy, options)
 
           if academy_chunks == [] do
             {:ok, prompt, false}
@@ -377,6 +383,17 @@ defmodule Sanbase.Knowledge do
 
   defp rerank(entries, user_input, source, options, opts) do
     rerank_entries(user_input, entries, source, maybe_put_reranker(opts, options))
+  end
+
+  # Optionally widen each reranked chunk with its document neighbours before the
+  # text is assembled into the prompt. Off unless `:context_expansion` is true,
+  # so the default behaviour is unchanged.
+  defp maybe_expand_context(hits, source, options) do
+    if Keyword.get(options, :context_expansion, false) do
+      ContextExpansion.expand(hits, source)
+    else
+      hits
+    end
   end
 
   defp maybe_put_reranker(opts, options) do

@@ -3,6 +3,8 @@ defmodule SanbaseWeb.AskLive do
 
   import SanbaseWeb.Admin.FaqLive.Nav, only: [nav: 1]
 
+  require Logger
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -10,6 +12,7 @@ defmodule SanbaseWeb.AskLive do
        question: "",
        answer: "",
        sources: %{faq: true, academy: true, insight: true},
+       features: %{reranker: true, context_expansion: false},
        answer_log_link: nil,
        loading: nil,
        ask_meta: nil
@@ -20,6 +23,7 @@ defmodule SanbaseWeb.AskLive do
   def handle_event(event, _params, socket) when event in ["ask_ai", "smart_search"] do
     question = socket.assigns.question
     sources = socket.assigns.sources
+    features = socket.assigns.features
 
     cond do
       socket.assigns.loading != nil ->
@@ -27,6 +31,17 @@ defmodule SanbaseWeb.AskLive do
 
       Enum.any?(Map.values(sources), &(&1 == true)) ->
         function = if event == "ask_ai", do: :answer_question, else: :smart_search
+
+        reranker_mod =
+          if features.reranker,
+            do: Sanbase.Knowledge.Reranker.default_impl(),
+            else: Sanbase.Knowledge.Reranker.Noop
+
+        options =
+          sources
+          |> Keyword.new()
+          |> Keyword.put(:reranker, reranker_mod)
+          |> Keyword.put(:context_expansion, features.context_expansion)
 
         # Run the (slow) retrieval/LLM call off the LiveView process. Blocking it
         # here makes the socket miss heartbeats on long answers, so the client
@@ -36,9 +51,14 @@ defmodule SanbaseWeb.AskLive do
          |> assign(:loading, event)
          |> assign(:answer, "")
          |> assign(:answer_log_link, nil)
-         |> assign(:ask_meta, %{event: event, question: question, sources: sources})
+         |> assign(:ask_meta, %{
+           event: event,
+           question: question,
+           sources: sources,
+           reranker_mod: reranker_mod
+         })
          |> start_async(:ask_question, fn ->
-           apply(Sanbase.Knowledge, function, [question, Keyword.new(sources)])
+           apply(Sanbase.Knowledge, function, [question, options])
          end)}
 
       true ->
@@ -59,6 +79,14 @@ defmodule SanbaseWeb.AskLive do
       Map.update!(sources, String.to_existing_atom(source), &(!&1))
 
     {:noreply, assign(socket, :sources, updated_sources)}
+  end
+
+  @impl true
+  def handle_event("toggle_feature", %{"feature" => feature}, socket) do
+    features =
+      Map.update!(socket.assigns.features, String.to_existing_atom(feature), &(!&1))
+
+    {:noreply, assign(socket, :features, features)}
   end
 
   @impl true
@@ -84,45 +112,49 @@ defmodule SanbaseWeb.AskLive do
             class="input input-lg w-full mb-4"
           />
 
-          <div class="mb-6 flex flex-wrap gap-6 justify-center">
-            <label class="label cursor-pointer gap-2">
-              <input
-                type="checkbox"
-                phx-click="toggle_source"
-                phx-value-source="faq"
-                name="faq"
-                value="true"
-                checked={@sources.faq}
-                class="checkbox checkbox-sm checkbox-primary"
-              />
-              <span class="text-sm font-medium">FAQ</span>
-            </label>
+          <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap gap-6">
+              <label class="label cursor-pointer gap-2">
+                <input
+                  type="checkbox"
+                  phx-click="toggle_source"
+                  phx-value-source="faq"
+                  name="faq"
+                  value="true"
+                  checked={@sources.faq}
+                  class="checkbox checkbox-sm checkbox-primary"
+                />
+                <span class="text-sm font-medium">FAQ</span>
+              </label>
 
-            <label class="label cursor-pointer gap-2">
-              <input
-                type="checkbox"
-                phx-click="toggle_source"
-                phx-value-source="academy"
-                name="academy"
-                value="true"
-                checked={@sources.academy}
-                class="checkbox checkbox-sm checkbox-primary"
-              />
-              <span class="text-sm font-medium">Academy</span>
-            </label>
+              <label class="label cursor-pointer gap-2">
+                <input
+                  type="checkbox"
+                  phx-click="toggle_source"
+                  phx-value-source="academy"
+                  name="academy"
+                  value="true"
+                  checked={@sources.academy}
+                  class="checkbox checkbox-sm checkbox-primary"
+                />
+                <span class="text-sm font-medium">Academy</span>
+              </label>
 
-            <label class="label cursor-pointer gap-2">
-              <input
-                type="checkbox"
-                phx-click="toggle_source"
-                phx-value-source="insight"
-                name="insight"
-                value="true"
-                checked={@sources.insight}
-                class="checkbox checkbox-sm checkbox-primary"
-              />
-              <span class="text-sm font-medium">Insights</span>
-            </label>
+              <label class="label cursor-pointer gap-2">
+                <input
+                  type="checkbox"
+                  phx-click="toggle_source"
+                  phx-value-source="insight"
+                  name="insight"
+                  value="true"
+                  checked={@sources.insight}
+                  class="checkbox checkbox-sm checkbox-primary"
+                />
+                <span class="text-sm font-medium">Insights</span>
+              </label>
+            </div>
+
+            <.features_menu features={@features} />
           </div>
 
           <div class="flex gap-4">
@@ -169,20 +201,84 @@ defmodule SanbaseWeb.AskLive do
     """
   end
 
+  # Toggleable retrieval features surfaced in the "Features" dropdown. Add a
+  # tuple here to expose a new on/off feature; the assign key must exist in the
+  # `features` map set in mount/3.
+  @feature_toggles [
+    {:reranker, "Reranker", "Re-order retrieved results by relevance before answering."},
+    {:context_expansion, "Context expansion",
+     "Pull the neighbouring chunks around each match for fuller context (Ask only)."}
+  ]
+
+  attr :features, :map, required: true
+
+  defp features_menu(assigns) do
+    assigns = assign(assigns, :toggles, @feature_toggles)
+
+    ~H"""
+    <div class="dropdown dropdown-end">
+      <div tabindex="0" role="button" class="btn btn-sm btn-outline gap-1.5">
+        <.icon name="hero-adjustments-horizontal" class="size-4" /> Features
+      </div>
+      <ul
+        tabindex="0"
+        class="dropdown-content menu z-10 mt-2 w-72 gap-1 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+      >
+        <li :for={{key, label, hint} <- @toggles} class="p-0">
+          <label class="flex items-start justify-between gap-3 cursor-pointer rounded-lg p-2">
+            <span class="flex flex-col">
+              <span class="text-sm font-medium">{label}</span>
+              <span class="text-xs text-base-content/60">{hint}</span>
+            </span>
+            <input
+              type="checkbox"
+              phx-click="toggle_feature"
+              phx-value-feature={key}
+              checked={Map.get(@features, key)}
+              class="toggle toggle-sm toggle-primary mt-0.5"
+            />
+          </label>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
   @impl true
   def handle_async(:ask_question, {:ok, result}, socket) do
-    %{event: event, question: question, sources: sources} = socket.assigns.ask_meta
+    %{event: event, question: question, sources: sources, reranker_mod: reranker_mod} =
+      socket.assigns.ask_meta
+
     current_user = socket.assigns.current_user
 
     socket =
       case result do
         {:ok, formatted_answer} ->
-          log_async(event, current_user, question, formatted_answer, sources, true, "")
+          log_async(
+            event,
+            current_user,
+            question,
+            formatted_answer,
+            sources,
+            true,
+            "",
+            reranker_mod
+          )
+
           assign(socket, :answer, formatted_answer)
 
         {:error, error} ->
-          log_async(event, current_user, question, "<no answer> ", sources, false, error)
-          require Logger
+          log_async(
+            event,
+            current_user,
+            question,
+            "<no answer> ",
+            sources,
+            false,
+            error,
+            reranker_mod
+          )
+
           Logger.debug("Ask error: #{inspect(error)}")
           assign(socket, :answer, "Can't answer. Please try again.")
       end
@@ -191,7 +287,6 @@ defmodule SanbaseWeb.AskLive do
   end
 
   def handle_async(:ask_question, {:exit, reason}, socket) do
-    require Logger
     Logger.error("Ask crashed: #{inspect(reason)}")
 
     {:noreply,
@@ -207,9 +302,18 @@ defmodule SanbaseWeb.AskLive do
      |> assign(:answer_log_link, link)}
   end
 
-  defp log_async(question_type, current_user, question, answer, sources, is_successful, errors) do
+  defp log_async(
+         question_type,
+         current_user,
+         question,
+         answer,
+         sources,
+         is_successful,
+         errors,
+         reranker_mod
+       ) do
     self = self()
-    reranker = Sanbase.Knowledge.Reranker.label(Sanbase.Knowledge.Reranker.default_impl())
+    reranker = Sanbase.Knowledge.Reranker.label(reranker_mod)
 
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
       with {:ok, struct} <-

@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
   use SanbaseWeb, :live_view
 
   alias Sanbase.Knowledge.QuestionAnswerLog
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
   import SanbaseWeb.Admin.FaqLive.Nav, only: [nav: 1]
 
   @default_page_size 10
@@ -33,16 +34,6 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
     |> assign(:page_size, page_size)
     |> assign(:total_count, total_count)
     |> assign(:total_pages, total_pages)
-  end
-
-  defp parse_int(nil, default), do: default
-  defp parse_int(value, _default) when is_integer(value), do: value
-
-  defp parse_int(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, _} -> int
-      :error -> default
-    end
   end
 
   def render(assigns) do

@@ -2,6 +2,7 @@ defmodule Sanbase.Knowledge.AcademyArticleChunk do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Knowledge.AcademyArticle
 
@@ -39,5 +40,19 @@ defmodule Sanbase.Knowledge.AcademyArticleChunk do
     |> validate_required([:article_id, :chunk_index, :content, :embedding])
     |> foreign_key_constraint(:article_id)
     |> unique_constraint([:article_id, :chunk_index])
+  end
+
+  @doc """
+  Fetch the non-stale chunks of `article_id` whose `chunk_index` is in
+  `indices`, ordered by `chunk_index`. Used by context expansion to pull the
+  neighbours around a matched chunk.
+  """
+  def fetch_chunks(article_id, indices) when is_integer(article_id) and is_list(indices) do
+    from(c in __MODULE__,
+      where: c.article_id == ^article_id and c.chunk_index in ^indices and c.is_stale == false,
+      order_by: [asc: c.chunk_index],
+      select: %{chunk_index: c.chunk_index, content: c.content}
+    )
+    |> Sanbase.Repo.all()
   end
 end

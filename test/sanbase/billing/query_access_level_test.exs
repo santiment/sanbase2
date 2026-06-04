@@ -12,6 +12,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         [
           :compute_raw_clickhouse_query,
           :academy_autocomplete_questions,
+          :academy_search,
           :active_widgets,
           :address_historical_balance_change,
           :alerts_historical_activity,

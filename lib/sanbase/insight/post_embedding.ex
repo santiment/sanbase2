@@ -53,15 +53,54 @@ defmodule Sanbase.Insight.PostEmbedding do
         "[PostEmbedding] Embedding batch ##{index}/#{chunks_count} consisting of #{length(posts)} posts"
       )
 
-      embed_posts_batch(posts)
+      # Log and skip a failing batch rather than aborting the whole reindex. A DB
+      # error inside the transaction raises, so rescue in addition to matching the
+      # {:error, _} rollback case.
+      try do
+        case embed_posts_batch(posts) do
+          {:ok, _} ->
+            Logger.info(
+              "[PostEmbedding] Finished embedding batch ##{index} of #{length(posts)} posts"
+            )
 
-      Logger.info("[PostEmbedding] Finished embedding batch of #{length(posts)} posts")
+          {:error, reason} ->
+            Logger.error("[PostEmbedding] Embedding batch ##{index} failed: #{inspect(reason)}")
+        end
+      rescue
+        e ->
+          Logger.error(
+            "[PostEmbedding] Embedding batch ##{index} crashed: #{Exception.message(e)}"
+          )
+      end
     end)
   end
 
   def drop_post_embeddings(%Sanbase.Insight.Post{id: post_id}) do
     from(pe in __MODULE__, where: pe.post_id == ^post_id)
     |> Sanbase.Repo.delete_all()
+  end
+
+  @doc """
+  Delete embeddings whose post is no longer published. `embed_all_posts/0` only
+  ever (re)embeds published posts, so once a post is unpublished its embeddings
+  are otherwise never removed. Uses the same "published" predicate as
+  `embed_all_posts/0` so the kept set and the embedded set stay in sync.
+
+  The keep set is expressed as a subquery, so the pruning happens in a single
+  DB statement instead of marshalling every published id into the app.
+
+  Returns the number of deleted rows.
+  """
+  def prune_all_stale() do
+    published_ids = from(p in Post, where: p.ready_state == ^Post.published(), select: p.id)
+
+    {deleted, _} =
+      from(pe in __MODULE__, where: pe.post_id not in subquery(published_ids))
+      |> Sanbase.Repo.delete_all()
+
+    Logger.info("[PostEmbedding] Pruned #{deleted} stale insight embeddings")
+
+    deleted
   end
 
   @doc """
@@ -113,7 +152,6 @@ defmodule Sanbase.Insight.PostEmbedding do
       Sanbase.AI.Embedding.generate_embeddings(chunk_texts, 1536)
 
     post_ids = Enum.map(posts, & &1.id)
-    Sanbase.Repo.delete_all(from(pe in __MODULE__, where: pe.post_id in ^post_ids))
 
     data =
       Enum.zip_with(chunks, embeddings, fn chunk, embedding ->
@@ -127,6 +165,13 @@ defmodule Sanbase.Insight.PostEmbedding do
         }
       end)
 
-    Sanbase.Repo.insert_all(__MODULE__, data)
+    # Replace this batch's embeddings atomically: a crash between the delete and
+    # the insert would otherwise leave these posts with their old rows gone and
+    # the new ones not yet written. Embeddings are generated above, before the
+    # transaction, so the slow API call never holds the transaction open.
+    Sanbase.Repo.transaction(fn ->
+      Sanbase.Repo.delete_all(from(pe in __MODULE__, where: pe.post_id in ^post_ids))
+      Sanbase.Repo.insert_all(__MODULE__, data)
+    end)
   end
 end

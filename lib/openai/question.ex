@@ -1,6 +1,7 @@
 defmodule Sanbase.OpenAI.Question do
   @moduledoc """
-  OpenAI question client using the GPT-4.1 model.
+  OpenAI question client. Defaults to the `gpt-5-nano` model; override per call
+  via `tracing_opts.model`.
   """
 
   require Logger

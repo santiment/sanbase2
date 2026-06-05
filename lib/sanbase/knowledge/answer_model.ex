@@ -53,7 +53,12 @@ defmodule Sanbase.Knowledge.AnswerModel do
 
   @doc "The default selectable model's key (the first available entry)."
   @spec default_key() :: String.t()
-  def default_key(), do: hd(selectable()).key
+  def default_key() do
+    case selectable() do
+      [first | _] -> first.key
+      [] -> raise "No selectable Knowledge answer models — check OpenAI/OpenRouter env config."
+    end
+  end
 
   @doc """
   Translate a selectable model `key` into the `:answer_client` / `:answer_model`

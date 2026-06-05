@@ -128,10 +128,22 @@ defmodule Sanbase.Insight.Post do
   end
 
   def find_most_similar_insight_chunks(embedding, size) when is_list(embedding) do
+    find_most_similar_insight_chunks(embedding, size, [])
+  end
+
+  @doc """
+  As `find_most_similar_insight_chunks/2`, with optional publication-date bounds.
+
+  `opts` may carry `:published_after` and/or `:published_before` (`Date`s) to
+  restrict results to insights published within that window (inclusive). Used by
+  the Knowledge retrieval plan for range queries like "in the last 7 days".
+  """
+  def find_most_similar_insight_chunks(embedding, size, opts) when is_list(embedding) do
     query =
       from(
         e in PostEmbedding,
         inner_join: p in Post,
+        as: :post,
         on: e.post_id == p.id,
         where: p.ready_state == ^@published and p.state == ^@approved and p.is_deleted != true,
         select: %{
@@ -145,30 +157,133 @@ defmodule Sanbase.Insight.Post do
         order_by: [desc: fragment("1 - (embedding <=> ?)", ^embedding)],
         limit: ^size
       )
+      |> apply_published_bounds(opts)
 
     result = Sanbase.Repo.VectorQuery.all(query)
     {:ok, result}
   end
 
-  def find_most_similar_insights(embedding, size) when is_list(embedding) do
+  def find_most_similar_insights(embedding, size, opts \\ []) when is_list(embedding) do
     query =
       from(
         e in PostEmbedding,
         inner_join: p in Post,
+        as: :post,
         on: e.post_id == p.id,
         where: p.ready_state == ^@published and p.state == ^@approved and p.is_deleted != true,
-        group_by: [e.post_id, p.title],
+        group_by: [e.post_id, p.title, p.published_at],
         select: %{
           post_id: e.post_id,
           post_title: p.title,
+          published_at: p.published_at,
           similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
         },
         order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
         limit: ^size
       )
+      |> apply_published_bounds(opts)
 
     result = Sanbase.Repo.VectorQuery.all(query)
     {:ok, result}
+  end
+
+  @doc """
+  The newest published insights that have embeddings, newest-first — no
+  similarity ranking.
+
+  Backs the Knowledge *browse* path (`QueryPlan.has_topic == false`, e.g.
+  "summarize the latest insights"): with no topic to embed, cosine ranking is
+  noise, so retrieval is purely date-ordered. `opts` takes the same
+  `:published_after` / `:published_before` bounds as the similarity queries.
+  Entries carry `similarity: nil` so they share the shape of similarity hits
+  without pretending a score exists.
+  """
+  def find_newest_insights(size, opts \\ []) do
+    result =
+      newest_embedded_posts_query(size, opts)
+      |> select([post: p], %{post_id: p.id, post_title: p.title, published_at: p.published_at})
+      |> Sanbase.Repo.all()
+      |> Enum.map(&Map.put(&1, :similarity, nil))
+
+    {:ok, result}
+  end
+
+  @doc """
+  Chunks of the `post_count` newest published insights (see
+  `find_newest_insights/2`), ordered newest-post-first and by `chunk_index`
+  within a post — i.e. each post reads in document order. Same `opts` bounds.
+
+  Per post, only the first `post_count` chunks (by 0-based `chunk_index`) are
+  fetched: the prompt takes at most `post_count` chunks in total, so even the
+  degenerate single-post case never needs more — and `text_chunk` is wide, so
+  fetching a long post's full tail would be pure transfer waste.
+  """
+  def find_newest_insight_chunks(post_count, opts \\ []) do
+    newest_ids = newest_embedded_posts_query(post_count, opts) |> select([post: p], p.id)
+
+    query =
+      from(
+        e in PostEmbedding,
+        inner_join: p in Post,
+        on: e.post_id == p.id,
+        where: e.post_id in subquery(newest_ids) and e.chunk_index < ^post_count,
+        order_by: [desc: p.published_at, desc: p.id, asc: e.chunk_index],
+        select: %{
+          post_id: e.post_id,
+          post_title: p.title,
+          published_at: p.published_at,
+          text_chunk: e.text_chunk,
+          chunk_index: e.chunk_index
+        }
+      )
+
+    result =
+      query
+      |> Sanbase.Repo.all()
+      |> Enum.map(&Map.put(&1, :similarity, nil))
+
+    {:ok, result}
+  end
+
+  # The `size` newest visible posts that have at least one embedding (posts
+  # without embeddings contribute no retrievable text). Ties on published_at
+  # break by id so the order is total and pagination-stable.
+  defp newest_embedded_posts_query(size, opts) do
+    embedded_post_ids = from(e in PostEmbedding, select: e.post_id, distinct: true)
+
+    from(
+      p in Post,
+      as: :post,
+      where: p.ready_state == ^@published and p.state == ^@approved and p.is_deleted != true,
+      where: p.id in subquery(embedded_post_ids),
+      order_by: [desc: p.published_at, desc: p.id],
+      limit: ^size
+    )
+    |> apply_published_bounds(opts)
+  end
+
+  # Inclusive publication-date bounds for the Knowledge retrieval plan
+  # (`:published_after` / `:published_before` `Date`s in `opts`; `nil` or absent
+  # leaves the query untouched). `published_before` is inclusive of the given
+  # day, so it filters strictly before the START of the next day. Requires the
+  # post binding to be named `:post`.
+  defp apply_published_bounds(query, opts) do
+    query
+    |> filter_published_after(Keyword.get(opts, :published_after))
+    |> filter_published_before(Keyword.get(opts, :published_before))
+  end
+
+  defp filter_published_after(query, nil), do: query
+
+  defp filter_published_after(query, %Date{} = date) do
+    from([post: p] in query, where: p.published_at >= ^NaiveDateTime.new!(date, ~T[00:00:00]))
+  end
+
+  defp filter_published_before(query, nil), do: query
+
+  defp filter_published_before(query, %Date{} = date) do
+    next_day_start = NaiveDateTime.new!(Date.add(date, 1), ~T[00:00:00])
+    from([post: p] in query, where: p.published_at < ^next_day_start)
   end
 
   @doc ~s"""

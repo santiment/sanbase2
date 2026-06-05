@@ -43,6 +43,7 @@ defmodule Sanbase.Knowledge.Eval do
           seed: integer() | nil,
           concurrency: pos_integer(),
           reranker: module() | nil,
+          plan: false | :heuristic,
           progress: boolean()
         ]
 
@@ -63,6 +64,7 @@ defmodule Sanbase.Knowledge.Eval do
     prompt_top_n = Keyword.get(opts, :prompt_top_n, Sanbase.Knowledge.prompt_top_n())
     sources = Keyword.get(opts, :sources, @all_sources)
     reranker = Keyword.get(opts, :reranker)
+    plan_mode = Keyword.get(opts, :plan, false)
     concurrency = Keyword.get(opts, :concurrency, @default_concurrency)
 
     if not (is_integer(concurrency) and concurrency > 0) do
@@ -76,7 +78,7 @@ defmodule Sanbase.Knowledge.Eval do
       items
       |> Task.async_stream(
         fn item ->
-          result = evaluate_item(item, top_k, prompt_top_n, sources, reranker)
+          result = evaluate_item(item, top_k, prompt_top_n, sources, reranker, plan_mode)
           tick_progress(progress, item)
           result
         end,
@@ -175,10 +177,10 @@ defmodule Sanbase.Knowledge.Eval do
 
   # Private functions
 
-  defp evaluate_item(item, top_k, prompt_top_n, sources, reranker) do
+  defp evaluate_item(item, top_k, prompt_top_n, sources, reranker, plan_mode) do
     base = %{id: item.id, question: item.question, tags: Map.get(item, :tags, [])}
 
-    case Sanbase.AI.Embedding.generate_embeddings([item.question], 1536) do
+    case Sanbase.AI.Embedding.generate_embeddings([embed_query(item.question, plan_mode)], 1536) do
       {:ok, [embedding]} ->
         # Each source returns {score_map, ranked_hits}: the score map feeds
         # the per-source hit@K/MRR metrics, the ranked hits (already reranked,
@@ -240,6 +242,18 @@ defmodule Sanbase.Knowledge.Eval do
         {%{error: inspect(reason), top1_similarity: nil}, []}
     end
   end
+
+  # `:heuristic` routes the embedded query through the same QueryPlan rewrite
+  # the live path uses (deterministic — no LLM call), so the eval measures
+  # retrieval over the rewritten query. Reranking still sees the raw question,
+  # matching the live answer path. Recency *ordering* is deliberately not
+  # applied to scoring: golden ids are topical, and a newest-first reorder
+  # would make hit@K meaningless.
+  defp embed_query(question, :heuristic) do
+    Sanbase.Knowledge.QueryPlan.build(question, query_understanding: false).semantic_query
+  end
+
+  defp embed_query(question, _plan_mode), do: question
 
   # Assemble the prompt-window context across all sources for one item, using
   # the same Context builder the live prompt uses. Only the top prompt_top_n

@@ -32,7 +32,13 @@ defmodule Sanbase.Knowledge.Context do
 
   @type source :: :faq | :insight | :academy
 
-  @type marker :: %{source: source(), prefix: String.t(), label: String.t(), url: String.t()}
+  @type marker :: %{
+          :source => source(),
+          :prefix => String.t(),
+          :label => String.t(),
+          :url => String.t(),
+          optional(:published_on) => Date.t() | nil
+        }
 
   @doc """
   Derive the `{source, prefix, label, url}` citation marker for one hit.
@@ -58,7 +64,10 @@ defmodule Sanbase.Knowledge.Context do
       source: :insight,
       prefix: "Insight",
       label: clean_label(hit.post_title),
-      url: SanbaseWeb.Endpoint.insight_url(hit.post_id)
+      url: SanbaseWeb.Endpoint.insight_url(hit.post_id),
+      # Insights are dated commentary, so their citations carry the publication
+      # date — `Citations` shows it next to the link in the Sources section.
+      published_on: chunk_date(hit)
     }
   end
 

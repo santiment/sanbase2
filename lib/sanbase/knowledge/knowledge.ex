@@ -5,6 +5,7 @@ defmodule Sanbase.Knowledge do
   alias Sanbase.Knowledge.Citations
   alias Sanbase.Knowledge.Context
   alias Sanbase.Knowledge.ContextExpansion
+  alias Sanbase.Knowledge.QueryPlan
   alias Sanbase.Knowledge.Reranker
   alias Sanbase.Knowledge.Reranker.CandidateFormatter
 
@@ -17,11 +18,30 @@ defmodule Sanbase.Knowledge do
   @retrieval_top_k 20
   @prompt_top_n 5
 
+  # When the plan sorts by recency (see `QueryPlan`), insight retrieval reorders
+  # the candidate pool by publication date. A pool sized for relevance-ranking
+  # (@retrieval_top_k) could cut the genuinely-newest relevant insight before the
+  # date sort sees it, so the pool is widened on that path. `min_similarity` still
+  # gates relevance, so widening only adds reach, not noise.
+  @recency_retrieval_top_k 100
+
+  # Recency intent reorders by date, but only among the most *relevant* candidates:
+  # the reranker first trims the (widened) cosine pool to this many hits, THEN we
+  # date-sort those. This stops a barely-relevant but brand-new insight from
+  # hijacking the top, while leaving enough headroom that the genuinely-newest
+  # relevant one survives the trim. Sits between @prompt_top_n and the pool size.
+  @recency_relevance_window 15
+
   @doc """
   Number of reranked hits per source that reach the answer prompt. Exposed so
   the eval harness measures context over the same window the live prompt uses.
   """
   def prompt_top_n(), do: @prompt_top_n
+
+  # Attach the resolved query plan to a successful result so callers (the Ask UI)
+  # can display how the query was interpreted. Errors pass through unchanged.
+  defp attach_plan({:ok, answer}, plan), do: {:ok, answer, plan}
+  defp attach_plan(other, _plan), do: other
 
   def answer_question(user_input, options \\ []) do
     reranker = Reranker.label(Keyword.get(options, :reranker) || Reranker.default_impl())
@@ -33,8 +53,12 @@ defmodule Sanbase.Knowledge do
 
     start_mono = System.monotonic_time()
 
+    plan = QueryPlan.build(user_input, options)
+    options = Keyword.put(options, :query_plan, plan)
+
     result =
-      with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
+      with {:ok, [embedding]} <-
+             Sanbase.AI.Embedding.generate_embeddings([plan.semantic_query], 1536),
            {:ok, prompt, registry} <-
              build_question_answer_prompt(user_input, embedding, options) do
         if registry == [] do
@@ -59,7 +83,7 @@ defmodule Sanbase.Knowledge do
         )
     end
 
-    result
+    attach_plan(result, plan)
   end
 
   def smart_search(user_input, options) do
@@ -82,9 +106,12 @@ defmodule Sanbase.Knowledge do
 
     start_mono = System.monotonic_time()
 
+    plan = QueryPlan.build(user_input, options)
+    options = Keyword.put(options, :query_plan, plan)
+
     result =
       with {:ok, [embedding]} <-
-             Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
+             Sanbase.AI.Embedding.generate_embeddings([plan.semantic_query], 1536),
            {:ok, faq_entries} <-
              maybe_find_most_similar_faqs(user_input, embedding, options, min_sim),
            {:ok, academy_articles} <-
@@ -93,7 +120,13 @@ defmodule Sanbase.Knowledge do
              maybe_find_most_similar_insights(user_input, embedding, options, min_sim) do
         filtered_faqs = filter_by_similarity(faq_entries, min_sim)
         filtered_academy = filter_by_similarity(academy_articles, min_sim)
-        filtered_insights = filter_by_similarity(insights, min_sim)
+
+        # Browse-mode insight entries are date-ordered and carry no similarity
+        # score (`similarity: nil`), so the gate must not drop them.
+        filtered_insights =
+          if browse_mode?(options),
+            do: insights,
+            else: filter_by_similarity(insights, min_sim)
 
         counts = %{
           faqs: length(filtered_faqs),
@@ -118,7 +151,7 @@ defmodule Sanbase.Knowledge do
           "smart_search done: question=#{preview} outcome=ok took_ms=#{took_ms} reranker=#{reranker} faqs=#{counts.faqs} academy=#{counts.academy} insight=#{counts.insight} no_answer=#{no_answer?}"
         )
 
-        ret
+        attach_plan(ret, plan)
 
       {:error, reason} = ret ->
         Logger.info(
@@ -157,10 +190,12 @@ defmodule Sanbase.Knowledge do
   # Private functions
 
   defp build_smart_search_result(faq_entries, academy_articles, insights, options) do
-    format_similarity = fn similarity ->
-      if is_float(similarity),
-        do: :erlang.float_to_binary(similarity, decimals: 2),
-        else: "embedding missing"
+    format_similarity = fn
+      # `nil` is the browse path (date-ordered, no score; see `QueryPlan`);
+      # any other non-float means the entry really is missing its embedding.
+      similarity when is_float(similarity) -> :erlang.float_to_binary(similarity, decimals: 2)
+      nil -> "—"
+      _other -> "embedding missing"
     end
 
     faqs_text =
@@ -173,7 +208,7 @@ defmodule Sanbase.Knowledge do
 
     insights_text =
       Enum.map(insights, fn insight ->
-        "- [#{format_similarity.(insight.similarity)}] [#{insight.post_title}](#{SanbaseWeb.Endpoint.insight_url(insight.post_id)})"
+        "- [#{format_similarity.(insight.similarity)}] [#{insight.post_title}](#{SanbaseWeb.Endpoint.insight_url(insight.post_id)}) {{date:#{format_published_at(Map.get(insight, :published_at))}}}"
       end)
       |> Enum.join("\n")
 
@@ -196,6 +231,18 @@ defmodule Sanbase.Knowledge do
     {:ok, answer}
   end
 
+  # Render an insight's publication date for the smart-search source list. The
+  # date is emitted inside a `{{date:...}}` sentinel (see the insight line above)
+  # that `SanbaseWeb.AskLive` turns into a greyed span AFTER markdown rendering —
+  # this keeps Earmark escaping on for the user-generated insight titles (no XSS)
+  # while still colouring the date. Only insights carry a date (`published_at`
+  # is a `:naive_datetime` field); show the date part (the time is noise here)
+  # and fall back to "unknown date" when absent.
+  defp format_published_at(%NaiveDateTime{} = dt),
+    do: dt |> NaiveDateTime.to_date() |> Date.to_iso8601()
+
+  defp format_published_at(_), do: "unknown date"
+
   # Build the answer prompt and the citation registry together. Each enabled
   # source contributes its final reranked hits; the hits are numbered globally
   # (FAQ, then Insight, then Academy) so every context block carries a stable
@@ -205,7 +252,7 @@ defmodule Sanbase.Knowledge do
   defp build_question_answer_prompt(user_input, embedding, options) do
     min_sim = min_similarity(options)
 
-    with {:ok, base_prompt} <- generate_initial_prompt(user_input),
+    with {:ok, base_prompt} <- generate_initial_prompt(user_input, options),
          {:ok, faq_hits} <- answer_faq_hits(user_input, embedding, options, min_sim),
          {:ok, insight_hits} <- answer_insight_hits(user_input, embedding, options, min_sim),
          {:ok, academy_hits} <- answer_academy_hits(user_input, embedding, options, min_sim) do
@@ -272,17 +319,40 @@ defmodule Sanbase.Knowledge do
   end
 
   defp answer_insight_hits(user_input, embedding, options, min_sim) do
-    if Keyword.get(options, :insight, true) do
-      with {:ok, raw_chunks} <- find_most_similar_insight_chunks(embedding, @retrieval_top_k) do
-        {:ok,
-         raw_chunks
-         |> filter_by_similarity(min_sim)
-         |> rerank(user_input, :insight, options)
-         |> diversify_by_document(& &1.post_id, @prompt_top_n)
-         |> maybe_expand_context(:insight, options)}
-      end
-    else
-      {:ok, []}
+    cond do
+      not Keyword.get(options, :insight, true) ->
+        {:ok, []}
+
+      # Browse mode (`plan.has_topic == false`, e.g. "summarize the latest
+      # insights"): no topic to embed, so cosine ranking and the similarity
+      # gate are noise. Fetch the newest posts' chunks directly; the diversity
+      # pass still spreads the prompt across distinct posts and backfills.
+      browse_mode?(options) ->
+        with {:ok, chunks} <-
+               Sanbase.Insight.Post.find_newest_insight_chunks(
+                 @prompt_top_n,
+                 insight_date_filter(options)
+               ) do
+          {:ok,
+           chunks
+           |> diversify_by_document(& &1.post_id, @prompt_top_n)
+           |> maybe_expand_context(:insight, options)}
+        end
+
+      true ->
+        with {:ok, raw_chunks} <-
+               find_most_similar_insight_chunks(
+                 embedding,
+                 insight_retrieval_top_k(options),
+                 insight_date_filter(options)
+               ) do
+          {:ok,
+           raw_chunks
+           |> filter_by_similarity(min_sim)
+           |> order_insights(user_input, :insight, options)
+           |> diversify_by_document(& &1.post_id, @prompt_top_n)
+           |> maybe_expand_context(:insight, options)}
+        end
     end
   end
 
@@ -366,25 +436,37 @@ defmodule Sanbase.Knowledge do
     Sanbase.Knowledge.Faq.find_most_similar_faqs(embedding, size)
   end
 
-  defp find_most_similar_insight_chunks(embedding, size) do
-    Sanbase.Insight.Post.find_most_similar_insight_chunks(embedding, size)
+  defp find_most_similar_insight_chunks(embedding, size, opts) do
+    Sanbase.Insight.Post.find_most_similar_insight_chunks(embedding, size, opts)
   end
 
   defp maybe_find_most_similar_insights(user_input, embedding, options, min_sim) do
-    if Keyword.get(options, :insight, true) do
-      with {:ok, raw} <- find_most_similar_insights(embedding, @retrieval_top_k) do
-        {:ok,
-         raw
-         |> filter_by_similarity(min_sim)
-         |> rerank(user_input, :insight, options, top_n: @prompt_top_n)}
-      end
-    else
-      {:ok, []}
+    cond do
+      not Keyword.get(options, :insight, true) ->
+        {:ok, []}
+
+      # Browse mode: date-ordered listing, no similarity ranking (see
+      # `answer_insight_hits/4`). Entries carry `similarity: nil`.
+      browse_mode?(options) ->
+        Sanbase.Insight.Post.find_newest_insights(@prompt_top_n, insight_date_filter(options))
+
+      true ->
+        with {:ok, raw} <-
+               find_most_similar_insights(
+                 embedding,
+                 insight_retrieval_top_k(options),
+                 insight_date_filter(options)
+               ) do
+          {:ok,
+           raw
+           |> filter_by_similarity(min_sim)
+           |> order_insights(user_input, :insight, options, top_n: @prompt_top_n)}
+        end
     end
   end
 
-  defp find_most_similar_insights(embedding, size) do
-    Sanbase.Insight.Post.find_most_similar_insights(embedding, size)
+  defp find_most_similar_insights(embedding, size, opts) do
+    Sanbase.Insight.Post.find_most_similar_insights(embedding, size, opts)
   end
 
   defp maybe_find_most_similar_academy_articles(user_input, embedding, options, min_sim) do
@@ -403,6 +485,113 @@ defmodule Sanbase.Knowledge do
   defp rerank(entries, user_input, source, options, opts \\ []) do
     rerank_entries(user_input, entries, source, maybe_put_reranker(opts, options))
   end
+
+  # Widen the insight candidate pool when the plan asks to sort by recency, so the
+  # date sort in `order_insights/5` chooses from enough relevant hits.
+  defp insight_retrieval_top_k(options) do
+    if recency_sort?(options), do: @recency_retrieval_top_k, else: @retrieval_top_k
+  end
+
+  # The plan's sort directive drives recency ordering. The plan already folded
+  # in the LLM/keyword decision (see `QueryPlan`), so retrieval just trusts
+  # `plan.sort`. Absent plan (e.g. a direct unit call) defaults to relevance.
+  defp recency_sort?(options) do
+    match?(%QueryPlan{sort: :recency}, Keyword.get(options, :query_plan))
+  end
+
+  # Browse mode: the plan found no topic to search for ("summarize the latest
+  # insights"), so insight retrieval is purely date-ordered (see `QueryPlan`).
+  defp browse_mode?(options) do
+    match?(%QueryPlan{has_topic: false}, Keyword.get(options, :query_plan))
+  end
+
+  # Inclusive publication-date bounds from the plan, as opts for the insight
+  # queries. Empty when the plan carries no range (the common case).
+  defp insight_date_filter(options) do
+    case Keyword.get(options, :query_plan) do
+      %QueryPlan{date_from: date_from, date_to: date_to} ->
+        Enum.reject(
+          [published_after: date_from, published_before: date_to],
+          fn {_key, date} -> is_nil(date) end
+        )
+
+      _ ->
+        []
+    end
+  end
+
+  @doc """
+  Order similarity-filtered insight candidates for the prompt/result.
+
+  When the plan in `options[:query_plan]` sorts by recency (see `QueryPlan`),
+  order by recency in stages: rerank for relevance, pick the
+  `@recency_relevance_window` most relevant *distinct documents*, sort those
+  newest-first by `published_at` — then emit ALL surviving chunks grouped in
+  that document order (rerank order within each document).
+
+  The document-level (not chunk-level) relevance window is essential:
+  candidates can be insight *chunks*, and for a broad topic ("bitcoin") one
+  comprehensive post can own most of the top relevant chunks. Gating relevance
+  on chunks would let that single post crowd out every other — so the answer
+  summarises one document instead of the newest several. Selecting distinct
+  documents *before* the date sort guarantees the freshest distinct documents
+  survive.
+
+  Sibling chunks are kept (grouped behind their document) rather than collapsed
+  to one-per-document, so the downstream `diversify_by_document/3` round-robin
+  can backfill the prompt from the newest documents' other chunks when fewer
+  than `@prompt_top_n` distinct documents matched. (On the smart-search path
+  candidates are already one-per-post, so grouping changes nothing there.)
+  When the plan sorts by relevance (or no plan is present) the plain relevance
+  rerank is used, unchanged.
+
+  `:top_n`, when given, truncates after ordering (the smart-search path truncates
+  here; the answer path keeps every hit for `diversify_by_document/3`).
+  """
+  @spec order_insights([map()], String.t(), CandidateFormatter.source(), keyword(), keyword()) ::
+          [map()]
+  def order_insights(entries, user_input, source, options, opts \\ []) do
+    if recency_sort?(options) do
+      key_fn = document_key(source)
+      reranked = rerank(entries, user_input, source, options)
+
+      newest_document_keys =
+        reranked
+        |> Enum.uniq_by(key_fn)
+        |> Enum.take(@recency_relevance_window)
+        |> sort_by_published_at_desc()
+        |> Enum.map(key_fn)
+
+      chunks_by_document = Enum.group_by(reranked, key_fn)
+
+      newest_document_keys
+      |> Enum.flat_map(&Map.fetch!(chunks_by_document, &1))
+      |> maybe_take(Keyword.get(opts, :top_n))
+    else
+      rerank(entries, user_input, source, options, opts)
+    end
+  end
+
+  # The field identifying a candidate's source document — chunks of the same
+  # document share it. Only insights carry the `published_at` that recency
+  # ordering needs, so `order_insights/5` is the sole caller; the fallback keeps
+  # the function total for entries without a document grouping.
+  defp document_key(:insight), do: & &1.post_id
+  defp document_key(_other), do: & &1
+
+  # Newest first. Entries without a `published_at` sort last so a missing date
+  # never outranks a real one.
+  defp sort_by_published_at_desc(entries) do
+    Enum.sort_by(entries, &Map.get(&1, :published_at), &published_at_desc?/2)
+  end
+
+  defp published_at_desc?(nil, nil), do: true
+  defp published_at_desc?(nil, _other), do: false
+  defp published_at_desc?(_one, nil), do: true
+  defp published_at_desc?(one, other), do: NaiveDateTime.compare(one, other) != :lt
+
+  defp maybe_take(entries, nil), do: entries
+  defp maybe_take(entries, n), do: Enum.take(entries, n)
 
   @doc """
   Diversity rerank by source document. `hits` arrive in reranked order;
@@ -464,7 +653,30 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp generate_initial_prompt(question) do
+  # When the plan asked for recency, tell the answer model so: retrieval already
+  # ordered the insight blocks newest-first, and a "latest …" answer should be
+  # organised around dates rather than topical structure. Empty otherwise, so
+  # relevance-sorted answers see exactly the prompt they always did.
+  defp recency_request_section(options) do
+    case Keyword.get(options, :query_plan) do
+      %QueryPlan{sort: :recency} ->
+        """
+        <Recency_Request>
+        - The user asked for the most RECENT content. The Insight blocks below are already
+          ordered newest-first by publication date — block order reflects recency, not relevance.
+        - Lead with the newest material. When summarising several insights, organise the answer
+          newest-first and make each insight's publication date visible next to its takeaways.
+        - If even the newest provided insight is old, say so explicitly (e.g. "the most recent
+          available insight on this is from <date>") instead of presenting it as current.
+        </Recency_Request>
+        """
+
+      _ ->
+        ""
+    end
+  end
+
+  defp generate_initial_prompt(question, options) do
     today = Date.to_iso8601(Date.utc_today())
 
     prompt = """
@@ -533,7 +745,7 @@ defmodule Sanbase.Knowledge do
     - FAQ and Academy content is maintained as reference material, so this caution applies most strongly to
       Insights; still apply the same judgment to any clearly time-bound statement from any source.
     </Content_Freshness>
-
+    #{recency_request_section(options)}
     <Answer_Style>
     - Respond as a professional support agent: direct, with no greetings, introductions, or congratulations.
     - Open with a one- or two-sentence direct answer to the main question, then expand. Do not make the

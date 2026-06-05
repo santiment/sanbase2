@@ -27,6 +27,10 @@ defmodule Sanbase.OpenAI.Question do
     - `:model` - OpenAI model to use (defaults to @model)
     - `:response_format` - OpenAI `response_format` payload (e.g. a JSON-schema
       map) to request structured output; omitted from the request when absent
+    - `:reasoning_effort` - reasoning effort for GPT-5-family models
+      ("minimal" | "low" | "medium" | "high"); omitted from the request when
+      absent. Use "minimal" for simple extraction calls where reasoning
+      latency dominates
     - `:user_id` - User ID for Langfuse trace
     - `:session_id` - Session ID for grouping traces
     - `:trace_metadata` - Additional metadata for the trace
@@ -45,10 +49,12 @@ defmodule Sanbase.OpenAI.Question do
       Question.ask("What is Elixir?", %{model: "gpt-4", user_id: "user123"})
   """
   deftraced ask(question) do
-    model = Map.get(tracing_opts, :model, @model)
-    response_format = Map.get(tracing_opts, :response_format)
+    request_opts =
+      tracing_opts
+      |> Map.take([:model, :response_format, :reasoning_effort])
+      |> Map.put_new(:model, @model)
 
-    case request_with_retry(question, model, response_format, 0) do
+    case request_with_retry(question, request_opts, 0) do
       {:ok, %{content: content}} ->
         {:ok, content}
 
@@ -57,9 +63,9 @@ defmodule Sanbase.OpenAI.Question do
     end
   end
 
-  defp request_with_retry(question, model, response_format, attempt)
+  defp request_with_retry(question, request_opts, attempt)
        when attempt < @max_retries do
-    case request_completion(question, %{model: model, response_format: response_format}) do
+    case request_completion(question, request_opts) do
       {:ok, result} ->
         {:ok, result}
 
@@ -72,20 +78,20 @@ defmodule Sanbase.OpenAI.Question do
           max_retries: @max_retries,
           backoff_ms: backoff_ms,
           question_length: String.length(question),
-          model: model
+          model: request_opts.model
         }
 
         Logger.warning("OpenAI connection closed, retrying: #{inspect(warning_info)}")
 
         Process.sleep(backoff_ms)
-        request_with_retry(question, model, response_format, attempt + 1)
+        request_with_retry(question, request_opts, attempt + 1)
 
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp request_with_retry(question, _model, _response_format, attempt)
+  defp request_with_retry(question, _request_opts, attempt)
        when attempt >= @max_retries do
     error_info = %{
       max_retries: @max_retries,
@@ -100,7 +106,7 @@ defmodule Sanbase.OpenAI.Question do
 
   defp request_completion(question, opts) do
     model = Map.get(opts, :model, @model)
-    body = build_request_body(question, model, Map.get(opts, :response_format))
+    body = build_request_body(question, model, opts)
 
     case Req.post(@base_url,
            json: body,
@@ -151,7 +157,7 @@ defmodule Sanbase.OpenAI.Question do
     end
   end
 
-  defp build_request_body(question, model, response_format) do
+  defp build_request_body(question, model, opts) do
     %{
       "model" => model,
       "messages" => [
@@ -161,11 +167,12 @@ defmodule Sanbase.OpenAI.Question do
         }
       ]
     }
-    |> maybe_put_response_format(response_format)
+    |> maybe_put_body("response_format", Map.get(opts, :response_format))
+    |> maybe_put_body("reasoning_effort", Map.get(opts, :reasoning_effort))
   end
 
-  defp maybe_put_response_format(body, nil), do: body
-  defp maybe_put_response_format(body, format), do: Map.put(body, "response_format", format)
+  defp maybe_put_body(body, _key, nil), do: body
+  defp maybe_put_body(body, key, value), do: Map.put(body, key, value)
 
   @doc """
   Returns the OpenAI API key.

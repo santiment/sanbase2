@@ -179,7 +179,15 @@ defmodule Sanbase.Knowledge.Citations do
   end
 
   # Sources-section entry: the source prefix is already the group header, so the
-  # bullet shows only the label, e.g. `[Getting Started](url)`.
+  # bullet shows only the label, e.g. `[Getting Started](url)`. Insight markers
+  # carry their publication date (see `Context.marker/2`); it is appended inside
+  # the `{{date:...}}` sentinel that `SanbaseWeb.AskLive` styles as a muted grey
+  # span after markdown rendering — same mechanism as the smart-search listing.
+  defp labelled_link(%{published_on: %Date{} = date} = marker) do
+    "[#{Context.escape_label(marker.label)}](#{safe_url(marker.url)}) " <>
+      "{{date:#{Date.to_iso8601(date)}}}"
+  end
+
   defp labelled_link(%{label: label, url: url}) do
     "[#{Context.escape_label(label)}](#{safe_url(url)})"
   end

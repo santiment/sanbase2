@@ -131,6 +131,32 @@ defmodule Sanbase.Knowledge.CitationsTest do
       assert rendered =~ "**FAQ:**\n- [What is MVRV?](https://s/faq/1)"
     end
 
+    test "insight bullet shows the publication date sentinel; inline link does not" do
+      registry = [
+        %{
+          id: 1,
+          source: :insight,
+          prefix: "Insight",
+          label: "BTC outlook",
+          url: "https://s/insight/1",
+          published_on: ~D[2026-01-02]
+        }
+      ]
+
+      content =
+        json(%{
+          "answer" => "BTC looks volatile. [1]",
+          "source_ids" => [1],
+          "financial_disclaimer" => false
+        })
+
+      rendered = Citations.render(content, registry)
+
+      assert rendered =~ "**Insight:**\n- [BTC outlook](https://s/insight/1) {{date:2026-01-02}}"
+      # the inline citation stays a plain link — the date only decorates Sources
+      assert rendered =~ "BTC looks volatile. [Insight: BTC outlook](https://s/insight/1)\n"
+    end
+
     test "no Sources section when nothing was cited" do
       content =
         json(%{"answer" => "Plain answer.", "source_ids" => [], "financial_disclaimer" => false})

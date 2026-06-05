@@ -15,6 +15,9 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
     field(:reranker, :string)
     field(:context_expansion, :boolean)
     field(:model, :string)
+    # The resolved Sanbase.Knowledge.QueryPlan (see QueryPlan.to_map/1): how the
+    # question was interpreted — rewritten search text, sort, browse, date window.
+    field(:query_plan, :map)
 
     belongs_to(:user, Sanbase.Accounts.User)
 
@@ -34,7 +37,8 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
       :question_type,
       :reranker,
       :context_expansion,
-      :model
+      :model,
+      :query_plan
     ])
     |> validate_required([:question, :answer, :is_successful, :source, :question_type])
     |> validate_inclusion(:question_type, ["ask_ai", "smart_search"])

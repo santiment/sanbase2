@@ -14,9 +14,14 @@ defmodule SanbaseWeb.AskLive do
        question: "",
        answer: "",
        sources: %{faq: true, academy: true, insight: true},
-       features: %{reranker: true, context_expansion: false},
+       features: %{
+         reranker: true,
+         context_expansion: false,
+         query_understanding: true
+       },
        answer_model: AnswerModel.default_key(),
        answer_log_link: nil,
+       query_plan: nil,
        loading: nil,
        ask_meta: nil
      )}
@@ -45,6 +50,7 @@ defmodule SanbaseWeb.AskLive do
           |> Keyword.new()
           |> Keyword.put(:reranker, reranker_mod)
           |> Keyword.put(:context_expansion, features.context_expansion)
+          |> Keyword.put(:query_understanding, features.query_understanding)
           |> Keyword.merge(AnswerModel.options_for(socket.assigns.answer_model))
 
         # Only the AI answer path runs an LLM, so only it has a model to log;
@@ -59,6 +65,7 @@ defmodule SanbaseWeb.AskLive do
          |> assign(:loading, event)
          |> assign(:answer, "")
          |> assign(:answer_log_link, nil)
+         |> assign(:query_plan, nil)
          |> assign(:ask_meta, %{
            event: event,
            question: question,
@@ -206,6 +213,7 @@ defmodule SanbaseWeb.AskLive do
             </button>
           </div>
         </form>
+        <.query_plan_box :if={@query_plan} plan={@query_plan} />
         <div :if={@answer != ""} class="mt-10 w-full flex flex-col items-center">
           <div class="card bg-base-200 shadow p-10 w-full max-w-3xl flex flex-col">
             <h3 class="text-2xl font-bold mb-6">Answer</h3>
@@ -219,7 +227,7 @@ defmodule SanbaseWeb.AskLive do
             <div class="divider"></div>
 
             <div class="prose prose-lg max-w-none">
-              {Phoenix.HTML.raw(Earmark.as_html!(@answer))}
+              {Phoenix.HTML.raw(render_answer_html(@answer))}
             </div>
           </div>
         </div>
@@ -227,6 +235,60 @@ defmodule SanbaseWeb.AskLive do
     </div>
     """
   end
+
+  # Render the answer markdown to HTML, then colour the `{{date:...}}` sentinels
+  # emitted by smart search (see `Sanbase.Knowledge`) and by the Ask AI Sources
+  # section (see `Sanbase.Knowledge.Citations`) as a muted grey date.
+  # Earmark escaping stays ON so user-generated insight titles can't inject HTML;
+  # only our own date string (an ISO date, or the literal "unknown date") is
+  # substituted into the span.
+  defp render_answer_html(answer) do
+    answer
+    |> Earmark.as_html!()
+    |> String.replace(
+      ~r/\{\{date:(\d{4}-\d{2}-\d{2}|unknown date)\}\}/,
+      "<span style=\"color: #9ca3af; white-space: nowrap\">(\\1)</span>"
+    )
+  end
+
+  # Shows how the query was interpreted by `Sanbase.Knowledge.QueryPlan`: the
+  # rewritten search text, the sort directive, and any date window. Surfaced so
+  # recency / retrieval behaviour is debuggable from the UI.
+  attr :plan, :map, required: true
+
+  defp query_plan_box(assigns) do
+    ~H"""
+    <div class="mt-6 w-full max-w-3xl">
+      <div class="card bg-base-100 border border-base-300 p-4 text-sm">
+        <div class="mb-2 font-semibold text-base-content/70">Query plan</div>
+        <dl class="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-1">
+          <dt class="text-base-content/50">Search</dt>
+          <dd :if={@plan.has_topic} class="font-mono break-words">{@plan.semantic_query}</dd>
+          <dd :if={!@plan.has_topic}>
+            <span class="badge badge-sm badge-info">browse</span>
+            <span class="text-base-content/50 ml-1">
+              no topic — newest insights by publication date
+            </span>
+          </dd>
+          <dt class="text-base-content/50">Sort</dt>
+          <dd>
+            <span class={"badge badge-sm #{sort_badge_class(@plan.sort)}"}>{@plan.sort}</span>
+          </dd>
+          <dt :if={@plan.date_from || @plan.date_to} class="text-base-content/50">Dates</dt>
+          <dd :if={@plan.date_from || @plan.date_to}>
+            {format_plan_date(@plan.date_from)} → {format_plan_date(@plan.date_to)}
+          </dd>
+        </dl>
+      </div>
+    </div>
+    """
+  end
+
+  defp sort_badge_class(:recency), do: "badge-success"
+  defp sort_badge_class(_other), do: "badge-ghost"
+
+  defp format_plan_date(nil), do: "—"
+  defp format_plan_date(%Date{} = date), do: Date.to_iso8601(date)
 
   # Dropdown to pick which model answers (Ask AI only; smart search ignores it).
   # The choices come from `Sanbase.Knowledge.AnswerModel.selectable/0`.
@@ -257,7 +319,9 @@ defmodule SanbaseWeb.AskLive do
   @feature_toggles [
     {:reranker, "Reranker", "Re-order retrieved results by relevance before answering."},
     {:context_expansion, "Context expansion",
-     "Pull the neighbouring chunks around each match for fuller context (Ask only)."}
+     "Pull the neighbouring chunks around each match for fuller context (Ask only)."},
+    {:query_understanding, "Query understanding",
+     "Use an LLM to rewrite the query (drop meta-words), detect recency intent, and extract date ranges before searching. Falls back to keywords if off or unavailable."}
   ]
 
   attr :features, :map, required: true
@@ -309,7 +373,7 @@ defmodule SanbaseWeb.AskLive do
 
     socket =
       case result do
-        {:ok, formatted_answer} ->
+        {:ok, formatted_answer, query_plan} ->
           log_async(
             event,
             current_user,
@@ -320,10 +384,13 @@ defmodule SanbaseWeb.AskLive do
             "",
             reranker_mod,
             context_expansion,
-            model
+            model,
+            query_plan
           )
 
-          assign(socket, :answer, formatted_answer)
+          socket
+          |> assign(:answer, formatted_answer)
+          |> assign(:query_plan, query_plan)
 
         {:error, error} ->
           log_async(
@@ -336,7 +403,8 @@ defmodule SanbaseWeb.AskLive do
             error,
             reranker_mod,
             context_expansion,
-            model
+            model,
+            nil
           )
 
           Logger.debug("Ask error: #{inspect(error)}")
@@ -372,7 +440,8 @@ defmodule SanbaseWeb.AskLive do
          errors,
          reranker_mod,
          context_expansion,
-         model
+         model,
+         query_plan
        ) do
     self = self()
     reranker = Sanbase.Knowledge.Reranker.label(reranker_mod)
@@ -389,7 +458,8 @@ defmodule SanbaseWeb.AskLive do
                errors: inspect(errors),
                reranker: reranker,
                context_expansion: context_expansion,
-               model: model
+               model: model,
+               query_plan: query_plan && Sanbase.Knowledge.QueryPlan.to_map(query_plan)
              }) do
         url = Path.join([SanbaseWeb.Endpoint.admin_url(), "admin", "faq", "history", struct.id])
         send(self, {:populate_answer_log_link, url})

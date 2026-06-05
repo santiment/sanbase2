@@ -72,6 +72,27 @@ defmodule SanbaseWeb.Admin.FaqLive.HistoryShow do
         </dd>
       </div>
 
+      <div :if={@entry.query_plan} class="mt-4">
+        <dt class="text-sm font-medium text-base-content/60">Query plan</dt>
+        <dd class="mt-1 text-sm">
+          <span :if={@entry.query_plan["has_topic"]} class="font-mono">
+            search: {@entry.query_plan["semantic_query"]}
+          </span>
+          <span :if={!@entry.query_plan["has_topic"]} class="badge badge-sm badge-info">
+            browse newest
+          </span>
+          <span class={"ml-2 badge badge-sm #{if @entry.query_plan["sort"] == "recency", do: "badge-success", else: "badge-ghost"}"}>
+            {@entry.query_plan["sort"]}
+          </span>
+          <span
+            :if={@entry.query_plan["date_from"] || @entry.query_plan["date_to"]}
+            class="ml-2 text-base-content/60"
+          >
+            {@entry.query_plan["date_from"] || "—"} → {@entry.query_plan["date_to"] || "—"}
+          </span>
+        </dd>
+      </div>
+
       <div :if={not @entry.is_successful} class="alert alert-error mt-4">
         <div>
           <dt class="text-sm font-medium">Errors</dt>

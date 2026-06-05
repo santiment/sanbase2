@@ -579,6 +579,44 @@
       tags: ["insights", "exchange", "supply"]
     },
 
+    # === Recency paraphrases (query-plan rewrite quality) ===
+    # Twins of topical items above, rephrased with recency cues. Run with
+    # `mix knowledge_eval --plan`: the QueryPlan heuristic strips the recency
+    # words before embedding, and these items verify the rewrite does NOT hurt
+    # topical retrieval (expected ids match the twins'). Recency *ordering* is
+    # deliberately outside eval scoring — golden ids are topical, so a
+    # newest-first reorder would make hit@K meaningless.
+    %{
+      id: "recency-twin-mvrv-danger-zone",
+      question: "What's the latest on when the MVRV overvaluation (danger) zone anomaly fires?",
+      expected: %{
+        academy_paths: ["src/content/docs/resources/data-anomaly/mvrv-danger-zone/index.mdx"]
+      },
+      tags: ["recency", "academy", "mvrv"]
+    },
+    %{
+      id: "recency-twin-social-volume-top",
+      question: "Most recent take on which metrics the case study used to spot a market top?",
+      expected: %{
+        academy_paths: [
+          "src/content/docs/guides/education-and-use-cases/case-study-social-volume/index.mdx"
+        ]
+      },
+      tags: ["recency", "academy", "social"]
+    },
+    %{
+      id: "recency-twin-api-key",
+      question: "Need up to date instructions on where to get my Santiment API key",
+      expected: %{faq_ids: ["7a5e4e22-232e-45cf-8aa4-f9a58700d3e5"]},
+      tags: ["recency", "api"]
+    },
+    %{
+      id: "recency-twin-btc-mvrv-longterm",
+      question: "Newest analysis of what Bitcoin's long-term MVRV suggests about the outlook?",
+      expected: %{insight_post_ids: [10667]},
+      tags: ["recency", "insights", "mvrv", "bitcoin"]
+    },
+
     # === Should-not-answer sentinels (track no-info fallback / drift) ===
     %{
       id: "off-topic-football",

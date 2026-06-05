@@ -31,6 +31,13 @@ defmodule Sanbase.Knowledge.ContextTest do
       assert marker.prefix == "Insight"
       assert marker.label == "Time to buy Bitcoin?"
       assert marker.url =~ "http"
+      assert marker.published_on == nil
+    end
+
+    test "insight marker carries the publication date when the hit has one" do
+      hit = %{post_id: 42, post_title: "T", published_at: ~N[2026-01-02 10:30:00]}
+
+      assert Context.marker(hit, :insight).published_on == ~D[2026-01-02]
     end
 
     test "academy marker passes the article title and url through" do

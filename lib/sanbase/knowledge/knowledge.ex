@@ -1,6 +1,7 @@
 defmodule Sanbase.Knowledge do
   require Logger
 
+  alias Sanbase.Knowledge.AnswerModel
   alias Sanbase.Knowledge.Citations
   alias Sanbase.Knowledge.Context
   alias Sanbase.Knowledge.ContextExpansion
@@ -310,89 +311,10 @@ defmodule Sanbase.Knowledge do
       %{response_format: Citations.response_format()}
       |> maybe_put(:model, Keyword.get(options, :answer_model))
 
-    case answer_client(options).ask(prompt, ask_opts) do
+    case AnswerModel.client(options).ask(prompt, ask_opts) do
       {:ok, content} -> {:ok, Citations.render(content, registry)}
       other -> other
     end
-  end
-
-  @doc """
-  The model name the answer step will use for `options`: the `:answer_model`
-  override if given, otherwise the configured answer client's default. Exposed
-  so callers (e.g. the Ask LiveView) can log which model produced an answer.
-  """
-  @spec resolved_answer_model(keyword()) :: String.t()
-  def resolved_answer_model(options \\ []) do
-    Keyword.get(options, :answer_model) || answer_client(options).default_model()
-  end
-
-  # Selectable answer models surfaced in the Ask UI. Each entry pairs a display
-  # label with the client module and model name to drive the answer step. Add a
-  # tuple here to expose a new choice; `answer_model_options/1` turns the chosen
-  # `key` into the `:answer_client` / `:answer_model` options the pipeline reads.
-  # `requires_env` (optional) gates an entry on an env var being set & non-empty,
-  # so e.g. the OpenRouter-backed model only appears when its API key is present.
-  @answer_models [
-    %{
-      key: "gpt-5-nano",
-      label: "GPT-5 Nano",
-      client: Sanbase.OpenAI.Question,
-      model: "gpt-5-nano"
-    },
-    %{
-      key: "gpt-5-mini",
-      label: "GPT-5 Mini",
-      client: Sanbase.OpenAI.Question,
-      model: "gpt-5-mini"
-    },
-    %{
-      key: "deepseek-v4-flash",
-      label: "DeepSeek V4 Flash",
-      client: Sanbase.OpenRouter.Question,
-      model: "deepseek/deepseek-v4-flash",
-      requires_env: "OPENROUTER_API_KEY"
-    }
-  ]
-
-  @doc """
-  The selectable answer models (key + label + client + model), filtered to those
-  currently usable — an entry with `requires_env` is dropped unless that env var
-  is set and non-empty. Evaluated at call time so it reflects the live env.
-  """
-  @spec answer_models() :: [map()]
-  def answer_models(), do: Enum.filter(@answer_models, &model_available?/1)
-
-  @doc "The default selectable answer model's key (the first available entry)."
-  @spec default_answer_model_key() :: String.t()
-  def default_answer_model_key(), do: hd(answer_models()).key
-
-  @doc """
-  Translate a selectable answer-model `key` into the `:answer_client` /
-  `:answer_model` options the answer pipeline reads. An unknown or unavailable
-  key returns `[]` so the configured default client/model is used.
-  """
-  @spec answer_model_options(String.t() | nil) :: keyword()
-  def answer_model_options(key) do
-    case Enum.find(answer_models(), &(&1.key == key)) do
-      nil -> []
-      choice -> [answer_client: choice.client, answer_model: choice.model]
-    end
-  end
-
-  defp model_available?(%{requires_env: var}) when is_binary(var) do
-    case System.get_env(var) do
-      value when is_binary(value) and value != "" -> true
-      _ -> false
-    end
-  end
-
-  defp model_available?(_), do: true
-
-  @default_answer_client Sanbase.OpenAI.Question
-
-  defp answer_client(options) do
-    Keyword.get(options, :answer_client) ||
-      Application.get_env(:sanbase, :knowledge_answer_client, @default_answer_client)
   end
 
   defp maybe_put(map, _key, nil), do: map

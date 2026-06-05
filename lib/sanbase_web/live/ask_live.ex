@@ -93,7 +93,13 @@ defmodule SanbaseWeb.AskLive do
 
   @impl true
   def handle_event("select_answer_model", %{"answer_model" => key}, socket) do
-    {:noreply, assign(socket, :answer_model, key)}
+    # `key` comes from the client; ignore anything not in the current selectable
+    # set so a bogus value can't be stored and later shown as the selected model.
+    if Enum.any?(AnswerModel.selectable(), &(&1.key == key)) do
+      {:noreply, assign(socket, :answer_model, key)}
+    else
+      {:noreply, socket}
+    end
   end
 
   # Flip the boolean under the map key whose name matches `name`. `name` comes

@@ -3,6 +3,8 @@ defmodule SanbaseWeb.AskLive do
 
   import SanbaseWeb.Admin.FaqLive.Nav, only: [nav: 1]
 
+  alias Sanbase.Knowledge.AnswerModel
+
   require Logger
 
   @impl true
@@ -13,7 +15,7 @@ defmodule SanbaseWeb.AskLive do
        answer: "",
        sources: %{faq: true, academy: true, insight: true},
        features: %{reranker: true, context_expansion: false},
-       answer_model: Sanbase.Knowledge.default_answer_model_key(),
+       answer_model: AnswerModel.default_key(),
        answer_log_link: nil,
        loading: nil,
        ask_meta: nil
@@ -43,11 +45,11 @@ defmodule SanbaseWeb.AskLive do
           |> Keyword.new()
           |> Keyword.put(:reranker, reranker_mod)
           |> Keyword.put(:context_expansion, features.context_expansion)
-          |> Keyword.merge(Sanbase.Knowledge.answer_model_options(socket.assigns.answer_model))
+          |> Keyword.merge(AnswerModel.options_for(socket.assigns.answer_model))
 
         # Only the AI answer path runs an LLM, so only it has a model to log;
         # smart search is pure retrieval.
-        model = if event == "ask_ai", do: Sanbase.Knowledge.resolved_answer_model(options)
+        model = if event == "ask_ai", do: AnswerModel.resolve(options)
 
         # Run the (slow) retrieval/LLM call off the LiveView process. Blocking it
         # here makes the socket miss heartbeats on long answers, so the client
@@ -221,11 +223,11 @@ defmodule SanbaseWeb.AskLive do
   end
 
   # Dropdown to pick which model answers (Ask AI only; smart search ignores it).
-  # The choices come from `Sanbase.Knowledge.answer_models/0`.
+  # The choices come from `Sanbase.Knowledge.AnswerModel.selectable/0`.
   attr :selected, :string, required: true
 
   defp answer_model_select(assigns) do
-    assigns = assign(assigns, :models, Sanbase.Knowledge.answer_models())
+    assigns = assign(assigns, :models, AnswerModel.selectable())
 
     ~H"""
     <label class="flex items-center gap-2">

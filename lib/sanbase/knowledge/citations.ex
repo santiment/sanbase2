@@ -2,10 +2,11 @@ defmodule Sanbase.Knowledge.Citations do
   @moduledoc """
   Turns the model's structured answer into the final, citation-correct markdown.
 
-  The answer model runs on a small model that cannot reliably reproduce long
-  `[Academy: label](https://…)` markers verbatim — it flattens them to plain
-  text and drops URLs. So instead of trusting it to format links, we make it
-  do the easy part and we do the formatting:
+  The answer is produced by an LLM (via OpenAI or OpenRouter, model-configurable)
+  that cannot reliably reproduce long `[Academy: label](https://…)` markers
+  verbatim — it flattens them to plain text and drops URLs. So instead of
+  trusting it to format links, we make it do the easy part and we do the
+  formatting:
 
     * The prompt numbers every provided context block (`Source [3] — …`).
     * The model returns JSON — `{answer, source_ids, financial_disclaimer}` —
@@ -16,8 +17,11 @@ defmodule Sanbase.Knowledge.Citations do
 
   Every link comes from the `registry` (a list of `Sanbase.Knowledge.Context`
   markers, each tagged with its `:id`), never from model output, so links are
-  always present and correct. `response_format/0` is the OpenAI structured
-  output schema that guarantees the JSON shape.
+  always present and correct. `response_format/0` is the OpenAI-compatible
+  structured-output schema both clients send to request that JSON shape; models
+  that enforce it return exactly that shape, and `render/2` falls back to the
+  raw content for any that don't — so this layer never depends on a specific
+  provider or model honouring the schema.
   """
 
   alias Sanbase.Knowledge.Context
@@ -28,10 +32,13 @@ defmodule Sanbase.Knowledge.Citations do
   @group_order [insight: "Insight", academy: "Academy", faq: "FAQ"]
 
   @doc """
-  The OpenAI `response_format` (strict JSON schema) for the answer call.
+  The OpenAI-compatible `response_format` (strict JSON schema) for the answer
+  call. Sent by both the OpenAI and OpenRouter clients.
 
-  `strict: true` requires every property to be listed in `required` and forbids
-  extra keys, so the model can only return this exact shape.
+  `strict: true` asks for every property in `required` and forbids extra keys.
+  Providers/models that support structured outputs (OpenAI, and the OpenRouter
+  models that implement it) constrain the response to exactly this shape; others
+  treat it as best-effort, which is why `render/2` tolerates a parse failure.
   """
   @spec response_format() :: map()
   def response_format() do

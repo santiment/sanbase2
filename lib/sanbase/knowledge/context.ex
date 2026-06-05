@@ -8,17 +8,20 @@ defmodule Sanbase.Knowledge.Context do
   eval measure "does the assembled context contain the facts needed to
   answer" without drifting from production.
 
-  Each source produces one entry per hit, every entry leading with a
-  `Source marker:` line carrying the markdown link the model must cite
-  verbatim. The marker folds the source tag INTO the link text with a
-  colon — `[FAQ: label](url)` — so the whole citation is a single markdown
-  link that renders as one clickable element. Keeping it a single
-  `[...](...)` token (rather than a bare `[FAQ]` tag next to a separate
-  `[label](url)` link) is what stops the model from dropping the `(url)`
-  and emitting a dead `[FAQ] [label]` with no link. The tag is joined with
-  a colon rather than nested brackets (`[[FAQ] label]`) because some
-  markdown renderers do not handle brackets inside link text. `assemble/2`
-  returns the inner text only — the caller wraps it in the source's XML tag.
+  Each source produces one entry per hit, leading with a `Source [<id>]`
+  header that names the source and its label. The numeric id is the ONLY
+  thing the answer model has to reproduce to cite a block — it writes the
+  bare token `[<id>]` inline and we (`Sanbase.Knowledge.Citations`) expand
+  it into a real markdown link from `marker/2`. The model never sees or
+  copies a URL, which is what makes citations reliable on a small model:
+  copying `[3]` is trivial, copying a long `[Academy: label](https://…)`
+  verbatim is not. The id is omitted from the header when a hit carries no
+  `:marker_id` (the eval path), so recall measurement is unaffected.
+
+  `marker/2` is the single place that derives a citation's `{prefix, label,
+  url}` from a hit, so the prompt header, the inline link, and the grouped
+  `Sources` section all agree. `assemble/2` returns the inner text only —
+  the caller wraps it in the source's XML tag.
 
   This module is also the seam where future context expansion (pulling
   neighbor chunks / parent article around a matched chunk) will plug in:
@@ -27,24 +30,61 @@ defmodule Sanbase.Knowledge.Context do
   measurable by the eval's `context_recall`.
   """
 
+  @type source :: :faq | :insight | :academy
+
+  @type marker :: %{source: source(), prefix: String.t(), label: String.t(), url: String.t()}
+
+  @doc """
+  Derive the `{source, prefix, label, url}` citation marker for one hit.
+
+  This is the single source of truth for how a hit maps to a citation, used
+  by the prompt header here and by link building in
+  `Sanbase.Knowledge.Citations`. The label is cleaned (whitespace folded,
+  long FAQ questions truncated) but NOT markdown-escaped — escaping happens
+  only where the label is interpolated into a `[label](url)` link.
+  """
+  @spec marker(map(), source()) :: marker()
+  def marker(hit, :faq) do
+    %{
+      source: :faq,
+      prefix: "FAQ",
+      label: faq_label(hit.question),
+      url: "#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{hit.id}"
+    }
+  end
+
+  def marker(hit, :insight) do
+    %{
+      source: :insight,
+      prefix: "Insight",
+      label: clean_label(hit.post_title),
+      url: SanbaseWeb.Endpoint.insight_url(hit.post_id)
+    }
+  end
+
+  def marker(hit, :academy) do
+    %{
+      source: :academy,
+      prefix: "Academy",
+      label: clean_label(hit.title),
+      url: hit.url
+    }
+  end
+
   @doc """
   Assemble the inner context text for a list of reranked hits of one source.
 
-  Returns `""` for an empty hit list. The output is byte-identical to what
-  the live prompt embeds between the source's XML tags.
+  Returns `""` for an empty hit list. Each block leads with a `Source [<id>]`
+  header (the id taken from `hit[:marker_id]`, omitted when absent).
   """
-  @spec assemble([map()], :faq | :insight | :academy) :: String.t()
+  @spec assemble([map()], source()) :: String.t()
   def assemble([], _source), do: ""
 
   def assemble(hits, :faq) do
-    admin_url = SanbaseWeb.Endpoint.admin_url()
-
     hits
     |> Enum.map(fn entry ->
-      url = "#{admin_url}/admin/faq/#{entry.id}"
-
       """
-      Source marker: [FAQ: #{escape_marker_label(faq_label(entry.question))}](#{url})
+      #{source_header(entry, :faq)}
       Question: #{entry.question}
       Answer: #{entry.answer_markdown}
       """
@@ -55,10 +95,8 @@ defmodule Sanbase.Knowledge.Context do
   def assemble(hits, :insight) do
     hits
     |> Enum.map(fn chunk ->
-      url = SanbaseWeb.Endpoint.insight_url(chunk.post_id)
-
       """
-      Source marker: [Insight: #{escape_marker_label(chunk.post_title)}](#{url})
+      #{source_header(chunk, :insight)}
       Published: #{published_on(chunk)}
       #{chunk.text_chunk}
       """
@@ -70,11 +108,23 @@ defmodule Sanbase.Knowledge.Context do
     hits
     |> Enum.map(fn chunk ->
       """
-      Source marker: [Academy: #{escape_marker_label(chunk.title)}](#{chunk.url})
+      #{source_header(chunk, :academy)}
       Most relevant chunk from article: #{chunk.chunk}
       """
     end)
     |> Enum.join("\n")
+  end
+
+  # The header names the block so the model knows what `[<id>]` refers to. The
+  # id is what the model copies inline to cite; when a hit carries no
+  # `:marker_id` (the eval path) the token is dropped and only the label shows.
+  defp source_header(hit, source) do
+    %{prefix: prefix, label: label} = marker(hit, source)
+
+    case Map.get(hit, :marker_id) do
+      nil -> "Source — #{prefix}: #{label}"
+      id -> "Source [#{id}] — #{prefix}: #{label}"
+    end
   end
 
   # Insights are dated commentary: an old post's prices, levels and "current"
@@ -103,30 +153,41 @@ defmodule Sanbase.Knowledge.Context do
   defp age_phrase(1), do: "1 day ago"
   defp age_phrase(days), do: "#{days} days ago"
 
-  # The model cites the marker label verbatim, so a FAQ links via its question
+  # The label is the citation's visible text, so a FAQ links via its question
   # (its title) rather than the opaque id. Truncated to keep citations short.
   @faq_label_max 100
   defp faq_label(question) do
-    question = String.trim(question || "")
+    cleaned = clean_label(question)
 
-    if String.length(question) > @faq_label_max do
-      String.slice(question, 0, @faq_label_max) <> "…"
+    if String.length(cleaned) > @faq_label_max do
+      String.slice(cleaned, 0, @faq_label_max) <> "…"
     else
-      question
+      cleaned
     end
   end
 
-  # Labels (post/article titles, FAQ questions) are user-controlled and get
-  # interpolated raw into the `[label](url)` markdown link. Without escaping, a
-  # crafted title like `x](https://phish)` closes the label early and injects a
-  # different target — the model would then cite a forged/phishing link. Escape
-  # the markdown link delimiters (and the backslash itself, first, so we don't
-  # double-escape) and fold newlines, so the label can only ever be inert text
-  # inside the link.
-  defp escape_marker_label(label) do
+  # Fold newlines/runs of whitespace so a label is always a single inert line —
+  # it goes into a one-line prompt header and into a `[label](url)` link.
+  defp clean_label(label) do
     label
     |> to_string()
-    |> String.replace(~r/[\r\n]+/u, " ")
+    |> String.replace(~r/\s+/u, " ")
+    |> String.trim()
+  end
+
+  @doc """
+  Escape markdown link delimiters in a label so it can only ever be inert text
+  inside a `[label](url)` link.
+
+  Labels (post/article titles, FAQ questions) are user-controlled. Without
+  escaping, a crafted title like `x](https://phish)` would close the label
+  early and inject a different target when we build the citation link. Escape
+  the backslash first (so we don't double-escape) and then the link delimiters.
+  """
+  @spec escape_label(String.t()) :: String.t()
+  def escape_label(label) do
+    label
+    |> to_string()
     |> String.replace("\\", "\\\\")
     |> String.replace("[", "\\[")
     |> String.replace("]", "\\]")

@@ -13,6 +13,10 @@ defmodule Sanbase.OpenAI.Question do
   @initial_backoff_ms 1_000
   @receive_timeout_ms 60_000
 
+  @doc "The default model this client uses when none is passed in `tracing_opts`."
+  @spec default_model() :: String.t()
+  def default_model(), do: @model
+
   @doc """
   Sends a question to OpenAI GPT and returns the answer.
 
@@ -20,6 +24,8 @@ defmodule Sanbase.OpenAI.Question do
   - question: The question text to send to GPT
   - tracing_opts: Optional map with:
     - `:model` - OpenAI model to use (defaults to @model)
+    - `:response_format` - OpenAI `response_format` payload (e.g. a JSON-schema
+      map) to request structured output; omitted from the request when absent
     - `:user_id` - User ID for Langfuse trace
     - `:session_id` - Session ID for grouping traces
     - `:trace_metadata` - Additional metadata for the trace
@@ -39,8 +45,9 @@ defmodule Sanbase.OpenAI.Question do
   """
   deftraced ask(question) do
     model = Map.get(tracing_opts, :model, @model)
+    response_format = Map.get(tracing_opts, :response_format)
 
-    case request_with_retry(question, model, 0) do
+    case request_with_retry(question, model, response_format, 0) do
       {:ok, %{content: content}} ->
         {:ok, content}
 
@@ -49,8 +56,9 @@ defmodule Sanbase.OpenAI.Question do
     end
   end
 
-  defp request_with_retry(question, model, attempt) when attempt < @max_retries do
-    case request_completion(question, %{model: model}) do
+  defp request_with_retry(question, model, response_format, attempt)
+       when attempt < @max_retries do
+    case request_completion(question, %{model: model, response_format: response_format}) do
       {:ok, result} ->
         {:ok, result}
 
@@ -69,14 +77,15 @@ defmodule Sanbase.OpenAI.Question do
         Logger.warning("OpenAI connection closed, retrying: #{inspect(warning_info)}")
 
         Process.sleep(backoff_ms)
-        request_with_retry(question, model, attempt + 1)
+        request_with_retry(question, model, response_format, attempt + 1)
 
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp request_with_retry(question, _model, attempt) when attempt >= @max_retries do
+  defp request_with_retry(question, _model, _response_format, attempt)
+       when attempt >= @max_retries do
     error_info = %{
       max_retries: @max_retries,
       question_length: String.length(question),
@@ -90,7 +99,7 @@ defmodule Sanbase.OpenAI.Question do
 
   defp request_completion(question, opts) do
     model = Map.get(opts, :model, @model)
-    body = build_request_body(question, model)
+    body = build_request_body(question, model, Map.get(opts, :response_format))
 
     case Req.post(@base_url,
            json: body,
@@ -141,7 +150,7 @@ defmodule Sanbase.OpenAI.Question do
     end
   end
 
-  defp build_request_body(question, model) do
+  defp build_request_body(question, model, response_format) do
     %{
       "model" => model,
       "messages" => [
@@ -151,7 +160,11 @@ defmodule Sanbase.OpenAI.Question do
         }
       ]
     }
+    |> maybe_put_response_format(response_format)
   end
+
+  defp maybe_put_response_format(body, nil), do: body
+  defp maybe_put_response_format(body, format), do: Map.put(body, "response_format", format)
 
   @doc """
   Returns the OpenAI API key.

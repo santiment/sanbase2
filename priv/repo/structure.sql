@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict b6j8ovBoDfSFxtID8qCAqDQaVk1wmrA06tLJCpXMKmbiogf59MOn3xH1OcgGPUx
+\restrict CBrVRixBzU0ZM8669CcGjscEpi6AbzUnZVVd5YxHjDBH7KVQcONnEBrSEkyqOh3
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -4022,7 +4022,8 @@ CREATE TABLE public.question_answer_logs (
     updated_at timestamp without time zone NOT NULL,
     question_type character varying(255),
     reranker character varying(255),
-    context_expansion boolean
+    context_expansion boolean DEFAULT false NOT NULL,
+    model character varying(255)
 );
 
 
@@ -11658,7 +11659,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict b6j8ovBoDfSFxtID8qCAqDQaVk1wmrA06tLJCpXMKmbiogf59MOn3xH1OcgGPUx
+\unrestrict CBrVRixBzU0ZM8669CcGjscEpi6AbzUnZVVd5YxHjDBH7KVQcONnEBrSEkyqOh3
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12236,3 +12237,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260526093118);
 INSERT INTO public."schema_migrations" (version) VALUES (20260528120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260529120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260604120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260604130000);

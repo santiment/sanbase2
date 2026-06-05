@@ -13,6 +13,7 @@ defmodule SanbaseWeb.AskLive do
        answer: "",
        sources: %{faq: true, academy: true, insight: true},
        features: %{reranker: true, context_expansion: false},
+       answer_model: Sanbase.Knowledge.default_answer_model_key(),
        answer_log_link: nil,
        loading: nil,
        ask_meta: nil
@@ -42,6 +43,11 @@ defmodule SanbaseWeb.AskLive do
           |> Keyword.new()
           |> Keyword.put(:reranker, reranker_mod)
           |> Keyword.put(:context_expansion, features.context_expansion)
+          |> Keyword.merge(Sanbase.Knowledge.answer_model_options(socket.assigns.answer_model))
+
+        # Only the AI answer path runs an LLM, so only it has a model to log;
+        # smart search is pure retrieval.
+        model = if event == "ask_ai", do: Sanbase.Knowledge.resolved_answer_model(options)
 
         # Run the (slow) retrieval/LLM call off the LiveView process. Blocking it
         # here makes the socket miss heartbeats on long answers, so the client
@@ -56,7 +62,8 @@ defmodule SanbaseWeb.AskLive do
            question: question,
            sources: sources,
            reranker_mod: reranker_mod,
-           context_expansion: features.context_expansion
+           context_expansion: features.context_expansion,
+           model: model
          })
          |> start_async(:ask_question, fn ->
            apply(Sanbase.Knowledge, function, [question, options])
@@ -80,6 +87,11 @@ defmodule SanbaseWeb.AskLive do
   @impl true
   def handle_event("toggle_feature", %{"feature" => feature}, socket) do
     {:noreply, assign(socket, :features, toggle_flag(socket.assigns.features, feature))}
+  end
+
+  @impl true
+  def handle_event("select_answer_model", %{"answer_model" => key}, socket) do
+    {:noreply, assign(socket, :answer_model, key)}
   end
 
   # Flip the boolean under the map key whose name matches `name`. `name` comes
@@ -158,7 +170,10 @@ defmodule SanbaseWeb.AskLive do
               </label>
             </div>
 
-            <.features_menu features={@features} />
+            <div class="flex items-center gap-3">
+              <.answer_model_select selected={@answer_model} />
+              <.features_menu features={@features} />
+            </div>
           </div>
 
           <div class="flex gap-4">
@@ -202,6 +217,29 @@ defmodule SanbaseWeb.AskLive do
         </div>
       </div>
     </div>
+    """
+  end
+
+  # Dropdown to pick which model answers (Ask AI only; smart search ignores it).
+  # The choices come from `Sanbase.Knowledge.answer_models/0`.
+  attr :selected, :string, required: true
+
+  defp answer_model_select(assigns) do
+    assigns = assign(assigns, :models, Sanbase.Knowledge.answer_models())
+
+    ~H"""
+    <label class="flex items-center gap-2">
+      <span class="text-sm font-medium">Model</span>
+      <select
+        name="answer_model"
+        phx-change="select_answer_model"
+        class="select select-sm select-bordered"
+      >
+        <option :for={m <- @models} value={m.key} selected={m.key == @selected}>
+          {m.label}
+        </option>
+      </select>
+    </label>
     """
   end
 
@@ -255,7 +293,8 @@ defmodule SanbaseWeb.AskLive do
       question: question,
       sources: sources,
       reranker_mod: reranker_mod,
-      context_expansion: context_expansion
+      context_expansion: context_expansion,
+      model: model
     } = socket.assigns.ask_meta
 
     current_user = socket.assigns.current_user
@@ -272,7 +311,8 @@ defmodule SanbaseWeb.AskLive do
             true,
             "",
             reranker_mod,
-            context_expansion
+            context_expansion,
+            model
           )
 
           assign(socket, :answer, formatted_answer)
@@ -287,7 +327,8 @@ defmodule SanbaseWeb.AskLive do
             false,
             error,
             reranker_mod,
-            context_expansion
+            context_expansion,
+            model
           )
 
           Logger.debug("Ask error: #{inspect(error)}")
@@ -322,7 +363,8 @@ defmodule SanbaseWeb.AskLive do
          is_successful,
          errors,
          reranker_mod,
-         context_expansion
+         context_expansion,
+         model
        ) do
     self = self()
     reranker = Sanbase.Knowledge.Reranker.label(reranker_mod)
@@ -338,7 +380,8 @@ defmodule SanbaseWeb.AskLive do
                user_id: current_user && current_user.id,
                errors: inspect(errors),
                reranker: reranker,
-               context_expansion: context_expansion
+               context_expansion: context_expansion,
+               model: model
              }) do
         url = Path.join([SanbaseWeb.Endpoint.admin_url(), "admin", "faq", "history", struct.id])
         send(self, {:populate_answer_log_link, url})

@@ -1,6 +1,7 @@
 defmodule Sanbase.Knowledge do
   require Logger
 
+  alias Sanbase.Knowledge.Citations
   alias Sanbase.Knowledge.Context
   alias Sanbase.Knowledge.ContextExpansion
   alias Sanbase.Knowledge.Reranker
@@ -33,12 +34,12 @@ defmodule Sanbase.Knowledge do
 
     result =
       with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
-           {:ok, prompt, sources_found?} <-
+           {:ok, prompt, registry} <-
              build_question_answer_prompt(user_input, embedding, options) do
-        if sources_found? do
-          Sanbase.OpenAI.Question.ask(prompt)
-        else
+        if registry == [] do
           {:ok, @no_answer_message}
+        else
+          ask_answer(prompt, registry, options)
         end
       end
 
@@ -194,48 +195,208 @@ defmodule Sanbase.Knowledge do
     {:ok, answer}
   end
 
+  # Build the answer prompt and the citation registry together. Each enabled
+  # source contributes its final reranked hits; the hits are numbered globally
+  # (FAQ, then Insight, then Academy) so every context block carries a stable
+  # `[<id>]` the model cites by, and the returned `registry` maps each id to the
+  # `{source, prefix, label, url}` marker `Citations` turns into real links.
+  # An empty registry means no source cleared the similarity threshold.
   defp build_question_answer_prompt(user_input, embedding, options) do
     min_sim = min_similarity(options)
 
-    with {:ok, prompt} <- generate_initial_prompt(user_input),
-         {:ok, prompt, faq_found?} <-
-           maybe_add_similar_faqs(prompt, user_input, embedding, options, min_sim),
-         {:ok, prompt, insights_found?} <-
-           maybe_add_similar_insight_chunks(prompt, user_input, embedding, options, min_sim),
-         {:ok, prompt, academy_found?} <-
-           maybe_add_similar_academy_chunks(prompt, user_input, embedding, options, min_sim) do
-      {:ok, prompt, faq_found? or insights_found? or academy_found?}
+    with {:ok, base_prompt} <- generate_initial_prompt(user_input),
+         {:ok, faq_hits} <- answer_faq_hits(user_input, embedding, options, min_sim),
+         {:ok, insight_hits} <- answer_insight_hits(user_input, embedding, options, min_sim),
+         {:ok, academy_hits} <- answer_academy_hits(user_input, embedding, options, min_sim) do
+      {numbered, registry} =
+        number_sources([{:faq, faq_hits}, {:insight, insight_hits}, {:academy, academy_hits}])
+
+      prompt =
+        base_prompt
+        |> append_section(:faq, numbered[:faq])
+        |> append_section(:insight, numbered[:insight])
+        |> append_section(:academy, numbered[:academy])
+
+      {:ok, prompt, registry}
     end
   end
 
-  defp maybe_add_similar_faqs(prompt, user_input, embedding, options, min_sim) do
+  # Assign each hit a globally-unique `:marker_id` in source order, and build the
+  # parallel registry of markers (with that id) the answer post-processing needs.
+  defp number_sources(source_hits) do
+    {numbered, registry, _next} =
+      Enum.reduce(source_hits, {%{}, [], 1}, fn {source, hits}, {numbered, registry, next} ->
+        {tagged, registry, next} =
+          Enum.reduce(hits, {[], registry, next}, fn hit, {tagged, registry, id} ->
+            marker = hit |> Context.marker(source) |> Map.put(:id, id)
+            {[Map.put(hit, :marker_id, id) | tagged], [marker | registry], id + 1}
+          end)
+
+        {Map.put(numbered, source, Enum.reverse(tagged)), registry, next}
+      end)
+
+    {numbered, Enum.reverse(registry)}
+  end
+
+  @section_tags %{
+    faq: "Similar_FAQ_Entries",
+    insight: "Most_Similar_Santiment_Insight_Chunks",
+    academy: "Academy_Content"
+  }
+
+  defp append_section(prompt, _source, []), do: prompt
+
+  defp append_section(prompt, source, hits) do
+    tag = Map.fetch!(@section_tags, source)
+
+    prompt <>
+      """
+      <#{tag}>
+      #{Context.assemble(hits, source)}
+      </#{tag}>
+      """
+  end
+
+  defp answer_faq_hits(user_input, embedding, options, min_sim) do
     if Keyword.get(options, :faq, true) do
-      with {:ok, raw_entries} <- find_most_similar_faqs(embedding, @retrieval_top_k) do
-        faq_entries =
-          raw_entries
-          |> filter_by_similarity(min_sim)
-          |> rerank(user_input, :faq, options, top_n: @prompt_top_n)
-
-        if faq_entries == [] do
-          {:ok, prompt, false}
-        else
-          entries_text = Context.assemble(faq_entries, :faq)
-
-          prompt =
-            prompt <>
-              """
-              <Similar_FAQ_Entries>
-              #{entries_text}
-              </Similar_FAQ_Entries>
-              """
-
-          {:ok, prompt, true}
-        end
+      with {:ok, raw} <- find_most_similar_faqs(embedding, @retrieval_top_k) do
+        {:ok,
+         raw
+         |> filter_by_similarity(min_sim)
+         |> rerank(user_input, :faq, options, top_n: @prompt_top_n)}
       end
     else
-      {:ok, prompt, false}
+      {:ok, []}
     end
   end
+
+  defp answer_insight_hits(user_input, embedding, options, min_sim) do
+    if Keyword.get(options, :insight, true) do
+      with {:ok, raw_chunks} <- find_most_similar_insight_chunks(embedding, @retrieval_top_k) do
+        {:ok,
+         raw_chunks
+         |> filter_by_similarity(min_sim)
+         |> rerank(user_input, :insight, options)
+         |> diversify_by_document(& &1.post_id, @prompt_top_n)
+         |> maybe_expand_context(:insight, options)}
+      end
+    else
+      {:ok, []}
+    end
+  end
+
+  defp answer_academy_hits(user_input, embedding, options, min_sim) do
+    if Keyword.get(options, :academy, true) do
+      with {:ok, raw_chunks} <-
+             Sanbase.Knowledge.Academy.search_chunks(embedding, @retrieval_top_k) do
+        {:ok,
+         raw_chunks
+         |> filter_by_similarity(min_sim)
+         |> rerank(user_input, :academy, options)
+         |> diversify_by_document(& &1.article_id, @prompt_top_n)
+         |> maybe_expand_context(:academy, options)}
+      end
+    else
+      {:ok, []}
+    end
+  end
+
+  # Send the assembled prompt to the configured answer client, asking for the
+  # structured JSON answer, then render it (inline links + grouped Sources). The
+  # client is pluggable so the answer step alone can be pointed at a different
+  # model (e.g. DeepSeek via OpenRouter) without touching embeddings or rerank.
+  defp ask_answer(prompt, registry, options) do
+    ask_opts =
+      %{response_format: Citations.response_format()}
+      |> maybe_put(:model, Keyword.get(options, :answer_model))
+
+    case answer_client(options).ask(prompt, ask_opts) do
+      {:ok, content} -> {:ok, Citations.render(content, registry)}
+      other -> other
+    end
+  end
+
+  @doc """
+  The model name the answer step will use for `options`: the `:answer_model`
+  override if given, otherwise the configured answer client's default. Exposed
+  so callers (e.g. the Ask LiveView) can log which model produced an answer.
+  """
+  @spec resolved_answer_model(keyword()) :: String.t()
+  def resolved_answer_model(options \\ []) do
+    Keyword.get(options, :answer_model) || answer_client(options).default_model()
+  end
+
+  # Selectable answer models surfaced in the Ask UI. Each entry pairs a display
+  # label with the client module and model name to drive the answer step. Add a
+  # tuple here to expose a new choice; `answer_model_options/1` turns the chosen
+  # `key` into the `:answer_client` / `:answer_model` options the pipeline reads.
+  # `requires_env` (optional) gates an entry on an env var being set & non-empty,
+  # so e.g. the OpenRouter-backed model only appears when its API key is present.
+  @answer_models [
+    %{
+      key: "gpt-5-nano",
+      label: "GPT-5 Nano",
+      client: Sanbase.OpenAI.Question,
+      model: "gpt-5-nano"
+    },
+    %{
+      key: "gpt-5-mini",
+      label: "GPT-5 Mini",
+      client: Sanbase.OpenAI.Question,
+      model: "gpt-5-mini"
+    },
+    %{
+      key: "deepseek-v4-flash",
+      label: "DeepSeek V4 Flash",
+      client: Sanbase.OpenRouter.Question,
+      model: "deepseek/deepseek-v4-flash",
+      requires_env: "OPENROUTER_API_KEY"
+    }
+  ]
+
+  @doc """
+  The selectable answer models (key + label + client + model), filtered to those
+  currently usable — an entry with `requires_env` is dropped unless that env var
+  is set and non-empty. Evaluated at call time so it reflects the live env.
+  """
+  @spec answer_models() :: [map()]
+  def answer_models(), do: Enum.filter(@answer_models, &model_available?/1)
+
+  @doc "The default selectable answer model's key (the first available entry)."
+  @spec default_answer_model_key() :: String.t()
+  def default_answer_model_key(), do: hd(answer_models()).key
+
+  @doc """
+  Translate a selectable answer-model `key` into the `:answer_client` /
+  `:answer_model` options the answer pipeline reads. An unknown or unavailable
+  key returns `[]` so the configured default client/model is used.
+  """
+  @spec answer_model_options(String.t() | nil) :: keyword()
+  def answer_model_options(key) do
+    case Enum.find(answer_models(), &(&1.key == key)) do
+      nil -> []
+      choice -> [answer_client: choice.client, answer_model: choice.model]
+    end
+  end
+
+  defp model_available?(%{requires_env: var}) when is_binary(var) do
+    case System.get_env(var) do
+      value when is_binary(value) and value != "" -> true
+      _ -> false
+    end
+  end
+
+  defp model_available?(_), do: true
+
+  @default_answer_client Sanbase.OpenAI.Question
+
+  defp answer_client(options) do
+    Keyword.get(options, :answer_client) ||
+      Application.get_env(:sanbase, :knowledge_answer_client, @default_answer_client)
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   defp maybe_find_most_similar_faqs(user_input, embedding, options, min_sim) do
     if Keyword.get(options, :faq, true) do
@@ -304,37 +465,6 @@ defmodule Sanbase.Knowledge do
     Sanbase.Insight.Post.find_most_similar_insights(embedding, size)
   end
 
-  defp maybe_add_similar_insight_chunks(prompt, user_input, embedding, options, min_sim) do
-    if Keyword.get(options, :insight, true) do
-      with {:ok, raw_chunks} <- find_most_similar_insight_chunks(embedding, @retrieval_top_k) do
-        post_embeddings =
-          raw_chunks
-          |> filter_by_similarity(min_sim)
-          |> rerank(user_input, :insight, options)
-          |> diversify_by_document(& &1.post_id, @prompt_top_n)
-          |> maybe_expand_context(:insight, options)
-
-        if post_embeddings == [] do
-          {:ok, prompt, false}
-        else
-          text_chunks = Context.assemble(post_embeddings, :insight)
-
-          prompt =
-            prompt <>
-              """
-              <Most_Similar_Santiment_Insight_Chunks>
-              #{text_chunks}
-              </Most_Similar_Santiment_Insight_Chunks>
-              """
-
-          {:ok, prompt, true}
-        end
-      end
-    else
-      {:ok, prompt, false}
-    end
-  end
-
   defp maybe_find_most_similar_academy_articles(user_input, embedding, options, min_sim) do
     if Keyword.get(options, :academy, true) do
       with {:ok, raw} <- Sanbase.Knowledge.Academy.search_articles(embedding, @retrieval_top_k) do
@@ -345,41 +475,6 @@ defmodule Sanbase.Knowledge do
       end
     else
       {:ok, []}
-    end
-  end
-
-  defp maybe_add_similar_academy_chunks(prompt, user_input, embedding, options, min_sim) do
-    if Keyword.get(options, :academy, true) do
-      case Sanbase.Knowledge.Academy.search_chunks(embedding, @retrieval_top_k) do
-        {:ok, raw_chunks} ->
-          academy_chunks =
-            raw_chunks
-            |> filter_by_similarity(min_sim)
-            |> rerank(user_input, :academy, options)
-            |> diversify_by_document(& &1.article_id, @prompt_top_n)
-            |> maybe_expand_context(:academy, options)
-
-          if academy_chunks == [] do
-            {:ok, prompt, false}
-          else
-            academy_text_chunks = Context.assemble(academy_chunks, :academy)
-
-            prompt =
-              prompt <>
-                """
-                <Academy_Content>
-                #{academy_text_chunks}
-                </Academy_Content>
-                """
-
-            {:ok, prompt, true}
-          end
-
-        _ ->
-          {:ok, prompt, false}
-      end
-    else
-      {:ok, prompt, false}
     end
   end
 
@@ -489,12 +584,9 @@ defmodule Sanbase.Knowledge do
       good time to sell?"), do NOT answer it directly. Explain the relevant metrics and general methodology,
       state that you cannot provide personalized investment advice, and suggest they do their own research and
       consult a licensed financial professional.
-    - Only when the answer touches trading, investing, buying, selling, or market timing, append this exact
-      line as the very last line of the answer, after the Sources section (omit it for purely technical,
-      account, or product questions):
-      *Disclaimer: This is general information for educational purposes only, not financial or investment
-      advice. Santiment is not a licensed financial adviser. Do your own research and consult a licensed
-      professional before making any investment decision.*
+    - When (and only when) the answer touches trading, investing, buying, selling, or market timing, set the
+      `financial_disclaimer` output field to `true` so the standard disclaimer is appended for you. Set it to
+      `false` for purely technical, account, or product questions. Do NOT write the disclaimer text yourself.
     </Not_Financial_Advice>
 
     <Content_Freshness>
@@ -528,9 +620,10 @@ defmodule Sanbase.Knowledge do
       gets fuller treatment. Prefer the shortest answer that is still complete.
     - Expand acronyms and name metrics in full on first use — e.g. "MVRV (Market Value to Realized
       Value)" — so a non-expert can follow.
-    - Format in markdown for easy scanning. Use `###` for main sections and `####` for sub-sections
+    - Format the `answer` in markdown for easy scanning. Use `###` for main sections and `####` for sub-sections
       (the answer is displayed under an "Answer" heading, so do NOT use `#` or `##`). Use bullet points,
-      bold, italics, and code blocks where they aid clarity.
+      bold, italics, and code blocks where they aid clarity. Do NOT write a `Sources` section yourself — it is
+      built for you from the sources you cite (see Citations).
     - When a part of the question is procedural ("how to..."), give the answer as concrete numbered steps
       rather than prose.
     - When comparing variants, thresholds, or options, use a markdown table if it scans better than bullets.
@@ -543,42 +636,33 @@ defmodule Sanbase.Knowledge do
     </Answer_Style>
 
     <Citations_And_Links>
-    - Every provided context block has a `Source marker:` line that is already a SINGLE markdown link. Its
-      visible text begins with one of `FAQ:`, `Insight:`, or `Academy:` and its target is the URL — i.e. the
-      marker is always one of `[FAQ: label](url)`, `[Insight: label](url)`, or `[Academy: label](url)`.
-      Example: `[Academy: Getting Started for Traders](https://academy.santiment.net/for-traders/)`.
-    - Cite a claim by reproducing that ENTIRE marker VERBATIM and INLINE, right after the claim it supports
-      (how often to cite is governed by the frequency rules below — do NOT cite after every sentence).
-    - Copy the marker as one whole token: the leading `[`, the source-name prefix (`FAQ:` / `Insight:` /
-      `Academy:`), the label, the closing `]`, and
-      the `(url)` — all of it. You MUST keep the `(url)` parentheses so it renders as one clickable link. The
-      citation is a real markdown link, NOT plain text; never drop the URL and never flatten it into bare words.
-      Do NOT split the source name out into its own `[FAQ]` / `[Insight]` / `[Academy]` tag, and do NOT add
-      brackets inside the link text.
-      This applies to EVERY inline citation, not only the ones in the `Sources` section.
-      - CORRECT: `... view where social chatter is surging. [Academy: Getting Started for Traders](https://academy.santiment.net/for-traders/)`
-      - WRONG (URL dropped, dead link): `... view where social chatter is surging. [Academy: Getting Started for Traders]`
-      - WRONG (split tag + brackets in link text): `... view where social chatter is surging. [Academy] [Getting Started for Traders](https://academy.santiment.net/for-traders/)`
-    - Citation frequency — cite SPARINGLY, at the paragraph or section level, NOT after every sentence. The
-      answer should read as prose with occasional citations, not as a sentence-by-sentence trail of markers.
-      As a rule of thumb aim for about one citation per paragraph or per distinct claim: place it once, on the
-      sentence that carries the key fact, and move on. When several consecutive sentences rely on the same
-      source, cite it a single time for the whole passage.
-    - One source per claim — cite the SINGLE source that best supports a claim. Do NOT stack multiple markers
-      after one sentence, and do NOT append a marker for every source that is loosely related to the topic.
-      Attach two markers to one claim only when two distinct sources each independently and directly establish
-      that exact claim; this should be rare.
-    - NO grouped citation blocks. Never write a "Citations for ...:" line, a "Sources for this section:" line,
-      or any run of markers piled together inside the body. The ONLY place markers may appear as a list is the
-      single final `Sources` section. Everywhere else a marker is inline, attached to the one claim it supports.
-    - Do not re-cite a source you have already cited inline unless it later supports a clearly different claim;
-      the complete list of what was used lives in the `Sources` section.
-    - Only use links explicitly included in the provided content. Do not invent or hallucinate markers,
-      links, labels, or URLs, and do not convert links to plain text.
-    - End the answer with a `Sources` section listing each unique cited marker on its own bullet,
-      reproducing the same marker verbatim (one per unique source).
+    - Every provided context block begins with a header like `Source [3] — Academy: Getting Started for Traders`.
+      The number in brackets (here `3`) is that block's citation id.
+    - Cite a claim by writing ONLY that bare id token inline, right after the claim it supports — e.g. `[3]`.
+      Do NOT write the label, the source name, a URL, or any markdown link: just the bracketed number. The real
+      clickable link and the `Sources` list are built for you from the id.
+      - CORRECT: `... social volume can signal a potential top. [3]`
+      - WRONG (do not write the label or a link): `... a potential top. [Academy: Getting Started for Traders](...)`
+      - WRONG (do not invent a URL): `... a potential top. (https://academy.santiment.net/...)`
+    - Use ONLY ids that appear in a provided `Source [...]` header. Never invent an id, a label, or a URL, and
+      never cite a block that was not provided.
+    - Citation frequency — cite SPARINGLY, at the paragraph or section level, NOT after every sentence. Aim for
+      about one citation per paragraph or per distinct claim: place the id once, on the sentence that carries the
+      key fact, and move on. When several consecutive sentences rely on the same source, cite it once for the
+      whole passage. Do not re-cite an id you already used unless it later supports a clearly different claim.
+    - One source per claim — cite the SINGLE id that best supports a claim. Do not pile several ids after one
+      sentence; attach two only when two distinct sources each independently establish that exact claim (rare).
+    - List every id you cited in the `source_ids` output field.
     </Citations_And_Links>
     </Instructions>
+
+    <Output_Format>
+    - Return a JSON object with exactly these keys:
+      - `answer`: the markdown answer described above, with inline `[id]` citations and NO `Sources` section.
+      - `source_ids`: an array of the integer ids you cited in `answer` (empty if you cited none).
+      - `financial_disclaimer`: a boolean, per the Not_Financial_Advice rules.
+    - Output ONLY this JSON object — no prose, code fences, or commentary around it.
+    </Output_Format>
 
     <User_Input>
     #{question}

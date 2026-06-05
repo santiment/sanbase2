@@ -3,6 +3,49 @@ defmodule Sanbase.Knowledge.ContextTest do
 
   alias Sanbase.Knowledge.Context
 
+  describe "marker/2" do
+    test "faq marker carries the question label and the admin faq url" do
+      hit = %{id: "550e8400-e29b-41d4-a716-446655440000", question: "What is MVRV?"}
+
+      marker = Context.marker(hit, :faq)
+
+      assert marker.source == :faq
+      assert marker.prefix == "FAQ"
+      assert marker.label == "What is MVRV?"
+      assert marker.url =~ "/admin/faq/550e8400-e29b-41d4-a716-446655440000"
+    end
+
+    test "faq label folds whitespace and truncates a long question to ~100 chars" do
+      long = String.duplicate("a", 150)
+
+      assert Context.marker(%{id: "1", question: long}, :faq).label ==
+               String.duplicate("a", 100) <> "…"
+
+      assert Context.marker(%{id: "1", question: "a\n  b\tc"}, :faq).label == "a b c"
+    end
+
+    test "insight marker carries the post title and an insight url" do
+      marker = Context.marker(%{post_id: 42, post_title: "Time to buy Bitcoin?"}, :insight)
+
+      assert marker.source == :insight
+      assert marker.prefix == "Insight"
+      assert marker.label == "Time to buy Bitcoin?"
+      assert marker.url =~ "http"
+    end
+
+    test "academy marker passes the article title and url through" do
+      marker =
+        Context.marker(%{title: "MVRV", url: "https://academy.santiment.net/mvrv"}, :academy)
+
+      assert marker == %{
+               source: :academy,
+               prefix: "Academy",
+               label: "MVRV",
+               url: "https://academy.santiment.net/mvrv"
+             }
+    end
+  end
+
   describe "assemble/2" do
     test "empty hits give empty string for every source" do
       assert Context.assemble([], :faq) == ""
@@ -10,9 +53,22 @@ defmodule Sanbase.Knowledge.ContextTest do
       assert Context.assemble([], :academy) == ""
     end
 
-    test "insight entry carries source marker, the publish date, and the chunk text" do
+    test "faq block leads with the numbered source header and carries Q/A" do
+      hits = [
+        %{marker_id: 2, id: "abc", question: "What is MVRV?", answer_markdown: "MV / RV."}
+      ]
+
+      text = Context.assemble(hits, :faq)
+
+      assert text =~ "Source [2] — FAQ: What is MVRV?"
+      assert text =~ "Question: What is MVRV?"
+      assert text =~ "Answer: MV / RV."
+    end
+
+    test "insight block carries the numbered header, the publish date and the chunk text" do
       hits = [
         %{
+          marker_id: 1,
           post_id: 42,
           post_title: "Time to buy Bitcoin?",
           published_at: ~N[2021-05-12 09:30:00],
@@ -22,135 +78,91 @@ defmodule Sanbase.Knowledge.ContextTest do
 
       text = Context.assemble(hits, :insight)
 
-      assert text =~ "Source marker: [Insight: Time to buy Bitcoin?]("
+      assert text =~ "Source [1] — Insight: Time to buy Bitcoin?"
       assert text =~ "Published: 2021-05-12"
       assert text =~ "Look for an entry near 36,600."
     end
 
+    test "academy block carries the numbered header and the chunk text" do
+      hits = [
+        %{
+          marker_id: 3,
+          title: "MVRV",
+          url: "https://academy.santiment.net/mvrv",
+          chunk: "MVRV body text"
+        }
+      ]
+
+      text = Context.assemble(hits, :academy)
+
+      assert text =~ "Source [3] — Academy: MVRV"
+      assert text =~ "Most relevant chunk from article: MVRV body text"
+    end
+
+    test "the source header omits the id when a hit carries no marker_id (eval path)" do
+      hits = [%{id: "abc", question: "What is MVRV?", answer_markdown: "MV / RV."}]
+
+      text = Context.assemble(hits, :faq)
+
+      assert text =~ "Source — FAQ: What is MVRV?"
+      refute text =~ "Source ["
+    end
+
+    test "no URL is embedded in the prompt context — only the model-cited id is" do
+      hits = [
+        %{marker_id: 3, title: "MVRV", url: "https://academy.santiment.net/mvrv", chunk: "body"}
+      ]
+
+      refute Context.assemble(hits, :academy) =~ "https://academy.santiment.net/mvrv"
+    end
+
     test "insight publish line includes the age so the model need not compute it" do
       pub = Date.add(Date.utc_today(), -3)
-
-      hits = [
-        %{post_id: 7, post_title: "T", published_at: pub, text_chunk: "body"}
-      ]
+      hits = [%{marker_id: 1, post_id: 7, post_title: "T", published_at: pub, text_chunk: "body"}]
 
       assert Context.assemble(hits, :insight) =~ "Published: #{Date.to_iso8601(pub)} (3 days ago)"
     end
 
     test "insight published today reads as today, not '0 days ago'" do
       hits = [
-        %{post_id: 8, post_title: "T", published_at: Date.utc_today(), text_chunk: "body"}
+        %{
+          marker_id: 1,
+          post_id: 8,
+          post_title: "T",
+          published_at: Date.utc_today(),
+          text_chunk: "b"
+        }
       ]
 
       assert Context.assemble(hits, :insight) =~ "(today)"
     end
 
     test "insight publish date degrades to a label when missing" do
-      hits = [%{post_id: 1, post_title: "T", text_chunk: "body"}]
+      hits = [%{marker_id: 1, post_id: 1, post_title: "T", text_chunk: "body"}]
 
       assert Context.assemble(hits, :insight) =~ "Published: unknown date"
     end
+  end
 
-    test "academy entry carries source marker, link and chunk text" do
-      hits = [
-        %{title: "MVRV", url: "https://academy.santiment.net/mvrv", chunk: "MVRV body text"}
-      ]
-
-      text = Context.assemble(hits, :academy)
-
-      assert text =~ "Source marker: [Academy: MVRV](https://academy.santiment.net/mvrv)"
-      assert text =~ "Most relevant chunk from article: MVRV body text"
+  describe "escape_label/1" do
+    # Labels are user-controlled (post/article titles, FAQ questions). When the
+    # label is interpolated into a `[label](url)` citation link, a crafted title
+    # with markdown link delimiters must not be able to close the label early and
+    # inject a different (e.g. phishing) target. escape_label neutralises them.
+    test "escapes the markdown link delimiters and the backslash" do
+      assert Context.escape_label("a]b") == "a\\]b"
+      assert Context.escape_label("a[b") == "a\\[b"
+      assert Context.escape_label("a(b)") == "a\\(b\\)"
+      # backslash is escaped first so the others are not double-escaped
+      assert Context.escape_label("a\\b") == "a\\\\b"
     end
 
-    test "academy joins multiple chunks" do
-      hits = [
-        %{title: "A", url: "u1", chunk: "first"},
-        %{title: "B", url: "u2", chunk: "second"}
-      ]
+    test "an escaped malicious title cannot break out of a citation link" do
+      label = "Click here](https://phishing.example) and [more"
+      escaped = Context.escape_label(label)
 
-      text = Context.assemble(hits, :academy)
+      html = Earmark.as_html!("[#{escaped}](https://academy.santiment.net/mvrv)")
 
-      assert text =~ "first"
-      assert text =~ "second"
-    end
-
-    test "faq link label is the question, not the id" do
-      hits = [
-        %{
-          id: "550e8400-e29b-41d4-a716-446655440000",
-          question: "What is MVRV?",
-          answer_markdown: "MV / RV."
-        }
-      ]
-
-      text = Context.assemble(hits, :faq)
-
-      assert text =~ "Source marker: [FAQ: What is MVRV?](http"
-      refute text =~ "[FAQ #"
-      assert text =~ "/admin/faq/550e8400-e29b-41d4-a716-446655440000)"
-    end
-
-    test "faq label truncates a long question to ~100 chars with an ellipsis" do
-      long = String.duplicate("a", 150)
-      hits = [%{id: "1", question: long, answer_markdown: "x"}]
-
-      text = Context.assemble(hits, :faq)
-
-      assert text =~ "[FAQ: #{String.duplicate("a", 100)}…]("
-      refute text =~ "[#{String.duplicate("a", 101)}"
-    end
-
-    # Guards two live rendering bugs: (1) a dead `[Academy] [label]` with no link
-    # (the marker must be a SINGLE markdown link), and (2) nested brackets in the
-    # link text (`[[Academy] label]`) which some renderers fail to parse. The
-    # source tag is joined to the label with a colon, inside one link, no brackets.
-    test "marker renders as one clickable link with no nested brackets in the link text" do
-      hits = [%{title: "MVRV", url: "https://academy.santiment.net/mvrv", chunk: "body"}]
-
-      marker =
-        hits
-        |> Context.assemble(:academy)
-        |> String.split("\n", trim: true)
-        |> Enum.find(&String.starts_with?(&1, "Source marker: "))
-        |> String.replace_leading("Source marker: ", "")
-
-      html = Earmark.as_html!(marker)
-
-      assert html =~ ~s(<a href="https://academy.santiment.net/mvrv">Academy: MVRV</a>)
-      # The marker itself must not contain a bracket inside the link text.
-      refute marker =~ "[Academy]"
-      refute marker =~ "[["
-    end
-
-    # Labels are user-controlled (post/article titles, FAQ questions). A crafted
-    # title with markdown link delimiters must NOT be able to close the label
-    # early and inject a different link target — otherwise a forged/phishing URL
-    # could surface in a citation. The delimiters are escaped so the title stays
-    # inert text inside the original link, which still points at the real URL.
-    test "a malicious title cannot break out of the link or inject another target" do
-      hits = [
-        %{
-          title: "Click here](https://phishing.example) and [more",
-          url: "https://academy.santiment.net/mvrv",
-          chunk: "body"
-        }
-      ]
-
-      marker =
-        hits
-        |> Context.assemble(:academy)
-        |> String.split("\n", trim: true)
-        |> Enum.find(&String.starts_with?(&1, "Source marker: "))
-        |> String.replace_leading("Source marker: ", "")
-
-      # The injected delimiters are escaped, so the phishing URL stays inert text
-      # inside the label rather than becoming a second link target.
-      assert marker =~ "\\]\\(https://phishing.example\\)"
-      assert marker =~ "\\[more"
-
-      html = Earmark.as_html!(marker)
-
-      # Exactly one link, pointing at the real URL — the phishing URL is never an href.
       assert html =~ ~s(href="https://academy.santiment.net/mvrv")
       refute html =~ ~s(href="https://phishing.example")
       assert length(Regex.scan(~r/<a /, html)) == 1

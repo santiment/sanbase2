@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.AddContextExpansionToQuestionAnswerLogs do
 
   def change do
     alter table(:question_answer_logs) do
-      add(:context_expansion, :boolean)
+      add(:context_expansion, :boolean, default: false, null: false)
     end
   end
 end

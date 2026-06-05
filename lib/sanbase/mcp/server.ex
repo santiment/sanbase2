@@ -44,8 +44,12 @@ defmodule Sanbase.MCP.Server do
   component(Sanbase.MCP.TrendingStoriesTool)
   component(Sanbase.MCP.CombinedTrendsTool)
 
+  # Register chart tool
+  component(Sanbase.MCP.ShowChartTool)
+
   # Register MCP App UI resources
   component(Sanbase.MCP.SocialTrendsUI)
+  component(Sanbase.MCP.ChartUI)
 
   # Register Screener tool
   component(Sanbase.MCP.AssetsByMetricTool)

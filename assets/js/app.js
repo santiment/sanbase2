@@ -11,6 +11,7 @@ import { InfiniteScroll } from "./infinite_scroll"
 import { TickerAutocomplete } from "./ticker_autocomplete"
 import { EasyMDEEditor } from "./hooks/easymde_editor"
 import { TimeseriesChart } from "./hooks/timeseries_chart"
+import { Copy } from "./hooks/copy"
 
 // Make Sortable available globally
 window.Sortable = Sortable
@@ -24,7 +25,8 @@ const Hooks = {
   InfiniteScroll: InfiniteScroll,
   TickerAutocomplete: TickerAutocomplete,
   EasyMDEEditor: EasyMDEEditor,
-  TimeseriesChart: TimeseriesChart
+  TimeseriesChart: TimeseriesChart,
+  Copy: Copy
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

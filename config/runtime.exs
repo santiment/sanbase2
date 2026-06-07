@@ -35,6 +35,19 @@ end
 config :sanbase, Sanbase.SmartContracts.SanrNFT,
   alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
 
+# Deep research agent (LangGraph). The LiveView connects directly to the agent's
+# HTTP/SSE API. Models/keys left unset fall back to the agent server's own .env
+# defaults (per-run `configurable` only overrides what we send).
+config :sanbase, Sanbase.DeepResearch,
+  base_url: System.get_env("DRA_BASE_URL", "http://127.0.0.1:2024"),
+  assistant_id: System.get_env("DRA_ASSISTANT_ID", "deep_research_agent"),
+  research_model: System.get_env("DRA_RESEARCH_MODEL"),
+  final_report_model: System.get_env("DRA_REPORT_MODEL"),
+  summarization_model: System.get_env("DRA_SUMMARIZATION_MODEL"),
+  compression_model: System.get_env("DRA_COMPRESSION_MODEL"),
+  openrouter_api_key: System.get_env("OPENROUTER_API_KEY"),
+  tavily_api_key: System.get_env("TAVILY_API_KEY")
+
 # CSV string of extra emails to treat as "team members" in the MCP admin
 # views. The @santiment.net domain is excluded unconditionally; this
 # variable lets us add gmail/personal accounts of teammates.

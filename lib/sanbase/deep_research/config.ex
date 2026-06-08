@@ -37,20 +37,25 @@ defmodule Sanbase.DeepResearch.Config do
   typed event protocol (`custom`), state updates (`updates`) and assistant
   thinking tokens (`messages`).
   """
-  @spec run_payload(String.t()) :: map()
-  def run_payload(message) when is_binary(message) do
+  @doc """
+  The run body. `opts[:mcp_servers]` is a list of agent MCP server maps
+  (`%{"name", "url", "headers", "tools"}`) to connect for this run; when present
+  the agent exposes those servers' tools (e.g. Santiment data) to the research.
+  """
+  @spec run_payload(String.t(), keyword()) :: map()
+  def run_payload(message, opts \\ []) when is_binary(message) do
     %{
       assistant_id: assistant_id(),
       input: %{messages: [%{role: "user", content: message}]},
-      config: %{configurable: configurable()},
+      config: %{configurable: configurable(opts)},
       stream_mode: ["messages", "updates", "custom"],
       stream_subgraphs: true
     }
   end
 
   @doc "The per-run `configurable` map (only non-nil keys are included)."
-  @spec configurable() :: map()
-  def configurable() do
+  @spec configurable(keyword()) :: map()
+  def configurable(opts \\ []) do
     %{
       "search_api" => "tavily",
       "allow_clarification" => get(:allow_clarification, true),
@@ -62,7 +67,47 @@ defmodule Sanbase.DeepResearch.Config do
       "final_report_model" => get(:final_report_model)
     }
     |> maybe_put_api_keys()
+    |> maybe_put_mcp(Keyword.get(opts, :mcp_servers, []))
     |> reject_nil_values()
+  end
+
+  @doc """
+  The catalog of MCP servers the UI can offer. Each entry is
+  `%{key, label, url, auth}` (`auth: :user_apikey` resolves to the caller's
+  Santiment API key). Configurable via `:mcp_servers` in app env so more
+  servers (local or remote) can be added without code changes.
+  """
+  @spec mcp_catalog() :: [map()]
+  def mcp_catalog() do
+    case get(:mcp_servers) do
+      servers when is_list(servers) and servers != [] -> servers
+      _ -> default_mcp_catalog()
+    end
+  end
+
+  defp default_mcp_catalog() do
+    [
+      %{
+        key: "santiment",
+        label: "Santiment",
+        url: System.get_env("DRA_MCP_URL", "http://localhost:4000/mcp"),
+        auth: :user_apikey
+      }
+    ]
+  end
+
+  defp maybe_put_mcp(configurable, []), do: configurable
+
+  defp maybe_put_mcp(configurable, mcp_servers) when is_list(mcp_servers) do
+    configurable
+    |> Map.put("mcp_servers", mcp_servers)
+    |> Map.put("mcp_prompt", get(:mcp_prompt) || default_mcp_prompt())
+  end
+
+  defp default_mcp_prompt() do
+    "Use the Santiment tools for quantitative crypto data — on-chain, social and " <>
+      "market metrics, asset/metric discovery, insights and trending stories. Prefer " <>
+      "them over generic web search for numeric metrics, and cite them in the report."
   end
 
   defp maybe_put_api_keys(configurable) do

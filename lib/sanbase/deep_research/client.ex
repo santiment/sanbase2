@@ -72,10 +72,10 @@ defmodule Sanbase.DeepResearch.Client do
   until the stream ends — run it via `start_async/3` so the LiveView keeps
   serving heartbeats. Returns the terminal status for `handle_async/3`.
   """
-  @spec stream_run(String.t(), String.t(), pid()) :: :ok | {:error, String.t()}
-  def stream_run(thread_id, message, lv_pid) do
+  @spec stream_run(String.t(), String.t(), pid(), [map()]) :: :ok | {:error, String.t()}
+  def stream_run(thread_id, message, lv_pid, mcp_servers \\ []) do
     Process.put(:dra_buffer, "")
-    payload = Config.run_payload(message)
+    payload = Config.run_payload(message, mcp_servers: mcp_servers)
 
     result =
       Req.post(url("/threads/#{thread_id}/runs/stream"),

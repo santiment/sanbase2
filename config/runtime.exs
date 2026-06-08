@@ -46,7 +46,19 @@ config :sanbase, Sanbase.DeepResearch,
   summarization_model: System.get_env("DRA_SUMMARIZATION_MODEL"),
   compression_model: System.get_env("DRA_COMPRESSION_MODEL"),
   openrouter_api_key: System.get_env("OPENROUTER_API_KEY"),
-  tavily_api_key: System.get_env("TAVILY_API_KEY")
+  tavily_api_key: System.get_env("TAVILY_API_KEY"),
+  # Catalog of MCP servers the research UI can connect to. Each entry:
+  # %{key, label, url, auth}. auth: :user_apikey sends the caller's Santiment
+  # API key as `Authorization: Apikey <key>`. Add more entries (local or remote)
+  # here — no code changes needed.
+  mcp_servers: [
+    %{
+      key: "santiment",
+      label: "Santiment",
+      url: System.get_env("DRA_MCP_URL", "http://localhost:4000/mcp"),
+      auth: :user_apikey
+    }
+  ]
 
 # CSV string of extra emails to treat as "team members" in the MCP admin
 # views. The @santiment.net domain is excluded unconditionally; this

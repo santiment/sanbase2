@@ -270,9 +270,12 @@ defmodule SanbaseWeb.DeepResearchLive do
       is_nil(turn) ->
         socket
 
-      # A report was delivered, or the turn already ended in a known state
-      # (failed via a `status: error`, cancelled, or awaiting a clarification).
-      turn.report || turn.phase in [:failed, :cancelled, :awaiting_user] ->
+      # A report was delivered, the turn already ended in a known state (failed
+      # via a `status: error`, cancelled, or awaiting a clarification), or the
+      # agent answered conversationally in plain text (a follow-up/simple
+      # question — no report is expected, so it is NOT a missing-report failure).
+      turn.report || turn.phase in [:failed, :cancelled, :awaiting_user] ||
+          Timeline.direct_answer?(turn) ->
         update_last_turn(socket, &finalize_turn/1)
 
       # The stream closed with NO report and no explicit error. Poll the thread

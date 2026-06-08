@@ -58,6 +58,30 @@ defmodule Sanbase.DeepResearch.Timeline do
   def running_phase?(phase), do: phase in @running_phases
 
   @doc """
+  True when the turn delivered a direct conversational answer — a non-empty
+  assistant text message, with no report, no clarification questions, and no
+  research tool calls.
+
+  The agent triages every turn: a simple or follow-up question is answered
+  briefly in plain text and it deliberately does NOT call `submit_report` (that
+  channel is for research reports only). Such a turn emits no `report` event, so
+  the absence of a report is expected here, not a failed run. The LiveView uses
+  this to avoid the spurious "no report" error on conversational replies. A turn
+  that DID research but produced no report is a genuine stall and is excluded.
+  """
+  @spec direct_answer?(turn()) :: boolean()
+  def direct_answer?(turn) do
+    is_nil(turn.report) and turn.clarification in [nil, []] and
+      not researched?(turn.timeline) and answered_in_text?(turn.timeline)
+  end
+
+  defp researched?(timeline), do: Enum.any?(timeline, &(&1.kind in [:search, :mcp]))
+
+  defp answered_in_text?(timeline) do
+    Enum.any?(timeline, &(&1.kind == :thinking and String.trim(&1.text || "") != ""))
+  end
+
+  @doc """
   Apply one parsed `EventParser` result map to `turn`. A single result may carry
   several effects at once (e.g. report + phase, or activity + phase).
   """

@@ -88,6 +88,58 @@ defmodule Sanbase.DeepResearch.TimelineTest do
     end
   end
 
+  describe "direct_answer?" do
+    test "true for a plain-text answer with no report, clarification, or research" do
+      t = Timeline.apply_result(turn(), %{thinking: %{id: "m1", text: "Those were my notes."}})
+      assert Timeline.direct_answer?(t)
+    end
+
+    test "false when a report was delivered" do
+      t =
+        turn()
+        |> Timeline.apply_result(%{thinking: %{id: "m1", text: "answer"}})
+        |> Timeline.apply_result(%{report: "# R"})
+
+      refute Timeline.direct_answer?(t)
+    end
+
+    test "false when clarification questions were asked" do
+      t =
+        turn()
+        |> Timeline.apply_result(%{thinking: %{id: "m1", text: "a"}})
+        |> Timeline.apply_result(%{
+          activity: %{kind: :clarification, questions: ["Which region?"]}
+        })
+
+      refute Timeline.direct_answer?(t)
+    end
+
+    test "false when research ran but no report was produced (a genuine stall)" do
+      mcp =
+        turn()
+        |> Timeline.apply_result(%{thinking: %{id: "m1", text: "found data"}})
+        |> Timeline.apply_result(%{activity: %{kind: :mcp_call, id: "x", tool: "f", args: %{}}})
+
+      search =
+        turn()
+        |> Timeline.apply_result(%{thinking: %{id: "m1", text: "found data"}})
+        |> Timeline.apply_result(%{activity: %{kind: :search_query, id: "s1", query: "q"}})
+
+      refute Timeline.direct_answer?(mcp)
+      refute Timeline.direct_answer?(search)
+    end
+
+    test "false when the turn carries no assistant text" do
+      empty = turn()
+      status = Timeline.apply_result(turn(), %{activity: %{kind: :status, state: "mcp_ready"}})
+      blank = Timeline.apply_result(turn(), %{thinking: %{id: "m1", text: "   "}})
+
+      refute Timeline.direct_answer?(empty)
+      refute Timeline.direct_answer?(status)
+      refute Timeline.direct_answer?(blank)
+    end
+  end
+
   describe "merge_phase" do
     test "advances monotonically through in-progress order" do
       assert Timeline.merge_phase(:planning, :researching) == :researching

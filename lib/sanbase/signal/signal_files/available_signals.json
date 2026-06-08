@@ -100,5 +100,35 @@
       "SANAPI": "free",
       "SANBASE": "free"
     }
+  },
+    {
+    "human_readable_name": "Anomaly: Large Stablecoin Mint",
+    "name": "anomaly_large_stablecoin_mint",
+    "signal": "large_usdc_usdt_mint",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
+  },
+    {
+    "human_readable_name": "Anomaly: Social-Price Correlation",
+    "name": "anomaly_social_price_correlation",
+    "signal": "social_price_correlation",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   }
 ]

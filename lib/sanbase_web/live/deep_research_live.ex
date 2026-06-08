@@ -16,8 +16,14 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   alias Sanbase.DeepResearch.{Client, EventParser, Timeline}
 
+  @no_report_error "The research run finished without producing a report — the agent stopped " <>
+                     "before delivering one (it may have hit a tool/iteration budget or been " <>
+                     "unable to complete the task). Try rephrasing or narrowing your question."
+
   @impl true
   def mount(_params, _session, socket) do
+    catalog = Sanbase.DeepResearch.Config.mcp_catalog()
+
     {:ok,
      assign(socket,
        turns: [],
@@ -26,6 +32,9 @@ defmodule SanbaseWeb.DeepResearchLive do
        running: false,
        query: "",
        mcp_warning: nil,
+       mcp_catalog: catalog,
+       # All configured MCP servers are enabled (connected) by default.
+       mcp_enabled: MapSet.new(Enum.map(catalog, & &1.key)),
        next_id: 1,
        now_ms: now_ms()
      )}
@@ -40,6 +49,17 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   def handle_event("use_example", %{"q" => query}, socket) do
     {:noreply, assign(socket, :query, query)}
+  end
+
+  def handle_event("toggle_mcp", %{"key" => key}, socket) do
+    enabled = socket.assigns.mcp_enabled
+
+    enabled =
+      if MapSet.member?(enabled, key),
+        do: MapSet.delete(enabled, key),
+        else: MapSet.put(enabled, key)
+
+    {:noreply, assign(socket, :mcp_enabled, enabled)}
   end
 
   def handle_event("submit", %{"query" => query}, socket) do
@@ -72,10 +92,14 @@ defmodule SanbaseWeb.DeepResearchLive do
     turn = Timeline.new_turn(text, id, now)
     lv = self()
     thread_id = socket.assigns.thread_id
+    # Pure, in-memory: which MCP servers are toggled on. Auth resolution (a DB
+    # read) is deferred into the async task so the LiveView process never blocks.
+    enabled_mcp = enabled_mcp_servers(socket)
+    user = socket.assigns[:current_user]
 
-    # The run streams off the socket via start_async/3 (like AskLive) so the
-    # LiveView process keeps serving heartbeats; incremental events arrive as
-    # {:dra_event, _} messages, the terminal status via handle_async/3.
+    # Everything network/DB-bound runs off the socket via start_async/3 (like
+    # AskLive) so the LiveView keeps serving heartbeats; incremental events
+    # arrive as {:dra_event, _} messages, the terminal status via handle_async/3.
     socket
     |> assign(
       turns: socket.assigns.turns ++ [turn],
@@ -86,25 +110,81 @@ defmodule SanbaseWeb.DeepResearchLive do
       now_ms: now
     )
     |> schedule_tick()
-    |> start_async(:research, fn -> run_stream(thread_id, text, lv) end)
+    |> start_async(:research, fn -> run_stream(thread_id, text, lv, enabled_mcp, user) end)
   end
 
-  # Runs in the async task: create the thread on the first turn, then stream.
-  # Returns the terminal status (handled by handle_async/3).
-  defp run_stream(nil, text, lv) do
+  # The enabled catalog entries — pure, runs in the LiveView process (no DB/IO).
+  defp enabled_mcp_servers(socket) do
+    Enum.filter(socket.assigns.mcp_catalog, &MapSet.member?(socket.assigns.mcp_enabled, &1.key))
+  end
+
+  # Runs INSIDE the async task (off the LiveView process): resolve MCP auth (a
+  # DB read), create the thread on the first turn, then stream. Returns the
+  # terminal status, handled by handle_async/3.
+  defp run_stream(thread_id, text, lv, enabled_mcp, user) do
+    mcp_servers = build_mcp_servers(enabled_mcp, user)
+    do_run_stream(thread_id, text, lv, mcp_servers)
+  end
+
+  defp do_run_stream(nil, text, lv, mcp_servers) do
     case Client.create_thread() do
       {:ok, thread_id} ->
         send(lv, {:dra_thread, thread_id})
-        Client.stream_run(thread_id, text, lv)
+        Client.stream_run(thread_id, text, lv, mcp_servers)
 
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp run_stream(thread_id, text, lv) when is_binary(thread_id) do
-    Client.stream_run(thread_id, text, lv)
+  defp do_run_stream(thread_id, text, lv, mcp_servers) when is_binary(thread_id) do
+    Client.stream_run(thread_id, text, lv, mcp_servers)
   end
+
+  # Build agent MCP server maps from the enabled catalog entries, resolving
+  # `:user_apikey` auth to the user's Santiment API key. Runs in the async task.
+  defp build_mcp_servers([], _user), do: []
+
+  defp build_mcp_servers(enabled, user) do
+    api_key = resolve_api_key(enabled, user)
+    enabled |> Enum.map(&agent_server(&1, api_key)) |> Enum.reject(&is_nil/1)
+  end
+
+  defp resolve_api_key(enabled, user) do
+    if Enum.any?(enabled, &(&1.auth == :user_apikey)) do
+      case fetch_api_key(user) do
+        {:ok, key} -> key
+        _ -> nil
+      end
+    end
+  end
+
+  defp agent_server(%{auth: :user_apikey} = server, api_key) when is_binary(api_key) do
+    %{
+      "name" => server.label,
+      "label" => server.label,
+      "url" => server.url,
+      "tools" => [],
+      "headers" => %{"Authorization" => "Apikey #{api_key}"}
+    }
+  end
+
+  # No API key available — skip a server that needs one.
+  defp agent_server(%{auth: :user_apikey}, _api_key), do: nil
+
+  defp agent_server(server, _api_key) do
+    %{"name" => server.label, "label" => server.label, "url" => server.url, "tools" => []}
+  end
+
+  defp fetch_api_key(%Sanbase.Accounts.User{} = user) do
+    case Sanbase.Accounts.Apikey.apikeys_list(user) do
+      {:ok, [key | _]} -> {:ok, key}
+      {:ok, []} -> Sanbase.Accounts.Apikey.generate_apikey(user)
+      other -> other
+    end
+  end
+
+  defp fetch_api_key(_), do: {:error, :no_user}
 
   # -- streamed messages -------------------------------------------------------
 
@@ -127,16 +207,28 @@ defmodule SanbaseWeb.DeepResearchLive do
     {:noreply, socket}
   end
 
-  # Poll-state fallback: only fill a missing report — never overwrite the turn's
-  # own report, and never revive a failed/cancelled/awaiting turn.
+  # Poll-state fallback after a no-report stream close: recover a report from the
+  # thread state if present, otherwise fail the turn with an explanation.
   def handle_info({:dra_poll, result}, socket) do
     socket =
       update_last_turn(socket, fn turn ->
         cond do
-          turn.phase in [:failed, :cancelled, :awaiting_user] -> turn
-          turn.report -> turn
-          is_binary(result[:report]) -> %{turn | report: result[:report], phase: :completed}
-          true -> turn
+          turn.phase in [:failed, :cancelled, :awaiting_user] ->
+            turn
+
+          turn.report ->
+            %{turn | phase: :completed, finished_at: turn.finished_at || now_ms()}
+
+          is_binary(result[:report]) ->
+            %{
+              turn
+              | report: result[:report],
+                phase: :completed,
+                finished_at: turn.finished_at || now_ms()
+            }
+
+          true ->
+            fail_no_report(turn)
         end
       end)
 
@@ -168,14 +260,43 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   # -- state helpers -----------------------------------------------------------
 
+  defp finalize_run(%{assigns: %{running: false}} = socket), do: socket
+
   defp finalize_run(socket) do
-    if socket.assigns.running do
-      socket = socket |> update_last_turn(&finalize_turn/1) |> assign(running: false)
-      maybe_poll_state(socket)
-      socket
-    else
-      socket
+    socket = assign(socket, running: false)
+    turn = List.last(socket.assigns.turns)
+
+    cond do
+      is_nil(turn) ->
+        socket
+
+      # A report was delivered, or the turn already ended in a known state
+      # (failed via a `status: error`, cancelled, or awaiting a clarification).
+      turn.report || turn.phase in [:failed, :cancelled, :awaiting_user] ->
+        update_last_turn(socket, &finalize_turn/1)
+
+      # The stream closed with NO report and no explicit error. Poll the thread
+      # state as a fallback; the {:dra_poll, _} handler then either completes the
+      # turn (report recovered) or fails it with an explanation.
+      socket.assigns.thread_id ->
+        poll_state_async(socket.assigns.thread_id, self())
+        update_last_turn(socket, fn t -> %{t | finished_at: t.finished_at || now_ms()} end)
+
+      true ->
+        update_last_turn(socket, &fail_no_report/1)
     end
+  end
+
+  # A run that ends without ever delivering a report is a failure — show why.
+  # Keep any error reason the agent already surfaced (e.g. a `status: error`
+  # detail); otherwise explain the missing report.
+  defp fail_no_report(turn) do
+    %{
+      turn
+      | phase: :failed,
+        error: turn.error || @no_report_error,
+        finished_at: turn.finished_at || now_ms()
+    }
   end
 
   defp fail_run(socket, reason) do
@@ -226,23 +347,16 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  defp maybe_poll_state(socket) do
-    turn = List.last(socket.assigns.turns)
-    thread_id = socket.assigns.thread_id
-
-    if thread_id && turn && is_nil(turn.report) && turn.phase == :completed do
-      poll_state_async(thread_id, self())
-    end
-
-    :ok
-  end
-
   defp poll_state_async(thread_id, lv) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      case Client.get_state(thread_id) do
-        {:ok, state} -> send(lv, {:dra_poll, EventParser.parse_thread_state(state)})
-        _ -> :ok
-      end
+      result =
+        case Client.get_state(thread_id) do
+          {:ok, state} -> EventParser.parse_thread_state(state)
+          _ -> %{}
+        end
+
+      # Always reply so the LiveView can finalize (recover report or fail).
+      send(lv, {:dra_poll, result})
     end)
   end
 
@@ -304,6 +418,35 @@ defmodule SanbaseWeb.DeepResearchLive do
       </div>
 
       <div class="shrink-0 pt-2">
+        <div :if={@mcp_catalog != []} class="mb-2 flex flex-wrap items-center gap-2 px-1">
+          <span class="text-[11px] font-medium uppercase tracking-wide text-base-content/40">
+            Data sources
+          </span>
+          <button
+            :for={server <- @mcp_catalog}
+            type="button"
+            phx-click="toggle_mcp"
+            phx-value-key={server.key}
+            aria-pressed={MapSet.member?(@mcp_enabled, server.key)}
+            title={"Connect the agent to #{server.label} MCP tools"}
+            class={[
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition",
+              if(MapSet.member?(@mcp_enabled, server.key),
+                do: "border-primary/40 bg-primary/10 text-primary",
+                else:
+                  "border-base-300 text-base-content/50 hover:border-base-content/20 hover:text-base-content"
+              )
+            ]}
+          >
+            <.icon name="hero-circle-stack" class="size-3.5" />
+            {server.label}
+            <span
+              :if={MapSet.member?(@mcp_enabled, server.key)}
+              class="size-1.5 rounded-full bg-success"
+            >
+            </span>
+          </button>
+        </div>
         <p :if={@mcp_warning} class="mb-2 px-1 text-xs text-warning" role="status">
           {@mcp_warning}
         </p>

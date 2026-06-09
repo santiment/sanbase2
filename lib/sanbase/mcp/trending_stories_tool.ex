@@ -45,6 +45,11 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
     }
   end
 
+  @impl true
+  def meta do
+    %{"ui" => %{"resourceUri" => "ui://santiment/social-trends"}}
+  end
+
   schema do
     field(:time_period, :string,
       required: false,
@@ -87,7 +92,7 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
         total_time_periods: length(stories_data)
       }
 
-      {:reply, Response.json(Response.tool(), response_data), frame}
+      {:reply, Response.structured(Response.tool(), response_data), frame}
     else
       {:error, reason} ->
         {:reply, Response.error(Response.tool(), reason), frame}

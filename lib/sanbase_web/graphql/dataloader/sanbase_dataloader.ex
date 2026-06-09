@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.SanbaseDataloader do
-  require Logger
-
   alias SanbaseWeb.Graphql.BalanceDataloader
   alias SanbaseWeb.Graphql.ClickhouseDataloader
   alias SanbaseWeb.Graphql.EcosystemDataloader
@@ -128,19 +126,19 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
         PostgresDataloader.query(queryable, args)
 
       queryable in @balance_dataloader ->
-        BalanceDataloader.query(queryable, args)
+        BalanceDataloader.query(queryable, args, request_context)
 
       queryable in @price_dataloader ->
-        PriceDataloader.query(queryable, args)
+        PriceDataloader.query(queryable, args, request_context)
 
       queryable in @metricshub_dataloader ->
-        MetricshubDataloader.query(queryable, args)
+        MetricshubDataloader.query(queryable, args, request_context)
 
       queryable in @ecosystem_dataloader ->
-        EcosystemDataloader.query(queryable, args)
+        EcosystemDataloader.query(queryable, args, request_context)
 
       queryable in @labels_dataloader ->
-        LabelsDataloader.query(queryable, args)
+        LabelsDataloader.query(queryable, args, request_context)
 
       true ->
         raise(RuntimeError, "Unknown queryable provided to the dataloder: #{inspect(queryable)}")

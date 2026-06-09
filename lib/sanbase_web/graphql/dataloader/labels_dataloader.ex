@@ -1,16 +1,15 @@
 defmodule SanbaseWeb.Graphql.LabelsDataloader do
   alias Sanbase.Clickhouse.Label
 
-  def data(), do: Dataloader.KV.new(&query/2)
-
-  def query(:address_labels, addresses) do
+  def query(:address_labels, addresses, ctx) do
     addresses
     |> Enum.uniq()
     |> Enum.chunk_every(50)
     |> Sanbase.Parallel.map(&get_address_labels/1,
       max_concurrency: 4,
       ordered: false,
-      timeout: 55_000
+      timeout: 55_000,
+      request_context: ctx
     )
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end

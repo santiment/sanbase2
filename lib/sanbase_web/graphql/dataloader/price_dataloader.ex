@@ -3,11 +3,7 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
 
   @max_concurrency 30
 
-  def data() do
-    Dataloader.KV.new(&query/2)
-  end
-
-  def query(:volume_change_24h, args) do
+  def query(:volume_change_24h, args, ctx) do
     slugs = args |> Enum.map(& &1.slug)
 
     now = Timex.now()
@@ -22,12 +18,13 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
         [] -> []
       end,
       max_concurrency: 8,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Map.new()
   end
 
-  def query({:price, slug}, ids) do
+  def query({:price, slug}, ids, ctx) do
     ids
     |> Enum.uniq()
     |> Sanbase.Parallel.map(
@@ -35,12 +32,13 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
         {id, fetch_price(slug, id)}
       end,
       max_concurrency: @max_concurrency,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Map.new()
   end
 
-  def query(:last_price_usd, slugs) do
+  def query(:last_price_usd, slugs, _ctx) do
     now = Timex.now()
     yesterday = Timex.shift(Timex.now(), days: -1)
     slugs = Enum.to_list(slugs)

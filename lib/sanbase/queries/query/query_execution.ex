@@ -330,6 +330,20 @@ defmodule Sanbase.Queries.QueryExecution do
     %{credits_cost: credits_cost, execution_details: execution_details}
   end
 
+  # Driver timeout / failure can leave summary as nil. Fall back to a
+  # flat safe minimum so the billing row is still written and the user
+  # is still accounted for, instead of crashing through the rescue and
+  # dropping the execution entirely.
+  defp compute_credits_cost_from_summary(_) do
+    %{
+      credits_cost: 10,
+      execution_details: %{
+        source: "summary_missing",
+        multiplier: @activity_traces_hidden_multiplier
+      }
+    }
+  end
+
   defp summary_int(summary, key) do
     case Map.get(summary, key) do
       n when is_integer(n) ->

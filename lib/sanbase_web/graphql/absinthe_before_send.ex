@@ -310,8 +310,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         remote_ip: if(hide_activity?, do: nil, else: query_metadata.remote_ip),
         user_agent: if(hide_activity?, do: nil, else: query_metadata.user_agent),
         duration_ms: query_metadata.duration_ms,
-        response_size_byte: query_metadata.result_sizes.byte_size,
-        compressed_response_size_byte: query_metadata.result_sizes.compressed_byte_size
+        # Response size is a side-channel for correlating masked queries
+        # back to known result shapes — drop it for protected users.
+        response_size_byte:
+          if(hide_activity?, do: nil, else: query_metadata.result_sizes.byte_size),
+        compressed_response_size_byte:
+          if(hide_activity?, do: nil, else: query_metadata.result_sizes.compressed_byte_size)
       }
     end)
   end
@@ -466,7 +470,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       end)
     end
 
-    %{success: success, error: error}
     %{success: rename_mapper.(success), error: rename_mapper.(error)}
   end
 

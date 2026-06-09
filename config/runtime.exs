@@ -40,10 +40,6 @@ config :sanbase, Sanbase.SmartContracts.SanrNFT,
 # variable lets us add gmail/personal accounts of teammates.
 config :sanbase, Sanbase.MCP.ToolInvocation, team_emails: System.get_env("MCP_TEAM_EMAILS", "")
 
-if mcp_apps_url = System.get_env("MCP_APPS_BASE_URL") do
-  config :sanbase, :mcp_apps_base_url, mcp_apps_url
-end
-
 kafka_url = System.get_env("KAFKA_URL", "blockchain-kafka-kafka")
 kafka_port = System.get_env("KAFKA_PORT", "9092")
 kafka_enabled = System.get_env("REAL_KAFKA_ENABLED", "true")

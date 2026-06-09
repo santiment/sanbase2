@@ -7,6 +7,9 @@ defmodule Sanbase.MajorTopics do
 
   import Ecto.Query
 
+  require Logger
+
+  alias Sanbase.MajorTopics.ClickhouseFetcher
   alias Sanbase.MajorTopics.MajorTopic
   alias Sanbase.MajorTopics.TopicBatch
   alias Sanbase.Repo
@@ -20,7 +23,7 @@ defmodule Sanbase.MajorTopics do
     page_size = Keyword.get(opts, :page_size, 50) |> max(1)
 
     from(b in TopicBatch,
-      order_by: [desc: b.fetched_at, desc: b.id],
+      order_by: [desc: b.interval_start, desc: b.id],
       limit: ^page_size,
       offset: ^((page - 1) * page_size)
     )
@@ -43,23 +46,85 @@ defmodule Sanbase.MajorTopics do
   def latest_published_batch do
     from(b in TopicBatch,
       where: b.state == ^@published,
-      order_by: [desc: b.published_at, desc: b.id],
+      order_by: [desc: b.interval_start, desc: b.id],
       limit: 1
     )
     |> Repo.one()
-    |> case do
-      nil ->
-        nil
+    |> preload_active_topics()
+  end
 
-      batch ->
-        Repo.preload(batch,
-          topics:
-            from(t in MajorTopic,
-              where: t.is_removed == false,
-              order_by: [asc: t.position, asc: t.id]
-            )
+  @doc """
+  Fetch the published batch at the given `interval_start`. Returns `nil` if no
+  such batch exists or is not yet published.
+  """
+  @spec get_published_batch_at(Date.t()) :: TopicBatch.t() | nil
+  def get_published_batch_at(%Date{} = interval_start) do
+    from(b in TopicBatch,
+      where: b.state == ^@published and b.interval_start == ^interval_start,
+      order_by: [desc: b.inserted_at, desc: b.id],
+      limit: 1
+    )
+    |> Repo.one()
+    |> preload_active_topics()
+  end
+
+  @doc """
+  `interval_start` of the published batch whose start is closest to one step
+  before `current_start`. Step size is 7 days when `granularity` is `"week"`,
+  1 day when `"day"`. Used as the `previousIntervalStart` cursor.
+  """
+  @spec previous_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
+  def previous_published_interval_start(granularity, %Date{} = current_start) do
+    target = Date.add(current_start, -pagination_step_days(granularity))
+
+    from(b in TopicBatch,
+      where: b.state == ^@published and b.interval_start < ^current_start,
+      order_by: [
+        asc: fragment("abs(? - ?)", b.interval_start, ^target),
+        desc: b.interval_start,
+        desc: b.id
+      ],
+      limit: 1,
+      select: b.interval_start
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  `interval_start` of the published batch whose start is closest to one step
+  after `current_start` (7 days for week, 1 day for day granularity), among
+  batches with a later start. Used as the `nextIntervalStart` cursor.
+  """
+  @spec next_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
+  def next_published_interval_start(granularity, %Date{} = current_start) do
+    target = Date.add(current_start, pagination_step_days(granularity))
+
+    from(b in TopicBatch,
+      where: b.state == ^@published and b.interval_start > ^current_start,
+      order_by: [
+        asc: fragment("abs(? - ?)", b.interval_start, ^target),
+        asc: b.interval_start,
+        asc: b.id
+      ],
+      limit: 1,
+      select: b.interval_start
+    )
+    |> Repo.one()
+  end
+
+  defp pagination_step_days("week"), do: 7
+  defp pagination_step_days("day"), do: 1
+
+  defp preload_active_topics(nil), do: nil
+
+  defp preload_active_topics(%TopicBatch{} = batch) do
+    Repo.preload(batch,
+      topics:
+        from(t in MajorTopic,
+          where: t.is_removed == false,
+          order_by: [asc: t.position, asc: t.id]
         )
-    end
+    )
   end
 
   @spec get_topic!(integer()) :: MajorTopic.t()
@@ -181,6 +246,74 @@ defmodule Sanbase.MajorTopics do
   end
 
   def publish_batch(%TopicBatch{}, _user_id), do: {:error, :already_published}
+
+  @doc """
+  Re-query ClickHouse for the given batch and refresh the stored `top_words`
+  string on each topic. Only the `top_words` field is touched — `label`,
+  `is_removed`, `description`, `position`, and other moderation state are
+  preserved.
+
+  Safe to run from a remote console:
+
+      Sanbase.MajorTopics.backfill_top_words(42)
+
+  Returns either `{:error, reason}` or a summary map counting updated /
+  unchanged / missing topics.
+  """
+  @spec backfill_top_words(integer()) ::
+          {:ok,
+           %{
+             topics_updated: non_neg_integer(),
+             topics_unchanged: non_neg_integer(),
+             topics_missing_in_ch: non_neg_integer(),
+             errors: [String.t()]
+           }}
+          | {:error, term()}
+  def backfill_top_words(batch_id) when is_integer(batch_id) do
+    case Repo.get(TopicBatch, batch_id) do
+      nil ->
+        {:error, :batch_not_found}
+
+      batch ->
+        with {:ok, by_ch_id} <-
+               ClickhouseFetcher.fetch_top_words(batch.source, batch.version, batch.interval_text) do
+          summary =
+            Repo.all(from(t in MajorTopic, where: t.batch_id == ^batch.id))
+            |> Enum.reduce(
+              %{topics_updated: 0, topics_unchanged: 0, topics_missing_in_ch: 0, errors: []},
+              fn topic, acc ->
+                update_topic_top_words(topic, batch, Map.get(by_ch_id, topic.ch_id), acc)
+              end
+            )
+
+          Logger.info(
+            "[backfill_top_words] batch #{batch.id}: #{inspect(Map.delete(summary, :errors))}"
+          )
+
+          {:ok, %{summary | errors: Enum.reverse(summary.errors)}}
+        end
+    end
+  end
+
+  defp update_topic_top_words(_topic, _batch, nil, acc) do
+    %{acc | topics_missing_in_ch: acc.topics_missing_in_ch + 1}
+  end
+
+  defp update_topic_top_words(%MajorTopic{top_words: current} = topic, batch, new, acc) do
+    if new == current do
+      %{acc | topics_unchanged: acc.topics_unchanged + 1}
+    else
+      case topic |> Ecto.Changeset.change(top_words: new) |> Repo.update() do
+        {:ok, _} ->
+          %{acc | topics_updated: acc.topics_updated + 1}
+
+        {:error, cs} ->
+          msg = "topic #{topic.id} (batch #{batch.id}): #{inspect(cs.errors)}"
+          Logger.error("[backfill_top_words] #{msg}")
+          %{acc | errors: [msg | acc.errors]}
+      end
+    end
+  end
 
   # interval looks like "2026-05-04T00:00:00/2026-05-11T00:00:00"
   defp parse_interval(interval) when is_binary(interval) do

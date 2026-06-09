@@ -56,6 +56,13 @@ defmodule SanbaseWeb.Admin.FaqLive.HistoryShow do
             {@entry.user.email || "Anon"}
           </dd>
         </div>
+
+        <div :if={@entry.model}>
+          <dt class="text-sm font-medium text-base-content/60">Model</dt>
+          <dd class="mt-1 text-sm">
+            {@entry.model}
+          </dd>
+        </div>
       </div>
 
       <div :if={@entry.source} class="mt-4">

@@ -43,26 +43,30 @@ defmodule KafkaExporterTest do
   end
 
   test "batching api calls works after flush timeout time has passed", %{topic: topic} do
+    # Pre-build payloads so the flush timer is not racing the expensive data
+    # generation (random bytes, gzip, Faker, JSON encode) on slow CI machines.
+    payloads = for _ <- 1..50, do: api_call_data()
+
     {:ok, exporter_pid} =
       Sanbase.KafkaExporter.start_link(
         name: rand_atom(),
         buffering_max_messages: 5000,
-        kafka_flush_timeout: 200,
+        kafka_flush_timeout: 1000,
         can_send_after_interval: 0,
         topic: topic
       )
 
-    for _ <- 1..50, do: :ok = Sanbase.KafkaExporter.persist_async(api_call_data(), exporter_pid)
+    for data <- payloads, do: :ok = Sanbase.KafkaExporter.persist_async(data, exporter_pid)
 
     # No data even after 50 api calls were persisted and some time has passed
-    Process.sleep(100)
+    Process.sleep(200)
 
     state = Sanbase.InMemoryKafka.Producer.get_state()
 
     assert Map.get(state, topic) == nil
 
-    # Aftert the kafka flush timeout has been reached the data is flushed
-    Process.sleep(200)
+    # After the kafka flush timeout has been reached the data is flushed
+    Process.sleep(1500)
     state = Sanbase.InMemoryKafka.Producer.get_state()
     topic_data = Map.get(state, topic)
     assert length(topic_data) == 50

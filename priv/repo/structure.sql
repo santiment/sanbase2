@@ -2,14 +2,15 @@
 -- PostgreSQL database dump
 --
 
-\restrict MGqEcjjv5Bj7d9SzGKGTG4BBRyNg3SXGmrFDjjmmw9rcn4eIZji2lT9SEQ1a9fy
+\restrict fmJ0bwtSTCbDR0i1pwcHZ9wObyZ4NodEmDkKr1TQQUfEjZSqvO7S7FLQOMqb9an
 
--- Dumped from database version 15.15 (Homebrew)
--- Dumped by pg_dump version 15.15 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -306,7 +307,8 @@ CREATE TABLE public.academy_articles (
     content_sha character varying(255) NOT NULL,
     is_stale boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    index_version integer DEFAULT 0 NOT NULL
 );
 
 
@@ -2279,7 +2281,9 @@ CREATE TABLE public.mcp_tool_invocations (
     user_agent character varying(512),
     client character varying(32),
     session_id character varying(128),
-    kind character varying(255) DEFAULT 'tool'::character varying NOT NULL
+    kind character varying(255) DEFAULT 'tool'::character varying NOT NULL,
+    product_code character varying(16),
+    plan_name character varying(32)
 );
 
 
@@ -3266,7 +3270,9 @@ CREATE TABLE public.posts_embeddings (
     embedding public.vector(1536) NOT NULL,
     text_chunk text NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    chunk_index integer,
+    CONSTRAINT posts_embeddings_chunk_index_non_negative CHECK (((chunk_index IS NULL) OR (chunk_index >= 0)))
 );
 
 
@@ -4014,7 +4020,10 @@ CREATE TABLE public.question_answer_logs (
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    question_type character varying(255)
+    question_type character varying(255),
+    reranker character varying(255),
+    context_expansion boolean DEFAULT false NOT NULL,
+    model character varying(255)
 );
 
 
@@ -9041,6 +9050,20 @@ CREATE INDEX mcp_tool_invocations_metrics_gin ON public.mcp_tool_invocations USI
 
 
 --
+-- Name: mcp_tool_invocations_plan_name_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_plan_name_inserted_at_index ON public.mcp_tool_invocations USING btree (plan_name, inserted_at);
+
+
+--
+-- Name: mcp_tool_invocations_product_code_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_product_code_inserted_at_index ON public.mcp_tool_invocations USING btree (product_code, inserted_at);
+
+
+--
 -- Name: mcp_tool_invocations_session_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9311,6 +9334,13 @@ CREATE UNIQUE INDEX post_images_image_url_index ON public.post_images USING btre
 --
 
 CREATE INDEX post_images_post_id_index ON public.post_images USING btree (post_id);
+
+
+--
+-- Name: posts_embeddings_post_id_chunk_index_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX posts_embeddings_post_id_chunk_index_index ON public.posts_embeddings USING btree (post_id, chunk_index) WHERE (chunk_index IS NOT NULL);
 
 
 --
@@ -9717,6 +9747,13 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 --
 
 CREATE UNIQUE INDEX topic_batches_source_interval_text_version_index ON public.topic_batches USING btree (source, interval_text, version);
+
+
+--
+-- Name: topic_batches_state_interval_start_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX topic_batches_state_interval_start_index ON public.topic_batches USING btree (state, interval_start);
 
 
 --
@@ -11614,7 +11651,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict MGqEcjjv5Bj7d9SzGKGTG4BBRyNg3SXGmrFDjjmmw9rcn4eIZji2lT9SEQ1a9fy
+\unrestrict fmJ0bwtSTCbDR0i1pwcHZ9wObyZ4NodEmDkKr1TQQUfEjZSqvO7S7FLQOMqb9an
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12184,3 +12221,11 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260427125517);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511101919);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112644);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);
+INSERT INTO public."schema_migrations" (version) VALUES (20260515075234);
+INSERT INTO public."schema_migrations" (version) VALUES (20260519151900);
+INSERT INTO public."schema_migrations" (version) VALUES (20260522100000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260526093118);
+INSERT INTO public."schema_migrations" (version) VALUES (20260528120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260529120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260604120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260604130000);

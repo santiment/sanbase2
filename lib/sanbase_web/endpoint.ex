@@ -72,6 +72,11 @@ defmodule SanbaseWeb.Endpoint do
   # request body and it can be read only once and if used anywhere else should be stored
   plug(SanbaseWeb.Plug.VerifyStripeWebhook)
 
+  # AWS SNS posts JSON bodies with `Content-Type: text/plain`, which Plug.Parsers below
+  # would pass through unparsed (pass: ["*/*"]). Rewrite it to application/json so SNS
+  # webhooks (e.g. SES events) are parsed. Must run before Plug.Parsers.
+  plug(SanbaseWeb.Plug.SnsContentType)
+
   # The parser lenght is bigger than the FileStore limit intentionally.
   # Plug.Parsers.length applies to the full multipart body before Sanbase.FileStore.validate/1 runs
   # and it will include headers, and possibly other parts of the request

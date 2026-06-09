@@ -133,17 +133,20 @@ defmodule Sanbase.Insight.Post do
         e in PostEmbedding,
         inner_join: p in Post,
         on: e.post_id == p.id,
+        where: p.ready_state == ^@published and p.state == ^@approved and p.is_deleted != true,
         select: %{
           post_id: e.post_id,
           post_title: p.title,
+          published_at: p.published_at,
           text_chunk: e.text_chunk,
+          chunk_index: e.chunk_index,
           similarity: fragment("1 - (embedding <=> ?)", ^embedding)
         },
         order_by: [desc: fragment("1 - (embedding <=> ?)", ^embedding)],
         limit: ^size
       )
 
-    result = Sanbase.Repo.all(query)
+    result = Sanbase.Repo.VectorQuery.all(query)
     {:ok, result}
   end
 
@@ -164,7 +167,7 @@ defmodule Sanbase.Insight.Post do
         limit: ^size
       )
 
-    result = Sanbase.Repo.all(query)
+    result = Sanbase.Repo.VectorQuery.all(query)
     {:ok, result}
   end
 

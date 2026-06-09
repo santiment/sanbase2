@@ -17,10 +17,32 @@ defmodule Sanbase.OpenAI.Tracing do
   def start(input, opts \\ %{}) do
     opts = Map.new(opts)
 
-    with {:ok, trace} <- ensure_trace(opts, input),
-         {:ok, generation} <- create_generation(trace, input, opts) do
-      {:ok, %{trace: trace, generation: generation}}
+    if enabled?() do
+      try do
+        with {:ok, trace} <- ensure_trace(opts, input),
+             {:ok, generation} <- create_generation(trace, input, opts) do
+          {:ok, %{trace: trace, generation: generation}}
+        end
+      rescue
+        error ->
+          Logger.warning("Langfuse tracing start crashed: #{inspect(error)}")
+          {:error, {:tracing_crashed, error}}
+      end
+    else
+      {:error, :langfuse_not_configured}
     end
+  end
+
+  @doc """
+  Returns true when Langfuse SDK has host + keys configured.
+  """
+  @spec enabled?() :: boolean()
+  def enabled?() do
+    cfg = Application.get_all_env(:langfuse_sdk)
+
+    is_binary(cfg[:host]) and cfg[:host] != "" and
+      is_binary(cfg[:secret_key]) and cfg[:secret_key] != "" and
+      is_binary(cfg[:public_key]) and cfg[:public_key] != ""
   end
 
   @spec finalize(

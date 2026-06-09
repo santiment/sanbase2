@@ -1,0 +1,268 @@
+export const NARRATIVES = {
+  labels: [
+    '23.01.25',
+    '24.01.25',
+    '24.01.25',
+    '24.01.25',
+    '24.01.25',
+    '24.01.25',
+    '24.01.25',
+    '24.01.25',
+    '25.01.25',
+    '25.01.25',
+    '25.01.25',
+    '25.01.25',
+    '25.01.25',
+    '25.01.25',
+    '25.01.25',
+    '25.01.25',
+    '26.01.25',
+    '26.01.25',
+    '26.01.25',
+    '26.01.25',
+    '26.01.25',
+    '26.01.25',
+    '26.01.25',
+    '26.01.25',
+    '27.01.25',
+    '27.01.25',
+    '27.01.25',
+    '27.01.25',
+    '27.01.25',
+    '27.01.25',
+    '27.01.25',
+    '27.01.25',
+    '28.01.25',
+    '28.01.25',
+    '28.01.25',
+    '28.01.25',
+    '28.01.25',
+    '28.01.25',
+    '28.01.25',
+    '28.01.25',
+    '29.01.25',
+    '29.01.25',
+    '29.01.25',
+    '29.01.25',
+    '29.01.25',
+    '29.01.25',
+    '29.01.25',
+    '29.01.25',
+    '30.01.25',
+    '30.01.25',
+    '30.01.25',
+    '30.01.25',
+    '30.01.25',
+    '30.01.25',
+    '30.01.25',
+  ],
+  datasets: [
+    {
+      label: 'AI',
+      topics: 'ai,agents,agent,models,data',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media include AI agents, collaboration between humans and AI, DeFi and AI use cases, speculation on subnets, the potential of AI in solving real-world problems, the impact of AI on the financial sector, new AI IDEs, augmented reality, bias in existing AI systems, tokenization of real-world assets, and decentralized AI commerce. There is also mention of specific projects and events such as EigenLayer and Cartesi hosting a hackathon, the XAI project, and a podcast featuring Justin Banon, Founder of BosonProtocol and FermionProtocol. Overall, the focus seems to be on the intersection of AI and crypto, with discussions ranging from technical advancements to real-world applications and implications.',
+      data: [
+        38, 322, 32, 24, 23, 3, 19, 35, 26, 41, 35, 40, 23, 20, 30, 31, 17, 30, 26, 40, 30, 27, 33,
+        25, 26, 42, 26, 47, 26, 35, 21, 27, 30, 35, 45, 34, 29, 38, 44, 38, 25, 35, 22, 16, 33, 28,
+        59, 37, 38, 32, 24, 29, 28, 30, 37,
+      ],
+    },
+    {
+      label: 'DeepSeek',
+      topics: 'deepseek,china,chinese,ai,model',
+      description:
+        "The key topics discussed in the messages from twitter about DeepSeek and the crypto industry include:\n1. DeepSeek's impact on the AI industry and the crypto market.\n2. China's influence on the tech and crypto space.\n3. DeepSeek's mobile app being removed from app stores in Italy.\n4. Competition in the AI industry, with Alibaba claiming to have launched a model surpassing DeepSeek.\n5. The potential positive long-term effects of China's AI debut on the tech space.\n6. The decline of the west and the rise of Chinese dominance in the tech industry.\n7. Suggestions for the US government to finance entrepreneurs and create a syndicate excluding businesses associated with the CCP.\n8. The relationship between US tech stocks and Bitcoin prices.\n9. The impact of open-source technology on Bitcoin prices.\n10. The Metaverse market and DeepSeek's role in it.\n11. Warnings about loading the DeepSeek app onto phones holding crypto wallets.\n12. CNBC's coverage of DeepSeek and its cost-effective open-source model disrupting the industry.",
+      data: [
+        12, 76, 16, 19, 11, 5, 19, 14, 15, 37, 28, 17, 12, 291, 8, 14, 7, 21, 6, 20, 17, 20, 31, 17,
+        13, 29, 22, 15, 10, 15, 27, 8, 18, 10, 22, 21, 18, 11, 19, 27, 22, 15, 37, 5, 14, 27, 36,
+        30, 23, 11, 12, 10, 14, 19, 21,
+      ],
+    },
+    {
+      label: 'BTC',
+      topics: 'btc,range,100k,price,resistance',
+      description:
+        "The key topics currently discussed in the crypto industry on Twitter include:\n- Bitcoin's price movements, with mentions of reaching $100k, potential all-time highs, and predictions ranging from $70k-$300k\n- Bitcoin dominance and the potential for a major altseason once it drops to 45-60%\n- Analysis of the current market trends, including the ADI of the top 100 cryptocurrencies\n- Speculation on when Bitcoin will break its all-time high and the impact of external factors like the FOMC meeting\n- Sentiment towards Bitcoin, with mentions of bullish and bearish scenarios\n- Calls for engagement and participation in trading challenges and private groups\n\nOverall, the sentiment seems mixed with some users expressing confidence in Bitcoin's future while others are more cautious or frustrated with market movements.",
+      data: [
+        15, 4, 8, 15, 55, 124, 30, 53, 6, 36, 15, 13, 22, 4, 18, 24, 5, 16, 21, 10, 9, 15, 11, 30,
+        7, 14, 9, 11, 9, 26, 33, 12, 20, 14, 16, 9, 14, 35, 25, 25, 26, 20, 23, 10, 6, 14, 19, 12,
+        15, 12, 2, 18, 8, 25, 12,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'meme,memecoin,memes,coins,memecoins',
+      description:
+        'The messages from Twitter suggest that there is a lot of discussion around meme coins in the crypto industry. Some key points mentioned include the volatility and short lifespan of meme coins, the comparison between meme coins and other types of cryptocurrencies like Ai coins or utility coins, the launch of new meme coins by celebrities like Micheal Jordan, and the potential risks and rewards of investing in meme coins. Overall, it seems that meme coins are a popular topic of conversation among crypto enthusiasts on social media.',
+      data: [
+        10, 8, 6, 10, 12, 6, 12, 11, 28, 16, 14, 11, 15, 7, 65, 11, 7, 28, 12, 13, 7, 25, 22, 20,
+        24, 12, 10, 18, 27, 22, 21, 185, 12, 27, 12, 15, 21, 13, 17, 11, 9, 17, 12, 6, 11, 18, 14,
+        24, 11, 16, 8, 17, 18, 12, 13,
+      ],
+    },
+    {
+      label: 'XRP',
+      topics: 'xrp,ripple,reserve,maxis,centralized',
+      description:
+        "The key topics currently being discussed in the crypto community on Twitter include:\n- Negative sentiment towards Ripple (XRP) and accusations of attacking Bitcoin\n- Bitcoin maximalism and criticism of altcoins like XRP\n- Concerns about the centralization of XRP and Ripple's control over the XRPL code\n- Ripple's expansion in the US with Money Transmitter Licenses and the launch of a stablecoin (RLUSD)\n- Criticisms of XRP's transaction speed and cost\n- Compliance issues and fines faced by Ripple for violating the Bank Secrecy Act\n\nOverall, the sentiment towards Ripple (XRP) seems to be largely negative, with many users expressing skepticism and criticism towards the project and its founders. Bitcoin remains the preferred cryptocurrency for many in the community, with concerns about the actions and intentions of Ripple and its impact on the broader crypto industry.",
+      data: [
+        15, 3, 9, 11, 12, 12, 12, 10, 27, 10, 14, 17, 12, 7, 12, 15, 8, 23, 18, 23, 17, 10, 7, 14,
+        10, 12, 13, 13, 16, 13, 5, 13, 8, 7, 6, 18, 10, 27, 12, 12, 41, 19, 14, 2, 10, 10, 20, 11,
+        9, 4, 3, 9, 13, 10, 9,
+      ],
+    },
+    {
+      label: 'SOL',
+      topics: 'solana,sol,solanas,runes,virtuals',
+      description:
+        'The key topics currently discussed in the crypto industry on Twitter include:\n- Approval and implementation of SIMD 228 potentially boosting SOL\n- Concerns about inflation and the impact on money lent on Solana\n- Coinbase filing for Solana futures\n- Solana becoming the first blockchain to exceed $200 billion in monthly DEX transaction volume\n- Solana price dropping 17% and the reasons behind it\n- Solana outperforming ETH and BSC in weekly DEX trading volume\n- Movement of $SOL to Kraken by PumpFun\n- Development of memecoins on Solana, such as $SUCHIR in support of OpenAI whistleblower Suchir Balaji\n- Highlights from community calls regarding migration from EOS to Solana, upcoming platform for AI Agents, P2P Task Platform, and hiring opportunities\n- Anticipation of BlackRock Solana ETF approval leading to potential flip of SOL over ETH\n- Introduction of Metaplex Aura for scalable and reliable data for dApps\n- Solana chart update and bullish continuation pattern with a price target of $1000\n- MicroStrategy led by Leah Wald in the Solana ecosystem.',
+      data: [
+        11, 6, 10, 17, 7, 4, 9, 10, 10, 7, 8, 9, 9, 13, 7, 16, 13, 11, 8, 11, 14, 8, 12, 10, 7, 8,
+        11, 16, 10, 8, 5, 10, 5, 15, 15, 10, 13, 17, 11, 5, 18, 10, 11, 56, 11, 8, 15, 4, 10, 23, 3,
+        13, 26, 10, 9,
+      ],
+    },
+    {
+      label: 'Inflation',
+      topics: 'inflation,powell,rate,rates,fed',
+      description:
+        "The key topics currently being discussed in the crypto industry on Twitter include:\n1. Impact of large sellers in temporary dislocations\n2. Bank of Japan rate hike boosting yen strength\n3. German business activity stability in January\n4. Federal Reserve's Powell indicating restrictive policy\n5. Bank of England Governor Bailey emphasizing the importance of raising economic growth rate\n6. Gross Domestic Product for the Fourth Quarter and Year 2024\n7. European Central Bank's Lagarde discussing the independence of central banks\n8. U.S. interest rate decision announcement\n9. Tariffs and their impact on inflation and prices\n10. U.S. equities posting strong gains\n11. Bank of Japan's rate hike and inflation levels\n12. Federal Reserve's FOMC meeting and monetary policy decisions\n13. Market expectations for rate cuts and GDP growth\n14. Federal Reserve's balance sheet unwinding and potential impact on the market.",
+      data: [
+        2, 4, 0, 12, 2, 0, 14, 6, 1, 3, 4, 2, 2, 4, 5, 16, 2, 4, 20, 4, 10, 4, 1, 17, 4, 19, 10, 5,
+        3, 7, 45, 6, 6, 3, 2, 4, 13, 7, 18, 8, 6, 12, 6, 0, 4, 11, 5, 7, 6, 4, 3, 8, 2, 7, 4,
+      ],
+    },
+    {
+      label: 'ETH',
+      topics: 'eth,ethereum,wedge,falling,break',
+      description:
+        "Based on the messages from Twitter, it seems that the key topics being discussed about Ethereum ($ETH) include:\n1. Ethereum price movements and potential breakout targets.\n2. Technical analysis patterns such as falling wedge, inverse head and shoulders, and head and shoulders.\n3. The impact of the Pectra upgrade on Ethereum's price.\n4. Comparison of Ethereum's performance in January and February historically.\n5. The influence of the Federal Reserve's policy on Ethereum's direction.\n6. Institutional demand for Ethereum and potential buying from Wall Street.\n7. Liquidation of short positions in Ethereum.\n8. Introduction of an ETH strategy protocol.\n9. Potential retesting of local lows for Ethereum.\n10. Trading opportunities and platforms for Ethereum.\n\nOverall, the sentiment around Ethereum appears to be bullish with discussions focusing on potential price movements, technical analysis, institutional interest, and trading strategies.",
+      data: [
+        9, 2, 5, 9, 4, 1, 4, 4, 4, 9, 9, 1, 12, 3, 3, 6, 71, 12, 3, 4, 1, 3, 2, 14, 11, 2, 4, 3, 11,
+        16, 5, 4, 6, 1, 1, 3, 6, 8, 8, 2, 5, 2, 4, 1, 5, 6, 7, 3, 6, 2, 3, 6, 1, 4, 3,
+      ],
+    },
+    {
+      label: 'DOGE',
+      topics: 'doge,dogecoin,moon,lets,03',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media platforms like Twitter include:\n- Dogecoin ($DOGE) price predictions and potential pump\n- Speculation on whether Dogecoin will reach all-time highs in February\n- Discussion on the impact of potential disappointments from Dogecoin and tariffs on the market\n- Recent achievements and developments related to Dogecoin, such as engineers turning on water for Southern CA and canceling unnecessary contracts\n- Excitement around the Gari cryptocurrency going to the moon on the BlueGhost Moon lander launched by SpaceX Falcon 9\n- General market sentiment and indicators, such as the DXY and bond market dynamics\n- Engagement with gaming events like the Dookey Dash tournament and betting on players\n\nOverall, the sentiment seems to be positive and optimistic, with a focus on potential price movements, market dynamics, and upcoming developments in the crypto industry.',
+      data: [
+        5, 3, 8, 0, 1, 2, 2, 1, 5, 3, 5, 5, 6, 1, 95, 4, 2, 5, 11, 4, 4, 9, 1, 14, 7, 3, 4, 5, 4,
+        12, 5, 3, 7, 4, 3, 8, 2, 3, 7, 4, 5, 2, 9, 2, 1, 3, 4, 3, 7, 2, 1, 1, 4, 7, 3,
+      ],
+    },
+    {
+      label: 'Art',
+      topics: 'art,artists,artist,piece,collection',
+      description:
+        'The key topics discussed in the messages from twitter are related to the Art Monstar project, which aims to make art more inclusive and exciting through blockchain technology. The project allows users to own rare art and collectibles with confidence, and aims to ensure that everyone can afford high-quality artistic expression. There is also discussion about the traditional art world and elitism, as well as the use of tokens like 721/1155 main net or L2 in the art industry. Additionally, there is a pre-sale event happening for the project, offering a 20% discount on the RWA meme token.',
+      data: [
+        2, 3, 70, 4, 0, 0, 2, 5, 1, 9, 9, 9, 7, 0, 5, 5, 3, 6, 5, 4, 9, 6, 2, 6, 5, 6, 4, 3, 3, 6,
+        6, 6, 6, 9, 8, 7, 4, 5, 0, 1, 5, 3, 4, 1, 1, 5, 3, 6, 8, 4, 3, 2, 2, 2, 7,
+      ],
+    },
+    {
+      label: 'GameFi',
+      topics: 'game,gaming,games,play,mobile',
+      description:
+        "Based on the messages from Twitter, it seems that the key topics being discussed are related to game theory, gaming industry innovations, cryptocurrency (specifically Ripple), and financial engineering in sports, particularly football. There is also mention of specific gaming projects such as Off The Grid, BetHog's 'Hogger' game, and Alien Worlds. Additionally, there is anticipation and excitement around upcoming gaming infrastructure launches and the potential impact of community-driven gaming revolution. The messages also touch upon the intersection of data, technology, and financial viability in football, with a specific interview with Steve Parish, the CEO of TAG, providing insights into these areas.",
+      data: [
+        4, 0, 3, 3, 3, 1, 0, 3, 1, 2, 2, 6, 2, 1, 3, 3, 2, 3, 14, 3, 52, 3, 1, 0, 1, 5, 3, 2, 6, 2,
+        1, 1, 1, 5, 1, 4, 17, 3, 2, 4, 4, 2, 1, 2, 1, 2, 5, 4, 4, 1, 0, 4, 9, 3, 1,
+      ],
+    },
+    {
+      label: 'MSTR',
+      topics: 'microstrategy,mstr,acquired,billion,offering',
+      description:
+        "The key topic discussed in the messages from Twitter is MicroStrategy's continued aggressive acquisition of Bitcoin. MicroStrategy has recently purchased an additional 10,107 BTC for $1.1 billion, bringing their total holdings to 471,107 BTC. This move is seen as a strategic investment in Bitcoin, with MicroStrategy holding a significant portion of the total Bitcoin supply. The company has also announced plans to offer shares of preferred stock to fund further Bitcoin acquisitions. This aggressive approach to acquiring Bitcoin has sparked discussions about MicroStrategy potentially becoming a trillion-dollar BTC powerhouse. Other companies, such as 180 Life Sciences Corp, are also pivoting towards Bitcoin and other cryptocurrencies as strategic assets. Overall, the trend of public companies stacking Bitcoin is seen as a shift towards viewing Bitcoin as a strategic resource rather than just an asset.",
+      data: [
+        11, 0, 5, 2, 5, 3, 10, 3, 7, 2, 2, 4, 1, 1, 1, 4, 2, 0, 6, 2, 2, 0, 1, 1, 2, 5, 2, 3, 1, 3,
+        2, 42, 6, 4, 1, 3, 4, 0, 8, 3, 1, 2, 1, 1, 0, 8, 1, 4, 5, 0, 1, 5, 0, 3, 1,
+      ],
+    },
+    {
+      label: 'Tesla',
+      topics: 'tesla,tsla,q4,earnings,accounting',
+      description:
+        "The key topics discussed in the messages from Twitter regarding Tesla and Bitcoin include:\n1. Tesla's $600 million gain from Bitcoin holdings in Q4 2024\n2. Speculation on Tesla's future earnings report\n3. Suggestions for Tesla to start pre-orders for Optimus Founder's Edition\n4. Comparison between Tesla's gains on digital assets and Doordash's losses\n5. Analysis of Tesla's stock valuation and growth expectations\n6. Criticism of the stock market's reaction to companies with questionable financial performance\n\nOverall, the messages reflect a mix of positive news about Tesla's financial gains from Bitcoin, speculation on future performance, and criticism of the stock market's valuation of certain companies.",
+      data: [
+        5, 1, 0, 3, 3, 0, 6, 2, 3, 1, 6, 1, 0, 0, 1, 10, 0, 2, 0, 3, 3, 3, 1, 3, 3, 4, 2, 2, 2, 2,
+        2, 1, 5, 7, 0, 2, 1, 3, 3, 14, 3, 5, 7, 1, 0, 6, 3, 32, 0, 0, 23, 3, 1, 0, 0,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'defi,buidl,defai,finance,tradfi',
+      description:
+        "The key topics discussed in the messages from twitter are:\n1. Strong DeFi protocols with aligned incentives\n2. Worldwide adoption of DeFi\n3. GameFi ecosystem and BEEFI\n4. Dynamic collateral ratios and secure liquidation in DeFi\n5. USDD 2.0 and BTTC bridging Web2 TradFi & Web3 DeFi\n6. Aave on Metis - DeFi's largest liquidity protocol\n7. RadixAPI for dApp development\n8. Issues with trading real DeFi coins on PulseChain\n9. PERI Finance for seamless access to decentralized trading\n10. SmartDeFi™ & FEG Pitch Deck for shaping the future of DeFi\n11. Potential upside of DeFi reaching $40B\n12. Updates from COTI on DeFAI and AI AGENTS\n\nOverall, the messages highlight the growth and innovation in the DeFi industry, with a focus on protocols, adoption, ecosystem development, and potential future trends.",
+      data: [
+        0, 1, 4, 2, 3, 2, 2, 1, 0, 4, 1, 1, 5, 11, 2, 6, 3, 3, 5, 4, 2, 4, 4, 3, 0, 7, 3, 4, 6, 1,
+        4, 0, 5, 9, 2, 4, 4, 8, 3, 4, 4, 3, 1, 3, 7, 7, 1, 3, 4, 5, 2, 5, 3, 3, 3,
+      ],
+    },
+    {
+      label: 'BTC Mining',
+      topics: 'mining,miners,miner,mined,blocks',
+      description:
+        "The key topics currently discussed in the crypto industry on social media platforms such as Twitter include:\n\n1. Bitcoin mining in unconventional locations such as the back of a Cybertruck and in orphanages in Paraguay.\n2. The transfer of a large amount of BTC ($21B) on the Bitcoin network.\n3. The increasing hashrate on the Verus network even after the block reward halving.\n4. The accumulation of 3x more BTC by Bitcoin ETFs than has been mined.\n5. Bitcoin mining's role in solving Europe's energy crisis and becoming a key player in the energy transition.\n6. The significance of blue-eyed OMBs minted on block 78 in homage to Hal Finney.\n7. The consecutive mining of the last 7 Bitcoin blocks in America by Foundry USA.\n8. Participation of industry leaders in events such as the Nashville Energy & Mining Summit 2025 and Mining Disrupt 2025.\n9. The decrease in Bitcoin mining difficulty by 1.018% and the anticipation of the next difficulty adjustment in approximately 14 days.",
+      data: [
+        4, 2, 4, 3, 1, 20, 10, 1, 3, 2, 2, 1, 1, 2, 4, 1, 1, 5, 3, 2, 0, 3, 3, 6, 1, 7, 6, 2, 4, 0,
+        3, 5, 16, 5, 5, 2, 6, 0, 4, 3, 4, 1, 2, 3, 6, 0, 2, 4, 2, 1, 0, 6, 1, 3, 0,
+      ],
+    },
+    {
+      label: 'Strategic BTC Reserves',
+      topics: 'state,reserve,texas,strategic,committee',
+      description:
+        'The key topic discussed in the messages from Twitter is the introduction and passing of bills related to creating Strategic Bitcoin Reserves in various states such as Ohio, Illinois, South Dakota, and Arizona. These bills allow for a certain percentage of public funds to be invested in cryptocurrencies like Bitcoin. Additionally, there is mention of Texas planning a Bitcoin Reserve as a priority for 2025 and Indiana proposing pension funds to invest in Bitcoin ETFs for diversification. The overall sentiment is bullish on Bitcoin and there is a call for more states to introduce pro-Bitcoin legislation.',
+      data: [
+        7, 1, 9, 2, 4, 2, 10, 3, 1, 1, 2, 1, 1, 3, 1, 2, 0, 1, 1, 0, 0, 1, 5, 1, 4, 12, 1, 6, 1, 1,
+        2, 5, 6, 7, 1, 6, 3, 6, 5, 4, 0, 7, 1, 0, 3, 26, 2, 1, 1, 0, 0, 7, 0, 0, 1,
+      ],
+    },
+    {
+      label: 'PEPE',
+      topics: 'pepe,momentum,whale,pattern,coin',
+      description:
+        'The key topics discussed in the messages from twitter about the crypto industry include the $PEPE coin, its market cap, recent transfers by the team, ability to lend and borrow on platforms like @useteller, price movements and potential bottoming out, comparisons with other coins like #FLOKI, and potential connections with other cryptocurrencies. There is also mention of influential figures like Trump getting involved in crypto and the importance of community support and innovation in the success of a coin. Overall, the discussions revolve around the current state and future potential of $PEPE and its place in the crypto market.',
+      data: [
+        4, 0, 2, 1, 2, 0, 0, 2, 2, 2, 2, 1, 3, 0, 2, 3, 2, 1, 2, 3, 4, 3, 3, 7, 3, 1, 1, 4, 2, 2, 2,
+        2, 6, 3, 2, 40, 1, 2, 0, 3, 1, 3, 4, 1, 3, 5, 4, 2, 3, 1, 5, 2, 1, 3, 4,
+      ],
+    },
+    {
+      label:
+        "Elon Musk exploring the use of blockchain technology in the US government's efficiency push",
+      topics: 'efficiency,government,elon,musk,doge',
+      description:
+        "The key topic discussed in the messages from twitter is Elon Musk exploring the use of blockchain technology in the US government's efficiency push. Musk's Department of Government Efficiency is reportedly evaluating the feasibility of using blockchain technology for various purposes such as tracking federal spending, protecting data, payments, and managing transactions. There are discussions about using stablecoins on public ledgers to improve government efficiency. Additionally, there are mentions of Musk's involvement in blockchain projects and potential collaborations with other firms. The topic also touches on the potential impact of blockchain technology on government operations and the role of cryptocurrencies like DOGE in government initiatives.",
+      data: [
+        6, 1, 3, 1, 2, 0, 13, 1, 0, 2, 1, 2, 2, 11, 5, 2, 0, 18, 6, 4, 1, 9, 3, 7, 1, 3, 1, 1, 1, 0,
+        3, 1, 2, 7, 4, 3, 2, 2, 2, 5, 2, 5, 4, 1, 3, 0, 2, 3, 0, 1, 1, 2, 1, 3, 1,
+      ],
+    },
+    {
+      label: "The Czech central bank's approval to assess investing reserves in Bitcoin",
+      topics: 'czech,bank,central,national,reserves',
+      description:
+        "The key topics currently being discussed on Twitter regarding the crypto industry include:\n1. The Czech central bank's approval to assess investing reserves in Bitcoin, with the head of the bank wanting to buy 'billions' of euros worth of Bitcoin.\n2. The Swiss initiative to add Bitcoin to the constitution.\n3. The proposal by the Czech National Bank Governor to allocate up to 5% of the country's reserves into Bitcoin.\n4. The statement by the Czech National Bank governor that Bitcoin has zero correlation to bonds and is worth considering for large portfolios.\n5. The comparison of the Czech National Bank's diversification strategy, including increasing gold holdings and planning for investments in equities, with the potential investment in Bitcoin.\n6. The speculation about the Czech National Bank potentially acquiring $7.3 billion in Bitcoin as part of its diversification strategy.\n7. The comparison between the Czech Republic's potential national Bitcoin stockpile and the lack of action in the United States.\n8. The criticism of diversifying into other cryptocurrencies like XRP instead of focusing solely on Bitcoin.",
+      data: [
+        5, 0, 4, 7, 2, 2, 12, 3, 16, 3, 4, 1, 4, 1, 0, 0, 1, 2, 2, 0, 0, 3, 7, 11, 3, 3, 3, 0, 2, 0,
+        2, 1, 1, 6, 1, 0, 5, 8, 2, 0, 2, 2, 2, 1, 1, 2, 1, 0, 1, 1, 1, 1, 6, 1, 1,
+      ],
+    },
+    {
+      label: 'ETF Flows',
+      topics: 'inflows,net,etfs,spot,etf',
+      description:
+        "The key topics currently being discussed in the crypto industry on social media platforms such as Twitter include:\n\n1. BlackRock's Bitcoin ETF, $IBIT, purchasing significant amounts of Bitcoin.\n2. U.S. Bitcoin ETFs experiencing consistent inflows, with a total net inflow of $18.44M on Jan 28.\n3. Corporations and US spot ETFs purchasing a combined amount of 68.2k BTC in 2025, while miners have only produced 12.5k BTC.\n4. The growing BTC supply deficit due to relentless ETF buying in 2025.\n5. Crypto funds seeing $1.9B in inflows, driven by Trump's Bitcoin reserve proposal.\n6. Ethereum rebounding with $205M in inflows, while altcoins also gaining traction.\n7. The total net outflow of Ethereum spot ETFs on Jan 23 and the largest net inflow from Fidelity ETF FETH.\n8. The performance of spot bitcoin ETFs, with $4.2B in flows since the start of the year.\n9. The total net inflow of Ethereum spot ETFs on Jan 24, with Bitwise ETF ETHW recording the largest net inflow.\n\nOverall, the discussion revolves around the significant inflows into Bitcoin and Ethereum ETFs, the impact of corporate and US spot ETF purchases on BTC supply, and the overall bullish sentiment in the crypto market.",
+      data: [
+        2, 0, 1, 0, 8, 4, 1, 5, 1, 0, 0, 2, 4, 1, 6, 0, 32, 2, 1, 0, 0, 4, 0, 0, 1, 3, 1, 3, 1, 0,
+        1, 1, 1, 2, 1, 2, 0, 0, 1, 3, 0, 2, 3, 0, 20, 0, 1, 0, 3, 5, 2, 5, 1, 4, 6,
+      ],
+    },
+  ],
+}

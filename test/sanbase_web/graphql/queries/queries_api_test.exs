@@ -159,6 +159,66 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     end
   end
 
+  describe "Subscription required to run queries" do
+    # The users created by `insert(:user)` have @santiment.net emails and are
+    # treated as Santiment employees, which bypass the subscription check. Use a
+    # regular, non-employee user here to exercise the subscription gate.
+    setup do
+      free_user = insert(:user, email: "free-user@example.com")
+      subscribed_user = insert(:user, email: "subscribed-user@example.com")
+      insert(:subscription_pro_sanbase, user: subscribed_user)
+
+      %{
+        free_conn: setup_jwt_auth(build_conn(), free_user),
+        subscribed_conn: setup_jwt_auth(build_conn(), subscribed_user)
+      }
+    end
+
+    test "free user without an active subscription cannot run queries", context do
+      args = %{
+        sql_query_text: "SELECT * FROM intraday_metrics LIMIT {{limit}}",
+        sql_query_parameters: %{limit: 2}
+      }
+
+      response = run_sql_query(context.free_conn, :run_raw_sql_query, args)
+
+      assert get_in(response, ["data", "runRawSqlQuery"]) == nil
+
+      error_msg = get_in(response, ["errors", Access.at(0), "message"])
+      assert error_msg =~ "Running queries requires an active subscription"
+    end
+
+    test "user with an active subscription can run queries", context do
+      Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
+
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
+
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 3
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        args = %{
+          sql_query_text: "SELECT * FROM intraday_metrics LIMIT {{limit}}",
+          sql_query_parameters: %{limit: 2}
+        }
+
+        response = run_sql_query(context.subscribed_conn, :run_raw_sql_query, args)
+
+        assert get_in(response, ["errors"]) in [nil, []]
+        assert get_in(response, ["data", "runRawSqlQuery", "clickhouseQueryId"]) != nil
+      end)
+    end
+  end
+
   describe "Run Queries" do
     test "run raw sql query", context do
       # In test env the storing runs not async and there's a 7500ms sleep

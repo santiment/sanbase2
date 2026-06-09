@@ -1,0 +1,265 @@
+export const NARRATIVES = {
+  labels: [
+    '12.02.26',
+    '13.02.26',
+    '13.02.26',
+    '13.02.26',
+    '13.02.26',
+    '13.02.26',
+    '13.02.26',
+    '13.02.26',
+    '14.02.26',
+    '14.02.26',
+    '14.02.26',
+    '14.02.26',
+    '14.02.26',
+    '14.02.26',
+    '14.02.26',
+    '14.02.26',
+    '15.02.26',
+    '15.02.26',
+    '15.02.26',
+    '15.02.26',
+    '15.02.26',
+    '15.02.26',
+    '15.02.26',
+    '15.02.26',
+    '16.02.26',
+    '16.02.26',
+    '16.02.26',
+    '16.02.26',
+    '16.02.26',
+    '16.02.26',
+    '16.02.26',
+    '16.02.26',
+    '17.02.26',
+    '17.02.26',
+    '17.02.26',
+    '17.02.26',
+    '17.02.26',
+    '17.02.26',
+    '17.02.26',
+    '17.02.26',
+    '18.02.26',
+    '18.02.26',
+    '18.02.26',
+    '18.02.26',
+    '18.02.26',
+    '18.02.26',
+    '18.02.26',
+    '18.02.26',
+    '19.02.26',
+    '19.02.26',
+    '19.02.26',
+    '19.02.26',
+    '19.02.26',
+    '19.02.26',
+    '19.02.26',
+  ],
+  datasets: [
+    {
+      label: 'AI',
+      topics: 'agi,ais,erc8004,autonomous,agentic',
+      description:
+        'Contributors argue AI will be a major catalyst for the next crypto cycle — from AI-driven trading (including on Lightning) and AI-native tokens to firms adopting protocol-level provenance (OpenLedger). Advice ranges from accumulating proven AI coins to building AI skills and agents; technical threads cover orchestration, model cost tradeoffs, and agent decision-routing. Warnings appear about systemic risks (job displacement, an AI arms race, misinformation/engagement farming) and how AI will reshape management and market catalysts.',
+      data: [
+        37, 250, 53, 53, 59, 29, 55, 34, 39, 56, 51, 32, 53, 44, 55, 35, 32, 55, 37, 54, 38, 38, 37,
+        49, 71, 44, 38, 36, 40, 36, 36, 38, 59, 25, 48, 35, 60, 31, 54, 53, 37, 46, 35, 50, 30, 37,
+        69, 63, 33, 51, 47, 32, 38, 52, 29,
+      ],
+    },
+    {
+      label: 'Lunar new year',
+      topics: 'lunar,horse,prosperity,wishing,envelope',
+      description:
+        'Crypto communities and projects used Lunar New Year (Year of the Fire Horse) for celebratory greetings, memetic marketing, and bullish messaging. Many posts tied cultural themes of rapid change and momentum to crypto narratives—promoting chains, tokens, rewards/events (BNB, Ethereum, $LINK, AKITA, HTX), product updates (Birdeye), fundraising (Dragonfly Fund IV), and advice to “stack sats” or hold. Tone mixes optimism, hype, and playful superstition amid broader market commentary.',
+      data: [
+        7, 9, 14, 6, 22, 33, 8, 39, 19, 43, 20, 14, 6, 9, 12, 25, 25, 27, 20, 18, 5, 54, 48, 10, 25,
+        4, 11, 13, 26, 13, 8, 12, 36, 13, 8, 7, 7, 24, 16, 17, 10, 5, 10, 21, 21, 25, 22, 4, 13, 8,
+        11, 15, 15, 37, 106,
+      ],
+    },
+    {
+      label: 'BTC price',
+      topics: 'ema,65k,68k,70k,67k',
+      description:
+        "Tweets focus on Bitcoin's recent drop below $63k and technicals pointing to continued downside momentum—4h trend lower, 50 EMA resistance, and price trading ~2 standard deviations below the 365-day VWAP with weekly RSI oversold. Analysts debate a local bottom (low-60ks) versus deeper drawdowns (possible ~-60% cycle bottom or even sub-$8k scenarios referenced), while others expect reclaiming key levels (70–74k) could trigger sharp rallies. Common advice: be patient, DCA/accumulate, watch liquidity grabs, weekly closes, and key VWAP/EMA resistances for confirmation.",
+      data: [
+        14, 1, 14, 13, 10, 43, 39, 20, 16, 12, 4, 25, 10, 31, 7, 22, 21, 7, 5, 13, 8, 23, 26, 5, 11,
+        2, 18, 17, 35, 11, 4, 12, 15, 8, 8, 15, 30, 18, 16, 14, 14, 10, 20, 16, 18, 29, 17, 17, 16,
+        22, 16, 9, 14, 4, 9,
+      ],
+    },
+    {
+      label: 'OpenClaw',
+      topics: 'steinberger,claw,openclaw,openai,kimi',
+      description:
+        'OpenClaw — a viral open‑source autonomous AI agent — is driving a fast-growing ecosystem of forks, integrations and apps. Users report it automates tasks, personal agents, finance/market analysis, content distribution, and connects to apps (Telegram/WhatsApp/browser), while projects like ClawIndex track hundreds of add‑ons. The creator joining OpenAI and an upstream merge have accelerated adoption, but discussions highlight hype cycles, many copies, monetization/legal pressures, and crypto intersections (Solana $ovsm analogs, smart‑contract payments, proofoflobster authentication). Overall, OpenClaw sparked a broader agent revolution with notable implications for finance and web3.',
+      data: [
+        7, 14, 4, 8, 12, 8, 11, 6, 14, 12, 17, 11, 4, 7, 7, 11, 8, 17, 7, 17, 7, 16, 9, 10, 19, 4,
+        14, 12, 17, 6, 7, 9, 5, 58, 4, 7, 12, 5, 10, 9, 11, 5, 12, 7, 10, 14, 11, 9, 12, 7, 18, 9,
+        12, 7, 8,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'memecoins,memecoin,memes,meme,wojak',
+      description:
+        'Social chatter centers on a memecoin renaissance: traders hunting low‑market‑cap tokens with active, cult‑like communities and chasing 100x gains. Several tokens and launches are highlighted ($ASTY, $mim, $motion, $M, $WOJAK, APEMARS, $ChiefPussy), with promotions via Discord, Solana integrations, and viral meme creation (even OpenAI mentions). Memecoins are outperforming majors in spots—sharp spikes, heavy shilling, and community-driven minting dominate the narrative, alongside concerns about politicized memes and security/stealing risks.',
+      data: [
+        5, 3, 8, 6, 9, 5, 4, 11, 16, 8, 3, 4, 11, 7, 3, 16, 13, 4, 6, 9, 3, 7, 7, 4, 9, 9, 8, 6, 13,
+        79, 36, 7, 8, 7, 3, 7, 7, 7, 6, 3, 5, 9, 6, 2, 11, 6, 7, 14, 7, 7, 4, 11, 3, 8, 9,
+      ],
+    },
+    {
+      label: 'US war with Iran',
+      topics: 'irans,nuclear,iran,iranian,strike',
+      description:
+        'Social media is focused on rapidly escalating US–Iran tensions: reports that the Trump administration is weighing limited military strikes to pressure Iran into a nuclear deal, US forces and personnel movements in the region, and stalled diplomacy after recent talks. Iran pushes back publicly while reports note regional military buildups and market impacts (VIX spikes, prediction markets), and a fringe claim Iran may sell weapons for Bitcoin/crypto. Overall risk of confrontation and market volatility is the central concern.',
+      data: [
+        2, 10, 7, 10, 3, 8, 2, 5, 7, 9, 3, 10, 11, 0, 4, 5, 8, 4, 8, 8, 1, 4, 8, 4, 7, 9, 3, 3, 2,
+        11, 9, 6, 17, 14, 1, 8, 16, 3, 12, 10, 25, 31, 3, 5, 9, 15, 12, 16, 4, 3, 5, 4, 30, 2, 2,
+      ],
+    },
+    {
+      label: 'PulseChain drama',
+      topics: 'brb,makeup,bat,monerotopia,pivoting',
+      description:
+        'Casual crypto community posts mixing event promotion and market commentary: PulseChain tablets and presence at ETH Denver with CryptoCoffee369 and DEXintheCityPod co-hosts (suggesting a repeatable format), alongside on-chain/market technical shorthand — e.g., $USDT.D structure possibly supporting a wave 4 — plus scattered memes, Pi/Hashtro references, and activist/viral links.',
+      data: [
+        11, 4, 11, 6, 3, 9, 6, 9, 12, 6, 12, 6, 5, 10, 8, 6, 11, 2, 3, 7, 9, 11, 11, 8, 10, 7, 9, 6,
+        5, 5, 2, 4, 12, 8, 5, 7, 10, 10, 2, 8, 7, 4, 5, 15, 4, 12, 10, 3, 5, 10, 5, 3, 1, 2, 9,
+      ],
+    },
+    {
+      label: 'CPI',
+      topics: 'cpi,inflation,03,yoy,expectations',
+      description:
+        'Twitter is reacting to a January US CPI print of 2.4% (headline) and 2.5% core, below expectations and at multi-year lows. Crypto and market commentators call it a soft surprise that eases Fed rate pressure, fuels rate-cut expectations, and is being framed as bullish for crypto. Alternative measures (Truflation) and critics argue official CPI understates money-supply driven inflation; posts also note large multi-year price gains in housing, food, and energy. Overall the release is driving debate on Fed credibility and near-term market volatility.',
+      data: [
+        7, 4, 6, 2, 3, 5, 2, 19, 9, 8, 12, 28, 6, 7, 4, 19, 8, 1, 4, 4, 4, 8, 4, 58, 7, 5, 3, 2, 10,
+        6, 2, 5, 7, 2, 3, 2, 12, 3, 10, 7, 5, 6, 5, 6, 3, 4, 0, 9, 3, 2, 2, 6, 9, 3, 6,
+      ],
+    },
+    {
+      label: 'Gaming',
+      topics: 'games,gaming,immutable,gameplay,metaverse',
+      description:
+        'Discussion focuses on Web3 play-to-earn gaming: trending blockchain titles, hubs, and engagement mechanics. Users call out addictive dungeon-crawlers (LootSurvivor), community-driven games (Sunflower Land), platform hubs (Nebula3, Immutable Play), and Ethereum/Starknet projects. Key themes: tournaments and revenue-sharing, embedded/AI mini-games and decentralized messaging, UX updates (Game Plaza), and why contextual, low-commitment play drives scale.',
+      data: [
+        6, 4, 6, 3, 9, 3, 4, 7, 4, 6, 6, 3, 3, 3, 7, 13, 8, 58, 15, 6, 6, 7, 2, 6, 4, 7, 8, 9, 6, 1,
+        9, 2, 11, 2, 3, 24, 2, 4, 1, 3, 5, 3, 7, 9, 7, 5, 5, 4, 0, 6, 5, 4, 8, 1, 3,
+      ],
+    },
+    {
+      label: 'ETH Denver',
+      topics: 'denver,ethereumdenver,ethdenver,booth,meetup',
+      description:
+        'Social posts center on ETHDenver — attendees and teams announcing presence, meetups, sponsor booths, panels and builder nights, promotional meetups (brunches, parties), POAP digital collectibles, art/AR exhibits, and networking among developers, infrastructure projects, and community members.',
+      data: [
+        6, 5, 7, 4, 1, 6, 1, 2, 9, 12, 1, 7, 8, 3, 8, 4, 7, 4, 5, 12, 9, 8, 14, 3, 8, 4, 2, 16, 7,
+        1, 5, 5, 5, 7, 4, 3, 3, 2, 0, 2, 4, 3, 5, 5, 8, 5, 16, 5, 10, 4, 4, 11, 21, 3, 7,
+      ],
+    },
+    {
+      label: 'Whales',
+      topics: 'whale,deposited,whales,40x,opened',
+      description:
+        'Social posts highlight intense whale activity: huge on-chain transfers and exchange deposits of BTC and ETH (examples: 261k ETH ~$543–546M, 5k BTC ~$348M, ~57k BTC moved), large leveraged longs and multi‑million dollar positions, and signs of both accumulation and unloading. Analysts warn exchange inflows often precede selling pressure, while other metrics (Bitfinex long exposure at a 3‑year high; spot buys vs retail futures leverage) point to squeeze risk and mixed bullish conviction. Market intelligence providers are actively tracking and monetizing these signals.',
+      data: [
+        9, 7, 6, 3, 1, 5, 8, 2, 2, 2, 3, 2, 12, 6, 1, 5, 0, 2, 1, 2, 5, 2, 3, 3, 3, 1, 2, 6, 4, 7,
+        1, 13, 2, 7, 2, 3, 1, 2, 5, 7, 2, 8, 5, 4, 5, 9, 2, 2, 6, 5, 1, 6, 4, 90, 6,
+      ],
+    },
+    {
+      label: 'Vibecoding',
+      topics: 'vibe,vibecoding,coders,coding,vibecode',
+      description:
+        'Social chatter centers on “vibe coding” — AI-driven, multi-agent app development that’s enabling rapid creation of business and consumer apps (Replit, Databricks, Bevy, CODEX CLI). Users praise fast prototyping and automation (even AI HFT desks and NFT collector hubs) but raise serious concerns about security and quality: recurring access-control bugs, LLMs failing to enforce invariants, data leaks, and OPSEC gaps. Emerging audit loops (GPT review + Claude fixes) and static analysis are highlighted as mitigations. The trend is bleeding into crypto (wallet verification, tokenization, community onboarding) and fuels both bullish adoption narratives and skeptical warnings about fragile, buggy deployments.',
+      data: [
+        5, 4, 0, 3, 3, 2, 6, 5, 25, 4, 2, 0, 6, 2, 5, 3, 3, 5, 8, 7, 5, 4, 8, 3, 4, 3, 3, 0, 1, 7,
+        6, 2, 3, 4, 4, 3, 4, 5, 4, 4, 3, 2, 1, 5, 5, 4, 6, 4, 4, 5, 2, 74, 10, 5, 4,
+      ],
+    },
+    {
+      label: 'Hyperliquid',
+      topics: 'hyperliquid,hl,hyperliquidx,hype,jake',
+      description:
+        'Twitter threads focus on Hyperliquid ($HYPE) token dynamics — heavy protocol repurchases (assistance fund and buybacks: ~$60.6M over 30 days, recent ~$1.2M additions), supply removal, and price-sensitive buyback mechanics. Discussion covers HIP proposals (HIP-3/HIP-4) and a network upgrade tied to prediction markets, options, and higher revenue potential, plus leverage/borrowing capacity for traders. Community speculation about undervaluation, potential airdrops, liquidity rails, and upcoming product growth is paired with institutional moves: hires, advisory additions, and the new Hyperliquid Policy Center to pursue regulatory clarity. Overall sentiment sees material on-chain buybacks, governance changes, and regulatory positioning as catalysts for HYPE price appreciation and broader adoption.',
+      data: [
+        4, 5, 4, 8, 9, 5, 7, 4, 1, 12, 3, 3, 3, 7, 3, 5, 4, 2, 2, 7, 4, 2, 28, 8, 4, 14, 11, 4, 4,
+        7, 4, 5, 4, 6, 2, 5, 6, 7, 4, 6, 5, 4, 7, 2, 6, 6, 1, 4, 8, 3, 6, 6, 2, 1, 6,
+      ],
+    },
+    {
+      label: 'Precious metals',
+      topics: 'silver,metals,precious,5000,disclaimer',
+      description:
+        'Social posts show heightened focus on precious metals: gold is oscillating around the $5,000 area with bullish calls (some forecasts as high as $6,200) and analysts raising 2026 targets, while silver has been highly volatile—spiking into the high $70s/low $80s then sliding back to mid-$70s. Market drivers cited include the US dollar, Fed minutes, and a noted correlation between gold and Japanese 10‑year yields (framed as a proxy for trust in the financial system). Traders offer competing views—momentum plays and short-term trading alerts, buy-the-dip strategies for longer consolidation, and technical setups (Fibonacci-based short targets around $100–104 by May 2026). Institutional forecasts (J.P. Morgan, UBS) and trading services/substack promotions are amplifying attention and positioning.',
+      data: [
+        4, 1, 7, 5, 2, 3, 1, 6, 10, 5, 5, 3, 5, 6, 2, 8, 3, 9, 4, 20, 3, 6, 2, 1, 3, 2, 5, 4, 5, 2,
+        10, 7, 1, 7, 4, 13, 14, 4, 9, 7, 2, 4, 20, 3, 4, 10, 6, 2, 4, 5, 3, 2, 4, 3, 3,
+      ],
+    },
+    {
+      label: 'China',
+      topics: 'chinas,china,treasuries,brics,73',
+      description:
+        'Social feeds highlight China’s strategic shift away from U.S. Treasuries toward gold accumulation and a very large current-account surplus, signaling de‑risking from dollar assets and potential global decoupling. Posts note China’s domestic pivot (stimulus to boost consumption), persistent deflationary/weak nominal income, IMF growth forecasts, and tech/infrastructure advances (e.g., 10G broadband). Market and geopolitical implications include pressure on UST demand, reserve diversification, and renewed narratives around Bitcoin as economic sovereignty.',
+      data: [
+        7, 3, 1, 3, 7, 1, 3, 8, 15, 8, 3, 5, 9, 11, 5, 4, 8, 1, 3, 6, 6, 3, 12, 10, 3, 10, 3, 6, 2,
+        4, 6, 6, 5, 5, 5, 5, 3, 3, 4, 5, 6, 6, 3, 4, 7, 6, 2, 3, 3, 5, 4, 2, 5, 4, 2,
+      ],
+    },
+    {
+      label: "Valentine's day",
+      topics: 'valentines,valentinesday,celebrating,loved,happy',
+      description:
+        'A flood of Valentine’s Day posts across crypto accounts blending personal greetings with project promotion and community engagement. Messages range from affectionate/mutual-support notes and Galentine shoutouts to marketing for DeFi staking rewards, WAX trading cards, NFT/metaverse hangouts, and platform mentions (BTSE, NoOnes, MadLads, Backpack). Also includes event highlights (TreeHacks) and a call for government transparency—overall a mix of celebration, user acquisition, and community-building.',
+      data: [
+        1, 5, 4, 4, 12, 2, 4, 14, 2, 2, 3, 21, 2, 3, 9, 8, 1, 9, 3, 3, 2, 31, 7, 2, 2, 3, 1, 2, 15,
+        4, 3, 3, 2, 2, 2, 1, 2, 2, 4, 2, 2, 2, 3, 8, 5, 3, 2, 2, 4, 3, 18, 3, 1, 5, 7,
+      ],
+    },
+    {
+      label: 'RWA',
+      topics: 'rwa,rwas,tokenized,15b,tokenization',
+      description:
+        'Social chatter centers on rapid growth and mainstreaming of tokenized real‑world assets (RWAs): Ethereum RWAs surpassed ~$150B, treasuries scaled to multi‑billions, and institutional capital is flowing into projects (Securitize, Ondo, Centrifuge and newer Solana/BNB initiatives). Conversations highlight product innovation (looping, structured RWA products, convergence trading), major events/partnerships, and promising niche use cases (private credit, real estate, luxury assets). Primary debates focus on whether TradFi moving on‑chain helps crypto developers and the practical bottlenecks — fragmentation, custody, legal frameworks, investor protection — that will shape RWA adoption in 2026.',
+      data: [
+        1, 3, 4, 6, 7, 3, 8, 3, 2, 6, 6, 2, 1, 8, 3, 3, 3, 3, 1, 2, 6, 3, 9, 4, 11, 0, 6, 0, 5, 17,
+        1, 1, 5, 5, 2, 1, 8, 6, 9, 1, 2, 5, 4, 3, 4, 8, 4, 5, 26, 2, 9, 7, 3, 2, 3,
+      ],
+    },
+    {
+      label: 'Art and NFTs',
+      topics: 'artists,painting,artist,art,pixel',
+      description:
+        'Conversation centers on generative and digital art (coded/generative pieces, pixel art) alongside traditional handmade work and prints. Posters share collecting and exhibition activity, notable commissions/collaborations, and enthusiasm for specific artists and series. Discussion also covers artist professionalization—unionizing, pricing standards, patronage—and creators working across multiple mediums while asserting creative freedom.',
+      data: [
+        1, 4, 26, 18, 4, 2, 4, 8, 6, 1, 4, 5, 4, 10, 3, 1, 9, 4, 4, 4, 2, 2, 2, 2, 2, 5, 7, 7, 6, 1,
+        0, 4, 2, 11, 7, 11, 2, 4, 4, 3, 3, 5, 3, 2, 1, 2, 3, 3, 1, 2, 4, 7, 3, 6, 3,
+      ],
+    },
+    {
+      label: 'Football',
+      topics: 'league,champions,premier,clubs,jr',
+      description:
+        "Social posts mix Arsenal match commentary (poor attacking form, match score updates, FA Cup progress, Saka signing) with heavy betting chatter — fans sharing bets, doubling down, and match predictions. Crypto-linked promotions are prominent: USDC prize giveaways for score predictions, betting promos for Champions League, and crypto community shoutouts (BONK/bonk_inu at BVB). Overall it's football fan sentiment + crypto-enabled wagering incentives.",
+      data: [
+        0, 4, 6, 9, 7, 4, 0, 2, 10, 8, 1, 2, 4, 5, 1, 5, 3, 4, 2, 9, 4, 5, 3, 4, 1, 5, 8, 1, 1, 4,
+        4, 2, 7, 7, 2, 14, 4, 4, 4, 3, 3, 8, 9, 0, 6, 0, 7, 0, 11, 5, 1, 5, 3, 11, 3,
+      ],
+    },
+    {
+      label: 'PUNCH memecoin',
+      topics: 'punch,moodeng,zoo,smashed,pnut',
+      description:
+        'Social chatter centers on $PUNCH, a Solana token undergoing a rapid viral breakout — large intraday gains, rising volume, and a stair-step pattern of higher lows. Community posts claim huge returns (from small buys to 10x–120x), market cap spikes (~$3M→$26M and claims of $16M in a day), ATH breakouts, and growing narrative momentum (videos, giveaways, influencer calls). Overall tone is bullish retail hype and short-term momentum-driven trading activity.',
+      data: [
+        11, 2, 3, 0, 4, 3, 5, 6, 5, 3, 0, 2, 3, 2, 3, 0, 2, 3, 6, 8, 1, 3, 8, 3, 2, 3, 9, 3, 8, 7,
+        4, 3, 5, 1, 2, 6, 2, 26, 3, 4, 6, 2, 2, 6, 3, 4, 4, 7, 1, 2, 4, 3, 2, 2, 4,
+      ],
+    },
+  ],
+}

@@ -1,0 +1,264 @@
+export const NARRATIVES = {
+  labels: [
+    '20.11.25',
+    '21.11.25',
+    '21.11.25',
+    '21.11.25',
+    '21.11.25',
+    '21.11.25',
+    '21.11.25',
+    '21.11.25',
+    '22.11.25',
+    '22.11.25',
+    '22.11.25',
+    '22.11.25',
+    '22.11.25',
+    '22.11.25',
+    '22.11.25',
+    '22.11.25',
+    '23.11.25',
+    '23.11.25',
+    '23.11.25',
+    '23.11.25',
+    '23.11.25',
+    '23.11.25',
+    '23.11.25',
+    '23.11.25',
+    '24.11.25',
+    '24.11.25',
+    '24.11.25',
+    '24.11.25',
+    '24.11.25',
+    '24.11.25',
+    '24.11.25',
+    '24.11.25',
+    '25.11.25',
+    '25.11.25',
+    '25.11.25',
+    '25.11.25',
+    '25.11.25',
+    '25.11.25',
+    '25.11.25',
+    '25.11.25',
+    '26.11.25',
+    '26.11.25',
+    '26.11.25',
+    '26.11.25',
+    '26.11.25',
+    '26.11.25',
+    '26.11.25',
+    '26.11.25',
+    '27.11.25',
+    '27.11.25',
+    '27.11.25',
+    '27.11.25',
+    '27.11.25',
+    '27.11.25',
+    '27.11.25',
+  ],
+  datasets: [
+    {
+      label: 'ZEC price',
+      topics: 'zec,zcash,vaneck,reliance,maxis',
+      description:
+        "The key topics currently being discussed in the crypto community on Twitter regarding Zcash (ZEC) include:\n1. Bullish sentiment towards Zcash and its potential for growth, with mentions of chainlink, zcash rivian, and the $zyield program.\n2. Concerns about \"splitting the vote\" for Zcash when Bitcoin (BTC) needs unity.\n3. Speculation about potential wave correction patterns for Zcash.\n4. Analysis of Zcash's price movements, with predictions of a pump and potential resistance levels.\n5. Discussion of the Z-Asset Standard and its implications for Zcash.\n6. Criticism of Zcash CEO's actions regarding friendly and unfriendly forks.\n7. Traders sharing their experiences with Zcash trades, including losses and gains.\n8. Speculation about Zcash's future price movements and potential scenarios.\n9. Analysis of the recent Zcash rally and rebound in price.\n10. Mention of a trader closing a Zcash long position with a significant loss and opening new short and long positions on Zcash and Bitcoin.\n\nOverall, the sentiment towards Zcash appears to be mixed, with some traders expressing optimism about its potential for growth while others are more cautious about its price movements and potential risks.",
+      data: [
+        5, 9, 9, 9, 8, 14, 16, 5, 12, 11, 10, 11, 7, 12, 13, 6, 13, 10, 9, 10, 8, 14, 6, 6, 7, 12,
+        10, 15, 10, 14, 7, 9, 10, 9, 10, 11, 20, 13, 7, 4, 11, 13, 29, 11, 11, 18, 9, 16, 8, 10, 11,
+        7, 9, 8, 74,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'memecoin,memecoins,memes,meme,mememaxfi',
+      description:
+        'The meme contest for $same is live and people are encouraged to get involved. Memecoins are being discussed, with some questioning if they have been replaced. There is talk about meme trading and the transition of equity and debt markets into extensions of the entertainment industry. The importance of asset selection in the meme coin market is emphasized, with a focus on good memecoins making new all-time highs. Meme-coin options are dominating the market, and there is excitement about the potential for high volatility. The community is discussing various meme projects and their sustainability. Overall, the meme culture in the crypto industry is alive and well, with a mix of humor, speculation, and excitement surrounding meme coins and trading.',
+      data: [
+        5, 4, 8, 6, 7, 6, 10, 9, 10, 6, 11, 8, 14, 3, 6, 13, 8, 10, 4, 12, 6, 9, 9, 9, 9, 12, 11, 9,
+        7, 11, 116, 5, 10, 5, 5, 10, 5, 8, 4, 10, 11, 8, 2, 6, 11, 6, 10, 15, 7, 11, 6, 7, 5, 7, 6,
+      ],
+    },
+    {
+      label: 'AI',
+      topics: 'ais,workflows,assistant,sentient,productivity',
+      description:
+        'The messages from twitter focus on the impact of AI on various industries, including finance, healthcare, and manufacturing. There is a discussion about the potential dominance of AI-based learning in the coming decade and the importance of using AI to increase productivity and reduce costs. The messages also touch on the dangers of not understanding how AI works and the potential job displacement caused by AI automation. Additionally, there is mention of the need for humans to adapt their skills to survive the AI transition. Overall, the messages highlight the growing influence of AI in various sectors and the need for individuals and businesses to adapt to this technological shift.',
+      data: [
+        6, 34, 22, 8, 8, 6, 7, 5, 8, 17, 9, 11, 10, 4, 18, 8, 13, 9, 8, 5, 6, 8, 6, 18, 11, 9, 8, 8,
+        3, 8, 5, 12, 11, 7, 16, 7, 6, 14, 10, 10, 6, 9, 5, 8, 8, 18, 5, 11, 7, 10, 9, 6, 4, 12, 7,
+      ],
+    },
+    {
+      label: "China's impact on crypto",
+      topics: 'chinas,china,taiwan,xi,chinese',
+      description:
+        "The messages from twitter highlight various discussions and concerns related to China's influence and activities in the crypto industry and beyond. There are mentions of Chinese immigrants flooding the United States, Chinese ASICs having backdoors in Bitcoin, potential deals between the US and China regarding technology sales, and China's increasing dominance in Bitcoin mining despite bans.\n\nAdditionally, there are references to China's advancements in AI technology, concerns about China's crackdown on religious freedom, and the impact of Chinese influence on global power dynamics. The messages also touch on the growing anti-Chinese sentiment in countries like Japan and South Korea.\n\nOverall, the messages suggest a complex and multifaceted relationship between China and the rest of the world, particularly in the context of technology, geopolitics, and economic power.",
+      data: [
+        5, 18, 10, 14, 4, 6, 9, 15, 12, 14, 6, 4, 8, 10, 3, 12, 12, 5, 3, 6, 6, 5, 12, 14, 14, 7, 7,
+        3, 2, 4, 19, 5, 9, 15, 8, 11, 5, 11, 5, 24, 31, 15, 8, 17, 16, 8, 10, 3, 6, 3, 8, 6, 10, 10,
+        7,
+      ],
+    },
+    {
+      label: 'Thanksgiving',
+      topics: 'turkey,dinner,cousin,turkeys,pie',
+      description:
+        'The messages from twitter cover a wide range of topics related to Thanksgiving, including discussions about traditional Thanksgiving meals, hosting Thanksgiving dinner with crypto profits, bringing up Bitcoin and cryptocurrency at the dinner table, and even controversial opinions about brisket being the meat of choice for Thanksgiving. There are also mentions of Thanksgiving recipes, entertainment glitches at the dinner table, and the history of Thanksgiving observance dates.\n\nAdditionally, there are references to Thanksgiving-themed events such as the Turkey Bowl and the importance of being mindful of the nutritional content of traditional Thanksgiving foods like turkey.\n\nOverall, the messages reflect a mix of humor, personal anecdotes, and discussions about various aspects of Thanksgiving within the context of the crypto industry and social media community.',
+      data: [
+        4, 4, 11, 6, 10, 11, 3, 6, 11, 4, 19, 4, 20, 15, 8, 17, 14, 15, 6, 8, 9, 11, 5, 6, 4, 7, 10,
+        9, 6, 4, 4, 3, 2, 8, 9, 6, 7, 6, 13, 14, 11, 4, 10, 8, 3, 15, 32, 5, 10, 24, 4, 10, 11, 6,
+        14,
+      ],
+    },
+    {
+      label: 'Black friday',
+      topics: 'black,discounts,friday,deals,metal',
+      description:
+        'The key topics discussed in the messages from twitter related to Black Friday include:\n- Early start of Black Friday sales\n- Various deals and discounts offered by different companies\n- Recommendations on what to buy during Black Friday\n- Importance of budgeting and not going into debt\n- Promotions and promo codes for trading groups\n- Discounts on trading memberships and subscriptions\n- Learning opportunities for trading automation\n- Sales and discounts on cryptocurrency-related products and services\n- Recommendations for preparing for Black Friday sales\n- Limited time offers and deadlines for discounts\n\nOverall, the messages highlight the excitement and anticipation surrounding Black Friday sales in the crypto industry, with a focus on deals, discounts, and promotions available to customers.',
+      data: [
+        9, 8, 4, 3, 31, 6, 8, 17, 12, 4, 6, 16, 10, 8, 4, 4, 7, 7, 5, 8, 11, 13, 4, 4, 7, 5, 7, 9,
+        8, 3, 4, 6, 9, 6, 5, 3, 11, 5, 8, 3, 27, 2, 9, 8, 5, 3, 1, 7, 8, 4, 7, 8, 6, 8, 3,
+      ],
+    },
+    {
+      label: 'Israel - Palestine',
+      topics: 'gaza,israel,israeli,jewish,killed',
+      description:
+        'The messages from twitter contain a mix of anti-Semitic and anti-Israel sentiments, with mentions of Zionists, Hamas, Hezbollah, and Israeli actions in Palestine. There are also references to conspiracy theories and accusations of corruption within Israeli political parties. The messages reflect a deep-seated animosity towards Israel and Jewish people, with some messages promoting harmful stereotypes and misinformation. It is important to approach such content critically and with an understanding of the complex political dynamics in the region.',
+      data: [
+        4, 6, 18, 9, 2, 3, 5, 16, 6, 13, 6, 2, 12, 1, 0, 9, 8, 4, 4, 1, 8, 7, 3, 7, 19, 4, 5, 5, 6,
+        1, 8, 8, 6, 8, 9, 7, 4, 7, 9, 11, 9, 8, 9, 14, 7, 12, 8, 3, 1, 3, 3, 7, 3, 5, 8,
+      ],
+    },
+    {
+      label: 'Devconnect',
+      topics: 'aires,buenos,devconnect,argentina,devcon',
+      description:
+        "The messages from twitter about Devconnect ARG in Argentina highlight the excitement and success of the event. Attendees discussed various topics such as the impact of Ethereum on trading, the underrated dish of Mollejas, and the positive outlook for Argentina's future. The event saw a large turnout with attendees from around the world, showcasing the global interest in cryptocurrency and blockchain technology. The closing happy hour was a chance for attendees to celebrate and network, reflecting the vibrant and innovative atmosphere of Devconnect. Overall, the event was a success and left a positive impression on those who attended.",
+      data: [
+        3, 9, 7, 6, 11, 9, 7, 7, 5, 11, 3, 8, 13, 4, 10, 7, 9, 5, 2, 3, 11, 8, 8, 12, 7, 2, 4, 2, 9,
+        3, 7, 4, 8, 7, 5, 3, 3, 5, 3, 7, 5, 0, 6, 6, 5, 12, 5, 8, 1, 4, 4, 3, 11, 8, 6,
+      ],
+    },
+    {
+      label: 'Bitcoin vs fiat',
+      topics: 'fiat,finite,monetary,salt,currency',
+      description:
+        'The messages from twitter highlight the importance and potential of Bitcoin as the future of money. It is described as the universal language of capital, a sovereign asset that is not controlled by corporations or governments. The messages emphasize the scarcity and decentralization of Bitcoin, making it a valuable and secure asset for long-term wealth protection. There is also a discussion about the evolution of Bitcoin and its role in forcing regulators to accept digital bearer assets. Overall, the messages convey a strong belief in the power and potential of Bitcoin as a transformative asset in the financial industry.',
+      data: [
+        3, 2, 11, 9, 29, 5, 2, 3, 7, 5, 7, 4, 12, 3, 13, 2, 9, 6, 4, 8, 6, 2, 2, 13, 12, 3, 6, 1, 3,
+        6, 2, 12, 12, 7, 8, 7, 5, 3, 7, 5, 4, 1, 2, 11, 5, 0, 3, 9, 3, 2, 12, 5, 6, 5, 6,
+      ],
+    },
+    {
+      label: 'Gambling',
+      topics: 'poker,gambling,casino,betting,addiction',
+      description:
+        'The key topics currently being discussed in the crypto industry on social media platforms like Twitter include:\n\n1. Gambling addiction and betting on various platforms like Polymarket and sports betting.\n2. The rise of prediction markets and casino-style platforms in the crypto space.\n3. The concept of a "Creator Casino" where players become founders and founders become the house.\n4. The impact of gambling addiction on individuals and families, including personal stories of addiction.\n5. The use of crypto platforms like Gamblr to make on-chain wagers more clean and deliberate.\n6. The influence of advisors and celebrities on gambling websites and potential government policy changes.\n7. The excitement around events like the CS2 Major and impromptu pick-em contests in Discord.\n8. The potential for big wins and losses in the crypto gambling space, with users sharing their experiences and strategies.\n\nOverall, the discussion around gambling and betting in the crypto industry is diverse, ranging from personal experiences with addiction to strategies for making successful bets on various platforms.',
+      data: [
+        5, 3, 2, 4, 42, 9, 4, 13, 4, 3, 6, 6, 6, 5, 3, 6, 2, 18, 10, 4, 5, 6, 6, 2, 5, 2, 3, 6, 6,
+        5, 4, 2, 3, 9, 7, 17, 7, 3, 2, 3, 6, 5, 1, 12, 5, 6, 7, 7, 6, 1, 5, 3, 4, 9, 3,
+      ],
+    },
+    {
+      label: "Twitter's location doxxing",
+      topics: 'doxxing,location,doxxed,locations,profiles',
+      description:
+        'The messages from twitter are discussing the new feature on platform X that displays the country or region where an account is based. Some users are concerned about privacy and potential doxxing, while others see it as a way to increase transparency and combat fraud. Vitalik Buterin has raised privacy concerns about the feature, stating that it reveals user locations without consent. Some users are suggesting ways to avoid having their exact location revealed, such as using VPNs or selecting to disclose only their continent or region. Overall, the reactions to the new feature are mixed, with some seeing it as a positive step towards transparency and others expressing concerns about privacy and potential negative consequences.',
+      data: [
+        14, 5, 4, 1, 3, 3, 3, 5, 2, 3, 19, 6, 1, 19, 3, 9, 11, 6, 6, 4, 4, 1, 1, 2, 1, 4, 7, 25, 6,
+        4, 1, 3, 15, 7, 6, 2, 9, 4, 6, 11, 8, 2, 8, 4, 3, 3, 1, 8, 3, 3, 10, 3, 4, 4, 4,
+      ],
+    },
+    {
+      label: 'US CPI data',
+      topics: 'ppi,inflation,prior,employment,03',
+      description:
+        "The key topics discussed in the messages from twitter are:\n- US Labor Department announcing the release of November CPI data on December 18\n- US decision to no longer release Q3 GDP report\n- 21e8 building a US manufacturing hub in Louisiana with no capex or opex on balance sheet\n- US ADP employment change\n- US inflation cooling down\n- DallasFed Services Index rising\n- Fiscal policy and growth in Europe\n- Calls for large interest rate cuts by Fed\n- Producer inflation cooling down\n- UK's Chancellor Reeves deciding against cutting VAT on energy bills\n- Modest increase in sales at US retailers and restaurants\n- Discrepancy in reported inflation rates\n- ATL Fed's estimate for Q3 GDP\n- Delayed August wholesale inventories and sales\n- Central bankers' changing stance on inflation\n- US PPI and Core PPI data drop\n- Atlanta Fed's GDPNow model\n- US S&P manufacturing, services, and composite PMI\n- Real story behind retail sales and PPI numbers\n- Inflation expectations below long term average\n\nOverall, the messages discuss various economic indicators, policy decisions, and market impacts related to the crypto industry.",
+      data: [
+        1, 7, 5, 4, 2, 1, 17, 2, 9, 17, 3, 17, 1, 13, 5, 2, 5, 1, 1, 6, 4, 5, 3, 28, 4, 4, 1, 2, 3,
+        6, 3, 10, 2, 3, 5, 2, 6, 1, 6, 26, 15, 12, 2, 3, 3, 4, 2, 2, 3, 2, 4, 7, 4, 4, 2,
+      ],
+    },
+    {
+      label: 'Airdrops',
+      topics: 'kinetiq,hyperevm,airdrops,airdrop,eligibility',
+      description:
+        'The key topics discussed in the messages from @maverick23NFT and other users in the crypto community include:\n1. Airdrops: There are mentions of various airdrops, including Opensea token airdrop, $KNTQ airdrop, $OPEN stock warrants airdrop, Hyperliquid airdrops, and more. Users are excited about receiving airdrops and discussing their experiences with them.\n2. Token Updates: Users are discussing updates and developments related to different tokens such as $sol, $KNTQ, $PUNKSR, $BLUFF, $S, $SOON, $CHZ, and $IN. They are sharing information about token performance, events, and potential opportunities.\n3. Airdrop Participation: There are mentions of users participating in airdrops, staking tokens, and claiming rewards. Some users express concerns about missing out on airdrops due to lack of announcements or information.\n4. Community Engagement: Users are engaging with each other, mentioning other users, projects, and events in the crypto community. They are sharing insights, opinions, and experiences related to airdrops and tokens.\n5. Speculation and Analysis: There is speculation about token purchases, market trends, and potential strategies for maximizing rewards from airdrops. Users are analyzing the behavior of other participants and making decisions based on their observations.\n6. Platform Updates: Users are discussing updates and features of different platforms such as Opensea, Hyperliquid, Airtasker, and Binance Alpha. They are sharing information about platform raises, events, and opportunities for users.\n7. Future Airdrops: There is anticipation and discussion about upcoming airdrops, events, and opportunities in the crypto industry. Users are looking forward to potential rewards and benefits from participating in future airdrops.',
+      data: [
+        3, 35, 6, 7, 4, 7, 1, 3, 7, 6, 8, 6, 6, 12, 7, 5, 5, 1, 2, 3, 5, 5, 4, 2, 3, 6, 3, 5, 9, 3,
+        4, 4, 7, 9, 8, 12, 3, 5, 8, 3, 3, 5, 1, 3, 4, 3, 6, 6, 6, 3, 1, 7, 2, 2, 7,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'eigenlayer,defi,pts,defai,lending',
+      description:
+        "The key topics discussed in the messages from twitter are:\n1. DeFi stability and the future of Real assets with blockchain transparency\n2. The importance of sustainable yield sources in DeFi\n3. The strategic success of Morpho's DeFi mullet strategy\n4. The need for clarity on DeFi credit protocols and their classification under investment contracts\n5. The shift of traditional finance players towards entering DeFi\n6. The innovation and efficiency of Ensofi_xyz's unified dashboard for managing assets in DeFi\n7. The importance of stable money in DeFi for a strong foundation\n8. The support for accelerating Solana's path to terminal inflation rate by DeFi Development Corp\n9. The importance of DEXs, LSDs, Stablecoins, and Derivatives in generating fees and sustaining DeFi\n10. The introduction of BubbleSwap + BubbleAI on Shido Network for DeFi meets AI integration\n11. The independent DeFi protocols under Each Leaf with their unique product offerings and value capture mechanisms\n12. New York's push for a zero-emissions grid by 2040 and the role of Dispatchable Emissions-Free Resources (DEFR) in achieving this goal.",
+      data: [
+        2, 4, 7, 4, 4, 3, 8, 3, 5, 8, 4, 4, 2, 7, 6, 2, 9, 15, 5, 3, 2, 6, 4, 12, 6, 10, 6, 6, 2, 8,
+        9, 6, 4, 7, 3, 2, 5, 7, 3, 4, 6, 3, 3, 4, 4, 6, 2, 4, 6, 6, 9, 3, 5, 6, 4,
+      ],
+    },
+    {
+      label: 'Privacy and encryption',
+      topics: 'confidentiality,privacy,surveillance,encrypted,freedom',
+      description:
+        'The messages from twitter focus heavily on the importance of privacy in the crypto industry. Key points include the idea that privacy is essential for personal and digital rights, the need for privacy to be programmable by default, and the concept of privacy as a form of resistance against mass surveillance. There is also discussion about the role of privacy in cryptocurrency transactions and the importance of privacy projects in the industry.\n\nOverall, the messages emphasize the significance of privacy in the crypto space and highlight the efforts of various projects and individuals to prioritize and enhance privacy within the ecosystem.',
+      data: [
+        0, 4, 5, 10, 8, 1, 3, 5, 4, 6, 8, 6, 0, 1, 8, 5, 5, 7, 5, 3, 3, 4, 2, 5, 7, 1, 5, 4, 3, 7,
+        8, 6, 5, 8, 4, 2, 40, 10, 3, 8, 4, 8, 1, 0, 5, 4, 5, 4, 0, 9, 3, 5, 6, 3, 2,
+      ],
+    },
+    {
+      label: 'BTC price',
+      topics: 'h4,4hr,4h,1d,91k',
+      description:
+        "The key topics currently being discussed in the crypto community on Twitter include:\n\n1. Bitcoin's current resistance levels: There is a lot of discussion about Bitcoin facing resistance around the $88,000-$90,000 zone. If Bitcoin doesn't break above this level soon, there is a possibility of dropping towards a new monthly low.\n\n2. Potential price movements for Bitcoin: Analysts are predicting various scenarios for Bitcoin's price, with some suggesting a fall towards $79k or even $76k, while others are looking for a bounce towards $100k or even $110k if certain support levels hold.\n\n3. Accumulation territory for Bitcoin: Some traders are suggesting that Bitcoin has entered accumulation territory, with short-term holders experiencing losses and the market potentially reacting at certain key levels.\n\n4. Technical analysis and resistance levels: Traders are analyzing technical charts and key resistance levels, such as the 91k zone and the 96-97k range, to make informed trading decisions.\n\nOverall, the sentiment in the crypto community seems to be cautious optimism, with traders closely monitoring Bitcoin's price movements and key levels to determine the next potential direction for the market.",
+      data: [
+        12, 0, 5, 3, 6, 26, 4, 4, 6, 5, 7, 5, 1, 7, 0, 9, 7, 2, 1, 4, 1, 4, 8, 4, 3, 3, 8, 7, 3, 5,
+        3, 1, 2, 1, 7, 3, 11, 1, 12, 5, 4, 4, 6, 2, 1, 10, 6, 2, 3, 11, 7, 2, 3, 3, 3,
+      ],
+    },
+    {
+      label: 'MON price',
+      topics: 'mon,010,presale,ico,dumped',
+      description:
+        "The key topics currently being discussed in the crypto community on Twitter regarding $MON include:\n1. Speculation on whether $MON will cause a maximum price increase and if it will reach $0.084 or higher.\n2. Mixed opinions on whether to invest in $MON, with some users yeeting half of their holdings while others believe it will make them rich.\n3. Observations of price movements and predictions of potential gains, with some users claiming it will 100x from its current low.\n4. Concerns about potential market manipulation, with suspicions of whales unloading $MON and impacting other altcoins.\n5. Speculation on the influence of Coinbase, as $MON is owned by the exchange, and predictions of potential price increases.\n6. Warnings of a potential market dump and advice to stay safe and cautious.\n7. Discussions on the involvement of bots in pumping and dumping coins, particularly $MON.\n8. Predictions of positive price action for $MON due to Coinbase's stake in its success, despite concerns about fundamentals and real value.\n9. Observations of significant gains for those who invested in $MON, despite the overall market conditions.\n10. Overall, there is a mix of excitement, skepticism, and caution surrounding $MON and its potential future performance in the crypto market.",
+      data: [
+        8, 3, 1, 7, 1, 7, 6, 2, 6, 4, 4, 1, 1, 2, 1, 5, 1, 3, 1, 7, 4, 5, 4, 3, 3, 3, 8, 5, 4, 2, 2,
+        58, 3, 5, 1, 1, 12, 10, 2, 1, 3, 4, 4, 5, 3, 1, 5, 5, 2, 9, 2, 2, 4, 1, 5,
+      ],
+    },
+    {
+      label: 'ETF outflows',
+      topics: 'outflows,outflow,inflows,etfs,inflow',
+      description:
+        'The key topics discussed in the messages from twitter are:\n- Record-breaking Bitcoin ETF volume\n- Ethereum ETF outflows and inflows\n- Bitcoin ETF net inflows and outflows\n- Digital asset investment products outflows\n- XRP funds bucking the trend with inflows\n- Massive BTC outflows from exchanges\n- Bitcoin ETFs hitting record volume\n- Drawdowns in Bitcoin ETF flows\n- ETH ETFs turning positive\n- Solana ETF inflows\n- Rotation in ETF flows\n- US spot ETFs net inflows\n- Institutional capital flowing into ETH\n- Altcoins attracting fresh capital\n\nOverall, the messages highlight the volatility and trends in ETF flows, with a focus on Bitcoin and Ethereum, as well as other digital assets like XRP and Solana.',
+      data: [
+        3, 2, 8, 1, 12, 2, 2, 4, 3, 4, 7, 2, 4, 2, 5, 5, 16, 5, 0, 0, 3, 2, 6, 9, 3, 4, 4, 2, 3, 3,
+        1, 2, 4, 1, 22, 1, 4, 1, 10, 3, 12, 9, 2, 7, 28, 3, 1, 1, 2, 1, 4, 6, 4, 1, 2,
+      ],
+    },
+    {
+      label: "Trump's impact on crypto",
+      topics: 'donald,tariff,potus,realdonaldtrump,election',
+      description:
+        'President Trump has issued a statement about potentially eliminating income tax due to tariff proceeds. He also mentioned that by the end of the year, there will be $21 trillion invested in the US, which will make the US dollar stronger. Additionally, there are speculations about potential buying opportunities in Trump Media despite recent losses.',
+      data: [
+        3, 6, 7, 4, 4, 6, 4, 4, 3, 4, 6, 1, 6, 6, 4, 4, 4, 7, 1, 12, 4, 8, 5, 1, 5, 4, 7, 3, 5, 4,
+        2, 2, 5, 4, 4, 3, 9, 2, 6, 3, 11, 11, 0, 1, 1, 4, 3, 5, 6, 4, 2, 4, 6, 6, 5,
+      ],
+    },
+    {
+      label: 'December rate cuts',
+      topics: 'odds,cut,fomc,williams,71',
+      description:
+        'The key topic currently being discussed in the crypto industry on social media platforms is the likelihood of a rate cut by the Federal Reserve in December. Various sources, such as Polymarket and Fed fund futures, are indicating high probabilities of a rate cut, ranging from 70% to as high as 85%. The market is reacting to these predictions, with some speculating that a rate cut could lead to a bullish trend in the markets. However, there is also uncertainty and division among officials, with some suggesting that a rate cut may not be necessary. Overall, the market is closely monitoring the situation as the FOMC meeting approaches in 13 days, and the outcome of a rate cut decision could have significant implications for market trends and investor sentiment.',
+      data: [
+        4, 1, 2, 1, 3, 5, 0, 18, 2, 0, 26, 18, 1, 2, 6, 3, 3, 3, 0, 3, 1, 4, 1, 1, 2, 0, 4, 1, 2,
+        11, 3, 7, 0, 12, 0, 0, 12, 3, 32, 0, 3, 1, 3, 2, 1, 2, 0, 4, 2, 1, 2, 1, 4, 5, 0,
+      ],
+    },
+  ],
+}

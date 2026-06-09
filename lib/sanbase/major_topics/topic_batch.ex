@@ -10,9 +10,15 @@ defmodule Sanbase.MajorTopics.TopicBatch do
   @published "published"
   @states [@draft, @published]
 
+  @day "day"
+  @week "week"
+
   def draft_state, do: @draft
   def published_state, do: @published
   def states, do: @states
+
+  def day_granularity, do: @day
+  def week_granularity, do: @week
 
   schema "topic_batches" do
     field(:source, :string)

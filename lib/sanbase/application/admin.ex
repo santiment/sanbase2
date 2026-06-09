@@ -22,7 +22,13 @@ defmodule Sanbase.Application.Admin do
       Sanbase.AI.DescriptionJob,
       # Persistent GenServer for invoice archive generation jobs
       Sanbase.Billing.Invoices.GenerationJob,
-      {Oban, oban_admin_config()},
+      # Oban admin instance.
+      # Wrapped in a dedicated supervisor with a relaxed restart policy so
+      # transient `Oban.Sonar` crashes during dev recompiles don't cascade.
+      start_if(
+        fn -> {Sanbase.Application.ObanSupervisor, config: oban_admin_config()} end,
+        &Sanbase.Application.ObanSupervisor.enabled?/0
+      ),
 
       # Start the libcluster in admin, so we can send messages to the web pods when some
       # important tables changes.

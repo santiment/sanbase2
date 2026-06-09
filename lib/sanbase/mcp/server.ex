@@ -7,7 +7,7 @@ defmodule Sanbase.MCP.Server do
     capabilities: [:tools, :prompts, :resources]
 
   alias Sanbase.Accounts.User
-  alias Sanbase.MCP.{Auth, ToolInvocation}
+  alias Sanbase.MCP.{Auth, Restrictions, ToolInvocation}
 
   @banned_message "Your account is banned from the Santiment MCP server. Contact support."
 
@@ -116,8 +116,10 @@ defmodule Sanbase.MCP.Server do
     if ToolInvocation.team_member?(user) do
       :ok
     else
-      with {:ok, _} <- ToolInvocation.check_rate_limit(user.id),
-           {:ok, _} <- ToolInvocation.check_tool_rate_limit(user.id, tool_name) do
+      tier = Restrictions.tier_for_user(user)
+
+      with {:ok, _} <- ToolInvocation.check_rate_limit(user.id, tier),
+           {:ok, _} <- ToolInvocation.check_tool_rate_limit(user.id, tool_name, tier) do
         :ok
       else
         {:error, message} -> {:rate_limited, message}

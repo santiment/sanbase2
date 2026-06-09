@@ -2,6 +2,8 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
   use SanbaseWeb, :live_view
 
   alias Sanbase.Knowledge.QuestionAnswerLog
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
+  import SanbaseWeb.Admin.FaqLive.Nav, only: [nav: 1]
 
   @default_page_size 10
 
@@ -18,7 +20,7 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
 
   defp assign_pagination(socket, params) do
     page = parse_int(Map.get(params, "page"), 1)
-    page_size = parse_int(Map.get(params, "page_size"), @default_page_size)
+    page_size = parse_int(Map.get(params, "page_size"), @default_page_size) |> max(1)
 
     total_count = Sanbase.Repo.aggregate(QuestionAnswerLog, :count, :id)
     total_pages = max(1, div(total_count + page_size - 1, page_size))
@@ -34,20 +36,14 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
     |> assign(:total_pages, total_pages)
   end
 
-  defp parse_int(nil, default), do: default
-  defp parse_int(value, _default) when is_integer(value), do: value
-
-  defp parse_int(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, _} -> int
-      :error -> default
-    end
-  end
-
   def render(assigns) do
     ~H"""
-    <h1 class="text-3xl font-bold">FAQ Question/Answer History</h1>
-    <div class="p-6 max-w-7xl">
+    <.nav active={:history} />
+    <div class="p-6 max-w-7xl mx-auto">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Question &amp; Answer History</h1>
+        <p class="mt-1 text-sm text-base-content/60">Logged Ask and Smart Search queries.</p>
+      </div>
       <.history_pager
         page={@page}
         page_size={@page_size}
@@ -81,6 +77,18 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
                     entry.question_type == "smart_search" && "badge-success"
                   ]}>
                     {String.replace(entry.question_type, "_", " ")}
+                  </span>
+                  <span :if={entry.reranker}>•</span>
+                  <span :if={entry.reranker} class="badge badge-sm badge-neutral">
+                    reranker: {entry.reranker}
+                  </span>
+                  <span :if={entry.model}>•</span>
+                  <span :if={entry.model} class="badge badge-sm badge-neutral">
+                    model: {entry.model}
+                  </span>
+                  <span :if={entry.context_expansion}>•</span>
+                  <span :if={entry.context_expansion} class="badge badge-sm badge-neutral">
+                    context expansion
                   </span>
                   <span :if={!entry.is_successful}>•</span>
                   <span :if={!entry.is_successful} class="badge badge-sm badge-error">Failed</span>

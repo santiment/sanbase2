@@ -116,4 +116,20 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
     field(:title, non_null(:string))
     field(:question, non_null(:string))
   end
+
+  @desc """
+  A single Academy chunk returned by semantic search, without any LLM synthesis.
+  """
+  object :academy_search_result do
+    @desc "Title of the Academy article the chunk belongs to"
+    field(:title, :string)
+    @desc "Public Academy URL of the source article"
+    field(:url, :string)
+    @desc "The matched chunk of Academy content"
+    field(:content, :string)
+    @desc "Nearest markdown heading for the chunk, if any"
+    field(:heading, :string)
+    @desc "Cosine similarity of the chunk to the query (0..1)"
+    field(:similarity, :float)
+  end
 end

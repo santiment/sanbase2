@@ -2,7 +2,7 @@ defmodule Sanbase.MajorTopics.BatchSerializer do
   @moduledoc """
   Convert a `TopicBatch` (with its topics preloaded) into the
   `{labels, datasets}` shape consumed by the social-trends frontend and the
-  public GraphQL `getLatestMajorTopics` query.
+  public GraphQL `majorTopicsBatch` query.
   """
 
   alias Sanbase.MajorTopics.MajorTopic
@@ -19,32 +19,51 @@ defmodule Sanbase.MajorTopics.BatchSerializer do
         }
 
   @type payload :: %{
+          granularity: String.t(),
           interval_start: Date.t(),
           interval_end: Date.t(),
           published_at: DateTime.t() | nil,
           labels: [String.t()],
-          datasets: [dataset()]
+          datasets: [dataset()],
+          previous_interval_start: Date.t() | nil,
+          next_interval_start: Date.t() | nil
         }
 
-  @spec to_payload(TopicBatch.t()) :: payload()
-  def to_payload(%TopicBatch{topics: topics} = batch) when is_list(topics) do
+  @doc """
+  Build the payload for a single `TopicBatch`. Pagination cursors default to
+  `nil`; the resolver supplies them by querying for sibling batches.
+  """
+  @spec to_payload(TopicBatch.t(), keyword()) :: payload()
+  def to_payload(%TopicBatch{topics: topics} = batch, opts \\ []) when is_list(topics) do
     active = Enum.reject(topics, & &1.is_removed)
-    dts = collect_dts(active)
-    labels = Enum.map(dts, &Calendar.strftime(&1, @label_format))
 
-    datasets =
+    limited =
       active
       |> Enum.sort_by(& &1.position)
-      |> Enum.map(&topic_to_dataset(&1, dts))
+      |> take_topics(Keyword.get(opts, :limit))
+
+    dts = collect_dts(limited)
+    labels = Enum.map(dts, &Calendar.strftime(&1, @label_format))
+    datasets = Enum.map(limited, &topic_to_dataset(&1, dts))
 
     %{
+      granularity: Keyword.fetch!(opts, :granularity),
       interval_start: batch.interval_start,
       interval_end: batch.interval_end,
       published_at: batch.published_at,
       labels: labels,
-      datasets: datasets
+      datasets: datasets,
+      previous_interval_start: Keyword.get(opts, :previous_interval_start),
+      next_interval_start: Keyword.get(opts, :next_interval_start)
     }
   end
+
+  defp take_topics(topics, nil), do: topics
+
+  defp take_topics(topics, limit) when is_integer(limit) and limit > 0,
+    do: Enum.take(topics, limit)
+
+  defp take_topics(topics, _), do: topics
 
   defp collect_dts(topics) do
     topics

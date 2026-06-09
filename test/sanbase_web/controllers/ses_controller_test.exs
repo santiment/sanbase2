@@ -333,6 +333,43 @@ defmodule SanbaseWeb.SESControllerTest do
     end
   end
 
+  describe "webhook/2 - AWS SNS content-type (text/plain)" do
+    test "parses SNS notification delivered as text/plain", %{conn: conn} do
+      # AWS SNS always posts with `Content-Type: text/plain; charset=UTF-8` and the
+      # `x-amz-sns-message-type` header. Without SnsContentType normalizing it to
+      # application/json, Plug.Parsers passes the body through unparsed and the event
+      # is silently dropped. This reproduces the real AWS request.
+      ses_event = %{
+        "eventType" => "Delivery",
+        "delivery" => %{
+          "recipients" => ["textplain@example.com"],
+          "timestamp" => "2026-02-16T10:00:00.000Z",
+          "smtpResponse" => "250 2.0.0 OK"
+        },
+        "mail" => %{"messageId" => "ses-textplain-msg-001"}
+      }
+
+      body =
+        Jason.encode!(%{
+          "Type" => "Notification",
+          "Message" => Jason.encode!(ses_event)
+        })
+
+      conn =
+        conn
+        |> put_req_header("content-type", "text/plain; charset=UTF-8")
+        |> put_req_header("x-amz-sns-message-type", "Notification")
+        |> post(~p"/ses/webhook/#{@secret}", body)
+
+      assert response(conn, 200) == ""
+      flush_task_supervisor()
+
+      events = SesEmailEvent.list_events(email_search: "textplain@example.com")
+      assert length(events) == 1
+      assert hd(events).event_type == "Delivery"
+    end
+  end
+
   defp flush_task_supervisor do
     @task_supervisor
     |> Task.Supervisor.children()

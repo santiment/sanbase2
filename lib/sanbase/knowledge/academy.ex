@@ -19,13 +19,38 @@ defmodule Sanbase.Knowledge.Academy do
   @embedding_retry_backoff_ms 2_000
   @github_repo_owner "santiment"
   @github_repo_name "academy"
+  # Version of the indexing pipeline. The cache check in `maybe_use_cached/3`
+  # treats an article as unchanged only when both `content_sha` AND
+  # `index_version` match. Without this, source SHA matches alone would revive
+  # stored chunks/embeddings even after the pipeline that produced them changed.
+  #
+  # Bump this constant whenever something that affects the derived data
+  # changes, so cached articles get reindexed instead of silently serving
+  # stale results. Examples:
+  #   - chunk size / overlap (@chunk_size, @chunk_overlap)
+  #   - embedding model or dimensions (@embedding_size)
+  #   - chunking algorithm (TextChunker options, format)
+  #   - heading / frontmatter / title extraction
+  #   - any change to what gets stored on `AcademyArticleChunk`
+  #
+  # A bump invalidates every cached row and forces a full reindex on the next
+  # run. The source SHA still short-circuits the GitHub content fetch for
+  # articles whose markdown has not changed *and* whose pipeline version
+  # matches the current one.
+  #
+  # v2: `to_academy_url/1` now strips the `ai-toolkit/` root section, fixing
+  # academy_url for ai-toolkit articles that previously 404'd. Existing rows
+  # have unchanged markdown, so without this bump the SHA-cache would keep the
+  # stale URLs instead of re-deriving them.
+  @index_version 2
 
   @excluded_paths MapSet.new([
-                    "docs/GUIDE.md",
                     "pull_request_template.md",
-                    "src/docs/changelog/index.md",
-                    "README.md"
+                    "src/docs/content/changelog/index.md"
                   ])
+
+  @excluded_path_prefixes ["scripts/", "static/"]
+  @excluded_basenames ["README.md", "GUIDE.md", "CONTRIBUTING.md", "CHANGELOG.md"]
 
   @type index_options :: [branch: String.t(), dry_run: boolean()]
   @type github_tree_entry :: %{
@@ -42,18 +67,23 @@ defmodule Sanbase.Knowledge.Academy do
   """
   @spec reindex_academy(index_options()) :: :ok | {:error, term()}
   def reindex_academy(opts \\ []) do
-    branch = Keyword.get(opts, :branch, "master")
+    branch = Keyword.get(opts, :branch, "production")
     dry_run? = Keyword.get(opts, :dry_run, false)
+    force? = Keyword.get(opts, :force, false)
     started_at = System.monotonic_time(:millisecond)
-    log_tags = if dry_run?, do: ["dry run"], else: []
+
+    log_tags =
+      []
+      |> then(&if(dry_run?, do: ["dry run" | &1], else: &1))
+      |> then(&if(force?, do: ["force" | &1], else: &1))
 
     log_info("Starting Academy reindex for branch #{branch}", log_tags)
 
     result =
       if dry_run? do
-        perform_dry_run(branch)
+        perform_dry_run(branch, force?)
       else
-        do_reindex(branch)
+        do_reindex(branch, force?)
       end
 
     log_reindex_result(result, started_at, log_tags)
@@ -87,10 +117,12 @@ defmodule Sanbase.Knowledge.Academy do
           title: article.title,
           url: article.academy_url,
           github_path: article.github_path,
-          heading: chunk.heading
+          heading: chunk.heading,
+          article_id: chunk.article_id,
+          chunk_index: chunk.chunk_index
         }
       )
-      |> Repo.all()
+      |> Sanbase.Repo.VectorQuery.all()
 
     {:ok, chunks}
   end
@@ -125,26 +157,31 @@ defmodule Sanbase.Knowledge.Academy do
         order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
         limit: ^top_k
       )
-      |> Repo.all()
+      |> Sanbase.Repo.VectorQuery.all()
 
     {:ok, articles}
   end
 
   # Helper functions for reindex_academy
 
-  defp perform_dry_run(branch) do
+  defp perform_dry_run(branch, force?) do
     with {:ok, tree_entries} <- fetch_repo_markdown_list(branch),
-         {:ok, _articles} <- process_markdown_entries(tree_entries, branch, true) do
+         {:ok, _result} <- process_markdown_entries(tree_entries, branch, true, force?) do
       :ok
     end
   end
 
-  defp do_reindex(branch) do
+  defp do_reindex(branch, force?) do
     with {:ok, tree_entries} <- fetch_repo_markdown_list(branch),
-         {:ok, articles} <- process_markdown_entries(tree_entries, branch, false) do
+         {:ok, %{to_index: to_index, unchanged: unchanged}} <-
+           process_markdown_entries(tree_entries, branch, false, force?) do
       Repo.transaction(fn ->
         mark_all_articles_stale()
-        finalize_indexing(articles)
+        clear_stale_for_unchanged(unchanged)
+        # Prune stale rows before upserting so their academy_url/github_path
+        # do not block new inserts via the unique constraints.
+        delete_stale_records()
+        finalize_indexing(to_index)
       end)
       |> case do
         {:ok, :ok} -> :ok
@@ -203,19 +240,31 @@ defmodule Sanbase.Knowledge.Academy do
     end
   end
 
-  defp process_markdown_entries(entries, branch, dry_run?) do
+  defp process_markdown_entries(entries, branch, dry_run?, force?) do
     total = length(entries)
+    init_acc = %{to_index: [], unchanged: []}
 
     result =
       entries
       |> Enum.with_index()
-      |> Enum.reduce_while({:ok, []}, fn {entry, index}, {:ok, acc} ->
-        with {:ok, article_attrs, chunks_attrs} <-
-               fetch_and_prepare_article(entry, branch, dry_run?) do
-          log_progress(index + 1, total, entry.path)
+      |> Enum.reduce_while({:ok, init_acc}, fn {entry, index}, {:ok, acc} ->
+        case fetch_and_prepare_article(entry, branch, dry_run?, force?) do
+          {:ok, article_attrs, chunks_attrs} ->
+            log_progress(index + 1, total, entry.path)
 
-          {:cont, {:ok, [%{article: article_attrs, chunks: chunks_attrs} | acc]}}
-        else
+            {:cont,
+             {:ok,
+              %{acc | to_index: [%{article: article_attrs, chunks: chunks_attrs} | acc.to_index]}}}
+
+          {:unchanged, article_id} ->
+            log_progress(
+              index + 1,
+              total,
+              "#{entry.path} (unchanged, sha+index_version match)"
+            )
+
+            {:cont, {:ok, %{acc | unchanged: [article_id | acc.unchanged]}}}
+
           {:ignore, _reason} ->
             {:cont, {:ok, acc}}
 
@@ -225,17 +274,46 @@ defmodule Sanbase.Knowledge.Academy do
       end)
 
     case result do
-      {:ok, articles} -> {:ok, Enum.reverse(articles)}
-      error -> error
+      {:ok, %{to_index: to_index, unchanged: unchanged}} ->
+        {:ok, %{to_index: Enum.reverse(to_index), unchanged: unchanged}}
+
+      error ->
+        error
     end
   end
 
-  defp fetch_and_prepare_article(entry, branch, dry_run?) do
+  defp fetch_and_prepare_article(entry, branch, dry_run?, force?) do
     path = entry.path
     repo_owner = Map.get(entry, :repo_owner, @github_repo_owner)
     repo_name = Map.get(entry, :repo_name, @github_repo_name)
     ref = Map.get(entry, :ref, branch)
+    github_path = Map.get(entry, :github_path, path)
+    incoming_sha = entry[:sha]
 
+    case maybe_use_cached(github_path, incoming_sha, dry_run?, force?) do
+      {:unchanged, article_id} ->
+        {:unchanged, article_id}
+
+      :no_cache ->
+        do_fetch_and_prepare_article(entry, path, ref, repo_owner, repo_name, dry_run?)
+    end
+  end
+
+  defp maybe_use_cached(_github_path, _sha, _dry_run?, true), do: :no_cache
+  defp maybe_use_cached(_github_path, nil, _dry_run?, _force?), do: :no_cache
+  defp maybe_use_cached(_github_path, _sha, true, _force?), do: :no_cache
+
+  defp maybe_use_cached(github_path, incoming_sha, false, false) do
+    case Repo.get_by(AcademyArticle, github_path: github_path) do
+      %AcademyArticle{content_sha: ^incoming_sha, index_version: @index_version, id: id} ->
+        {:unchanged, id}
+
+      _ ->
+        :no_cache
+    end
+  end
+
+  defp do_fetch_and_prepare_article(entry, path, ref, repo_owner, repo_name, dry_run?) do
     case fetch_file_contents(path, ref, repo_owner, repo_name) do
       {:ok, %{content: markdown, sha: fetched_sha}} ->
         content_sha =
@@ -243,21 +321,28 @@ defmodule Sanbase.Knowledge.Academy do
             fetched_sha ||
             :crypto.hash(:sha256, markdown) |> Base.encode16(case: :lower)
 
-        academy_url = Map.get(entry, :academy_url) || to_academy_url(path)
+        frontmatter = extract_frontmatter(markdown)
+
+        academy_url =
+          Map.get(entry, :academy_url) ||
+            frontmatter_slug_url(frontmatter) ||
+            to_academy_url(path)
+
         github_path = Map.get(entry, :github_path, path)
         # Only the sanpy additional source has predefined title at the moment.
         # All of the academy articles' titles will be extracted
-        title = Map.get(entry, :title)
+        title =
+          present_string(Map.get(entry, :title)) ||
+            present_string(Map.get(frontmatter, :title)) ||
+            extract_heading_title(markdown)
 
-        article_attrs =
-          %{
-            github_path: github_path,
-            academy_url: academy_url,
-            title: title || extract_title(markdown),
-            content_sha: content_sha,
-            is_stale: false
-          }
-          |> maybe_put_frontmatter_title(markdown)
+        article_attrs = %{
+          github_path: github_path,
+          academy_url: academy_url,
+          title: title,
+          content_sha: content_sha,
+          is_stale: false
+        }
 
         case build_chunks(markdown, dry_run?) do
           {:ok, chunks_attrs} ->
@@ -407,7 +492,22 @@ defmodule Sanbase.Knowledge.Academy do
       upsert_article_with_chunks(article_attrs, chunks_attrs)
     end)
 
-    delete_stale_records()
+    :ok
+  end
+
+  defp clear_stale_for_unchanged([]), do: :ok
+
+  defp clear_stale_for_unchanged(article_ids) when is_list(article_ids) do
+    Repo.update_all(
+      from(a in AcademyArticle, where: a.id in ^article_ids),
+      set: [is_stale: false]
+    )
+
+    Repo.update_all(
+      from(c in AcademyArticleChunk, where: c.article_id in ^article_ids),
+      set: [is_stale: false]
+    )
+
     :ok
   end
 
@@ -426,6 +526,7 @@ defmodule Sanbase.Knowledge.Academy do
     {:ok, article} =
       article
       |> AcademyArticle.changeset(article_attrs)
+      |> Ecto.Changeset.put_change(:index_version, @index_version)
       |> Repo.insert_or_update()
 
     Repo.delete_all(from(chunk in AcademyArticleChunk, where: chunk.article_id == ^article.id))
@@ -454,35 +555,42 @@ defmodule Sanbase.Knowledge.Academy do
 
   defp format_chunk_for_embedding(%{content: content}), do: content
 
-  defp extract_title(markdown) do
-    case extract_frontmatter_title(markdown) do
-      {:ok, title} -> title
-      :error -> extract_heading_title(markdown)
-    end
-  end
-
-  defp maybe_put_frontmatter_title(attrs, markdown) do
-    case extract_frontmatter_title(markdown) do
-      {:ok, title} -> Map.put(attrs, :title, title)
-      :error -> attrs
-    end
-  end
-
-  defp extract_frontmatter_title(markdown) do
+  defp extract_frontmatter(markdown) do
     markdown
     |> String.trim_leading()
     |> case do
       "---" <> rest ->
         with [frontmatter | _] <- String.split(rest, "---\n", parts: 2),
-             {:ok, metadata} <- parse_frontmatter(frontmatter),
-             {:ok, title} <- fetch_required(metadata, :title) do
-          {:ok, title}
+             {:ok, metadata} <- parse_frontmatter(frontmatter) do
+          metadata
         else
-          _ -> :error
+          _ -> %{}
         end
 
       _ ->
-        :error
+        %{}
+    end
+  end
+
+  defp frontmatter_slug_url(frontmatter) do
+    case present_string(Map.get(frontmatter, :slug)) do
+      nil ->
+        nil
+
+      slug ->
+        case slug |> String.trim_leading("/") |> String.trim_trailing("/") do
+          "" -> nil
+          s -> "https://academy.santiment.net/#{s}/"
+        end
+    end
+  end
+
+  defp present_string(nil), do: nil
+
+  defp present_string(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
     end
   end
 
@@ -538,9 +646,20 @@ defmodule Sanbase.Knowledge.Academy do
     end
   end
 
+  # The academy site derives a doc's public URL by stripping the first path
+  # segment when it is a "root section" (see `ROOT_SECTIONS` in the academy
+  # repo's src/config/navigation.ts -> src/modules/navigation/paths.ts).
+  # This list MUST stay in sync with that config; a missing entry produces URLs
+  # with an extra leading segment that 404 (e.g. /ai-toolkit/mcp-connector/
+  # instead of /mcp-connector/).
   defp to_academy_url(path) do
     path
+    |> String.trim_leading("src/content/docs/")
     |> String.trim_leading("src/docs/")
+    |> String.trim_leading("getting-started/")
+    |> String.trim_leading("guides/")
+    |> String.trim_leading("resources/")
+    |> String.trim_leading("ai-toolkit/")
     |> String.trim_trailing("/index.mdx")
     |> String.trim_trailing("/index.md")
     |> String.replace_suffix(".md", "")
@@ -620,7 +739,9 @@ defmodule Sanbase.Knowledge.Academy do
 
   defp fetch_additional_sources(branch) do
     additional_sources()
-    |> Enum.reject(fn source -> excluded_path?(Map.get(source, :path)) end)
+    |> Enum.reject(fn source ->
+      excluded_path?(Map.get(source, :path), exclude_basenames?: false)
+    end)
     |> Enum.map(fn source ->
       with {:ok, repo_owner} <- fetch_required(source, :repo_owner),
            {:ok, repo_name} <- fetch_required(source, :repo_name),
@@ -678,6 +799,14 @@ defmodule Sanbase.Knowledge.Academy do
     ]
   end
 
-  defp excluded_path?(nil), do: false
-  defp excluded_path?(path), do: MapSet.member?(@excluded_paths, path)
+  defp excluded_path?(path, opts \\ [])
+  defp excluded_path?(nil, _opts), do: false
+
+  defp excluded_path?(path, opts) do
+    exclude_basenames? = Keyword.get(opts, :exclude_basenames?, true)
+
+    MapSet.member?(@excluded_paths, path) or
+      Enum.any?(@excluded_path_prefixes, &String.starts_with?(path, &1)) or
+      (exclude_basenames? and Enum.member?(@excluded_basenames, Path.basename(path)))
+  end
 end

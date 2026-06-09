@@ -47,7 +47,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunDetailsLive do
       </div>
       <h2>Content</h2>
       <div :for={metric <- @sync.content}>
-        <pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto">{Jason.encode!(metric, pretty: true)}</pre>
+        <pre class="bg-base-200 text-base-content p-4 rounded-lg overflow-x-auto">{Jason.encode!(metric, pretty: true)}</pre>
       </div>
     </div>
     """

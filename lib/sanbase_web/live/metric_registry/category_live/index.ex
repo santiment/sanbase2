@@ -21,7 +21,7 @@ defmodule SanbaseWeb.CategoryLive.Index do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-base-content text-2xl mb-4">
         Metric Categories
       </div>
 
@@ -32,7 +32,7 @@ defmodule SanbaseWeb.CategoryLive.Index do
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering Categories</.header>
         <div class="text-center py-4">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p class="mt-4">Saving new order...</p>
         </div>
       </.modal>
@@ -45,36 +45,36 @@ defmodule SanbaseWeb.CategoryLive.Index do
   def categories_table(assigns) do
     ~H"""
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="min-w-full divide-y divide-base-300">
+        <thead class="bg-base-200">
           <tr>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
             >
               Order
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
             >
               Category Name
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
             >
               Group Count
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
             >
               Actions
             </th>
           </tr>
         </thead>
-        <tbody id="categories" phx-hook="Sortable" class="bg-white divide-y divide-gray-200">
+        <tbody id="categories" phx-hook="Sortable" class="bg-base-100 divide-y divide-base-300">
           <.category_row
             :for={{category, index} <- Enum.with_index(@categories)}
             category={category}
@@ -93,8 +93,8 @@ defmodule SanbaseWeb.CategoryLive.Index do
 
   def category_row(assigns) do
     ~H"""
-    <tr id={"category-#{@category.id}"} data-id={@category.id} class="hover:bg-gray-50">
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+    <tr id={"category-#{@category.id}"} data-id={@category.id} class="hover:bg-base-200">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
         <div class="flex items-center">
           <button phx-click="move-up" phx-value-id={@category.id} class="mr-2" disabled={@index == 0}>
             <.icon name="hero-arrow-up" class="w-4 h-4" />
@@ -110,13 +110,13 @@ defmodule SanbaseWeb.CategoryLive.Index do
           </button>
         </div>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
         {@category.name}
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
         {length(Sanbase.Metric.UIMetadata.Group.by_category(@category.id))}
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
         <.category_actions category={@category} />
       </td>
     </tr>
@@ -130,14 +130,14 @@ defmodule SanbaseWeb.CategoryLive.Index do
     <div class="flex space-x-2">
       <.link
         navigate={~p"/admin/metric_registry/categories/edit/#{@category.id}"}
-        class="text-blue-600 hover:text-blue-900"
+        class="link link-primary"
       >
         Edit
       </.link>
       <button
         phx-click="delete"
         phx-value-id={@category.id}
-        class="text-red-600 hover:text-red-900"
+        class="link link-error"
         data-confirm="Are you sure you want to delete this category? This will also delete all associated groups."
       >
         Delete

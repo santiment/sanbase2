@@ -8,6 +8,8 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
 
     expected_available_signals =
       [
+        "anomaly_eth_whale_dump",
+        "anomaly_hyperliquid_avg_funding_rate",
         "anomaly_project_in_trending_words",
         "anomaly_total_liquidations",
         "mvrv_usd_30d_upper_zone",

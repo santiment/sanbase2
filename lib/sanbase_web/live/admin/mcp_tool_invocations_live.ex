@@ -17,12 +17,14 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       |> assign(:tool_name_filter, "")
       |> assign(:email_search, "")
       |> assign(:metric_search, "")
+      |> assign(:plan_filter, "")
       |> assign(:include_team, false)
       |> assign(:hide_auto_rejected, true)
       |> assign(:expanded_sessions, MapSet.new())
       |> assign(:page, 1)
       |> assign(:page_size, @page_size)
       |> assign(:tool_names, ToolInvocation.tool_names())
+      |> assign(:plan_combos, ToolInvocation.plan_combos())
       |> assign(:modal_invocation, nil)
       |> assign(:timeline_window, "7d")
       |> assign(:ban_target, nil)
@@ -80,6 +82,14 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     {:noreply,
      socket
      |> assign(:metric_search, metric)
+     |> assign(:page, 1)
+     |> load_invocations()}
+  end
+
+  def handle_event("filter_plan", %{"plan_combo" => combo}, socket) do
+    {:noreply,
+     socket
+     |> assign(:plan_filter, combo)
      |> assign(:page, 1)
      |> load_invocations()}
   end
@@ -248,6 +258,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     |> assign(:timeline_rows, ToolInvocation.time_series(since: since, bucket: bucket))
     |> assign(:top_clients, ToolInvocation.top_by(:client, since))
     |> assign(:top_tools, ToolInvocation.top_by(:tool_name, since))
+    |> assign(:top_plans, ToolInvocation.top_by(:plan_name, since))
     |> assign(:timeline_bucket, bucket)
     |> assign(:timeline_noise, ToolInvocation.noise_counts_since(since))
   end
@@ -277,6 +288,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       tool_name: assigns.tool_name_filter,
       email_search: assigns.email_search,
       metric: assigns.metric_search,
+      plan_combo: assigns.plan_filter,
       exclude_team_members: not assigns.include_team,
       hide_auto_rejected: assigns.hide_auto_rejected,
       page: assigns.page,
@@ -395,6 +407,18 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       </fieldset>
 
       <fieldset class="fieldset">
+        <legend class="fieldset-legend">Plan</legend>
+        <form phx-change="filter_plan" id="plan-filter-form">
+          <select id="plan-filter" name="plan_combo" class="select select-sm">
+            <option value="">All Plans</option>
+            <option :for={combo <- @plan_combos} value={combo} selected={combo == @plan_filter}>
+              {combo}
+            </option>
+          </select>
+        </form>
+      </fieldset>
+
+      <fieldset class="fieldset">
         <legend class="fieldset-legend">Team members</legend>
         <label class="label cursor-pointer gap-2">
           <input
@@ -439,6 +463,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             <th>Tool Name</th>
             <th>Kind</th>
             <th>Client</th>
+            <th>Plan</th>
             <th>Metrics</th>
             <th>Slugs</th>
             <th>Duration (ms)</th>
@@ -449,7 +474,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         <tbody>
           <AdminSharedComponents.empty_table_row
             :if={@invocations == []}
-            colspan={11}
+            colspan={12}
             message="No invocations found matching your filters."
           />
           <tr
@@ -496,6 +521,9 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             <td><.tool_badge tool_name={row.inv.tool_name} /></td>
             <td class="text-base-content/70">{row.inv.kind}</td>
             <td class="text-base-content/70">{row.inv.client || "-"}</td>
+            <td class="text-base-content/70 whitespace-nowrap">
+              <.plan_badge plan_name={row.inv.plan_name} product_code={row.inv.product_code} />
+            </td>
             <td class="text-base-content/70">{Enum.join(row.inv.metrics, ", ")}</td>
             <td class="text-base-content/70">{Enum.join(row.inv.slugs, ", ")}</td>
             <td class="text-base-content/70">{row.inv.duration_ms}</td>
@@ -556,6 +584,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         <div class="flex flex-col gap-4">
           <.top_table title="Top clients" rows={@top_clients} />
           <.top_table title="Top tools / prompts" rows={@top_tools} />
+          <.top_table title="Top plans" rows={@top_plans} />
           <.noise_panel noise={@timeline_noise} window_label={@timeline_window} />
         </div>
       </div>
@@ -753,6 +782,25 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     <span class="badge badge-sm badge-secondary">{@tool_name}</span>
     """
   end
+
+  defp plan_badge(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :combo,
+        ToolInvocation.format_plan_combo({assigns[:product_code], assigns[:plan_name]})
+      )
+
+    ~H"""
+    <span :if={@combo} class={["badge badge-sm", plan_badge_class(@plan_name)]}>
+      {@combo}
+    </span>
+    <span :if={!@combo} class="text-base-content/40">-</span>
+    """
+  end
+
+  defp plan_badge_class("FREE"), do: "badge-ghost"
+  defp plan_badge_class(_), do: "badge-info"
 
   # Accepts a preloaded User struct or a plain map with `:user_id`, `:email`,
   # `:username` (e.g. from `rate_limited_users/1`). Renders a link to the

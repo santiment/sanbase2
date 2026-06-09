@@ -1,0 +1,263 @@
+export const NARRATIVES = {
+  labels: [
+    '27.11.25',
+    '28.11.25',
+    '28.11.25',
+    '28.11.25',
+    '28.11.25',
+    '28.11.25',
+    '28.11.25',
+    '28.11.25',
+    '29.11.25',
+    '29.11.25',
+    '29.11.25',
+    '29.11.25',
+    '29.11.25',
+    '29.11.25',
+    '29.11.25',
+    '29.11.25',
+    '30.11.25',
+    '30.11.25',
+    '30.11.25',
+    '30.11.25',
+    '30.11.25',
+    '30.11.25',
+    '30.11.25',
+    '30.11.25',
+    '01.12.25',
+    '01.12.25',
+    '01.12.25',
+    '01.12.25',
+    '01.12.25',
+    '01.12.25',
+    '01.12.25',
+    '01.12.25',
+    '02.12.25',
+    '02.12.25',
+    '02.12.25',
+    '02.12.25',
+    '02.12.25',
+    '02.12.25',
+    '02.12.25',
+    '02.12.25',
+    '03.12.25',
+    '03.12.25',
+    '03.12.25',
+    '03.12.25',
+    '03.12.25',
+    '03.12.25',
+    '03.12.25',
+    '03.12.25',
+    '04.12.25',
+    '04.12.25',
+    '04.12.25',
+    '04.12.25',
+    '04.12.25',
+    '04.12.25',
+    '04.12.25',
+  ],
+  datasets: [
+    {
+      label: 'Black friday',
+      topics: 'cyber,discounts,checkout,black,cashback',
+      description:
+        'The key topics discussed in the messages from twitter are Black Friday deals, Cyber Monday deals, discounts on various platforms and services, crypto cashback offers, interest rates, and the increase in online spending during the holiday season. The messages also mention specific products such as keyboards, smartphones, and cold wallets. Overall, the messages indicate a high level of interest and activity in the crypto industry during the holiday shopping season.',
+      data: [
+        21, 15, 12, 8, 45, 13, 25, 31, 22, 12, 14, 68, 26, 12, 15, 12, 14, 14, 9, 18, 12, 22, 32, 4,
+        11, 9, 13, 12, 16, 11, 15, 6, 12, 27, 9, 13, 15, 14, 12, 12, 45, 7, 25, 20, 16, 8, 7, 21,
+        10, 14, 17, 15, 10, 8, 12,
+      ],
+    },
+    {
+      label: 'AI',
+      topics: 'agi,ais,intelligence,artificial,agentic',
+      description:
+        'The key topics currently discussed in the messages from twitter are:\n1. The role of AI in various industries, including finance and trading\n2. The impact of AI on job losses and job security\n3. The development of AI-powered products and services, such as AI trading coaches and AI newsrooms\n4. The intersection of AI and cryptocurrency, including AI-powered coins and platforms\n5. The potential for AI to revolutionize industries like call centers and freelancing\n6. The importance of data governance and security in AI and ML models\n7. The potential for AI to redefine how art is created and consumed\n\nOverall, the messages highlight the growing influence and potential of AI in various sectors, as well as the need for responsible and strategic use of AI technologies.',
+      data: [
+        9, 50, 24, 12, 11, 17, 14, 15, 22, 21, 20, 9, 11, 15, 22, 11, 10, 23, 13, 12, 8, 12, 10, 22,
+        16, 16, 9, 17, 12, 14, 17, 12, 16, 10, 20, 10, 27, 16, 17, 21, 15, 14, 11, 15, 11, 20, 24,
+        18, 16, 10, 23, 11, 12, 14, 11,
+      ],
+    },
+    {
+      label: 'Christmas',
+      topics: 'santa,christmas,xmas,tree,lights',
+      description:
+        'The key topics discussed in the messages from twitter are:\n1. Christmas gifts and holiday spirit\n2. Bitcoin and cryptocurrency-related gifts\n3. Family DNA kits as gifts\n4. Financial wishes for Christmas\n5. Santa Claus and Christmas wishlist\n6. Solana cryptocurrency and NFTs for Christmas\n7. Christmas skins and NFTs\n8. Christmas coin dropping chaos and raffles\n9. Santa rally in the cryptocurrency market\n10. Controversial topics related to Santa Claus and Christmas celebrations.',
+      data: [
+        5, 8, 10, 16, 10, 6, 12, 10, 11, 7, 2, 19, 5, 16, 3, 6, 11, 6, 28, 11, 1, 10, 21, 3, 7, 7,
+        11, 14, 10, 9, 7, 7, 8, 10, 9, 4, 4, 15, 13, 7, 15, 20, 5, 7, 10, 4, 8, 8, 15, 10, 3, 18,
+        14, 9, 7,
+      ],
+    },
+    {
+      label: 'BTC price',
+      topics: 'rejected,93k,reclaim,84k,90k',
+      description:
+        'The key topic currently being discussed on twitter is the resistance zone for Bitcoin (BTC) at 93-94k. Traders are closely watching this level as BTC has been rejecting it pretty hard. There are downside zones mentioned, with possible fake outs and pullbacks to 88-89k first. Some traders are expecting a move straight into the $100,000 zone, while others are cautious about the current resistance levels. The sentiment is mixed, with some seeing a bullish reversal incoming while others are waiting for more confirmation. Overall, the discussion revolves around the key resistance levels for BTC and the potential outcomes based on the current market conditions.',
+      data: [
+        15, 4, 4, 6, 4, 30, 7, 13, 4, 11, 7, 5, 7, 2, 2, 13, 6, 5, 8, 8, 6, 6, 15, 6, 7, 5, 11, 12,
+        22, 3, 5, 12, 6, 6, 4, 7, 21, 12, 27, 24, 6, 8, 11, 2, 10, 12, 10, 6, 5, 5, 9, 6, 9, 7, 5,
+      ],
+    },
+    {
+      label: 'Art',
+      topics: 'artists,artwork,ink,artist,art',
+      description: '',
+      data: [
+        3, 3, 59, 5, 9, 3, 3, 8, 10, 10, 6, 5, 8, 13, 10, 8, 8, 12, 6, 3, 5, 7, 7, 17, 4, 3, 7, 5,
+        10, 8, 4, 3, 9, 7, 14, 13, 4, 5, 5, 3, 1, 1, 3, 3, 6, 6, 6, 6, 7, 4, 3, 7, 5, 13, 4,
+      ],
+    },
+    {
+      label: 'Precious metals',
+      topics: 'silver,precious,metals,platinum,metal',
+      description:
+        "The key topics discussed in the messages from twitter are:\n- Silver and gold prices reaching new highs\n- Predictions of silver hitting $100 by end of 2026\n- UBS raising outlook on silver and forecasting a spike to $65/oz\n- Silver being seen as a critical metal with potential for significant growth\n- Gold's strong performance in 2025, on pace for best year since 1979\n- Market trends favoring precious metals over cryptocurrencies\n- Potential for silver to reach $250 in the long term\n- Positive performance of gold in recent months, on track for best annual performance in 46 years\n\nOverall, the messages indicate a bullish sentiment towards silver and gold, with expectations of continued growth and potential for significant price increases in the future.",
+      data: [
+        7, 7, 9, 4, 5, 13, 5, 5, 9, 9, 5, 3, 8, 5, 4, 5, 7, 10, 4, 26, 2, 8, 18, 5, 9, 3, 5, 2, 3,
+        5, 10, 3, 3, 18, 1, 8, 19, 7, 9, 3, 5, 4, 37, 8, 9, 6, 4, 4, 7, 4, 4, 11, 5, 1, 5,
+      ],
+    },
+    {
+      label: 'ETH Fusaka upgrade',
+      topics: 'fusaka,ethereums,upgrade,rollups,throughput',
+      description:
+        "The messages from twitter indicate that the Fusaka upgrade for Ethereum is highly anticipated and expected to bring significant improvements to the network. The upgrade is set to increase transaction throughput, leading to more people using Ethereum. The upgrade is also expected to enable Ethereum to reach a price of $5k immediately. The community is excited about the potential impact of Fusaka on Ethereum's scalability and overall performance. Additionally, the upgrade is seen as a pivotal moment for Ethereum, with expectations of cheaper execution and increased on-chain demand. Overall, the sentiment surrounding the Fusaka upgrade is bullish, with many expecting positive outcomes for Ethereum and its users.",
+      data: [
+        11, 4, 2, 3, 7, 7, 5, 4, 11, 10, 2, 9, 6, 6, 7, 3, 9, 25, 14, 5, 2, 4, 7, 3, 4, 8, 2, 14,
+        10, 4, 7, 3, 12, 5, 3, 3, 6, 4, 1, 6, 7, 6, 9, 5, 0, 6, 4, 3, 2, 3, 77, 2, 2, 6, 3,
+      ],
+    },
+    {
+      label: 'Pokemon cards',
+      topics: 'kabuto,pokemon,kabutoking,psa,tcg',
+      description:
+        'The messages from twitter are discussing the rise of $KABUTO in the crypto market, with some users expressing excitement about owning the coin and its potential for growth. There is also mention of a Kabuto World Order and the power of the intersection between crypto and Pokemon. Additionally, there is talk about the value of collecting Pokemon cards and the importance of asset selection in the market. Some users are also discussing the potential of Kabuto to increase in value and its significance in the crypto world. Overall, the sentiment seems positive towards $KABUTO and its potential for success.',
+      data: [
+        10, 4, 4, 7, 6, 9, 22, 5, 7, 8, 5, 1, 3, 6, 4, 8, 11, 5, 5, 7, 9, 8, 6, 10, 19, 3, 13, 9, 5,
+        5, 10, 5, 4, 11, 7, 26, 4, 3, 7, 5, 5, 10, 4, 6, 6, 5, 8, 8, 2, 5, 1, 3, 6, 2, 8,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'memecoins,memes,memecoin,meme,dickbutt',
+      description:
+        'The messages from twitter are discussing the current state of memecoins in the market. Some users are questioning the sustainability of memecoins, while others are speculating on potential new meme coins that could explode in value. There is also mention of the importance of holding memecoins with leading mindshare across social media platforms. Overall, there seems to be a mix of skepticism and excitement surrounding memecoins in the crypto industry.',
+      data: [
+        4, 4, 4, 6, 10, 3, 11, 5, 12, 6, 4, 3, 5, 3, 5, 9, 6, 3, 3, 4, 4, 5, 13, 6, 7, 4, 6, 2, 7,
+        5, 83, 8, 12, 6, 4, 2, 3, 4, 7, 3, 5, 3, 7, 2, 6, 4, 8, 12, 1, 7, 4, 6, 2, 1, 5,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'infinitlabs,defi,oneclick,manual,protocols',
+      description:
+        'DeFi, or decentralized finance, is a rapidly evolving sector within the crypto industry that is focused on making financial services more accessible and efficient through blockchain technology. In recent discussions on social media platforms like Twitter, there is a lot of excitement around the potential of DeFi to revolutionize traditional finance systems.\n\nKey points mentioned in the messages include:\n- The value of DeFi lies in its ability to open up new opportunities for users, allowing them to access financial services without the need for traditional intermediaries.\n- Projects like Geeq, 1inch, Aqua, and RISE are working on innovative solutions to unlock the true potential of DeFi and improve liquidity in the market.\n- There is a focus on building more sophisticated systems within DeFi, such as automated trading strategies and cross-chain lending, to enhance user experience and efficiency.\n- Infinit Labs is highlighted as a project that is leading the way in creating one-click solutions for complex DeFi operations, making it easier for users to navigate the decentralized finance space.\n- The industry is moving towards more sustainable yield models and real yield systems, signaling a shift towards long-term viability and growth in the DeFi sector.\n\nOverall, the messages reflect a positive outlook on the future of DeFi and the potential for continued innovation and growth within the industry.',
+      data: [
+        5, 11, 4, 5, 6, 7, 7, 2, 8, 1, 3, 13, 5, 8, 11, 10, 9, 4, 3, 6, 7, 4, 3, 9, 11, 5, 6, 4, 10,
+        8, 2, 5, 4, 8, 9, 3, 6, 14, 16, 4, 4, 3, 6, 0, 7, 5, 5, 3, 8, 6, 8, 7, 5, 3, 3,
+      ],
+    },
+    {
+      label: 'China bans crypto',
+      topics: 'chinas,chinese,china,export,crackdown',
+      description:
+        "The key topics currently discussed in the messages from twitter are:\n1. China's renewed crackdown on crypto trading and stablecoin misuse, with the People's Bank of China (PBOC) and 13 agencies flagging illegal activity and speculation.\n2. China's central bank reaffirming its stance on crypto, stating that Bitcoin and crypto are not legal tender and their use is considered illegal.\n3. China's dominance in the supply chain of rare earth minerals, leading to the US not mining its own resources.\n4. China's environmental impact on the world's oceanic environment, with concerns about the lack of action to stop China's activities.\n5. Taiwan's involvement in the tech industry, with UMC poised to win silicon photonics orders and partnerships with European research centers.\n6. The impact of China's policies on stablecoins and virtual currency trading, leading to stock plunges in Hong Kong and regional crypto sentiment.\n7. Geopolitical tensions between China and Japan, with Beijing aiming to punish Japan for public comments on Taiwan.\n8. The discussion of a right-wing leader for Taiwan to navigate future challenges.\n9. The impact of China's policies on the market, with stricter supervision on stablecoins and virtual currency trading.\n10. The rise in gold and silver prices in China, with declining inventories and increased demand.",
+      data: [
+        5, 7, 1, 9, 3, 6, 3, 25, 4, 5, 3, 4, 6, 5, 5, 4, 8, 5, 1, 7, 7, 4, 2, 7, 6, 7, 7, 5, 4, 3,
+        9, 5, 2, 4, 1, 8, 8, 9, 8, 3, 10, 11, 5, 6, 11, 6, 7, 4, 2, 4, 3, 2, 4, 3, 5,
+      ],
+    },
+    {
+      label: 'Hyperliquid',
+      topics: 'hyperliquid,hype,hyper,unlocks,hyperevm',
+      description:
+        'The key topics currently being discussed in the crypto community on Twitter include the Hyperliquid bridge, the hype surrounding the Hyperliquid x402 coin, potential price movements of HYPE, SEC experiences with stonk perps, the unlocking of $HYPE tokens, the revenue and fees collected by Hyperliquid, the development of HIP-3 and HIP-5 markets, and the transfer of HYPE tokens to Hypercore. Overall, there is a bullish sentiment towards HYPE and Hyperliquid, with discussions about potential price increases and the impact of various catalysts on the project.',
+      data: [
+        10, 3, 5, 8, 4, 6, 10, 2, 2, 5, 2, 1, 0, 3, 5, 5, 6, 0, 4, 6, 5, 3, 35, 2, 5, 6, 4, 10, 8,
+        3, 5, 2, 7, 10, 5, 2, 8, 6, 7, 1, 4, 2, 4, 6, 7, 3, 11, 5, 4, 7, 11, 3, 3, 1, 8,
+      ],
+    },
+    {
+      label: 'Microstrategy',
+      topics: 'mstr,dividends,mnav,ponzi,preferred',
+      description:
+        "The messages from twitter indicate that there is a lot of discussion and speculation surrounding the company MSTR (MicroStrategy) and its recent actions. It seems that MSTR has been making moves to increase its Bitcoin holdings, potentially at the expense of diluting its shares and raising cash through stock sales. There is also mention of MSTR's shift in narrative from buying Bitcoin as a USD hedge to buying USD as a reserve asset.\n\nDespite some concerns about MSTR's business model and strategy, there are also positive sentiments expressed, with some seeing MSTR as a good buy at the current price and praising the company for its aggressive moves to increase its Bitcoin holdings. The mention of a potential short squeeze and the company owning more Bitcoin than its market cap suggests a potential buy-the-dip opportunity.\n\nOverall, it seems that there is a mix of optimism and skepticism surrounding MSTR and its recent actions, with some seeing potential for growth and others questioning the sustainability of its business model.",
+      data: [
+        5, 5, 6, 11, 4, 6, 7, 5, 7, 4, 2, 3, 4, 9, 8, 6, 4, 2, 5, 6, 6, 3, 6, 5, 2, 5, 8, 1, 6, 8,
+        3, 7, 6, 7, 8, 4, 7, 3, 5, 5, 5, 8, 5, 4, 7, 6, 3, 9, 10, 5, 3, 2, 7, 2, 6,
+      ],
+    },
+    {
+      label: 'Monad',
+      topics: 'monad,emonad,emo,hayes,arthur',
+      description:
+        'The key topic currently discussed on twitter is the cryptocurrency Monad. There are mixed opinions about Monad, with some users impressed by its potential and others warning about its risks. Some users are excited about buying Monad at ICO price, while others caution against holding it for too long. Arthur Hayes, a prominent trader, has issued a warning about Monad, suggesting a potential 99% price collapse due to its tokenomics. Overall, there is a lot of discussion and debate surrounding Monad on social media platforms within the crypto community.',
+      data: [
+        5, 1, 6, 8, 6, 3, 7, 6, 3, 4, 4, 2, 7, 10, 5, 4, 1, 9, 8, 5, 0, 8, 7, 3, 3, 4, 2, 12, 6, 4,
+        37, 1, 3, 5, 6, 5, 6, 8, 3, 1, 5, 1, 3, 1, 1, 2, 5, 6, 2, 1, 4, 5, 8, 5, 1,
+      ],
+    },
+    {
+      label: 'ZEC price',
+      topics: 'zec,zcash,440,dancing,750',
+      description:
+        'The key topics discussed in the messages from twitter about $ZEC include:\n- Speculation on the price movement of $ZEC, with some predicting a bounce back to highs and others warning of a potential dump.\n- Discussion about buying opportunities at certain price levels, such as $295 and below $300.\n- Debate about whether $ZEC has bottomed or if there is more downside potential.\n- Analysis of technical indicators, such as triangles and double tops, to predict future price movements.\n- Mention of a possible fake dump and anticipation of a big bounce coming.\n- Reference to a significant price drop from last week and speculation on whether $ZEC has topped out.\n- Mention of accurate chart predictions and potential next moves for $ZEC.\n- Discussion about taking profits and potential accumulation opportunities.\n- Debate about whether the market will be kind and provide a buying opportunity at certain levels.\n- Overall sentiment seems to be mixed, with some expecting a bounce and others anticipating further downside.',
+      data: [
+        5, 0, 2, 3, 1, 9, 12, 8, 3, 5, 4, 2, 6, 4, 4, 1, 3, 3, 5, 4, 5, 6, 4, 2, 2, 1, 7, 5, 7, 1,
+        4, 1, 4, 4, 10, 8, 4, 7, 6, 0, 3, 2, 11, 5, 4, 4, 4, 5, 5, 6, 1, 1, 5, 4, 38,
+      ],
+    },
+    {
+      label: 'XRP',
+      topics: 'xrp,ripple,inflows,thebittimes,cryptocurrecy',
+      description:
+        "The key topic currently discussed in the crypto community on Twitter is the significant inflows into XRP spot ETFs, which have attracted over $756 million since their launch. The XRP community is encouraged to invest in these ETFs for the potential to become millionaires. Additionally, there is discussion about XRP's price movements, with analysis pointing towards potential breakouts and rebounds, as well as institutional demand and short-term pressures affecting the price. Overall, there is a mix of bullish and bearish sentiment surrounding XRP, with traders closely monitoring key resistance levels and potential price targets.",
+      data: [
+        4, 1, 6, 2, 5, 5, 4, 5, 4, 2, 7, 1, 2, 5, 4, 5, 9, 9, 5, 5, 3, 4, 6, 2, 7, 6, 4, 7, 5, 2, 1,
+        8, 3, 5, 3, 3, 7, 8, 11, 7, 4, 5, 8, 12, 7, 3, 2, 0, 5, 7, 1, 5, 3, 11, 4,
+      ],
+    },
+    {
+      label: 'Fed end tightening',
+      topics: 'qe,quantitative,qt,tightening,ended',
+      description:
+        'The key topics currently being discussed in the crypto community on social media include the Federal Reserve officially ending Quantitative Tightening (QT), with QT ending today and a rate cut expected in 9 days. There is speculation about how this will impact the crypto market, with some suggesting that the end of QT could trigger an altcoin season. Additionally, there is discussion about the potential for QE (quantitative easing) to start soon, with some analysts predicting it could begin as early as Q1 2026. Overall, there is anticipation for improved liquidity and potential market shifts in the near future.',
+      data: [
+        4, 3, 4, 2, 2, 2, 4, 2, 7, 1, 3, 6, 0, 40, 29, 2, 9, 3, 2, 2, 4, 4, 2, 2, 2, 5, 0, 3, 0, 8,
+        2, 1, 3, 25, 5, 0, 1, 3, 3, 4, 2, 4, 1, 1, 7, 2, 3, 10, 3, 5, 2, 2, 0, 1, 7,
+      ],
+    },
+    {
+      label: 'BTC mining',
+      topics: 'profitability,mining,miners,hashrate,ore',
+      description:
+        "The messages from twitter indicate that Bitcoin mining profitability is on the rise, with the average cash cost to produce one Bitcoin among publicly listed miners increasing to approximately $74,600 in Q2 2025. When factoring in non-cash costs such as depreciation and stock-based compensation, the total average cost climbs to $137,800. Despite this increase in costs, there is a remarkable stability in the Bitcoin mining ecosystem, with profitability holding firm at around $0.0384/day per TH/s. The current price of Bitcoin at $93,377 is driving strong returns for miners, making it a prime moment to optimize hashpower strategy. However, there are challenges such as the hashprice plunging to $35/PH/s, below miners' $44 costs, leading to debt accumulation and potential struggles for some operators. Overall, the messages suggest that Bitcoin mining remains a key topic of discussion in the crypto community, with a focus on profitability, costs, and the evolving landscape of the industry.",
+      data: [
+        1, 1, 2, 7, 10, 1, 4, 3, 3, 6, 7, 6, 8, 5, 5, 5, 2, 2, 3, 6, 5, 6, 6, 1, 4, 3, 3, 1, 3, 6,
+        49, 2, 5, 3, 4, 3, 11, 1, 5, 3, 4, 3, 6, 5, 3, 4, 2, 3, 2, 1, 4, 3, 1, 2, 0,
+      ],
+    },
+    {
+      label: 'Tether backing in question',
+      topics: 'tether,fud,hayes,tetherto,reserves',
+      description:
+        "The key topic currently discussed in the messages from twitter is the ongoing Tether FUD (Fear, Uncertainty, Doubt). Many users are expressing skepticism and concern about Tether's actions, particularly regarding their holdings of gold and potential insolvency. Some users are also discussing Tether's involvement in the crypto industry and its impact on the market. Overall, there is a mix of opinions and speculation about Tether's future and its role in the industry.",
+      data: [
+        2, 8, 2, 7, 1, 4, 3, 2, 4, 6, 10, 6, 6, 2, 1, 4, 6, 18, 2, 6, 4, 3, 3, 3, 5, 1, 5, 2, 10, 8,
+        1, 0, 5, 7, 2, 2, 3, 4, 4, 7, 5, 1, 1, 2, 8, 2, 27, 7, 1, 0, 8, 2, 3, 3, 2,
+      ],
+    },
+    {
+      label: 'Bitcoin is the future',
+      topics: 'guns,sovereignty,invention,bitcoiners,existed',
+      description:
+        "The messages from twitter highlight the importance of Bitcoin in changing the financial and monetary system. Bitcoin is seen as a way to separate money from the state, providing freedom and quality of life for future generations. The messages also discuss Bitcoin's role as a perfect form of money, immune to inflation and secure from central bank manipulation. Additionally, there is a focus on how Bitcoin is challenging traditional financial institutions and exposing the limits of central banks. Overall, Bitcoin is portrayed as a revolutionary force that is reshaping the way we think about money and finance.",
+      data: [
+        2, 6, 5, 3, 9, 2, 2, 3, 4, 6, 7, 1, 3, 3, 8, 2, 7, 9, 1, 2, 1, 5, 1, 5, 7, 3, 5, 6, 4, 1, 5,
+        5, 5, 2, 7, 2, 5, 5, 1, 5, 6, 4, 2, 1, 5, 3, 3, 6, 2, 3, 9, 5, 3, 3, 2,
+      ],
+    },
+  ],
+}

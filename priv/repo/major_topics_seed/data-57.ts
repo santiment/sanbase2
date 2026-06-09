@@ -1,0 +1,266 @@
+export const NARRATIVES = {
+  labels: [
+    '30.01.25',
+    '31.01.25',
+    '31.01.25',
+    '31.01.25',
+    '31.01.25',
+    '31.01.25',
+    '31.01.25',
+    '31.01.25',
+    '01.02.25',
+    '01.02.25',
+    '01.02.25',
+    '01.02.25',
+    '01.02.25',
+    '01.02.25',
+    '01.02.25',
+    '01.02.25',
+    '02.02.25',
+    '02.02.25',
+    '02.02.25',
+    '02.02.25',
+    '02.02.25',
+    '02.02.25',
+    '02.02.25',
+    '02.02.25',
+    '03.02.25',
+    '03.02.25',
+    '03.02.25',
+    '03.02.25',
+    '03.02.25',
+    '03.02.25',
+    '03.02.25',
+    '03.02.25',
+    '04.02.25',
+    '04.02.25',
+    '04.02.25',
+    '04.02.25',
+    '04.02.25',
+    '04.02.25',
+    '04.02.25',
+    '04.02.25',
+    '05.02.25',
+    '05.02.25',
+    '05.02.25',
+    '05.02.25',
+    '05.02.25',
+    '05.02.25',
+    '05.02.25',
+    '05.02.25',
+    '06.02.25',
+    '06.02.25',
+    '06.02.25',
+    '06.02.25',
+    '06.02.25',
+    '06.02.25',
+    '06.02.25',
+  ],
+  datasets: [
+    {
+      label: 'ETH',
+      topics: 'eth,ethereum,time,long,price',
+      description:
+        "The key topics discussed in the messages from Twitter about the crypto industry, specifically Ethereum (ETH), include:\n1. Overnight price movements of ETH and confusion among investors.\n2. Speculation on the best time to invest in ETH and other cryptocurrencies.\n3. Predictions of a significant price increase in ETH in the near future.\n4. Analysis of market trends and potential trading strategies for ETH and other cryptocurrencies.\n5. Mention of other cryptocurrencies like Maker (MKR) and Solana (SOL) impacting ETH's market liquidity.\n6. Institutional interest in ETH, with the possibility of an Ether ETF and potential price breakout towards $6,000.\n7. Overall positive sentiment towards ETH despite recent market challenges.",
+      data: [
+        28, 4, 22, 23, 7, 9, 22, 38, 43, 26, 21, 22, 29, 19, 36, 134, 203, 45, 41, 16, 38, 32, 43,
+        39, 24, 18, 29, 39, 55, 37, 23, 21, 28, 15, 40, 31, 25, 34, 23, 44, 31, 28, 29, 21, 25, 23,
+        31, 25, 40, 25, 19, 34, 25, 27, 28,
+      ],
+    },
+    {
+      label: 'Memecoins',
+      topics: 'meme,memecoin,coins,memecoins,memes',
+      description:
+        'Based on the messages from Twitter, it is clear that meme coins are a popular topic of discussion within the crypto community. Some of the meme coins mentioned include $DOGE, $PEPE, $GIGA, Arctic Pablo ($APC), Turbo, Ponke, Bonk, BTFD Coin, Dogecoin, and Pudgy Penguins. There is also mention of new meme tokens being released and the potential for significant gains with certain meme coins.\n\nAdditionally, there is a debate about whether meme coins are just for laughs or if they can lead to serious financial gains. Some users caution against falling for bait and engaging in insider trading, while others share success stories of finding profitable meme coins independently.\n\nOverall, it appears that meme coins are a significant part of the crypto culture, with enthusiasts actively discussing and investing in them for potential profits.',
+      data: [
+        7, 6, 12, 15, 5, 10, 6, 14, 8, 22, 10, 9, 9, 40, 3, 9, 6, 21, 14, 14, 16, 21, 7, 13, 5, 10,
+        14, 15, 13, 22, 61, 130, 15, 11, 9, 12, 17, 8, 17, 14, 14, 14, 13, 9, 12, 18, 4, 17, 9, 14,
+        6, 11, 12, 12, 11,
+      ],
+    },
+    {
+      label: 'DOGE',
+      topics: 'doge,dogecoin,elon,government,elonmusk',
+      description:
+        'Based on the messages from Twitter, it seems that there is a lot of discussion about Dogecoin ($DOGE) and its potential pump, as well as its interactions with various entities such as the IRS, Elon Musk, and the education department. There are also mentions of fraud, corruption, and wasteful spending being uncovered by Dogecoin. Additionally, there is talk about the fear and pursuit of Dogecoin by young team members, as well as potential airdrops of Dogecoin. The messages also touch on political corruption and USAID officials being put on leave for trying to stop Dogecoin from accessing agency systems. Overall, it appears that Dogecoin is a hot topic of discussion in the crypto community on Twitter.',
+      data: [
+        11, 9, 22, 12, 4, 2, 13, 8, 7, 9, 11, 6, 19, 21, 166, 10, 7, 16, 6, 9, 15, 21, 15, 14, 9,
+        10, 14, 19, 16, 11, 8, 5, 22, 13, 6, 19, 15, 11, 6, 10, 14, 11, 10, 6, 10, 11, 15, 14, 11,
+        6, 9, 21, 25, 17, 11,
+      ],
+    },
+    {
+      label: 'AI',
+      topics: 'ai,agents,agent,data,future',
+      description:
+        'The key topics discussed in the messages from twitter about the crypto industry include:\n1. AI revolution and its impact on various sectors such as healthcare and business\n2. Different types of AI opportunities and frameworks for model improvement/adoption\n3. The role of AI agents in transforming business and security\n4. The integration of AI and blockchain technology for data security\n5. Irony in job applicants being told not to use AI in their applications by a billion-dollar AI company\n6. The importance of leveraging technology to improve quality of life\n7. Analysis and automation of breaking news and trending topics using AI models\n8. Interviews with founders and product leaders behind successful AI products\n9. Comparison of AI agents with traditional query/answer systems\n10. The impact of AI on society and personal introspection on its benefits\n\nOverall, the messages reflect a deep interest and engagement in the advancements and implications of AI technology within the crypto industry.',
+      data: [
+        47, 127, 16, 13, 2, 5, 6, 9, 8, 20, 19, 13, 10, 11, 6, 15, 11, 9, 12, 34, 12, 14, 6, 4, 22,
+        25, 9, 19, 11, 10, 8, 9, 14, 6, 10, 15, 17, 14, 11, 8, 18, 8, 7, 14, 20, 4, 17, 20, 9, 7, 4,
+        13, 7, 13, 13,
+      ],
+    },
+    {
+      label: 'BTC Price',
+      topics: 'range,btc,100k,weekly,support',
+      description:
+        "The key topics currently being discussed in the crypto industry on Twitter include:\n- Telcoin potentially affecting Bitcoin's price\n- Bitcoin's price movement towards 100K\n- Speculation on Bitcoin reaching 300K-400K\n- Nations experiencing FOMO in relation to Bitcoin\n- Technical analysis of Bitcoin's price movement and potential resistance levels\n- Retail investors and whales reacting to price fluctuations in the 89K to 91K zone\n- Predictions and scenarios for Bitcoin's price movement, including potential support and resistance levels\n- Updates and news affecting the crypto industry, with a focus on Bitcoin's dominance and market trends\n- Monthly review and analysis of Bitcoin's price performance\n- Market analyst reports on Bitcoin's market direction and potential factors influencing its price movement.",
+      data: [
+        12, 8, 12, 11, 56, 40, 33, 10, 4, 16, 13, 8, 16, 2, 6, 4, 5, 10, 5, 7, 5, 2, 10, 28, 13, 2,
+        8, 8, 6, 17, 5, 5, 7, 14, 9, 9, 11, 21, 18, 24, 5, 13, 15, 8, 13, 17, 20, 10, 2, 12, 0, 5,
+        5, 21, 3,
+      ],
+    },
+    {
+      label: 'APE',
+      topics: 'apes,nft,nfts,ape,mint',
+      description:
+        "The key topics discussed in the messages from twitter related to the crypto industry include:\n1. Launch of the FNF on-chain hit squad FL1CK3R on the @osura_com marketplace\n2. Impressive NFT projects\n3. Conviction trades and restaked POND @symbioticfi vault on @mellowprotocol\n4. Introduction to NFT projects on @MagicEden\n5. Collecting points on #ApeChain #NFTs\n6. HAPE x @apecoin Paris Meetup\n7. Future of NFTs and Web3 from an artist's standpoint\n8. Cybernetic Drift floor on #ApeChain\n9. ApeChain's new Spotlight season and NFT rewards for contributions to coding\n10. Networking events and community bonding in Paris\n\nOverall, the messages reflect a vibrant and active community discussing various aspects of the crypto industry, including NFT projects, trading strategies, and community events.",
+      data: [
+        5, 1, 38, 10, 3, 3, 0, 7, 6, 11, 5, 14, 4, 6, 0, 5, 3, 4, 5, 9, 6, 5, 8, 6, 3, 5, 10, 5, 4,
+        8, 5, 16, 9, 37, 5, 4, 2, 8, 9, 6, 1, 4, 8, 6, 9, 3, 5, 3, 10, 3, 5, 3, 10, 8, 8,
+      ],
+    },
+    {
+      label: 'SOL',
+      topics: 'solana,sol,ethereum,social,ca',
+      description:
+        "Based on the messages from Twitter, key topics currently discussed in the crypto industry include:\n- Ethereum vs Solana: There is a discussion about which cryptocurrency is more bullish, with mentions of peer to peer, peer to pool, pool to pool, and bot to bot transactions. Some users believe that Solana is the real winner due to its IP rights and being the first coin on the Solana network.\n- Market trends: Bitcoin is above $100k, Solana has seen a 120% increase in the last year, and the US President has launched 4 crypto projects.\n- Trading strategies: There are mentions of buying opportunities, swing plays, and theories about market cycles and price movements for Solana.\n- Network performance: Solana's network uptime is highlighted, with comparisons to Ethereum's past performance.\n- Trading activity: There are mentions of liquidated long positions, trading volumes, and price targets for Solana.\n- New developments: A new app launch on Solana is announced, with a focus on liquidity and volume advantages.\n\nOverall, the discussions on Twitter indicate a mix of market analysis, trading strategies, network performance, and new developments in the crypto industry, with a particular focus on Solana and its comparison to Ethereum.",
+      data: [
+        3, 5, 4, 7, 3, 3, 7, 9, 10, 10, 3, 6, 6, 10, 5, 8, 4, 11, 11, 8, 8, 3, 4, 2, 3, 9, 3, 4, 6,
+        9, 6, 6, 1, 5, 4, 5, 10, 15, 8, 2, 8, 7, 6, 36, 3, 12, 8, 5, 8, 15, 3, 5, 5, 7, 9,
+      ],
+    },
+    {
+      label: 'XRP',
+      topics: 'xrp,ripple,ledger,etf,purpose',
+      description:
+        "Based on the messages from Twitter, key topics currently being discussed in the crypto industry include:\n1. XRP and Ripple: Discussions about XRP being decentralized, network outages, price breakouts, and the Ripple community.\n2. Reserve Protocol (RSR): Excitement about the potential for RSR, upcoming launches, and its performance in the market.\n3. Memecoin wars: Speculation about XRP's community involvement in memecoin wars and the need to make it easier for everyone to buy their coins.\n4. Stablecoins: Updates on Ripple's RLUSD stablecoin trading volume and competition with other stablecoins.\n5. Market trends: Analysis of XRP's price drop amid the recent market downturn and predictions for its future price movement.\n\nOverall, the discussions on Twitter reflect a mix of excitement, speculation, and analysis surrounding XRP, Ripple, RSR, memecoins, stablecoins, and market trends in the crypto industry.",
+      data: [
+        8, 3, 5, 8, 2, 7, 8, 2, 9, 4, 9, 6, 4, 3, 11, 10, 3, 7, 5, 4, 8, 4, 9, 7, 6, 5, 5, 5, 6, 5,
+        4, 5, 8, 6, 8, 2, 9, 29, 6, 7, 25, 3, 6, 1, 2, 8, 6, 3, 8, 2, 1, 7, 5, 3, 5,
+      ],
+    },
+    {
+      label: 'GameFi',
+      topics: 'gaming,games,game,web3,play',
+      description:
+        'The messages from twitter are discussing various topics related to the crypto gaming industry. Some key words mentioned include game jam, web3 gaming, Avalanche, play-to-earn, NAKA ecosystem, Web3 DAOs, and gaming executives. The messages highlight the excitement around new games, player engagement, and the potential for Web3 gaming to revolutionize the industry. There is also mention of upcoming events, such as fireside chats and livestreamed game matches. Overall, the crypto gaming community seems to be buzzing with activity and innovation.',
+      data: [
+        5, 6, 7, 5, 3, 1, 5, 3, 6, 2, 6, 4, 2, 1, 3, 5, 3, 6, 4, 54, 5, 4, 6, 0, 5, 9, 6, 4, 3, 10,
+        5, 3, 7, 5, 2, 6, 22, 3, 6, 4, 9, 7, 8, 5, 2, 4, 7, 2, 11, 1, 5, 4, 5, 9, 2,
+      ],
+    },
+    {
+      label: 'VVV',
+      topics: 'vvv,vine,coinbase,altseason,hodl',
+      description:
+        'The key topics currently being discussed on Twitter in the crypto industry are the listing of $Vine on a tier 1 USA exchange, the confirmation of $Vine as a "Blockchain based social media," the potential for $Vine to hit $7.40, the positive movement of $vvv, the surge of $Vine past $0.17, and the upcoming $Vine Futures Frenzy event. Additionally, there is discussion about patterns in the market, potential future moves, diamond balls hodling $vvv, and the anticipation of green candles for $vvv. Overall, the sentiment seems to be bullish on both $Vine and $vvv with expectations of significant price increases.',
+      data: [
+        5, 7, 6, 4, 1, 0, 3, 9, 4, 4, 2, 3, 4, 1, 9, 2, 1, 5, 4, 2, 3, 2, 1, 16, 3, 4, 2, 6, 13, 12,
+        3, 3, 2, 10, 4, 9, 3, 4, 1, 5, 3, 3, 6, 2, 2, 3, 2, 1, 5, 2, 0, 4, 22, 4, 3,
+      ],
+    },
+    {
+      label: 'Berachain',
+      topics: 'berachain,mainnet,airdrop,launch,binance',
+      description:
+        "The key topics currently discussed in the crypto industry on Twitter include the launch of Berachain's mainnet on February 6, 2025, with various features such as margin trading, futures, savings, and fast trade. There is also excitement surrounding the compatibility of Berachain with EVM and Cosmos SDK, as well as the announcement of the Ondo Chain. Additionally, there are discussions about the launch of Berachain perpetual futures pairs on Bitrue and the upcoming HODLer Airdrops with Berachain on Binance. Furthermore, there is a bounty program for Berachain where participants can share rewards in USDT. Overall, the sentiment seems to be positive and bullish about the future of Berachain and its developments in the crypto industry.",
+      data: [
+        3, 3, 5, 47, 1, 2, 2, 3, 3, 6, 3, 2, 2, 6, 5, 2, 3, 3, 9, 2, 3, 4, 1, 3, 4, 4, 9, 2, 13, 5,
+        1, 3, 5, 10, 9, 4, 2, 3, 5, 2, 1, 1, 3, 2, 2, 4, 0, 3, 1, 5, 0, 3, 4, 4, 3,
+      ],
+    },
+    {
+      label: 'Liquidations',
+      topics: 'liquidated,liquidations,liquidation,covid,24',
+      description:
+        'The key topics currently being discussed in the crypto industry on Twitter include:\n1. Major disruptions in the Bitcoin cryptocurrency market due to on-chain losses climbing to $1.31 billion.\n2. Over $2 billion liquidated in just 24 hours, surpassing previous crashes like the COVID crash and FTX collapse.\n3. Market shakeout with $2.18 billion liquidated in 24 hours, attributed to a trade war ignited by Trump.\n4. Worst liquidation event in history in a single day, with 712,698 traders being liquidated.\n5. Performance of different cryptocurrencies, with some bags performing well (BTC, OM, BGB), others performing OK-ish (SOL, Sui), and bad performing bags including ETH, L1s, L2s, Ai, IEOs, DeFi, etc.\n6. Comparison of the current market situation to the March 12th, 2020 COVID crash, with some users arguing that it is not as bad for BTC.\n7. Potential worst-case scenarios involving rug-pulls, unlocked tokens, and draining locked LPs.\n8. Record-breaking $2.2 billion liquidated in the last 24 hours, with ETH dominating in liquidations followed by BTC, XRP, SOL, and DOGE.\n9. Total liquidations reaching $2.09 billion in the past 24 hours, with various cryptocurrencies being affected.\nOverall, the discussions on Twitter reflect the volatility and uncertainty in the crypto market, with traders experiencing significant losses and trying to navigate the current market conditions.',
+      data: [
+        3, 2, 4, 11, 3, 6, 1, 0, 3, 0, 2, 23, 2, 2, 2, 1, 1, 4, 1, 6, 7, 3, 1, 3, 3, 3, 5, 17, 18,
+        5, 20, 2, 1, 1, 14, 3, 5, 1, 3, 4, 1, 4, 4, 0, 0, 2, 3, 1, 5, 7, 1, 2, 3, 2, 7,
+      ],
+    },
+    {
+      label: 'BTC',
+      topics: 'bitcoin,makes,sense,statement,energy',
+      description:
+        'Based on the messages from Twitter, the key topics currently being discussed in the crypto industry include:\n- #Bitcoin\n- Crypto\n- #LUNC\n- Moby wicks\n- NFT project\n- Real #Bitcoiner\n- HODLers\n- Strategy\n- @saylor\n- Shitcoiners\n- Permissionless\n- OpCat\n- @benthecarman\n- Sponsorship\n- Nihilists\n\nOverall, the sentiment towards Bitcoin seems to be mixed, with some users expressing excitement and support, while others are skeptical and critical of potential changes to Bitcoin. The discussion also touches on other cryptocurrencies and projects within the industry.',
+      data: [
+        3, 3, 2, 1, 33, 17, 0, 2, 3, 2, 5, 1, 6, 8, 1, 3, 3, 1, 5, 1, 2, 4, 2, 2, 2, 4, 8, 8, 3, 6,
+        2, 4, 6, 2, 5, 2, 4, 4, 3, 10, 4, 0, 8, 3, 2, 5, 3, 6, 2, 4, 5, 0, 1, 3, 1,
+      ],
+    },
+    {
+      label: 'DeFi',
+      topics: 'defi,defai,protocols,ecosystem,finance',
+      description:
+        'The key topics discussed in the messages from twitter are related to DeFi (Decentralized Finance) and DeFAI (Decentralized Finance Artificial Intelligence). Some specific projects and platforms mentioned include TEL DeFi, Ankr, AltLayer, Buidl, UniLend Finance, Numa Network, Lamaa AI, Starknet, and MODE Club. The messages also highlight the integration of AI with decentralized finance for enhanced efficiency, predictive lending, automated transactions, and dynamic portfolio management. Additionally, there is a focus on upcoming launches, partnerships, and the potential of financial AI agents in the DeFI space. Overall, the discussions revolve around the advancements and innovations in the crypto industry, particularly in the realm of decentralized finance.',
+      data: [
+        6, 8, 6, 5, 1, 0, 5, 4, 6, 1, 3, 5, 6, 14, 0, 4, 6, 2, 5, 7, 3, 3, 5, 2, 4, 10, 7, 2, 2, 1,
+        1, 4, 7, 4, 2, 1, 8, 5, 8, 6, 1, 4, 3, 2, 5, 1, 4, 0, 7, 4, 0, 5, 2, 3, 3,
+      ],
+    },
+    {
+      label: 'SEC',
+      topics: 'sec,task,enforcement,force,securities',
+      description:
+        "The messages from Twitter are discussing the SEC's actions and decisions regarding cryptocurrency regulation, particularly focusing on SEC Chair Gary Gensler. There are mentions of the SEC launching a Crypto Task Force website, scaling back enforcement efforts, appointing a new acting chair who is a Bitcoin and crypto supporter, and setting new priorities for regulatory frameworks. There is also criticism of past SEC directors and their handling of crypto-related matters, with calls for greater accountability. Overall, the topic revolves around the evolving regulatory landscape for digital assets and the impact of SEC decisions on the crypto industry.",
+      data: [
+        5, 0, 5, 0, 1, 1, 19, 2, 5, 1, 6, 5, 1, 1, 6, 2, 1, 1, 5, 0, 3, 1, 2, 1, 3, 1, 11, 4, 1, 0,
+        2, 0, 5, 4, 2, 5, 1, 2, 3, 9, 1, 9, 9, 0, 0, 1, 4, 3, 2, 2, 1, 1, 0, 3, 0,
+      ],
+    },
+    {
+      label: 'Inflation',
+      topics: 'inflation,rates,rate,impact,cuts',
+      description:
+        "The key topics currently discussed in the messages from twitter are:\n1. Inflation approaching the ECB's target\n2. US Services Sector Surveys Plunged in January\n3. CA Gross domestic product by industry in November 2024\n4. BOE Monetary Policy Report in February 2025\n5. US limited experience with large scale tariffs\n6. US Job Openings and Labor Turnover in December 2024\n7. Difficulty in specifying terminal rate by BOJ's Tamura\n8. US Services PMI at 52.8% in January 2025\n9. Impact of egg prices surge due to bird flu on food inflation\n10. Discussion on Bitcoin's purchasing power and potential impact of AI on deflation and hyperinflation.",
+      data: [
+        3, 2, 1, 1, 0, 4, 4, 3, 1, 1, 2, 1, 8, 1, 1, 5, 1, 1, 2, 4, 0, 3, 2, 2, 15, 7, 3, 4, 0, 2,
+        26, 1, 1, 1, 0, 5, 7, 4, 2, 2, 2, 2, 3, 0, 1, 1, 1, 1, 2, 0, 2, 1, 0, 1, 10,
+      ],
+    },
+    {
+      label: 'BTC Mining',
+      topics: 'mining,miners,miner,power,energy',
+      description:
+        "The key topics discussed in the messages from Twitter regarding Bitcoin mining include:\n- Bitcoin mining being used to create energy demand in Greenland\n- Leading miners signaling a $115,000 Bitcoin price within 2 weeks\n- KuCoin exiting the U.S. market\n- Bitcoin miners turning to hashrate derivatives to hedge against revenue volatility\n- Bitcoin's hashrate hitting a record high\n- JPMorgan reporting on Bitcoin network hashrate and mining difficulty\n- Bitcoin miners selling a significant amount of BTC\n- Research on Bitcoin mining as a virtual energy storage system\n- Miner reserves increasing significantly\n- CleanSpark crushing earnings with improved efficiency in mining\n- Mention of TrustlessMining, BraiinsMining, and Ocean Mining as mining entities\n\nOverall, the messages highlight the current trends and developments in the Bitcoin mining industry, including price predictions, market dynamics, and technological advancements.",
+      data: [
+        7, 0, 4, 1, 16, 5, 8, 0, 3, 3, 3, 2, 4, 1, 2, 2, 3, 1, 3, 1, 1, 3, 6, 2, 2, 3, 4, 7, 1, 1,
+        2, 13, 3, 3, 3, 2, 4, 1, 1, 2, 3, 2, 2, 2, 1, 2, 1, 2, 0, 1, 0, 1, 1, 4, 1,
+      ],
+    },
+    {
+      label: 'David Sacks',
+      topics: 'sacks,david,press,conference,digital',
+      description:
+        "The key topic discussed in the messages from Twitter is the press conference being held by President Trump's Crypto Czar, David Sacks, regarding the evaluation of a potential Bitcoin reserve and the U.S. Digital Asset Leadership Plan. The community is eagerly anticipating the outcome of this conference and speculating on how it will shape the future of crypto industry. Regulatory clarity and the potential impact on Bitcoin and other digital assets are also being discussed. Overall, there is a lot of excitement and interest surrounding this event and its implications for the industry.",
+      data: [
+        1, 5, 2, 2, 0, 0, 17, 3, 0, 6, 1, 3, 10, 1, 0, 0, 1, 1, 2, 1, 0, 1, 1, 4, 0, 0, 0, 4, 6, 0,
+        1, 0, 2, 0, 0, 1, 3, 1, 2, 2, 25, 5, 1, 3, 1, 2, 5, 3, 3, 11, 0, 0, 0, 1, 0,
+      ],
+    },
+    {
+      label: 'Gold',
+      topics: 'gold,record,high,alltime,physical',
+      description:
+        'Based on the messages from Twitter, it is evident that there is a significant discussion about the price and performance of gold in comparison to Bitcoin within the crypto industry. Gold is experiencing spikes in price due to physical stockpiling and demand for assets that protect against inflation and uncertainty. There are mentions of gold hitting record highs, surpassing $2800, and the potential for it to reach $3000 in the near future. Additionally, there are comparisons between the price of gold and other assets like oil, highlighting the current affordability of oil in comparison to gold.\n\nFurthermore, there is a debate about the scarcity and purchasing power of gold, with some users expressing skepticism about its real value. The role of gold as a safe-haven asset and its historical performance in times of economic uncertainty are also discussed. In contrast, there are mentions of Bitcoin as a potential alternative to gold, with some suggesting that Bitcoin will see a surge in price when gold takes a break from its current rally.\n\nOverall, the messages reflect a mix of opinions and analysis regarding the performance of gold, its relationship with Bitcoin, and the broader economic implications of these trends in the crypto industry.',
+      data: [
+        2, 0, 1, 0, 6, 4, 2, 3, 0, 1, 2, 0, 0, 1, 0, 0, 0, 1, 3, 1, 62, 1, 1, 0, 3, 1, 4, 0, 0, 1,
+        3, 1, 1, 1, 1, 3, 2, 2, 4, 1, 3, 2, 2, 0, 1, 0, 5, 0, 1, 1, 0, 0, 1, 2, 3,
+      ],
+    },
+    {
+      label: 'Buy the dip',
+      topics: 'dip,buy,buying,bought,did',
+      description:
+        'The key topic discussed in the messages from Twitter is buying the dip in the crypto market. Many users are expressing confidence in buying the dip, while others are hesitant or joking about it. Some are discussing specific strategies for buying the dip, such as setting a price target or adding to their cryptocurrency holdings during a dip. Overall, the sentiment towards buying the dip in the crypto market varies among users, with some believing it will pay off in the long run and others being more skeptical.',
+      data: [
+        1, 0, 1, 3, 0, 2, 1, 39, 4, 3, 1, 2, 3, 14, 0, 4, 0, 2, 0, 1, 1, 0, 1, 3, 0, 0, 2, 1, 0, 1,
+        2, 2, 2, 1, 0, 0, 0, 2, 0, 4, 0, 4, 1, 1, 1, 3, 0, 1, 2, 0, 0, 0, 1, 1, 0,
+      ],
+    },
+  ],
+}

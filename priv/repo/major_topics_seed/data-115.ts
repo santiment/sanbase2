@@ -1,0 +1,285 @@
+export const NARRATIVES = {
+  labels: [
+    '12.03.26',
+    '13.03.26',
+    '13.03.26',
+    '13.03.26',
+    '13.03.26',
+    '13.03.26',
+    '13.03.26',
+    '13.03.26',
+    '14.03.26',
+    '14.03.26',
+    '14.03.26',
+    '14.03.26',
+    '14.03.26',
+    '14.03.26',
+    '14.03.26',
+    '14.03.26',
+    '15.03.26',
+    '15.03.26',
+    '15.03.26',
+    '15.03.26',
+    '15.03.26',
+    '15.03.26',
+    '15.03.26',
+    '15.03.26',
+    '16.03.26',
+    '16.03.26',
+    '16.03.26',
+    '16.03.26',
+    '16.03.26',
+    '16.03.26',
+    '16.03.26',
+    '16.03.26',
+    '17.03.26',
+    '17.03.26',
+    '17.03.26',
+    '17.03.26',
+    '17.03.26',
+    '17.03.26',
+    '17.03.26',
+    '17.03.26',
+    '18.03.26',
+    '18.03.26',
+    '18.03.26',
+    '18.03.26',
+    '18.03.26',
+    '18.03.26',
+    '18.03.26',
+    '18.03.26',
+    '19.03.26',
+    '19.03.26',
+    '19.03.26',
+    '19.03.26',
+    '19.03.26',
+    '19.03.26',
+    '19.03.26',
+  ],
+  datasets: [
+    {
+      label: 'Oil price',
+      topics: 'brent,wti,barrel,crude,uso',
+      description:
+        'Brent crude has surged above $100–$110 after strikes on Middle East energy infrastructure and disruptions around the Strait of Hormuz, driving sharp volatility. Market focus is on the Brent vs WTI spread, oil futures and perpetuals (including large weekend volume on crypto venues like Hyperliquid), and claims of WTI price distortion. Analysts note knock-on effects for equities, Fed policy, and outsized windfalls for U.S. oil companies if prices persist.',
+      data: [
+        9, 5, 13, 22, 17, 17, 12, 18, 18, 12, 80, 11, 22, 21, 12, 17, 10, 20, 10, 13, 13, 40, 11,
+        12, 13, 13, 9, 23, 11, 30, 15, 21, 10, 173, 10, 12, 57, 15, 21, 18, 15, 14, 32, 9, 26, 24,
+        17, 17, 24, 17, 14, 13, 18, 20, 11,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'AI impact on jobs',
+      topics: 'replace,jobs,ais,collar,centers',
+      description:
+        'Social discussion centers on AI’s accelerating disruption of white‑collar work: high‑income roles are highly exposed, AI agents are automating coordination (even hiring humans), and productivity gains often translate into more tasks rather than less work. Participants warn of a major AI breakthrough by 2026 and stress the need to become “AI‑fluent” or be replaced. Conversations also highlight a shift from models to infrastructure (semantic layers), debate centralized vs. decentralized/permissionless AI, and note investor interest and research gains improving model performance.',
+      data: [
+        9, 36, 11, 20, 26, 11, 12, 11, 16, 26, 13, 18, 17, 16, 34, 11, 10, 14, 24, 17, 4, 14, 12,
+        30, 26, 16, 13, 9, 11, 13, 5, 7, 10, 11, 23, 7, 16, 6, 15, 13, 19, 14, 7, 11, 9, 13, 21, 22,
+        12, 7, 16, 9, 8, 18, 10,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Modern dating',
+      topics: 'dating,women,woman,men,girl',
+      description:
+        'A combative stream of hot takes about dating, marriage and gender roles—praising traditional “wife material,” disparaging older women, promoting younger partners, and endorsing controlling attitudes and sexual double standards. Includes sapiosexual bragging, provocative social tests to partners, trans-athlete criticism, and casual sexism, but also brief crypto-related notes praising women in web3 as brave survivors in a male-dominated industry.',
+      data: [
+        9, 10, 9, 16, 14, 11, 4, 10, 4, 4, 4, 18, 9, 6, 11, 5, 12, 8, 34, 9, 8, 9, 19, 6, 10, 12,
+        10, 9, 21, 44, 7, 10, 6, 7, 5, 6, 8, 8, 5, 7, 3, 5, 5, 11, 11, 12, 10, 11, 4, 14, 4, 11, 17,
+        80, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Bitcoin ideology',
+      topics: 'spam,bitcoiners,ponzi,jack,satoshi',
+      description:
+        'Twitter discussions center on defending Bitcoin as sound money, urging adoption to preserve purchasing power and buy scarce, counterparty‑free assets. Debates focus on Bitcoin governance (criticism of Core, BIP‑110, node operator priorities), on‑chain data/spam risks, and the need for useful Bitcoin protocols and Layer‑2s. Strong maximalist sentiment rejects distracting crypto/altcoin narratives and emphasizes community building, preparedness, and real-world adoption to reduce poverty and strengthen sovereign money.',
+      data: [
+        10, 12, 8, 18, 8, 26, 12, 18, 5, 10, 16, 8, 10, 8, 12, 10, 18, 11, 6, 4, 9, 8, 13, 11, 15,
+        6, 10, 4, 17, 10, 18, 8, 10, 10, 14, 14, 14, 9, 10, 15, 14, 9, 9, 11, 7, 14, 16, 18, 5, 12,
+        17, 7, 10, 11, 6,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Nvidia',
+      topics: 'huang,jensen,gtc,nvidia,nvidias',
+      description:
+        'Tweets focus on NVIDIA’s accelerating AI-led growth: CEO Jensen Huang’s $1T revenue-by-2027 claim, new Vera Rubin/Feynman/Alchemi chip platforms, and partnerships highlight product-led demand. Market debate over valuation (P/B vs forward P/E) and rapidly rising GPU rental prices amid capacity sellouts. Export-control compliance and China sales risk are discussed alongside competitors (Groq, custom hyperscaler chips) and the idea that NVIDIA controls chip supply like OPEC. Overall sentiment: NVIDIA’s dominance is bullish for AI-related crypto tokens and firms that supply or leverage its GPUs.',
+      data: [
+        7, 8, 19, 8, 6, 11, 5, 4, 10, 14, 5, 9, 9, 6, 6, 12, 4, 7, 10, 4, 10, 7, 6, 9, 10, 9, 3, 5,
+        5, 2, 3, 5, 12, 15, 2, 11, 10, 5, 7, 14, 20, 19, 12, 8, 10, 7, 9, 8, 11, 9, 16, 5, 7, 6, 15,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'War in Iran',
+      topics: 'iranians,persian,regimes,ceasefire,afghanistan',
+      description:
+        'Social media discussion centers on a rapidly escalating Iran–US/Israel conflict: Iran is reportedly striking critical infrastructure, setting conditions for peace that include reparations and U.S. withdrawal, and claiming tactical successes. Commenters debate the feasibility of a ground invasion, compare this conflict to Iraq/Afghanistan, and highlight information asymmetries and propaganda (Rashomon effect). Economic and geopolitical consequences are emphasized — potential oil-price shocks, wider great-power implications, and risks of regional destabilization. Analysts and users reference military statements, AI-driven scenario analyses, and polarized political reactions.',
+      data: [
+        11, 6, 7, 9, 3, 5, 4, 9, 5, 15, 7, 7, 8, 4, 7, 4, 12, 7, 7, 6, 10, 7, 3, 11, 6, 6, 10, 2, 8,
+        2, 4, 3, 11, 7, 8, 6, 11, 6, 9, 5, 9, 15, 6, 8, 10, 7, 9, 15, 7, 4, 11, 7, 27, 16, 9,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'STRC ramping up',
+      topics: 'mstr,strc,strategys,dividend,atm',
+      description:
+        "Social posts focus on MicroStrategy’s perpetual preferred 'STRC' as a fast-scaling capital vehicle used to fund large Bitcoin buys. STRC reportedly pays ~11.5% annual dividends (monthly, paid in BTC) and recent sales funded major purchases (claims include $1.18B of $1.57B BTC buys, ~16,816 BTC last week, and ~267k BTC since issuance). Supporters argue STRC removes open-market BTC supply and could attract huge institutional capital, creating reflexive upside; critics and researchers warn of structural and liquidity risks as STRC trades near parity around ex-dividend dates. Debate compares STRC to UST but notes it’s backed by BTC on MicroStrategy’s balance sheet, raising questions about sustainability, dilution, and potential price-support tactics.",
+      data: [
+        21, 5, 5, 4, 17, 21, 16, 4, 5, 6, 10, 4, 7, 2, 10, 6, 5, 2, 8, 7, 13, 10, 4, 8, 8, 2, 11, 4,
+        5, 6, 6, 11, 10, 3, 4, 4, 9, 20, 9, 9, 10, 5, 10, 7, 5, 15, 2, 7, 9, 6, 6, 10, 11, 2, 6,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Memecoins',
+      topics: 'memes,meme,memecoin,memecoins,giga',
+      description:
+        'Social channels are buzzing about a memecoin comeback: traders hunt sub-$10M market-cap “runners” with strong cult/community energy, viral memetics, and distribution power. Discussion covers new launchpads, aggregators, infrastructure to scale launches, and overlaps with GameFi/onchain activity. Contributors name specific tokens ($MOG, $DMT, $memetic, $buttcoin), predict a 2026 “memecoin summer,” and push for viral campaigns and community-driven token growth.',
+      data: [
+        8, 8, 5, 5, 13, 6, 4, 5, 11, 10, 9, 2, 6, 3, 3, 3, 7, 7, 1, 6, 5, 3, 5, 2, 5, 6, 7, 7, 9,
+        83, 2, 5, 10, 3, 5, 6, 6, 5, 6, 5, 5, 2, 1, 3, 8, 6, 4, 5, 10, 9, 9, 5, 2, 3, 4,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'SEC and CFTC guidance on crypto',
+      topics: 'atkins,taxonomy,securities,cftc,guidance',
+      description:
+        'The SEC and CFTC issued joint guidance creating a crypto asset taxonomy that classifies most tokens (including BTC, ETH, SOL, XRP, AVAX and 13 others) as digital commodities, and states mining rewards, staking, airdrops and many stablecoins are not securities. Markets and many commentators reacted bullishly, calling it major regulatory clarity, while others urge caution—the guidance is not law, insider enrichment and fraudulent schemes remain concerns, and proponents want the Clarity Act to codify the changes. The shift reduces enforcement uncertainty but raises calls for stronger securities laws and fairer market access.',
+      data: [
+        2, 11, 19, 2, 3, 2, 4, 9, 29, 2, 19, 13, 7, 9, 7, 5, 12, 4, 2, 2, 7, 5, 1, 10, 31, 3, 2, 6,
+        3, 2, 2, 5, 25, 3, 1, 2, 1, 4, 22, 3, 16, 16, 4, 4, 5, 2, 2, 2, 3, 3, 5, 1, 3, 5, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'XRP',
+      topics: 'xrp,xrpl,ledger,160,ripple',
+      description:
+        'Heavy social media discussion around XRP’s market activity, adoption, and price outlook. Key points: $3–5B daily volume, reported $85B market cap, 500k+ new wallets, institutional/partnership moves (Doppler Finance + Hex Trust, SBI group adoption), and rumors about replacing SWIFT. Traders debate catalysts (CLARITY Act, U.S. market structure laws), technical targets (short-term $1.1–$2.25, analyst “Zone 1” $1.65–$1.70, long-term bullish scenarios up to $50), orderbook/liquidity dynamics, rising open interest and whale accumulation, plus event-driven hype (XRP Las Vegas). Sentiment is mixed: strong adoption narratives vs. bearish technical cautions under $1.80.',
+      data: [
+        3, 3, 11, 5, 15, 11, 6, 6, 8, 9, 6, 9, 3, 4, 8, 8, 13, 4, 3, 7, 0, 25, 3, 8, 9, 8, 12, 7, 7,
+        6, 6, 9, 4, 2, 7, 6, 5, 5, 8, 9, 2, 5, 4, 7, 6, 9, 5, 7, 3, 10, 1, 7, 4, 5, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'HYPE',
+      topics: 'hype,hip3,programmed,epoch,lighter',
+      description:
+        'Social posts are focused on the $HYPE token with heavy bullish speculation and technical trading chatter—price targets cited from ~$6 up to $100, local tops around $40–$44, mentions of flipping ADA, breakouts, and activity on HyperliquidX. Tone is largely hype-driven with some contrarian takes.',
+      data: [
+        5, 4, 2, 3, 4, 11, 11, 5, 4, 6, 6, 2, 7, 3, 2, 9, 8, 3, 4, 4, 4, 10, 40, 5, 1, 1, 4, 10, 7,
+        4, 3, 5, 3, 7, 5, 2, 12, 7, 3, 6, 5, 5, 3, 2, 8, 6, 3, 6, 3, 7, 3, 2, 4, 6, 6,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Pokemon cards',
+      topics: 'pokemon,pokmon,cards,vintage,psa',
+      description:
+        'Twitter chatter centers on Pokémon card collecting turning into a market — high-end PSA slabs, rare pulls and nostalgic finds driving big price moves. Users compare NFTs to physical cards, note private sales by wealthy buyers, accept crypto payments, and run bots to arbitrage between cheaper crypto-based card platforms and traditional marketplaces.',
+      data: [
+        8, 2, 8, 2, 5, 3, 4, 21, 7, 5, 5, 6, 4, 6, 3, 6, 4, 3, 6, 5, 5, 5, 8, 3, 1, 3, 6, 6, 8, 2,
+        1, 5, 7, 7, 11, 18, 4, 14, 8, 3, 3, 6, 4, 8, 3, 2, 2, 6, 8, 6, 8, 4, 5, 5, 2,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Claude code',
+      topics: 'claude,cowork,codex,code,prompting',
+      description:
+        'Social chatter focuses on Anthropic’s Claude and Claude Code: users report powerful automations, scheduling, multi-model switching, workflows, sandboxing, security controls, PR analysis, and enterprise/AWS integrations — plus a quiet model/API upgrade (claude-3-opus-20240229) and UI artifact organization. Many are building Claude-powered automations and Polymarket trading bots, sharing how-tos and Zoom sessions. At the same time people report instability/overloads and warn about risky skills that expose browser tabs or dangerous commands.',
+      data: [
+        4, 1, 3, 3, 5, 2, 9, 7, 44, 6, 8, 2, 5, 4, 6, 2, 6, 4, 3, 9, 7, 4, 3, 8, 0, 4, 5, 2, 4, 2,
+        4, 3, 4, 6, 1, 2, 3, 1, 5, 4, 2, 5, 7, 6, 3, 4, 7, 6, 7, 4, 22, 3, 3, 4, 4,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'SOL price',
+      topics: 'sol,branding,94,solanas,92',
+      description:
+        'Conversation centers on Solana ($SOL) price action: SOL is trading below $100 while traders note accumulation, higher lows, and bullish technical setups (ascending triangle, cup-and-handle, SuperTrend flip). Many expect a breakout to $100–$150 if momentum holds, though some warn of heavy selling near $100 and dependence on Bitcoin strength. Parallel chatter highlights speculative Solana tokens/memes seeing explosive moves and fundraising activity, plus governance/staff changes in Solana projects affecting sentiment.',
+      data: [
+        5, 2, 7, 3, 8, 12, 9, 10, 5, 4, 10, 3, 3, 4, 2, 8, 0, 10, 4, 1, 4, 5, 3, 8, 2, 10, 4, 9, 5,
+        5, 4, 4, 3, 4, 3, 7, 12, 2, 7, 5, 3, 1, 8, 17, 6, 7, 3, 4, 5, 3, 6, 4, 4, 2, 3,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Dubai safety concerns',
+      topics: 'dubai,uae,emirates,influencers,safest',
+      description:
+        'Social chatter centers on crypto influencers in Dubai promoting a “Dubai is safe” narrative amid reports of unrest, shortages, and media FUD. Critics accuse influencers and London-linked real estate interests of biased messaging driven by financial stakes (bagholder bias), while supporters post on-the-ground photos of stocked stores, busy streets, luxury life and praise UAE resilience and innovation. The debate mixes real estate, crypto reputational incentives, geopolitics and claims of smear campaigns.',
+      data: [
+        7, 2, 4, 4, 4, 3, 6, 5, 2, 3, 9, 6, 7, 7, 3, 5, 10, 3, 4, 4, 6, 1, 7, 9, 6, 2, 8, 6, 7, 6,
+        4, 8, 5, 3, 12, 3, 3, 4, 6, 6, 9, 1, 4, 6, 8, 7, 1, 6, 4, 4, 7, 5, 6, 3, 2,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'DOGE',
+      topics: 'dogecoin,doge,shib,inu,macd',
+      description:
+        'Social chatter is highly bullish on Dogecoin: users tout growing on‑chain activity (active addresses +176%), rising volumes (~$1.96B), and bullish technicals as DOGE tests $0.10–$0.12 resistances after bouncing a decade‑long support. Community optimism is fueled by Elon/Tesla associations, merchant acceptance (e.g., ice cream shop), and upcoming infrastructure like DogeOS and app‑layer projects that promise new utility. Traders discuss breakout targets (up to $0.151 and beyond) while some hype toward much higher price goals persists.',
+      data: [
+        5, 3, 3, 3, 4, 3, 5, 7, 5, 6, 4, 7, 11, 8, 6, 6, 5, 6, 5, 10, 2, 6, 6, 4, 3, 2, 1, 3, 9, 4,
+        11, 5, 3, 1, 4, 3, 6, 10, 4, 4, 7, 1, 6, 2, 7, 2, 2, 3, 3, 5, 4, 2, 2, 6, 1,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Art',
+      topics: 'artist,artists,art,artwork,artistic',
+      description:
+        'Discussion argues the artist is the platform—not marketplaces—and art should be made for its own sake rather than commerce. Key themes: support for 1/1 artists and collectors motivated by art, skepticism of provenance/hype, pressure to overproduce in attention-driven spaces, a call for artist-led communities (Clubhouse vibe), creator health concerns, and the conceptual/artistic challenges posed by the NFT space.',
+      data: [
+        0, 2, 51, 4, 4, 4, 5, 3, 7, 6, 11, 4, 4, 3, 4, 6, 3, 4, 1, 2, 3, 0, 2, 7, 4, 2, 2, 3, 4, 1,
+        1, 5, 2, 10, 10, 1, 2, 2, 4, 2, 2, 3, 1, 3, 2, 7, 5, 5, 1, 5, 4, 4, 2, 3, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'TAO',
+      topics: 'tao,265,240,fet,upwards',
+      description:
+        'Conversation focuses on $TAO (Bittensor) outperformance and rally—bullish technical commentary, breakout momentum, and price targets (near $310, $455, and $497). Key levels cited: support around $165–$272, resistance/flip at ~$307 and 0.702 log Fib; supply noted near $269. Traders discuss profit-taking, consolidation, smart-money positioning, staking yields (~50%+), and comparisons to other tokens ($GLXY, $AIUS).',
+      data: [
+        5, 4, 1, 6, 5, 7, 7, 5, 2, 3, 2, 4, 3, 3, 3, 4, 6, 2, 4, 8, 2, 8, 4, 3, 3, 5, 6, 7, 4, 5, 3,
+        2, 2, 3, 3, 5, 4, 3, 2, 2, 3, 2, 2, 4, 1, 6, 22, 5, 11, 5, 7, 4, 1, 3, 5,
+      ],
+      infofi: false,
+    },
+    {
+      label: 'Oscars',
+      topics: 'oscars,oscar,actor,jordan,academy',
+      description:
+        'Social chatter around the 98th Oscars highlighted surprising results and high miss-rates for public predictions. “One Battle After Another” took Best Picture (6 wins) and Michael B. Jordan won Best Actor, while favorites like “Marty Supreme” were shut out. Conversation centered on the growing role of crypto-linked prediction markets (Polymarket) and betting—both boosting engagement and drawing criticism after an alphabetical tie-break controversy—and broader skepticism about the legitimacy and viewership impact of awards and forecasts.',
+      data: [
+        5, 5, 3, 5, 7, 1, 0, 5, 0, 0, 0, 1, 6, 5, 0, 4, 1, 3, 10, 4, 7, 3, 6, 2, 1, 3, 5, 3, 3, 2,
+        6, 2, 7, 7, 7, 2, 4, 2, 9, 6, 3, 2, 2, 6, 4, 1, 3, 2, 3, 5, 2, 4, 12, 24, 4,
+      ],
+      infofi: false,
+    },
+    {
+      label: "St Patrick's day",
+      topics: 'patricks,st,irish,saint,ireland',
+      description:
+        'Twitter chatter is dominated by St. Patrick’s Day greetings and community engagement posts, many from crypto accounts using the holiday to run giveaways, token tips ($DOGE, $POKEMON) and promotional calls-to-action (follow/retweet/comments). Projects also promoted DeFi incentives—e.g., Mode staking for veMODE with claims of ~87% APY in OP—alongside casual cultural posts and safety/PR messages. Overall the theme is holiday-led marketing and user engagement with some DeFi yield promotions.',
+      data: [
+        3, 1, 3, 3, 2, 2, 3, 10, 5, 1, 5, 22, 1, 4, 4, 5, 4, 6, 5, 4, 17, 2, 4, 0, 2, 2, 2, 7, 12,
+        3, 2, 2, 3, 4, 2, 5, 2, 2, 4, 0, 2, 2, 2, 5, 11, 3, 3, 1, 8, 0, 0, 2, 3, 3, 6,
+      ],
+      infofi: false,
+    },
+  ],
+}

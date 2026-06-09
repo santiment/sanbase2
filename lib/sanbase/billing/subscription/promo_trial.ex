@@ -125,7 +125,8 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   defp create_promo_subscriptions(%User{} = user, plans, trial_days) when is_list(plans) do
     with {:ok, user} <- Billing.create_or_update_stripe_customer(user),
-         {:ok, subscriptions} <- promo_subscribe(user, plans, trial_days) do
+         {:ok, subscriptions} <- promo_subscribe(user, plans, trial_days),
+         {:ok, _promo_trial} <- insert_promo_trial_record(user.id, plans, trial_days) do
       {:ok, subscriptions}
     else
       {:error, error} ->
@@ -135,12 +136,21 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   defp create_promo_subscription(%User{} = user, plan_id, trial_days) do
     with {:ok, user} <- Billing.create_or_update_stripe_customer(user),
-         {:ok, subscription} <- promo_subscribe(user, plan_id, trial_days) do
+         {:ok, subscription} <- promo_subscribe(user, plan_id, trial_days),
+         {:ok, _promo_trial} <- insert_promo_trial_record(user.id, [plan_id], trial_days) do
       {:ok, subscription}
     else
       {:error, error} ->
         handle_error(user, error)
     end
+  end
+
+  defp insert_promo_trial_record(user_id, plans, trial_days) do
+    plan_ids = Enum.map(plans, &to_string/1)
+
+    %__MODULE__{}
+    |> changeset(%{user_id: user_id, trial_days: trial_days, plans: plan_ids})
+    |> Sanbase.Repo.insert()
   end
 
   defp promo_subscribe(user, plan_ids, trial_days) when is_list(plan_ids) do
@@ -173,10 +183,13 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   end
 
   defp promotional_subsciption_data(user, plan, trial_days) do
+    trial_end_unix = Timex.shift(Timex.now(), days: trial_days) |> DateTime.to_unix()
+
     %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}],
-      trial_end: Timex.shift(Timex.now(), days: trial_days) |> DateTime.to_unix()
+      trial_end: trial_end_unix,
+      cancel_at: trial_end_unix - 60
     }
   end
 

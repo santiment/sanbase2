@@ -270,6 +270,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     end
   end
 
+  @doc "Semantic search over Academy content (vector retrieval + rerank, no LLM synthesis)"
+  def academy_search(_root, %{query: query} = args, _context) do
+    top_k = Map.get(args, :top_k, 10)
+
+    case AcademyAIService.semantic_search(query, top_k: top_k) do
+      {:ok, chunks} ->
+        results =
+          Enum.map(chunks, fn chunk ->
+            %{
+              title: Map.get(chunk, :title),
+              url: Map.get(chunk, :url),
+              content: Map.get(chunk, :chunk),
+              heading: Map.get(chunk, :heading),
+              similarity: Map.get(chunk, :similarity)
+            }
+          end)
+
+        {:ok, results}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   # Helper functions
   defp convert_enum_to_string(:dyor_dashboard), do: "dyor_dashboard"
   defp convert_enum_to_string(:academy_qa), do: "academy_qa"

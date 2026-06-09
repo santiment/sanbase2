@@ -107,7 +107,7 @@ defmodule Sanbase.Knowledge.Faq do
         }
       )
 
-    result = Repo.all(query)
+    result = Sanbase.Repo.VectorQuery.all(query)
     {:ok, result}
   end
 

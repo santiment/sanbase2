@@ -56,7 +56,7 @@ config :sanbase,
 # in `lib/sanbase/application/web.ex`.
 config :sanbase, :use_rehydrating_cache, true
 
-config :sanbase, Sanbase.PromEx,
+config :sanbase, SanbaseWeb.Prometheus,
   disabled: false,
   manual_metrics_start_delay: :no_delay,
   drop_metrics_groups: [],
@@ -335,6 +335,10 @@ import_config "scrapers_config.exs"
 import_config "notifications_config.exs"
 import_config "stripe_config.exs"
 import_config "scheduler_config.exs"
+
+# Reranker for Sanbase.Knowledge retrieval. The dispatcher in
+# Sanbase.Knowledge.Reranker reads this and falls back to Noop if unset.
+config :sanbase, Sanbase.Knowledge.Reranker, default: Sanbase.Knowledge.Reranker.OpenAI
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

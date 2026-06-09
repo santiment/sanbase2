@@ -23,6 +23,8 @@ config :sanbase, Sanbase.EventBus,
 
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 
+config :sanbase, SanbaseWeb.Prometheus, disabled: true
+
 test_port =
   case System.get_env("MIX_TEST_PARTITION") do
     nil -> 4001
@@ -192,18 +194,26 @@ config :sanbase, Sanbase.Insight.Post,
   creation_limit_day: 1000,
   creation_limit_minute: 1000
 
-# Increase the limits in test env so they are not hit unless
-# the limit is intentionally lowered by using Application.put_env
-config :sanbase, Sanbase.MCP.ToolInvocation,
-  global_rate_limit_minute: 10000,
-  global_rate_limit_hour: 10000,
-  global_rate_limit_day: 10000,
-  combined_trends_rate_limit_minute: 10000,
-  combined_trends_rate_limit_hour: 10000,
-  combined_trends_rate_limit_day: 10000
+# Increase the limits in test env so they are not hit unless a test
+# intentionally lowers them via Application.put_env on Sanbase.MCP.Restrictions.
+config :sanbase, Sanbase.MCP.Restrictions,
+  global: %{
+    free: %{minute: 10_000, hour: 10_000, day: 10_000, month: 10_000},
+    pro: %{minute: 10_000, hour: 10_000, day: 10_000, month: 10_000},
+    max: %{minute: 10_000, hour: 10_000, day: 10_000, month: 10_000}
+  },
+  combined_trends: %{
+    free: %{minute: 10_000, hour: 10_000, day: 10_000, month: 10_000},
+    pro: %{minute: 10_000, hour: 10_000, day: 10_000, month: 10_000},
+    max: %{minute: 10_000, hour: 10_000, day: 10_000, month: 10_000}
+  }
 
 # Configure test environment for OpenAI client mocking
 config :sanbase, :openai_client, Sanbase.AI.MockOpenAIClient
+
+# Tests must never hit OpenAI for retrieval reranking. Tests that exercise
+# rerank semantics should inject a stub reranker via opts.
+config :sanbase, Sanbase.Knowledge.Reranker, default: Sanbase.Knowledge.Reranker.Noop
 
 if(File.exists?("config/test.secret.exs")) do
   import_config "test.secret.exs"

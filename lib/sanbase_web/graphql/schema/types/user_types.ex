@@ -453,6 +453,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:required_selectors, list_of(list_of(:selector_name)))
     # only metrics have status, for queries and signals it is nil
     field(:status, :string)
+    # only metrics have default_aggregation, for queries and signals it is nil
+    field(:default_aggregation, :aggregation)
 
     field :available_versions, list_of(:metric_version) do
       cache_resolve(&SanbaseWeb.Graphql.Resolvers.AccessControlResolver.available_versions/3,

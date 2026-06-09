@@ -210,7 +210,7 @@ defmodule Sanbase.Queries.QueryExecution do
           {:error, "Cannot store execution"}
 
         false ->
-          store_execution(user_id, query_result, wait_fetching_details_ms, attempts_left - 1)
+          store_execution(query_result, user_id, wait_fetching_details_ms, attempts_left - 1)
       end
   end
 

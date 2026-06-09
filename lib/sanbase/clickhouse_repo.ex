@@ -57,9 +57,10 @@ defmodule Sanbase.ClickhouseRepo do
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     query = add_metadata_to_query(query)
+    ctx = query.context
 
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
-      query_transform(sql, args, transform_fn)
+      query_transform(sql, args, transform_fn, ctx: ctx)
     end
   end
 
@@ -84,8 +85,8 @@ defmodule Sanbase.ClickhouseRepo do
     })
   end
 
-  def query_transform(query, args, transform_fn) do
-    case execute_query_transform(query, args) do
+  def query_transform(query, args, transform_fn, opts \\ []) do
+    case execute_query_transform(query, args, opts) do
       {:ok, result} ->
         {:ok, Enum.map(result.rows, transform_fn)}
 
@@ -108,14 +109,15 @@ defmodule Sanbase.ClickhouseRepo do
           {:ok, Map.t()} | {:error, String.t()}
   def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     query = add_metadata_to_query(query)
+    ctx = query.context
 
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
-      query_transform_with_metadata(sql, args, transform_fn)
+      query_transform_with_metadata(sql, args, transform_fn, ctx: ctx)
     end
   end
 
-  def query_transform_with_metadata(query, args, transform_fn) do
-    case execute_query_transform_with_metadata(query, args, propagate_error: true) do
+  def query_transform_with_metadata(query, args, transform_fn, opts \\ []) do
+    case execute_query_transform_with_metadata(query, args, [propagate_error: true] ++ opts) do
       {:ok, metadata} ->
         {:ok,
          %{
@@ -157,15 +159,16 @@ defmodule Sanbase.ClickhouseRepo do
         when acc: any
   def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
     query = add_metadata_to_query(query)
+    ctx = query.context
 
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
-      query_reduce(sql, args, init, reducer)
+      query_reduce(sql, args, init, reducer, ctx: ctx)
     end
   end
 
-  def query_reduce(query, args, init, reducer) do
+  def query_reduce(query, args, init, reducer, opts \\ []) do
     maybe_store_executed_clickhouse_sql(query, args)
-    maybe_print_interpolated_query(query, args)
+    maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
     case __MODULE__.query(query, args, []) do
       {:ok, result} ->
@@ -181,7 +184,7 @@ defmodule Sanbase.ClickhouseRepo do
 
   defp execute_query_transform(query, args, opts \\ []) do
     maybe_store_executed_clickhouse_sql(query, args)
-    maybe_print_interpolated_query(query, args)
+    maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
     case __MODULE__.query(query, args, []) do
       {:ok, result} ->
@@ -194,7 +197,7 @@ defmodule Sanbase.ClickhouseRepo do
 
   defp execute_query_transform_with_metadata(query, args, opts) do
     maybe_store_executed_clickhouse_sql(query, args)
-    maybe_print_interpolated_query(query, args)
+    maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
     # Pass decode: false so the `ch` driver returns the raw RowBinary
     # response (binary data + HTTP headers) instead of decoded rows.
@@ -319,17 +322,19 @@ defmodule Sanbase.ClickhouseRepo do
 
   case Mix.env() do
     :dev ->
-      defp maybe_print_interpolated_query(query, params) do
-        # In dev env, if the PRINT_CLICKHOUSE_SQL env var is set to true/1
-        # the interpolated query  is printed to the console.
-        # This makes it much easier to copy/paste the query and share it
-        # with other people, or directly run it for debugging purposes.
-        #
-        # Skipped for users with `activity_traces_hidden` even in dev — the
-        # interpolated SQL contains the same slugs/metrics/params we mask
-        # everywhere else.
+      # In dev env, if the PRINT_CLICKHOUSE_SQL env var is set to true/1
+      # the interpolated query is printed to the console — easy to copy
+      # and run directly for debugging.
+      #
+      # Skipped for users with `activity_traces_hidden` even in dev. The
+      # ctx is passed in explicitly by the Query-struct entry points;
+      # falls back to `RequestContext.current/0` when the caller didn't
+      # have one (e.g. bare SQL helpers called from a background process).
+      defp maybe_print_interpolated_query(query, params, ctx) do
+        ctx = ctx || Sanbase.RequestContext.current()
+
         if System.get_env("PRINT_INTERPOLATED_CLICKHOUSE_SQL") in ["true", "1"] and
-             not Sanbase.RequestContext.activity_traces_hidden?(Sanbase.RequestContext.current()) do
+             not Sanbase.RequestContext.activity_traces_hidden?(ctx) do
           IO.puts(
             IO.ANSI.format([
               :light_blue,
@@ -342,7 +347,7 @@ defmodule Sanbase.ClickhouseRepo do
       end
 
     _ ->
-      defp maybe_print_interpolated_query(_query, _params), do: :ok
+      defp maybe_print_interpolated_query(_query, _params, _ctx), do: :ok
   end
 
   defp get_interpolated_query(query, params) do

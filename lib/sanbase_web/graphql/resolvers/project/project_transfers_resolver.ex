@@ -93,11 +93,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   end
 
   defp calculate_eth_spent_by_projects(projects, from, to) do
+    ctx = Sanbase.RequestContext.current()
+
     total_eth_spent =
       projects
       |> Sanbase.Parallel.map(&calculate_eth_spent_cached(&1, from, to).(),
         timeout: 25_000,
-        max_concurrency: @max_concurrency
+        max_concurrency: @max_concurrency,
+        request_context: ctx
       )
       |> Enum.map(fn
         {:ok, value} when not is_nil(value) -> value
@@ -134,11 +137,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   end
 
   defp eth_spent_over_time(projects, from, to, interval) do
+    ctx = Sanbase.RequestContext.current()
+
     projects
     |> Sanbase.Parallel.map(
       &calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
       timeout: 25_000,
-      max_concurrency: @max_concurrency
+      max_concurrency: @max_concurrency,
+      request_context: ctx
     )
     |> combine_eth_spent_by_all_projects()
   end

@@ -19,6 +19,8 @@ defmodule Sanbase.Accounts.ProtectedUser do
 
   import Ecto.Query
 
+  require Logger
+
   @key __MODULE__
   @ttl_seconds 30 * 60
 
@@ -66,6 +68,13 @@ defmodule Sanbase.Accounts.ProtectedUser do
   Recomputes the cache on the local node only. Public so peers reached
   via `Node.spawn/2` can invoke it; do not call directly for cluster-wide
   refresh — use `refresh/0`.
+
+  Hot-path reads go through `:persistent_term` and only hit this function
+  on TTL expiry (every 30 min) or explicit refresh, so most requests are
+  unaffected by DB state. The rescue covers the narrow window where TTL
+  expiry coincides with a DB outage: keep the last-known MapSet if we
+  have one, otherwise fall back to empty (treats unknown users as
+  un-protected). The error is logged; the heartbeat retries.
   """
   @spec refresh_local() :: MapSet.t(non_neg_integer())
   def refresh_local() do
@@ -76,6 +85,14 @@ defmodule Sanbase.Accounts.ProtectedUser do
 
     :persistent_term.put(@key, {ids, System.monotonic_time(:second)})
     ids
+  rescue
+    e ->
+      Logger.error("ProtectedUser.refresh_local failed: #{Exception.message(e)}")
+
+      case :persistent_term.get(@key, nil) do
+        {%MapSet{} = stale, _added_at} -> stale
+        _ -> MapSet.new()
+      end
   end
 
   @doc """

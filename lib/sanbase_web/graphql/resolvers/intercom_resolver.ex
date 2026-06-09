@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
 
   alias Sanbase.Intercom.UserEvent
   alias Sanbase.Clickhouse.ApiCallData
+  alias Sanbase.RequestContext
 
   def get_events_for_users(_, %{users: users, days: days} = args, _) do
     from = Map.get(args, :from, Sanbase.Utils.DateTime.days_ago(days))
@@ -23,23 +24,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   def track_events(_, %{events: events} = params, resolution) do
     with {:ok, %{} = identification} <- get_identification_fields(resolution, params),
          :ok <- validate_events(events) do
-      events =
-        events
-        |> Enum.map(fn %{"event_name" => event_name, "created_at" => created_at} = event ->
-          %{
-            event_name: event_name,
-            created_at: from_iso8601!(created_at) |> DateTime.truncate(:second),
-            metadata: event["metadata"],
-            inserted_at: DateTime.utc_now() |> DateTime.truncate(:second),
-            updated_at: DateTime.utc_now() |> DateTime.truncate(:second),
-            user_id: identification.user_id,
-            anonymous_user_id: identification.anonymous_user_id
-          }
-        end)
+      ctx = resolution.context[:request_context]
 
-      :ok = UserEvent.create(events, identification.is_authenticated)
+      # Event names (e.g. `viewed_asset:BTC`) and metadata describe
+      # the user's activity. For NDA-protected users, swallow the
+      # call entirely — no Kafka topic write, no Postgres row — and
+      # return success so clients keep working.
+      if RequestContext.activity_traces_hidden?(ctx) do
+        {:ok, true}
+      else
+        events =
+          events
+          |> Enum.map(fn %{"event_name" => event_name, "created_at" => created_at} = event ->
+            %{
+              event_name: event_name,
+              created_at: from_iso8601!(created_at) |> DateTime.truncate(:second),
+              metadata: event["metadata"],
+              inserted_at: DateTime.utc_now() |> DateTime.truncate(:second),
+              updated_at: DateTime.utc_now() |> DateTime.truncate(:second),
+              user_id: identification.user_id,
+              anonymous_user_id: identification.anonymous_user_id
+            }
+          end)
 
-      {:ok, true}
+        :ok = UserEvent.create(events, identification.is_authenticated)
+
+        {:ok, true}
+      end
     end
   end
 

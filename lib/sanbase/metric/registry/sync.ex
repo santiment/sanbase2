@@ -165,11 +165,30 @@ defmodule Sanbase.Metric.Registry.Sync do
   end
 
   defp send_sync_completed_confirmation(url, actual_changes) do
-    # The URL already contains the sync uuid and the secret token
-    Logger.info("Confirming that a Metric Registry sync was completed to url #{url}")
-
-    Req.post(url, json: %{actual_changes: actual_changes})
+    # The URL already contains the sync uuid and the secret token.
+    # The confirmation endpoint is always built from our own backend_url
+    # (see get_confirmation_endpoint/1), so we only ever post back to our own
+    # host. Validate this to prevent the caller-supplied url from being used as
+    # an SSRF vector pointing at internal services or cloud metadata endpoints.
+    if allowed_confirmation_url?(url) do
+      Logger.info("Confirming that a Metric Registry sync was completed to url #{url}")
+      Req.post(url, json: %{actual_changes: actual_changes})
+    else
+      Logger.error("Refusing to send sync confirmation to disallowed url #{inspect(url)}")
+      {:error, "confirmation_endpoint host is not allowed"}
+    end
   end
+
+  defp allowed_confirmation_url?(url) when is_binary(url) do
+    uri = URI.parse(url)
+
+    allowed_host =
+      SanbaseWeb.Endpoint.backend_url() |> URI.parse() |> Map.get(:host)
+
+    uri.scheme in ["http", "https"] and not is_nil(uri.host) and uri.host == allowed_host
+  end
+
+  defp allowed_confirmation_url?(_url), do: false
 
   defp maybe_apply_sync_content(list, is_dry_run) when is_boolean(is_dry_run) do
     # After the Ecto.Multi is built, it is committed to the database only in case is_dry_run_ is false

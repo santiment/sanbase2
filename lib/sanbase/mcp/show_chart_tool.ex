@@ -51,7 +51,7 @@ defmodule Sanbase.MCP.ShowChartTool do
 
   @impl true
   def meta do
-    %{"ui" => %{"resourceUri" => Sanbase.MCP.ChartUI.uri()}}
+    %{"ui" => %{"resourceUri" => Sanbase.MCP.ChartUI.current_uri()}}
   end
 
   schema do

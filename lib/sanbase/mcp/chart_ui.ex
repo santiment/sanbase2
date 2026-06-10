@@ -9,14 +9,24 @@ defmodule Sanbase.MCP.ChartUI do
 
   use Anubis.Server.Component,
     type: :resource,
-    uri: "ui://santiment/chart",
+    uri_template: "ui://santiment/chart-{version}",
     name: "chart-ui",
     mime_type: "text/html;profile=mcp-app"
 
-  # Content-versioned URI (overrides the static one above) so hosts re-fetch
-  # the widget whenever the bundled HTML changes. See WidgetAsset.ui_uri/2.
-  def uri, do: Sanbase.MCP.WidgetAsset.ui_uri("chart", "chart.html")
+  alias Sanbase.MCP.WidgetAsset
+
+  @doc """
+  Current content-versioned URI, advertised in the `show_chart` tool's
+  `_meta.ui.resourceUri` so hosts re-fetch the widget whenever the bundled
+  HTML changes. `read/2` accepts any version (or the bare base URI), so
+  clients holding a stale tool list still get the current widget instead of
+  a resource-not-found error.
+  """
+  def current_uri, do: WidgetAsset.ui_uri("chart", "chart.html")
 
   @impl true
-  def read(_params, frame), do: Sanbase.MCP.WidgetAsset.serve("chart.html", frame)
+  def read(%{"uri" => "ui://santiment/chart" <> _}, frame),
+    do: WidgetAsset.serve("chart.html", frame)
+
+  def read(%{"uri" => uri}, frame), do: WidgetAsset.not_found(uri, frame)
 end

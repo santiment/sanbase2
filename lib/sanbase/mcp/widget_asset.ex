@@ -60,6 +60,15 @@ defmodule Sanbase.MCP.WidgetAsset do
     end
   end
 
+  @doc """
+  Standard "not mine" reply for template resources: Anubis tries resource
+  templates sequentially and moves on when one returns this error.
+  """
+  @spec not_found(uri :: String.t(), Frame.t()) :: {:error, Error.t(), Frame.t()}
+  def not_found(uri, frame) do
+    {:error, Error.resource(:not_found, %{message: "Resource not found: #{uri}"}), frame}
+  end
+
   defp fetch(filename) do
     key = {__MODULE__, filename}
 

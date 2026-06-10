@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Plug.TelegramMatchPlug do
   def init(opts), do: opts
 
   def call(%{params: %{"path" => path}} = conn, _) do
-    case path === telegram_endpoint() do
+    case valid_path?(path, telegram_endpoint()) do
       true ->
         conn
 
@@ -29,6 +29,12 @@ defmodule SanbaseWeb.Plug.TelegramMatchPlug do
     |> send_resp(403, "Unauthorized")
     |> halt()
   end
+
+  defp valid_path?(path, endpoint) when is_binary(path) and is_binary(endpoint) do
+    Plug.Crypto.secure_compare(path, endpoint)
+  end
+
+  defp valid_path?(_path, _endpoint), do: false
 
   defp telegram_endpoint(), do: Config.module_get(Sanbase.Telegram, :telegram_endpoint)
 end

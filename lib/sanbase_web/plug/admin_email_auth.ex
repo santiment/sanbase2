@@ -8,26 +8,35 @@ defmodule SanbaseWeb.Plug.AdminEmailAuthPlug do
   alias Sanbase.Accounts
   alias Sanbase.Accounts.User
 
+  # Captured at compile time. `Mix` is not available at runtime in releases, so
+  # this can never be :dev/:test in a production build. This prevents the
+  # passwordless dev login from being enabled by a missing/incorrect
+  # DEPLOYMENT_ENVIRONMENT runtime variable in production.
+  @compile_env Mix.env()
+
   def init(opts), do: opts
 
   def call(%{params: %{"email" => email} = params} = conn, _) do
-    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
-      "dev" ->
-        login(conn, email)
+    if passwordless_dev_login_allowed?() do
+      login(conn, email)
+    else
+      case params["token"] do
+        nil ->
+          conn
+          |> send_resp(
+            400,
+            "Bad Request -- User Token Missing. Params present: #{Map.keys(params) |> Enum.join(", ")}"
+          )
 
-      _ ->
-        case params["token"] do
-          nil ->
-            conn
-            |> send_resp(
-              400,
-              "Bad Request -- User Token Missing. Params present: #{Map.keys(params) |> Enum.join(", ")}"
-            )
-
-          token ->
-            check_and_login(conn, email, token)
-        end
+        token ->
+          check_and_login(conn, email, token)
+      end
     end
+  end
+
+  defp passwordless_dev_login_allowed?() do
+    @compile_env in [:dev, :test] and
+      Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "dev"
   end
 
   defp check_and_login(conn, email, token) do

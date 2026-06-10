@@ -144,6 +144,24 @@ defmodule SanbaseWeb.AdminUserAuth do
     {:cont, socket}
   end
 
+  def on_mount(:ensure_user_has_admin_panel_role, _params, _session, socket) do
+    roles = socket.assigns[:current_user_role_names] || []
+
+    if Enum.any?(roles, &String.starts_with?(&1, "Admin Panel")) do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(
+          :error,
+          "You must have an Admin Panel role to access this page."
+        )
+        |> Phoenix.LiveView.redirect(to: ~p"/admin_auth/login")
+
+      {:halt, socket}
+    end
+  end
+
   def on_mount(:ensure_user_has_metric_registry_role, _params, _session, socket) do
     roles = socket.assigns.current_user_role_names
 

@@ -4,6 +4,15 @@ defmodule SanbaseWeb.Router do
 
   import SanbaseWeb.AdminUserAuth
 
+  # on_mount hooks that re-enforce the "Admin Panel" role on every LiveView
+  # (re)connect. The HTTP plug pipeline only runs on the initial request, so
+  # without these a LiveView websocket reconnect would not re-check the role.
+  @admin_panel_on_mount [
+    {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
+    {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles},
+    {SanbaseWeb.AdminUserAuth, :ensure_user_has_admin_panel_role}
+  ]
+
   pipeline :admin_pod_only do
     plug(SanbaseWeb.Plug.AdminPodOnly)
   end
@@ -126,7 +135,9 @@ defmodule SanbaseWeb.Router do
     get("/", GenericAdminController, :home)
 
     # Project Changelog routes
-    live("/project_changelog", ProjectChangelogLive)
+    live_session :project_changelog_admin, on_mount: @admin_panel_on_mount do
+      live("/project_changelog", ProjectChangelogLive)
+    end
 
     scope "/metric_registry" do
       live_session :require_authenticated_user,
@@ -176,7 +187,7 @@ defmodule SanbaseWeb.Router do
 
     scope "/faq" do
       live_session :require_authenticated_user_faq,
-        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        on_mount: @admin_panel_on_mount do
         live "/", Admin.FaqLive.Index, :index
         live "/new", Admin.FaqLive.Form, :new
         live "/ask", AskLive, :index
@@ -189,14 +200,14 @@ defmodule SanbaseWeb.Router do
 
     scope "/insight_categorization" do
       live_session :insight_categorization_authenticated_user,
-        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        on_mount: @admin_panel_on_mount do
         live("/", Admin.InsightCategorizationLive)
       end
     end
 
     scope "/major_topics" do
       live_session :major_topics_authenticated_user,
-        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        on_mount: @admin_panel_on_mount do
         live "/", Admin.MajorTopicsLive.Index, :index
         live "/:id", Admin.MajorTopicsLive.Show, :show
       end
@@ -204,14 +215,14 @@ defmodule SanbaseWeb.Router do
 
     scope "/ai_descriptions" do
       live_session :ai_descriptions_authenticated_user,
-        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        on_mount: @admin_panel_on_mount do
         live("/", Admin.AiDescriptionLive)
       end
     end
 
     scope "/invoices" do
       live_session :invoices_authenticated_user,
-        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        on_mount: @admin_panel_on_mount do
         live("/", Admin.InvoicesLive)
       end
 
@@ -229,7 +240,9 @@ defmodule SanbaseWeb.Router do
     end
 
     scope "/price_predictions" do
-      live("/", PricePredictionsLive)
+      live_session :price_predictions_admin, on_mount: @admin_panel_on_mount do
+        live("/", PricePredictionsLive)
+      end
     end
 
     scope "/disagreement_tweets" do
@@ -243,21 +256,24 @@ defmodule SanbaseWeb.Router do
     end
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
-    live("/admin_forms", AdminFormsLive)
-    live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
-    live("/suggest_ecosystems_admin_live", SuggestEcosystemLabelsChangeAdminLive)
-    live("/suggest_github_organizations_admin_live", SuggestGithubOrganizationsAdminLive)
-    live("/upload_image_live", UploadImageLive)
-    live("/uploaded_images_live", UploadedImagesLive)
 
-    live "/notifications/manual/discord", NotificationsLive.ManualDiscordFormLive
-    live "/notifications/manual/email", NotificationsLive.ManualEmailFormLive
-    live "/notifications/broadcast", NotificationsLive.BroadcastNotificationFormLive
-    live "/notifications/broadcast/overview", NotificationsLive.BroadcastOverviewLive
-    live "/notifications/digest/:action", NotificationsLive.DigestFormLive
-    # Add route for scheduled deprecation notification UI
-    live "/scheduled_deprecations", ScheduledDeprecationIndexLive, :index
-    live "/scheduled_deprecations/new", ScheduledDeprecationLive, :new
+    live_session :admin_panel_forms, on_mount: @admin_panel_on_mount do
+      live("/admin_forms", AdminFormsLive)
+      live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
+      live("/suggest_ecosystems_admin_live", SuggestEcosystemLabelsChangeAdminLive)
+      live("/suggest_github_organizations_admin_live", SuggestGithubOrganizationsAdminLive)
+      live("/upload_image_live", UploadImageLive)
+      live("/uploaded_images_live", UploadedImagesLive)
+
+      live "/notifications/manual/discord", NotificationsLive.ManualDiscordFormLive
+      live "/notifications/manual/email", NotificationsLive.ManualEmailFormLive
+      live "/notifications/broadcast", NotificationsLive.BroadcastNotificationFormLive
+      live "/notifications/broadcast/overview", NotificationsLive.BroadcastOverviewLive
+      live "/notifications/digest/:action", NotificationsLive.DigestFormLive
+      # Add route for scheduled deprecation notification UI
+      live "/scheduled_deprecations", ScheduledDeprecationIndexLive, :index
+      live "/scheduled_deprecations/new", ScheduledDeprecationLive, :new
+    end
 
     resources("/reports", ReportController)
     resources("/custom_plans", CustomPlanController)
@@ -265,15 +281,20 @@ defmodule SanbaseWeb.Router do
     get("/generic/search", GenericAdminController, :search)
     get("/generic/show_action", GenericAdminController, :show_action)
 
-    live "/promo_trials/new", Admin.PromoTrialLive.Form, :new
+    live_session :promo_trials_admin, on_mount: @admin_panel_on_mount do
+      live "/promo_trials/new", Admin.PromoTrialLive.Form, :new
+    end
 
     resources("/generic", GenericAdminController)
 
-    live("/ses_events", Admin.SesEventsLive)
-    live("/mcp_tool_invocations", Admin.McpToolInvocationsLive)
-    live("/user_stats", UserStatsLive)
-    live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
-    live("/user_roles", Admin.UserRolesLive, :index)
+    live_session :admin_panel_misc, on_mount: @admin_panel_on_mount do
+      live("/ses_events", Admin.SesEventsLive)
+      live("/mcp_tool_invocations", Admin.McpToolInvocationsLive)
+      live("/user_stats", UserStatsLive)
+      live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
+      live("/user_roles", Admin.UserRolesLive, :index)
+    end
+
     get("/download_inactive_users_csv", InactiveUsersController, :download_csv)
   end
 

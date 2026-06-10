@@ -87,32 +87,51 @@ defmodule Sanbase.MCP.ShowChartTool do
 
     with :ok <- validate_range(range),
          :ok <- validate_metric(primary, :primary),
-         :ok <- validate_metric(overlay, :overlay),
-         {from, to, interval} = window_for(range),
-         {:ok, primary_series} <- build_primary(primary, slug, from, to, interval) do
-      # Overlay is best-effort — if it fails (e.g. missing service in dev or
-      # metric doesn't apply to the asset), we still render the primary.
-      {overlay_series, overlay_warning} =
-        case build_overlay(overlay, slug, from, to, interval) do
-          {:ok, series} -> {series, nil}
-          {:error, reason} -> {nil, reason}
-        end
+         :ok <- validate_metric(overlay, :overlay) do
+      {from, to, interval} = window_for(range)
 
-      series = [primary_series | overlay_to_list(overlay_series)]
+      # Primary and overlay are independent fetches — run them concurrently.
+      [primary_result, overlay_result] =
+        [
+          fn -> build_primary(primary, slug, from, to, interval) end,
+          fn -> build_overlay(overlay, slug, from, to, interval) end
+        ]
+        |> Task.async_stream(& &1.(), timeout: 30_000, on_timeout: :kill_task, ordered: true)
+        |> Enum.map(fn
+          {:ok, result} -> result
+          {:exit, :timeout} -> {:error, "data fetch timed out"}
+          {:exit, reason} -> {:error, "data fetch failed: #{inspect(reason)}"}
+        end)
 
-      response_data =
-        %{
-          slug: slug,
-          range: range,
-          interval: interval,
-          period_start: DateTime.to_iso8601(from),
-          period_end: DateTime.to_iso8601(to),
-          summary: build_summary(primary_series, overlay_series),
-          series: series
-        }
-        |> maybe_put_warning(overlay_warning)
+      case primary_result do
+        {:ok, primary_series} ->
+          # Overlay is best-effort — if it fails (e.g. missing service in dev
+          # or metric doesn't apply to the asset), we still render the primary.
+          {overlay_series, overlay_warning} =
+            case overlay_result do
+              {:ok, series} -> {series, nil}
+              {:error, reason} -> {nil, reason}
+            end
 
-      {:reply, Response.structured(Response.tool(), response_data), frame}
+          series = [primary_series | overlay_to_list(overlay_series)]
+
+          response_data =
+            %{
+              slug: slug,
+              range: range,
+              interval: interval,
+              period_start: DateTime.to_iso8601(from),
+              period_end: DateTime.to_iso8601(to),
+              summary: build_summary(primary_series, overlay_series),
+              series: series
+            }
+            |> maybe_put_warning(overlay_warning)
+
+          {:reply, Response.structured(Response.tool(), response_data), frame}
+
+        {:error, reason} ->
+          {:reply, Response.error(Response.tool(), reason), frame}
+      end
     else
       {:error, reason} ->
         {:reply, Response.error(Response.tool(), reason), frame}
@@ -192,10 +211,10 @@ defmodule Sanbase.MCP.ShowChartTool do
                                } ->
             %{
               time: DateTime.to_unix(dt),
-              open: round2(o),
-              high: round2(h),
-              low: round2(l),
-              close: round2(c)
+              open: round_num(o),
+              high: round_num(h),
+              low: round_num(l),
+              close: round_num(c)
             }
           end)
 
@@ -235,12 +254,15 @@ defmodule Sanbase.MCP.ShowChartTool do
     pane = Keyword.get(opts, :pane_override, catalog.default_pane)
     role = Keyword.get(opts, :role, :primary)
     id = if role == :overlay, do: "overlay", else: "primary"
+    # Daily-only metrics (mvrv, nvt, …) error when queried below their
+    # min_interval, so never request finer than the metric supports.
+    interval = effective_interval(metric_name, interval)
 
     case Sanbase.Metric.timeseries_data(metric_name, %{slug: slug}, from, to, interval) do
       {:ok, points} ->
         data =
           Enum.map(points, fn %{datetime: dt, value: v} ->
-            %{time: DateTime.to_unix(dt), value: round_value(v)}
+            %{time: DateTime.to_unix(dt), value: round_num(v)}
           end)
 
         {:ok,
@@ -299,9 +321,40 @@ defmodule Sanbase.MCP.ShowChartTool do
 
   defp pct_change(_, _), do: 0.0
 
-  defp round2(nil), do: nil
-  defp round2(n) when is_number(n), do: Float.round(n / 1, 2)
+  # Magnitude-aware rounding: 2 decimals for normal values, but keep precision
+  # for sub-cent assets (e.g. SHIB) so candles don't collapse to 0.0.
+  defp round_num(nil), do: nil
 
-  defp round_value(nil), do: nil
-  defp round_value(n) when is_number(n), do: Float.round(n / 1, 6)
+  defp round_num(n) when is_number(n) do
+    digits =
+      case Kernel.abs(n / 1) do
+        a when a >= 1.0 -> 2
+        a when a >= 0.01 -> 4
+        _ -> 8
+      end
+
+    Float.round(n / 1, digits)
+  end
+
+  # Never request a finer interval than the metric supports (its min_interval),
+  # otherwise the metric fetch errors. Falls back to the requested interval.
+  defp effective_interval(metric_name, interval) do
+    case Sanbase.Metric.metadata(metric_name) do
+      {:ok, %{min_interval: min}} when is_binary(min) -> coarser_interval(interval, min)
+      _ -> interval
+    end
+  end
+
+  defp coarser_interval(requested, min) do
+    case {safe_sec(requested), safe_sec(min)} do
+      {req, mn} when is_integer(req) and is_integer(mn) -> if req >= mn, do: requested, else: min
+      _ -> requested
+    end
+  end
+
+  defp safe_sec(interval) do
+    Sanbase.Utils.DateTime.str_to_sec(interval)
+  rescue
+    _ -> nil
+  end
 end

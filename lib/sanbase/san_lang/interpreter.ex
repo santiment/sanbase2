@@ -97,7 +97,7 @@ defmodule Sanbase.SanLang.Interpreter do
     # errors during tests that :map_keys is not an existing atom, even though there is
     # such a function in the SanLang.Kernel module
     # credo:disable-for-next-line
-    apply(SanLang.Kernel, String.to_atom(function_name), args)
+    apply(SanLang.Kernel, String.to_existing_atom(function_name), args)
   end
 
   defp eval_function_call(function_name, _args, _env) when is_binary(function_name) do

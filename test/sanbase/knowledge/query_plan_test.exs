@@ -36,22 +36,6 @@ defmodule Sanbase.Knowledge.QueryPlanTest do
     end
   end
 
-  defmodule WrongRelevanceClient do
-    # Claims :relevance for a query with an explicit recency keyword — the
-    # keyword floor must override it (observed gpt-5-nano failure mode).
-    def ask(_prompt, _opts) do
-      {:ok,
-       Jason.encode!(%{
-         semantic_query: "bitcoin",
-         has_topic: true,
-         sort: "relevance",
-         last_n_days: nil,
-         date_from: nil,
-         date_to: nil
-       })}
-    end
-  end
-
   defmodule ErrorClient do
     def ask(_prompt, _opts), do: {:error, :boom}
   end
@@ -80,22 +64,6 @@ defmodule Sanbase.Knowledge.QueryPlanTest do
       assert plan.sort == :recency
     end
 
-    test "keyword floor: explicit recency cue overrides an LLM :relevance verdict" do
-      plan =
-        QueryPlan.build("Analyze the latest bitcoin insights",
-          plan_llm_client: WrongRelevanceClient
-        )
-
-      assert plan.sort == :recency
-      assert plan.semantic_query == "bitcoin"
-    end
-
-    test "keyword floor does not fire without a recency cue" do
-      plan = QueryPlan.build("what is MVRV", plan_llm_client: WrongRelevanceClient)
-
-      assert plan.sort == :relevance
-    end
-
     test "browse plan: has_topic=false forces recency sort" do
       plan = QueryPlan.build("summarize the latest insights", plan_llm_client: BrowseClient)
 
@@ -103,88 +71,50 @@ defmodule Sanbase.Knowledge.QueryPlanTest do
       assert plan.sort == :recency
     end
 
-    test "client error falls back to the heuristic" do
-      plan = QueryPlan.build("gimme newest btc article", plan_llm_client: ErrorClient)
-
-      assert plan.sort == :recency
-      refute plan.semantic_query =~ ~r/newest/i
-      assert plan.semantic_query =~ "btc"
-    end
-
-    test "malformed JSON falls back to the heuristic" do
-      plan = QueryPlan.build("gimme newest btc article", plan_llm_client: MalformedClient)
-
-      assert plan.sort == :recency
-      assert plan.semantic_query =~ "btc"
-    end
-
-    test "a crashing client is caught and falls back to the heuristic" do
-      plan = QueryPlan.build("gimme newest btc article", plan_llm_client: RaisingClient)
-
-      assert plan.sort == :recency
-      assert plan.semantic_query =~ "btc"
-    end
-
-    test "a slow client is cut off at :plan_timeout_ms and falls back" do
-      plan =
-        QueryPlan.build("gimme newest btc article",
-          plan_llm_client: SlowClient,
-          plan_timeout_ms: 50
-        )
-
-      assert plan.sort == :recency
-      assert plan.semantic_query =~ "btc"
-    end
-  end
-
-  # `query_understanding: false` forces the deterministic heuristic path, so these
-  # never make a network call regardless of whether OPENAI_API_KEY is set.
-  describe "build/2 (heuristic path)" do
-    test "recency query: strips recency words and sorts by recency" do
-      plan = QueryPlan.build("gimme newest btc article", query_understanding: false)
-
-      assert plan.sort == :recency
+    # Every non-LLM path degrades to the same neutral pass-through plan: the
+    # raw query embedded as-is, relevance sort, no dates — retrieval behaves
+    # exactly as it did before query understanding existed.
+    defp assert_passthrough(plan, user_input) do
+      assert plan.semantic_query == user_input
+      assert plan.sort == :relevance
       assert plan.has_topic
-      refute plan.semantic_query =~ ~r/newest/i
-      assert plan.semantic_query =~ "btc"
       assert plan.date_from == nil
       assert plan.date_to == nil
     end
 
-    test "non-recency query: kept as-is and sorts by relevance" do
-      plan = QueryPlan.build("what is MVRV", query_understanding: false)
+    test "client error falls back to the pass-through plan" do
+      input = "gimme newest btc article"
 
-      assert plan.sort == :relevance
-      assert plan.has_topic
-      assert plan.semantic_query == "what is MVRV"
+      plan = QueryPlan.build(input, plan_llm_client: ErrorClient)
+      assert_passthrough(plan, input)
     end
 
-    test "recency query with only generic words flags browse mode" do
-      for query <- [
-            "summarize the latest insights",
-            "what's the latest insights",
-            "show me the newest posts please"
-          ] do
-        plan = QueryPlan.build(query, query_understanding: false)
+    test "malformed JSON falls back to the pass-through plan" do
+      input = "gimme newest btc article"
 
-        refute plan.has_topic, "expected browse mode for: #{query}"
-        assert plan.sort == :recency
-      end
+      plan = QueryPlan.build(input, plan_llm_client: MalformedClient)
+      assert_passthrough(plan, input)
     end
 
-    test "generic words WITHOUT a recency cue stay topical (browse needs both)" do
-      plan = QueryPlan.build("show me insights", query_understanding: false)
+    test "a crashing client is caught and falls back to the pass-through plan" do
+      input = "gimme newest btc article"
 
-      assert plan.has_topic
-      assert plan.sort == :relevance
+      plan = QueryPlan.build(input, plan_llm_client: RaisingClient)
+      assert_passthrough(plan, input)
     end
 
-    test "a recency query naming a topic is never browse mode" do
-      plan = QueryPlan.build("latest bitcoin insights", query_understanding: false)
+    test "a slow client is cut off at :plan_timeout_ms and falls back" do
+      input = "gimme newest btc article"
 
-      assert plan.has_topic
-      assert plan.sort == :recency
-      assert plan.semantic_query =~ "bitcoin"
+      plan = QueryPlan.build(input, plan_llm_client: SlowClient, plan_timeout_ms: 50)
+      assert_passthrough(plan, input)
+    end
+
+    test "query_understanding: false skips the LLM and passes the query through" do
+      input = "Analyze the latest bitcoin insights"
+
+      plan = QueryPlan.build(input, query_understanding: false)
+      assert_passthrough(plan, input)
     end
   end
 

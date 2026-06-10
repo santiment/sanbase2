@@ -36,11 +36,11 @@ defmodule Sanbase.Knowledge.QueryPlan do
        effort). Handles paraphrases, typos and explicit ranges ("since 2023")
        for free. The call runs under a generous hard budget
        (`:plan_timeout_ms`) — a slower plan is acceptable, but genuine API
-       trouble must fall back to the heuristic rather than wait out the
-       client's own 60s × 3-retry policy.
-    2. Otherwise → a deterministic heuristic: `RecencyIntent` for the sort
-       decision and `RecencyIntent.strip/1` for a best-effort `semantic_query`.
-       This is also the graceful fallback when the LLM call fails or times out.
+       trouble must not wait out the client's own 60s × 3-retry policy.
+    2. Otherwise → a neutral **pass-through plan**: the raw query embedded
+       as-is, relevance sort, no dates. This is also the graceful fallback
+       when the LLM call fails or times out — retrieval quality degrades to
+       what it was before query understanding existed, never below.
 
   Relative windows ("last 7 days") are returned by the LLM as a day count and
   resolved into `date_from` **here, in Elixir** — small models are unreliable at
@@ -50,8 +50,6 @@ defmodule Sanbase.Knowledge.QueryPlan do
   """
 
   require Logger
-
-  alias Sanbase.Knowledge.RecencyIntent
 
   @enforce_keys [:semantic_query]
   defstruct semantic_query: nil, has_topic: true, sort: :relevance, date_from: nil, date_to: nil
@@ -71,7 +69,7 @@ defmodule Sanbase.Knowledge.QueryPlan do
 
   # Hard budget for the planning LLM call. The underlying client retries with
   # backoff and a 60s receive timeout — fine for the *answer* call, too long for
-  # a pre-retrieval step. Past this budget the heuristic plan is used instead.
+  # a pre-retrieval step. Past this budget the pass-through plan is used instead.
   # Deliberately generous: a good plan is worth waiting a few extra seconds for
   # (the call is typically ~1-3s with `reasoning_effort: "minimal"`), so the
   # budget only exists to catch genuine API trouble, not to race the model.
@@ -82,40 +80,22 @@ defmodule Sanbase.Knowledge.QueryPlan do
   # just thinking). Minimal effort keeps the call fast AND cheap.
   @reasoning_effort "minimal"
 
-  # Generic content nouns / filler with no topical content. When a recency query
-  # strips down to ONLY these words ("summarize the latest insights"), there is
-  # no topic to embed — vector search on it is noise — so the plan flags browse
-  # mode. Curated and conservative: a false "no topic" skips semantic search, so
-  # only unambiguous filler belongs here.
-  @generic_words ~w(
-    insight insights article articles post posts report reports analysis
-    news update updates summary summaries content publication publications
-    entry entries item items piece pieces stuff write-up write-ups writeup writeups
-    give gimme show fetch get list summarize summarise sum tldr
-    me us i we you your our
-    the a an any some all few couple
-    please pls can could would what whats s about of for from on in and or
-  )
-
   @doc """
   Build the retrieval plan for `user_input`.
 
   Options:
 
     * `:query_understanding` — use the LLM self-query step (default `true`).
-      Falls back to the heuristic when `false`, when no LLM is reachable, or when
-      the call fails.
+      A neutral pass-through plan (raw query, relevance sort) is used when
+      `false`, when no LLM is reachable, or when the call fails.
     * `:plan_llm_client` — module with `ask/2` used for the self-query call
       (default `#{inspect(@llm_client)}`). Injectable for tests.
     * `:plan_timeout_ms` — time budget for the self-query call (default
-      `#{@plan_timeout_ms}`); on expiry the heuristic plan is used.
+      `#{@plan_timeout_ms}`); on expiry the pass-through plan is used.
   """
   @spec build(String.t(), keyword()) :: t()
   def build(user_input, options \\ []) when is_binary(user_input) do
-    plan =
-      user_input
-      |> base_plan(options)
-      |> apply_keyword_recency_floor(user_input)
+    plan = base_plan(user_input, options)
 
     Logger.info(
       "query_plan: sort=#{plan.sort} has_topic=#{plan.has_topic} " <>
@@ -130,7 +110,7 @@ defmodule Sanbase.Knowledge.QueryPlan do
   @doc """
   Build a plan from an already-decoded LLM JSON map. Public so it can be unit
   tested without a network call. Returns `:error` on a structurally invalid map
-  so the caller can fall back to the heuristic.
+  so the caller can fall back to the pass-through plan.
 
   `today` anchors the resolution of the relative `last_n_days` window; it
   defaults to `Date.utc_today()` and is a parameter only for deterministic tests.
@@ -253,61 +233,21 @@ defmodule Sanbase.Knowledge.QueryPlan do
           plan
 
         other ->
-          Logger.info("query_plan: LLM self-query failed, using heuristic (#{inspect(other)})")
-          heuristic_plan(user_input)
+          Logger.info("query_plan: LLM self-query failed, using pass-through (#{inspect(other)})")
+
+          passthrough_plan(user_input)
       end
     else
-      # Toggle off, or no LLM reachable: the deterministic heuristic is the
-      # baseline (it still strips recency words and detects the sort by keyword).
-      heuristic_plan(user_input)
+      passthrough_plan(user_input)
     end
   end
 
-  # Cheap, deterministic plan: strip recency words for the embedding, derive the
-  # sort from the keyword detector, and flag browse mode when a recency query
-  # carries no topical words. No date-range parsing (the LLM path does that).
-  defp heuristic_plan(user_input) do
-    semantic_query = RecencyIntent.strip(user_input)
-    sort = keyword_sort(user_input)
-
-    %__MODULE__{
-      semantic_query: semantic_query,
-      sort: sort,
-      # Only a *recency* query can fall into browse mode here: without a recency
-      # cue, "no topic" would more likely mean the stoplist is wrong than that
-      # the user wants a date-ordered listing.
-      has_topic: not (sort == :recency and topicless?(semantic_query))
-    }
+  # Neutral plan: the raw query embedded as-is, relevance sort, no dates.
+  # Used when query understanding is off, no LLM is reachable, or the LLM call
+  # fails — retrieval behaves exactly as it did before query understanding.
+  defp passthrough_plan(user_input) do
+    %__MODULE__{semantic_query: user_input}
   end
-
-  defp keyword_sort(user_input) do
-    if RecencyIntent.detect?(user_input), do: :recency, else: :relevance
-  end
-
-  # True when, after stripping recency words, the query consists solely of
-  # generic content nouns and filler — nothing for an embedding to latch onto.
-  # Splitting drops apostrophes too, so "what's" tokenises to ["what", "s"]
-  # (both in the stoplist) rather than surviving as a fake topic word.
-  defp topicless?(semantic_query) do
-    words =
-      semantic_query
-      |> String.downcase()
-      |> String.split(~r/[^\p{L}\p{N}]+/u, trim: true)
-
-    words != [] and Enum.all?(words, &(&1 in @generic_words))
-  end
-
-  # Ensemble floor: the keyword detector is deliberately high-precision — when
-  # it fires, the query unambiguously asks for recency ("latest", "newest", …).
-  # An LLM plan that still says :relevance got it wrong (observed with small
-  # models on e.g. "Analyze the latest bitcoin insights"), so the keyword
-  # signal wins. The reverse is NOT applied: the LLM saying :recency on a
-  # paraphrase the keywords miss is exactly what it is for.
-  defp apply_keyword_recency_floor(%__MODULE__{sort: :relevance} = plan, user_input) do
-    if RecencyIntent.detect?(user_input), do: %{plan | sort: :recency}, else: plan
-  end
-
-  defp apply_keyword_recency_floor(plan, _user_input), do: plan
 
   # --- LLM self-query ----------------------------------------------------
 
@@ -325,7 +265,7 @@ defmodule Sanbase.Knowledge.QueryPlan do
 
   # Run the self-query under a hard time budget. The client's own retry/backoff
   # (60s receive timeout, 3 attempts) is sized for answer generation; the
-  # planning step must degrade to the heuristic instead of blocking retrieval.
+  # planning step must degrade to the pass-through plan instead of blocking retrieval.
   # Crashes inside the task are caught and surface as {:error, _} so the caller
   # falls back rather than taking the LiveView process down with the link.
   defp llm_plan_with_budget(user_input, client, timeout_ms) do

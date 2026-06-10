@@ -581,11 +581,12 @@
 
     # === Recency paraphrases (query-plan rewrite quality) ===
     # Twins of topical items above, rephrased with recency cues. Run with
-    # `mix knowledge_eval --plan`: the QueryPlan heuristic strips the recency
-    # words before embedding, and these items verify the rewrite does NOT hurt
-    # topical retrieval (expected ids match the twins'). Recency *ordering* is
-    # deliberately outside eval scoring — golden ids are topical, so a
-    # newest-first reorder would make hit@K meaningless.
+    # `mix knowledge_eval --plan` (requires OPENAI_API_KEY): the QueryPlan LLM
+    # rewrite strips the recency words before embedding, and these items verify
+    # the rewrite does NOT hurt topical retrieval (expected ids match the
+    # twins'). Recency *ordering* is deliberately outside eval scoring —
+    # golden ids are topical, so a newest-first reorder would make hit@K
+    # meaningless.
     %{
       id: "recency-twin-mvrv-danger-zone",
       question: "What's the latest on when the MVRV overvaluation (danger) zone anomaly fires?",

@@ -225,12 +225,23 @@ defmodule Sanbase.ClickhouseRepo do
     log_id = UUID.uuid4()
     error_message = extract_error_from_stacktrace(stacktrace) || Exception.message(exception)
 
-    Logger.warning("""
-    [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}
+    # ClickHouse error strings + stacktraces can embed the user's query
+    # params/SQL fragments. For activity_traces_hidden users keep only a
+    # correlatable breadcrumb in the logs. The returned error still
+    # carries the real message — it goes back to the user who ran the
+    # query, not into the logs.
+    if activity_traces_hidden?() do
+      Logger.warning(
+        "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason hidden (activity_traces_hidden)"
+      )
+    else
+      Logger.warning("""
+      [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}
 
-    Stacktrace:
-    #{Exception.format_stacktrace()}
-    """)
+      Stacktrace:
+      #{Exception.format_stacktrace()}
+      """)
+    end
 
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
@@ -241,11 +252,21 @@ defmodule Sanbase.ClickhouseRepo do
 
     error_message = extract_error_from_error(error)
 
-    Logger.warning(
-      "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}"
-    )
+    if activity_traces_hidden?() do
+      Logger.warning(
+        "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason hidden (activity_traces_hidden)"
+      )
+    else
+      Logger.warning(
+        "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}"
+      )
+    end
 
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
+  end
+
+  defp activity_traces_hidden?() do
+    Sanbase.RequestContext.activity_traces_hidden?(Sanbase.RequestContext.current())
   end
 
   defp extract_error_from_stacktrace(stacktrace) do

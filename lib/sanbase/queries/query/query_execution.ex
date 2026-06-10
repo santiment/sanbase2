@@ -323,6 +323,12 @@ defmodule Sanbase.Queries.QueryExecution do
       result_rows: result_rows,
       result_gb: Float.round(result_gb, 6),
       query_duration_ms: Float.round(query_duration_ms, 3),
+      # Unavailable without `system.query_log`; zeroed so the
+      # `non_null(:float)` fields on `:sql_query_execution_stats` still
+      # resolve for protected users.
+      read_compressed_gb: 0.0,
+      cpu_time_microseconds: 0.0,
+      memory_usage_gb: 0.0,
       source: "summary_only",
       multiplier: @activity_traces_hidden_multiplier
     }
@@ -333,11 +339,20 @@ defmodule Sanbase.Queries.QueryExecution do
   # Driver timeout / failure can leave summary as nil. Fall back to a
   # flat safe minimum so the billing row is still written and the user
   # is still accounted for, instead of crashing through the rescue and
-  # dropping the execution entirely.
+  # dropping the execution entirely. All stat fields are zeroed so the
+  # `non_null(:float)` fields on `:sql_query_execution_stats` resolve.
   defp compute_credits_cost_from_summary(_) do
     %{
       credits_cost: 10,
       execution_details: %{
+        read_rows: 0.0,
+        read_gb: 0.0,
+        result_rows: 0.0,
+        result_gb: 0.0,
+        query_duration_ms: 0.0,
+        read_compressed_gb: 0.0,
+        cpu_time_microseconds: 0.0,
+        memory_usage_gb: 0.0,
         source: "summary_missing",
         multiplier: @activity_traces_hidden_multiplier
       }

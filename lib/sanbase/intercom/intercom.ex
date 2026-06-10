@@ -7,7 +7,7 @@ defmodule Sanbase.Intercom do
   import Sanbase.Accounts.User.Ecto, only: [is_registered: 0]
 
   alias Sanbase.Utils.Config
-  alias Sanbase.Accounts.{User, Statistics}
+  alias Sanbase.Accounts.{User, Statistics, ProtectedUser}
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Accounts.EthAccount
@@ -27,11 +27,18 @@ defmodule Sanbase.Intercom do
     Logger.info("[intercom_to_kafka] Start")
     all_stats = all_stats || all_users_stats()
 
+    hidden_ids = ProtectedUser.activity_traces_hidden_user_ids()
+
     process_batch_fn = fn contacts ->
       contacts =
         contacts
         |> Enum.reject(fn c ->
           is_nil(c["external_id"]) or not Regex.match?(~r/^\d+$/, c["external_id"])
+        end)
+        # NDA-protected users must not have their stats exported to the
+        # external CRM / Kafka. external_id is the numeric user id here.
+        |> Enum.reject(fn c ->
+          MapSet.member?(hidden_ids, String.to_integer(c["external_id"]))
         end)
 
       user_ids = contacts |> Enum.map(& &1["external_id"])
@@ -81,7 +88,11 @@ defmodule Sanbase.Intercom do
   end
 
   def sync_newly_registered_to_intercom(dt) do
+    hidden_ids = ProtectedUser.activity_traces_hidden_user_ids()
+
     fetch_new_registrations_since(dt)
+    # NDA-protected users must not be created as contacts in the external CRM.
+    |> Enum.reject(&MapSet.member?(hidden_ids, &1))
     |> Enum.each(fn user_id ->
       if is_nil(get_contact_by_user_id(user_id)) do
         create_contact(user_id)

@@ -22,6 +22,8 @@ defmodule Sanbase.MCP.Privacy do
           required(:error_message) => String.t() | nil,
           required(:user_agent) => String.t() | nil,
           required(:client) => String.t() | nil,
+          optional(:session_id) => String.t() | nil,
+          optional(:response_size_bytes) => non_neg_integer() | nil,
           optional(atom()) => term()
         }
 
@@ -31,13 +33,18 @@ defmodule Sanbase.MCP.Privacy do
   def mask_attrs(attrs, true) do
     masked = Accounts.masked_sentinel()
 
+    # session_id links separate invocations into one trace; response size
+    # is a side-channel that can fingerprint a known query by its result
+    # shape. Drop both. Counts/durations/success flag are kept on purpose.
     %{
       attrs
       | tool_name: masked,
         params: %{},
         error_message: if(attrs.error_message, do: masked, else: nil),
         user_agent: nil,
-        client: nil
+        client: nil,
+        session_id: nil,
+        response_size_bytes: nil
     }
   end
 end

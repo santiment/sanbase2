@@ -16,6 +16,16 @@ defmodule Sanbase.Cache.RequestContextStripper do
   is a tree without any `RequestContext` nested anywhere. `strip/1`
   short-circuits via a walk-without-allocate probe and only rebuilds
   the tree when a context is actually found.
+
+  Limitation: the probe does NOT descend into the fields of other
+  structs (`%_{}` returns `false`), so a `%RequestContext{}` buried
+  inside some other struct is not detected or stripped. This is
+  intentional — cache-key inputs are plain tuples/lists/maps with the
+  context as a top-level `:context` keyword pair, never nested inside a
+  struct, and descending into every struct would defeat the
+  walk-without-allocate fast path. If a future call site nests the
+  context inside a struct, extend `contains?/1` and `do_strip/1` to
+  recurse via `Map.from_struct/1`.
   """
 
   alias Sanbase.RequestContext

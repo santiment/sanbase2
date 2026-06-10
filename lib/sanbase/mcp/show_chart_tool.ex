@@ -99,7 +99,8 @@ defmodule Sanbase.MCP.ShowChartTool do
         |> Task.async_stream(& &1.(), timeout: 30_000, on_timeout: :kill_task, ordered: true)
         |> Enum.map(fn
           {:ok, result} -> result
-          {:exit, _reason} -> {:error, "data fetch timed out"}
+          {:exit, :timeout} -> {:error, "data fetch timed out"}
+          {:exit, reason} -> {:error, "data fetch failed: #{inspect(reason)}"}
         end)
 
       case primary_result do

@@ -7,6 +7,10 @@ defmodule Sanbase.MCP.WidgetAsset do
   `pnpm build:single`). All JS/CSS/fonts are inlined, so the MCP host's strict
   default CSP needs no extra domains and the widget works with just the Elixir
   server running — no external widget host.
+
+  The widget HTML is a static build artifact: it is read from disk once and
+  cached in `:persistent_term`, so subsequent renders serve it from memory.
+  A fresh build is picked up on the next app restart.
   """
 
   alias Anubis.MCP.Error
@@ -15,6 +19,13 @@ defmodule Sanbase.MCP.WidgetAsset do
 
   @meta %{"ui" => %{"prefersBorder" => true}}
 
+  @doc """
+  Serves the widget `filename` from `priv/mcp_widgets/` as an MCP App UI
+  resource response, e.g. `serve("chart.html", frame)`.
+
+  Returns `{:reply, response, frame}` with the inlined HTML, or
+  `{:error, error, frame}` if the file cannot be read.
+  """
   @spec serve(filename :: String.t(), Frame.t()) ::
           {:reply, Response.t(), Frame.t()} | {:error, Error.t(), Frame.t()}
   def serve(filename, frame) do
@@ -32,9 +43,6 @@ defmodule Sanbase.MCP.WidgetAsset do
     end
   end
 
-  # The widget HTML is a static build artifact, so read it from disk once and
-  # cache it in :persistent_term — subsequent renders serve it from memory.
-  # A fresh build is picked up on the next app restart (which clears the term).
   defp load(filename) do
     key = {__MODULE__, filename}
 

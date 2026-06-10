@@ -253,6 +253,54 @@ defmodule Sanbase.DashboardsTest do
                  "Dashboard does not exist, or it is private and owned by another user."
       end)
     end
+
+    test "cannot poison a public dashboard cache with only_owner: true", context do
+      %{
+        query: query,
+        dashboard_query_mapping: dashboard_query_mapping,
+        dashboard: dashboard,
+        user: user,
+        user2: user2,
+        query_metadata: query_metadata
+      } = context
+
+      # Make the dashboard public - anyone can read it, but only the owner may
+      # store a client-supplied cached result for it.
+      {:ok, _} = Sanbase.Dashboards.update_dashboard(dashboard.id, %{is_public: true}, user.id)
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, result_mock()})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, result} =
+                 Sanbase.Queries.run_query(query, user2, query_metadata,
+                   store_execution_details: false
+                 )
+
+        # A non-owner attempting to store an arbitrary result for a public
+        # dashboard must be rejected.
+        assert {:error, error_msg} =
+                 Sanbase.Dashboards.cache_dashboard_query_execution(
+                   dashboard.id,
+                   _parameters_override = %{},
+                   dashboard_query_mapping.id,
+                   result,
+                   user2.id,
+                   only_owner: true
+                 )
+
+        assert error_msg =~ "Dashboard does not exist, or it is not owned by the current user."
+
+        # The owner can still store a result for the public dashboard.
+        assert {:ok, _} =
+                 Sanbase.Dashboards.cache_dashboard_query_execution(
+                   dashboard.id,
+                   _parameters_override = %{},
+                   dashboard_query_mapping.id,
+                   result,
+                   user.id,
+                   only_owner: true
+                 )
+      end)
+    end
   end
 
   defp result_mock() do

@@ -348,7 +348,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
              _parameters_override = %{},
              mapping_id,
              result,
-             user.id
+             user.id,
+             # The result is supplied by the client, so only the dashboard owner
+             # may store it. Otherwise anyone could poison a public dashboard's cache.
+             only_owner: true
            ) do
       queries = Map.values(dashboard_cache.queries)
 

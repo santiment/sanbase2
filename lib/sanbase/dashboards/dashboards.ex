@@ -943,13 +943,21 @@ defmodule Sanbase.Dashboards do
         parameters_override,
         dashboard_query_mapping_id,
         query_result,
-        user_id
+        user_id,
+        opts \\ []
       ) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard_for_cache_update, fn _repo, _changes ->
-      # Just to check that the user can mutate the dashboard. Creating a
-      # cache for a dashboard is doable only by the owner.
-      get_dashboard_for_cache_update(dashboard_id, user_id, preload?: false)
+      # Check that the user can cache for the dashboard. When `only_owner: true`
+      # is passed (e.g. when the result is supplied by the client), only the
+      # dashboard owner is allowed - otherwise anyone could poison the cache of
+      # a public dashboard. The default also allows caching freshly recomputed
+      # results for public dashboards.
+      get_dashboard_for_cache_update(
+        dashboard_id,
+        user_id,
+        Keyword.merge([preload?: false], opts)
+      )
     end)
     |> Ecto.Multi.run(:update_query_cache, fn _repo, %{get_dashboard_for_cache_update: _struct} ->
       Sanbase.Dashboards.DashboardCache.update_query_cache(
@@ -1004,11 +1012,24 @@ defmodule Sanbase.Dashboards do
   end
 
   defp get_dashboard_for_cache_update(dashboard_id, querying_user_id, opts) do
-    query = Dashboard.get_for_cache_update(dashboard_id, querying_user_id, opts)
+    only_owner? = Keyword.get(opts, :only_owner, false)
+
+    query =
+      if only_owner? do
+        Dashboard.get_for_mutation(dashboard_id, querying_user_id, opts)
+      else
+        Dashboard.get_for_cache_update(dashboard_id, querying_user_id, opts)
+      end
 
     case Repo.one(query) do
-      %Dashboard{} = struct -> {:ok, struct}
-      _ -> {:error, "Dashboard does not exist, or it is private and owned by another user."}
+      %Dashboard{} = struct ->
+        {:ok, struct}
+
+      _ when only_owner? ->
+        {:error, "Dashboard does not exist, or it is not owned by the current user."}
+
+      _ ->
+        {:error, "Dashboard does not exist, or it is private and owned by another user."}
     end
   end
 

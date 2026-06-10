@@ -310,6 +310,19 @@ defmodule Sanbase.Factory do
     %Project.SourceSlugMapping{}
   end
 
+  def non_crypto_asset_factory(attrs) do
+    slug = Map.get(attrs, :slug, rand_str())
+
+    %Sanbase.NonCryptoAsset{
+      slug: slug,
+      name: "Gold",
+      ticker: "XAU",
+      asset_type: :commodity,
+      is_hidden: false
+    }
+    |> merge_attributes(attrs)
+  end
+
   def social_volume_query_factory() do
     %Project.SocialVolumeQuery{}
   end

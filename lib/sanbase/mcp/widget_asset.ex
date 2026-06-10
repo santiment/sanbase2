@@ -29,8 +29,8 @@ defmodule Sanbase.MCP.WidgetAsset do
   @spec serve(filename :: String.t(), Frame.t()) ::
           {:reply, Response.t(), Frame.t()} | {:error, Error.t(), Frame.t()}
   def serve(filename, frame) do
-    case load(filename) do
-      {:ok, html} ->
+    case fetch(filename) do
+      {:ok, {html, _version}} ->
         response =
           Response.resource()
           |> Response.text(html)
@@ -43,7 +43,24 @@ defmodule Sanbase.MCP.WidgetAsset do
     end
   end
 
-  defp load(filename) do
+  @doc """
+  Content-versioned `ui://` URI for a bundled widget, e.g.
+  `ui_uri("chart", "chart.html")` -> `"ui://santiment/chart-1a2b3c4d"`.
+
+  MCP hosts cache app resources by URI, so the version suffix is derived from
+  the artifact's content hash — every widget rebuild automatically busts the
+  host cache, with no manual version bumping. Use it both for the resource's
+  `uri/0` and the tool's `_meta.ui.resourceUri` so they always agree.
+  """
+  @spec ui_uri(base :: String.t(), filename :: String.t()) :: String.t()
+  def ui_uri(base, filename) do
+    case fetch(filename) do
+      {:ok, {_html, version}} -> "ui://santiment/#{base}-#{version}"
+      {:error, _reason} -> "ui://santiment/#{base}"
+    end
+  end
+
+  defp fetch(filename) do
     key = {__MODULE__, filename}
 
     case :persistent_term.get(key, nil) do
@@ -51,12 +68,22 @@ defmodule Sanbase.MCP.WidgetAsset do
         path = Application.app_dir(:sanbase, Path.join(["priv", "mcp_widgets", filename]))
 
         with {:ok, html} <- File.read(path) do
-          :persistent_term.put(key, html)
-          {:ok, html}
+          entry = {html, content_version(html)}
+          if cache?(), do: :persistent_term.put(key, entry)
+          {:ok, entry}
         end
 
-      html ->
-        {:ok, html}
+      entry ->
+        {:ok, entry}
     end
   end
+
+  defp content_version(html) do
+    :crypto.hash(:sha256, html)
+    |> Base.encode16(case: :lower)
+    |> binary_part(0, 8)
+  end
+
+  # In dev, skip the cache so a rebuilt widget is picked up without a restart.
+  defp cache?, do: Application.get_env(:sanbase, :env) != :dev
 end

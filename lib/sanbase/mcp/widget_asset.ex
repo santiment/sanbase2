@@ -18,9 +18,7 @@ defmodule Sanbase.MCP.WidgetAsset do
   @spec serve(filename :: String.t(), Frame.t()) ::
           {:reply, Response.t(), Frame.t()} | {:error, Error.t(), Frame.t()}
   def serve(filename, frame) do
-    path = Application.app_dir(:sanbase, Path.join(["priv", "mcp_widgets", filename]))
-
-    case File.read(path) do
+    case load(filename) do
       {:ok, html} ->
         response =
           Response.resource()
@@ -31,6 +29,26 @@ defmodule Sanbase.MCP.WidgetAsset do
 
       {:error, reason} ->
         {:error, Error.execution("Widget #{filename} unavailable: #{inspect(reason)}"), frame}
+    end
+  end
+
+  # The widget HTML is a static build artifact, so read it from disk once and
+  # cache it in :persistent_term — subsequent renders serve it from memory.
+  # A fresh build is picked up on the next app restart (which clears the term).
+  defp load(filename) do
+    key = {__MODULE__, filename}
+
+    case :persistent_term.get(key, nil) do
+      nil ->
+        path = Application.app_dir(:sanbase, Path.join(["priv", "mcp_widgets", filename]))
+
+        with {:ok, html} <- File.read(path) do
+          :persistent_term.put(key, html)
+          {:ok, html}
+        end
+
+      html ->
+        {:ok, html}
     end
   end
 end

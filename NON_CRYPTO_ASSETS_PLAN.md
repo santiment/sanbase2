@@ -287,44 +287,114 @@ non-crypto slugs as soon as Steps 3.1–3.2 land. Optionally add a `priceUsd` fi
 
 ---
 
-## Phase 4 (optional, later) — `getMetric` integration
+## Phase 4 — `getAvailableNonCryptoAssets` (metric discoverability)
 
-Expose non-crypto prices through `getMetric(metric: "price_usd")` so existing tooling
-(charts, alerts, screeners) works on them. Non-trivial because:
+Goal: answer "which non-crypto assets have data for metric X?" WITHOUT touching the
+`Sanbase.Metric.available_slugs/2` project-slug guard or the adapter dispatch. A
+standalone top-level query keeps the entire crypto metric path untouched.
 
-1. **Adapter**: new `Sanbase.NonCryptoAsset.MetricAdapter` implementing
-   `Sanbase.Metric.Behaviour`, registered in `Sanbase.Metric.Helper` `@modules` list
-   (`lib/sanbase/metric/helper.ex:23-34`). Module order matters there — registration
-   must not shadow `Sanbase.Price.MetricAdapter` for crypto slugs (dispatch would need
-   slug-aware selection, like how `Price` overrides `PricePair`).
-2. **Slug guard**: `Sanbase.Metric.available_slugs/2`
-   (`lib/sanbase/metric/metric.ex:610-630`) intersects adapter slugs with
-   `Project.List.projects_slugs()` — must union with `NonCryptoAsset.slugs/0`.
-3. **Selector resolution**: anywhere a slug is resolved to a project
-   (`Project.by_slug/1` in metric paths) needs a fallback to non-crypto assets.
-4. **Metric metadata — `availableNonCryptoAssets`**: add to the `:metric_metadata`
-   object (`lib/sanbase_web/graphql/schema/types/metric_types.ex:344`), mirroring the
-   existing `available_slugs` (line 399) / `available_projects` (line 407) pair:
+Key idea: the non-crypto asset list is small (tens of slugs), so instead of computing
+the metric's full available-slugs list and intersecting, pass the non-crypto slugs as
+a parameter INTO one ClickHouse query and ask which of them are present.
 
-   ```elixir
-   @desc ~s"""
-   List of non-crypto assets (stocks, commodities, indices, ...) whose slug can be
-   provided to the `timeseriesDataJson` (and co.) field to fetch the metric.
-   """
-   field :available_non_crypto_assets, list_of(:non_crypto_asset) do
-     cache_resolve(&MetricResolver.get_available_non_crypto_assets/3, ttl: 300)
-   end
-   ```
+### Step 4.1: GraphQL query
 
-   Resolver (`MetricResolver.get_available_non_crypto_assets/3`) mirrors
-   `get_available_projects/3`: take the metric's available slugs, intersect with
-   `NonCryptoAsset.slugs/0`, map to structs. Depends on item 2 above — the slug guard
-   in `Metric.available_slugs/2` currently drops anything that is not a project slug,
-   so this field returns `[]` until the guard unions in non-crypto slugs (or the
-   resolver reads adapter slugs pre-guard). `availableSlugs` should then also include
-   non-crypto slugs so the two fields stay consistent.
+Add to `lib/sanbase_web/graphql/schema/queries/non_crypto_asset_queries.ex`:
 
-Defer until the dedicated GraphQL API proves insufficient. Keep as separate PR.
+```elixir
+@desc ~s"""
+List the non-crypto assets that have data for the given metric. The returned
+assets' slugs can be used wherever the metric accepts a slug.
+"""
+field :get_available_non_crypto_assets, list_of(:non_crypto_asset) do
+  meta(access: :free)
+
+  arg(:metric, non_null(:string))
+
+  cache_resolve(&NonCryptoAssetResolver.get_available_non_crypto_assets/3, ttl: 600)
+end
+```
+
+Naming follows the top-level `getMetric` / `getAvailableMetrics` convention.
+
+### Step 4.2: Resolver
+
+`NonCryptoAssetResolver.get_available_non_crypto_assets/3`:
+1. Validate the metric name the same way `MetricResolver.get_metric/3` does
+   (`Sanbase.Metric.has_metric?/1` path) — unknown metric → error with suggestions.
+2. `slugs = NonCryptoAsset.slugs()` (small, Postgres).
+3. `Sanbase.Metric.available_slugs_among(metric, slugs)` (Step 4.3) → present slugs.
+4. Map present slugs back to `NonCryptoAsset` structs (`list/1` filtered by slugs).
+
+### Step 4.3: `Sanbase.Metric.available_slugs_among(metric, slugs)`
+
+New function in `lib/sanbase/metric/metric.ex`. Dispatches via `get_module(metric)`:
+
+- **Optional behaviour callback** `available_slugs_among/2` added to
+  `Sanbase.Metric.Behaviour` (`@optional_callbacks`). If the adapter exports it, call
+  it; otherwise fall back to `module.available_slugs(metric, opts)` (the UNguarded
+  adapter-level list) intersected with the given slugs in Elixir.
+
+Adapter implementations (one cheap CH query each, `{{slugs}}` as an `IN` parameter):
+
+- **`Sanbase.Clickhouse.MetricAdapter`** (clickhouse_v2 metrics) — reuse the shape of
+  `available_slugs_for_metric_query/2`
+  (`lib/sanbase/clickhouse/metric/sql_query/metric_sql_query.ex:501`) with an extra
+  `name IN ({{slugs}})` filter on `asset_metadata`:
+
+  ```sql
+  SELECT DISTINCT(name)
+  FROM asset_metadata FINAL
+  WHERE
+    name IN ({{slugs}}) AND
+    asset_id IN (
+      SELECT DISTINCT(asset_id) FROM available_metrics
+      WHERE metric_id = ... AND end_dt > now() - INTERVAL {{lookback_days}} DAY
+    )
+  ```
+
+  Cheap: `name` is the slug, list is tens of values.
+
+- **`Sanbase.Price.MetricAdapter`** (`price_usd`, `volume_usd`, ...) — its
+  `available_slugs` comes from Postgres source mappings (`projects_with_source`),
+  which excludes non-crypto assets by construction. Implement the callback as a direct
+  presence check against `asset_prices_v3`:
+
+  ```sql
+  SELECT DISTINCT(slug)
+  FROM asset_prices_v3
+  WHERE slug IN ({{slugs}}) AND dt > now() - INTERVAL 7 DAY
+  ```
+
+  The `dt` bound keeps the scan within recent parts; "has recent data" is the right
+  semantics for availability anyway. Add as `available_slugs_among_query/1` in
+  `lib/sanbase/prices/price_sql_query.ex`.
+
+- Other adapters (social, github, ...) — no implementation needed; the Elixir-side
+  intersect fallback returns `[]` naturally since their available slugs are
+  project-based.
+
+Cache the result in `Sanbase.Cache` (600s), keyed by `{metric, slugs-hash}` — same TTL
+class as the adapters' own `available_slugs` caching.
+
+### Step 4.4: Tests
+
+- Resolver test: mock `ClickhouseRepo` (`Sanbase.Mock` pattern) to return a subset of
+  seeded non-crypto slugs; assert only those come back, as full asset objects.
+- Unknown metric → error.
+- Metric whose adapter has no callback (e.g. a social metric) → `[]`, no crash.
+
+### Later (out of scope here): full `getMetric` timeseries integration
+
+Making `getMetric(metric: "price_usd"){ timeseriesData(slug: "gold") }` work end-to-end
+still requires the items below — unchanged from the earlier analysis, deferred:
+
+1. Slug guard union in `Metric.available_slugs/2` (`metric.ex:610-630`).
+2. Selector resolution fallback (`Project.by_slug/1` → non-crypto assets) in metric
+   paths.
+3. Possibly a metadata field `availableNonCryptoAssets` inside `getMetric { metadata }`
+   — once Step 4.3 exists, that field is a thin wrapper over the same function, so it
+   can be added cheaply at any point.
 
 ---
 

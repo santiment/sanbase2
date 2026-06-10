@@ -7,7 +7,7 @@ config :stripity_stripe,
   json_library: Jason
 
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook,
-  webhook_secret: {:system, "STRIPE_WEBHOOK_SECRET", ""}
+  webhook_secret: {:system, "STRIPE_WEBHOOK_SECRET"}
 
 config :sanbase, Sanbase.Billing.DiscordNotification,
   payments_webhook_url: {:system, "STRIPE_PAYMENT_DISCORD_WEBHOOK"},

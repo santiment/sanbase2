@@ -47,7 +47,7 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
 
   @impl true
   def meta do
-    %{"ui" => %{"resourceUri" => Sanbase.MCP.SocialTrendsUI.uri()}}
+    %{"ui" => %{"resourceUri" => Sanbase.MCP.SocialTrendsUI.current_uri()}}
   end
 
   schema do

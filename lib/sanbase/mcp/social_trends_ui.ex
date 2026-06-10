@@ -10,14 +10,22 @@ defmodule Sanbase.MCP.SocialTrendsUI do
 
   use Anubis.Server.Component,
     type: :resource,
-    uri: "ui://santiment/social-trends",
+    uri_template: "ui://santiment/social-trends-{version}",
     name: "social-trends-ui",
     mime_type: "text/html;profile=mcp-app"
 
-  # Content-versioned URI (overrides the static one above) so hosts re-fetch
-  # the widget whenever the bundled HTML changes. See WidgetAsset.ui_uri/2.
-  def uri, do: Sanbase.MCP.WidgetAsset.ui_uri("social-trends", "social-trends.html")
+  alias Sanbase.MCP.WidgetAsset
+
+  @doc """
+  Current content-versioned URI, advertised in the tool's
+  `_meta.ui.resourceUri`. `read/2` accepts any version (or the bare base
+  URI) — see `Sanbase.MCP.ChartUI` for the rationale.
+  """
+  def current_uri, do: WidgetAsset.ui_uri("social-trends", "social-trends.html")
 
   @impl true
-  def read(_params, frame), do: Sanbase.MCP.WidgetAsset.serve("social-trends.html", frame)
+  def read(%{"uri" => "ui://santiment/social-trends" <> _}, frame),
+    do: WidgetAsset.serve("social-trends.html", frame)
+
+  def read(%{"uri" => uri}, frame), do: WidgetAsset.not_found(uri, frame)
 end

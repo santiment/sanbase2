@@ -212,6 +212,17 @@ defmodule Sanbase.Accounts.User do
     )
   end
 
+  @doc """
+  Narrow changeset for the terms & conditions / marketing consent mutation.
+  Only these two fields may be set through this path so that no privileged
+  fields (is_superuser, access levels, stripe_customer_id, ...) can ever be
+  reached from the public mutation's arguments.
+  """
+  def terms_changeset(%User{} = user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [:privacy_policy_accepted, :marketing_accepted])
+  end
+
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)
   def san_balance_or_zero(user), do: __MODULE__.SanBalance.san_balance_or_zero(user)
 

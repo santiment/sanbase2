@@ -25,10 +25,10 @@ defmodule Mix.Tasks.KnowledgeEval do
     * `--concurrency` - parallel items in flight (default 4)
     * `--no-rerank` - skip reranking (force the Noop reranker). Use to capture
       a coarse-retrieval baseline and compare against the reranked run.
-    * `--plan` - embed the QueryPlan heuristic rewrite of each question instead
-      of the raw question (recency meta-words stripped). Compare against a
-      plain run to measure the rewrite's effect; see the "recency"-tagged
-      golden items.
+    * `--plan` - embed the QueryPlan LLM rewrite of each question instead of
+      the raw question (recency meta-words stripped; requires OPENAI_API_KEY,
+      otherwise a no-op pass-through). Compare against a plain run to measure
+      the rewrite's effect; see the "recency"-tagged golden items.
     * `--verbose` / `-v` - print per-question rank breakdown
   """
 
@@ -80,7 +80,7 @@ defmodule Mix.Tasks.KnowledgeEval do
     |> maybe_put(:limit, opts[:limit])
     |> maybe_put(:concurrency, opts[:concurrency])
     |> maybe_put_reranker(opts[:no_rerank])
-    |> maybe_put(:plan, opts[:plan] && :heuristic)
+    |> maybe_put(:plan, opts[:plan])
   end
 
   @allowed_sources ~w(faq academy insight)

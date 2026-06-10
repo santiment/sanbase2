@@ -492,9 +492,9 @@ defmodule Sanbase.Knowledge do
     if recency_sort?(options), do: @recency_retrieval_top_k, else: @retrieval_top_k
   end
 
-  # The plan's sort directive drives recency ordering. The plan already folded
-  # in the LLM/keyword decision (see `QueryPlan`), so retrieval just trusts
-  # `plan.sort`. Absent plan (e.g. a direct unit call) defaults to relevance.
+  # The plan's sort directive drives recency ordering (see `QueryPlan`), so
+  # retrieval just trusts `plan.sort`. Absent plan (e.g. a direct unit call)
+  # defaults to relevance.
   defp recency_sort?(options) do
     match?(%QueryPlan{sort: :recency}, Keyword.get(options, :query_plan))
   end

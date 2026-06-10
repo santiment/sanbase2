@@ -321,7 +321,7 @@ defmodule SanbaseWeb.AskLive do
     {:context_expansion, "Context expansion",
      "Pull the neighbouring chunks around each match for fuller context (Ask only)."},
     {:query_understanding, "Query understanding",
-     "Use an LLM to rewrite the query (drop meta-words), detect recency intent, and extract date ranges before searching. Falls back to keywords if off or unavailable."}
+     "Use an LLM to rewrite the query (drop meta-words), detect recency intent, and extract date ranges before searching. When off or unavailable, the raw question is searched as-is."}
   ]
 
   attr :features, :map, required: true

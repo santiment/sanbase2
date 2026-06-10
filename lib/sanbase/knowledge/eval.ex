@@ -43,7 +43,7 @@ defmodule Sanbase.Knowledge.Eval do
           seed: integer() | nil,
           concurrency: pos_integer(),
           reranker: module() | nil,
-          plan: false | :heuristic,
+          plan: boolean(),
           progress: boolean()
         ]
 
@@ -243,14 +243,15 @@ defmodule Sanbase.Knowledge.Eval do
     end
   end
 
-  # `:heuristic` routes the embedded query through the same QueryPlan rewrite
-  # the live path uses (deterministic — no LLM call), so the eval measures
+  # `true` routes the embedded query through the same QueryPlan rewrite the
+  # live path uses (the LLM self-query; needs OPENAI_API_KEY — without it the
+  # plan passes the raw question through unchanged), so the eval measures
   # retrieval over the rewritten query. Reranking still sees the raw question,
   # matching the live answer path. Recency *ordering* is deliberately not
   # applied to scoring: golden ids are topical, and a newest-first reorder
   # would make hit@K meaningless.
-  defp embed_query(question, :heuristic) do
-    Sanbase.Knowledge.QueryPlan.build(question, query_understanding: false).semantic_query
+  defp embed_query(question, true) do
+    Sanbase.Knowledge.QueryPlan.build(question).semantic_query
   end
 
   defp embed_query(question, _plan_mode), do: question

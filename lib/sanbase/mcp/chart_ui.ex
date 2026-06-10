@@ -13,6 +13,10 @@ defmodule Sanbase.MCP.ChartUI do
     name: "chart-ui",
     mime_type: "text/html;profile=mcp-app"
 
+  # Content-versioned URI (overrides the static one above) so hosts re-fetch
+  # the widget whenever the bundled HTML changes. See WidgetAsset.ui_uri/2.
+  def uri, do: Sanbase.MCP.WidgetAsset.ui_uri("chart", "chart.html")
+
   @impl true
   def read(_params, frame), do: Sanbase.MCP.WidgetAsset.serve("chart.html", frame)
 end

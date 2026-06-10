@@ -14,6 +14,10 @@ defmodule Sanbase.MCP.SocialTrendsUI do
     name: "social-trends-ui",
     mime_type: "text/html;profile=mcp-app"
 
+  # Content-versioned URI (overrides the static one above) so hosts re-fetch
+  # the widget whenever the bundled HTML changes. See WidgetAsset.ui_uri/2.
+  def uri, do: Sanbase.MCP.WidgetAsset.ui_uri("social-trends", "social-trends.html")
+
   @impl true
   def read(_params, frame), do: Sanbase.MCP.WidgetAsset.serve("social-trends.html", frame)
 end

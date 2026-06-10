@@ -249,6 +249,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       arg(:functions_filter, :clickhouse_metadata_function_filter_enum)
 
+      middleware(UserAuth)
       cache_resolve(&QueriesResolver.get_clickhouse_database_metadata/3)
     end
 

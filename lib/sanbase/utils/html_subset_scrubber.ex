@@ -55,7 +55,6 @@ defmodule Sanbase.Utils.HtmlSubsetScrubber do
   Meta.allow_tag_with_these_attributes("u", ["class", "id"])
   Meta.allow_tag_with_these_attributes("ul", ["class", "id"])
 
-  Meta.allow_tag_with_these_attributes("iframe", ["src"])
   Meta.allow_tag_with_these_attributes("figure", ["class", "id"])
   Meta.allow_tag_with_these_attributes("figcaption", ["class", "id"])
 end

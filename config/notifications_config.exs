@@ -8,7 +8,7 @@ config :sanbase, Sanbase.Messaging.Insight,
 
 config :sanbase, Sanbase.Telegram,
   bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", "SantimentSignalsStageBot"},
-  telegram_endpoint: {:system, "TELEGRAM_ENDPOINT_RANDOM_STRING", "some_random_string"},
+  telegram_endpoint: {:system, "TELEGRAM_ENDPOINT_RANDOM_STRING"},
   token: {:system, "TELEGRAM_SIGNALS_BOT_TOKEN"}
 
 config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "false"}

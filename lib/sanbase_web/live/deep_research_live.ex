@@ -199,12 +199,19 @@ defmodule SanbaseWeb.DeepResearchLive do
   end
 
   def handle_info({:dra_event, result}, socket) do
-    socket =
-      socket
-      |> apply_socket_level(result)
-      |> update_last_turn(&Timeline.apply_result(&1, result))
+    # A cancel (or any terminal status) can land before queued stream events
+    # drain. Drop late events so they can't append thinking/tools or graft a
+    # report onto an already-terminal turn.
+    if last_turn_terminal?(socket) do
+      {:noreply, socket}
+    else
+      socket =
+        socket
+        |> apply_socket_level(result)
+        |> update_last_turn(&Timeline.apply_result(&1, result))
 
-    {:noreply, socket}
+      {:noreply, socket}
+    end
   end
 
   # Poll-state fallback after a no-report stream close: recover a report from the
@@ -337,6 +344,13 @@ defmodule SanbaseWeb.DeepResearchLive do
       if turn.phase in [:failed, :cancelled, :awaiting_user], do: turn.phase, else: :completed
 
     %{turn | phase: phase, finished_at: turn.finished_at || now_ms()}
+  end
+
+  defp last_turn_terminal?(socket) do
+    case List.last(socket.assigns.turns) do
+      %{phase: phase} -> Timeline.terminal_phase?(phase)
+      _ -> false
+    end
   end
 
   defp update_last_turn(socket, fun) do
@@ -909,8 +923,15 @@ defmodule SanbaseWeb.DeepResearchLive do
     "#{minutes}m #{String.pad_leading(Integer.to_string(rest), 2, "0")}s"
   end
 
+  # The report/thinking markdown comes from the research agent over the wire, so
+  # sanitize the rendered HTML (Earmark is a converter, not a sanitizer) before
+  # injecting it raw — strips scripts and `javascript:` links, keeps the tags a
+  # report needs (headings, links, tables, code, lists).
   defp markdown(text) when is_binary(text) do
-    Phoenix.HTML.raw(Earmark.as_html!(text))
+    text
+    |> Earmark.as_html!()
+    |> HtmlSanitizeEx.markdown_html()
+    |> Phoenix.HTML.raw()
   end
 
   defp markdown(_), do: ""

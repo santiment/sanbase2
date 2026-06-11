@@ -9,7 +9,7 @@ defmodule SanbaseWeb.ReportController do
   end
 
   def new(conn, _params) do
-    changeset = Report.new_changeset(%Report{})
+    changeset = Report.change_report()
     render(conn, "new.html", form: Phoenix.Component.to_form(changeset))
   end
 
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.ReportController do
 
   def create(conn, %{"report" => params}) do
     changeset =
-      Report.changeset(%Report{}, params)
+      Report.change_report(%Report{}, params)
       |> Ecto.Changeset.add_error(:report, "No file uploaded!")
 
     render(conn, "new.html",
@@ -69,7 +69,7 @@ defmodule SanbaseWeb.ReportController do
 
   def edit(conn, %{"id" => id}) do
     report = Report.by_id(id) |> stringify_tags()
-    changeset = Report.changeset(report, %{})
+    changeset = Report.change_report(report)
     render(conn, "edit.html", report: report, form: Phoenix.Component.to_form(changeset))
   end
 

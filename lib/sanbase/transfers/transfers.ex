@@ -2,6 +2,27 @@ defmodule Sanbase.Transfers do
   alias Sanbase.Project
 
   alias Sanbase.Transfers.{EthTransfers, Erc20Transfers, BtcTransfers}
+  alias Sanbase.Utils.BlockchainAddressUtils
+  alias Sanbase.Clickhouse.Label
+
+  @doc ~s"""
+  Apply the standard transfer-enrichment pipeline:
+  `transform_address_to_map` → `Label.add_labels` → `MarkExchanges.mark_exchanges`.
+
+  Pass the blockchain or slug used for label lookups; pass the infrastructure
+  (e.g. `"ETH"`, `"BTC"`) for address normalization, or `nil` when callers do
+  not have it handy.
+  """
+  @spec enrich_with_labels(list(), String.t(), String.t() | nil) ::
+          {:ok, list()} | {:error, any()}
+  def enrich_with_labels(transfers, blockchain_or_slug, infrastructure \\ nil) do
+    with {:ok, transfers} <-
+           BlockchainAddressUtils.transform_address_to_map(transfers, infrastructure),
+         {:ok, transfers} <- Label.add_labels(blockchain_or_slug, transfers),
+         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
+      {:ok, transfers}
+    end
+  end
 
   def incoming_transfers_summary(slug, address, from, to, opts) do
     case Project.contract_info_infrastructure_by_slug(slug) do

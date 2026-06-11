@@ -7,7 +7,7 @@ defmodule Sanbase.Webinars.Registration do
   import Ecto.Query
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Webinar
+  alias Sanbase.Webinars.Webinar
   alias Sanbase.Repo
 
   schema "webinar_registrations" do

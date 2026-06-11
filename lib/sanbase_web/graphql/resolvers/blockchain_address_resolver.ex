@@ -13,7 +13,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   alias Sanbase.BlockchainAddress
   alias Sanbase.BlockchainAddress.{BlockchainAddressUserPair, BlockchainAddressLabelChange}
 
-  alias Sanbase.Utils.BlockchainAddressUtils
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Clickhouse.Label
   alias Sanbase.Project
@@ -41,9 +40,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
            Transfers.top_wallet_transfers(slug, address, from, to, page, page_size, type),
          {:ok, transfers} <- apply_in_page_order_by(transfers, args),
          {:ok, _, _, infr} <- Project.contract_info_infrastructure_by_slug(slug),
-         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers, infr),
-         {:ok, transfers} <- Label.add_labels(slug, transfers),
-         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
+         {:ok, transfers} <- Transfers.enrich_with_labels(transfers, slug, infr) do
       {:ok, transfers}
     end
   end
@@ -58,9 +55,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     with {:ok, transfers} <- Transfers.top_transfers(slug, from, to, page, page_size),
          {:ok, transfers} <- apply_in_page_order_by(transfers, args),
          {:ok, _, _, infr} <- Project.contract_info_infrastructure_by_slug(slug),
-         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers, infr),
-         {:ok, transfers} <- Label.add_labels(slug, transfers),
-         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
+         {:ok, transfers} <- Transfers.enrich_with_labels(transfers, slug, infr) do
       {:ok, transfers}
     end
   end
@@ -93,9 +88,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     with %{address: address, infrastructure: infr} <-
            selector_to_address_map_do_not_create(selector),
          {:ok, changes} <- BlockchainAddressLabelChange.label_changes(address, infr, from, to),
-         {:ok, changes} <- BlockchainAddressUtils.transform_address_to_map(changes, infr),
-         {:ok, changes} <- Label.add_labels(infrastructure_to_blockchain(infr), changes),
-         {:ok, changes} <- Sanbase.MarkExchanges.mark_exchanges(changes) do
+         {:ok, changes} <-
+           Transfers.enrich_with_labels(changes, infrastructure_to_blockchain(infr), infr) do
       {:ok, changes}
     end
   end
@@ -171,10 +165,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     opts = [page: page, page_size: page_size, only_sender: only_sender]
 
     with {:ok, transfers} <- module.recent_transactions(address, opts),
-         {:ok, transfers} <-
-           BlockchainAddressUtils.transform_address_to_map(transfers, @eth_infr),
-         {:ok, transfers} <- Label.add_labels("ethereum", transfers),
-         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
+         {:ok, transfers} <- Transfers.enrich_with_labels(transfers, "ethereum", @eth_infr) do
       {:ok, transfers}
     else
       {:error, error} ->

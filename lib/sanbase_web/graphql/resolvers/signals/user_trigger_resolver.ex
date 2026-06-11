@@ -6,8 +6,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Alert.{Trigger, UserTrigger}
-  alias Sanbase.Telegram
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Alerts
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
@@ -173,26 +173,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   # Private functions
 
   defp do_create_trigger(current_user, args) do
-    UserTrigger.create_user_trigger(current_user, args)
+    Alerts.create_trigger(current_user, args)
     |> handle_result("create")
-    |> case do
-      {:ok, result} ->
-        Telegram.send_message(
-          current_user,
-          """
-          Successfully created a new alert of type: #{Trigger.human_readable_settings_type(args.settings["type"])}
-
-          Title: #{args.title}#{if args[:description], do: "\nDescription: #{args[:description]}"}
-
-          This bot will send you a message when the alert triggers 🤖
-          """
-        )
-
-        {:ok, result}
-
-      error ->
-        error
-    end
   end
 
   defp handle_result(result, operation) do

@@ -6,8 +6,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
   alias Sanbase.Accounts.User
 
-  alias Sanbase.StripeApi
-
   require Logger
 
   def products_with_plans(_root, _args, _resolution) do
@@ -87,18 +85,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def get_subscription_with_payment_intent(_root, %{subscription_id: subscription_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    user_id = current_user.id
+    case Billing.refresh_subscription_payment_intent(current_user, subscription_id) do
+      {:ok, _} = ok ->
+        ok
 
-    with {_, %Subscription{user_id: ^user_id} = subscription} <-
-           {:subscription?, Subscription.by_id(subscription_id)},
-         {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription.stripe_id) do
-      Subscription.sync_subscription_with_stripe(stripe_subscription, subscription)
-    else
       result ->
         handle_subscription_error_result(
           result,
           "Fetching latest payment intent failed",
-          %{user_id: user_id, subscription_id: subscription_id}
+          %{user_id: current_user.id, subscription_id: subscription_id}
         )
     end
   end
@@ -148,13 +143,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def payments(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    StripeApi.list_payments(current_user)
-    |> case do
-      {:ok, []} ->
-        {:ok, []}
-
+    case Billing.list_payments(current_user) do
       {:ok, payments} ->
-        {:ok, transform_payments(payments)}
+        {:ok, payments}
 
       {:error, reason} ->
         log_error("Listing payments failed", reason)
@@ -169,22 +160,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
     with :ok <- Sanbase.Accounts.CouponAttempt.check_attempt_limit(current_user, remote_ip),
          {:ok, _} <- Sanbase.Accounts.CouponAttempt.create(current_user, remote_ip),
-         {:ok,
-          %Stripe.Coupon{
-            valid: valid,
-            id: id,
-            name: name,
-            percent_off: percent_off,
-            amount_off: amount_off
-          }} <- Sanbase.StripeApi.retrieve_coupon(coupon) do
-      {:ok,
-       %{
-         is_valid: valid,
-         id: id,
-         name: name,
-         percent_off: percent_off,
-         amount_off: amount_off
-       }}
+         {:ok, coupon_data} <- Billing.retrieve_coupon(coupon) do
+      {:ok, coupon_data}
     else
       {:error, :too_many_attempts} ->
         {:error, "Too many coupon attempts. Please try again later."}
@@ -198,19 +175,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def upcoming_invoice(_root, %{subscription_id: subscription_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    current_user_id = current_user.id
+    case Billing.upcoming_invoice(current_user, subscription_id) do
+      {:ok, invoice} ->
+        {:ok, invoice}
 
-    with %Subscription{user_id: ^current_user_id} = subscription <-
-           Subscription.by_id(subscription_id),
-         true <- subscription.status in [:active, :trialing, :past_due],
-         {:ok, %Stripe.Invoice{} = invoice} <- StripeApi.upcoming_invoice(subscription.stripe_id) do
-      {:ok,
-       %{
-         period_start: DateTime.from_unix!(invoice.period_start),
-         period_end: DateTime.from_unix!(invoice.period_end),
-         amount_due: invoice.total
-       }}
-    else
       {:error, %Stripe.Error{message: message} = reason} ->
         log_error("Error fetching upcoming invoice", reason)
         {:error, message}
@@ -223,19 +191,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def fetch_default_payment_instrument(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    with {:ok, customer} <- StripeApi.fetch_stripe_customer(current_user),
-         {:card?, card} when not is_nil(card) <- {:card?, choose_default_card(customer)} do
-      {:ok,
-       %{
-         last4: card.last4,
-         # dynamic_last4 might not be present
-         dynamic_last4: card[:dynamic_last4],
-         exp_year: card.exp_year,
-         exp_month: card.exp_month,
-         brand: card.brand,
-         funding: card.funding
-       }}
-    else
+    case Billing.default_payment_instrument(current_user) do
+      {:ok, card} ->
+        {:ok, card}
+
       {:card?, nil} ->
         {:error, "Customer has no default payment instrument"}
 
@@ -303,42 +262,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  # Private functions
-
-  # default card can be either a card token or a payment method
-  # they are stored in different places in the customer object
-  defp choose_default_card(customer) do
-    cond do
-      # Check for default payment method first
-      is_map(customer.invoice_settings) and customer.invoice_settings.default_payment_method ->
-        pm_id = customer.invoice_settings.default_payment_method
-        {:ok, pm} = StripeApi.retrieve_payment_method(pm_id)
-        pm.card
-
-      # Fall back to default source if it exists and is a card
-      customer.default_source && is_struct(customer.default_source, Stripe.Card) ->
-        Map.from_struct(customer.default_source)
-
-      # Handle card source type
-      customer.default_source && is_map(customer.default_source) &&
-          Map.get(customer.default_source, :type) == "card" ->
-        get_in(customer.default_source, [:card]) || customer.default_source
-
-      true ->
-        nil
-    end
-  end
-
   def update_default_payment_instrument(_root, %{card_token: card_token}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    if current_user.stripe_customer_id do
-      StripeApi.maybe_detach_payment_method(current_user.stripe_customer_id)
-    end
-
-    Billing.create_or_update_stripe_customer(current_user, card_token)
-    |> case do
-      {:ok, _} ->
+    case Billing.update_default_payment_instrument(current_user, card_token) do
+      {:ok, true} ->
         {:ok, true}
 
       {:error, %Stripe.Error{message: message} = reason} ->
@@ -353,8 +281,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def delete_default_payment_instrument(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    case StripeApi.delete_default_card(current_user) do
-      :ok ->
+    case Billing.delete_default_payment_instrument(current_user) do
+      {:ok, true} ->
         {:ok, true}
 
       {:error, %Stripe.Error{message: message} = reason} ->
@@ -369,9 +297,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def create_stripe_setup_intent(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    case StripeApi.create_setup_intent(current_user) do
-      {:ok, setup_intent} ->
-        {:ok, %{client_secret: setup_intent.client_secret}}
+    case Billing.create_setup_intent(current_user) do
+      {:ok, payload} ->
+        {:ok, payload}
 
       {:error, %Stripe.Error{message: message} = reason} ->
         log_error("Create setup intent: user=#{inspect(current_user)}", reason)
@@ -409,12 +337,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   end
 
   def san_credit_balance(%User{} = user, _args, _resolution) do
-    with {:ok, customer} <- Sanbase.StripeApi.retrieve_customer(user),
-         true <- customer.balance < 0 do
-      {:ok, -(customer.balance / 100)}
-    else
-      _ -> {:ok, 0.00}
-    end
+    {:ok, Billing.san_credit_balance(user)}
   end
 
   def check_annual_discount_eligibility(_root, _args, %{
@@ -424,26 +347,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   end
 
   # private functions
-  defp transform_payments(%Stripe.List{data: payments}) do
-    payments
-    |> Enum.map(fn
-      %Stripe.Charge{
-        status: status,
-        amount: amount,
-        created: created,
-        receipt_url: receipt_url,
-        description: description
-      } ->
-        %{
-          status: status,
-          amount: amount,
-          created_at: DateTime.from_unix!(created),
-          receipt_url: receipt_url,
-          description: description
-        }
-    end)
-  end
-
   defp handle_subscription_error_result(result, log_message, params) do
     case result do
       {:error, %Stripe.Error{message: message} = reason} ->

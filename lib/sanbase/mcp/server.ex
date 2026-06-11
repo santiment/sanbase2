@@ -101,20 +101,11 @@ defmodule Sanbase.MCP.Server do
     try do
       fun.()
     after
-      restore_logger_metadata(old_metadata)
+      # Replace (not merge) the metadata with the saved snapshot, so keys
+      # seeded for this invocation don't leak into the next one handled
+      # by the same process.
+      Logger.reset_metadata(old_metadata)
     end
-  end
-
-  defp restore_logger_metadata(old_metadata) do
-    old_keys = Keyword.keys(old_metadata)
-
-    reset_metadata =
-      Logger.metadata()
-      |> Keyword.keys()
-      |> Enum.reject(&(&1 in old_keys))
-      |> Enum.map(&{&1, nil})
-
-    Logger.metadata(reset_metadata ++ old_metadata)
   end
 
   defp error_response(message) do

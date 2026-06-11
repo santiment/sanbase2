@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
 
   alias Sanbase.Intercom.UserEvent
   alias Sanbase.Clickhouse.ApiCallData
-  alias Sanbase.RequestContext
+  alias Sanbase.Accounts.ActivityTracesConfig
 
   def get_events_for_users(_, %{users: users, days: days} = args, _) do
     from = Map.get(args, :from, Sanbase.Utils.DateTime.days_ago(days))
@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
       # the user's activity. For NDA-protected users, swallow the
       # call entirely — no Kafka topic write, no Postgres row — and
       # return success so clients keep working.
-      if RequestContext.activity_traces_hidden?(ctx) do
+      if ActivityTracesConfig.hidden?(:hide_intercom, ctx) do
         {:ok, true}
       else
         events =

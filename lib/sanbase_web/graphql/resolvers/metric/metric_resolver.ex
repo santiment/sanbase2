@@ -277,17 +277,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         args,
         %{source: %{metric: metric, version: version}} = resolution
       ) do
-    Process.flag(:max_heap_size, @max_heap_size_in_words)
     requested_fields = requested_fields(resolution)
 
-    fetch_timeseries_data(
-      metric,
-      version,
-      args,
-      requested_fields,
-      :timeseries_data_per_slug
-    )
+    # A heap-capped fetch: on overrun the BEAM kills the worker with an
+    # untrappable :killed exit, which we turn into a friendly error instead of a
+    # Sentry alert. See run_per_slug_in_bounded_process/4.
+    run_per_slug_in_bounded_process(metric, version, args, requested_fields)
   rescue
+    # CatchableError raised during the per-slug fetch is handled inside the
+    # bounded worker (see run_per_slug_in_bounded_process/4) and returned as an
+    # {:error, message} tuple, so this clause is only a defensive fallback.
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
   end
@@ -402,6 +401,86 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
             "The metric '#{metric}' must have at least one of the following fields in the selector: #{selectors_str}"}}
       end
     end)
+  end
+
+  # Runs the fetch in an unlinked, monitored worker with a capped heap. On
+  # overrun the BEAM kills the worker (`kill: true`) without logging it
+  # (`error_logger: false`); being unlinked, that :killed exit doesn't touch the
+  # request process - we just see the :DOWN and return a friendly error. Other
+  # outcomes (a CatchableError, or an unexpected raise we still want in Sentry)
+  # are caught in the worker and sent back, so inline behaviour is preserved.
+  defp run_per_slug_in_bounded_process(metric, version, args, requested_fields) do
+    parent = self()
+    ref = make_ref()
+
+    # The worker runs with a fresh, empty process dictionary, so any flags the
+    # request process relies on must be forwarded explicitly.
+    user_id = Process.get(:__graphql_query_current_user_id__)
+    store_executed_sql? = Process.get(:__store_executed_clickhouse_sql__, false)
+
+    {_pid, monitor_ref} =
+      spawn_monitor(fn ->
+        Process.flag(:max_heap_size, %{
+          size: @max_heap_size_in_words,
+          kill: true,
+          error_logger: false
+        })
+
+        if user_id, do: Process.put(:__graphql_query_current_user_id__, user_id)
+        if store_executed_sql?, do: Process.put(:__store_executed_clickhouse_sql__, true)
+
+        outcome =
+          try do
+            {:ok,
+             fetch_timeseries_data(
+               metric,
+               version,
+               args,
+               requested_fields,
+               :timeseries_data_per_slug
+             )}
+          rescue
+            e in [Sanbase.Metric.CatchableError] -> {:ok, {:error, Exception.message(e)}}
+            e -> {:raise, e, __STACKTRACE__}
+          end
+
+        # The ClickHouse SQL is recorded into the worker's process dictionary, so
+        # hand it back to the request process where `executedClickhouseSql` is read.
+        executed_sql = Process.get(:__executed_clickhouse_sql_list__, [])
+        send(parent, {ref, outcome, executed_sql})
+      end)
+
+    receive do
+      {^ref, {:ok, result}, executed_sql} ->
+        Process.demonitor(monitor_ref, [:flush])
+        merge_worker_executed_clickhouse_sql(executed_sql)
+        result
+
+      {^ref, {:raise, e, stacktrace}, _executed_sql} ->
+        Process.demonitor(monitor_ref, [:flush])
+        reraise(e, stacktrace)
+
+      # The heap cap kills the worker with an untrappable :killed exit - the one
+      # outcome we turn into a friendly error instead of a crash.
+      {:DOWN, ^monitor_ref, :process, _pid, :killed} ->
+        {:error,
+         "The metric '#{metric}' returned too much data for `timeseriesDataPerSlug`. " <>
+           "Please use `timeseriesDataPerSlugJson`, which is optimized for large datasets."}
+
+      # Any other worker death is unexpected - surface it so it reaches Sentry.
+      {:DOWN, ^monitor_ref, :process, _pid, reason} ->
+        raise("timeseriesDataPerSlug bounded worker exited unexpectedly: #{inspect(reason)}")
+    end
+  end
+
+  # The bounded worker accumulates executed ClickHouse SQL in its own (initially
+  # empty) process dictionary. Prepend those entries onto whatever the request
+  # process already recorded, keeping the newest-first ordering the reader expects.
+  defp merge_worker_executed_clickhouse_sql([]), do: :ok
+
+  defp merge_worker_executed_clickhouse_sql(executed_sql) do
+    existing = Process.get(:__executed_clickhouse_sql_list__, [])
+    Process.put(:__executed_clickhouse_sql_list__, executed_sql ++ existing)
   end
 
   # timeseries_data and timeseries_data_per_slug are processed and fetched in

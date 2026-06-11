@@ -36,11 +36,11 @@ defmodule Sanbase.DeepResearch.Config do
   `config.configurable`, and the multi-channel stream modes that surface the
   typed event protocol (`custom`), state updates (`updates`) and assistant
   thinking tokens (`messages`).
-  """
-  @doc """
-  The run body. `opts[:mcp_servers]` is a list of agent MCP server maps
+
+  `opts[:mcp_servers]` is a list of agent MCP server maps
   (`%{"name", "url", "headers", "tools"}`) to connect for this run; when present
   the agent exposes those servers' tools (e.g. Santiment data) to the research.
+  `opts[:model_tier]` is the price-tier name picked in the UI (see `model_tiers/0`).
   """
   @spec run_payload(String.t(), keyword()) :: map()
   def run_payload(message, opts \\ []) when is_binary(message) do
@@ -62,13 +62,44 @@ defmodule Sanbase.DeepResearch.Config do
       "max_concurrent_research_units" => get(:max_concurrent_research_units, 2),
       "max_react_tool_calls" => get(:max_react_tool_calls, 500),
       # Models are selected by tier NAME only (extra-low | low | mid | high); the
-      # agent ignores per-model keys (research_model etc.) with a warning. Unset
-      # falls back to the agent's default tier (extra-low).
-      "model_tier" => get(:model_tier)
+      # agent ignores per-model keys (research_model etc.) with a warning. The
+      # user's UI pick (opts) wins over the deploy-wide default; unset falls back
+      # to the agent's own default tier (extra-low).
+      "model_tier" => Keyword.get(opts, :model_tier) || get(:model_tier)
     }
     |> maybe_put_api_keys()
     |> maybe_put_mcp(Keyword.get(opts, :mcp_servers, []))
     |> reject_nil_values()
+  end
+
+  @doc """
+  Tiers selectable in the UI: `{value, label, hint}`. Must mirror `MODEL_TIERS`
+  in the agent's `config.py` — the agent warns and falls back to its default on
+  an unknown name, so a stale entry degrades gracefully.
+  """
+  @spec model_tiers() :: [{String.t(), String.t(), String.t()}]
+  def model_tiers() do
+    [
+      {"extra-low", "Extra low", "cheapest models — demos and smoke tests"},
+      {"low", "Low", "budget models — quick looks"},
+      {"mid", "Mid", "balanced cost/quality — everyday research"},
+      {"high", "High", "best quality — decision-grade research"}
+    ]
+  end
+
+  @doc "The tier preselected in the UI: deploy config, else the agent's default."
+  @spec default_model_tier() :: String.t()
+  def default_model_tier(), do: get(:model_tier) || "extra-low"
+
+  @doc """
+  Whether the research UI shows the model-tier dropdown
+  (`DRA_TIERING_DROPDOWN_ENABLED`, assumed false when missing). Read straight
+  from the environment at call time — a feature flag, not app config.
+  When false, every run uses the deploy-wide tier (`default_model_tier/0`).
+  """
+  @spec tiering_dropdown_enabled?() :: boolean()
+  def tiering_dropdown_enabled?() do
+    System.get_env("DRA_TIERING_DROPDOWN_ENABLED", "false") == "true"
   end
 
   @doc """

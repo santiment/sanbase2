@@ -35,6 +35,11 @@ defmodule SanbaseWeb.DeepResearchLive do
        mcp_catalog: catalog,
        # All configured MCP servers are enabled (connected) by default.
        mcp_enabled: MapSet.new(Enum.map(catalog, & &1.key)),
+       # Model price tier (the only model knob the agent exposes per run). The
+       # dropdown is feature-flagged; when off, every run uses the deploy default.
+       tiering_dropdown_enabled: Sanbase.DeepResearch.Config.tiering_dropdown_enabled?(),
+       model_tiers: Sanbase.DeepResearch.Config.model_tiers(),
+       model_tier: Sanbase.DeepResearch.Config.default_model_tier(),
        next_id: 1,
        now_ms: now_ms()
      )}
@@ -49,6 +54,16 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   def handle_event("use_example", %{"q" => query}, socket) do
     {:noreply, assign(socket, :query, query)}
+  end
+
+  def handle_event("select_tier", %{"model_tier" => tier}, socket) do
+    # Whitelist against the catalog (and the feature flag — a crafted event must
+    # not change the tier when the dropdown is off). Anything else keeps current.
+    valid? =
+      socket.assigns.tiering_dropdown_enabled and
+        Enum.any?(socket.assigns.model_tiers, fn {value, _, _} -> value == tier end)
+
+    {:noreply, if(valid?, do: assign(socket, :model_tier, tier), else: socket)}
   end
 
   def handle_event("toggle_mcp", %{"key" => key}, socket) do
@@ -95,6 +110,7 @@ defmodule SanbaseWeb.DeepResearchLive do
     # Pure, in-memory: which MCP servers are toggled on. Auth resolution (a DB
     # read) is deferred into the async task so the LiveView process never blocks.
     enabled_mcp = enabled_mcp_servers(socket)
+    model_tier = socket.assigns.model_tier
     user = socket.assigns[:current_user]
 
     # Everything network/DB-bound runs off the socket via start_async/3 (like
@@ -110,7 +126,9 @@ defmodule SanbaseWeb.DeepResearchLive do
       now_ms: now
     )
     |> schedule_tick()
-    |> start_async(:research, fn -> run_stream(thread_id, text, lv, enabled_mcp, user) end)
+    |> start_async(:research, fn ->
+      run_stream(thread_id, text, lv, enabled_mcp, user, model_tier)
+    end)
   end
 
   # The enabled catalog entries — pure, runs in the LiveView process (no DB/IO).
@@ -118,27 +136,34 @@ defmodule SanbaseWeb.DeepResearchLive do
     Enum.filter(socket.assigns.mcp_catalog, &MapSet.member?(socket.assigns.mcp_enabled, &1.key))
   end
 
+  defp tier_hint(tiers, selected) do
+    case List.keyfind(tiers, selected, 0) do
+      {_, _, hint} -> hint
+      nil -> nil
+    end
+  end
+
   # Runs INSIDE the async task (off the LiveView process): resolve MCP auth (a
   # DB read), create the thread on the first turn, then stream. Returns the
   # terminal status, handled by handle_async/3.
-  defp run_stream(thread_id, text, lv, enabled_mcp, user) do
+  defp run_stream(thread_id, text, lv, enabled_mcp, user, model_tier) do
     mcp_servers = build_mcp_servers(enabled_mcp, user)
-    do_run_stream(thread_id, text, lv, mcp_servers)
+    do_run_stream(thread_id, text, lv, mcp_servers: mcp_servers, model_tier: model_tier)
   end
 
-  defp do_run_stream(nil, text, lv, mcp_servers) do
+  defp do_run_stream(nil, text, lv, opts) do
     case Client.create_thread() do
       {:ok, thread_id} ->
         send(lv, {:dra_thread, thread_id})
-        Client.stream_run(thread_id, text, lv, mcp_servers)
+        Client.stream_run(thread_id, text, lv, opts)
 
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp do_run_stream(thread_id, text, lv, mcp_servers) when is_binary(thread_id) do
-    Client.stream_run(thread_id, text, lv, mcp_servers)
+  defp do_run_stream(thread_id, text, lv, opts) when is_binary(thread_id) do
+    Client.stream_run(thread_id, text, lv, opts)
   end
 
   # Build agent MCP server maps from the enabled catalog entries, resolving
@@ -435,8 +460,38 @@ defmodule SanbaseWeb.DeepResearchLive do
       </div>
 
       <div class="shrink-0 pt-2">
-        <div :if={@mcp_catalog != []} class="mb-2 flex flex-wrap items-center gap-2 px-1">
-          <span class="text-[11px] font-medium uppercase tracking-wide text-base-content/40">
+        <div
+          :if={@tiering_dropdown_enabled or @mcp_catalog != []}
+          class="mb-2 flex flex-wrap items-center gap-2 px-1"
+        >
+          <span
+            :if={@tiering_dropdown_enabled}
+            class="text-[11px] font-medium uppercase tracking-wide text-base-content/40"
+          >
+            Model tier
+          </span>
+          <form :if={@tiering_dropdown_enabled} phx-change="select_tier">
+            <select
+              name="model_tier"
+              title={tier_hint(@model_tiers, @model_tier)}
+              class="rounded-full border border-base-300 bg-base-100 px-2.5 py-1 text-xs text-base-content/70 transition hover:border-base-content/20 focus:outline-none"
+            >
+              <option
+                :for={{value, label, hint} <- @model_tiers}
+                value={value}
+                selected={value == @model_tier}
+              >
+                {label} — {hint}
+              </option>
+            </select>
+          </form>
+          <span
+            :if={@mcp_catalog != []}
+            class={[
+              "text-[11px] font-medium uppercase tracking-wide text-base-content/40",
+              @tiering_dropdown_enabled && "ml-2"
+            ]}
+          >
             Data sources
           </span>
           <button
@@ -810,7 +865,7 @@ defmodule SanbaseWeb.DeepResearchLive do
         </span>
         <.icon
           :if={Map.get(@call, :done) == true}
-          name="hero-check-circle"
+          name={if @call[:ok] == false, do: "hero-x-circle", else: "hero-check-circle"}
           class={"ml-auto size-3 #{if @call[:ok] == false, do: "text-error", else: "text-success"}"}
         />
       </summary>

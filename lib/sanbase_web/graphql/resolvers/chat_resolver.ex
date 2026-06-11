@@ -199,7 +199,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
         {:error, "Chat not found"}
 
       chat ->
-        if can_access_chat?(chat, current_user) do
+        if can_modify_chat?(chat, current_user && current_user.id) do
           case Chat.delete_chat(chat_id) do
             {:ok, deleted_chat} -> {:ok, deleted_chat}
             {:error, :not_found} -> {:error, "Chat not found"}
@@ -215,20 +215,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
   def submit_message_feedback(
         _root,
         %{message_id: message_id, feedback_type: feedback_type},
-        _context
+        resolution
       ) do
-    # Convert GraphQL enum to string
+    current_user = get_in(resolution.context, [:auth, :current_user])
     feedback_string = convert_feedback_enum_to_string(feedback_type)
 
-    case Chat.update_message_feedback(message_id, feedback_string) do
-      {:ok, updated_message} ->
-        {:ok, updated_message}
+    with message when not is_nil(message) <- Chat.get_message(message_id),
+         chat when not is_nil(chat) <- Chat.get_chat(message.chat_id),
+         true <- can_access_chat?(chat, current_user) do
+      case Chat.update_message_feedback(message_id, feedback_string) do
+        {:ok, updated_message} ->
+          {:ok, updated_message}
 
-      {:error, :message_not_found} ->
-        {:error, "Message not found"}
+        {:error, :message_not_found} ->
+          {:error, "Message not found"}
 
-      {:error, changeset} ->
-        {:error, format_changeset_errors(changeset)}
+        {:error, changeset} ->
+          {:error, format_changeset_errors(changeset)}
+      end
+    else
+      false -> {:error, "Access denied"}
+      _ -> {:error, "Message not found"}
     end
   end
 

@@ -311,6 +311,43 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
     end
   end
 
+  describe "submitChatMessageFeedback mutation" do
+    test "owner can submit feedback on their chat message", %{conn: conn, user: user} do
+      {:ok, chat} = Chat.create_chat(%{title: "Test Chat", user_id: user.id})
+      {:ok, message} = Chat.add_message_to_chat(chat.id, "Assistant reply", :assistant)
+
+      mutation = """
+      mutation {
+        submitChatMessageFeedback(messageId: "#{message.id}", feedbackType: THUMBS_UP) {
+          id
+        }
+      }
+      """
+
+      result = execute_mutation_with_success(mutation, "submitChatMessageFeedback", conn)
+      assert result["id"] == message.id
+    end
+
+    test "cannot submit feedback on another user's chat message", %{
+      conn: conn,
+      other_user: other_user
+    } do
+      {:ok, other_chat} = Chat.create_chat(%{title: "Other Chat", user_id: other_user.id})
+      {:ok, message} = Chat.add_message_to_chat(other_chat.id, "Assistant reply", :assistant)
+
+      mutation = """
+      mutation {
+        submitChatMessageFeedback(messageId: "#{message.id}", feedbackType: THUMBS_UP) {
+          id
+        }
+      }
+      """
+
+      result = execute_mutation_with_errors(mutation, conn)
+      assert result["message"] =~ "Access denied"
+    end
+  end
+
   describe "myChats query" do
     test "returns user's chats ordered by most recent", %{conn: conn, user: user} do
       {:ok, chat1} = Chat.create_chat(%{title: "First Chat", user_id: user.id})

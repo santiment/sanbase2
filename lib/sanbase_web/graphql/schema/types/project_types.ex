@@ -124,28 +124,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   """
   object :project do
     @desc ~s"""
-    Returns a list of available signals. Every one of the signals in the list
-    can be passed as the `metric` argument of the `getMetric` query.
-
-    For example, any of the signals from the query:
+    Returns a list of available signals for this project.
     ```
     {
       projectBySlug(slug: "ethereum"){ availableSignals }
     }
-    ```
-    can be used like this:
-    ```
-    {
-      getSignal(signal: "<signal>"){
-        timeseriesData(
-          slug: "ethereum"
-          from: "2019-01-01T00:00:00Z"
-          to: "2019-02-01T00:00:00Z"
-          interval: "1d"){
-            datetime
-            value
-          }
-      }
     ```
     """
 

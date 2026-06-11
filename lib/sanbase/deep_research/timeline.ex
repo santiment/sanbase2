@@ -179,6 +179,19 @@ defmodule Sanbase.DeepResearch.Timeline do
     end
   end
 
+  def reduce_timeline(prev, %{kind: :subagent_findings} = a) do
+    prev ++
+      [
+        %{
+          kind: :subagent_findings,
+          unit: a[:unit],
+          summary: a[:summary],
+          findings: a[:findings] || [],
+          gaps: a[:gaps] || []
+        }
+      ]
+  end
+
   def reduce_timeline(prev, _), do: prev
 
   # Find the item of `kind` with `id` and replace it via `fun.(existing)`;
@@ -243,6 +256,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `{:narration, [thinking_item, ...]}` - contiguous run of thinking (visible prose)
     * `{:tools, [item, ...], running?}`    - contiguous run of search/mcp/status (folded)
     * `{:skill, [skill_item, ...]}`        - contiguous run of skills (always-visible chips)
+    * `{:findings, [finding_item, ...]}`   - contiguous run of sub-agent findings (folded tables)
   """
   @spec segment([map()]) :: [tuple()]
   def segment(items) do
@@ -251,6 +265,7 @@ defmodule Sanbase.DeepResearch.Timeline do
         case item.kind do
           :thinking -> {push_narration(flush_tools(blocks, tools), item), []}
           :skill -> {push_skill(flush_tools(blocks, tools), item), []}
+          :subagent_findings -> {push_findings(flush_tools(blocks, tools), item), []}
           _ -> {blocks, tools ++ [item]}
         end
       end)
@@ -273,6 +288,11 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   defp push_skill([{:skill, items} | rest], item), do: [{:skill, items ++ [item]} | rest]
   defp push_skill(blocks, item), do: [{:skill, [item]} | blocks]
+
+  defp push_findings([{:findings, items} | rest], item),
+    do: [{:findings, items ++ [item]} | rest]
+
+  defp push_findings(blocks, item), do: [{:findings, [item]} | blocks]
 
   @doc "True if any tool item in the run is still in flight (search awaiting results / mcp not done)."
   @spec tools_running?([map()]) :: boolean()

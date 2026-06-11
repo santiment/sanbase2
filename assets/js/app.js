@@ -12,6 +12,7 @@ import { TickerAutocomplete } from "./ticker_autocomplete"
 import { EasyMDEEditor } from "./hooks/easymde_editor"
 import { TimeseriesChart } from "./hooks/timeseries_chart"
 import { Copy } from "./hooks/copy"
+import { KeepDetailsOpen } from "./hooks/keep_details_open"
 
 // Make Sortable available globally
 window.Sortable = Sortable
@@ -26,7 +27,8 @@ const Hooks = {
   TickerAutocomplete: TickerAutocomplete,
   EasyMDEEditor: EasyMDEEditor,
   TimeseriesChart: TimeseriesChart,
-  Copy: Copy
+  Copy: Copy,
+  KeepDetailsOpen: KeepDetailsOpen
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

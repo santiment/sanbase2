@@ -61,10 +61,10 @@ defmodule Sanbase.DeepResearch.Config do
       "allow_clarification" => get(:allow_clarification, true),
       "max_concurrent_research_units" => get(:max_concurrent_research_units, 2),
       "max_react_tool_calls" => get(:max_react_tool_calls, 500),
-      "research_model" => get(:research_model),
-      "summarization_model" => get(:summarization_model),
-      "compression_model" => get(:compression_model),
-      "final_report_model" => get(:final_report_model)
+      # Models are selected by tier NAME only (extra-low | low | mid | high); the
+      # agent ignores per-model keys (research_model etc.) with a warning. Unset
+      # falls back to the agent's default tier (extra-low).
+      "model_tier" => get(:model_tier)
     }
     |> maybe_put_api_keys()
     |> maybe_put_mcp(Keyword.get(opts, :mcp_servers, []))

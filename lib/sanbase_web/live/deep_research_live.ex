@@ -637,6 +637,14 @@ defmodule SanbaseWeb.DeepResearchLive do
   defp research_timeline(assigns) do
     turn = assigns.turn
     proc_items = visible_items(turn.timeline, turn.report, turn.clarification)
+    # A terminal turn has nothing in flight — settle any tool item still marked
+    # running so it shows a final state, not a perpetual spinner (e.g. when a run was
+    # interrupted before a call returned, like a dev hot-reload killing the workers).
+    proc_items =
+      if Timeline.terminal_phase?(turn.phase),
+        do: Enum.map(proc_items, &settle_item/1),
+        else: proc_items
+
     blocks = Timeline.segment(proc_items)
     has_research = Enum.any?(blocks, &match?({:tools, _, _}, &1)) or not is_nil(turn.report)
 
@@ -650,7 +658,7 @@ defmodule SanbaseWeb.DeepResearchLive do
     ~H"""
     <div :if={not (@empty? and not @running)} class="space-y-3">
       <%= for {block, index} <- Enum.with_index(@blocks) do %>
-        <.timeline_block block={block} index={index} />
+        <.timeline_block block={block} index={index} turn_id={@turn.id} />
       <% end %>
 
       <.report_card :if={@turn.report} id={@turn.id} report={@turn.report} />
@@ -682,6 +690,7 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   attr :block, :any, required: true
   attr :index, :integer, required: true
+  attr :turn_id, :any, default: nil
 
   defp timeline_block(%{block: {:narration, items}} = assigns) do
     assigns = assign(assigns, :items, items)
@@ -712,6 +721,58 @@ defmodule SanbaseWeb.DeepResearchLive do
     """
   end
 
+  defp timeline_block(%{block: {:findings, items}} = assigns) do
+    assigns = assign(assigns, :items, items)
+
+    ~H"""
+    <div class="space-y-2">
+      <details
+        :for={{f, fi} <- Enum.with_index(@items)}
+        id={"dra-findings-#{@turn_id}-#{@index}-#{fi}"}
+        phx-hook="KeepDetailsOpen"
+        class="group rounded-lg border border-base-300 bg-indigo-500/5"
+      >
+        <summary class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm text-base-content/80 hover:text-base-content">
+          <.icon name="hero-clipboard-document-list" class="size-4 shrink-0 text-indigo-500" />
+          <span class="font-medium">Sub-agent findings</span>
+          <span :if={f[:unit]} class="truncate text-xs text-base-content/50">· {f[:unit]}</span>
+          <span class="ml-auto shrink-0 text-xs text-base-content/50">
+            {length(f.findings)} {pluralize(length(f.findings), "finding", "findings")}
+          </span>
+          <.icon
+            name="hero-chevron-down"
+            class="size-4 shrink-0 text-base-content/40 transition-transform group-open:rotate-0 -rotate-90"
+          />
+        </summary>
+        <div class="space-y-2 border-t border-base-300 px-3 py-2.5">
+          <p :if={f[:summary]} class="text-sm text-base-content/80">{f[:summary]}</p>
+          <div :if={f.findings != []} class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="text-left text-base-content/50">
+                  <th class="py-1 pr-3 font-medium">Finding</th>
+                  <th class="py-1 pr-3 font-medium">Evidence</th>
+                  <th class="py-1 font-medium">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={row <- f.findings} class="border-t border-base-200 align-top">
+                  <td class="py-1 pr-3">{finding_field(row, ~w(finding observation claim))}</td>
+                  <td class="py-1 pr-3 text-base-content/70">
+                    {finding_field(row, ~w(evidence data value))}
+                  </td>
+                  <td class="py-1 text-base-content/60">{finding_field(row, ~w(source))}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p :if={f.gaps != []} class="text-xs text-warning">Gaps: {Enum.join(f.gaps, "; ")}</p>
+        </div>
+      </details>
+    </div>
+    """
+  end
+
   defp timeline_block(%{block: {:tools, items, running}} = assigns) do
     assigns = assign(assigns, items: items, running: running, summary: tool_summary(items))
 
@@ -729,21 +790,49 @@ defmodule SanbaseWeb.DeepResearchLive do
       </summary>
       <div class="space-y-3 border-t border-base-300 px-3.5 py-3">
         <%= for {item, i} <- Enum.with_index(Timeline.coalesce(@items)) do %>
-          <.tool_item item={item} index={i} />
+          <.tool_item item={item} index={i} dom_id={"dra-tools-#{@turn_id}-#{@index}-#{i}"} />
         <% end %>
       </div>
     </details>
     """
   end
 
+  # Mark an in-flight tool item as settled (done, outcome unknown) so a terminal
+  # turn shows no spinner. ok stays nil → the row renders a neutral "interrupted"
+  # icon, not a misleading success check or error cross.
+  defp settle_item(%{kind: :mcp, done: true} = item), do: item
+  defp settle_item(%{kind: :mcp} = item), do: Map.put(item, :done, true)
+
+  defp settle_item(%{kind: :search} = item) do
+    if is_nil(Map.get(item, :count)),
+      do: Map.put(item, :count, length(item[:results] || [])),
+      else: item
+  end
+
+  defp settle_item(item), do: item
+
+  # Schema-tolerant read of a finding row: cheap models drift the keys
+  # (finding/observation, evidence/data), so try each in order.
+  defp finding_field(row, keys) when is_map(row) do
+    Enum.find_value(keys, "", fn k ->
+      case row[k] do
+        v when is_binary(v) and v != "" -> v
+        _ -> nil
+      end
+    end)
+  end
+
+  defp finding_field(_, _), do: ""
+
   attr :item, :any, required: true
   attr :index, :integer, required: true
+  attr :dom_id, :string, default: nil
 
   defp tool_item(%{item: {:mcp_group, items}} = assigns) do
     assigns = assign(assigns, items: items, running: Timeline.tools_running?(items))
 
     ~H"""
-    <details class="group">
+    <details id={@dom_id} phx-hook="KeepDetailsOpen" class="group">
       <summary class="flex cursor-pointer list-none items-center gap-2 text-sm text-base-content/80 hover:text-base-content">
         <.icon name="hero-circle-stack" class="size-4 text-indigo-500" />
         <span class="font-medium">Data tools</span>
@@ -864,9 +953,20 @@ defmodule SanbaseWeb.DeepResearchLive do
         <span :if={Map.get(@call, :done) != true} class="loading loading-spinner loading-xs ml-auto">
         </span>
         <.icon
-          :if={Map.get(@call, :done) == true}
-          name={if @call[:ok] == false, do: "hero-x-circle", else: "hero-check-circle"}
-          class={"ml-auto size-3 #{if @call[:ok] == false, do: "text-error", else: "text-success"}"}
+          :if={Map.get(@call, :done) == true and @call[:ok] == true}
+          name="hero-check-circle"
+          class="ml-auto size-3 text-success"
+        />
+        <.icon
+          :if={Map.get(@call, :done) == true and @call[:ok] == false}
+          name="hero-x-circle"
+          class="ml-auto size-3 text-error"
+        />
+        <.icon
+          :if={Map.get(@call, :done) == true and is_nil(@call[:ok])}
+          name="hero-minus-circle"
+          class="ml-auto size-3 text-base-content/40"
+          title="Interrupted — did not return"
         />
       </summary>
       <pre

@@ -17,12 +17,18 @@ defmodule Sanbase.DeepResearch.EventParser do
   An empty map means "nothing to apply" (heartbeat / noise / tool message).
   """
 
-  @activity_types ~w(search_query search_results mcp_call mcp_result source skill status report clarification)
+  @activity_types ~w(search_query search_results mcp_call mcp_result source skill status report clarification subagent_findings)
 
   # Internal structured-output field names that can leak onto the messages channel.
   @structured_field_re ~r/need_clarification|allow_clarification|max_researcher|max_concurrent|search_api/i
   # Pure JSON scaffolding (no prose) on the messages channel.
   @json_scaffolding_re ~r/^[\s{}\[\]",:_0-9.\-]+$/
+  # A raw JSON object on the messages channel — typically a sub-agent's findings blob
+  # streaming as thinking, optionally wrapped in a ```json fence. The `subagent_findings`
+  # event renders it as a folded table, so drop the raw JSON here (also a backstop for an
+  # orchestrator JSON leak). Matches: a leading fence/brace, OR the findings array key
+  # anywhere (so a fenced or partially-streamed blob is still caught).
+  @json_object_re ~r/^\s*`{0,3}\s*(?:json)?\s*[\[{]|"findings"\s*:\s*\[/
 
   @spec parse(term()) :: map()
   def parse(value) when is_map(value) do
@@ -134,6 +140,30 @@ defmodule Sanbase.DeepResearch.EventParser do
     %{
       phase: :researching,
       activity: %{kind: :skill, name: to_string(obj["name"] || ""), path: non_blank(obj["path"])}
+    }
+  end
+
+  defp parse_activity_event(%{"type" => "subagent_findings"} = obj) do
+    findings =
+      case obj["findings"] do
+        list when is_list(list) -> Enum.filter(list, &is_map/1)
+        _ -> []
+      end
+
+    gaps =
+      case obj["gaps"] do
+        list when is_list(list) -> list |> Enum.map(&to_string/1) |> Enum.reject(&(&1 == ""))
+        _ -> []
+      end
+
+    %{
+      activity: %{
+        kind: :subagent_findings,
+        unit: non_blank(obj["unit"]),
+        summary: non_blank(obj["summary"]),
+        findings: findings,
+        gaps: gaps
+      }
     }
   end
 
@@ -263,6 +293,7 @@ defmodule Sanbase.DeepResearch.EventParser do
         String.trim(text) == "" -> %{}
         Regex.match?(@structured_field_re, text) -> %{}
         Regex.match?(@json_scaffolding_re, text) -> %{}
+        Regex.match?(@json_object_re, text) -> %{}
         true -> %{thinking: %{id: message_id(payload) || "msg", text: text}, phase: :researching}
       end
     end

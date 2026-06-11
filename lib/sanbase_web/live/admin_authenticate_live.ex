@@ -5,6 +5,12 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
 
   require Logger
 
+  # Captured at compile time. `Mix` is not available at runtime in releases, so
+  # this can never be :dev/:test in a production build. Prevents passwordless
+  # direct login from being enabled by a missing/incorrect DEPLOYMENT_ENVIRONMENT
+  # runtime variable in production.
+  @compile_env Mix.env()
+
   def mount(_params, _session, socket) do
     {:ok,
      socket
@@ -105,9 +111,11 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
   end
 
   defp login(email) do
-    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
-      "dev" -> direct_login(email)
-      _ -> send_email_login(email)
+    if @compile_env in [:dev, :test] and
+         Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "dev" do
+      direct_login(email)
+    else
+      send_email_login(email)
     end
   end
 

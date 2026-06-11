@@ -237,10 +237,14 @@ defmodule Sanbase.Clickhouse.Query do
     apply_settings(query, ctx.user_id, ActivityTracesConfig.hidden?(:hide_ch_query_log, ctx))
   end
 
-  defp apply_settings(%{sql: sql, log_comment: log_comment} = query, user_id, hide_activity?) do
+  defp apply_settings(
+         %{sql: sql, log_comment: log_comment} = query,
+         user_id,
+         activity_traces_hidden?
+       ) do
     log_comment =
       cond do
-        hide_activity? ->
+        activity_traces_hidden? ->
           # Keep user_id (matches the Kafka api_call export) but drop the
           # request/stacktrace breadcrumbs that could reveal what was queried.
           log_comment
@@ -259,7 +263,7 @@ defmodule Sanbase.Clickhouse.Query do
         " log_comment='#{Jason.encode!(log_comment)}'"
       end
 
-    log_queries_str = if hide_activity?, do: " log_queries=0"
+    log_queries_str = if activity_traces_hidden?, do: " log_queries=0"
 
     settings_parts =
       [log_comment_str, log_queries_str]

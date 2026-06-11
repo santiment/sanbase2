@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSendPrivacyTest do
     {:ok, protected: protected, unprotected: unprotected}
   end
 
-  defp metadata(user_id, queries, hide_activity?) do
+  defp metadata(user_id, queries, activity_traces_hidden?) do
     %{
       request_id: "req-1",
       timestamp: 1_700_000_000,
@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSendPrivacyTest do
       },
       remote_ip: "127.0.0.1",
       partial_context: %{},
-      hide_activity?: hide_activity?
+      activity_traces_hidden?: activity_traces_hidden?
     }
   end
 

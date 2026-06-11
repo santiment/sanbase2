@@ -96,7 +96,7 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error_from_exception(e, "query_transform/3", __STACKTRACE__)
+      log_and_return_error_from_exception(e, "query_transform/3", __STACKTRACE__, opts)
   end
 
   @doc ~s"""
@@ -134,8 +134,11 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error_from_exception(e, "query_transform_with_metadata/3", __STACKTRACE__,
-        propagate_error: true
+      log_and_return_error_from_exception(
+        e,
+        "query_transform_with_metadata/3",
+        __STACKTRACE__,
+        [propagate_error: true] ++ opts
       )
   end
 
@@ -176,11 +179,11 @@ defmodule Sanbase.ClickhouseRepo do
         {:ok, Enum.reduce(result.rows, init, reducer)}
 
       {:error, error} ->
-        log_and_return_error(error, "query_reduce/4")
+        log_and_return_error(error, "query_reduce/4", opts)
     end
   rescue
     e ->
-      log_and_return_error_from_exception(e, "query_reduce/4", __STACKTRACE__)
+      log_and_return_error_from_exception(e, "query_reduce/4", __STACKTRACE__, opts)
   end
 
   defp execute_query_transform(query, args, opts) do
@@ -231,7 +234,7 @@ defmodule Sanbase.ClickhouseRepo do
     # correlatable breadcrumb in the logs. The returned error still
     # carries the real message — it goes back to the user who ran the
     # query, not into the logs.
-    if activity_traces_hidden?() do
+    if activity_traces_hidden?(opts) do
       Logger.warning(
         "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason hidden (activity_traces_hidden)"
       )
@@ -253,7 +256,7 @@ defmodule Sanbase.ClickhouseRepo do
 
     error_message = extract_error_from_error(error)
 
-    if activity_traces_hidden?() do
+    if activity_traces_hidden?(opts) do
       Logger.warning(
         "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason hidden (activity_traces_hidden)"
       )
@@ -266,8 +269,12 @@ defmodule Sanbase.ClickhouseRepo do
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
 
-  defp activity_traces_hidden?() do
-    ActivityTracesConfig.hidden?(:hide_ch_error_logs, Sanbase.RequestContext.current())
+  # Prefer the ctx explicitly threaded through `opts` (set by the
+  # Query-struct entry points); fall back to the ambient context for
+  # bare-SQL callers that don't carry one.
+  defp activity_traces_hidden?(opts) do
+    ctx = Keyword.get(opts, :ctx) || Sanbase.RequestContext.current()
+    ActivityTracesConfig.hidden?(:hide_ch_error_logs, ctx)
   end
 
   defp extract_error_from_stacktrace(stacktrace) do

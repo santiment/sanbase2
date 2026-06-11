@@ -314,7 +314,8 @@ defmodule Sanbase.DeepResearch.Timeline do
         cut = start + len
         head = binary_part(md, 0, cut)
         tail = binary_part(md, cut, byte_size(md) - cut)
-        reflow_tail(md, head, tail)
+        {sources_block, rest} = split_at_next_heading(tail)
+        reflow_tail(md, head, sources_block, rest)
 
       _ ->
         md
@@ -323,13 +324,28 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   def reflow_sources(md), do: md
 
-  defp reflow_tail(md, head, tail) do
-    markers = length(Regex.scan(~r/\[\d+\]/, tail))
-    lines_with_marker = tail |> String.split("\n") |> Enum.count(&Regex.match?(~r/\[\d+\]/, &1))
+  # The Sources block ends at the next Markdown heading (if any) — anything after
+  # it is a separate section and must be left untouched, even if it has citation
+  # markers of its own.
+  defp split_at_next_heading(tail) do
+    case Regex.run(~r/\n\#{1,6}\s/, tail, return: :index) do
+      [{h_start, _} | _] ->
+        {binary_part(tail, 0, h_start), binary_part(tail, h_start, byte_size(tail) - h_start)}
+
+      _ ->
+        {tail, ""}
+    end
+  end
+
+  defp reflow_tail(md, head, sources_block, rest) do
+    markers = length(Regex.scan(~r/\[\d+\]/, sources_block))
+
+    lines_with_marker =
+      sources_block |> String.split("\n") |> Enum.count(&Regex.match?(~r/\[\d+\]/, &1))
 
     entries =
       ~r/\s*(?=\[\d+\]\s)/
-      |> Regex.split(tail)
+      |> Regex.split(sources_block)
       |> Enum.map(&(&1 |> String.replace(~r/^[-*]\s*/, "") |> String.trim()))
       |> Enum.reject(&(&1 == ""))
 
@@ -338,7 +354,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     if markers < 2 or lines_with_marker >= markers or length(entries) < 2 do
       md
     else
-      head <> Enum.map_join(entries, "\n", &"- #{&1}") <> "\n"
+      head <> Enum.map_join(entries, "\n", &"- #{&1}") <> "\n" <> rest
     end
   end
 end

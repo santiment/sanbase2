@@ -36,15 +36,15 @@ config :sanbase, Sanbase.SmartContracts.SanrNFT,
   alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
 
 # Deep research agent (LangGraph). The LiveView connects directly to the agent's
-# HTTP/SSE API. Models/keys left unset fall back to the agent server's own .env
-# defaults (per-run `configurable` only overrides what we send).
+# HTTP/SSE API. Keys left unset fall back to the agent server's own .env defaults
+# (per-run `configurable` only overrides what we send).
 config :sanbase, Sanbase.DeepResearch,
   base_url: System.get_env("DRA_BASE_URL", "http://127.0.0.1:2024"),
   assistant_id: System.get_env("DRA_ASSISTANT_ID", "deep_research_agent"),
-  research_model: System.get_env("DRA_RESEARCH_MODEL"),
-  final_report_model: System.get_env("DRA_REPORT_MODEL"),
-  summarization_model: System.get_env("DRA_SUMMARIZATION_MODEL"),
-  compression_model: System.get_env("DRA_COMPRESSION_MODEL"),
+  # Models are selected by tier NAME only (extra-low | low | mid | high) — the
+  # models behind each name live in the agent's code (MODEL_TIERS in config.py).
+  # Per-model env vars (DRA_RESEARCH_MODEL etc.) are no longer honored anywhere.
+  model_tier: System.get_env("DRA_MODEL_TIER"),
   openrouter_api_key: System.get_env("OPENROUTER_API_KEY"),
   tavily_api_key: System.get_env("TAVILY_API_KEY"),
   # Catalog of MCP servers the research UI can connect to. Each entry:

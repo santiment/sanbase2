@@ -37,16 +37,29 @@ defmodule Sanbase.DeepResearch.Client do
     end
   end
 
-  @doc "Cancel an in-flight run. Best-effort; errors are swallowed."
+  @doc """
+  Cancel an in-flight run. Best-effort (always returns `:ok`), but every failure
+  is logged instead of swallowed silently — the thread is reused for later turns,
+  so a failed cancel leaving the previous run alive is worth a warning.
+  """
   @spec cancel_run(String.t(), String.t()) :: :ok
   def cancel_run(thread_id, run_id) do
-    Req.post(url("/threads/#{thread_id}/runs/#{run_id}/cancel"),
-      json: %{},
-      receive_timeout: @request_timeout,
-      retry: false
-    )
+    case Req.post(url("/threads/#{thread_id}/runs/#{run_id}/cancel"),
+           json: %{},
+           receive_timeout: @request_timeout,
+           retry: false
+         ) do
+      {:ok, %{status: status}} when status in 200..299 ->
+        :ok
 
-    :ok
+      {:ok, %{status: status, body: body}} ->
+        Logger.warning("DeepResearch cancel_run failed (HTTP #{status}): #{inspect(body)}")
+        :ok
+
+      {:error, error} ->
+        Logger.warning("DeepResearch cancel_run failed: #{error_message(error)}")
+        :ok
+    end
   rescue
     error ->
       Logger.warning("DeepResearch cancel_run failed: #{Exception.message(error)}")
@@ -88,6 +101,10 @@ defmodule Sanbase.DeepResearch.Client do
         end
       )
 
+    # The last SSE event may arrive without a trailing newline, leaving it in the
+    # buffer — flush it so a terminal `run_id`/`error`/`report` isn't dropped.
+    flush_buffer(lv_pid)
+
     case result do
       {:ok, %{status: status}} when status in 200..299 -> :ok
       {:ok, %{status: status}} -> {:error, "Research stream failed (HTTP #{status})"}
@@ -103,6 +120,17 @@ defmodule Sanbase.DeepResearch.Client do
     {complete, [rest]} = Enum.split(parts, -1)
     Process.put(:dra_buffer, rest)
     Enum.each(complete, &handle_line(&1, lv_pid))
+  end
+
+  # Dispatch any buffered tail left when the stream closed without a final
+  # newline, then clear the buffer.
+  defp flush_buffer(lv_pid) do
+    case Process.get(:dra_buffer, "") do
+      "" -> :ok
+      rest -> handle_line(rest, lv_pid)
+    end
+
+    Process.put(:dra_buffer, "")
   end
 
   defp handle_line("data:" <> rest, lv_pid) do

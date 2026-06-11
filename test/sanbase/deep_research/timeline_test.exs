@@ -221,5 +221,17 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       md = "Just a report with [1] and [2] inline."
       assert Timeline.reflow_sources(md) == md
     end
+
+    test "leaves a section after Sources untouched" do
+      md =
+        "## Sources\n[1] A https://a.com [2] B https://b.com\n\n" <>
+          "## Appendix\nFollow-up on [1] and [2] with more detail.\n"
+
+      out = Timeline.reflow_sources(md)
+      assert out =~ "- [1] A https://a.com"
+      assert out =~ "- [2] B https://b.com"
+      # The later section keeps its heading and prose — not folded into bullets.
+      assert out =~ "## Appendix\nFollow-up on [1] and [2] with more detail.\n"
+    end
   end
 end

@@ -32,7 +32,9 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
     hide_chat_logs: true,
     # Kafka api_call_data: mask query/selector/token/ip/sizes in the export.
     hide_kafka_api_call_data: true,
-    # Skip the Intercom / sanbase_user_intercom_attributes export entirely.
+    # Skip all Intercom-bound exports: the CRM contact/stats batch
+    # (sanbase_user_intercom_attributes) and per-request trackEvents
+    # writes (user_events Kafka topic + Postgres).
     hide_intercom: true,
     # MCP: mask tool_name/params/client/session in tool_invocations.
     hide_mcp_tool_invocations: true,

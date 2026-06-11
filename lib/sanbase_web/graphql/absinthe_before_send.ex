@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     queries = success_queries ++ error_queries
 
-    hide_activity? =
+    activity_traces_hidden? =
       ActivityTracesConfig.hidden?(
         :hide_kafka_api_call_data,
         blueprint.execution.context[:request_context]
@@ -147,7 +147,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       caller_data: caller_data,
       remote_ip: remote_ip(blueprint),
       partial_context: partial_context,
-      hide_activity?: hide_activity?
+      activity_traces_hidden?: activity_traces_hidden?
     }
   end
 
@@ -288,11 +288,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
   def build_export_records(query_metadata) do
     user_id = query_metadata.caller_data.user_id
-    hide_activity? = query_metadata.hide_activity?
+    activity_traces_hidden? = query_metadata.activity_traces_hidden?
 
     Enum.map(query_metadata.success_queries, fn query ->
       {query, selector, version} =
-        if hide_activity? do
+        if activity_traces_hidden? do
           {Sanbase.Accounts.masked_sentinel(), nil, nil}
         else
           get_query_and_selector(query)
@@ -309,16 +309,20 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         user_id: user_id,
         san_tokens: query_metadata.caller_data.san_balance,
         auth_method: query_metadata.caller_data.auth_method,
-        api_token: if(hide_activity?, do: nil, else: query_metadata.caller_data.api_token),
-        remote_ip: if(hide_activity?, do: nil, else: query_metadata.remote_ip),
-        user_agent: if(hide_activity?, do: nil, else: query_metadata.user_agent),
+        api_token:
+          if(activity_traces_hidden?, do: nil, else: query_metadata.caller_data.api_token),
+        remote_ip: if(activity_traces_hidden?, do: nil, else: query_metadata.remote_ip),
+        user_agent: if(activity_traces_hidden?, do: nil, else: query_metadata.user_agent),
         duration_ms: query_metadata.duration_ms,
         # Response size is a side-channel for correlating masked queries
         # back to known result shapes — drop it for protected users.
         response_size_byte:
-          if(hide_activity?, do: nil, else: query_metadata.result_sizes.byte_size),
+          if(activity_traces_hidden?, do: nil, else: query_metadata.result_sizes.byte_size),
         compressed_response_size_byte:
-          if(hide_activity?, do: nil, else: query_metadata.result_sizes.compressed_byte_size)
+          if(activity_traces_hidden?,
+            do: nil,
+            else: query_metadata.result_sizes.compressed_byte_size
+          )
       }
     end)
   end

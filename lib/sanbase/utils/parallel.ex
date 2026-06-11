@@ -13,8 +13,10 @@ defmodule Sanbase.Parallel do
 
   def map(collection, func, opts \\ []) when is_function(func, 1) do
     max_concurrency = Keyword.get(opts, :max_concurrency) || 2 * System.schedulers_online()
-    # Use a default arg, not `|| true`: the latter coerces an explicit
-    # `ordered: false` back to `true`, silently dropping callers' intent.
+    # Default arg, not `|| true`: `false || true` would coerce an explicit
+    # `ordered: false` back to `true`, silently forcing ordering. All
+    # existing `ordered: false` callers collect into maps / sums (order
+    # independent), so honoring the flag changes throughput, not results.
     ordered = Keyword.get(opts, :ordered, true)
     timeout = Keyword.get(opts, :timeout) || @default_timeout
     on_timeout = Keyword.get(opts, :on_timeout) || :exit

@@ -61,7 +61,9 @@ defmodule Sanbase.Accounts.Hmac do
 
   @spec apikey_valid?(String.t(), String.t()) :: boolean
   def apikey_valid?(token, apikey) when byte_size(apikey) >= 32 and byte_size(token) >= 16 do
-    apikey == generate_apikey(token)
+    # Constant-time comparison to avoid leaking the expected apikey via a timing
+    # side-channel during authentication.
+    Plug.Crypto.secure_compare(apikey, generate_apikey(token))
   end
 
   def apikey_valid?(_, _), do: false

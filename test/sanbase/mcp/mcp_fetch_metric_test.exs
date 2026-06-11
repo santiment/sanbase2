@@ -761,7 +761,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                 "content" => [
                   %{
                     "text" =>
-                      "The provided list of slugs is empty. Provide between 1 and 10 slugs.",
+                      "[permanent] The provided list of slugs is empty. Provide between 1 and 10 slugs.",
                     "type" => "text"
                   }
                 ],
@@ -792,7 +792,9 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                result: %{
                  "content" => [
                    %{
-                     "text" => "Slug 'not_supported_slug' mistyped or not supported.",
+                     "text" =>
+                       "[permanent] Slug 'not_supported_slug' mistyped or not supported. " <>
+                         "Use the metrics_and_assets_discovery_tool to resolve valid asset slugs.",
                      "type" => "text"
                    }
                  ],

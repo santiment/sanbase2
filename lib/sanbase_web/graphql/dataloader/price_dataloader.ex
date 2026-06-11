@@ -3,6 +3,14 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
 
   @max_concurrency 30
 
+  @doc """
+  `Dataloader.KV` batch callback for price-related fields
+  (`:volume_change_24h`, `{:price, slug}`, `:last_price_usd`). The
+  request `ctx` is threaded into the parallel fan-outs so
+  `activity_traces_hidden` masking applies in the spawned workers.
+  Returns a map keyed by the batch's entries.
+  """
+  @spec query(atom() | {:price, String.t()}, term(), Sanbase.RequestContext.t() | nil) :: map()
   def query(:volume_change_24h, args, ctx) do
     slugs = args |> Enum.map(& &1.slug)
 

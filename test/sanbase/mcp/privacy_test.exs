@@ -4,6 +4,8 @@ defmodule Sanbase.MCP.PrivacyTest do
   alias Sanbase.Accounts
   alias Sanbase.MCP.Privacy
 
+  doctest Sanbase.MCP.Privacy
+
   defp base_attrs(user_id) do
     %{
       user_id: user_id,

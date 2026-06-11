@@ -5,6 +5,8 @@ defmodule Sanbase.RequestContextTest do
 
   alias Sanbase.RequestContext
 
+  doctest Sanbase.RequestContext
+
   setup do
     protected = insert(:user)
     Sanbase.PrivacyCacheSeed.seed!([protected.id])

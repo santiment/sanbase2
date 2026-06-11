@@ -215,12 +215,10 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
 
       aggregation =
         if is_binary(aggregation),
-          # credo:disable-for-next-line
-          do: String.to_atom(aggregation),
+          do: safe_existing_atom(aggregation) || metadata.default_aggregation,
           else: metadata.default_aggregation
 
-      # credo:disable-for-next-line
-      operator = if operator = params[:operator], do: String.to_atom(operator)
+      operator = if operator = params[:operator], do: safe_existing_atom(operator)
       threshold = params[:threshold]
 
       # If there's no operator and threshold
@@ -346,5 +344,14 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
       _ ->
         :ok
     end
+  end
+
+  # Convert a client-supplied string to an atom WITHOUT creating new atoms.
+  # Using String.to_atom/1 on tool params would let a caller exhaust the BEAM
+  # atom table (DoS). Unknown values return nil and are handled by the caller.
+  defp safe_existing_atom(value) when is_binary(value) do
+    String.to_existing_atom(value)
+  rescue
+    ArgumentError -> nil
   end
 end

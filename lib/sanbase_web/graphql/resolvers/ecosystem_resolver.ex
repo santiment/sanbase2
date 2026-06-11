@@ -32,10 +32,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
         resolution
       ) do
     with {:ok, transform} <- MetricTransform.args_to_transform(args),
-         {:ok, from} <- MetricTransform.calibrate_transform_params(transform, from, to, interval),
-         args = Map.merge(args, %{original_from: args[:from], from: from, transform: transform}),
-         {:ok, result} <- get_timeseries_data(root, args, resolution) do
-      {:ok, result}
+         {:ok, from} <- MetricTransform.calibrate_transform_params(transform, from, to, interval) do
+      args = Map.merge(args, %{original_from: args[:from], from: from, transform: transform})
+      get_timeseries_data(root, args, resolution)
     end
   end
 

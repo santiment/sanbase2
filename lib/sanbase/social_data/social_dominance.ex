@@ -66,13 +66,13 @@ defmodule Sanbase.SocialData.SocialDominance do
     words = List.wrap(word_or_words) |> Enum.reject(&(&1 == "***"))
     %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
-    with {:ok, words_volume} <-
+    with {:ok, [_ | _] = words_volume} <-
            SocialData.social_volume(%{words: words}, from, to, interval, source, opts),
-         {:ok, total_volume} <- SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
+         {:ok, [_ | _] = total_volume} <-
+           SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
       compute_dominance_per_word_value(words_volume, total_volume)
     else
-      {:ok, []} -> {:ok, nil}
-      _error -> {:ok, nil}
+      _ -> {:ok, nil}
     end
   end
 

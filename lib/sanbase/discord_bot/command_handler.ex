@@ -93,9 +93,6 @@ defmodule Sanbase.DiscordBot.CommandHandler do
 
         {:error, error} ->
           send_error_message(interaction, error)
-
-        _ ->
-          generic_error_message(interaction)
       end
     end
   end

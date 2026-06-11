@@ -347,12 +347,6 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     {enriched_words, []}
   end
 
-  defp enrich_words_with_documents(words_data) do
-    error_msg = "Invalid words_data format for enrichment: #{inspect(words_data)}"
-    Logger.warning(error_msg)
-    {[], [error_msg]}
-  end
-
   defp collect_words_and_documents(words_data) do
     words_data
     |> Enum.flat_map(fn period_data ->

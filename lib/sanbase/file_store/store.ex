@@ -40,7 +40,8 @@ defmodule Sanbase.FileStore do
     end
   end
 
-  def transform(_version, _file_and_scope), do: :noaction
+  # Waffle.Definition injects a `transform(_, _) -> :noaction` fallback clause
+  # which covers the non-variant versions (:original).
 
   @doc ~s"""
     Generate a filename. The generated file name is in the format `scope_timestamp_name`

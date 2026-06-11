@@ -100,6 +100,23 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                  activity: %{kind: :skill, name: "defi", path: "/skills/defi"}
                }
     end
+
+    test "source event" do
+      assert EventParser.parse(%{
+               "type" => "source",
+               "title" => "Ethereum Staking Guide",
+               "url" => "https://ethereum.org/staking",
+               "domain" => "ethereum.org"
+             }) ==
+               %{
+                 activity: %{
+                   kind: :source,
+                   title: "Ethereum Staking Guide",
+                   url: "https://ethereum.org/staking",
+                   domain: "ethereum.org"
+                 }
+               }
+    end
   end
 
   describe "santiment_meta" do

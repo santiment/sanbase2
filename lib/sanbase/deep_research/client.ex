@@ -84,11 +84,14 @@ defmodule Sanbase.DeepResearch.Client do
   `{:dra_event, result}` messages during the stream. Blocks the calling process
   until the stream ends — run it via `start_async/3` so the LiveView keeps
   serving heartbeats. Returns the terminal status for `handle_async/3`.
+
+  `opts` are forwarded to `Config.run_payload/2`: `:mcp_servers` (list of agent
+  MCP server maps) and `:model_tier` (the price-tier name picked in the UI).
   """
-  @spec stream_run(String.t(), String.t(), pid(), [map()]) :: :ok | {:error, String.t()}
-  def stream_run(thread_id, message, lv_pid, mcp_servers \\ []) do
+  @spec stream_run(String.t(), String.t(), pid(), keyword()) :: :ok | {:error, String.t()}
+  def stream_run(thread_id, message, lv_pid, opts \\ []) do
     Process.put(:dra_buffer, "")
-    payload = Config.run_payload(message, mcp_servers: mcp_servers)
+    payload = Config.run_payload(message, opts)
 
     result =
       Req.post(url("/threads/#{thread_id}/runs/stream"),

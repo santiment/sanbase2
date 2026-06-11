@@ -8,6 +8,7 @@ defmodule Sanbase.Clickhouse.Query do
   """
   alias Sanbase.Clickhouse.Query.Environment
   alias Sanbase.RequestContext
+  alias Sanbase.Accounts.ActivityTracesConfig
 
   defstruct [:sql, :parameters, :log_comment, :leading_comments, :environment, :context]
 
@@ -225,7 +226,7 @@ defmodule Sanbase.Clickhouse.Query do
 
   # Explicit context threaded by the caller wins — preferred path.
   defp add_settings(%{context: %RequestContext{} = ctx} = query) do
-    apply_settings(query, ctx.user_id, RequestContext.activity_traces_hidden?(ctx))
+    apply_settings(query, ctx.user_id, ActivityTracesConfig.hidden?(:hide_ch_query_log, ctx))
   end
 
   # Transitional fallback for call sites that haven't been migrated to
@@ -233,7 +234,7 @@ defmodule Sanbase.Clickhouse.Query do
   # edge. Aim to remove once every CH-issuing path passes ctx explicitly.
   defp add_settings(%{context: nil} = query) do
     ctx = RequestContext.current()
-    apply_settings(query, ctx.user_id, RequestContext.activity_traces_hidden?(ctx))
+    apply_settings(query, ctx.user_id, ActivityTracesConfig.hidden?(:hide_ch_query_log, ctx))
   end
 
   defp apply_settings(%{sql: sql, log_comment: log_comment} = query, user_id, hide_activity?) do

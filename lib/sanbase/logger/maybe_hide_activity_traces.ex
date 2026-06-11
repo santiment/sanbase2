@@ -38,6 +38,7 @@ defmodule Sanbase.Logger.MaybeHideActivityTraces do
   """
 
   alias Sanbase.RequestContext
+  alias Sanbase.Accounts.ActivityTracesConfig
 
   # Subset of the allowlist in `config :logger, :console, metadata: ...`
   # that can identify the customer or reveal the document. Kept in sync
@@ -65,12 +66,16 @@ defmodule Sanbase.Logger.MaybeHideActivityTraces do
          } = event,
          _extra
        ) do
-    event = %{event | meta: Map.drop(meta, @sensitive_meta_keys)}
+    if ActivityTracesConfig.enabled?(:hide_logger) do
+      event = %{event | meta: Map.drop(meta, @sensitive_meta_keys)}
 
-    case msg_kind(msg) do
-      :absinthe -> %{event | msg: {:string, absinthe_redaction(ctx)}}
-      :ecto -> %{event | msg: {:string, ecto_redaction(ctx)}}
-      :other -> event
+      case msg_kind(msg) do
+        :absinthe -> %{event | msg: {:string, absinthe_redaction(ctx)}}
+        :ecto -> %{event | msg: {:string, ecto_redaction(ctx)}}
+        :other -> event
+      end
+    else
+      :ignore
     end
   end
 

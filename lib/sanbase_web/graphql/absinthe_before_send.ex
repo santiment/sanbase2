@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
 
   alias SanbaseWeb.Graphql.Cache
-  alias Sanbase.RequestContext
+  alias Sanbase.Accounts.ActivityTracesConfig
   alias Sanbase.Utils.IP
 
   @compile inline: [
@@ -127,7 +127,10 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     queries = success_queries ++ error_queries
 
     hide_activity? =
-      RequestContext.activity_traces_hidden?(blueprint.execution.context[:request_context])
+      ActivityTracesConfig.hidden?(
+        :hide_kafka_api_call_data,
+        blueprint.execution.context[:request_context]
+      )
 
     %{
       request_id: generate_id(),

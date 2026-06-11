@@ -1,6 +1,13 @@
 defmodule SanbaseWeb.Graphql.LabelsDataloader do
   alias Sanbase.Clickhouse.Label
 
+  @doc """
+  `Dataloader.KV` batch callback. Resolves address labels for the
+  batched `addresses`, threading the request `ctx` into the parallel
+  ClickHouse fan-out so `activity_traces_hidden` masking applies in the
+  spawned workers. Returns a map of `address => labels`.
+  """
+  @spec query(:address_labels, [String.t()], Sanbase.RequestContext.t() | nil) :: map()
   def query(:address_labels, addresses, ctx) do
     addresses
     |> Enum.uniq()

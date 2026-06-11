@@ -7,6 +7,7 @@ defmodule Sanbase.MCP.Server do
     capabilities: [:tools, :prompts, :resources]
 
   alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.ActivityTracesConfig
   alias Sanbase.MCP.{Auth, Restrictions, ToolInvocation}
   alias Sanbase.RequestContext
 
@@ -216,7 +217,9 @@ defmodule Sanbase.MCP.Server do
       session_id: ctx.session_id,
       kind: kind
     }
-    |> Sanbase.MCP.Privacy.mask_attrs(RequestContext.activity_traces_hidden?(ctx))
+    |> Sanbase.MCP.Privacy.mask_attrs(
+      ActivityTracesConfig.hidden?(:hide_mcp_tool_invocations, ctx)
+    )
   end
 
   # In test, Ecto SQL Sandbox ties DB connections to the test process.

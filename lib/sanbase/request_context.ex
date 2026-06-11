@@ -49,6 +49,19 @@ defmodule Sanbase.RequestContext do
           origin: origin()
         }
 
+  @doc """
+  Whether the context belongs to an `activity_traces_hidden` user. Total
+  over any input — anything that isn't a context with the flag set is
+  treated as not hidden.
+
+  ## Examples
+
+      iex> Sanbase.RequestContext.activity_traces_hidden?(%Sanbase.RequestContext{origin: :graphql, activity_traces_hidden: true})
+      true
+
+      iex> Sanbase.RequestContext.activity_traces_hidden?(nil)
+      false
+  """
   @spec activity_traces_hidden?(t() | term()) :: boolean()
   def activity_traces_hidden?(%__MODULE__{activity_traces_hidden: v}), do: v
   def activity_traces_hidden?(_), do: false
@@ -82,11 +95,22 @@ defmodule Sanbase.RequestContext do
     Logger.metadata(user_id: ctx.user_id || "anonymous", request_context: ctx)
   end
 
+  @doc """
+  Builds the `:graphql` context at the HTTP edge from the authenticated
+  `Plug.Conn`. Reads the current user, auth method, product code,
+  request id and remote ip, and freezes the `activity_traces_hidden`
+  decision. Called once per request by `SanbaseWeb.Plug.RequestContextPlug`.
+  """
   @spec from_conn(Plug.Conn.t()) :: t()
   def from_conn(%Plug.Conn{} = conn) do
     auth_struct = conn.private[:san_authentication] || %{}
     auth = Map.get(auth_struct, :auth) || %{}
-    user_id = get_in(auth, [:current_user, Access.key(:id)])
+
+    user_id =
+      case Map.get(auth, :current_user) do
+        %{id: id} -> id
+        _ -> nil
+      end
 
     %__MODULE__{
       origin: :graphql,
@@ -99,6 +123,13 @@ defmodule Sanbase.RequestContext do
     }
   end
 
+  @doc """
+  Builds the `:mcp` context from an Anubis MCP frame — the equivalent of
+  `from_conn/1` for the MCP transport. Pulls the current user, auth
+  method, request/session ids, remote ip, user agent and client from the
+  frame's assigns/headers and freezes the `activity_traces_hidden`
+  decision.
+  """
   @spec from_mcp_frame(map()) :: t()
   def from_mcp_frame(frame) do
     assigns = Map.get(frame, :assigns, %{}) || %{}
@@ -126,6 +157,16 @@ defmodule Sanbase.RequestContext do
 
   @origins [:graphql, :mcp, :oban, :script, :system, :anonymous]
 
+  @doc """
+  A user-less context tagged with `origin` (one of `#{inspect(@origins)}`).
+  Used outside any request scope — background jobs, Oban, scripts — and
+  as the `current/0` fallback. Never hides activity (`user_id` is nil).
+
+  ## Examples
+
+      iex> Sanbase.RequestContext.anonymous(:oban).origin
+      :oban
+  """
   @spec anonymous(origin()) :: t()
   def anonymous(origin) when origin in @origins do
     %__MODULE__{origin: origin, user_id: nil, activity_traces_hidden: false}

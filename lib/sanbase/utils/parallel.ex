@@ -13,7 +13,9 @@ defmodule Sanbase.Parallel do
 
   def map(collection, func, opts \\ []) when is_function(func, 1) do
     max_concurrency = Keyword.get(opts, :max_concurrency) || 2 * System.schedulers_online()
-    ordered = Keyword.get(opts, :ordered) || true
+    # Use a default arg, not `|| true`: the latter coerces an explicit
+    # `ordered: false` back to `true`, silently dropping callers' intent.
+    ordered = Keyword.get(opts, :ordered, true)
     timeout = Keyword.get(opts, :timeout) || @default_timeout
     on_timeout = Keyword.get(opts, :on_timeout) || :exit
     map_type = Keyword.get(opts, :map_type) || :map

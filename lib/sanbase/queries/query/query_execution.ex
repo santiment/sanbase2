@@ -70,6 +70,14 @@ defmodule Sanbase.Queries.QueryExecution do
   @activity_traces_hidden_multiplier 2
   @bytes_per_gb 1_073_741_824
 
+  # Flat credits charge for an `activity_traces_hidden` execution whose
+  # HTTP summary is entirely missing (driver failure/timeout). We can't
+  # measure the real cost and won't drop the billing row, so charge a
+  # modest non-trivial default — deliberately above the module minimum
+  # of 1 so an unmeasured query can't be effectively free. Summary
+  # gaps are rare; when present the real per-query formula is used.
+  @summary_missing_credits_cost 10
+
   @timestamps_opts [type: :utc_datetime]
   schema "clickhouse_query_executions" do
     belongs_to(:user, User)
@@ -343,7 +351,7 @@ defmodule Sanbase.Queries.QueryExecution do
   # `non_null(:float)` fields on `:sql_query_execution_stats` resolve.
   defp compute_credits_cost_from_summary(_) do
     %{
-      credits_cost: 10,
+      credits_cost: @summary_missing_credits_cost,
       execution_details: %{
         read_rows: 0.0,
         read_gb: 0.0,

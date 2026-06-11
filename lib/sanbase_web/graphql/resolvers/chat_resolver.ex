@@ -444,7 +444,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
   # `MaybeHideActivityTraces` logger filter: keep a breadcrumb so the
   # request stays visible to ops, but never log the content itself.
   defp activity_traces_hidden?(resolution) do
-    Sanbase.RequestContext.activity_traces_hidden?(resolution.context[:request_context])
+    Sanbase.Accounts.ActivityTracesConfig.hidden?(
+      :hide_chat_logs,
+      resolution.context[:request_context]
+    )
   end
 
   defp extract_user_id(%{context: %{auth: %{current_user: %{id: user_id}}}}), do: user_id

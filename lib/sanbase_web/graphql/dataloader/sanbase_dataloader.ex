@@ -7,6 +7,13 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.PostgresDataloader
   alias SanbaseWeb.Graphql.PriceDataloader
 
+  @doc """
+  Builds the `Dataloader.KV` source for the Absinthe schema, closing
+  over the per-request `request_context` so every batch this source runs
+  carries it (for `activity_traces_hidden` masking). `nil` outside a
+  request scope. See `make_kv_fun/1` for how the context crosses the
+  `Dataloader.KV` task boundary.
+  """
   @spec data(Sanbase.RequestContext.t() | nil) :: Dataloader.KV.t()
   def data(request_context \\ nil) do
     Dataloader.KV.new(make_kv_fun(request_context))

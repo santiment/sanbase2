@@ -14,6 +14,7 @@ defmodule Sanbase.ClickhouseRepo do
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
   alias Sanbase.Utils.Config
+  alias Sanbase.Accounts.ActivityTracesConfig
   require Logger
 
   def enabled?() do
@@ -182,7 +183,7 @@ defmodule Sanbase.ClickhouseRepo do
       log_and_return_error_from_exception(e, "query_reduce/4", __STACKTRACE__)
   end
 
-  defp execute_query_transform(query, args, opts \\ []) do
+  defp execute_query_transform(query, args, opts) do
     maybe_store_executed_clickhouse_sql(query, args)
     maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
@@ -266,7 +267,7 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   defp activity_traces_hidden?() do
-    Sanbase.RequestContext.activity_traces_hidden?(Sanbase.RequestContext.current())
+    ActivityTracesConfig.hidden?(:hide_ch_error_logs, Sanbase.RequestContext.current())
   end
 
   defp extract_error_from_stacktrace(stacktrace) do
@@ -355,7 +356,7 @@ defmodule Sanbase.ClickhouseRepo do
         ctx = ctx || Sanbase.RequestContext.current()
 
         if System.get_env("PRINT_INTERPOLATED_CLICKHOUSE_SQL") in ["true", "1"] and
-             not Sanbase.RequestContext.activity_traces_hidden?(ctx) do
+             not ActivityTracesConfig.hidden?(:hide_interpolated_sql, ctx) do
           IO.puts(
             IO.ANSI.format([
               :light_blue,

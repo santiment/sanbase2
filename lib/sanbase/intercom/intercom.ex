@@ -7,7 +7,7 @@ defmodule Sanbase.Intercom do
   import Sanbase.Accounts.User.Ecto, only: [is_registered: 0]
 
   alias Sanbase.Utils.Config
-  alias Sanbase.Accounts.{User, Statistics, ProtectedUser}
+  alias Sanbase.Accounts.{User, Statistics, ProtectedUser, ActivityTracesConfig}
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Accounts.EthAccount
@@ -27,7 +27,7 @@ defmodule Sanbase.Intercom do
     Logger.info("[intercom_to_kafka] Start")
     all_stats = all_stats || all_users_stats()
 
-    hidden_ids = ProtectedUser.activity_traces_hidden_user_ids()
+    hidden_ids = intercom_hidden_ids()
 
     process_batch_fn = fn contacts ->
       contacts =
@@ -88,7 +88,7 @@ defmodule Sanbase.Intercom do
   end
 
   def sync_newly_registered_to_intercom(dt) do
-    hidden_ids = ProtectedUser.activity_traces_hidden_user_ids()
+    hidden_ids = intercom_hidden_ids()
 
     fetch_new_registrations_since(dt)
     # NDA-protected users must not be created as contacts in the external CRM.
@@ -98,6 +98,16 @@ defmodule Sanbase.Intercom do
         create_contact(user_id)
       end
     end)
+  end
+
+  # Protected-user id set to exclude from the CRM export, or an empty set
+  # when the `hide_intercom` switch is off (then the rejects are no-ops).
+  defp intercom_hidden_ids() do
+    if ActivityTracesConfig.enabled?(:hide_intercom) do
+      ProtectedUser.activity_traces_hidden_user_ids()
+    else
+      MapSet.new()
+    end
   end
 
   def save_contacts_to_intercom(contacts) do

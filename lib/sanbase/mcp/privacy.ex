@@ -27,6 +27,30 @@ defmodule Sanbase.MCP.Privacy do
           optional(atom()) => term()
         }
 
+  @doc """
+  Masks `tool_invocations` attributes when the second argument is `true`
+  (the caller's `activity_traces_hidden?` decision). When `false`, attrs
+  pass through unchanged.
+
+  Masked: `tool_name`/`params`/`user_agent`/`client`/`session_id` and a
+  non-nil `error_message` (replaced with `Sanbase.Accounts.masked_sentinel/0`),
+  plus `response_size_bytes` (a result-shape side channel). Kept:
+  `user_id` (billing) and the shape metrics (counts, `duration_ms`,
+  `is_successful`).
+
+  ## Examples
+
+      iex> attrs = %{user_id: 1, tool_name: "fetch_metric", params: %{slug: "bitcoin"}, error_message: nil, user_agent: "Claude", client: "cursor", session_id: "s1", response_size_bytes: 9}
+      iex> Sanbase.MCP.Privacy.mask_attrs(attrs, false) == attrs
+      true
+
+      iex> attrs = %{user_id: 1, tool_name: "fetch_metric", params: %{slug: "bitcoin"}, error_message: nil, user_agent: "Claude", client: "cursor", session_id: "s1", response_size_bytes: 9}
+      iex> masked = Sanbase.MCP.Privacy.mask_attrs(attrs, true)
+      iex> masked.tool_name == Sanbase.Accounts.masked_sentinel()
+      true
+      iex> {masked.params, masked.session_id, masked.user_id}
+      {%{}, nil, 1}
+  """
   @spec mask_attrs(attrs(), boolean()) :: attrs()
   def mask_attrs(attrs, false), do: attrs
 

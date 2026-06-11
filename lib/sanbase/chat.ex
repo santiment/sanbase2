@@ -239,6 +239,14 @@ defmodule Sanbase.Chat do
   end
 
   @doc """
+  Retrieves a single chat message by ID.
+  """
+  @spec get_message(Ecto.UUID.t()) :: ChatMessage.t() | nil
+  def get_message(message_id) do
+    Repo.get(ChatMessage, message_id)
+  end
+
+  @doc """
   Lists all chats for a specific user, ordered by most recent first.
   Returns empty list for nil user_id (anonymous users can't list chats).
   """

@@ -124,11 +124,8 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  # Default event handler, if you don't include this, your consumer WILL crash if
-  # you don't have a method definition for each event type.
-  def handle_event(_event) do
-    :noop
-  end
+  # Unhandled events are ignored by the default `handle_event(_)` clause
+  # injected by `use Nostrum.Consumer`.
 
   defp msg_contains_bot_mention?(msg) do
     msg.mentions

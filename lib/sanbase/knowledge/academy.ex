@@ -469,8 +469,6 @@ defmodule Sanbase.Knowledge.Academy do
     end
   end
 
-  defp handle_embedding_failure(_chunks, _attempts, error), do: {:error, error}
-
   defp retryable_embedding_error?(reason) when is_binary(reason) do
     downcased = String.downcase(reason)
 

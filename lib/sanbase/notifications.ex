@@ -202,7 +202,8 @@ defmodule Sanbase.Notifications do
 
   defp prepare_deprecation_data(attrs) do
     with {:ok, deprecation_date} <- Date.from_iso8601(attrs.deprecation_date),
-         mailjet_list_key <- Map.get(@contact_list_to_mailjet_key, attrs.contact_list_name) do
+         {:ok, mailjet_list_key} <-
+           Map.fetch(@contact_list_to_mailjet_key, attrs.contact_list_name) do
       now = DateTime.utc_now()
 
       # 1. Initial email: 1 hour from now
@@ -239,8 +240,8 @@ defmodule Sanbase.Notifications do
 
       {:ok, data_for_changeset}
     else
-      :error -> {:error, {:invalid_date, attrs.deprecation_date}}
-      nil -> {:error, {:unknown_contact_list, attrs.contact_list_name}}
+      {:error, _} -> {:error, {:invalid_date, attrs.deprecation_date}}
+      :error -> {:error, {:unknown_contact_list, attrs.contact_list_name}}
     end
   end
 

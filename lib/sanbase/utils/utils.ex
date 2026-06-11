@@ -9,12 +9,11 @@ defmodule Sanbase.Utils do
     cond do
       is_binary(value) -> :binary
       is_bitstring(value) -> :bitstring
+      is_boolean(value) -> :boolean
       is_atom(value) -> :atom
       is_pid(value) -> :pid
-      is_boolean(value) -> :boolean
       is_integer(value) -> :integer
       is_float(value) -> :float
-      is_number(value) -> :number
       is_list(value) -> :list
       is_struct(value) -> :struct
       is_map(value) -> :map

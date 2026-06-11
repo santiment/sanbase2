@@ -497,8 +497,6 @@ defmodule Sanbase.Alert.UserTrigger do
 
       {:map_from_struct, {:error, error}} ->
         Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(error)}")
-
-      {:error, error} ->
         {:error, error}
     end
   end

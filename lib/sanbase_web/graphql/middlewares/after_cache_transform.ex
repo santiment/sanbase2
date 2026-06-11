@@ -7,14 +7,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AfterCacheTransform do
   def call(%Resolution{value: value} = resolution, _opts) when not is_nil(value) do
     args = resolution.arguments
 
-    with {:ok, result} <- SanbaseWeb.Graphql.Helpers.Utils.fit_from_datetime(value, args) do
-      %{
-        resolution
-        | value: result
-      }
-    else
-      _ -> resolution
-    end
+    {:ok, result} = SanbaseWeb.Graphql.Helpers.Utils.fit_from_datetime(value, args)
+
+    %{resolution | value: result}
   end
 
   def call(resolution, _opts), do: resolution

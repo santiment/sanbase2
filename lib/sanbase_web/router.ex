@@ -187,6 +187,13 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/deep_research" do
+      live_session :deep_research_authenticated_user,
+        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        live("/", DeepResearchLive, :index)
+      end
+    end
+
     scope "/insight_categorization" do
       live_session :insight_categorization_authenticated_user,
         on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do

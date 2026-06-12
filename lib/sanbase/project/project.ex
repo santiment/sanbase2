@@ -164,7 +164,7 @@ defmodule Sanbase.Project do
         changeset
         |> put_change(:hidden_since, DateTime.utc_now() |> DateTime.truncate(:second))
 
-      %{is_hiden: false} ->
+      %{is_hidden: false} ->
         changeset
         |> put_change(:hidden_since, nil)
 

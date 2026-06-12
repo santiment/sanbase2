@@ -44,6 +44,24 @@ defmodule Sanbase.NonCryptoAssetTest do
 
       assert %{slug: ["already used by a project"]} = errors_on(changeset)
     end
+
+    test "hiding sets hidden_since, unhiding clears it" do
+      assert {:ok, asset} =
+               NonCryptoAsset.create(%{
+                 slug: "gold",
+                 name: "Gold",
+                 asset_type: :commodity,
+                 is_hidden: true
+               })
+
+      assert %DateTime{} = asset.hidden_since
+
+      assert {:ok, asset} =
+               NonCryptoAsset.changeset(asset, %{is_hidden: false}) |> Sanbase.Repo.update()
+
+      refute asset.is_hidden
+      assert is_nil(asset.hidden_since)
+    end
   end
 
   describe "list/1 and slugs/0" do

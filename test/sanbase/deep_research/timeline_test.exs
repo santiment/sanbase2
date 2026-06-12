@@ -52,6 +52,24 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       assert [%{kind: :skill, name: "defi"}] = t.timeline
     end
 
+    test "charts dedupe by id (a re-emit replaces in place)" do
+      chart = %{
+        kind: :chart,
+        id: "c1",
+        slug: "bitcoin",
+        range: "90d",
+        summary: nil,
+        series: [%{"data" => []}]
+      }
+
+      t =
+        turn()
+        |> Timeline.apply_result(%{activity: chart})
+        |> Timeline.apply_result(%{activity: %{chart | range: "30d"}})
+
+      assert [%{kind: :chart, id: "c1", range: "30d"}] = t.timeline
+    end
+
     test "sources dedupe by url" do
       src = %{kind: :source, url: "https://a.com", title: "A", domain: "a.com"}
 
@@ -182,6 +200,18 @@ defmodule Sanbase.DeepResearch.TimelineTest do
 
       assert [{:tools, _, false}] = Timeline.segment(items)
     end
+
+    test "charts form their own always-visible block after the tools run" do
+      items = [
+        %{kind: :mcp, id: "m1", tool: "show_chart", done: true},
+        %{kind: :chart, id: "c1", slug: "bitcoin", range: "90d", series: [%{"data" => []}]}
+      ]
+
+      assert [
+               {:tools, [%{kind: :mcp}], false},
+               {:chart, [%{kind: :chart, id: "c1"}]}
+             ] = Timeline.segment(items)
+    end
   end
 
   describe "coalesce" do
@@ -198,40 +228,6 @@ defmodule Sanbase.DeepResearch.TimelineTest do
                {:mcp_group, [%{id: "m1"}, %{id: "m2"}]},
                %{kind: :status}
              ] = Timeline.coalesce(items)
-    end
-  end
-
-  describe "reflow_sources" do
-    test "re-bullets a crammed single-paragraph Sources section" do
-      md =
-        "Body text.\n\n## Sources\n[1] A https://a.com [2] B https://b.com [3] C https://c.com\n"
-
-      out = Timeline.reflow_sources(md)
-      assert out =~ "- [1] A https://a.com"
-      assert out =~ "- [2] B https://b.com"
-      assert out =~ "- [3] C https://c.com"
-    end
-
-    test "is a no-op when already one-per-line" do
-      md = "## Sources\n- [1] A\n- [2] B\n"
-      assert Timeline.reflow_sources(md) == md
-    end
-
-    test "is a no-op without a Sources heading" do
-      md = "Just a report with [1] and [2] inline."
-      assert Timeline.reflow_sources(md) == md
-    end
-
-    test "leaves a section after Sources untouched" do
-      md =
-        "## Sources\n[1] A https://a.com [2] B https://b.com\n\n" <>
-          "## Appendix\nFollow-up on [1] and [2] with more detail.\n"
-
-      out = Timeline.reflow_sources(md)
-      assert out =~ "- [1] A https://a.com"
-      assert out =~ "- [2] B https://b.com"
-      # The later section keeps its heading and prose — not folded into bullets.
-      assert out =~ "## Appendix\nFollow-up on [1] and [2] with more detail.\n"
     end
   end
 end

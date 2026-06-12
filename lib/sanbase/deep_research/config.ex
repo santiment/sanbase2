@@ -13,7 +13,10 @@ defmodule Sanbase.DeepResearch.Config do
   safety knobs), never `nil`.
 
   All values are read from application env under `:sanbase, Sanbase.DeepResearch`,
-  populated from system env in `config/runtime.exs`.
+  populated from system env in `config/runtime.exs`. Each default lives in
+  exactly one place: literal fallbacks for the connection knobs are the module
+  attributes below, everything deploy-shaped (the MCP catalog, feature flags)
+  defaults in `runtime.exs`.
   """
 
   @default_base_url "http://127.0.0.1:2024"
@@ -92,39 +95,26 @@ defmodule Sanbase.DeepResearch.Config do
   def default_model_tier(), do: get(:model_tier) || "extra-low"
 
   @doc """
-  Whether the research UI shows the model-tier dropdown
-  (`DRA_TIERING_DROPDOWN_ENABLED`, assumed false when missing). Read straight
-  from the environment at call time — a feature flag, not app config.
-  When false, every run uses the deploy-wide tier (`default_model_tier/0`).
+  Whether the research UI shows the model-tier dropdown (`:tiering_dropdown_enabled`,
+  from `DRA_TIERING_DROPDOWN_ENABLED`; false when unset). When false, every run
+  uses the deploy-wide tier (`default_model_tier/0`).
   """
   @spec tiering_dropdown_enabled?() :: boolean()
-  def tiering_dropdown_enabled?() do
-    System.get_env("DRA_TIERING_DROPDOWN_ENABLED", "false") == "true"
-  end
+  def tiering_dropdown_enabled?(), do: get(:tiering_dropdown_enabled, false) == true
 
   @doc """
   The catalog of MCP servers the UI can offer. Each entry is
   `%{key, label, url, auth}` (`auth: :user_apikey` resolves to the caller's
-  Santiment API key). Configurable via `:mcp_servers` in app env so more
-  servers (local or remote) can be added without code changes.
+  Santiment API key). Defined in `runtime.exs` under `:mcp_servers`, so more
+  servers (local or remote) can be added without code changes; an empty or
+  missing list simply means the UI offers no data sources.
   """
   @spec mcp_catalog() :: [map()]
   def mcp_catalog() do
     case get(:mcp_servers) do
-      servers when is_list(servers) and servers != [] -> servers
-      _ -> default_mcp_catalog()
+      servers when is_list(servers) -> servers
+      _ -> []
     end
-  end
-
-  defp default_mcp_catalog() do
-    [
-      %{
-        key: "santiment",
-        label: "Santiment",
-        url: System.get_env("DRA_MCP_URL", "http://localhost:4000/mcp"),
-        auth: :user_apikey
-      }
-    ]
   end
 
   defp maybe_put_mcp(configurable, []), do: configurable
@@ -144,6 +134,8 @@ defmodule Sanbase.DeepResearch.Config do
   defp maybe_put_api_keys(configurable) do
     api_keys =
       %{
+        # Not a typo: the agent talks to OpenRouter through an OpenAI-compatible
+        # client, which reads the key from `OPENAI_API_KEY`.
         "OPENAI_API_KEY" => get(:openrouter_api_key),
         "TAVILY_API_KEY" => get(:tavily_api_key)
       }
@@ -162,9 +154,14 @@ defmodule Sanbase.DeepResearch.Config do
     |> Map.new()
   end
 
+  # The env namespace is `Sanbase.DeepResearch` (what `runtime.exs` configures),
+  # NOT this module — reading `__MODULE__` here would silently ignore every
+  # configured value and leave the whole agent on its compiled-in defaults.
+  @env_key Sanbase.DeepResearch
+
   defp get(key, default \\ nil) do
     :sanbase
-    |> Application.get_env(__MODULE__, [])
+    |> Application.get_env(@env_key, [])
     |> Keyword.get(key, default)
   end
 end

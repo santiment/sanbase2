@@ -112,33 +112,21 @@ defmodule Sanbase.Knowledge do
     result =
       with {:ok, [embedding]} <-
              Sanbase.AI.Embedding.generate_embeddings([plan.semantic_query], 1536),
-           {:ok, faq_entries} <-
-             maybe_find_most_similar_faqs(user_input, embedding, options, min_sim),
-           {:ok, academy_articles} <-
+           {:ok, faqs} <- retrieve_faqs(user_input, embedding, options, min_sim),
+           {:ok, academy} <-
              maybe_find_most_similar_academy_articles(user_input, embedding, options, min_sim),
            {:ok, insights} <-
              maybe_find_most_similar_insights(user_input, embedding, options, min_sim) do
-        filtered_faqs = filter_by_similarity(faq_entries, min_sim)
-        filtered_academy = filter_by_similarity(academy_articles, min_sim)
+        # Each retrieval helper already applied the similarity gate, so the lists
+        # are final here. Browse-mode insights are intentionally ungated — they
+        # are date-ordered and carry no score (`similarity: nil`) — and pass
+        # through unchanged.
+        counts = %{faqs: length(faqs), academy: length(academy), insight: length(insights)}
 
-        # Browse-mode insight entries are date-ordered and carry no similarity
-        # score (`similarity: nil`), so the gate must not drop them.
-        filtered_insights =
-          if browse_mode?(options),
-            do: insights,
-            else: filter_by_similarity(insights, min_sim)
-
-        counts = %{
-          faqs: length(filtered_faqs),
-          academy: length(filtered_academy),
-          insight: length(filtered_insights)
-        }
-
-        if filtered_faqs == [] and filtered_academy == [] and filtered_insights == [] do
+        if faqs == [] and academy == [] and insights == [] do
           {{:ok, @no_answer_message}, counts, true}
         else
-          {build_smart_search_result(filtered_faqs, filtered_academy, filtered_insights, options),
-           counts, false}
+          {build_smart_search_result(faqs, academy, insights, options), counts, false}
         end
       end
 
@@ -253,7 +241,7 @@ defmodule Sanbase.Knowledge do
     min_sim = min_similarity(options)
 
     with {:ok, base_prompt} <- generate_initial_prompt(user_input, options),
-         {:ok, faq_hits} <- answer_faq_hits(user_input, embedding, options, min_sim),
+         {:ok, faq_hits} <- retrieve_faqs(user_input, embedding, options, min_sim),
          {:ok, insight_hits} <- answer_insight_hits(user_input, embedding, options, min_sim),
          {:ok, academy_hits} <- answer_academy_hits(user_input, embedding, options, min_sim) do
       {numbered, registry} =
@@ -305,7 +293,11 @@ defmodule Sanbase.Knowledge do
       """
   end
 
-  defp answer_faq_hits(user_input, embedding, options, min_sim) do
+  # FAQ retrieval is identical on both the answer and smart-search paths (no
+  # recency ordering or browse mode — only insights carry a date), so a single
+  # function serves both, unlike the insight/academy `answer_*` vs
+  # `maybe_find_most_similar_*` pairs which genuinely diverge.
+  defp retrieve_faqs(user_input, embedding, options, min_sim) do
     if Keyword.get(options, :faq, true) do
       with {:ok, raw} <- find_most_similar_faqs(embedding, @retrieval_top_k) do
         {:ok,
@@ -389,19 +381,6 @@ defmodule Sanbase.Knowledge do
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
-
-  defp maybe_find_most_similar_faqs(user_input, embedding, options, min_sim) do
-    if Keyword.get(options, :faq, true) do
-      with {:ok, raw} <- find_most_similar_faqs(embedding, @retrieval_top_k) do
-        {:ok,
-         raw
-         |> filter_by_similarity(min_sim)
-         |> rerank(user_input, :faq, options, top_n: @prompt_top_n)}
-      end
-    else
-      {:ok, []}
-    end
-  end
 
   defp min_similarity(options) do
     Keyword.get(options, :min_similarity, @default_min_similarity)

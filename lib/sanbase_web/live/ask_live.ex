@@ -4,6 +4,7 @@ defmodule SanbaseWeb.AskLive do
   import SanbaseWeb.Admin.FaqLive.Nav, only: [nav: 1]
 
   alias Sanbase.Knowledge.AnswerModel
+  alias SanbaseWeb.KnowledgeAnswerHTML
 
   require Logger
 
@@ -227,28 +228,13 @@ defmodule SanbaseWeb.AskLive do
             <div class="divider"></div>
 
             <div class="prose prose-lg max-w-none">
-              {Phoenix.HTML.raw(render_answer_html(@answer))}
+              {Phoenix.HTML.raw(KnowledgeAnswerHTML.to_html(@answer))}
             </div>
           </div>
         </div>
       </div>
     </div>
     """
-  end
-
-  # Render the answer markdown to HTML, then colour the `{{date:...}}` sentinels
-  # emitted by smart search (see `Sanbase.Knowledge`) and by the Ask AI Sources
-  # section (see `Sanbase.Knowledge.Citations`) as a muted grey date.
-  # Earmark escaping stays ON so user-generated insight titles can't inject HTML;
-  # only our own date string (an ISO date, or the literal "unknown date") is
-  # substituted into the span.
-  defp render_answer_html(answer) do
-    answer
-    |> Earmark.as_html!()
-    |> String.replace(
-      ~r/\{\{date:(\d{4}-\d{2}-\d{2}|unknown date)\}\}/,
-      "<span style=\"color: #9ca3af; white-space: nowrap\">(\\1)</span>"
-    )
   end
 
   # Shows how the query was interpreted by `Sanbase.Knowledge.QueryPlan`: the

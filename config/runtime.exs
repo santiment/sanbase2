@@ -53,8 +53,12 @@ config :sanbase, Sanbase.SmartContracts.SanrNFT,
 # HTTP/SSE API. Keys left unset fall back to the agent server's own .env defaults
 # (per-run `configurable` only overrides what we send).
 config :sanbase, Sanbase.DeepResearch,
-  base_url: System.get_env("DRA_BASE_URL", "http://127.0.0.1:2024"),
-  assistant_id: System.get_env("DRA_ASSISTANT_ID", "deep_research_agent"),
+  # No literal defaults here — unset means "fall back to the module attribute in
+  # Sanbase.DeepResearch.Config", so each default has exactly one home.
+  base_url: System.get_env("DRA_BASE_URL"),
+  assistant_id: System.get_env("DRA_ASSISTANT_ID"),
+  # Shows the model-tier dropdown in the research UI.
+  tiering_dropdown_enabled: System.get_env("DRA_TIERING_DROPDOWN_ENABLED") == "true",
   # Models are selected by tier NAME only (extra-low | low | mid | high) — the
   # models behind each name live in the agent's code (MODEL_TIERS in config.py).
   # Per-model env vars (DRA_RESEARCH_MODEL etc.) are no longer honored anywhere.

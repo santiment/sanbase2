@@ -4,16 +4,19 @@ defmodule Sanbase.DeepResearch.Client do
   directly to the LangGraph server (`Sanbase.DeepResearch.Config.base_url/0`),
   no auth header (trusted internal dev service) — no separate proxy tier.
 
-  `stream_run/3` is meant to run via the LiveView's `start_async/3`. During the
+  `stream_run/4` is meant to run via the LiveView's `start_async/3`. During the
   stream it forwards each parsed event to the LiveView pid as a
-  `{:dra_event, result}` message (`result` is an `EventParser.parse/1` map), and
-  returns the terminal status (`:ok` / `{:error, reason}`) for `handle_async/3`.
+  `{:dra_event, ref, result}` message (`result` is an `EventParser.parse/1` map),
+  and returns the terminal status (`:ok` / `{:error, reason}`) for
+  `handle_async/3`. `ref` is an opaque correlation token supplied by the caller
+  and echoed back untouched, so a caller with several runs in its lifetime can
+  discard events belonging to a superseded one.
 
   Thread creation, cancellation and the state-poll fallback are plain request/
   response calls.
   """
 
-  alias Sanbase.DeepResearch.{Config, EventParser}
+  alias Sanbase.DeepResearch.{Config, EventParser, SSE}
 
   require Logger
 
@@ -21,6 +24,8 @@ defmodule Sanbase.DeepResearch.Client do
   # the model thinks before emitting the next event.
   @stream_receive_timeout 300_000
   @request_timeout 30_000
+
+  @buffer_key :dra_sse_buffer
 
   @doc "Create a new thread. Returns `{:ok, thread_id}` or `{:error, reason}`."
   @spec create_thread() :: {:ok, String.t()} | {:error, String.t()}
@@ -81,16 +86,18 @@ defmodule Sanbase.DeepResearch.Client do
 
   @doc """
   Stream a run on `thread_id`, forwarding parsed events to `lv_pid` as
-  `{:dra_event, result}` messages during the stream. Blocks the calling process
-  until the stream ends — run it via `start_async/3` so the LiveView keeps
+  `{:dra_event, ref, result}` messages during the stream. Blocks the calling
+  process until the stream ends — run it via `start_async/3` so the LiveView keeps
   serving heartbeats. Returns the terminal status for `handle_async/3`.
 
-  `opts` are forwarded to `Config.run_payload/2`: `:mcp_servers` (list of agent
-  MCP server maps) and `:model_tier` (the price-tier name picked in the UI).
+  `opts[:ref]` is echoed back in every event message (see the moduledoc); the
+  rest are forwarded to `Config.run_payload/2`: `:mcp_servers` (list of agent MCP
+  server maps) and `:model_tier` (the price-tier name picked in the UI).
   """
   @spec stream_run(String.t(), String.t(), pid(), keyword()) :: :ok | {:error, String.t()}
   def stream_run(thread_id, message, lv_pid, opts \\ []) do
-    Process.put(:dra_buffer, "")
+    warn_if_insecure_base_url()
+    {ref, opts} = Keyword.pop(opts, :ref)
     payload = Config.run_payload(message, opts)
 
     result =
@@ -98,15 +105,19 @@ defmodule Sanbase.DeepResearch.Client do
         json: payload,
         receive_timeout: @stream_receive_timeout,
         retry: false,
+        # The partial-line buffer rides along on the response's private map, so
+        # the framing state is explicit and scoped to this request rather than
+        # hidden in the calling process's dictionary.
         into: fn {:data, data}, {req, resp} ->
-          handle_chunk(data, lv_pid)
-          {:cont, {req, resp}}
+          {lines, buffer} = SSE.feed(Req.Response.get_private(resp, @buffer_key, ""), data)
+          Enum.each(lines, &handle_line(&1, lv_pid, ref))
+          {:cont, {req, Req.Response.put_private(resp, @buffer_key, buffer)}}
         end
       )
 
     # The last SSE event may arrive without a trailing newline, leaving it in the
     # buffer — flush it so a terminal `run_id`/`error`/`report` isn't dropped.
-    flush_buffer(lv_pid)
+    flush_buffer(result, lv_pid, ref)
 
     case result do
       {:ok, %{status: status}} when status in 200..299 -> :ok
@@ -115,34 +126,21 @@ defmodule Sanbase.DeepResearch.Client do
     end
   end
 
-  # Accumulate the partial-line buffer (in this Task's process dictionary) and
-  # dispatch every complete `data:` line, buffering partial lines across chunks.
-  defp handle_chunk(data, lv_pid) do
-    buffer = Process.get(:dra_buffer, "") <> data
-    parts = String.split(buffer, "\n")
-    {complete, [rest]} = Enum.split(parts, -1)
-    Process.put(:dra_buffer, rest)
-    Enum.each(complete, &handle_line(&1, lv_pid))
+  defp flush_buffer({:ok, %Req.Response{} = resp}, lv_pid, ref) do
+    {lines, ""} = resp |> Req.Response.get_private(@buffer_key, "") |> SSE.flush()
+    Enum.each(lines, &handle_line(&1, lv_pid, ref))
   end
 
-  # Dispatch any buffered tail left when the stream closed without a final
-  # newline, then clear the buffer.
-  defp flush_buffer(lv_pid) do
-    case Process.get(:dra_buffer, "") do
-      "" -> :ok
-      rest -> handle_line(rest, lv_pid)
-    end
+  # A transport-level failure has no response to drain.
+  defp flush_buffer(_result, _lv_pid, _ref), do: :ok
 
-    Process.put(:dra_buffer, "")
-  end
-
-  defp handle_line("data:" <> rest, lv_pid) do
+  defp handle_line("data:" <> rest, lv_pid, ref) do
     raw = String.trim(rest)
 
     if raw != "" and raw != "[DONE]" do
       with {:ok, value} <- Jason.decode(raw),
            result when map_size(result) > 0 <- EventParser.parse(value) do
-        send(lv_pid, {:dra_event, result})
+        send(lv_pid, {:dra_event, ref, result})
       else
         _ -> :ok
       end
@@ -150,9 +148,25 @@ defmodule Sanbase.DeepResearch.Client do
   end
 
   # Non-data lines: `event:` mode markers, comments, blank separators — ignored.
-  defp handle_line(_line, _lv_pid), do: :ok
+  defp handle_line(_line, _lv_pid, _ref), do: :ok
 
   defp url(path), do: Config.base_url() <> path
+
+  # The run payload carries the OpenRouter/Tavily API keys, so a non-local plain
+  # HTTP base URL puts them on the wire in cleartext. Warn once per run rather
+  # than refuse — the default is localhost and a remote deploy should be https.
+  defp warn_if_insecure_base_url() do
+    case URI.parse(Config.base_url()) do
+      %URI{scheme: "http", host: host} when host not in ["localhost", "127.0.0.1", "::1"] ->
+        Logger.warning(
+          "DeepResearch base_url is plain HTTP to a non-local host (#{host}) — the run " <>
+            "payload's API keys are sent in cleartext. Use https for remote agents."
+        )
+
+      _ ->
+        :ok
+    end
+  end
 
   defp error_message(%{__exception__: true} = error), do: Exception.message(error)
   defp error_message(error) when is_binary(error), do: error

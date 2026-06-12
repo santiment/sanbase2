@@ -1,9 +1,11 @@
 defmodule Sanbase.DeepResearch.Timeline do
   @moduledoc """
   Pure state reducer for a research transcript: folds parsed stream events into
-  per-turn timeline state (`reduce_timeline`, `upsert_thinking`, `merge_phase`),
-  groups it for rendering (`segment`, `coalesce`) and tidies the report
-  (`reflow_sources`).
+  per-turn timeline state (`reduce_timeline`, `upsert_thinking`, `merge_phase`)
+  and groups it for rendering (`segment`, `coalesce`).
+
+  Shaping the *finished* report markdown (source reflow, in-report chart specs)
+  is a separate concern — see `Sanbase.DeepResearch.ReportMarkdown`.
 
   A transcript is a list of `turn` maps. A turn holds an ordered `timeline` of
   items (thinking / search / mcp / status / skill), accumulated `sources`, the
@@ -16,6 +18,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `%{kind: :mcp, id, tool, args, ok, summary, done}`
     * `%{kind: :status, state, detail}`
     * `%{kind: :skill, name, path}`
+    * `%{kind: :chart, id, slug, range, summary, series}`
   """
 
   @phases [:idle, :planning, :researching, :writing, :awaiting_user]
@@ -179,6 +182,21 @@ defmodule Sanbase.DeepResearch.Timeline do
     end
   end
 
+  def reduce_timeline(prev, %{kind: :chart} = a) do
+    build = fn _existing ->
+      %{
+        kind: :chart,
+        id: a.id,
+        slug: a[:slug],
+        range: a[:range],
+        summary: a[:summary],
+        series: a.series
+      }
+    end
+
+    upsert_by_id(prev, :chart, a.id, build)
+  end
+
   def reduce_timeline(prev, %{kind: :subagent_findings} = a) do
     prev ++
       [
@@ -256,6 +274,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `{:narration, [thinking_item, ...]}` - contiguous run of thinking (visible prose)
     * `{:tools, [item, ...], running?}`    - contiguous run of search/mcp/status (folded)
     * `{:skill, [skill_item, ...]}`        - contiguous run of skills (always-visible chips)
+    * `{:chart, [chart_item, ...]}`        - contiguous run of charts (always-visible widgets)
     * `{:findings, [finding_item, ...]}`   - contiguous run of sub-agent findings (folded tables)
   """
   @spec segment([map()]) :: [tuple()]
@@ -265,6 +284,7 @@ defmodule Sanbase.DeepResearch.Timeline do
         case item.kind do
           :thinking -> {push_narration(flush_tools(blocks, tools), item), []}
           :skill -> {push_skill(flush_tools(blocks, tools), item), []}
+          :chart -> {push_chart(flush_tools(blocks, tools), item), []}
           :subagent_findings -> {push_findings(flush_tools(blocks, tools), item), []}
           _ -> {blocks, tools ++ [item]}
         end
@@ -288,6 +308,9 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   defp push_skill([{:skill, items} | rest], item), do: [{:skill, items ++ [item]} | rest]
   defp push_skill(blocks, item), do: [{:skill, [item]} | blocks]
+
+  defp push_chart([{:chart, items} | rest], item), do: [{:chart, items ++ [item]} | rest]
+  defp push_chart(blocks, item), do: [{:chart, [item]} | blocks]
 
   defp push_findings([{:findings, items} | rest], item),
     do: [{:findings, items ++ [item]} | rest]
@@ -321,60 +344,4 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   defp flush_mcp_run(out, []), do: out
   defp flush_mcp_run(out, run), do: [{:mcp_group, run} | out]
-
-  @doc """
-  Force a report's `Sources` section to render one entry per line. Idempotent —
-  a no-op when already a list, when there are fewer than two sources, or when
-  there is no Sources heading.
-  """
-  @spec reflow_sources(String.t()) :: String.t()
-  def reflow_sources(md) when is_binary(md) do
-    case Regex.run(~r/(^|\n)\#{0,6}\s*\**sources\**\s*:?\s*\n/i, md, return: :index) do
-      [{start, len} | _] ->
-        cut = start + len
-        head = binary_part(md, 0, cut)
-        tail = binary_part(md, cut, byte_size(md) - cut)
-        {sources_block, rest} = split_at_next_heading(tail)
-        reflow_tail(md, head, sources_block, rest)
-
-      _ ->
-        md
-    end
-  end
-
-  def reflow_sources(md), do: md
-
-  # The Sources block ends at the next Markdown heading (if any) — anything after
-  # it is a separate section and must be left untouched, even if it has citation
-  # markers of its own.
-  defp split_at_next_heading(tail) do
-    case Regex.run(~r/\n\#{1,6}\s/, tail, return: :index) do
-      [{h_start, _} | _] ->
-        {binary_part(tail, 0, h_start), binary_part(tail, h_start, byte_size(tail) - h_start)}
-
-      _ ->
-        {tail, ""}
-    end
-  end
-
-  defp reflow_tail(md, head, sources_block, rest) do
-    markers = length(Regex.scan(~r/\[\d+\]/, sources_block))
-
-    lines_with_marker =
-      sources_block |> String.split("\n") |> Enum.count(&Regex.match?(~r/\[\d+\]/, &1))
-
-    entries =
-      ~r/\s*(?=\[\d+\]\s)/
-      |> Regex.split(sources_block)
-      |> Enum.map(&(&1 |> String.replace(~r/^[-*]\s*/, "") |> String.trim()))
-      |> Enum.reject(&(&1 == ""))
-
-    # Leave untouched when there are fewer than two sources or it is already
-    # one-per-line; otherwise re-bullet each entry.
-    if markers < 2 or lines_with_marker >= markers or length(entries) < 2 do
-      md
-    else
-      head <> Enum.map_join(entries, "\n", &"- #{&1}") <> "\n" <> rest
-    end
-  end
 end

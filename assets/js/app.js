@@ -13,6 +13,8 @@ import { EasyMDEEditor } from "./hooks/easymde_editor"
 import { TimeseriesChart } from "./hooks/timeseries_chart"
 import { Copy } from "./hooks/copy"
 import { KeepDetailsOpen } from "./hooks/keep_details_open"
+import { AutoGrow } from "./hooks/auto_grow"
+import { LightweightChart } from "./hooks/lightweight_chart"
 
 // Make Sortable available globally
 window.Sortable = Sortable
@@ -28,7 +30,9 @@ const Hooks = {
   EasyMDEEditor: EasyMDEEditor,
   TimeseriesChart: TimeseriesChart,
   Copy: Copy,
-  KeepDetailsOpen: KeepDetailsOpen
+  KeepDetailsOpen: KeepDetailsOpen,
+  AutoGrow: AutoGrow,
+  LightweightChart: LightweightChart
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

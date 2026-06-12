@@ -23,7 +23,10 @@ defmodule Sanbase.Cache do
 
   @impl Sanbase.Cache.Behaviour
   def hash(data) do
-    :crypto.hash(:sha256, :erlang.term_to_binary(data))
+    data
+    |> Sanbase.Cache.RequestContextStripper.strip()
+    |> :erlang.term_to_binary()
+    |> then(&:crypto.hash(:sha256, &1))
     |> Base.encode64()
   end
 

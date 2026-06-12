@@ -1,7 +1,5 @@
 defmodule SanbaseWeb.Graphql.EcosystemDataloader do
-  def data(), do: Dataloader.KV.new(&query/2)
-
-  def query(:ecosystem_aggregated_metric_data, data) do
+  def query(:ecosystem_aggregated_metric_data, data, ctx) do
     # The key is the arguments, the value is the list of ecosystems
     # The args are from/to/interval/aggregation/metric
     map =
@@ -29,12 +27,13 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       end,
       max_concurrency: 4,
       timeout: 60_000,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
-  def query(:ecosystem_timeseries_metric_data, data) do
+  def query(:ecosystem_timeseries_metric_data, data, ctx) do
     # The key is the arguments, the value is the list of ecosystems
     # The args are from/to/interval/aggregation/metric
     map =
@@ -63,7 +62,8 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       end,
       max_concurrency: 4,
       timeout: 60_000,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end

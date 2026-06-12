@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict fmJ0bwtSTCbDR0i1pwcHZ9wObyZ4NodEmDkKr1TQQUfEjZSqvO7S7FLQOMqb9an
+\restrict GvMb9myGq5Xvi01e9hnaWh4yO5t6O99tTsXj7R2Kdf7NmCrw8gW8w78V7SERzGm
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -5573,7 +5573,8 @@ CREATE TABLE public.users (
     available_metrics_lookback_days integer,
     is_mcp_banned boolean DEFAULT false NOT NULL,
     mcp_banned_at timestamp(0) without time zone,
-    mcp_banned_reason text
+    mcp_banned_reason text,
+    are_activity_traces_hidden boolean DEFAULT false NOT NULL
 );
 
 
@@ -9926,6 +9927,13 @@ CREATE UNIQUE INDEX user_uniswap_staking_user_id_index ON public.user_uniswap_st
 
 
 --
+-- Name: users_are_activity_traces_hidden_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX users_are_activity_traces_hidden_index ON public.users USING btree (are_activity_traces_hidden) WHERE (are_activity_traces_hidden = true);
+
+
+--
 -- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11652,7 +11660,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fmJ0bwtSTCbDR0i1pwcHZ9wObyZ4NodEmDkKr1TQQUfEjZSqvO7S7FLQOMqb9an
+\unrestrict GvMb9myGq5Xvi01e9hnaWh4yO5t6O99tTsXj7R2Kdf7NmCrw8gW8w78V7SERzGm
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12224,6 +12232,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260511112644);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);
 INSERT INTO public."schema_migrations" (version) VALUES (20260515075234);
 INSERT INTO public."schema_migrations" (version) VALUES (20260519151900);
+INSERT INTO public."schema_migrations" (version) VALUES (20260521120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260522100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260526093118);
 INSERT INTO public."schema_migrations" (version) VALUES (20260528120000);

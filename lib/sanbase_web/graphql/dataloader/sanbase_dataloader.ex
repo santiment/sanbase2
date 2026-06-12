@@ -7,9 +7,32 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.PostgresDataloader
   alias SanbaseWeb.Graphql.PriceDataloader
 
-  @spec data() :: Dataloader.KV.t()
-  def data() do
-    Dataloader.KV.new(&query/2)
+  @doc """
+  Builds the `Dataloader.KV` source for the Absinthe schema, closing
+  over the per-request `request_context` so every batch this source runs
+  carries it (for `activity_traces_hidden` masking). `nil` outside a
+  request scope. See `make_kv_fun/1` for how the context crosses the
+  `Dataloader.KV` task boundary.
+  """
+  @spec data(Sanbase.RequestContext.t() | nil) :: Dataloader.KV.t()
+  def data(request_context \\ nil) do
+    Dataloader.KV.new(make_kv_fun(request_context))
+  end
+
+  # `Dataloader.KV` runs each batch in a fresh `Task`. Its callback is
+  # fixed to `(batch_key, args) -> result`, so we cannot pass ctx as a
+  # third arg through the library — instead we close over it. Inside the
+  # spawned task we (a) re-seed `Logger.metadata` once as the explicit
+  # process-boundary hop (transitional, for callers that still read ctx
+  # via `RequestContext.current/0`) and (b) thread ctx into our own
+  # `query/3` so downstream code can take it as an explicit argument.
+  defp make_kv_fun(nil), do: fn batch_key, args -> query(batch_key, args, nil) end
+
+  defp make_kv_fun(%Sanbase.RequestContext{} = ctx) do
+    fn batch_key, args ->
+      Sanbase.RequestContext.put_logger_metadata(ctx)
+      query(batch_key, args, ctx)
+    end
   end
 
   @metricshub_dataloader [
@@ -101,28 +124,28 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   @postgres_dataloader MapSet.new(@postgres_dataloader)
   @clickhouse_dataloader MapSet.new(@clickhouse_dataloader)
 
-  def query(queryable, args) do
+  def query(queryable, args, request_context) do
     cond do
       queryable in @clickhouse_dataloader ->
-        ClickhouseDataloader.query(queryable, args)
+        ClickhouseDataloader.query(queryable, args, request_context)
 
       queryable in @postgres_dataloader ->
         PostgresDataloader.query(queryable, args)
 
       queryable in @balance_dataloader ->
-        BalanceDataloader.query(queryable, args)
+        BalanceDataloader.query(queryable, args, request_context)
 
       queryable in @price_dataloader ->
-        PriceDataloader.query(queryable, args)
+        PriceDataloader.query(queryable, args, request_context)
 
       queryable in @metricshub_dataloader ->
-        MetricshubDataloader.query(queryable, args)
+        MetricshubDataloader.query(queryable, args, request_context)
 
       queryable in @ecosystem_dataloader ->
-        EcosystemDataloader.query(queryable, args)
+        EcosystemDataloader.query(queryable, args, request_context)
 
       queryable in @labels_dataloader ->
-        LabelsDataloader.query(queryable, args)
+        LabelsDataloader.query(queryable, args, request_context)
 
       true ->
         raise(RuntimeError, "Unknown queryable provided to the dataloder: #{inspect(queryable)}")

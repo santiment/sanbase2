@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     result = do_send_chat_message(args, current_user.id)
 
     duration_ms = div(System.monotonic_time() - start_time, 1_000_000)
-    log_graphql_response("sendChatMessage", result, duration_ms)
+    log_graphql_response("sendChatMessage", result, duration_ms, resolution)
 
     result
   end
@@ -124,7 +124,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     result = do_send_chat_message(args, nil)
 
     duration_ms = div(System.monotonic_time() - start_time, 1_000_000)
-    log_graphql_response("sendChatMessage", result, duration_ms)
+    log_graphql_response("sendChatMessage", result, duration_ms, resolution)
 
     result
   end
@@ -400,27 +400,54 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
 
   defp log_graphql_request(query_name, args, resolution) do
     user_id = extract_user_id(resolution)
-    sanitized_args = sanitize_args_for_logging(args)
 
-    Logger.warning(
-      "GraphQL request: query=#{query_name}, user_id=#{inspect(user_id)}, args=#{inspect(sanitized_args)}"
-    )
+    if activity_traces_hidden?(resolution) do
+      Logger.warning(
+        "GraphQL request: query=#{query_name}, user_id=#{inspect(user_id)}, args hidden (activity_traces_hidden)"
+      )
+    else
+      sanitized_args = sanitize_args_for_logging(args)
+
+      Logger.warning(
+        "GraphQL request: query=#{query_name}, user_id=#{inspect(user_id)}, args=#{inspect(sanitized_args)}"
+      )
+    end
   end
 
-  defp log_graphql_response(query_name, result, duration_ms) do
-    case result do
-      {:ok, data} ->
+  defp log_graphql_response(query_name, result, duration_ms, resolution) do
+    cond do
+      activity_traces_hidden?(resolution) ->
+        status = if match?({:ok, _}, result), do: "success", else: "error"
+
+        Logger.warning(
+          "GraphQL response: query=#{query_name}, status=#{status}, duration_ms=#{duration_ms}, data hidden (activity_traces_hidden)"
+        )
+
+      match?({:ok, _}, result) ->
+        {:ok, data} = result
         sanitized_data = sanitize_response_for_logging(data)
 
         Logger.warning(
           "GraphQL response: query=#{query_name}, status=success, duration_ms=#{duration_ms}, data=#{inspect(sanitized_data)}"
         )
 
-      {:error, reason} ->
+      true ->
+        {:error, reason} = result
+
         Logger.warning(
           "GraphQL response: query=#{query_name}, status=error, duration_ms=#{duration_ms}, error=#{inspect(reason)}"
         )
     end
+  end
+
+  # Chat content (user prompts, AI responses) is activity. Mirror the
+  # `MaybeHideActivityTraces` logger filter: keep a breadcrumb so the
+  # request stays visible to ops, but never log the content itself.
+  defp activity_traces_hidden?(resolution) do
+    Sanbase.Accounts.ActivityTracesConfig.hidden?(
+      :hide_chat_logs,
+      resolution.context[:request_context]
+    )
   end
 
   defp extract_user_id(%{context: %{auth: %{current_user: %{id: user_id}}}}), do: user_id

@@ -21,12 +21,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Utils do
   datetime
   """
   def combine_historical_balances(addresses, fun) when is_function(fun, 1) do
+    ctx = Sanbase.RequestContext.current()
+
     result =
       addresses
-      |> Sanbase.Parallel.map(fn address ->
-        {:ok, balances} = fun.(address)
-        balances
-      end)
+      |> Sanbase.Parallel.map(
+        fn address ->
+          {:ok, balances} = fun.(address)
+          balances
+        end,
+        request_context: ctx
+      )
       |> Enum.zip()
       |> Enum.map(&Tuple.to_list/1)
       |> Enum.map(fn

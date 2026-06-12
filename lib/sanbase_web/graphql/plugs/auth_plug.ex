@@ -42,6 +42,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Chart.Configuration.SharedAccessToken
+  alias Sanbase.RequestContext
   alias Sanbase.Utils.Config
 
   defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
@@ -80,19 +81,27 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     case authenticate(conn, @authentication_methods) do
       {:ok, %AuthStruct{} = auth_struct} ->
         auth_struct = augment_auth(auth_struct, conn)
+        conn = put_private(conn, :san_authentication, Map.from_struct(auth_struct))
+        ctx = RequestContext.from_conn(conn)
 
         case auth_struct do
           %{auth: %{current_user: %{id: user_id}}} ->
-            Process.put(:__graphql_query_current_user_id__, user_id)
-            Logger.metadata(user_id: user_id)
+            # Tag Sentry events with the user id so exceptions are
+            # attributable to a specific request without having to
+            # cross-reference Logger metadata. `RequestContextPlug`
+            # clears this between requests so Cowboy worker reuse
+            # cannot leak the previous user's id into a new event.
+            Sentry.Context.set_user_context(%{id: user_id})
 
           _ ->
-            Logger.metadata(user_id: "anonymous")
+            :ok
         end
+
+        RequestContext.put_logger_metadata(ctx)
 
         conn
         |> maybe_put_new_access_token(auth_struct)
-        |> put_private(:san_authentication, Map.from_struct(auth_struct))
+        |> assign(:request_context, ctx)
 
       {:error, error_msg} ->
         conn

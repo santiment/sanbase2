@@ -138,15 +138,20 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.WidgetQueries)
   import_types(Graphql.Schema.ChangelogQueries)
 
-  def dataloader() do
+  def dataloader(request_context \\ nil) do
     Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
-    |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
+    |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data(request_context))
   end
 
   def context(ctx) do
-    ctx
-    |> Map.put(:loader, dataloader())
+    request_context =
+      case ctx do
+        %{request_context: %Sanbase.RequestContext{} = rc} -> rc
+        _ -> nil
+      end
+
+    Map.put(ctx, :loader, dataloader(request_context))
   end
 
   def plugins do

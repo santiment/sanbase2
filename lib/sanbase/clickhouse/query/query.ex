@@ -7,8 +7,10 @@ defmodule Sanbase.Clickhouse.Query do
   the ClickHouse specific SETTINGS to the query.
   """
   alias Sanbase.Clickhouse.Query.Environment
+  alias Sanbase.RequestContext
+  alias Sanbase.Accounts.ActivityTracesConfig
 
-  defstruct [:sql, :parameters, :log_comment, :leading_comments, :environment]
+  defstruct [:sql, :parameters, :log_comment, :leading_comments, :environment, :context]
 
   @type sql :: String.t()
   @type parameters :: Map.t()
@@ -18,7 +20,8 @@ defmodule Sanbase.Clickhouse.Query do
           parameters: parameters(),
           log_comment: map() | nil,
           leading_comments: [],
-          environment: Environment.t()
+          environment: Environment.t(),
+          context: RequestContext.t() | nil
         }
 
   @doc ~s"""
@@ -45,7 +48,8 @@ defmodule Sanbase.Clickhouse.Query do
       parameters: parameters,
       log_comment: Keyword.get(opts, :log_comment, %{}),
       environment: Keyword.get(opts, :environment, Environment.empty()),
-      leading_comments: Keyword.get(opts, :leading_comments, [])
+      leading_comments: Keyword.get(opts, :leading_comments, []),
+      context: Keyword.get(opts, :context)
     }
   end
 
@@ -220,22 +224,57 @@ defmodule Sanbase.Clickhouse.Query do
     %{query | sql: new_sql}
   end
 
-  defp add_settings(%{sql: sql, log_comment: log_comment} = query) do
+  # Explicit context threaded by the caller wins — preferred path.
+  defp add_settings(%{context: %RequestContext{} = ctx} = query) do
+    apply_settings(query, ctx.user_id, ActivityTracesConfig.hidden?(:hide_ch_query_log, ctx))
+  end
+
+  # Transitional fallback for call sites that haven't been migrated to
+  # thread `:context` yet. Reads from `Logger.metadata` seeded at the
+  # edge. Aim to remove once every CH-issuing path passes ctx explicitly.
+  defp add_settings(%{context: nil} = query) do
+    ctx = RequestContext.current()
+    apply_settings(query, ctx.user_id, ActivityTracesConfig.hidden?(:hide_ch_query_log, ctx))
+  end
+
+  defp apply_settings(
+         %{sql: sql, log_comment: log_comment} = query,
+         user_id,
+         activity_traces_hidden?
+       ) do
     log_comment =
-      if user_id = Process.get(:__graphql_query_current_user_id__),
-        do: Map.put_new(log_comment, :user_id, user_id),
-        else: Map.put_new(log_comment, :user_id, 0)
+      cond do
+        activity_traces_hidden? ->
+          # Keep user_id (matches the Kafka api_call export) but drop the
+          # request/stacktrace breadcrumbs that could reveal what was queried.
+          log_comment
+          |> Map.drop([:stacktrace, :graphql_request_log_id])
+          |> Map.put(:user_id, user_id)
+
+        user_id ->
+          Map.put_new(log_comment, :user_id, user_id)
+
+        true ->
+          Map.put_new(log_comment, :user_id, 0)
+      end
 
     log_comment_str =
       if map_size(log_comment) > 0 do
         " log_comment='#{Jason.encode!(log_comment)}'"
       end
 
+    log_queries_str = if activity_traces_hidden?, do: " log_queries=0"
+
+    settings_parts =
+      [log_comment_str, log_queries_str]
+      |> Enum.reject(&is_nil/1)
+
     settings_str =
-      if log_comment_str, do: "\nSETTINGS" <> log_comment_str, else: ""
+      case settings_parts do
+        [] -> ""
+        parts -> "\nSETTINGS" <> Enum.join(parts, ",")
+      end
 
-    sql = sql <> settings_str
-
-    %{query | sql: sql}
+    %{query | sql: sql <> settings_str}
   end
 end

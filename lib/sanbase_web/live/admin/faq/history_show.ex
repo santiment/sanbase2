@@ -2,10 +2,13 @@ defmodule SanbaseWeb.Admin.FaqLive.HistoryShow do
   use SanbaseWeb, :live_view
 
   alias Sanbase.Knowledge.QuestionAnswerLog
+  alias SanbaseWeb.KnowledgeAnswerHTML
 
   def mount(%{"id" => id}, _session, socket) do
     {:ok, entry} = QuestionAnswerLog.by_id(id)
-    answer_html = Earmark.as_html!(entry.answer || "")
+    # Same renderer as the live Ask UI, so persisted answers show styled
+    # publication dates instead of raw `{{date:...}}` sentinels.
+    answer_html = KnowledgeAnswerHTML.to_html(entry.answer)
 
     socket =
       socket

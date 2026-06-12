@@ -132,7 +132,7 @@ defmodule Sanbase.Application do
         {scrapers_children, _} = Sanbase.Application.Scrapers.children()
         {alerts_children, _} = Sanbase.Application.Alerts.children()
         {admin_children, _} = Sanbase.Application.Admin.children()
-        {queries_children, _} = Sanbase.Application.Admin.children()
+        {queries_children, _} = Sanbase.Application.Queries.children()
         {mcp_children, _} = Sanbase.Application.Mcp.children()
 
         children =

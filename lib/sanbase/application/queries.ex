@@ -23,7 +23,12 @@ defmodule Sanbase.Application.Queries do
         fn -> Sanbase.DiscordConsumer end,
         fn -> Sanbase.Nostrum.enabled?() end
       ),
-      Sanbase.DiscordBot.Worker
+      Sanbase.DiscordBot.Worker,
+      # Telegram Q&A bot (long-polling). Started only when its bot token is set.
+      start_if(
+        fn -> Sanbase.TelegramBot.Poller end,
+        fn -> Sanbase.TelegramBot.Api.enabled?() end
+      )
     ]
 
     opts = [

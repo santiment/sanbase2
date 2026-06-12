@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict fmJ0bwtSTCbDR0i1pwcHZ9wObyZ4NodEmDkKr1TQQUfEjZSqvO7S7FLQOMqb9an
+\restrict UAM5iE8zt3GSbRhnSHuk7zwQzMQcawO4JjV0j46HgEx3uGFGr8DTmkR2LZqQAal
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 17.10 (Homebrew)
+-- Dumped by pg_dump version 17.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -4812,6 +4812,39 @@ ALTER SEQUENCE public.tags_id_seq OWNED BY public.tags.id;
 
 
 --
+-- Name: telegram_bot_messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telegram_bot_messages (
+    id bigint NOT NULL,
+    chat_id character varying(255) NOT NULL,
+    message_id bigint NOT NULL,
+    conversation_id character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: telegram_bot_messages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telegram_bot_messages_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telegram_bot_messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telegram_bot_messages_id_seq OWNED BY public.telegram_bot_messages.id;
+
+
+--
 -- Name: telegram_user_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6811,6 +6844,13 @@ ALTER TABLE ONLY public.tags ALTER COLUMN id SET DEFAULT nextval('public.tags_id
 
 
 --
+-- Name: telegram_bot_messages id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telegram_bot_messages ALTER COLUMN id SET DEFAULT nextval('public.telegram_bot_messages_id_seq'::regclass);
+
+
+--
 -- Name: thread_ai_context id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8082,6 +8122,14 @@ ALTER TABLE ONLY public.table_configurations
 
 ALTER TABLE ONLY public.tags
     ADD CONSTRAINT tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: telegram_bot_messages telegram_bot_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telegram_bot_messages
+    ADD CONSTRAINT telegram_bot_messages_pkey PRIMARY KEY (id);
 
 
 --
@@ -9678,6 +9726,13 @@ CREATE UNIQUE INDEX subscriptions_stripe_id_index ON public.subscriptions USING 
 --
 
 CREATE UNIQUE INDEX tags_name_index ON public.tags USING btree (name);
+
+
+--
+-- Name: telegram_bot_messages_chat_id_message_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX telegram_bot_messages_chat_id_message_id_index ON public.telegram_bot_messages USING btree (chat_id, message_id);
 
 
 --
@@ -11652,7 +11707,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fmJ0bwtSTCbDR0i1pwcHZ9wObyZ4NodEmDkKr1TQQUfEjZSqvO7S7FLQOMqb9an
+\unrestrict UAM5iE8zt3GSbRhnSHuk7zwQzMQcawO4JjV0j46HgEx3uGFGr8DTmkR2LZqQAal
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12231,3 +12286,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260529120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260604120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260604130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260610170000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260612130000);

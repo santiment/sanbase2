@@ -548,12 +548,14 @@ defmodule SanbaseWeb.DeepResearchLive do
     <form phx-submit="submit" phx-change="update_query">
       <div class="flex items-end gap-2 rounded-[1.75rem] border border-base-300 bg-base-100 py-1.5 pl-4 pr-2 shadow-sm transition focus-within:border-base-content/25 focus-within:shadow-md">
         <textarea
+          id="dr-composer-input"
           name="query"
           rows="1"
+          phx-hook="AutoGrow"
           phx-debounce="150"
           disabled={@running}
           placeholder={@placeholder}
-          class="max-h-44 min-h-[2.75rem] flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-relaxed placeholder:text-base-content/40 focus:outline-none disabled:opacity-60"
+          class="max-h-72 min-h-[2.75rem] flex-1 resize-none overflow-y-auto bg-transparent py-2.5 text-[15px] leading-relaxed placeholder:text-base-content/40 focus:outline-none disabled:opacity-60"
         >{@query}</textarea>
         <div class="flex items-center gap-1 pb-1">
           <button

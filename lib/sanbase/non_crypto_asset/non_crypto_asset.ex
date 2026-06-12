@@ -57,6 +57,7 @@ defmodule Sanbase.NonCryptoAsset do
     |> validate_required([:slug, :name, :asset_type])
     |> unique_constraint(:slug)
     |> validate_no_project_slug_collision()
+    |> maybe_add_hidden_since()
   end
 
   def create(attrs) do
@@ -106,6 +107,19 @@ defmodule Sanbase.NonCryptoAsset do
 
   defp maybe_exclude_hidden(query, true), do: query
   defp maybe_exclude_hidden(query, false), do: where(query, [a], a.is_hidden == false)
+
+  defp maybe_add_hidden_since(changeset) do
+    case changeset.changes do
+      %{is_hidden: true} ->
+        put_change(changeset, :hidden_since, DateTime.utc_now() |> DateTime.truncate(:second))
+
+      %{is_hidden: false} ->
+        put_change(changeset, :hidden_since, nil)
+
+      _ ->
+        changeset
+    end
+  end
 
   defp validate_no_project_slug_collision(changeset) do
     case get_change(changeset, :slug) do

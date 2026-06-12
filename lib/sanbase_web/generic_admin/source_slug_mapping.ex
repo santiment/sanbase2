@@ -16,6 +16,9 @@ defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
         project_id: %{
           value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
         },
+        non_crypto_asset_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.NonCryptoAsset.non_crypto_asset_link/1
+        },
         source: %{
           collection: ["cryptocompare", "coinmarketcap", "binance", "hyperliquid"],
           type: :select

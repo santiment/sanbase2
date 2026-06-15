@@ -6,7 +6,6 @@
     useChartPanesCtx,
     useMetricSeriesCtx,
   } from "san-webkit-next/ui/app/Chart/ctx";
-  import { useUiCtx } from "san-webkit-next/ctx/ui";
   import { getFormattedDetailedTimestamp } from "san-webkit-next/utils/dates";
   import type { TInterval } from "san-webkit-next/ui/app/Chart/api";
   import type { TAssetSlug } from "san-webkit-next/ctx/assets";
@@ -19,11 +18,9 @@
 
   type TProps = {
     data: ChartData;
-    isNightMode: boolean;
   };
-  const { data, isNightMode }: TProps = $props();
+  const { data }: TProps = $props();
 
-  useUiCtx.set({ isNightMode });
   useChartCtx.set();
   useChartPanesCtx.set();
   useChartGlobalParametersCtx.set({

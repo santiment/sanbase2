@@ -97,7 +97,7 @@
       {@const so = mcpApp.$.data.summary.overlay}
 
       {#key `${mcpApp.$.data.slug}|${mcpApp.$.data.range}|${so?.label ?? ""}`}
-        <ChartView data={mcpApp.$.data} isNightMode={mcpApp.isNightMode$} />
+        <ChartView data={mcpApp.$.data} />
       {/key}
     {/if}
 

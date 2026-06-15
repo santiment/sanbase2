@@ -1,26 +1,12 @@
 import type { UTCTimestamp } from "@santiment-network/chart-next";
 
 import {
-  MetricStyle,
   MetricType,
   type TChartAssetMetric,
-  type TMetricStyles,
 } from "san-webkit-next/ctx/metrics-registry/types";
 import type { TAssetSlug } from "san-webkit-next/ctx/assets";
 
-import type {
-  CandlePoint,
-  ChartSeries,
-  SeriesStyle,
-  ValuePoint,
-} from "./contract";
-
-const STYLE_MAP: Record<SeriesStyle, TMetricStyles> = {
-  candles: MetricStyle.CANDLES,
-  line: MetricStyle.LINE,
-  area: MetricStyle.AREA,
-  histogram: MetricStyle.HISTOGRAM,
-};
+import type { CandlePoint, ChartSeries, ValuePoint } from "./contract";
 
 const isCandle = (p: CandlePoint | ValuePoint): p is CandlePoint => "open" in p;
 
@@ -48,7 +34,7 @@ export function toMetricConfig(
     apiMetricName: series.name,
     label: series.label,
     data: toMetricData(series),
-    style: STYLE_MAP[series.style] ?? MetricStyle.LINE,
+    style: series.style,
     pane: 0,
     scaleId: `right-${series.id}`,
     color: series.color,

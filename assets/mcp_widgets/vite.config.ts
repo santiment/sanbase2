@@ -5,9 +5,6 @@ import { resolve } from "path";
 
 const lib = (file: string) => resolve(__dirname, "lib", file);
 
-// `vite-plugin-singlefile` disables code-splitting, which Rollup forbids with
-// multiple HTML inputs. So we parameterize the build by `WIDGET` env var and
-// run vite once per widget (see `scripts.build` in package.json).
 const widget = process.env.WIDGET;
 
 const buildConfig =

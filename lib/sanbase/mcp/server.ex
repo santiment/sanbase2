@@ -11,6 +11,8 @@ defmodule Sanbase.MCP.Server do
   alias Sanbase.MCP.{Auth, Restrictions, ToolInvocation}
   alias Sanbase.RequestContext
 
+  require Logger
+
   @banned_message "Your account is banned from the Santiment MCP server. Contact support."
 
   @impl true
@@ -227,10 +229,24 @@ defmodule Sanbase.MCP.Server do
     # carries the request's privacy flag. `Task.Supervisor.start_child/2`
     # does not inherit Logger metadata from the caller.
     defp persist_tool_invocation(%RequestContext{} = ctx, attrs) do
-      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-        RequestContext.put_logger_metadata(ctx)
-        ToolInvocation.create(attrs)
-      end)
+      result =
+        Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+          RequestContext.put_logger_metadata(ctx)
+          ToolInvocation.create(attrs)
+        end)
+
+      # Persistence is best-effort analytics, so a spawn failure (e.g. the
+      # supervisor is shutting down) must not crash the MCP response — but
+      # it must not be silent either. Log and move on; dropping a row only
+      # ever loses data, never leaks it.
+      case result do
+        {:ok, _pid} ->
+          :ok
+
+        other ->
+          Logger.error("Failed to start MCP tool-invocation persistence task: #{inspect(other)}")
+          :ok
+      end
     end
   end
 

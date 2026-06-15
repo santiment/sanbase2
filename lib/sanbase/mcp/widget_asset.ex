@@ -3,10 +3,11 @@ defmodule Sanbase.MCP.WidgetAsset do
   Shared helper for MCP App UI resources.
 
   Serves a self-contained, single-file widget HTML bundled into
-  `priv/mcp_widgets/` (built by the `santiment/san-mcp-apps` repo via
-  `pnpm build:single`). All JS/CSS/fonts are inlined, so the MCP host's strict
-  default CSP needs no extra domains and the widget works with just the Elixir
-  server running — no external widget host.
+  `priv/mcp_widgets/` (built from `assets/mcp_widgets/` via `mix mcp.widgets.build`,
+  hooked into `mix assets.build` / `mix assets.deploy`). All JS/CSS/fonts are
+  inlined by `vite-plugin-singlefile`, so the MCP host's strict default CSP
+  needs no extra domains and the widget works with just the Elixir server
+  running — no external widget host.
 
   The widget HTML is a static build artifact: it is read from disk once and
   cached in `:persistent_term`, so subsequent renders serve it from memory.

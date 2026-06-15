@@ -212,12 +212,22 @@ defmodule Sanbase.Mixfile do
       [
         # esbuild/assets building related
         setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
-        "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-        "assets.build": ["tailwind default", "esbuild default", "esbuild graphiql"],
+        "assets.setup": [
+          "tailwind.install --if-missing",
+          "esbuild.install --if-missing",
+          "mcp.widgets.setup"
+        ],
+        "assets.build": [
+          "tailwind default",
+          "esbuild default",
+          "esbuild graphiql",
+          "mcp.widgets.build"
+        ],
         "assets.deploy": [
           "tailwind default --minify",
           "esbuild default --minify",
           "esbuild graphiql --minify",
+          "mcp.widgets.build",
           "phx.digest"
         ]
       ]

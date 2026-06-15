@@ -1,0 +1,98 @@
+import { onMount } from "svelte";
+import { App, type McpUiHostContext } from "@modelcontextprotocol/ext-apps";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+
+export type McpAppOptions<T> = {
+  name: string;
+  parse: (result: CallToolResult) => T | null;
+};
+
+type McpAppState<T> = {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+  hostContext: McpUiHostContext | undefined;
+};
+
+export function useMcpApp<T>(opts: McpAppOptions<T>) {
+  let instance: App | null = null;
+
+  const state = $state<McpAppState<T>>({
+    data: null,
+    loading: true,
+    error: null,
+    hostContext: undefined,
+  });
+
+  const isNightMode = $derived(state.hostContext?.theme !== "light");
+
+  onMount(async () => {
+    const app = new App(
+      { name: opts.name, version: "1.0.0" },
+      { availableDisplayModes: ["inline"] },
+    );
+
+    app.ontoolresult = (result) => {
+      try {
+        const parsed = opts.parse(result);
+        if (parsed === null) return;
+
+        state.data = parsed;
+        state.error = null;
+      } catch (e) {
+        console.error(e);
+        state.error = e instanceof Error ? e.message : String(e);
+      } finally {
+        state.loading = false;
+      }
+    };
+
+    app.onerror = (e) => {
+      console.error("useMcpApp: SDK error", e);
+      state.error = e instanceof Error ? e.message : String(e);
+    };
+
+    app.onhostcontextchanged = (params) => {
+      state.hostContext = { ...state.hostContext, ...params };
+    };
+
+    try {
+      await app.connect();
+
+      instance = app;
+      state.hostContext = app.getHostContext();
+    } catch (e) {
+      state.error = e instanceof Error ? e.message : String(e);
+      state.loading = false;
+    }
+  });
+
+  async function openLink(url: string): Promise<boolean> {
+    if (!instance) return false;
+
+    try {
+      const { isError } = await instance.openLink({ url });
+      if (isError) console.warn("openLink denied by host:", url);
+
+      return !isError;
+    } catch (e) {
+      console.error(e);
+
+      return false;
+    }
+  }
+
+  return {
+    mcpApp: {
+      get $() {
+        return state;
+      },
+
+      get isNightMode$() {
+        return isNightMode;
+      },
+
+      openLink,
+    },
+  };
+}

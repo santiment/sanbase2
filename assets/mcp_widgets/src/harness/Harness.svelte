@@ -1,85 +1,63 @@
 <script lang="ts">
+  import {
+    AppBridge,
+    PostMessageTransport,
+  } from "@modelcontextprotocol/ext-apps/app-bridge";
   import Button from "san-webkit-next/ui/core/Button";
-  import { MOCK_DATA as TRENDING_MOCK } from "../widgets/social-trends/mock";
-  import { CHART_MOCK } from "../widgets/chart/mock";
-
-  type WidgetConfig = {
-    label: string;
-    url: string;
-    mock: unknown;
-    args: object;
-  };
-
-  const WIDGETS: Record<string, WidgetConfig> = {
-    "social-trends": {
-      label: "Social Trends",
-      url: "/social-trends.html",
-      mock: TRENDING_MOCK,
-      args: { time_period: "1h" },
-    },
-    chart: {
-      label: "Chart",
-      url: "/chart.html",
-      mock: CHART_MOCK,
-      args: { slug: "bitcoin", primary: "price", overlay: "social_volume_total", range: "7d" },
-    },
-  };
+  import { WIDGETS } from "./widgets";
 
   let selected = $state<keyof typeof WIDGETS>("social-trends");
   let iframeEl = $state<HTMLIFrameElement>();
   let iframeHeight = $state(0);
+  let bridge: AppBridge | null = null;
 
   const current = $derived(WIDGETS[selected]);
 
-  function postToWidget(method: string, params: object) {
-    iframeEl?.contentWindow?.postMessage({ jsonrpc: "2.0", method, params }, "*");
+  async function setupBridge() {
+    if (!iframeEl?.contentWindow) return;
+
+    await bridge?.close();
+
+    bridge = new AppBridge(
+      null,
+      { name: "san-mcp-apps-harness", version: "0.0.0" },
+      {},
+    );
+
+    bridge.oninitialized = () => deliverMock();
+
+    bridge.onsizechange = ({ height }) => {
+      if (height) iframeHeight = height;
+    };
+
+    bridge.onopenlink = async ({ url }) => {
+      console.info("[harness] widget openLink:", url);
+      return { isError: false };
+    };
+
+    bridge.onmessage = async (params) => {
+      console.info("[harness] widget message:", params);
+      return {};
+    };
+
+    const transport = new PostMessageTransport(
+      iframeEl.contentWindow,
+      iframeEl.contentWindow,
+    );
+
+    await bridge.connect(transport);
   }
 
-  function deliverToolResult(data: unknown, args: object) {
-    postToWidget("ui/notifications/tool-input", { arguments: args });
-    postToWidget("ui/notifications/tool-result", {
-      content: [{ type: "text", text: JSON.stringify(data) }],
-      structuredContent: data,
+  function deliverMock() {
+    if (!bridge) return;
+
+    bridge.sendToolInput({ arguments: current.args });
+    bridge.sendToolResult({
+      content: [{ type: "text", text: JSON.stringify(current.mock) }],
+      structuredContent: current.mock as Record<string, unknown>,
       isError: false,
     });
   }
-
-  window.addEventListener("message", (e) => {
-    const msg = e.data;
-    if (!msg || typeof msg !== "object") return;
-
-    if (msg.method === "ui/initialize" && msg.id != null) {
-      iframeEl?.contentWindow?.postMessage(
-        {
-          jsonrpc: "2.0",
-          id: msg.id,
-          result: {
-            protocolVersion: "2026-01-26",
-            hostCapabilities: {},
-            hostInfo: { name: "san-mcp-apps-harness", version: "0.0.0" },
-            hostContext: {},
-          },
-        },
-        "*",
-      );
-    }
-
-    if (msg.method === "ui/notifications/initialized") {
-      deliverToolResult(current.mock, current.args);
-    }
-
-    if (msg.method === "ui/notifications/size-changed" && msg.params?.height) {
-      iframeHeight = msg.params.height;
-    }
-
-    if (msg.method === "ui/message" && msg.id != null) {
-      iframeEl?.contentWindow?.postMessage(
-        { jsonrpc: "2.0", id: msg.id, result: {} },
-        "*",
-      );
-      console.info("[harness] widget sent message:", msg.params);
-    }
-  });
 
   function switchWidget(key: keyof typeof WIDGETS) {
     iframeHeight = 0;
@@ -112,7 +90,7 @@
     <Button
       variant="fill"
       class="w-full justify-start focus:outline-none"
-      onclick={() => deliverToolResult(current.mock, current.args)}
+      onclick={deliverMock}
     >
       ↺ Resend mock data
     </Button>
@@ -125,6 +103,7 @@
       <iframe
         bind:this={iframeEl}
         src={current.url}
+        onload={setupBridge}
         title="Widget preview"
         sandbox="allow-scripts allow-same-origin"
         class="w-full border-none block"

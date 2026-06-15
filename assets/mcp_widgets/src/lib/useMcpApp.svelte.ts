@@ -1,6 +1,7 @@
 import { onMount } from "svelte";
 import { App, type McpUiHostContext } from "@modelcontextprotocol/ext-apps";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { useUiCtx } from "san-webkit-next/ctx/ui";
 
 export type McpAppOptions<T> = {
   name: string;
@@ -25,6 +26,13 @@ export function useMcpApp<T>(opts: McpAppOptions<T>) {
   });
 
   const isNightMode = $derived(state.hostContext?.theme !== "light");
+
+  const { ui } = useUiCtx.set({ isNightMode });
+
+  $effect(() => {
+    document.body.classList.toggle("night-mode", isNightMode);
+    ui.$$.isNightMode = isNightMode;
+  });
 
   onMount(async () => {
     const app = new App(

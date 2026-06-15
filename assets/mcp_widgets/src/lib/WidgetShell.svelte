@@ -1,11 +1,9 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { useUiCtx } from "san-webkit-next/ctx/ui";
 
   type TProps = {
     title: string;
     badge?: string | null;
-    isNightMode: boolean;
     loading: boolean;
     error?: string | null;
     empty?: boolean;
@@ -19,7 +17,6 @@
   let {
     title,
     badge = null,
-    isNightMode,
     loading,
     error = null,
     empty = false,
@@ -29,8 +26,6 @@
     children,
     footer,
   }: TProps = $props();
-
-  useUiCtx.set({ isNightMode });
 </script>
 
 <section class="bg-white text-rhino p-4" aria-label={title}>

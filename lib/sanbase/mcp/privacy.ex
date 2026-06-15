@@ -22,8 +22,12 @@ defmodule Sanbase.MCP.Privacy do
           required(:error_message) => String.t() | nil,
           required(:user_agent) => String.t() | nil,
           required(:client) => String.t() | nil,
-          optional(:session_id) => String.t() | nil,
-          optional(:response_size_bytes) => non_neg_integer() | nil,
+          # Required (not optional): `mask_attrs/2` nils these via the
+          # `%{attrs | ...}` update syntax, which raises `KeyError` if the
+          # key is absent. The sole builder (`MCP.Server.build_attrs/6`)
+          # always sets them.
+          required(:session_id) => String.t() | nil,
+          required(:response_size_bytes) => non_neg_integer() | nil,
           optional(atom()) => term()
         }
 

@@ -60,6 +60,7 @@
       {#if mcpApp.$.data}
         {@const sp = mcpApp.$.data.summary.primary}
         {@const so = mcpApp.$.data.summary.overlay}
+
         <div class="flex items-center gap-4 mb-3 flex-wrap">
           {#if sp}
             <div class="flex items-center gap-2">
@@ -75,6 +76,7 @@
               <span class="text-sm text-waterloo">{mcpApp.$.data.range}</span>
             </div>
           {/if}
+
           {#if so}
             <div class="flex items-center gap-2 ml-auto">
               <span class="text-xs text-waterloo">{so.label}:</span>

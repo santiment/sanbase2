@@ -48,7 +48,7 @@ export function useMcpApp<T>(opts: McpAppOptions<T>) {
     };
 
     app.onerror = (e) => {
-      console.error("useMcpApp: SDK error", e);
+      console.error(e);
       state.error = e instanceof Error ? e.message : String(e);
     };
 
@@ -70,9 +70,17 @@ export function useMcpApp<T>(opts: McpAppOptions<T>) {
   async function openLink(url: string): Promise<boolean> {
     if (!instance) return false;
 
+    const u = new URL(url);
+
+    u.searchParams.set("utm_source", "mcp_host");
+    u.searchParams.set("utm_medium", "mcp_widget");
+    u.searchParams.set("utm_campaign", opts.name);
+
+    const tagged = u.toString();
+
     try {
-      const { isError } = await instance.openLink({ url });
-      if (isError) console.warn("openLink denied by host:", url);
+      const { isError } = await instance.openLink({ url: tagged });
+      if (isError) console.warn("openLink denied by host:", tagged);
 
       return !isError;
     } catch (e) {

@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Plug.AdminEmailAuthPlug do
             400,
             "Bad Request -- User Token Missing. Params present: #{Map.keys(params) |> Enum.join(", ")}"
           )
+          |> halt()
 
         token ->
           check_and_login(conn, email, token)

@@ -935,7 +935,8 @@ defmodule Sanbase.Dashboards do
           parameters_override(),
           dashboard_query_mapping_id(),
           map(),
-          user_id()
+          user_id(),
+          Keyword.t()
         ) ::
           {:ok, DashboardQueryMappingCache.t()} | {:error, String.t()}
   def cache_dashboard_query_execution(

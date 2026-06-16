@@ -3,10 +3,20 @@ defmodule Sanbase.Utils.HtmlSubsetScrubberTest do
 
   defp scrub(input), do: HtmlSanitizeEx.Scrubber.scrub(input, Sanbase.Utils.HtmlSubsetScrubber)
 
-  test "strips iframe tags entirely" do
-    assert scrub(~S{<iframe src="javascript:alert(1)"></iframe>}) == ""
-    assert scrub(~S{<iframe src="data:text/html,<script>alert(1)</script>"></iframe>}) == ""
-    assert scrub(~S{<iframe src="https://evil.example"></iframe>}) == ""
+  test "keeps http(s) iframe embeds but strips dangerous-scheme src" do
+    # Legitimate embeds are preserved
+    assert scrub(~S{<iframe src="https://www.youtube.com/embed/abc"></iframe>}) =~
+             ~S{src="https://www.youtube.com/embed/abc"}
+
+    # javascript: / data: schemes are dropped (no script execution)
+    refute scrub(~S{<iframe src="javascript:alert(1)"></iframe>}) =~ "javascript:"
+    refute scrub(~S{<iframe src="data:text/html,<script>alert(1)</script>"></iframe>}) =~ "data:"
+  end
+
+  test "strips dangerous iframe attributes (srcdoc, event handlers)" do
+    # srcdoc would allow inline HTML/JS - must be stripped
+    refute scrub(~S{<iframe srcdoc="<script>alert(1)</script>"></iframe>}) =~ "srcdoc"
+    refute scrub(~S{<iframe src="https://ok.example" onload="alert(1)"></iframe>}) =~ "onload"
   end
 
   test "strips script tags" do

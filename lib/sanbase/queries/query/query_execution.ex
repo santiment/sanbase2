@@ -234,11 +234,11 @@ defmodule Sanbase.Queries.QueryExecution do
   """
   @spec get_execution_stats(String.t(), user_id, non_neg_integer()) ::
           {:ok, t()} | {:error, String.t()}
-  def get_execution_stats(clickhouse_query_id, user_id, attempts_left \\ 2) do
+  def get_execution_stats(clickhouse_query_id, querying_user_id, attempts_left \\ 2) do
     query =
       from(
         qe in __MODULE__,
-        where: qe.clickhouse_query_id == ^clickhouse_query_id and qe.user_id == ^user_id
+        where: qe.clickhouse_query_id == ^clickhouse_query_id and qe.user_id == ^querying_user_id
       )
 
     case Sanbase.Repo.one(query) do
@@ -255,7 +255,7 @@ defmodule Sanbase.Queries.QueryExecution do
 
           _ ->
             Process.sleep(5000)
-            get_execution_stats(clickhouse_query_id, user_id, attempts_left - 1)
+            get_execution_stats(clickhouse_query_id, querying_user_id, attempts_left - 1)
         end
     end
   end

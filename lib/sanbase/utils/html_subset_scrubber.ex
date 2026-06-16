@@ -55,6 +55,12 @@ defmodule Sanbase.Utils.HtmlSubsetScrubber do
   Meta.allow_tag_with_these_attributes("u", ["class", "id"])
   Meta.allow_tag_with_these_attributes("ul", ["class", "id"])
 
+  # Allow iframes (used for legitimate embeds in insights), but only with an
+  # http/https `src`. This blocks the XSS vectors `javascript:` and `data:` URIs
+  # while preserving real embeds. Note: only the `src` attribute is kept - any
+  # `srcdoc`, `onload`, or other event-handler attributes are stripped.
+  Meta.allow_tag_with_uri_attributes("iframe", ["src"], ["http", "https"])
+
   Meta.allow_tag_with_these_attributes("figure", ["class", "id"])
   Meta.allow_tag_with_these_attributes("figcaption", ["class", "id"])
 end

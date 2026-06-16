@@ -217,7 +217,12 @@ defmodule Sanbase.Accounts.User do
   Only these two fields may be set through this path so that no privileged
   fields (is_superuser, access levels, stripe_customer_id, ...) can ever be
   reached from the public mutation's arguments.
+
+  ## Example
+
+      User.terms_changeset(user, %{privacy_policy_accepted: true, marketing_accepted: false})
   """
+  @spec terms_changeset(%User{}, map()) :: Ecto.Changeset.t()
   def terms_changeset(%User{} = user, attrs \\ %{}) do
     user
     |> cast(attrs, [:privacy_policy_accepted, :marketing_accepted])

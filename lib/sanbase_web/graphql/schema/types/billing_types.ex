@@ -130,5 +130,34 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:id, non_null(:string))
     field(:status, non_null(:string))
     field(:client_secret, non_null(:string))
+
+    field :last_payment_error, :payment_error do
+      # Translate the raw Stripe error into its frontend-safe payload once here,
+      # so the :payment_error fields below are plain reads (no per-field recompute).
+      resolve(fn payment_intent, _, _ ->
+        error = Map.get(payment_intent, :last_payment_error)
+        {:ok, Sanbase.Billing.PaymentError.to_safe_map(error)}
+      end)
+    end
+  end
+
+  # Populated only when the PaymentIntent has a failed attempt (e.g. a declined
+  # card). Resolved from the virtual `payment_intent` map on the subscription.
+  #
+  # Only sanitized, frontend-safe values are exposed — fraud-sensitive decline
+  # codes and non-card (technical) errors collapse to a generic code/message, so
+  # raw Stripe values never cross the wire. The raw decline reason stays
+  # available internally via the Stripe Dashboard and the failed-payment Discord
+  # notification.
+  object :payment_error do
+    # Stable code for analytics / fine-grained copy. Fraud and technical errors
+    # collapse to "generic_decline".
+    field(:safe_code, :string)
+
+    # Curated, user-facing copy to display as-is.
+    field(:user_message, :string)
+
+    # Primary CTA the FE should offer: "retry" or "use_different_card".
+    field(:recommended_action, :string)
   end
 end

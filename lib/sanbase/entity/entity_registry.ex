@@ -77,10 +77,9 @@ defmodule Sanbase.Entity.Registry do
   }
 
   # Additional vote field mappings for types that aren't in @entities
-  # but still need vote field lookup (e.g. :post, :timeline_event)
+  # but still need vote field lookup (e.g. :post)
   @extra_vote_fields %{
-    post: :post_id,
-    timeline_event: :timeline_event_id
+    post: :post_id
   }
 
   @supported_entity_types [

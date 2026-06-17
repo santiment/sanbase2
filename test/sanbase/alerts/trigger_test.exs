@@ -8,7 +8,6 @@ defmodule Sanbase.Alert.TriggersTest do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.Alert.UserTrigger
-  alias Sanbase.Timeline.TimelineEvent
 
   setup do
     clean_task_supervisor_children()
@@ -32,10 +31,6 @@ defmodule Sanbase.Alert.TriggersTest do
         is_public: true,
         settings: trigger_settings
       })
-
-    assert_receive({_, {:ok, %TimelineEvent{}}})
-
-    assert TimelineEvent |> Sanbase.Repo.all() |> length() == 1
 
     assert created_trigger.trigger.settings == trigger_settings
 

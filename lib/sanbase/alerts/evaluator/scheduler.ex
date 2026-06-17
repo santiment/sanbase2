@@ -179,7 +179,6 @@ defmodule Sanbase.Alert.Scheduler do
       |> get_fired_alerts_data()
 
     fired_alerts |> persist_historical_activity()
-    fired_alerts |> persist_timeline_events()
 
     updated_user_triggers |> deactivate_non_repeating()
 
@@ -456,11 +455,6 @@ defmodule Sanbase.Alert.Scheduler do
     |> Enum.each(fn chunk ->
       Sanbase.Repo.insert_all(HistoricalActivity, chunk)
     end)
-  end
-
-  defp persist_timeline_events(fired_triggers) do
-    fired_triggers
-    |> Sanbase.Timeline.TimelineEvent.create_trigger_fired_events()
   end
 
   defp log_sent_messages_stats([], type, info_map) do

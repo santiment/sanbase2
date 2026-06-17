@@ -24,12 +24,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:query_vote_stats, data), do: get_votes_stats(:query, :query_id, data)
   def query(:query_voted_at, data), do: get_voted_at(:query, :query_id, data)
 
-  def query(:timeline_event_vote_stats, data),
-    do: get_votes_stats(:timeline_event, :timeline_event_id, data)
-
-  def query(:timeline_event_voted_at, data),
-    do: get_voted_at(:timeline_event, :timeline_event_id, data)
-
   def query(:chart_configuration_vote_stats, data),
     do: get_votes_stats(:chart_configuration, :chart_configuration_id, data)
 
@@ -168,10 +162,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     get_comment_entity_id(ids_mapset, Comment.ChartConfigurationComment, :chart_configuration_id)
   end
 
-  def query(:comment_timeline_event_id, ids_mapset) do
-    get_comment_entity_id(ids_mapset, Comment.TimelineEventComment, :timeline_event_id)
-  end
-
   def query(:comment_blockchain_address_id, ids_mapset) do
     get_comment_entity_id(ids_mapset, Comment.BlockchainAddressComment, :blockchain_address_id)
   end
@@ -181,10 +171,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   # Comments count functions
   def query(:insights_comments_count, ids_mapset) do
     get_comments_count(ids_mapset, Comment.PostComment, :post_id)
-  end
-
-  def query(:timeline_events_comments_count, ids_mapset) do
-    get_comments_count(ids_mapset, Comment.TimelineEventComment, :timeline_event_id)
   end
 
   def query(:blockchain_addresses_comments_count, ids_mapset) do

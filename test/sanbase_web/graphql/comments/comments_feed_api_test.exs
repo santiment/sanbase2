@@ -10,7 +10,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
     insert(:insights_fallback_user)
 
     user = insert(:user)
-    watchlist = insert(:watchlist)
 
     blockchain_address = insert(:blockchain_address)
     unpublished_insight = insert(:post, user: user)
@@ -18,13 +17,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
     insight2 = insert(:published_post, user: user)
     chart_configuration = insert(:chart_configuration, user: user, is_public: true)
     chart_configuration2 = insert(:chart_configuration, user: user, is_public: false)
-
-    timeline_event =
-      insert(:timeline_event,
-        user_list: watchlist,
-        user: user,
-        event_type: Sanbase.Timeline.TimelineEvent.update_watchlist_type()
-      )
 
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -36,8 +28,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
       unpublished_insight: unpublished_insight,
       blockchain_address: blockchain_address,
       chart_configuration: chart_configuration,
-      chart_configuration2: chart_configuration2,
-      timeline_event: timeline_event
+      chart_configuration2: chart_configuration2
     }
   end
 
@@ -82,15 +73,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         "some comment2"
       )
 
-    {:ok, timeline_event_comment} =
-      EntityComment.create_and_link(
-        :timeline_event,
-        context.timeline_event.id,
-        context.user.id,
-        nil,
-        "some comment4"
-      )
-
     {:ok, chart_configuration_comment} =
       EntityComment.create_and_link(
         :chart_configuration,
@@ -126,20 +108,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
-               "timelineEvent" => nil,
                "chartConfiguration" => %{"id" => context.chart_configuration.id}
-             },
-             %{
-               "blockchainAddress" => nil,
-               "content" => timeline_event_comment.content,
-               "id" => timeline_event_comment.id,
-               "insertedAt" =>
-                 timeline_event_comment.inserted_at
-                 |> DateTime.from_naive!("Etc/UTC")
-                 |> DateTime.to_iso8601(),
-               "insight" => nil,
-               "timelineEvent" => %{"id" => context.timeline_event.id},
-               "chartConfiguration" => nil
              },
              %{
                "blockchainAddress" => %{
@@ -153,7 +122,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
-               "timelineEvent" => nil,
                "chartConfiguration" => nil
              },
              %{
@@ -165,7 +133,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => %{"id" => context.insight.id},
-               "timelineEvent" => nil,
                "chartConfiguration" => nil
              }
            ]
@@ -179,7 +146,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         content
         insertedAt
         insight { id }
-        timelineEvent { id }
         blockchainAddress { id address }
         chartConfiguration { id }
       }

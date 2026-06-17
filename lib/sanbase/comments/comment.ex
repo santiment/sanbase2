@@ -33,7 +33,6 @@ defmodule Sanbase.Comment do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Insight.Post
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.BlockchainAddress
   alias Sanbase.Dashboards.Dashboard
   alias Sanbase.UserList
@@ -46,7 +45,6 @@ defmodule Sanbase.Comment do
   @max_comment_length 15_000
 
   @insights_table "post_comments_mapping"
-  @timeline_events_table "timeline_event_comments_mapping"
   @blockchain_addrs_table "blockchain_address_comments_mapping"
   @dashboard_table "dashboard_comments_mapping"
   @watchlists_table "watchlist_comments_mapping"
@@ -77,7 +75,6 @@ defmodule Sanbase.Comment do
     # the existing code, manipulate the DB schema, etc.
     many_to_many(:insights, Post, join_through: @insights_table)
     many_to_many(:watchlists, UserList, join_through: @watchlists_table)
-    many_to_many(:timeline_events, TimelineEvent, join_through: @timeline_events_table)
     many_to_many(:blockchain_addresses, BlockchainAddress, join_through: @blockchain_addrs_table)
 
     many_to_many(:dashboards, Dashboard,
@@ -109,7 +106,7 @@ defmodule Sanbase.Comment do
   end
 
   def user_can_comment_entity?(entity_type, _, _)
-      when entity_type in [:timeline_event, :blockchain_address],
+      when entity_type in [:blockchain_address],
       do: {:ok, true}
 
   def user_can_comment_entity?(entity_type, entity_id, user_id) do

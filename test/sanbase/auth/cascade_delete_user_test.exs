@@ -1,7 +1,6 @@
 defmodule Sanbase.CascadeDeleteUserTest do
   use Sanbase.DataCase
 
-  alias Sanbase.Timeline.TimelineEvent
   import Sanbase.Factory
 
   test "delete user and all its associations" do
@@ -63,14 +62,6 @@ defmodule Sanbase.CascadeDeleteUserTest do
         _api_calls_count = 500,
         _result_byte_size = 1000
       )
-
-    {:ok, _} =
-      TimelineEvent.create_changeset(%TimelineEvent{}, %{
-        user_id: user.id,
-        post_id: post.id,
-        event_type: TimelineEvent.publish_insight_type()
-      })
-      |> Sanbase.Repo.insert()
 
     insert(:alerts_historical_activity,
       user: user,

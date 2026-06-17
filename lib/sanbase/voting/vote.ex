@@ -1,6 +1,6 @@
 defmodule Sanbase.Vote do
   @moduledoc """
-  Module for voting for insights and timeline events.
+  Module for voting for insights and other entities.
   """
   use Ecto.Schema
 
@@ -14,14 +14,12 @@ defmodule Sanbase.Vote do
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Alert.UserTrigger
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
           optional(:post_id) => non_neg_integer(),
           optional(:watchlist_id) => non_neg_integer(),
-          optional(:timeline_event_id) => non_neg_integer(),
           optional(:chart_configuration_id) => non_neg_integer(),
           optional(:user_trigger_id) => non_neg_integer(),
           optional(:dashboard_id) => non_neg_integer(),
@@ -32,7 +30,6 @@ defmodule Sanbase.Vote do
           {:user_id, non_neg_integer()}
           | {:post_id, non_neg_integer()}
           | {:watchlist_id, non_neg_integer()}
-          | {:timeline_event_id, non_neg_integer()}
           | {:chart_configuration_id, non_neg_integer()}
           | {:user_trigger_id, non_neg_integer()}
           | {:dashboard_id, non_neg_integer()}
@@ -47,7 +44,6 @@ defmodule Sanbase.Vote do
     belongs_to(:user, User)
 
     belongs_to(:post, Post)
-    belongs_to(:timeline_event, TimelineEvent)
     belongs_to(:watchlist, UserList, foreign_key: :watchlist_id)
 
     belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
@@ -65,7 +61,6 @@ defmodule Sanbase.Vote do
       :user_id,
       :count,
       :post_id,
-      :timeline_event_id,
       :chart_configuration_id,
       :user_trigger_id,
       :watchlist_id,
@@ -74,7 +69,6 @@ defmodule Sanbase.Vote do
     ])
     |> validate_required([:user_id])
     |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
-    |> unique_constraint(:timeline_event_id, name: :votes_timeline_event_id_user_id_index)
     |> unique_constraint(:chart_configuration_id,
       name: :votes_chart_configuration_id_user_id_index
     )
@@ -326,8 +320,6 @@ defmodule Sanbase.Vote do
 
   defp maybe_emit_event({:ok, vote}, event_type) do
     if entity_info = extract_entity_info(vote) do
-      # For timeline_event_vote, we don't emit events.
-      # Timeline events are going to be deprecated and removed from code
       emit_event({:ok, vote}, event_type, entity_info)
     end
 

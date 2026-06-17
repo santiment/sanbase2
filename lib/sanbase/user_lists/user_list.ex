@@ -27,7 +27,6 @@ defmodule Sanbase.UserList do
   alias Sanbase.UserList.ListItem
   alias Sanbase.WatchlistFunction
   alias Sanbase.Repo
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
 
   @preloads [:featured_item, :list_items, :user]
@@ -61,7 +60,6 @@ defmodule Sanbase.UserList do
     has_many(:blockchain_addresses, ListItem, on_delete: :delete_all)
 
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
-    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
     # Virtual fields
     field(:views, :integer, virtual: true, default: 0)
@@ -330,7 +328,6 @@ defmodule Sanbase.UserList do
       |> Map.put(:old_is_public_updated_at, user_list.is_public_updated_at)
 
     Repo.update(changeset)
-    |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())
     |> maybe_emit_event(:update_watchlist, event_data)
   end
 
@@ -429,13 +426,6 @@ defmodule Sanbase.UserList do
   defp base_query(_opts \\ []) do
     from(ul in __MODULE__, where: ul.is_deleted != true)
   end
-
-  defp maybe_create_event({:ok, watchlist}, changeset, event_type) do
-    TimelineEvent.maybe_create_event_async(event_type, watchlist, changeset)
-    {:ok, watchlist}
-  end
-
-  defp maybe_create_event(error_result, _, _), do: error_result
 
   defp maybe_emit_event({:ok, watchlist}, event_type, data) do
     emit_event({:ok, watchlist}, event_type, data)

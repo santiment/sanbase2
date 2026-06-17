@@ -7,7 +7,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   alias Sanbase.Insight.Post
   alias Sanbase.Chart
   alias Sanbase.Alert.UserTrigger
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.UserList
 
   @doc ~s"""
@@ -75,15 +74,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_votes(loader, :user_trigger_vote_stats, selector)
   end
 
-  def votes(%TimelineEvent{} = event, _args, %{
-        context: %{loader: loader} = context
-      }) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{timeline_event_id: event.id, user_id: user.id}
-
-    get_votes(loader, :timeline_event_vote_stats, selector)
-  end
-
   def votes(_root, args, %{source: %{post_id: id}} = resolution) do
     # Handles the case where the `votes` is called on top of the result
     # from `vote`/`unvote`. They return the entity id as a result which
@@ -126,13 +116,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     votes(%UserTrigger{id: id}, args, resolution)
   end
 
-  def votes(_root, args, %{source: %{timeline_event_id: id}} = resolution) do
-    # Handles the case where the `votes` is called on top of the result
-    # from `vote`/`unvote`. They return the entity id as a result which
-    # can be used from the `source` map in the resolution
-    votes(%TimelineEvent{id: id}, args, resolution)
-  end
-
   def voted_at(%Post{} = post, _args, %{
         context: %{loader: loader, auth: %{current_user: user}}
       }) do
@@ -145,13 +128,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       }) do
     selector = %{watchlist_id: ul.id, user_id: user.id}
     get_voted_at(loader, :watchlist_voted_at, selector)
-  end
-
-  def voted_at(%TimelineEvent{} = event, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{timeline_event_id: event.id, user_id: user.id}
-    get_voted_at(loader, :timeline_event_voted_at, selector)
   end
 
   def voted_at(%Chart.Configuration{} = config, _args, %{

@@ -74,10 +74,15 @@ defmodule Sanbase.SanLang.Interpreter do
     end
   end
 
+  # Map of supported function name (string) -> function atom, built at compile
+  # time. Capturing the atoms here means we never create atoms from user input
+  # at runtime (no atom-table exhaustion) and we don't depend on SanLang.Kernel
+  # being loaded for String.to_existing_atom to succeed.
   @supported_functions SanLang.Kernel.__info__(:functions)
-                       |> Enum.map(fn {name, _arity} -> to_string(name) end)
+                       |> Enum.map(fn {name, _arity} -> {to_string(name), name} end)
+                       |> Map.new()
   defp eval_function_call(function_name, args, env)
-       when is_binary(function_name) and function_name in @supported_functions do
+       when is_binary(function_name) and is_map_key(@supported_functions, function_name) do
     args =
       Enum.map(
         args,
@@ -93,11 +98,7 @@ defmodule Sanbase.SanLang.Interpreter do
 
     # Each of the functions in the Kernel module takes an environment as the last argument
     args = args ++ [env]
-    # We've already checked that the function name exists. Somethimes there are strange
-    # errors during tests that :map_keys is not an existing atom, even though there is
-    # such a function in the SanLang.Kernel module
-    # credo:disable-for-next-line
-    apply(SanLang.Kernel, String.to_existing_atom(function_name), args)
+    apply(SanLang.Kernel, Map.fetch!(@supported_functions, function_name), args)
   end
 
   defp eval_function_call(function_name, _args, _env) when is_binary(function_name) do

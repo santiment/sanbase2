@@ -111,7 +111,6 @@ defmodule Sanbase.Accounts.User do
 
     has_one(:telegram_user_tokens, Telegram.UserToken, on_delete: :delete_all)
     has_one(:uniswap_staking, User.UniswapStaking, on_delete: :delete_all)
-    has_many(:timeline_events, Sanbase.Timeline.TimelineEvent, on_delete: :delete_all)
     has_many(:eth_accounts, EthAccount, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
     has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)

@@ -21,7 +21,6 @@ defmodule Sanbase.Alert.UserTrigger do
   alias Sanbase.Alert.{Trigger, HistoricalActivity}
   alias Sanbase.Repo
   alias Sanbase.Tag
-  alias Sanbase.Timeline.TimelineEvent
 
   require Logger
 
@@ -46,7 +45,6 @@ defmodule Sanbase.Alert.UserTrigger do
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:alerts_historical_activity, HistoricalActivity, on_delete: :delete_all)
-    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
     # Virtual fields
     field(:views, :integer, virtual: true, default: 0)
@@ -310,8 +308,6 @@ defmodule Sanbase.Alert.UserTrigger do
 
       case Repo.insert(changeset) do
         {:ok, ut} ->
-          {:ok, _} = create_event(ut, changeset, TimelineEvent.create_public_trigger_type())
-
           post_create_process(ut)
           |> emit_event(:create_alert, %{})
 
@@ -503,11 +499,6 @@ defmodule Sanbase.Alert.UserTrigger do
 
   defp validate_settings_or_nil(nil), do: :ok
   defp validate_settings_or_nil(settings), do: validate_settings(settings)
-
-  defp create_event(user_trigger, changeset, event_type) do
-    TimelineEvent.maybe_create_event_async(event_type, user_trigger, changeset)
-    {:ok, user_trigger}
-  end
 
   defp clean_params(params) do
     params

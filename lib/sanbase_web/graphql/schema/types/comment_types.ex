@@ -10,7 +10,6 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     value(:chart_configuration)
     value(:dashboard)
     value(:insight)
-    value(:timeline_event)
     value(:watchlist)
   end
 
@@ -20,7 +19,6 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     field(:chart_configuration, :chart_configuration)
     field(:dashboard, :dashboard)
     field(:insight, :post)
-    field(:timeline_event, :timeline_event)
 
     field(:content, non_null(:sanitized_html_subset_string))
 
@@ -40,10 +38,6 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
 
     field :insight_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.insight_id/3)
-    end
-
-    field :timeline_event_id, non_null(:integer) do
-      cache_resolve(&CommentEntityIdResolver.timeline_event_id/3)
     end
 
     field :blockchain_address_id, non_null(:integer) do

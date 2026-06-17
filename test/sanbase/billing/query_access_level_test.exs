@@ -157,8 +157,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :subcomments,
           :table_configuration,
           :table_configurations,
-          :timeline_event,
-          :timeline_events,
           :top_transfers,
           :transaction_volume_per_address,
           :upcoming_invoice,

@@ -6,7 +6,7 @@ defmodule Sanbase.Comments.EventEmitter do
 
   def handle_event({:error, _}, _event_type, _args), do: :ok
 
-  # entity is one of :insight, :timeline_event, etc.
+  # entity is one of :insight, :watchlist, etc.
   def handle_event({:ok, comment}, event_type, %{} = args)
       when event_type in [:create_comment, :update_comment, :anonymize_comment] do
     %{

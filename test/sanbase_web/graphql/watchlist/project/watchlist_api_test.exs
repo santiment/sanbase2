@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
   import Sanbase.TestHelpers
 
   alias Sanbase.UserList
-  alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
@@ -474,10 +472,6 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
           id: watchlist.id,
           list_items: [%{project_id: project.id}]
         })
-
-      assert_receive({_, {:ok, %TimelineEvent{}}})
-
-      assert TimelineEvent |> Repo.all() |> length() == 1
 
       query = query("watchlist(id: #{watchlist.id})")
 

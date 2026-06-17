@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   alias Sanbase.Insight.Post
   alias Sanbase.Project
   alias Sanbase.Repo
-  alias Sanbase.Timeline.TimelineEvent
 
   setup do
     clean_task_supervisor_children()
@@ -926,7 +925,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   describe "Publish insight" do
-    test "successfully publishes in Discord and creates timeline event", %{
+    test "successfully publishes in Discord", %{
       user: user,
       conn: conn
     } do
@@ -944,13 +943,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
           |> publish_insight_mutation()
           |> execute_mutation_with_success("publishInsight", conn)
 
-        assert_receive({_, {:ok, %TimelineEvent{}}})
-
         assert result["readyState"] == Post.published()
 
         assert result["publishedAt"] != nil
-
-        assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
       end)
     end
 
@@ -979,8 +974,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
           post
           |> publish_insight_mutation()
           |> execute_mutation_with_success("publishInsight", conn)
-
-        assert_receive({_, {:ok, %TimelineEvent{}}})
 
         assert result["readyState"] == Post.published()
       end

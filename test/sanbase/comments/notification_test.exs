@@ -11,13 +11,6 @@ defmodule Sanbase.Comments.NotificationTest do
     post = insert(:published_post, user: author)
     user = insert(:user)
 
-    timeline_event =
-      insert(:timeline_event,
-        post: post,
-        user: author,
-        event_type: Sanbase.Timeline.TimelineEvent.publish_insight_type()
-      )
-
     chart_configuration = insert(:chart_configuration, user: author, is_public: true)
     watchlist = insert(:watchlist, user: author, is_public: true)
     screener = insert(:watchlist, user: author, is_screener: true, is_public: true)
@@ -26,7 +19,6 @@ defmodule Sanbase.Comments.NotificationTest do
      user: user,
      author: author,
      post: post,
-     timeline_event: timeline_event,
      chart_configuration: chart_configuration,
      watchlist: watchlist,
      screener: screener}

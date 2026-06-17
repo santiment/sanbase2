@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
   import Sanbase.Factory
 
   alias Sanbase.Insight.Post
-  alias Sanbase.Timeline.TimelineEvent
 
   setup do
     user = insert(:user)
@@ -150,7 +149,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     end
   end
 
-  describe "filter paywalled when fetching all insights and timeline events" do
+  describe "filter paywalled when fetching all insights" do
     setup do
       text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
       author = insert(:user)
@@ -173,68 +172,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       assert result_insight2["text"] != insight2.text
       assert result_insight2["text"] =~ "alabala"
     end
-
-    test "text is filtered in timeline events", context do
-      san_author = insert(:user)
-      insert(:user_role, user: san_author, role: context.role_san_family)
-      insight = create_insight(context, %{user: san_author, is_paywall_required: true})
-
-      timeline_event =
-        insert(:timeline_event,
-          post: insight,
-          user: san_author,
-          event_type: TimelineEvent.publish_insight_type()
-        )
-
-      events = execute_query(context.conn, timeline_events_query(), "timelineEvents")
-      event = events |> hd() |> Map.get("events") |> hd()
-      assert event["post"]["text"] != insight.text
-      assert event["post"]["text"] =~ "alabala"
-
-      event =
-        execute_query(context.conn, timeline_event_query(timeline_event.id), "timelineEvent")
-
-      assert event["post"]["text"] != insight
-      assert event["post"]["text"] =~ "alabala"
-    end
-  end
-
-  defp timeline_event_query(event_id) do
-    """
-    {
-      timelineEvent(id: #{event_id}) {
-        id
-        post {
-          id
-          tags { name }
-          text
-          isPaywallRequired
-        }
-      }
-    }
-    """
-  end
-
-  defp timeline_events_query() do
-    """
-    {
-      timelineEvents {
-        cursor {
-          after
-          before
-        }
-        events {
-          id
-          post {
-            id
-            tags { name }
-            text
-            isPaywallRequired
-          }
-        }
-      }
-    }
-    """
   end
 
   defp insight_by_id_query(insight_id) do

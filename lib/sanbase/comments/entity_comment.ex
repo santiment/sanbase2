@@ -13,7 +13,6 @@ defmodule Sanbase.Comments.EntityComment do
     ChartConfigurationComment,
     DashboardComment,
     PostComment,
-    TimelineEventComment,
     WatchlistComment
   }
 
@@ -22,7 +21,6 @@ defmodule Sanbase.Comments.EntityComment do
           | %ChartConfigurationComment{}
           | %DashboardComment{}
           | %PostComment{}
-          | %TimelineEventComment{}
           | %WatchlistComment{}
 
   @type entity_id :: non_neg_integer()
@@ -31,23 +29,20 @@ defmodule Sanbase.Comments.EntityComment do
           | :chart_configuration
           | :dashboard
           | :insight
-          | :timeline_event
           | :watchlist
 
   @comments_feed_entities [
     :blockchain_addresses,
     :chart_configurations,
     :dashboards,
-    :insights,
-    :timeline_events
+    :insights
   ]
 
   @entity_singular_map %{
     blockchain_addresses: :blockchain_address,
     chart_configurations: :chart_configuration,
     dashboards: :dashboard,
-    insights: :insight,
-    timeline_events: :timeline_event
+    insights: :insight
   }
 
   @spec create_and_link(
@@ -87,15 +82,6 @@ defmodule Sanbase.Comments.EntityComment do
   def link(:insight, entity_id, comment_id) do
     %PostComment{}
     |> PostComment.changeset(%{comment_id: comment_id, post_id: entity_id})
-    |> Repo.insert()
-  end
-
-  def link(:timeline_event, entity_id, comment_id) do
-    %TimelineEventComment{}
-    |> TimelineEventComment.changeset(%{
-      comment_id: comment_id,
-      timeline_event_id: entity_id
-    })
     |> Repo.insert()
   end
 
@@ -170,7 +156,7 @@ defmodule Sanbase.Comments.EntityComment do
   # Private Functions
 
   defp maybe_emit_event({:ok, comment}, event_type, entity_type, entity_id, parent_id) do
-    with false <- entity_type in [:timeline_event, :blockchain_address],
+    with false <- entity_type in [:blockchain_address],
          %{entity_owner_user_id: _, entity_name: _} = entity_data <-
            get_entity_data(entity_type, entity_id) do
       args =
@@ -206,7 +192,6 @@ defmodule Sanbase.Comments.EntityComment do
     # is not propagated to all levels.
     comment_ids_query =
       from(pc in PostComment, select: pc.comment_id)
-      |> union_all(^from(pc in TimelineEventComment, select: pc.comment_id))
       |> union_all(^from(pc in BlockchainAddressComment, select: pc.comment_id))
       |> union_all(^from(pc in ChartConfigurationComment, select: pc.comment_id))
 
@@ -309,14 +294,6 @@ defmodule Sanbase.Comments.EntityComment do
       preload: [:comment, comment: :user]
     )
     |> maybe_add_entity_id_clause(:dashboard_id, entity_id)
-  end
-
-  defp entity_comments_query(:timeline_event, entity_id) do
-    from(
-      comment in TimelineEventComment,
-      preload: [:comment, comment: :user]
-    )
-    |> maybe_add_entity_id_clause(:timeline_event_id, entity_id)
   end
 
   defp entity_comments_query(:insight, entity_id) do

@@ -9,16 +9,6 @@ defmodule Sanbase.Alert.SignalTriggerSettingsTest do
   alias Sanbase.Alert.Evaluator
   alias Sanbase.Alert.Trigger.SignalTriggerSettings
 
-  setup_all_with_mocks([
-    {
-      Sanbase.Timeline.TimelineEvent,
-      [:passthrough],
-      maybe_create_event_async: fn user_trigger_tuple, _, _ -> user_trigger_tuple end
-    }
-  ]) do
-    []
-  end
-
   describe "signal trigger settings" do
     setup do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted

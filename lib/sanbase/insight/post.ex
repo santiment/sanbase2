@@ -14,7 +14,6 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Accounts.User
   alias Sanbase.Project
   alias Sanbase.Insight.{Post, PostImage, ImageUrl, Category}
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
   alias Sanbase.Chart.Configuration
   alias Sanbase.Utils.Config
@@ -86,7 +85,6 @@ defmodule Sanbase.Insight.Post do
 
     has_many(:chart_configurations, Configuration)
     has_many(:images, PostImage, on_delete: :nilify_all, on_replace: :nilify)
-    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
     has_many(:votes, Sanbase.Vote, on_delete: :delete_all)
 
     many_to_many(:tags, Tag,
@@ -929,13 +927,6 @@ defmodule Sanbase.Insight.Post do
 
         # Auto-categorize the insight (only if no human categories exist)
         async_categorize_post(post)
-
-        # Create a timeline event
-        TimelineEvent.maybe_create_event_async(
-          TimelineEvent.publish_insight_type(),
-          post,
-          publish_changeset
-        )
 
         {:ok, post}
 

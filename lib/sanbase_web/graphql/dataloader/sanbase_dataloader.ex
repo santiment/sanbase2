@@ -69,7 +69,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :comment_dashboard_id,
     :comment_insight_id,
     :comment_short_url_id,
-    :comment_timeline_event_id,
     :comment_watchlist_id,
     # Comments count
     :blockchain_addresses_comments_count,
@@ -77,7 +76,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :dashboard_comments_count,
     :insights_comments_count,
     :short_urls_comments_count,
-    :timeline_events_comments_count,
     :watchlist_comments_count,
     # Votes
     :chart_configuration_vote_stats,
@@ -88,8 +86,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :query_voted_at,
     :insight_vote_stats,
     :insight_voted_at,
-    :timeline_event_vote_stats,
-    :timeline_event_voted_at,
     :user_trigger_vote_stats,
     :user_trigger_voted_at,
     :watchlist_vote_stats,

@@ -17,7 +17,6 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
       arg(:dashboard_id, :integer)
       arg(:query_id, :integer)
       arg(:insight_id, :integer)
-      arg(:timeline_event_id, :integer)
       arg(:user_trigger_id, :integer)
       arg(:watchlist_id, :integer)
 
@@ -34,7 +33,6 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
       arg(:dashboard_id, :integer)
       arg(:query_id, :integer)
       arg(:insight_id, :integer)
-      arg(:timeline_event_id, :integer)
       arg(:user_trigger_id, :integer)
       arg(:watchlist_id, :integer)
 

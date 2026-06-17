@@ -28,9 +28,9 @@ The following steps need to be done in order to add comments to a new entity.
 ```elixir
 defmodule Sanbase.Comment.DashboardComment do
   @moduledoc ~s"""
-  A mapping table connecting comments and timeline events.
+  A mapping table connecting comments and dashboards.
 
-  This module is used to create, update, delete and fetch timeline events comments.
+  This module is used to create, update, delete and fetch dashboard comments.
   """
   use Ecto.Schema
 

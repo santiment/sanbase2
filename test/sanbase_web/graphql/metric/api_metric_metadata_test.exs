@@ -6,6 +6,32 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
 
   alias Sanbase.Metric
 
+  test "returns all visible non-crypto assets for availableNonCryptoAssets", %{conn: conn} do
+    insert(:non_crypto_asset, slug: "gold", name: "Gold", ticker: "XAU", asset_type: :commodity)
+    insert(:non_crypto_asset, slug: "sp500", name: "S&P 500", asset_type: :index)
+    insert(:non_crypto_asset, slug: "hidden-asset", name: "Hidden", is_hidden: true)
+
+    query = """
+    {
+      getMetric(metric: "price_usd"){
+        metadata{
+          availableNonCryptoAssets{ slug name assetType }
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "getMetric", "metadata", "availableNonCryptoAssets"])
+
+    assert %{"slug" => "gold", "name" => "Gold", "assetType" => "COMMODITY"} in result
+    assert Enum.find(result, &(&1["slug"] == "sp500"))
+    refute Enum.find(result, &(&1["slug"] == "hidden-asset"))
+  end
+
   test "returns data for availableFounders", %{conn: conn} do
     metrics_with_founders =
       Metric.available_metrics()

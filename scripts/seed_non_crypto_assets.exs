@@ -9,10 +9,12 @@
 # (POST https://api.hyperliquid.xyz/info {"type":"meta"}) before running —
 # the names below are placeholders for the non-crypto markets.
 #
-# Two ways to run:
+# Does NOT run on load — the @assets coin names are placeholders that must be
+# verified against the live Hyperliquid meta API (above) first. Run it
+# explicitly once verified, two ways:
 #
 #   1. As a script:
-#        mix run scripts/seed_non_crypto_assets.exs
+#        mix run -e "SeedNonCryptoAssets.run()" scripts/seed_non_crypto_assets.exs
 #
 #   2. Paste into iex:
 #        Paste the whole `defmodule ... end` block, then call:
@@ -91,6 +93,5 @@ defmodule SeedNonCryptoAssets do
       "#{status |> to_string() |> String.upcase() |> String.pad_trailing(8)} #{c} -> #{s} asset_id=#{id}"
 end
 
-# When loaded via `mix run`, kick it off. In iex, paste the defmodule block
-# above and call SeedNonCryptoAssets.run() yourself.
-SeedNonCryptoAssets.run()
+# Intentionally not invoked on load — see the header note. Run explicitly with
+# `mix run -e "SeedNonCryptoAssets.run()" scripts/seed_non_crypto_assets.exs`.

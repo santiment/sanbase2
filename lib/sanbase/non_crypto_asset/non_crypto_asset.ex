@@ -69,6 +69,11 @@ defmodule Sanbase.NonCryptoAsset do
     Repo.get_by(__MODULE__, slug: slug)
   end
 
+  @spec id_by_slug(String.t()) :: non_neg_integer() | nil
+  def id_by_slug(slug) when is_binary(slug) do
+    from(a in __MODULE__, where: a.slug == ^slug, select: a.id) |> Repo.one()
+  end
+
   @doc ~s"""
   List non-crypto assets ordered by name.
 

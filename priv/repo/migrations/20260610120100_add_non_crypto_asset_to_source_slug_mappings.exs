@@ -10,6 +10,8 @@ defmodule Sanbase.Repo.Migrations.AddNonCryptoAssetToSourceSlugMappings do
 
     # project_id has been nullable since the table was created; rows without a
     # project carry no information and would violate the check constraint below
+    #
+    # also prod database has been manually checked and no such rows exist
     execute("DELETE FROM #{@table} WHERE project_id IS NULL")
 
     create(

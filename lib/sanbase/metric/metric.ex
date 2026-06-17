@@ -991,10 +991,14 @@ defmodule Sanbase.Metric do
   # Find the metric name from the mapset which is closest to the given metric.
   # The found metric must have a jaro distance bigger than 0.8
   defp find_closest(mapset, metric) do
-    closest = Enum.max_by(mapset, &String.jaro_distance(metric, &1))
+    if Enum.empty?(mapset) do
+      nil
+    else
+      closest = Enum.max_by(mapset, &String.jaro_distance(metric, &1))
 
-    if String.jaro_distance(metric, closest) > 0.8 do
-      closest
+      if String.jaro_distance(metric, closest) > 0.8 do
+        closest
+      end
     end
   end
 

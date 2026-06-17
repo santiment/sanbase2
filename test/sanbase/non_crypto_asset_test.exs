@@ -45,6 +45,15 @@ defmodule Sanbase.NonCryptoAssetTest do
       assert %{slug: ["already used by a project"]} = errors_on(changeset)
     end
 
+    test "project slug colliding with a non-crypto asset slug is rejected" do
+      insert(:non_crypto_asset, slug: "gold")
+
+      changeset =
+        Sanbase.Project.changeset(%Sanbase.Project{}, %{name: "Gold", slug: "gold"})
+
+      assert %{slug: ["already used by a non-crypto asset"]} = errors_on(changeset)
+    end
+
     test "hiding sets hidden_since, unhiding clears it" do
       assert {:ok, asset} =
                NonCryptoAsset.create(%{

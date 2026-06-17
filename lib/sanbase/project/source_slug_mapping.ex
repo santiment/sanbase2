@@ -23,6 +23,7 @@ defmodule Sanbase.Project.SourceSlugMapping do
     |> validate_required([:source, :slug])
     |> validate_exactly_one_asset_reference()
     |> check_constraint(:project_id, name: :exactly_one_asset_reference)
+    |> unique_constraint(:non_crypto_asset_id, name: :one_mapping_per_source_non_crypto_asset)
   end
 
   defp validate_exactly_one_asset_reference(changeset) do

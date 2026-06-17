@@ -136,6 +136,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  def get_available_non_crypto_assets(_root, _args, _resolution) do
+    # Returns all visible non-crypto assets from Postgres, regardless of whether
+    # this specific metric has data for them. A per-metric availability check
+    # (against ClickHouse) is intentionally deferred.
+    {:ok, Sanbase.NonCryptoAsset.list()}
+  end
+
   def get_available_label_fqns(_root, args, %{source: %{metric: metric}}) do
     case args[:slug] do
       nil -> Metric.available_label_fqns(metric)

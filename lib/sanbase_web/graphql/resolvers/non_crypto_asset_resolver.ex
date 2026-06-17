@@ -12,9 +12,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.NonCryptoAssetResolver do
   end
 
   def non_crypto_asset_by_slug(_root, %{slug: slug}, _resolution) do
+    # Hidden assets are not served, matching the visibility behaviour of the list
+    # endpoints, but a hidden asset reports a distinct error from a missing one.
     case NonCryptoAsset.by_slug(slug) do
+      %{is_hidden: false} = asset -> {:ok, asset}
+      %{is_hidden: true} -> {:error, "Non-crypto asset with slug #{slug} is hidden."}
       nil -> {:error, "Non-crypto asset with slug #{slug} not found."}
-      asset -> {:ok, asset}
     end
   end
 end

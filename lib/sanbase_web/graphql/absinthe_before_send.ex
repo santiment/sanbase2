@@ -26,6 +26,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
 
   alias SanbaseWeb.Graphql.Cache
+  alias Sanbase.Accounts.ActivityTracesConfig
   alias Sanbase.Utils.IP
 
   @compile inline: [
@@ -125,6 +126,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     queries = success_queries ++ error_queries
 
+    activity_traces_hidden? =
+      ActivityTracesConfig.hidden?(
+        :hide_kafka_api_call_data,
+        blueprint.execution.context[:request_context]
+      )
+
     %{
       request_id: generate_id(),
       timestamp: DateTime.utc_now() |> DateTime.to_unix(:second),
@@ -139,7 +146,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       result_sizes: result_sizes,
       caller_data: caller_data,
       remote_ip: remote_ip(blueprint),
-      partial_context: partial_context
+      partial_context: partial_context,
+      activity_traces_hidden?: activity_traces_hidden?
     }
   end
 
@@ -266,8 +274,29 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   # Create an API Call event for every query in a Document separately.
   defp export_api_call_data(query_metadata) when is_map(query_metadata) do
+    build_export_records(query_metadata)
+    |> Sanbase.Kafka.ApiCall.json_kv_tuple_no_hash_collision()
+    |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
+  end
+
+  @doc """
+  Builds the per-query records exported to the `api_call_exporter` Kafka
+  topic. For users with `activity_traces_hidden` the GraphQL query name,
+  selector, version, api_token, remote_ip, and user_agent are nilled or
+  replaced with `Sanbase.Accounts.masked_sentinel/0`. `user_id` is kept
+  so the row can still be used for billing reconciliation.
+  """
+  def build_export_records(query_metadata) do
+    user_id = query_metadata.caller_data.user_id
+    activity_traces_hidden? = query_metadata.activity_traces_hidden?
+
     Enum.map(query_metadata.success_queries, fn query ->
-      {query, selector, version} = get_query_and_selector(query)
+      {query, selector, version} =
+        if activity_traces_hidden? do
+          {Sanbase.Accounts.masked_sentinel(), nil, nil}
+        else
+          get_query_and_selector(query)
+        end
 
       %{
         id: query_metadata.request_id,
@@ -277,19 +306,25 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         version: version,
         status_code: 200,
         has_graphql_errors: query_metadata.has_graphql_errors,
-        user_id: query_metadata.caller_data.user_id,
+        user_id: user_id,
         san_tokens: query_metadata.caller_data.san_balance,
         auth_method: query_metadata.caller_data.auth_method,
-        api_token: query_metadata.caller_data.api_token,
-        remote_ip: query_metadata.remote_ip,
-        user_agent: query_metadata.user_agent,
+        api_token:
+          if(activity_traces_hidden?, do: nil, else: query_metadata.caller_data.api_token),
+        remote_ip: if(activity_traces_hidden?, do: nil, else: query_metadata.remote_ip),
+        user_agent: if(activity_traces_hidden?, do: nil, else: query_metadata.user_agent),
         duration_ms: query_metadata.duration_ms,
-        response_size_byte: query_metadata.result_sizes.byte_size,
-        compressed_response_size_byte: query_metadata.result_sizes.compressed_byte_size
+        # Response size is a side-channel for correlating masked queries
+        # back to known result shapes — drop it for protected users.
+        response_size_byte:
+          if(activity_traces_hidden?, do: nil, else: query_metadata.result_sizes.byte_size),
+        compressed_response_size_byte:
+          if(activity_traces_hidden?,
+            do: nil,
+            else: query_metadata.result_sizes.compressed_byte_size
+          )
       }
     end)
-    |> Sanbase.Kafka.ApiCall.json_kv_tuple_no_hash_collision()
-    |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
   end
 
   defp generate_id() do
@@ -442,7 +477,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       end)
     end
 
-    %{success: success, error: error}
     %{success: rename_mapper.(success), error: rename_mapper.(error)}
   end
 

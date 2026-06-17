@@ -148,7 +148,8 @@ defmodule Sanbase.AI.ChatAIService do
     end
   end
 
-  defp mask_sensitive_sql("<masked>"), do: "<masked>"
+  @masked Sanbase.Accounts.masked_sentinel()
+  defp mask_sensitive_sql(@masked), do: @masked
   defp mask_sensitive_sql(sql_text) when is_binary(sql_text), do: sql_text
   defp mask_sensitive_sql(_), do: "<unavailable>"
 

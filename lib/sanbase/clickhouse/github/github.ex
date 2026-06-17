@@ -32,17 +32,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   def total_github_activity(organizations, from, to)
       when length(organizations) > 20 do
-    Enum.chunk_every(organizations, 20)
-    |> Sanbase.Parallel.map(
-      &total_github_activity(&1, from, to),
-      timeout: 25_000,
-      max_concurrency: 8,
-      ordered: false
-    )
-    |> Enum.filter(&match?({:ok, _}, &1))
-    |> Enum.map(&elem(&1, 1))
-    |> Enum.reduce(%{}, &Map.merge(&1, &2))
-    |> then(fn result -> {:ok, result} end)
+    chunked_parallel_merge(organizations, &total_github_activity(&1, from, to))
   end
 
   def total_github_activity(organizations, from, to) do
@@ -69,17 +59,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   def total_dev_activity(organizations, from, to)
       when length(organizations) > 20 do
-    Enum.chunk_every(organizations, 20)
-    |> Sanbase.Parallel.map(
-      &total_dev_activity(&1, from, to),
-      timeout: 25_000,
-      max_concurrency: 8,
-      ordered: false
-    )
-    |> Enum.filter(&match?({:ok, _}, &1))
-    |> Enum.map(&elem(&1, 1))
-    |> Enum.reduce(%{}, &Map.merge(&1, &2))
-    |> then(fn result -> {:ok, result} end)
+    chunked_parallel_merge(organizations, &total_dev_activity(&1, from, to))
   end
 
   def total_dev_activity(organizations, from, to) do
@@ -110,17 +90,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   def total_dev_activity_contributors_count(organizations, from, to)
       when length(organizations) > 20 do
-    Enum.chunk_every(organizations, 20)
-    |> Sanbase.Parallel.map(
-      &total_dev_activity_contributors_count(&1, from, to),
-      timeout: 25_000,
-      max_concurrency: 8,
-      ordered: false
-    )
-    |> Enum.filter(&match?({:ok, _}, &1))
-    |> Enum.map(&elem(&1, 1))
-    |> Enum.reduce(%{}, &Map.merge(&1, &2))
-    |> then(fn result -> {:ok, result} end)
+    chunked_parallel_merge(organizations, &total_dev_activity_contributors_count(&1, from, to))
   end
 
   def total_dev_activity_contributors_count(organizations, from, to) do
@@ -150,17 +120,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   def total_github_activity_contributors_count(organizations, from, to)
       when length(organizations) > 20 do
-    Enum.chunk_every(organizations, 20)
-    |> Sanbase.Parallel.map(
-      &total_github_activity_contributors_count(&1, from, to),
-      timeout: 25_000,
-      max_concurrency: 8,
-      ordered: false
-    )
-    |> Enum.filter(&match?({:ok, _}, &1))
-    |> Enum.map(&elem(&1, 1))
-    |> Enum.reduce(%{}, &Map.merge(&1, &2))
-    |> then(fn result -> {:ok, result} end)
+    chunked_parallel_merge(organizations, &total_github_activity_contributors_count(&1, from, to))
   end
 
   def total_github_activity_contributors_count(organizations, from, to) do
@@ -192,12 +152,15 @@ defmodule Sanbase.Clickhouse.Github do
 
   def dev_activity(organizations, from, to, interval, transform, ma_base)
       when length(organizations) > 10 do
+    ctx = Sanbase.RequestContext.current()
+
     Enum.chunk_every(organizations, 10)
     |> Sanbase.Parallel.map(
       &dev_activity(&1, from, to, interval, transform, ma_base),
       timeout: 25_000,
       max_concurrency: 8,
-      ordered: false
+      ordered: false,
+      request_context: ctx
     )
     |> Enum.filter(&match?({:ok, _}, &1))
     |> Enum.map(&elem(&1, 1))
@@ -335,6 +298,28 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   # Private functions
+
+  # Run `fun` over 20-organization chunks in parallel and merge the
+  # `{:ok, map}` results into one map. The request context is captured
+  # here (transitional `current/0` read) and re-seeded in each worker so
+  # ClickHouse privacy SETTINGS survive the process boundary.
+  defp chunked_parallel_merge(organizations, fun) do
+    ctx = Sanbase.RequestContext.current()
+
+    organizations
+    |> Enum.chunk_every(20)
+    |> Sanbase.Parallel.map(
+      fun,
+      timeout: 25_000,
+      max_concurrency: 8,
+      ordered: false,
+      request_context: ctx
+    )
+    |> Enum.filter(&match?({:ok, _}, &1))
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.reduce(%{}, &Map.merge(&1, &2))
+    |> then(fn result -> {:ok, result} end)
+  end
 
   defp combine_dev_activity(tuple) do
     [%{datetime: datetime} | _] = data = Tuple.to_list(tuple)

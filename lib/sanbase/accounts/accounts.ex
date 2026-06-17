@@ -2,6 +2,27 @@ defmodule Sanbase.Accounts do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Accounts.EthAccount
+  alias Sanbase.Accounts.ProtectedUser
+
+  @doc """
+  True when this user has activity-traces hidden (NDA-protected). Used by
+  the privacy-masking pipeline to short-circuit logging, ClickHouse system
+  query persistence, Kafka api_call_data exports, and MCP tool-invocation
+  analytics. The decision is cached in `Sanbase.Accounts.ProtectedUser`.
+  """
+  @spec activity_traces_hidden?(non_neg_integer() | nil) :: boolean()
+  defdelegate activity_traces_hidden?(user_id), to: ProtectedUser
+
+  @doc """
+  Sentinel string used wherever a value would normally be persisted/logged
+  for an `activity_traces_hidden?/1` user. Kept identical across surfaces
+  so downstream consumers (Kafka, ClickHouse readers, MCP analytics) can
+  recognize a masked row with a single equality check, and so an engineer
+  who sees the literal in data can grep `activity_traces_hidden` and land
+  on the masking pipeline immediately.
+  """
+  @spec masked_sentinel() :: String.t()
+  def masked_sentinel(), do: "<activity_traces_hidden>"
 
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)

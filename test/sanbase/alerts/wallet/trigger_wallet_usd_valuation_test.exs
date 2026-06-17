@@ -74,12 +74,30 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
     ] do
       Scheduler.run_alert(WalletUsdValuationTriggerSettings)
 
-      assert_receive({:telegram_to_self, message})
+      # Two alerts fire (amount_down and percent_down). They are evaluated
+      # concurrently via Sanbase.Parallel.map(ordered: false), so the order in
+      # which they reach Telegram is not deterministic. Collect both messages
+      # and assert on the amount_down one regardless of arrival order.
+      assert_receive({:telegram_to_self, message1})
+      assert_receive({:telegram_to_self, message2})
 
-      assert message =~
-               "The address #{context.address}'s total USD valuation has decreased by 177.70 Million"
+      IO.inspect({message1, message2})
 
-      assert message =~ "Was: 2.07 Billion\nNow: 1.90 Billion"
+      amount_down_message =
+        Enum.find([message1, message2], fn message ->
+          message =~ "valuation has decreased by 177.70 Million"
+        end)
+
+      percent_down_message =
+        Enum.find([message1, message2], fn message ->
+          message =~ "valuation has decreased by 8.56%"
+        end)
+
+      assert amount_down_message
+      assert amount_down_message =~ "Was: 2.07 Billion\nNow: 1.90 Billion"
+
+      assert percent_down_message
+      assert percent_down_message =~ "Was: 2.07 Billion\nNow: 1.90 Billion"
     end
   end
 

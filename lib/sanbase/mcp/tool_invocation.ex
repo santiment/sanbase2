@@ -64,19 +64,6 @@ defmodule Sanbase.MCP.ToolInvocation do
   end
 
   @doc """
-  Maps a raw User-Agent header to a client identifier. Matches the well-known
-  clients (claude/chatgpt/cursor) and falls back to the raw UA string
-  (truncated to the column's size limit) when no match is found. Returns nil
-  only for nil input so legacy rows stay nil.
-  """
-  @spec derive_client_from_user_agent(String.t() | nil) :: String.t() | nil
-  def derive_client_from_user_agent(nil), do: nil
-
-  def derive_client_from_user_agent(ua) when is_binary(ua) do
-    match_known_client(ua) || truncate_client(ua)
-  end
-
-  @doc """
   Derives the client identifier from the User-Agent header and the MCP
   `clientInfo` (from the `initialize` handshake). Many MCP clients (custom
   CLIs, some SDK wrappers) omit User-Agent but always provide clientInfo,

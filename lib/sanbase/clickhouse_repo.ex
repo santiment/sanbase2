@@ -14,6 +14,7 @@ defmodule Sanbase.ClickhouseRepo do
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
   alias Sanbase.Utils.Config
+  alias Sanbase.Accounts.ActivityTracesConfig
   require Logger
 
   def enabled?() do
@@ -57,9 +58,10 @@ defmodule Sanbase.ClickhouseRepo do
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     query = add_metadata_to_query(query)
+    ctx = query.context
 
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
-      query_transform(sql, args, transform_fn)
+      query_transform(sql, args, transform_fn, ctx: ctx)
     end
   end
 
@@ -84,8 +86,8 @@ defmodule Sanbase.ClickhouseRepo do
     })
   end
 
-  def query_transform(query, args, transform_fn) do
-    case execute_query_transform(query, args) do
+  def query_transform(query, args, transform_fn, opts \\ []) do
+    case execute_query_transform(query, args, opts) do
       {:ok, result} ->
         {:ok, Enum.map(result.rows, transform_fn)}
 
@@ -94,7 +96,7 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error_from_exception(e, "query_transform/3", __STACKTRACE__)
+      log_and_return_error_from_exception(e, "query_transform/3", __STACKTRACE__, opts)
   end
 
   @doc ~s"""
@@ -108,14 +110,15 @@ defmodule Sanbase.ClickhouseRepo do
           {:ok, Map.t()} | {:error, String.t()}
   def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     query = add_metadata_to_query(query)
+    ctx = query.context
 
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
-      query_transform_with_metadata(sql, args, transform_fn)
+      query_transform_with_metadata(sql, args, transform_fn, ctx: ctx)
     end
   end
 
-  def query_transform_with_metadata(query, args, transform_fn) do
-    case execute_query_transform_with_metadata(query, args, propagate_error: true) do
+  def query_transform_with_metadata(query, args, transform_fn, opts \\ []) do
+    case execute_query_transform_with_metadata(query, args, [propagate_error: true] ++ opts) do
       {:ok, metadata} ->
         {:ok,
          %{
@@ -131,8 +134,11 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error_from_exception(e, "query_transform_with_metadata/3", __STACKTRACE__,
-        propagate_error: true
+      log_and_return_error_from_exception(
+        e,
+        "query_transform_with_metadata/3",
+        __STACKTRACE__,
+        [propagate_error: true] ++ opts
       )
   end
 
@@ -157,31 +163,32 @@ defmodule Sanbase.ClickhouseRepo do
         when acc: any
   def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
     query = add_metadata_to_query(query)
+    ctx = query.context
 
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
-      query_reduce(sql, args, init, reducer)
+      query_reduce(sql, args, init, reducer, ctx: ctx)
     end
   end
 
-  def query_reduce(query, args, init, reducer) do
+  def query_reduce(query, args, init, reducer, opts \\ []) do
     maybe_store_executed_clickhouse_sql(query, args)
-    maybe_print_interpolated_query(query, args)
+    maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
     case __MODULE__.query(query, args, []) do
       {:ok, result} ->
         {:ok, Enum.reduce(result.rows, init, reducer)}
 
       {:error, error} ->
-        log_and_return_error(error, "query_reduce/4")
+        log_and_return_error(error, "query_reduce/4", opts)
     end
   rescue
     e ->
-      log_and_return_error_from_exception(e, "query_reduce/4", __STACKTRACE__)
+      log_and_return_error_from_exception(e, "query_reduce/4", __STACKTRACE__, opts)
   end
 
-  defp execute_query_transform(query, args, opts \\ []) do
+  defp execute_query_transform(query, args, opts) do
     maybe_store_executed_clickhouse_sql(query, args)
-    maybe_print_interpolated_query(query, args)
+    maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
     case __MODULE__.query(query, args, []) do
       {:ok, result} ->
@@ -194,7 +201,7 @@ defmodule Sanbase.ClickhouseRepo do
 
   defp execute_query_transform_with_metadata(query, args, opts) do
     maybe_store_executed_clickhouse_sql(query, args)
-    maybe_print_interpolated_query(query, args)
+    maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
     # Pass decode: false so the `ch` driver returns the raw RowBinary
     # response (binary data + HTTP headers) instead of decoded rows.
@@ -222,12 +229,23 @@ defmodule Sanbase.ClickhouseRepo do
     log_id = UUID.uuid4()
     error_message = extract_error_from_stacktrace(stacktrace) || Exception.message(exception)
 
-    Logger.warning("""
-    [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}
+    # ClickHouse error strings + stacktraces can embed the user's query
+    # params/SQL fragments. For activity_traces_hidden users keep only a
+    # correlatable breadcrumb in the logs. The returned error still
+    # carries the real message — it goes back to the user who ran the
+    # query, not into the logs.
+    if activity_traces_hidden?(opts) do
+      Logger.warning(
+        "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason hidden (activity_traces_hidden)"
+      )
+    else
+      Logger.warning("""
+      [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}
 
-    Stacktrace:
-    #{Exception.format_stacktrace()}
-    """)
+      Stacktrace:
+      #{Exception.format_stacktrace()}
+      """)
+    end
 
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
@@ -238,11 +256,25 @@ defmodule Sanbase.ClickhouseRepo do
 
     error_message = extract_error_from_error(error)
 
-    Logger.warning(
-      "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}"
-    )
+    if activity_traces_hidden?(opts) do
+      Logger.warning(
+        "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason hidden (activity_traces_hidden)"
+      )
+    else
+      Logger.warning(
+        "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}"
+      )
+    end
 
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
+  end
+
+  # Prefer the ctx explicitly threaded through `opts` (set by the
+  # Query-struct entry points); fall back to the ambient context for
+  # bare-SQL callers that don't carry one.
+  defp activity_traces_hidden?(opts) do
+    ctx = Keyword.get(opts, :ctx) || Sanbase.RequestContext.current()
+    ActivityTracesConfig.hidden?(:hide_ch_error_logs, ctx)
   end
 
   defp extract_error_from_stacktrace(stacktrace) do
@@ -319,12 +351,19 @@ defmodule Sanbase.ClickhouseRepo do
 
   case Mix.env() do
     :dev ->
-      defp maybe_print_interpolated_query(query, params) do
-        # In dev env, if the PRINT_CLICKHOUSE_SQL env var is set to true/1
-        # the interpolated query  is printed to the console.
-        # This makes it much easier to copy/paste the query and share it
-        # with other people, or directly run it for debugging purposes
-        if System.get_env("PRINT_INTERPOLATED_CLICKHOUSE_SQL") in ["true", "1"] do
+      # In dev env, if the PRINT_CLICKHOUSE_SQL env var is set to true/1
+      # the interpolated query is printed to the console — easy to copy
+      # and run directly for debugging.
+      #
+      # Skipped for users with `activity_traces_hidden` even in dev. The
+      # ctx is passed in explicitly by the Query-struct entry points;
+      # falls back to `RequestContext.current/0` when the caller didn't
+      # have one (e.g. bare SQL helpers called from a background process).
+      defp maybe_print_interpolated_query(query, params, ctx) do
+        ctx = ctx || Sanbase.RequestContext.current()
+
+        if System.get_env("PRINT_INTERPOLATED_CLICKHOUSE_SQL") in ["true", "1"] and
+             not ActivityTracesConfig.hidden?(:hide_interpolated_sql, ctx) do
           IO.puts(
             IO.ANSI.format([
               :light_blue,
@@ -337,7 +376,7 @@ defmodule Sanbase.ClickhouseRepo do
       end
 
     _ ->
-      defp maybe_print_interpolated_query(_query, _params), do: :ok
+      defp maybe_print_interpolated_query(_query, _params, _ctx), do: :ok
   end
 
   defp get_interpolated_query(query, params) do

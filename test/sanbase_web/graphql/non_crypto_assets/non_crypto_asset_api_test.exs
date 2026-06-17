@@ -84,4 +84,18 @@ defmodule SanbaseWeb.Graphql.NonCryptoAssetApiTest do
 
     assert error_msg =~ "Non-crypto asset with slug unknown not found"
   end
+
+  test "nonCryptoAssetBySlug does not expose hidden assets", context do
+    query = """
+    {
+      nonCryptoAssetBySlug(slug: "hidden-asset") {
+        slug
+      }
+    }
+    """
+
+    error_msg = execute_query_with_error(context.conn, query, "nonCryptoAssetBySlug")
+
+    assert error_msg =~ "Non-crypto asset with slug hidden-asset is hidden"
+  end
 end

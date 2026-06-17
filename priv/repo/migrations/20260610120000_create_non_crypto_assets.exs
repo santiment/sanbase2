@@ -18,6 +18,15 @@ defmodule Sanbase.Repo.Migrations.CreateNonCryptoAssets do
       timestamps()
     end
 
+    # Constrain asset_type at the DB boundary so raw SQL / imports / admin paths
+    # cannot drift from the Ecto.Enum contract. Keep in sync with
+    # `Sanbase.NonCryptoAsset.asset_types/0`.
+    create(
+      constraint(:non_crypto_assets, :valid_asset_type,
+        check: "asset_type IN ('stock', 'commodity', 'index', 'forex', 'fund', 'bond', 'other')"
+      )
+    )
+
     create(unique_index(:non_crypto_assets, [:slug]))
     create(index(:non_crypto_assets, [:asset_type]))
   end

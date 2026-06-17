@@ -109,7 +109,9 @@ defmodule Mix.Tasks.CloneMetricRegistry do
           "so the in-memory metric mapsets pick up the new rows."
       )
     after
-      File.rm!(file)
+      # `File.rm/1` (not `rm!`): if pg_dump failed before creating the file, the
+      # file may never exist — raising here would mask the original error.
+      File.rm(file)
     end
 
     :ok

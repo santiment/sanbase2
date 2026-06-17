@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.GenericAdmin.Webinar do
   @behaviour SanbaseWeb.GenericAdmin
-  def schema_module, do: Sanbase.Webinar
+  def schema_module, do: Sanbase.Webinars.Webinar
   def resource_name, do: "webinars"
   def singular_resource_name, do: "webinar"
 

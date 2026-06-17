@@ -193,6 +193,67 @@ defmodule Sanbase.Vote do
     Repo.get_by(__MODULE__, opts)
   end
 
+  @doc ~s"""
+  Return `{entity_id, selector_key, votes_dataloader_query, voted_at_dataloader_query}`
+  for any votable entity: a votable struct, the raw `%{trigger: %{id: _}}` shape
+  used by Absinthe parents, or a `source`-style map carrying one of the votable
+  id fields.
+
+  Returns `nil` when the input is not a votable entity.
+  """
+  @spec dataloader_keys(any()) ::
+          {non_neg_integer(), atom(), atom(), atom()} | nil
+  def dataloader_keys(%Post{id: id}),
+    do: {id, :post_id, :insight_vote_stats, :insight_voted_at}
+
+  def dataloader_keys(%UserList{id: id}),
+    do: {id, :watchlist_id, :watchlist_vote_stats, :watchlist_voted_at}
+
+  def dataloader_keys(%Chart.Configuration{id: id}),
+    do:
+      {id, :chart_configuration_id, :chart_configuration_vote_stats,
+       :chart_configuration_voted_at}
+
+  def dataloader_keys(%Sanbase.Dashboards.Dashboard{id: id}),
+    do: {id, :dashboard_id, :dashboard_vote_stats, :dashboard_voted_at}
+
+  def dataloader_keys(%Sanbase.Queries.Query{id: id}),
+    do: {id, :query_id, :query_vote_stats, :query_voted_at}
+
+  def dataloader_keys(%UserTrigger{id: id}),
+    do: {id, :user_trigger_id, :user_trigger_vote_stats, :user_trigger_voted_at}
+
+  def dataloader_keys(%TimelineEvent{id: id}),
+    do: {id, :timeline_event_id, :timeline_event_vote_stats, :timeline_event_voted_at}
+
+  def dataloader_keys(%{trigger: %{id: id}}) when is_integer(id),
+    do: {id, :user_trigger_id, :user_trigger_vote_stats, :user_trigger_voted_at}
+
+  def dataloader_keys(%{post_id: id}) when is_integer(id),
+    do: {id, :post_id, :insight_vote_stats, :insight_voted_at}
+
+  def dataloader_keys(%{watchlist_id: id}) when is_integer(id),
+    do: {id, :watchlist_id, :watchlist_vote_stats, :watchlist_voted_at}
+
+  def dataloader_keys(%{chart_configuration_id: id}) when is_integer(id),
+    do:
+      {id, :chart_configuration_id, :chart_configuration_vote_stats,
+       :chart_configuration_voted_at}
+
+  def dataloader_keys(%{dashboard_id: id}) when is_integer(id),
+    do: {id, :dashboard_id, :dashboard_vote_stats, :dashboard_voted_at}
+
+  def dataloader_keys(%{query_id: id}) when is_integer(id),
+    do: {id, :query_id, :query_vote_stats, :query_voted_at}
+
+  def dataloader_keys(%{user_trigger_id: id}) when is_integer(id),
+    do: {id, :user_trigger_id, :user_trigger_vote_stats, :user_trigger_voted_at}
+
+  def dataloader_keys(%{timeline_event_id: id}) when is_integer(id),
+    do: {id, :timeline_event_id, :timeline_event_vote_stats, :timeline_event_voted_at}
+
+  def dataloader_keys(_), do: nil
+
   def user_total_votes(user_id) do
     query =
       from(

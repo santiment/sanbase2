@@ -4,7 +4,8 @@ defmodule Sanbase.Accounts.UserSettings do
 
   alias Sanbase.Accounts.{User, Settings}
   alias Sanbase.Repo
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing
+  alias Sanbase.Billing.Product
 
   @self_reset_api_rate_limits_cooldown 90
 
@@ -145,10 +146,10 @@ defmodule Sanbase.Accounts.UserSettings do
   # ignoring the rest of the params if is_subscribed_biweekly_report is set to true
   def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
     cond do
-      Subscription.current_subscription_plan(user.id, Product.product_sanbase()) != "FREE" ->
+      Billing.user_has_product_access?(user.id, Product.product_sanbase()) ->
         settings_update(user.id, params)
 
-      Subscription.current_subscription_plan(user.id, Product.product_api()) != "FREE" ->
+      Billing.user_has_product_access?(user.id, Product.product_api()) ->
         settings_update(user.id, params)
 
       true ->

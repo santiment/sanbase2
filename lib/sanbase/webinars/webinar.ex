@@ -1,4 +1,4 @@
-defmodule Sanbase.Webinar do
+defmodule Sanbase.Webinars.Webinar do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query

@@ -3,8 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChangelogResolver do
   Resolvers for changelog-related GraphQL queries.
   """
 
-  alias Sanbase.Metric.Registry.MetricVersions
-  alias Sanbase.Project.ProjectVersions
+  alias Sanbase.Changelog
   alias Sanbase.Project
 
   @default_page_size 20
@@ -23,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChangelogResolver do
     offset = (page - 1) * page_size
 
     {changelog_entries, has_more, total_dates} =
-      MetricVersions.get_changelog_by_date(limit, offset, search_term)
+      Changelog.metrics_changelog(limit, offset, search_term)
 
     entries = format_metrics_changelog_entries(changelog_entries)
     total_pages = calculate_total_pages(total_dates, page_size)
@@ -52,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChangelogResolver do
     search_term = Map.get(args, :search_term)
 
     {changelog_entries, total_dates} =
-      ProjectVersions.get_changelog_by_date(page, page_size, search_term)
+      Changelog.assets_changelog(page, page_size, search_term)
 
     entries = format_assets_changelog_entries(changelog_entries)
     total_pages = calculate_total_pages(total_dates, page_size)

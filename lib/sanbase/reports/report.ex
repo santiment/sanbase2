@@ -30,8 +30,11 @@ defmodule Sanbase.Report do
     timestamps()
   end
 
-  @doc false
-  def new_changeset(report, attrs \\ %{}) do
+  @doc ~s"""
+  Build an unvalidated changeset suitable for rendering new/edit forms. Use
+  `create/1` and `update/2` when persisting — they run the full validation set.
+  """
+  def change_report(report \\ %__MODULE__{}, attrs \\ %{}) do
     attrs = normalize_tags(attrs)
 
     report

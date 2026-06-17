@@ -6,9 +6,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
 
   alias Sanbase.Transfers
   alias Sanbase.Project
-  alias Sanbase.Utils.BlockchainAddressUtils
   alias SanbaseWeb.Graphql.{Cache, SanbaseDataloader}
-  alias Sanbase.Clickhouse.{Label, HistoricalBalance.EthSpent}
+  alias Sanbase.Clickhouse.HistoricalBalance.EthSpent
 
   @max_concurrency 100
 
@@ -26,9 +25,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     opts = [excluded_addresses: Map.get(args, :excluded_addresses, [])]
 
     with {:ok, transfers} <- Transfers.top_transfers(slug, from, to, 1, limit, opts),
-         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers),
-         {:ok, transfers} <- Label.add_labels(slug, transfers),
-         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
+         {:ok, transfers} <- Transfers.enrich_with_labels(transfers, slug) do
       {:ok, transfers}
     else
       {:error, {:missing_contract, _}} ->
@@ -165,9 +162,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     limit = Enum.min([limit, 100])
 
     with {:ok, transfers} <- Transfers.top_transfers("ethereum", from, to, 1, limit),
-         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers),
-         {:ok, transfers} <- Label.add_labels("ethereum", transfers),
-         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
+         {:ok, transfers} <- Transfers.enrich_with_labels(transfers, "ethereum") do
       {:ok, transfers}
     else
       error ->
@@ -187,9 +182,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     with {:ok, addresses} <- Project.eth_addresses(project),
          {:ok, transfers} <-
            Transfers.top_wallet_transfers("ethereum", addresses, from, to, 1, limit, type),
-         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers, infr),
-         {:ok, transfers} <- Label.add_labels("ethereum", transfers),
-         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
+         {:ok, transfers} <- Transfers.enrich_with_labels(transfers, "ethereum", infr) do
       {:ok, transfers}
     else
       error ->

@@ -4,11 +4,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
   alias Sanbase.Vote
-  alias Sanbase.Insight.Post
-  alias Sanbase.Chart
-  alias Sanbase.Alert.UserTrigger
-  alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.UserList
 
   @doc ~s"""
   Returns a tuple `{total_votes, total_san_votes}` where:
@@ -16,180 +11,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   - `total_san_votes` represents the number of votes where each vote's weight is
   equal to the san balance of the voter
   """
-  def votes(%Post{} = post, _args, %{context: %{loader: loader} = context}) do
+  def votes(parent, _args, %{context: %{loader: loader} = context} = resolution) do
     user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{post_id: post.id, user_id: user.id}
-    get_votes(loader, :insight_vote_stats, selector)
+
+    case resolve_entity(parent, resolution) do
+      {entity_id, selector_key, votes_query, _voted_at_query} ->
+        get_votes(loader, votes_query, %{selector_key => entity_id, :user_id => user.id})
+
+      nil ->
+        {:ok, nil}
+    end
   end
 
-  def votes(%UserList{} = ul, _args, %{context: %{loader: loader} = context}) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{watchlist_id: ul.id, user_id: user.id}
-    get_votes(loader, :watchlist_vote_stats, selector)
-  end
+  def voted_at(
+        parent,
+        _args,
+        %{context: %{loader: loader, auth: %{current_user: user}}} = resolution
+      ) do
+    case resolve_entity(parent, resolution) do
+      {entity_id, selector_key, _votes_query, voted_at_query} ->
+        get_voted_at(loader, voted_at_query, %{selector_key => entity_id, :user_id => user.id})
 
-  def votes(%Chart.Configuration{} = config, _args, %{
-        context: %{loader: loader} = context
-      }) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{chart_configuration_id: config.id, user_id: user.id}
-
-    get_votes(loader, :chart_configuration_vote_stats, selector)
-  end
-
-  def votes(%Sanbase.Dashboards.Dashboard{} = dashboard, _args, %{
-        context: %{loader: loader} = context
-      }) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{dashboard_id: dashboard.id, user_id: user.id}
-
-    get_votes(loader, :dashboard_vote_stats, selector)
-  end
-
-  def votes(%Sanbase.Queries.Query{} = query, _args, %{
-        context: %{loader: loader} = context
-      }) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{query_id: query.id, user_id: user.id}
-
-    get_votes(loader, :query_vote_stats, selector)
-  end
-
-  def votes(%{trigger: %{id: user_trigger_id}}, _args, %{
-        context: %{loader: loader} = context
-      })
-      when is_integer(user_trigger_id) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{user_trigger_id: user_trigger_id, user_id: user.id}
-
-    get_votes(loader, :user_trigger_vote_stats, selector)
-  end
-
-  def votes(%UserTrigger{id: user_trigger_id}, _args, %{
-        context: %{loader: loader} = context
-      })
-      when is_integer(user_trigger_id) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{user_trigger_id: user_trigger_id, user_id: user.id}
-
-    get_votes(loader, :user_trigger_vote_stats, selector)
-  end
-
-  def votes(%TimelineEvent{} = event, _args, %{
-        context: %{loader: loader} = context
-      }) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{timeline_event_id: event.id, user_id: user.id}
-
-    get_votes(loader, :timeline_event_vote_stats, selector)
-  end
-
-  def votes(_root, args, %{source: %{post_id: id}} = resolution) do
-    # Handles the case where the `votes` is called on top of the result
-    # from `vote`/`unvote`. They return the entity id as a result which
-    # can be used from the `source` map in the resolution
-    votes(%Post{id: id}, args, resolution)
-  end
-
-  def votes(_root, args, %{source: %{watchlist_id: id}} = resolution) do
-    # Handles the case where the `votes` is called on top of the result
-    # from `vote`/`unvote`. They return the entity id as a result which
-    # can be used from the `source` map in the resolution
-    votes(%UserList{id: id}, args, resolution)
-  end
-
-  def votes(_root, args, %{source: %{chart_configuration_id: id}} = resolution) do
-    # Handles the case where the `votes` is called on top of the result
-    # from `vote`/`unvote`. They return the entity id as a result which
-    # can be used from the `source` map in the resolution
-    votes(%Chart.Configuration{id: id}, args, resolution)
-  end
-
-  def votes(_root, args, %{source: %{dashboard_id: id}} = resolution) do
-    # Handles the case where the `votes` is called on top of the result
-    # from `vote`/`unvote`. They return the entity id as a result which
-    # can be used from the `source` map in the resolution
-    votes(%Sanbase.Dashboards.Dashboard{id: id}, args, resolution)
-  end
-
-  def votes(_root, args, %{source: %{query_id: id}} = resolution) do
-    # Handles the case where the `votes` is called on top of the result
-    # from `vote`/`unvote`. They return the entity id as a result which
-    # can be used from the `source` map in the resolution
-    votes(%Sanbase.Queries.Query{id: id}, args, resolution)
-  end
-
-  def votes(_root, args, %{source: %{user_trigger_id: id}} = resolution) do
-    # Handles the case where the `votes` is called on top of the result
-    # from `vote`/`unvote`. They return the entity id as a result which
-    # can be used from the `source` map in the resolution
-    votes(%UserTrigger{id: id}, args, resolution)
-  end
-
-  def votes(_root, args, %{source: %{timeline_event_id: id}} = resolution) do
-    # Handles the case where the `votes` is called on top of the result
-    # from `vote`/`unvote`. They return the entity id as a result which
-    # can be used from the `source` map in the resolution
-    votes(%TimelineEvent{id: id}, args, resolution)
-  end
-
-  def voted_at(%Post{} = post, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{post_id: post.id, user_id: user.id}
-    get_voted_at(loader, :insight_voted_at, selector)
-  end
-
-  def voted_at(%UserList{} = ul, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{watchlist_id: ul.id, user_id: user.id}
-    get_voted_at(loader, :watchlist_voted_at, selector)
-  end
-
-  def voted_at(%TimelineEvent{} = event, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{timeline_event_id: event.id, user_id: user.id}
-    get_voted_at(loader, :timeline_event_voted_at, selector)
-  end
-
-  def voted_at(%Chart.Configuration{} = config, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{chart_configuration_id: config.id, user_id: user.id}
-    get_voted_at(loader, :chart_configuration_voted_at, selector)
-  end
-
-  def voted_at(%Sanbase.Dashboards.Dashboard{} = config, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{dashboard_id: config.id, user_id: user.id}
-    get_voted_at(loader, :dashboard_voted_at, selector)
-  end
-
-  def voted_at(%Sanbase.Queries.Query{} = config, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{query_id: config.id, user_id: user.id}
-    get_voted_at(loader, :query_voted_at, selector)
-  end
-
-  def voted_at(%{trigger: %{id: id}}, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{user_trigger_id: id, user_id: user.id}
-    get_voted_at(loader, :user_trigger_voted_at, selector)
-  end
-
-  def voted_at(%UserTrigger{id: id}, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{user_trigger_id: id, user_id: user.id}
-    get_voted_at(loader, :user_trigger_voted_at, selector)
+      nil ->
+        {:ok, nil}
+    end
   end
 
   def voted_at(_root, _args, _context), do: {:ok, nil}
+
+  defp resolve_entity(parent, resolution) do
+    Vote.dataloader_keys(parent) ||
+      Vote.dataloader_keys(Map.get(resolution, :source) || %{})
+  end
 
   # Private functions
   defp get_votes(loader, query, selector) do

@@ -54,11 +54,47 @@ defmodule Sanbase.Project.SourceSlugMapping do
     |> Repo.delete_all()
   end
 
+  @type return_filter :: :crypto_project_only | :non_crypto_project_only | :all
+
   @doc ~s"""
-  Return `{source_slug, sanbase_slug}` pairs for `source`, covering both
-  project-mapped and non-crypto-asset-mapped rows.
+  Return `{source_slug, sanbase_slug}` pairs for `source`.
+
+  The `:return` option selects which mappings are included:
+
+    * `:crypto_project_only` (default) — only rows mapped to a crypto `Project`.
+      This is the historical behaviour, kept as the default so project-coupled
+      callers never accidentally pick up non-crypto assets.
+    * `:non_crypto_project_only` — only rows mapped to a `Sanbase.NonCryptoAsset`.
+    * `:all` — both, with `sanbase_slug` taken from whichever reference is set.
   """
-  def get_source_slug_mappings(source) do
+  @spec get_source_slug_mappings(String.t(), [{:return, return_filter()}]) ::
+          [{String.t(), String.t()}]
+  def get_source_slug_mappings(source, opts \\ []) do
+    opts
+    |> Keyword.get(:return, :crypto_project_only)
+    |> source_slug_mappings_query(source)
+    |> Repo.all()
+  end
+
+  defp source_slug_mappings_query(:crypto_project_only, source) do
+    from(
+      ssm in __MODULE__,
+      join: p in assoc(ssm, :project),
+      where: ssm.source == ^source,
+      select: {ssm.slug, p.slug}
+    )
+  end
+
+  defp source_slug_mappings_query(:non_crypto_project_only, source) do
+    from(
+      ssm in __MODULE__,
+      join: nca in assoc(ssm, :non_crypto_asset),
+      where: ssm.source == ^source,
+      select: {ssm.slug, nca.slug}
+    )
+  end
+
+  defp source_slug_mappings_query(:all, source) do
     from(
       ssm in __MODULE__,
       left_join: p in assoc(ssm, :project),
@@ -66,7 +102,6 @@ defmodule Sanbase.Project.SourceSlugMapping do
       where: ssm.source == ^source,
       select: {ssm.slug, coalesce(p.slug, nca.slug)}
     )
-    |> Repo.all()
   end
 
   def get_slug(%Project{id: project_id}, source) do

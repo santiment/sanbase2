@@ -418,7 +418,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   end
 
   defp load_mappings() do
-    rows = SourceSlugMapping.get_source_slug_mappings(@source)
+    # Hyperliquid lists both crypto projects and non-crypto assets (gold, SPX,
+    # …), so subscribe to mappings of either kind.
+    rows = SourceSlugMapping.get_source_slug_mappings(@source, return: :all)
 
     slug_map =
       Enum.reduce(rows, %{}, fn {coin, slug}, acc ->

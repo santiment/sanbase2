@@ -121,7 +121,10 @@ defmodule Sanbase.NonCryptoAssetTest do
                  non_crypto_asset_id: asset.id
                })
 
-      assert {"GOLD", "gold"} in SourceSlugMapping.get_source_slug_mappings("hyperliquid")
+      assert {"GOLD", "gold"} in SourceSlugMapping.get_source_slug_mappings("hyperliquid",
+               return: :all
+             )
+
       assert SourceSlugMapping.get_source_slug("gold", "hyperliquid") == "GOLD"
     end
 
@@ -147,7 +150,7 @@ defmodule Sanbase.NonCryptoAssetTest do
                errors_on(changeset)
     end
 
-    test "get_source_slug_mappings returns both project and non-crypto rows" do
+    test "get_source_slug_mappings filters by the :return option" do
       asset = insert(:non_crypto_asset, slug: "gold")
       project = insert(:random_project, slug: "bitcoin")
 
@@ -165,10 +168,27 @@ defmodule Sanbase.NonCryptoAssetTest do
           project_id: project.id
         })
 
-      mappings = SourceSlugMapping.get_source_slug_mappings("hyperliquid")
+      # Default is crypto-project-only.
+      default = SourceSlugMapping.get_source_slug_mappings("hyperliquid")
+      assert {"BTC", "bitcoin"} in default
+      refute {"GOLD", "gold"} in default
 
-      assert {"GOLD", "gold"} in mappings
-      assert {"BTC", "bitcoin"} in mappings
+      crypto =
+        SourceSlugMapping.get_source_slug_mappings("hyperliquid", return: :crypto_project_only)
+
+      assert crypto == default
+
+      non_crypto =
+        SourceSlugMapping.get_source_slug_mappings("hyperliquid",
+          return: :non_crypto_project_only
+        )
+
+      assert {"GOLD", "gold"} in non_crypto
+      refute {"BTC", "bitcoin"} in non_crypto
+
+      all = SourceSlugMapping.get_source_slug_mappings("hyperliquid", return: :all)
+      assert {"GOLD", "gold"} in all
+      assert {"BTC", "bitcoin"} in all
     end
   end
 end

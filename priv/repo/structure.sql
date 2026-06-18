@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict UAM5iE8zt3GSbRhnSHuk7zwQzMQcawO4JjV0j46HgEx3uGFGr8DTmkR2LZqQAal
+\restrict L8PDbSzrw0g7tpoFh9fJOW0rjnPsPQMvkc6mK9hLT60B8DAWqaPNaZ0NznoSOO7
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -5606,7 +5606,8 @@ CREATE TABLE public.users (
     available_metrics_lookback_days integer,
     is_mcp_banned boolean DEFAULT false NOT NULL,
     mcp_banned_at timestamp(0) without time zone,
-    mcp_banned_reason text
+    mcp_banned_reason text,
+    are_activity_traces_hidden boolean DEFAULT false NOT NULL
 );
 
 
@@ -9981,6 +9982,13 @@ CREATE UNIQUE INDEX user_uniswap_staking_user_id_index ON public.user_uniswap_st
 
 
 --
+-- Name: users_are_activity_traces_hidden_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX users_are_activity_traces_hidden_index ON public.users USING btree (are_activity_traces_hidden) WHERE (are_activity_traces_hidden = true);
+
+
+--
 -- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11707,7 +11715,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict UAM5iE8zt3GSbRhnSHuk7zwQzMQcawO4JjV0j46HgEx3uGFGr8DTmkR2LZqQAal
+\unrestrict L8PDbSzrw0g7tpoFh9fJOW0rjnPsPQMvkc6mK9hLT60B8DAWqaPNaZ0NznoSOO7
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12279,6 +12287,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260511112644);
 INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);
 INSERT INTO public."schema_migrations" (version) VALUES (20260515075234);
 INSERT INTO public."schema_migrations" (version) VALUES (20260519151900);
+INSERT INTO public."schema_migrations" (version) VALUES (20260521120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260522100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260526093118);
 INSERT INTO public."schema_migrations" (version) VALUES (20260528120000);

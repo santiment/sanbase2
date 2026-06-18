@@ -397,6 +397,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)
        when is_list(slugs) and length(slugs) > 1000 do
+    ctx = Sanbase.RequestContext.current()
+
     result =
       Enum.chunk_every(slugs, 1000)
       |> Sanbase.Parallel.map(
@@ -404,7 +406,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         timeout: 55_000,
         max_concurrency: 8,
         ordered: false,
-        on_timeout: :kill_task
+        on_timeout: :kill_task,
+        request_context: ctx
       )
       |> Enum.filter(&match?({:ok, _}, &1))
       |> Enum.map(&elem(&1, 1))

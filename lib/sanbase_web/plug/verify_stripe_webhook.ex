@@ -32,15 +32,20 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
   end
 
   defp do_verify(conn, body) do
-    [signature] = get_req_header(conn, "stripe-signature")
+    secret = webhook_secret()
 
-    case Sanbase.StripeApi.Webhook.construct_event(body, signature, webhook_secret()) do
-      {:ok, %Stripe.Event{}} ->
-        conn
-        |> assign(:stripe_event, Jason.decode!(body))
-
+    with [signature] <- get_req_header(conn, "stripe-signature"),
+         true <- is_binary(secret) and byte_size(secret) > 0,
+         {:ok, %Stripe.Event{}} <-
+           Sanbase.StripeApi.Webhook.construct_event(body, signature, secret) do
+      conn
+      |> assign(:stripe_event, Jason.decode!(body))
+    else
       {:error, error} ->
         halt_and_log_error(conn, error)
+
+      _ ->
+        halt_and_log_error(conn, "missing stripe-signature header or webhook secret")
     end
   end
 

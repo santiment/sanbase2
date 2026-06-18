@@ -73,7 +73,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.TableConfigurationTypes)
   import_types(Graphql.TagTypes)
   import_types(Graphql.TelegramTypes)
-  import_types(Graphql.TimelineEventTypes)
   import_types(Graphql.TransactionTypes)
   import_types(Graphql.TransferTypes)
   import_types(Graphql.TwitterTypes)
@@ -128,7 +127,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.SignalQueries)
   import_types(Graphql.Schema.SocialDataQueries)
   import_types(Graphql.Schema.TableConfigurationQueries)
-  import_types(Graphql.Schema.TimelineQueries)
   import_types(Graphql.Schema.UserAffiliateDetailsQueries)
   import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.UserQueries)
@@ -138,15 +136,20 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.WidgetQueries)
   import_types(Graphql.Schema.ChangelogQueries)
 
-  def dataloader() do
+  def dataloader(request_context \\ nil) do
     Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
-    |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
+    |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data(request_context))
   end
 
   def context(ctx) do
-    ctx
-    |> Map.put(:loader, dataloader())
+    request_context =
+      case ctx do
+        %{request_context: %Sanbase.RequestContext{} = rc} -> rc
+        _ -> nil
+      end
+
+    Map.put(ctx, :loader, dataloader(request_context))
   end
 
   def plugins do
@@ -195,7 +198,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:signal_queries)
     import_fields(:social_data_queries)
     import_fields(:table_configuration_queries)
-    import_fields(:timeline_queries)
     import_fields(:user_list_queries)
     import_fields(:user_queries)
     import_fields(:webinar_queries)
@@ -230,7 +232,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:report_mutations)
     import_fields(:short_url_mutations)
     import_fields(:table_configuration_mutations)
-    import_fields(:timeline_mutations)
     import_fields(:user_affiliate_details_mutations)
     import_fields(:user_list_mutations)
     import_fields(:user_mutations)

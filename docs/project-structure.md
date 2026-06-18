@@ -185,7 +185,6 @@ Provide comments for multiple different entities:
 - Insights
 - Blockchain Addresses
 - Short URLs
-- Timeline Events
 
 ## Glossary
 

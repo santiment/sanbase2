@@ -3,7 +3,6 @@ defmodule Sanbase.Comments.Notification do
 
   alias Sanbase.Comment.{
     PostComment,
-    TimelineEventComment,
     ChartConfigurationComment,
     WatchlistComment
   }
@@ -32,7 +31,6 @@ defmodule Sanbase.Comments.Notification do
 
   def comments_ntf_map() do
     recent_insight_comments = recent_comments_query(:insight) |> Repo.all()
-    recent_timeline_event_comments = recent_comments_query(:timeline_event) |> Repo.all()
 
     recent_chart_configuration_comments =
       recent_comments_query(:chart_configuration) |> Repo.all()
@@ -40,7 +38,6 @@ defmodule Sanbase.Comments.Notification do
     recent_watchlist_comments = recent_comments_query(:watchlist) |> Repo.all()
 
     build_notify_map(recent_insight_comments, :insight)
-    |> merge_events(build_notify_map(recent_timeline_event_comments, :timeline_event))
     |> merge_events(build_notify_map(recent_chart_configuration_comments, :chart_configuration))
     |> merge_events(build_notify_map(recent_watchlist_comments, :watchlist))
   end
@@ -179,17 +176,6 @@ defmodule Sanbase.Comments.Notification do
 
   defp ntf_author(
          notify_users_map,
-         %TimelineEventComment{
-           comment: %{user_id: commenter_id},
-           timeline_event: %{user_id: author_id}
-         },
-         _
-       )
-       when commenter_id == author_id,
-       do: notify_users_map
-
-  defp ntf_author(
-         notify_users_map,
          %ChartConfigurationComment{
            comment: %{user_id: commenter_id},
            chart_configuration: %{user_id: author_id}
@@ -216,14 +202,6 @@ defmodule Sanbase.Comments.Notification do
          :insight
        ) do
     put_event_in_map(notify_users_map, user_id, comment, "comment", :insight)
-  end
-
-  defp ntf_author(
-         notify_users_map,
-         %TimelineEventComment{timeline_event: %{user_id: user_id}} = comment,
-         :timeline_event
-       ) do
-    put_event_in_map(notify_users_map, user_id, comment, "comment", :timeline_event)
   end
 
   defp ntf_author(
@@ -284,29 +262,9 @@ defmodule Sanbase.Comments.Notification do
       comment_id: comment.id,
       entity: "insight",
       type: event_type,
-      comment_text: comment.content,
+      comment_text: HtmlSanitizeEx.strip_tags(comment.content || ""),
       link: "https://insights.santiment.net/read/#{post_comment.post_id}",
       title: post_comment.post.title,
-      username: get_name(comment.user),
-      avatar_url: comment.user.avatar_url || @default_avatar
-    }
-
-    Map.put(notify_users_map, user_id, events ++ [new_event])
-  end
-
-  defp put_event_in_map(notify_users_map, user_id, feed_comment, event_type, :timeline_event) do
-    comment = feed_comment.comment
-    events = notify_users_map[user_id] || []
-
-    events = events |> Enum.reject(fn event -> event.comment_id == feed_comment.id end)
-
-    new_event = %{
-      comment_id: feed_comment.id,
-      entity: "feed",
-      type: event_type,
-      comment_text: comment.content,
-      link: deduce_entity_link(feed_comment.timeline_event, :timeline_event),
-      title: feed_entity_title(feed_comment.timeline_event_id),
       username: get_name(comment.user),
       avatar_url: comment.user.avatar_url || @default_avatar
     }
@@ -324,7 +282,7 @@ defmodule Sanbase.Comments.Notification do
       comment_id: cc_comment.id,
       entity: "chart layout",
       type: event_type,
-      comment_text: comment.content,
+      comment_text: HtmlSanitizeEx.strip_tags(comment.content || ""),
       link: deduce_entity_link(cc_comment.chart_configuration, :chart_configuration),
       title: cc_comment.chart_configuration.title || "",
       username: get_name(comment.user),
@@ -344,7 +302,7 @@ defmodule Sanbase.Comments.Notification do
       comment_id: watchlist_comment.id,
       entity: watchlist_type(watchlist_comment.watchlist),
       type: event_type,
-      comment_text: comment.content,
+      comment_text: HtmlSanitizeEx.strip_tags(comment.content || ""),
       link: deduce_entity_link(watchlist_comment.watchlist, :watchlist),
       title: watchlist_comment.watchlist.name,
       username: get_name(comment.user),
@@ -360,19 +318,6 @@ defmodule Sanbase.Comments.Notification do
     from(p in PostComment,
       where: p.inserted_at > ^yesterday,
       preload: [comment: [:user, parent: :user], post: :user],
-      order_by: [asc: :inserted_at]
-    )
-  end
-
-  defp recent_comments_query(:timeline_event) do
-    yesterday =
-      Timex.shift(Timex.now(),
-        days: -1
-      )
-
-    from(t in TimelineEventComment,
-      where: t.inserted_at > ^yesterday,
-      preload: [comment: [:user, parent: :user], timeline_event: :user],
       order_by: [asc: :inserted_at]
     )
   end
@@ -402,7 +347,7 @@ defmodule Sanbase.Comments.Notification do
 
     from(v in Sanbase.Vote,
       where: v.inserted_at > ^yesterday,
-      preload: [:post, :watchlist, :timeline_event, :chart_configuration, :user],
+      preload: [:post, :watchlist, :chart_configuration, :user],
       order_by: [asc: :inserted_at]
     )
   end
@@ -414,15 +359,6 @@ defmodule Sanbase.Comments.Notification do
 
   defp get_name(user) do
     "@" <> (user.username || "Anon")
-  end
-
-  defp feed_entity_title(timeline_event_id) do
-    case Sanbase.Timeline.TimelineEvent.by_id!(timeline_event_id, []) do
-      %{post: %{title: title}} -> title
-      %{user_list: %{name: name}} -> name
-      %{user_trigger: %{trigger: %{title: title}}} -> title
-      _ -> "feed event"
-    end
   end
 
   def send_email(email, params) do
@@ -449,10 +385,6 @@ defmodule Sanbase.Comments.Notification do
 
   defp deduce_entity_link(insight_id, :insight) do
     SanbaseWeb.Endpoint.frontend_url() <> "/insights/read/#{insight_id}"
-  end
-
-  defp deduce_entity_link(_chart_configuration, :timeline_event) do
-    SanbaseWeb.Endpoint.frontend_url()
   end
 
   defp deduce_entity_link(chart_configuration, :chart_configuration) do

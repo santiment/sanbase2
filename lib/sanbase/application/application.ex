@@ -46,6 +46,27 @@ defmodule Sanbase.Application do
       config: %{metadata: [:file, :line]}
     })
 
+    # Redact Absinthe/Ecto log lines for users with NDA-protected
+    # activity. See Sanbase.Logger.MaybeHideActivityTraces. This filter
+    # is the only thing standing between a protected user's queries and
+    # the logs, so a silent failure to install it must not be allowed —
+    # treat "already registered" as success (a prior boot in the same
+    # VM) and fail fast on anything else.
+    case :logger.add_primary_filter(
+           :sanbase_maybe_hide_activity_traces,
+           {&Sanbase.Logger.MaybeHideActivityTraces.filter/2, []}
+         ) do
+      :ok ->
+        :ok
+
+      {:error, {:already_exist, _}} ->
+        :ok
+
+      {:error, reason} ->
+        raise "Failed to register the :sanbase_maybe_hide_activity_traces logger filter: " <>
+                "#{inspect(reason)}"
+    end
+
     case Supervisor.start_link(children, opts) do
       {:ok, _} = ok ->
         ok

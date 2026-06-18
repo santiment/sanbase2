@@ -19,7 +19,6 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
   alias Sanbase.Billing.{Product, Plan, Subscription}
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Chart
   alias Sanbase.TableConfiguration
   alias Sanbase.Email.NewsletterToken
@@ -744,10 +743,6 @@ defmodule Sanbase.Factory do
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }
-  end
-
-  def timeline_event_factory() do
-    %TimelineEvent{}
   end
 
   def ico_factory() do

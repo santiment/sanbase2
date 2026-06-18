@@ -9,7 +9,6 @@ defmodule Sanbase.Accounts.UserTest do
 
   alias Sanbase.Accounts.{EthAccount, User, Statistics}
   alias Sanbase.Repo
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
   alias Sanbase.Accounts.User.UniswapStaking
@@ -51,23 +50,9 @@ defmodule Sanbase.Accounts.UserTest do
       user_to_follow = insert(:user)
       Sanbase.Accounts.UserFollower.follow(user_to_follow.id, user.id)
 
-      # Timeline event with post
-      insert(:timeline_event,
-        post: post,
-        user: user,
-        event_type: TimelineEvent.publish_insight_type()
-      )
-
       # Watchlist
-      {:ok, user_list} =
+      {:ok, _user_list} =
         Sanbase.UserList.create_user_list(user, %{name: "My Test List", is_public: true})
-
-      # Timeline event with watchlist
-      insert(:timeline_event,
-        user_list: user_list,
-        user: user,
-        event_type: TimelineEvent.update_watchlist_type()
-      )
 
       # Trigger
       user_trigger =
@@ -80,13 +65,6 @@ defmodule Sanbase.Accounts.UserTest do
             description: "DAA going up 300%"
           }
         )
-
-      # Timeline event with trigger
-      insert(:timeline_event,
-        user_trigger: user_trigger,
-        user: user_to_follow,
-        event_type: TimelineEvent.create_public_trigger_type()
-      )
 
       # Trigger Historical activity
       {:ok, _} =

@@ -107,6 +107,9 @@ defmodule Sanbase.Utils.Validation do
       uri.scheme == nil ->
         {:error, "URL '#{url}' is missing a scheme (e.g. https)"}
 
+      uri.scheme not in ["http", "https"] ->
+        {:error, "URL '#{url}' must use the http or https scheme"}
+
       uri.host == nil ->
         {:error, "URL '#{url}' is missing a host"}
 

@@ -10,7 +10,9 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
       [
         "anomaly_eth_whale_dump",
         "anomaly_hyperliquid_avg_funding_rate",
+        "anomaly_large_stablecoin_mint",
         "anomaly_project_in_trending_words",
+        "anomaly_social_price_correlation",
         "anomaly_total_liquidations",
         "mvrv_usd_30d_upper_zone",
         "mvrv_usd_60d_upper_zone",

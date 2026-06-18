@@ -348,7 +348,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
              _parameters_override = %{},
              mapping_id,
              result,
-             user.id
+             user.id,
+             # The result is supplied by the client, so only the dashboard owner
+             # may store it. Otherwise anyone could poison a public dashboard's cache.
+             only_owner: true
            ) do
       queries = Map.values(dashboard_cache.queries)
 
@@ -467,9 +470,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def get_clickhouse_query_execution_stats(
         _root,
         %{clickhouse_query_id: clickhouse_query_id},
-        _resolution
+        %{context: %{auth: %{current_user: user}}}
       ) do
-    case Queries.QueryExecution.get_execution_stats(clickhouse_query_id) do
+    case Queries.QueryExecution.get_execution_stats(clickhouse_query_id, user.id) do
       {:ok, %{execution_details: details} = result} ->
         # For legacy reasons the API response is flat.
         result = Map.delete(result, :execution_details) |> Map.merge(details)

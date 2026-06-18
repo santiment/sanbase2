@@ -104,12 +104,13 @@ defmodule Sanbase.Accounts.User do
     field(:mcp_banned_at, :utc_datetime)
     field(:mcp_banned_reason, :string)
 
+    field(:are_activity_traces_hidden, :boolean, default: false)
+
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
     has_one(:user_onboarding, UserOnboarding, on_delete: :delete_all)
 
     has_one(:telegram_user_tokens, Telegram.UserToken, on_delete: :delete_all)
     has_one(:uniswap_staking, User.UniswapStaking, on_delete: :delete_all)
-    has_many(:timeline_events, Sanbase.Timeline.TimelineEvent, on_delete: :delete_all)
     has_many(:eth_accounts, EthAccount, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
     has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
@@ -186,7 +187,8 @@ defmodule Sanbase.Accounts.User do
       :twitter_handle,
       :is_mcp_banned,
       :mcp_banned_at,
-      :mcp_banned_reason
+      :mcp_banned_reason,
+      :are_activity_traces_hidden
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
@@ -207,6 +209,22 @@ defmodule Sanbase.Accounts.User do
       greater_than: 0,
       less_than_or_equal_to: 7300
     )
+  end
+
+  @doc """
+  Narrow changeset for the terms & conditions / marketing consent mutation.
+  Only these two fields may be set through this path so that no privileged
+  fields (is_superuser, access levels, stripe_customer_id, ...) can ever be
+  reached from the public mutation's arguments.
+
+  ## Example
+
+      User.terms_changeset(user, %{privacy_policy_accepted: true, marketing_accepted: false})
+  """
+  @spec terms_changeset(%User{}, map()) :: Ecto.Changeset.t()
+  def terms_changeset(%User{} = user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [:privacy_policy_accepted, :marketing_accepted])
   end
 
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)
@@ -264,6 +282,20 @@ defmodule Sanbase.Accounts.User do
       true -> true
       _ -> false
     end
+  end
+
+  def hide_activity_traces!(%__MODULE__{} = user) do
+    user
+    |> cast(%{are_activity_traces_hidden: true}, [:are_activity_traces_hidden])
+    |> Repo.update!()
+    |> tap(fn _ -> Sanbase.Accounts.ProtectedUser.refresh() end)
+  end
+
+  def unhide_activity_traces!(%__MODULE__{} = user) do
+    user
+    |> cast(%{are_activity_traces_hidden: false}, [:are_activity_traces_hidden])
+    |> Repo.update!()
+    |> tap(fn _ -> Sanbase.Accounts.ProtectedUser.refresh() end)
   end
 
   def atomic_update_registration_state(user_id, old_state, new_state, _opts \\ []) do

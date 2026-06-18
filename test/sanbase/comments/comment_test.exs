@@ -69,34 +69,6 @@ defmodule Sanbase.CommentTest do
     assert comment.id == chart_configuration_id
   end
 
-  test "add a comment to a timeline event" do
-    watchlist = insert(:watchlist)
-    user = insert(:user)
-
-    timeline_event =
-      insert(:timeline_event,
-        user_list: watchlist,
-        user: user,
-        event_type: Sanbase.Timeline.TimelineEvent.update_watchlist_type()
-      )
-
-    {:ok, comment} =
-      EntityComment.create_and_link(
-        :timeline_event,
-        timeline_event.id,
-        user.id,
-        nil,
-        "some comment"
-      )
-
-    timeline_event_comments =
-      EntityComment.get_comments(:timeline_event, timeline_event.id, %{cursor: nil, limit: 100})
-
-    assert length(timeline_event_comments) == 1
-    [%{comment: %{id: timeline_event_comment_id}}] = timeline_event_comments
-    assert comment.id == timeline_event_comment_id
-  end
-
   test "add a comment to a blockchain address" do
     blockchain_address = insert(:blockchain_address)
     user = insert(:user)

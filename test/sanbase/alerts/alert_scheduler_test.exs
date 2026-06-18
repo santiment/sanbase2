@@ -151,50 +151,6 @@ defmodule Sanbase.Alert.SchedulerTest do
     end)
   end
 
-  test "successful signal is written in timeline_events", context do
-    %{
-      mock_fun: mock_fun,
-      user: user,
-      trigger: trigger,
-      project: project
-    } = context
-
-    Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.MetricAdapter,
-      :aggregated_timeseries_data,
-      mock_fun
-    )
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
-
-      Process.sleep(100)
-
-      Sanbase.Timeline.TimelineEvent |> Sanbase.Repo.all()
-
-      [_create_trigger_event, fired_trigger_event] =
-        Sanbase.Timeline.TimelineEvent
-        |> Sanbase.Repo.all()
-
-      assert fired_trigger_event.id != nil
-      assert fired_trigger_event.event_type == "trigger_fired"
-      assert fired_trigger_event.user_id == user.id
-      assert fired_trigger_event.user_trigger_id == trigger.id
-
-      # Test payload
-      [{identifier, payload}] = Enum.take(fired_trigger_event.payload, 1)
-      assert identifier == project.slug
-      assert String.contains?(payload, "is above 300")
-      assert String.contains?(payload, project.name)
-
-      # Test data (kv list)
-      [{identifier, kv}] = Enum.take(fired_trigger_event.data["user_trigger_data"], 1)
-      assert identifier == project.slug
-      assert is_map(kv)
-      assert kv["type"] == MetricTriggerSettings.type()
-      assert kv["value"] == 5000
-    end)
-  end
-
   test "email channel for user without email", context do
     %{mock_fun: mock_fun, project: project} = context
 

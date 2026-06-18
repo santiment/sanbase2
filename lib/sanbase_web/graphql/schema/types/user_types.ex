@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field(:name, :string)
     field(:username, :string)
-    field(:description, :string)
+    field(:description, :sanitized_string_no_tags)
 
     field(:avatar_url, :string)
     field(:website_url, :string)
@@ -186,7 +186,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:stripe_customer_id, :string)
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
-    field(:description, :string)
+    field(:description, :sanitized_string_no_tags)
     field(:website_url, :string)
     field(:twitter_handle, :string)
 

@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     result = do_send_chat_message(args, current_user.id)
 
     duration_ms = div(System.monotonic_time() - start_time, 1_000_000)
-    log_graphql_response("sendChatMessage", result, duration_ms)
+    log_graphql_response("sendChatMessage", result, duration_ms, resolution)
 
     result
   end
@@ -124,7 +124,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     result = do_send_chat_message(args, nil)
 
     duration_ms = div(System.monotonic_time() - start_time, 1_000_000)
-    log_graphql_response("sendChatMessage", result, duration_ms)
+    log_graphql_response("sendChatMessage", result, duration_ms, resolution)
 
     result
   end
@@ -199,7 +199,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
         {:error, "Chat not found"}
 
       chat ->
-        if can_access_chat?(chat, current_user) do
+        if can_modify_chat?(chat, current_user && current_user.id) do
           case Chat.delete_chat(chat_id) do
             {:ok, deleted_chat} -> {:ok, deleted_chat}
             {:error, :not_found} -> {:error, "Chat not found"}
@@ -215,20 +215,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
   def submit_message_feedback(
         _root,
         %{message_id: message_id, feedback_type: feedback_type},
-        _context
+        resolution
       ) do
-    # Convert GraphQL enum to string
+    current_user = get_in(resolution.context, [:auth, :current_user])
     feedback_string = convert_feedback_enum_to_string(feedback_type)
 
-    case Chat.update_message_feedback(message_id, feedback_string) do
-      {:ok, updated_message} ->
-        {:ok, updated_message}
+    with message when not is_nil(message) <- Chat.get_message(message_id),
+         chat when not is_nil(chat) <- Chat.get_chat(message.chat_id),
+         true <- can_access_chat?(chat, current_user) do
+      case Chat.update_message_feedback(message_id, feedback_string) do
+        {:ok, updated_message} ->
+          {:ok, updated_message}
 
-      {:error, :message_not_found} ->
-        {:error, "Message not found"}
+        {:error, :message_not_found} ->
+          {:error, "Message not found"}
 
-      {:error, changeset} ->
-        {:error, format_changeset_errors(changeset)}
+        {:error, changeset} ->
+          {:error, format_changeset_errors(changeset)}
+      end
+    else
+      false -> {:error, "Access denied"}
+      _ -> {:error, "Message not found"}
     end
   end
 
@@ -400,27 +407,54 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
 
   defp log_graphql_request(query_name, args, resolution) do
     user_id = extract_user_id(resolution)
-    sanitized_args = sanitize_args_for_logging(args)
 
-    Logger.warning(
-      "GraphQL request: query=#{query_name}, user_id=#{inspect(user_id)}, args=#{inspect(sanitized_args)}"
-    )
+    if activity_traces_hidden?(resolution) do
+      Logger.warning(
+        "GraphQL request: query=#{query_name}, user_id=#{inspect(user_id)}, args hidden (activity_traces_hidden)"
+      )
+    else
+      sanitized_args = sanitize_args_for_logging(args)
+
+      Logger.warning(
+        "GraphQL request: query=#{query_name}, user_id=#{inspect(user_id)}, args=#{inspect(sanitized_args)}"
+      )
+    end
   end
 
-  defp log_graphql_response(query_name, result, duration_ms) do
-    case result do
-      {:ok, data} ->
+  defp log_graphql_response(query_name, result, duration_ms, resolution) do
+    cond do
+      activity_traces_hidden?(resolution) ->
+        status = if match?({:ok, _}, result), do: "success", else: "error"
+
+        Logger.warning(
+          "GraphQL response: query=#{query_name}, status=#{status}, duration_ms=#{duration_ms}, data hidden (activity_traces_hidden)"
+        )
+
+      match?({:ok, _}, result) ->
+        {:ok, data} = result
         sanitized_data = sanitize_response_for_logging(data)
 
         Logger.warning(
           "GraphQL response: query=#{query_name}, status=success, duration_ms=#{duration_ms}, data=#{inspect(sanitized_data)}"
         )
 
-      {:error, reason} ->
+      true ->
+        {:error, reason} = result
+
         Logger.warning(
           "GraphQL response: query=#{query_name}, status=error, duration_ms=#{duration_ms}, error=#{inspect(reason)}"
         )
     end
+  end
+
+  # Chat content (user prompts, AI responses) is activity. Mirror the
+  # `MaybeHideActivityTraces` logger filter: keep a breadcrumb so the
+  # request stays visible to ops, but never log the content itself.
+  defp activity_traces_hidden?(resolution) do
+    Sanbase.Accounts.ActivityTracesConfig.hidden?(
+      :hide_chat_logs,
+      resolution.context[:request_context]
+    )
   end
 
   defp extract_user_id(%{context: %{auth: %{current_user: %{id: user_id}}}}), do: user_id

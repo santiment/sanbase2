@@ -378,7 +378,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       |> Enum.into(%{})
 
     user
-    |> User.changeset(args)
+    |> User.terms_changeset(args)
     |> Sanbase.Repo.update()
     |> case do
       {:ok, user} ->

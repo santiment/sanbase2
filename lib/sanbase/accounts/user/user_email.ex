@@ -102,7 +102,7 @@ defmodule Sanbase.Accounts.User.Email do
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     # same token, not used and still valid
-    user.email_token == token and
+    secure_token_match?(user.email_token, token) and
       (user.email_token_validated_at == nil or
          abs(Timex.diff(user.email_token_validated_at, naive_now, :minutes)) <= 5) and
       abs(Timex.diff(user.email_token_generated_at, naive_now, :minutes)) <
@@ -113,11 +113,19 @@ defmodule Sanbase.Accounts.User.Email do
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     # same token, not used and still valid
-    user.email_candidate_token == email_candidate_token and
+    secure_token_match?(user.email_candidate_token, email_candidate_token) and
       user.email_candidate_token_validated_at == nil and
       Timex.diff(naive_now, user.email_candidate_token_generated_at, :minutes) <
         @token_valid_window_minutes
   end
+
+  # Constant-time comparison that also handles nil tokens (e.g. when no token was
+  # ever generated for the user) without raising.
+  defp secure_token_match?(stored, provided) when is_binary(stored) and is_binary(provided) do
+    Plug.Crypto.secure_compare(stored, provided)
+  end
+
+  defp secure_token_match?(_stored, _provided), do: false
 
   def send_login_email(user, first_login, origin_host_parts, args \\ %{})
 

@@ -78,9 +78,19 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
               </td>
               <td class="whitespace-nowrap text-xs">{format_datetime(b.inserted_at)}</td>
               <td>
-                <.link href={recipients_url(b.id)} class="btn btn-xs btn-soft btn-info">
-                  <.icon name="hero-users" class="size-3.5" /> View Recipients
-                </.link>
+                <div class="flex gap-2">
+                  <.link href={recipients_url(b.id)} class="btn btn-xs btn-soft btn-info">
+                    <.icon name="hero-users" class="size-3.5" /> View Recipients
+                  </.link>
+                  <button
+                    phx-click="delete"
+                    phx-value-id={b.id}
+                    class="btn btn-xs btn-soft btn-error"
+                    data-confirm={delete_confirm_message(b)}
+                  >
+                    <.icon name="hero-trash" class="size-3.5" /> Delete
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -88,6 +98,31 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
       </div>
     </div>
     """
+  end
+
+  @impl true
+  def handle_event("delete", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+
+    case AppNotifications.soft_delete_broadcast_notification(id) do
+      {:ok, _notification} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Broadcast deleted. It no longer appears for any user.")
+         |> stream_delete_by_dom_id(:broadcasts, "broadcasts-#{id}")}
+
+      {:error, :not_found} ->
+        {:noreply, put_flash(socket, :error, "Broadcast not found.")}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not delete broadcast. Please try again.")}
+    end
+  end
+
+  defp delete_confirm_message(broadcast) do
+    "Delete this broadcast? It will immediately disappear from all " <>
+      "#{broadcast.recipients_count} recipients' notifications. " <>
+      "This can be undone by an engineer."
   end
 
   defp recipients_url(notification_id) do

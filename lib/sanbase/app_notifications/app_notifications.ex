@@ -121,10 +121,34 @@ defmodule Sanbase.AppNotifications do
         type: n.type,
         inserted_at: n.inserted_at,
         recipients_count: count(nrs.id),
+        read_count: filter(count(nrs.id), not is_nil(nrs.read_at)),
         unread_count: filter(count(nrs.id), is_nil(nrs.read_at))
       }
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Soft-deletes a broadcast notification by setting `is_deleted` to true.
+
+  Once soft-deleted, the notification immediately disappears from every user's
+  notification list and unread counts, because all read queries filter out
+  notifications where `is_deleted == true`. The per-user read-status rows are
+  left untouched, so the action is fully reversible (set `is_deleted` back to
+  false). Only broadcast notifications can be soft-deleted through this function.
+  """
+  @spec soft_delete_broadcast_notification(pos_integer()) ::
+          {:ok, Notification.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def soft_delete_broadcast_notification(notification_id) when is_integer(notification_id) do
+    case Repo.get_by(Notification, id: notification_id, is_broadcast: true) do
+      %Notification{} = notification ->
+        notification
+        |> Ecto.Changeset.change(is_deleted: true)
+        |> Repo.update()
+
+      nil ->
+        {:error, :not_found}
+    end
   end
 
   @doc """

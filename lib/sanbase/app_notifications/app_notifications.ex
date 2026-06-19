@@ -121,6 +121,7 @@ defmodule Sanbase.AppNotifications do
         type: n.type,
         inserted_at: n.inserted_at,
         recipients_count: count(nrs.id),
+        read_count: filter(count(nrs.id), not is_nil(nrs.read_at)),
         unread_count: filter(count(nrs.id), is_nil(nrs.read_at))
       }
     )

@@ -1446,11 +1446,42 @@ defmodule Sanbase.AppNotificationsTest do
                %{
                  id: notification_id,
                  recipients_count: 0,
+                 read_count: 0,
                  unread_count: 0
                }
              ] = AppNotifications.list_broadcast_notifications()
 
       assert notification_id == notification.id
+    end
+
+    test "reports read and unread counts that stay consistent" do
+      user = insert(:user)
+
+      {:ok, %{notification: notification, recipients_count: recipients}} =
+        AppNotifications.create_broadcast_notification(%{
+          type: "santiment_broadcast_new_features",
+          title: "New feature",
+          content: "We shipped something new."
+        })
+
+      assert recipients >= 1
+
+      entry =
+        AppNotifications.list_broadcast_notifications() |> Enum.find(&(&1.id == notification.id))
+
+      assert entry.recipients_count == recipients
+      assert entry.read_count == 0
+      assert entry.unread_count == recipients
+      assert entry.read_count + entry.unread_count == entry.recipients_count
+
+      {:ok, :updated} = AppNotifications.set_read_status(user.id, notification.id, true)
+
+      entry =
+        AppNotifications.list_broadcast_notifications() |> Enum.find(&(&1.id == notification.id))
+
+      assert entry.read_count == 1
+      assert entry.unread_count == recipients - 1
+      assert entry.read_count + entry.unread_count == entry.recipients_count
     end
   end
 end

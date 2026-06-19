@@ -40,6 +40,7 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
               <th>Content</th>
               <th>Type</th>
               <th>Recipients</th>
+              <th>Read</th>
               <th>Unread</th>
               <th>Created</th>
               <th>Actions</th>
@@ -47,7 +48,7 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
           </thead>
           <tbody id="broadcasts" phx-update="stream">
             <tr class="hidden only:block">
-              <td colspan="8" class="px-4 py-8 text-center text-base-content/40">
+              <td colspan="9" class="px-4 py-8 text-center text-base-content/40">
                 No broadcast notifications found. Use the "New Broadcast" button to create one.
               </td>
             </tr>
@@ -67,6 +68,9 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
               </td>
               <td class="text-center">
                 <span class="font-semibold">{b.recipients_count}</span>
+              </td>
+              <td class="text-center">
+                <span class="font-semibold text-success">{b.read_count}</span>
               </td>
               <td class="text-center">
                 <span class={[

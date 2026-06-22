@@ -279,6 +279,7 @@ defmodule SanbaseWeb.Router do
     resources("/custom_plans", CustomPlanController)
 
     get("/generic/search", GenericAdminController, :search)
+    get("/generic/export", GenericAdminController, :export)
     get("/generic/show_action", GenericAdminController, :show_action)
 
     live_session :promo_trials_admin, on_mount: @admin_panel_on_mount do

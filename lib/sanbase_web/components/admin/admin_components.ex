@@ -1416,6 +1416,37 @@ defmodule SanbaseWeb.AdminComponents do
     """
   end
 
+  @doc """
+  Renders a "Save as CSV" link that exports the current resource listing,
+  carrying over the active search filters so the export respects them.
+
+  ## Attributes
+
+    - `:resource` - The name of the resource.
+    - `:search` - The current search params map (or `nil`).
+  """
+  attr(:resource, :string, required: true)
+  attr(:search, :map, default: nil)
+
+  def csv_export_button(assigns) do
+    ~H"""
+    <.link href={csv_export_href(@resource, @search)} class="btn btn-sm btn-soft whitespace-nowrap">
+      <.icon name="hero-arrow-down-tray" class="size-4" /> Save as CSV
+    </.link>
+    """
+  end
+
+  defp csv_export_href(resource, search) do
+    params = %{"resource" => resource}
+
+    params =
+      if is_map(search) and is_map(search["filters"]),
+        do: Map.put(params, "search", search),
+        else: params
+
+    "/admin/generic/export?" <> Plug.Conn.Query.encode(params)
+  end
+
   # private
 
   defp generic_admin_action_path(:show, row, resource),

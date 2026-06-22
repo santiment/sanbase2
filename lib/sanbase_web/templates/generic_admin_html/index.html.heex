@@ -9,6 +9,12 @@
         search={@table.search}
       />
     </div>
+
+    <SanbaseWeb.AdminComponents.csv_export_button
+      :if={@table.csv_export}
+      resource={@table.resource}
+      search={@table.search}
+    />
   </div>
 
   <SanbaseWeb.AdminComponents.table

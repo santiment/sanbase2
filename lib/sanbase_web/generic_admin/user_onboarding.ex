@@ -8,6 +8,7 @@ defmodule SanbaseWeb.GenericAdmin.UserOnboarding do
   def resource do
     %{
       actions: [],
+      csv_export: true,
       preloads: [:user],
       index_fields: [
         :id,

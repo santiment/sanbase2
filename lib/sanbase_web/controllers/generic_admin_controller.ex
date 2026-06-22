@@ -145,27 +145,7 @@ defmodule SanbaseWeb.GenericAdminController do
     page = to_integer(params["page"] || 0)
     page_size = to_integer(params["page_size"] || 10)
 
-    base_query = from(m in module)
-
-    # Convert map of filters to list and sort by keys to maintain order
-    filters_list =
-      filters
-      |> Map.to_list()
-      |> Enum.sort_by(&elem(&1, 0))
-      |> Enum.map(&elem(&1, 1))
-
-    query =
-      Enum.reduce(filters_list, base_query, fn %{"field" => field, "value" => value}, query ->
-        case field do
-          "id" ->
-            {id, ""} = Integer.parse(value)
-            where(query, [m], m.id == ^id)
-
-          field ->
-            condition = build_field_condition(field, value, module)
-            where(query, ^condition)
-        end
-      end)
+    query = build_query_with_filters(module, filters)
 
     sort_field = sort_field(module)
     query = order_by(query, [m], desc: field(m, ^sort_field))
@@ -189,6 +169,58 @@ defmodule SanbaseWeb.GenericAdminController do
           search: params["search"]
         })
     )
+  end
+
+  @doc """
+  Exports all rows of a resource (respecting the active search filters) as a CSV
+  download. Only available for resources that opt in with `csv_export: true` in
+  their `resource/0` config — admin auth alone does not enable bulk export.
+  """
+  def export(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
+    resource_config = resource_module_map(conn)[resource]
+
+    if resource_config && resource_config[:csv_export] do
+      module = resource_config[:module]
+      admin_module = resource_config[:admin_module]
+      preloads = resource_config[:preloads] || []
+
+      filters = get_in(params, ["search", "filters"])
+
+      query =
+        case filters do
+          filters when is_map(filters) and map_size(filters) > 0 ->
+            build_query_with_filters(module, filters)
+
+          _ ->
+            from(m in module)
+        end
+
+      sort_field = sort_field(module)
+
+      rows =
+        query
+        |> order_by([m], desc: field(m, ^sort_field))
+        |> preload(^preloads)
+        |> Repo.all()
+        |> Enum.map(
+          &GenericAdmin.call_module_function_or_default(admin_module, :before_filter, [&1], &1)
+        )
+
+      %{fields: fields, funcs: funcs, field_type_map: field_type_map} =
+        resource_params(conn, resource, :index)
+
+      conn
+      |> put_resp_content_type("text/csv")
+      |> put_resp_header(
+        "content-disposition",
+        ~s(attachment; filename="#{resource}.csv")
+      )
+      |> send_resp(200, build_csv(rows, fields, funcs, field_type_map))
+    else
+      conn
+      |> put_flash(:error, "CSV export is not enabled for #{resource}.")
+      |> redirect(to: ~p"/admin/generic?resource=#{resource}")
+    end
   end
 
   def show(%Plug.Conn{} = conn, %{"resource" => resource, "id" => id}) do
@@ -469,6 +501,7 @@ defmodule SanbaseWeb.GenericAdminController do
       resource: resource,
       resource_name: resource_name,
       singular: resource_config[:singular] || resource,
+      csv_export: resource_config[:csv_export] || false,
       fields: fields,
       funcs: funcs,
       actions: resource_config[:actions],
@@ -662,6 +695,78 @@ defmodule SanbaseWeb.GenericAdminController do
       true ->
         dynamic([m], field(m, ^field) == ^value)
     end
+  end
+
+  # Builds an Ecto query that applies the search filters (map keyed by index,
+  # each value a %{"field" => ..., "value" => ...}). Shared by `search` and `export`.
+  defp build_query_with_filters(module, filters) do
+    base_query = from(m in module)
+
+    # Convert map of filters to list and sort by keys to maintain order
+    filters_list =
+      filters
+      |> Map.to_list()
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map(&elem(&1, 1))
+
+    Enum.reduce(filters_list, base_query, fn %{"field" => field, "value" => value}, query ->
+      case field do
+        "id" ->
+          {id, ""} = Integer.parse(value)
+          where(query, [m], m.id == ^id)
+
+        field ->
+          condition = build_field_condition(field, value, module)
+          where(query, ^condition)
+      end
+    end)
+  end
+
+  defp build_csv(rows, fields, funcs, field_type_map) do
+    header = Enum.map(fields, &to_string/1)
+
+    data_rows =
+      Enum.map(rows, fn row ->
+        Enum.map(fields, &csv_cell_value(row, &1, funcs, field_type_map))
+      end)
+
+    NimbleCSV.RFC4180.dump_to_iodata([header | data_rows])
+  end
+
+  defp csv_cell_value(row, field, funcs, field_type_map) do
+    value = if funcs[field], do: funcs[field].(row), else: Map.get(row, field)
+    format_csv_value(value, Map.get(field_type_map, field))
+  end
+
+  # Mirrors the on-screen value resolution but produces plain text for CSV:
+  # value_modifier output that is HTML (e.g. a resource link) is stripped to its
+  # text content, lists are joined, and maps are JSON-encoded.
+  defp format_csv_value(value, type) do
+    cond do
+      match?({:safe, _}, value) ->
+        value |> Phoenix.HTML.safe_to_string() |> strip_html()
+
+      is_nil(value) ->
+        ""
+
+      is_list(value) ->
+        Enum.map_join(value, ", ", &to_string/1)
+
+      is_map(value) and not is_struct(value) ->
+        Jason.encode!(value)
+
+      type == :map ->
+        if is_binary(value), do: value, else: Jason.encode!(value)
+
+      true ->
+        to_string(value)
+    end
+  end
+
+  defp strip_html(string) do
+    string
+    |> String.replace(~r/<[^>]*>/, "")
+    |> String.trim()
   end
 
   defp sort_field(module) do

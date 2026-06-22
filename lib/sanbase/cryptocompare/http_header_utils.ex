@@ -89,6 +89,43 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
     end
   end
 
+  @default_reset_seconds 60
+
+  @doc ~s"""
+  How many seconds to wait before retrying after a rate limit was hit.
+
+  Looks at which windows are exhausted (0 remaining in `X-RateLimit-Remaining-All`),
+  takes the one with the longest period (the binding constraint) and returns that
+  window's reset time from `X-RateLimit-Reset-All`.
+
+  Unlike `get_biggest_ratelimited_window/1`, which returns the largest reset across
+  *all* windows (e.g. the monthly window, which can be many days away even for a
+  brief per-second burst limit), this returns the reset for the window that is
+  actually exhausted.
+
+  Returns `nil` when the response is not rate limited, and falls back to
+  `#{@default_reset_seconds}` seconds when the reset header is missing or unparseable.
+  """
+  def rate_limit_reset_seconds(resp) do
+    case rate_limited?(resp) do
+      {:error_limited, %{time_period: time_period}} ->
+        reset_seconds_for_window(resp, time_period) || @default_reset_seconds
+
+      false ->
+        nil
+    end
+  end
+
+  defp reset_seconds_for_window(resp, time_period) do
+    with {_header, value} <- get_header(resp, "X-RateLimit-Reset-All"),
+         list when is_list(list) <- parse_value_list(value),
+         %{value: reset_after} <- Enum.find(list, &(&1.time_period == time_period)) do
+      reset_after
+    else
+      _ -> nil
+    end
+  end
+
   def get_header(%HTTPoison.Response{} = resp, header) do
     Enum.find(resp.headers, &match?({^header, _}, &1))
   end

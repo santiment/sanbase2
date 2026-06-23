@@ -165,6 +165,16 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
     [
       %{
+        name: "Overview Dashboard",
+        fields: [
+          %{
+            field_name: "user overview",
+            data: "Subscription, all creations with depth, and abuse flags"
+          }
+        ],
+        actions: [:view_user_overview]
+      },
+      %{
         name: "Api Calls Limits",
         fields: [
           %{
@@ -236,6 +246,10 @@ defmodule SanbaseWeb.GenericAdmin.User do
     rescue
       _error -> 0.0
     end
+  end
+
+  def view_user_overview(conn, %{id: id}) do
+    Phoenix.Controller.redirect(conn, to: "/admin/user_overview?user_id=#{id}")
   end
 
   def reset_api_call_limits(conn, %{id: id}) do

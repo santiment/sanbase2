@@ -1,52 +1,32 @@
 defmodule SanbaseWeb.Admin.UserRankingsLive do
   @moduledoc """
   Read-only leaderboard of the heaviest content creators (team users excluded),
-  for spotting power-users and potential abuse. Sortable by any count or depth
-  metric; each row links to the per-user overview. Backed by the cached
-  single-query `SanbaseWeb.Admin.UserRankings`.
+  for spotting power-users and potential abuse. Sort by clicking any column
+  header; the active sort and page size live in the query string, so the
+  browser Back button restores the previous view and the URL is shareable.
+  Each row links to the per-user overview. Backed by the cached single-query
+  `SanbaseWeb.Admin.UserRankings`.
   """
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.Admin.UserRankings
 
-  @rank_labels [
-    total_creations: "Total creations",
-    charts: "Charts",
-    max_chart_metrics: "Deepest chart (metrics)",
-    total_chart_metrics: "Total chart metrics",
-    insights: "Insights",
-    dashboards: "Dashboards",
-    watchlists: "Watchlists",
-    screeners: "Screeners",
-    max_watchlist_assets: "Largest watchlist (assets)",
-    alerts: "Alerts",
-    queries: "SQL queries",
-    addresses: "Addresses",
-    api_keys: "API keys"
-  ]
+  @default_rank :total_creations
+  @default_limit 200
+  @limit_options [50, 100, 200, 500, 1000]
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:page_title, "User Rankings")
-     |> assign(:rank_by, :total_creations)
-     |> assign(:limit, 200)
-     |> load_rows(:total_creations, 200)}
+    # The actual rows are loaded in handle_params/3, which runs after mount on
+    # the initial render and again on every push_patch (header click / limit
+    # change), so the URL is always the single source of truth.
+    {:ok, assign(socket, :page_title, "User Rankings")}
   end
 
   @impl true
-  def handle_event("rank", %{"rank_by" => rank_by, "limit" => limit}, socket) do
-    rank_by =
-      Enum.find(UserRankings.rank_options(), :total_creations, &(Atom.to_string(&1) == rank_by))
-
-    # Clamp to the same bounds UserRankings.get/1 enforces, so @limit (used by
-    # the select and the CSV export link) matches the rows actually returned.
-    limit =
-      case Integer.parse(limit) do
-        {n, _} when n > 0 -> min(n, 1000)
-        _ -> 200
-      end
+  def handle_params(params, _uri, socket) do
+    rank_by = parse_rank_by(params["rank_by"])
+    limit = parse_limit(params["limit"])
 
     {:noreply,
      socket
@@ -54,6 +34,34 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
      |> assign(:limit, limit)
      |> load_rows(rank_by, limit)}
   end
+
+  # Changing the page-size select pushes a patch that keeps the current sort
+  # column; the header links carry the sort and keep the current limit. Both
+  # funnel through handle_params/3 above.
+  @impl true
+  def handle_event("set_limit", %{"limit" => limit}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/admin/user_rankings?rank_by=#{socket.assigns.rank_by}&limit=#{parse_limit(limit)}"
+     )}
+  end
+
+  defp parse_rank_by(nil), do: @default_rank
+
+  defp parse_rank_by(value) when is_binary(value) do
+    Enum.find(UserRankings.rank_options(), @default_rank, &(Atom.to_string(&1) == value))
+  end
+
+  defp parse_limit(value) when is_integer(value) and value > 0, do: min(value, 1000)
+
+  defp parse_limit(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {n, _} -> parse_limit(n)
+      :error -> @default_limit
+    end
+  end
+
+  defp parse_limit(_), do: @default_limit
 
   defp load_rows(socket, rank_by, limit) do
     assign_async(socket, :ranking, fn ->
@@ -66,7 +74,7 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, :rank_labels, @rank_labels)
+    assigns = assign(assigns, :limit_options, @limit_options)
 
     ~H"""
     <div class="space-y-4">
@@ -77,30 +85,25 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
         </.link>
       </div>
 
-      <form phx-change="rank" class="flex flex-wrap items-end gap-2">
-        <label class="form-control">
-          <span class="label-text text-xs">Rank by</span>
-          <select name="rank_by" class="select select-bordered select-sm">
-            <option :for={{value, label} <- @rank_labels} value={value} selected={value == @rank_by}>
-              {label}
-            </option>
-          </select>
-        </label>
-        <label class="form-control">
-          <span class="label-text text-xs">Top</span>
-          <select name="limit" class="select select-bordered select-sm">
-            <option :for={n <- [50, 100, 200, 500, 1000]} value={n} selected={n == @limit}>
-              {n}
-            </option>
-          </select>
-        </label>
+      <div class="flex flex-wrap items-end gap-2">
+        <form phx-change="set_limit">
+          <label class="form-control">
+            <span class="label-text text-xs">Top</span>
+            <select name="limit" class="select select-bordered select-sm">
+              <option :for={n <- @limit_options} value={n} selected={n == @limit}>{n}</option>
+            </select>
+          </label>
+        </form>
+        <p class="text-xs text-base-content/50 pb-1">
+          Sort by clicking a column header.
+        </p>
         <.link
           href={~p"/admin/user_rankings/export?rank_by=#{@rank_by}&limit=#{@limit}"}
-          class="btn btn-sm btn-soft"
+          class="btn btn-sm btn-soft ml-auto"
         >
           <.icon name="hero-arrow-down-tray" class="size-4" /> Save as CSV
         </.link>
-      </form>
+      </div>
 
       <.async_result :let={ranking} assign={@ranking}>
         <:loading>
@@ -125,18 +128,43 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
               <tr class="text-base-content/60">
                 <th class="text-right">#</th>
                 <th>User</th>
+                <.sort_th
+                  col={:last_active}
+                  label="Last active"
+                  rank_by={@rank_by}
+                  limit={@limit}
+                  align="left"
+                  title="Last web/app session activity (JWT refresh, ~5-min resolution). Excludes API-key traffic."
+                />
                 <th>Paid</th>
-                <th class="text-right">Total</th>
-                <th class="text-right">Charts</th>
-                <th class="text-right">Max metrics</th>
-                <th class="text-right">Insights</th>
-                <th class="text-right">Dashboards</th>
-                <th class="text-right">Watchlists</th>
-                <th class="text-right">Screeners</th>
-                <th class="text-right">Max assets</th>
-                <th class="text-right">Alerts</th>
-                <th class="text-right">Queries</th>
-                <th class="text-right">API keys</th>
+                <.sort_th col={:total_creations} label="Total" rank_by={@rank_by} limit={@limit} />
+                <.sort_th col={:charts} label="Charts" rank_by={@rank_by} limit={@limit} />
+                <.sort_th
+                  col={:max_chart_metrics}
+                  label="Max metrics"
+                  rank_by={@rank_by}
+                  limit={@limit}
+                />
+                <.sort_th
+                  col={:total_chart_metrics}
+                  label="Total metrics"
+                  rank_by={@rank_by}
+                  limit={@limit}
+                />
+                <.sort_th col={:insights} label="Insights" rank_by={@rank_by} limit={@limit} />
+                <.sort_th col={:dashboards} label="Dashboards" rank_by={@rank_by} limit={@limit} />
+                <.sort_th col={:watchlists} label="Watchlists" rank_by={@rank_by} limit={@limit} />
+                <.sort_th col={:screeners} label="Screeners" rank_by={@rank_by} limit={@limit} />
+                <.sort_th
+                  col={:max_watchlist_assets}
+                  label="Max assets"
+                  rank_by={@rank_by}
+                  limit={@limit}
+                />
+                <.sort_th col={:alerts} label="Alerts" rank_by={@rank_by} limit={@limit} />
+                <.sort_th col={:queries} label="Queries" rank_by={@rank_by} limit={@limit} />
+                <.sort_th col={:addresses} label="Addresses" rank_by={@rank_by} limit={@limit} />
+                <.sort_th col={:api_keys} label="API keys" rank_by={@rank_by} limit={@limit} />
                 <th>Flags</th>
               </tr>
             </thead>
@@ -151,6 +179,12 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
                     {row.email || row.username || "##{row.user_id}"}
                   </.link>
                 </td>
+                <td
+                  class="whitespace-nowrap text-base-content/70 tabular-nums"
+                  title={fmt_last_active_full(row.last_active)}
+                >
+                  {fmt_last_active(row.last_active)}
+                </td>
                 <td>
                   <span class={["badge badge-xs", (row.is_paid && "badge-success") || "badge-ghost"]}>
                     {(row.is_paid && "paid") || "free"}
@@ -163,6 +197,7 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
                     {row.max_chart_metrics}
                   </span>
                 </td>
+                <td class="text-right tabular-nums">{row.total_chart_metrics}</td>
                 <td class="text-right tabular-nums">{row.insights}</td>
                 <td class="text-right tabular-nums">{row.dashboards}</td>
                 <td class="text-right tabular-nums">{row.watchlists}</td>
@@ -170,6 +205,7 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
                 <td class="text-right tabular-nums">{row.max_watchlist_assets}</td>
                 <td class="text-right tabular-nums">{row.alerts}</td>
                 <td class="text-right tabular-nums">{row.queries}</td>
+                <td class="text-right tabular-nums">{row.addresses}</td>
                 <td class="text-right tabular-nums">{row.api_keys}</td>
                 <td>
                   <div class="flex flex-wrap gap-1">
@@ -184,7 +220,7 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
                 </td>
               </tr>
               <tr :if={ranking.rows == []}>
-                <td colspan="15" class="text-center text-base-content/50">No creators found</td>
+                <td colspan="18" class="text-center text-base-content/50">No creators found</td>
               </tr>
             </tbody>
           </table>
@@ -193,6 +229,45 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
     </div>
     """
   end
+
+  # ── Components ─────────────────────────────────────────────────────────────
+
+  # A sortable column header. Clicking it patches the URL to sort by `col` while
+  # keeping the current page size. The active column is bold with a solid ▼;
+  # the others show a faint ▼ to signal they are clickable.
+  attr :col, :atom, required: true
+  attr :label, :string, required: true
+  attr :rank_by, :atom, required: true
+  attr :limit, :integer, required: true
+  attr :align, :string, default: "right"
+  attr :title, :string, default: nil
+
+  defp sort_th(assigns) do
+    assigns = assign(assigns, :active, assigns.rank_by == assigns.col)
+
+    ~H"""
+    <th class={(@align == "right" && "text-right") || "text-left"}>
+      <.link
+        patch={~p"/admin/user_rankings?rank_by=#{@col}&limit=#{@limit}"}
+        title={@title}
+        class={[
+          "inline-flex items-center gap-0.5 select-none hover:text-base-content",
+          (@align == "right" && "justify-end") || "justify-start",
+          @active && "text-base-content font-semibold"
+        ]}
+      >
+        {@label}
+        <span class={["text-[0.6rem]", (@active && "opacity-100") || "opacity-30"]}>▼</span>
+      </.link>
+    </th>
+    """
+  end
+
+  defp fmt_last_active(nil), do: "—"
+  defp fmt_last_active(dt), do: Calendar.strftime(dt, "%Y-%m-%d")
+
+  defp fmt_last_active_full(nil), do: "No web/app session recorded"
+  defp fmt_last_active_full(dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M UTC")
 
   defp flag_label(:huge_chart), do: "Huge chart"
   defp flag_label(:deep_chart), do: "Deep chart"

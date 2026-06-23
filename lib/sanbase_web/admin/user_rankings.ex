@@ -6,8 +6,10 @@ defmodule SanbaseWeb.Admin.UserRankings do
   The whole ranking is one round-trip: a single raw SQL with one
   `GROUP BY user_id` aggregate per creation table (charts, insights,
   dashboards, watchlists, screeners, alerts, queries, addresses, API keys),
-  joined to `users`. No N+1. Team (`@santiment.net`) accounts are excluded in
-  SQL, and any extra configured team emails are dropped afterwards.
+  joined to `users`, plus a last web/app activity timestamp from
+  `guardian_tokens` (`last_exchanged_at`). No N+1. Team (`@santiment.net`)
+  accounts are excluded in SQL, and any extra configured team emails are
+  dropped afterwards.
 
   Results are cached for `@ttl_seconds` per `(rank_by, limit)`.
   """
@@ -35,7 +37,8 @@ defmodule SanbaseWeb.Admin.UserRankings do
     api_keys: "api_keys",
     max_chart_metrics: "max_chart_metrics",
     total_chart_metrics: "total_chart_metrics",
-    max_watchlist_assets: "max_watchlist_assets"
+    max_watchlist_assets: "max_watchlist_assets",
+    last_active: "last_active"
   }
 
   @doc "The list of valid `rank_by` atoms (for building the UI dropdown)."
@@ -114,7 +117,8 @@ defmodule SanbaseWeb.Admin.UserRankings do
          total_chart_metrics,
          max_watchlist_assets,
          total_creations,
-         is_paid
+         is_paid,
+         last_active
        ]) do
     %{
       user_id: user_id,
@@ -133,7 +137,8 @@ defmodule SanbaseWeb.Admin.UserRankings do
       total_chart_metrics: total_chart_metrics,
       max_watchlist_assets: max_watchlist_assets,
       total_creations: total_creations,
-      is_paid: is_paid
+      is_paid: is_paid,
+      last_active: last_active
     }
   end
 
@@ -192,6 +197,18 @@ defmodule SanbaseWeb.Admin.UserRankings do
     c_apikeys AS (
       SELECT user_id, COUNT(*) AS cnt FROM user_api_key_tokens GROUP BY user_id
     ),
+    -- Last web/app session activity: guardian_tokens stores refresh tokens, and
+    -- `last_exchanged_at` is bumped on each access-token exchange (at most once
+    -- per 5 min — the access-token TTL). `sub` is the user_id as text. Mirrors
+    -- SanbaseWeb.Guardian.Token.user_id_last_activity/1 (max of last_exchanged_at
+    -- and updated_at). Does NOT reflect API-key traffic.
+    c_activity AS (
+      SELECT sub::integer AS user_id,
+             MAX(GREATEST(last_exchanged_at, updated_at)) AS last_active
+      FROM guardian_tokens
+      WHERE sub ~ '^[0-9]+$'
+      GROUP BY sub
+    ),
     c_paid AS (
       SELECT DISTINCT user_id FROM subscriptions
       WHERE status IN ('active', 'past_due')
@@ -226,7 +243,8 @@ defmodule SanbaseWeb.Admin.UserRankings do
         COALESCE(wa.max_assets, 0) AS max_watchlist_assets,
         (COALESCE(c.cnt, 0) + COALESCE(i.cnt, 0) + COALESCE(d.cnt, 0) + COALESCE(w.cnt, 0)
           + COALESCE(s.cnt, 0) + COALESCE(a.cnt, 0) + COALESCE(q.cnt, 0)) AS total_creations,
-        (p.user_id IS NOT NULL) AS is_paid
+        (p.user_id IS NOT NULL) AS is_paid,
+        act.last_active AS last_active
       FROM creators cr
       JOIN users u ON u.id = cr.user_id
       LEFT JOIN c_charts c ON c.user_id = u.id
@@ -240,6 +258,7 @@ defmodule SanbaseWeb.Admin.UserRankings do
       LEFT JOIN c_apikeys ak ON ak.user_id = u.id
       LEFT JOIN c_wl_assets wa ON wa.user_id = u.id
       LEFT JOIN c_paid p ON p.user_id = u.id
+      LEFT JOIN c_activity act ON act.user_id = u.id
       WHERE u.email IS NULL
          OR (u.email NOT ILIKE '%@santiment.net' AND LOWER(u.email) <> ALL($2::text[]))
     ) ranked

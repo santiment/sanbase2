@@ -8,9 +8,9 @@ defmodule SanbaseWeb.Admin.UserRankingsController do
 
   alias SanbaseWeb.Admin.UserRankings
 
-  @headers ~w(rank user_id email username is_paid total_creations charts max_chart_metrics
-              total_chart_metrics insights dashboards watchlists screeners max_watchlist_assets
-              alerts queries addresses api_keys flags)
+  @headers ~w(rank user_id email username is_paid last_active total_creations charts
+              max_chart_metrics total_chart_metrics insights dashboards watchlists screeners
+              max_watchlist_assets alerts queries addresses api_keys flags)
 
   def export(conn, params) do
     rank_by = Map.get(params, "rank_by", "total_creations")
@@ -41,6 +41,7 @@ defmodule SanbaseWeb.Admin.UserRankingsController do
           row.email,
           row.username,
           row.is_paid,
+          row.last_active,
           row.total_creations,
           row.charts,
           row.max_chart_metrics,

@@ -63,6 +63,12 @@ defmodule SanbaseWeb.Admin.UserRankingsController do
   end
 
   defp cell(nil), do: ""
-  defp cell(value) when is_binary(value), do: value
+
+  # Guard against spreadsheet formula injection: a leading =, +, - or @ in a
+  # user-controlled value (email/username) can be executed as a formula.
+  defp cell(value) when is_binary(value) do
+    if String.starts_with?(value, ["=", "+", "-", "@"]), do: "'" <> value, else: value
+  end
+
   defp cell(value), do: to_string(value)
 end

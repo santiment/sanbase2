@@ -92,15 +92,23 @@ defmodule SanbaseWeb.Admin.UserOverview do
       max_watchlist_assets: max_watchlist_assets
     }
 
+    is_team = Sanbase.MCP.ToolInvocation.team_member?(user)
+
+    # Team users are excluded from abuse flagging (consistent with the rankings
+    # page, which excludes them entirely).
     flags =
-      Flags.compute(%{
-        charts: creations.charts.count,
-        max_chart_metrics: max_chart_metrics,
-        max_watchlist_assets: max_watchlist_assets,
-        total_creations: total_creations,
-        api_keys: creations.api_keys.count,
-        is_paid: subscription.is_paid
-      })
+      if is_team do
+        []
+      else
+        Flags.compute(%{
+          charts: creations.charts.count,
+          max_chart_metrics: max_chart_metrics,
+          max_watchlist_assets: max_watchlist_assets,
+          total_creations: total_creations,
+          api_keys: creations.api_keys.count,
+          is_paid: subscription.is_paid
+        })
+      end
 
     %{
       user: %{
@@ -108,7 +116,7 @@ defmodule SanbaseWeb.Admin.UserOverview do
         email: user.email,
         username: user.username,
         inserted_at: user.inserted_at,
-        is_team: Sanbase.MCP.ToolInvocation.team_member?(user)
+        is_team: is_team
       },
       subscription: subscription,
       creations: creations,

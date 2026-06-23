@@ -40,10 +40,12 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
     rank_by =
       Enum.find(UserRankings.rank_options(), :total_creations, &(Atom.to_string(&1) == rank_by))
 
+    # Clamp to the same bounds UserRankings.get/1 enforces, so @limit (used by
+    # the select and the CSV export link) matches the rows actually returned.
     limit =
       case Integer.parse(limit) do
-        {n, _} -> n
-        :error -> 200
+        {n, _} when n > 0 -> min(n, 1000)
+        _ -> 200
       end
 
     {:noreply,

@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Admin.UserRankings do
 
     cache_key = {__MODULE__, :get, rank_by, limit, :v1} |> Sanbase.Cache.hash()
 
-    Sanbase.Cache.get_or_store({cache_key, @ttl_seconds}, fn -> {:ok, compute(rank_by, limit)} end)
+    Sanbase.Cache.get_or_store({cache_key, @ttl_seconds}, fn -> compute(rank_by, limit) end)
   end
 
   defp normalize_rank_by(rank_by) when is_atom(rank_by) and not is_nil(rank_by) do
@@ -82,16 +82,19 @@ defmodule SanbaseWeb.Admin.UserRankings do
 
   defp compute(rank_by, limit) do
     order_column = Map.fetch!(@rank_columns, rank_by)
+    # Downcased team emails are excluded inside the SQL WHERE (bound as $2), so
+    # the LIMIT applies after exclusions and never returns a short page.
+    team_emails = Sanbase.MCP.ToolInvocation.team_emails()
 
-    {:ok, %{rows: rows}} = Repo.query(sql(order_column), [limit])
+    case Repo.query(sql(order_column), [limit, team_emails]) do
+      {:ok, %{rows: rows}} ->
+        ranked = rows |> Enum.map(&row_to_map/1) |> Enum.map(&attach_flags/1)
 
-    ranked =
-      rows
-      |> Enum.map(&row_to_map/1)
-      |> drop_extra_team_members()
-      |> Enum.map(&attach_flags/1)
+        {:ok, %{rows: ranked, rank_by: rank_by, limit: limit, computed_at: DateTime.utc_now()}}
 
-    %{rows: ranked, rank_by: rank_by, limit: limit, computed_at: DateTime.utc_now()}
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp row_to_map([
@@ -134,20 +137,13 @@ defmodule SanbaseWeb.Admin.UserRankings do
     }
   end
 
-  defp drop_extra_team_members(rows) do
-    team_emails = MapSet.new(Sanbase.MCP.ToolInvocation.team_emails())
-
-    Enum.reject(rows, fn row ->
-      is_binary(row.email) and MapSet.member?(team_emails, String.downcase(row.email))
-    end)
-  end
-
   defp attach_flags(row) do
     Map.put(row, :flags, Flags.compute(row))
   end
 
-  # `order_column` is always a value from @rank_columns (trusted); `limit` is
-  # bound as $1. Nothing user-supplied is interpolated.
+  # `order_column` is always a value from @rank_columns (trusted); `limit` and
+  # the team-email exclusion list are bound as $1/$2. Nothing user-supplied is
+  # interpolated.
   defp sql(order_column) do
     """
     WITH c_charts AS (
@@ -244,7 +240,8 @@ defmodule SanbaseWeb.Admin.UserRankings do
       LEFT JOIN c_apikeys ak ON ak.user_id = u.id
       LEFT JOIN c_wl_assets wa ON wa.user_id = u.id
       LEFT JOIN c_paid p ON p.user_id = u.id
-      WHERE u.email IS NULL OR u.email NOT ILIKE '%@santiment.net'
+      WHERE u.email IS NULL
+         OR (u.email NOT ILIKE '%@santiment.net' AND LOWER(u.email) <> ALL($2::text[]))
     ) ranked
     ORDER BY #{order_column} DESC NULLS LAST, total_creations DESC
     LIMIT $1

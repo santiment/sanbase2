@@ -23,8 +23,8 @@ defmodule SanbaseWeb.Admin.UserOverviewLive do
   @impl true
   def handle_params(%{"user_id" => user_id}, _uri, socket) do
     case Integer.parse(user_id) do
-      {id, _} -> {:noreply, load_user(socket, id)}
-      :error -> {:noreply, assign(socket, :error, "Invalid user id #{inspect(user_id)}")}
+      {id, ""} -> {:noreply, load_user(socket, id)}
+      _ -> {:noreply, assign(socket, :error, "Invalid user id #{inspect(user_id)}")}
     end
   end
 

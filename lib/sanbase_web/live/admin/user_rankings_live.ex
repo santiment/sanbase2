@@ -130,11 +130,11 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
                 <th>User</th>
                 <.sort_th
                   col={:last_active}
-                  label="Last active"
+                  label="Last active (≤4 wk)"
                   rank_by={@rank_by}
                   limit={@limit}
                   align="left"
-                  title="Last web/app session activity (JWT refresh, ~5-min resolution). Excludes API-key traffic."
+                  title="Last web/app session activity. Source (refresh tokens) is kept only ~4 weeks and dropped on logout, so a blank means no live web session in the last ~4 weeks — not necessarily inactive. Excludes API-key-only users."
                 />
                 <th>Paid</th>
                 <.sort_th col={:total_creations} label="Total" rank_by={@rank_by} limit={@limit} />
@@ -264,9 +264,21 @@ defmodule SanbaseWeb.Admin.UserRankingsLive do
   end
 
   defp fmt_last_active(nil), do: "—"
-  defp fmt_last_active(dt), do: Calendar.strftime(dt, "%Y-%m-%d")
 
-  defp fmt_last_active_full(nil), do: "No web/app session recorded"
+  defp fmt_last_active(dt) do
+    case Date.diff(Date.utc_today(), to_date(dt)) do
+      d when d <= 0 -> "today"
+      1 -> "1 day ago"
+      d -> "#{d} days ago"
+    end
+  end
+
+  defp to_date(%NaiveDateTime{} = dt), do: NaiveDateTime.to_date(dt)
+  defp to_date(%DateTime{} = dt), do: DateTime.to_date(dt)
+
+  defp fmt_last_active_full(nil),
+    do: "No live web session in the last ~4 weeks (logged out, or API-key-only)"
+
   defp fmt_last_active_full(dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M UTC")
 
   defp flag_label(:huge_chart), do: "Huge chart"

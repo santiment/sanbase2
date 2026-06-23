@@ -65,6 +65,8 @@ defmodule SanbaseWeb.GenericAdminController do
       {"Metric Registry", ~p"/admin/metric_registry"},
       {"SES Events", ~p"/admin/ses_events"},
       {"User Roles", ~p"/admin/user_roles"},
+      {"User Overview", ~p"/admin/user_overview"},
+      {"User Rankings", ~p"/admin/user_rankings"},
       {"Invoice Archives", ~p"/admin/invoices"},
       {"Broadcast Notifications Overview", ~p"/admin/notifications/broadcast/overview"}
     ]

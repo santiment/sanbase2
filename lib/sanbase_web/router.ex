@@ -294,8 +294,11 @@ defmodule SanbaseWeb.Router do
       live("/user_stats", UserStatsLive)
       live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
       live("/user_roles", Admin.UserRolesLive, :index)
+      live("/user_overview", Admin.UserOverviewLive)
+      live("/user_rankings", Admin.UserRankingsLive)
     end
 
+    get("/user_rankings/export", Admin.UserRankingsController, :export)
     get("/download_inactive_users_csv", InactiveUsersController, :download_csv)
   end
 

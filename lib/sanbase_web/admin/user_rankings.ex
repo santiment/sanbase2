@@ -203,7 +203,7 @@ defmodule SanbaseWeb.Admin.UserRankings do
     -- SanbaseWeb.Guardian.Token.user_id_last_activity/1 (max of last_exchanged_at
     -- and updated_at). Does NOT reflect API-key traffic.
     c_activity AS (
-      SELECT sub::integer AS user_id,
+      SELECT sub::bigint AS user_id,
              MAX(GREATEST(last_exchanged_at, updated_at)) AS last_active
       FROM guardian_tokens
       WHERE sub ~ '^[0-9]+$'

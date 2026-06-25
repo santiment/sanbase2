@@ -2,6 +2,7 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.AppNotifications
+  alias Sanbase.Admin.Permissions
 
   @impl true
   def mount(_params, _session, socket) do
@@ -10,6 +11,8 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
     socket =
       socket
       |> assign(:page_title, "Broadcast Notifications Overview")
+      |> assign(:can_delete, can_delete?(socket))
+      |> assign(:confirming, nil)
       |> stream(:broadcasts, broadcasts)
 
     {:ok, socket}
@@ -40,14 +43,15 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
               <th>Content</th>
               <th>Type</th>
               <th>Recipients</th>
+              <th>Read</th>
               <th>Unread</th>
               <th>Created</th>
-              <th>Actions</th>
+              <th class="sticky right-0 z-10 bg-base-200 border-l border-base-300">Actions</th>
             </tr>
           </thead>
           <tbody id="broadcasts" phx-update="stream">
-            <tr class="hidden only:block">
-              <td colspan="8" class="px-4 py-8 text-center text-base-content/40">
+            <tr id="broadcasts-empty" class="hidden only:block">
+              <td colspan="9" class="px-4 py-8 text-center text-base-content/40">
                 No broadcast notifications found. Use the "New Broadcast" button to create one.
               </td>
             </tr>
@@ -69,6 +73,9 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
                 <span class="font-semibold">{b.recipients_count}</span>
               </td>
               <td class="text-center">
+                <span class="font-semibold text-success">{b.read_count}</span>
+              </td>
+              <td class="text-center">
                 <span class={[
                   "font-semibold",
                   if(b.unread_count > 0, do: "text-warning", else: "text-success")
@@ -77,17 +84,114 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
                 </span>
               </td>
               <td class="whitespace-nowrap text-xs">{format_datetime(b.inserted_at)}</td>
-              <td>
-                <.link href={recipients_url(b.id)} class="btn btn-xs btn-soft btn-info">
-                  <.icon name="hero-users" class="size-3.5" /> View Recipients
-                </.link>
+              <td class="sticky right-0 z-10 bg-base-100 border-l border-base-300">
+                <div class="flex gap-2">
+                  <.link href={recipients_url(b.id)} class="btn btn-xs btn-soft btn-info">
+                    <.icon name="hero-users" class="size-3.5" /> View Recipients
+                  </.link>
+                  <button
+                    :if={@can_delete}
+                    type="button"
+                    phx-click="request_delete"
+                    phx-value-id={b.id}
+                    phx-value-title={b.title}
+                    phx-value-recipients={b.recipients_count}
+                    class="btn btn-xs btn-soft btn-error"
+                  >
+                    <.icon name="hero-trash" class="size-3.5" /> Delete
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <.modal
+        :if={@confirming}
+        id="confirm-delete-broadcast"
+        show
+        on_cancel={JS.push("cancel_delete")}
+      >
+        <h3 class="text-lg font-semibold">Delete this broadcast?</h3>
+        <p class="py-4 text-sm">
+          <span class="font-medium">"{@confirming.title}"</span>
+          will immediately disappear from all
+          <span class="font-semibold">{@confirming.recipients}</span>
+          recipients' notifications. This can be undone by an engineer.
+        </p>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn btn-sm btn-ghost" phx-click={JS.push("cancel_delete")}>
+            Cancel
+          </button>
+          <button type="button" class="btn btn-sm btn-error" phx-click="confirm_delete">
+            <.icon name="hero-trash" class="size-4" /> Delete broadcast
+          </button>
+        </div>
+      </.modal>
     </div>
     """
+  end
+
+  @impl true
+  def handle_event("request_delete", %{"id" => id} = params, socket) do
+    if can_delete?(socket) do
+      confirming = %{
+        id: String.to_integer(id),
+        title: params["title"] || "",
+        recipients: params["recipients"] || "0"
+      }
+
+      {:noreply, assign(socket, :confirming, confirming)}
+    else
+      {:noreply, deny_delete(socket)}
+    end
+  end
+
+  def handle_event("cancel_delete", _params, socket) do
+    {:noreply, assign(socket, :confirming, nil)}
+  end
+
+  def handle_event("confirm_delete", _params, socket) do
+    with true <- can_delete?(socket),
+         %{id: id} <- socket.assigns.confirming,
+         {:ok, _notification} <- AppNotifications.soft_delete_broadcast_notification(id) do
+      {:noreply,
+       socket
+       |> assign(:confirming, nil)
+       |> put_flash(:info, "Broadcast deleted. It no longer appears for any user.")
+       |> stream_delete_by_dom_id(:broadcasts, "broadcasts-#{id}")}
+    else
+      false ->
+        {:noreply, deny_delete(socket)}
+
+      nil ->
+        {:noreply, assign(socket, :confirming, nil)}
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> assign(:confirming, nil)
+         |> put_flash(:error, "Broadcast not found.")}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> assign(:confirming, nil)
+         |> put_flash(:error, "Could not delete broadcast. Please try again.")}
+    end
+  end
+
+  # Editor and Owner can delete; Viewer cannot. Mirrors the generic admin's
+  # delete gating (Sanbase.Admin.Permissions.can?(:delete, ...)).
+  defp can_delete?(socket) do
+    Permissions.can?(:delete, roles: socket.assigns[:current_user_role_names] || [])
+  end
+
+  defp deny_delete(socket) do
+    socket
+    |> assign(:confirming, nil)
+    |> put_flash(:error, "You don't have permission to delete broadcasts.")
   end
 
   defp recipients_url(notification_id) do

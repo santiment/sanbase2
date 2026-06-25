@@ -330,6 +330,66 @@ defmodule Sanbase.AppNotificationsTest do
     end
   end
 
+  describe "soft_delete_broadcast_notification/1" do
+    test "hides the broadcast from the admin overview and from recipients" do
+      user = insert(:user)
+
+      {:ok, %{notification: notification, recipients_count: count}} =
+        AppNotifications.create_broadcast_notification(%{
+          type: "santiment_broadcast_new_features",
+          title: "New feature",
+          content: "We shipped something new."
+        })
+
+      assert count >= 1
+
+      # Visible before deletion: in the admin overview and in the recipient's list
+      assert Enum.any?(
+               AppNotifications.list_broadcast_notifications(),
+               &(&1.id == notification.id)
+             )
+
+      assert Enum.any?(
+               AppNotifications.list_notifications_for_user(user.id),
+               &(&1.id == notification.id)
+             )
+
+      assert {:ok, deleted} = AppNotifications.soft_delete_broadcast_notification(notification.id)
+      assert deleted.is_deleted == true
+
+      # Gone from the admin overview
+      refute Enum.any?(
+               AppNotifications.list_broadcast_notifications(),
+               &(&1.id == notification.id)
+             )
+
+      # Gone from the recipient's notifications
+      refute Enum.any?(
+               AppNotifications.list_notifications_for_user(user.id),
+               &(&1.id == notification.id)
+             )
+    end
+
+    test "returns :not_found for a missing notification" do
+      assert {:error, :not_found} = AppNotifications.soft_delete_broadcast_notification(-1)
+    end
+
+    test "returns :not_found for a non-broadcast notification" do
+      author = insert(:user)
+
+      {:ok, notification} =
+        AppNotifications.create_notification(%{
+          type: "create_watchlist",
+          user_id: author.id,
+          entity_type: "watchlist",
+          entity_id: 1
+        })
+
+      assert {:error, :not_found} =
+               AppNotifications.soft_delete_broadcast_notification(notification.id)
+    end
+  end
+
   describe "get_notification_for_user/2" do
     setup do
       follower = insert(:user)
@@ -1386,11 +1446,42 @@ defmodule Sanbase.AppNotificationsTest do
                %{
                  id: notification_id,
                  recipients_count: 0,
+                 read_count: 0,
                  unread_count: 0
                }
              ] = AppNotifications.list_broadcast_notifications()
 
       assert notification_id == notification.id
+    end
+
+    test "reports read and unread counts that stay consistent" do
+      user = insert(:user)
+
+      {:ok, %{notification: notification, recipients_count: recipients}} =
+        AppNotifications.create_broadcast_notification(%{
+          type: "santiment_broadcast_new_features",
+          title: "New feature",
+          content: "We shipped something new."
+        })
+
+      assert recipients >= 1
+
+      entry =
+        AppNotifications.list_broadcast_notifications() |> Enum.find(&(&1.id == notification.id))
+
+      assert entry.recipients_count == recipients
+      assert entry.read_count == 0
+      assert entry.unread_count == recipients
+      assert entry.read_count + entry.unread_count == entry.recipients_count
+
+      {:ok, :updated} = AppNotifications.set_read_status(user.id, notification.id, true)
+
+      entry =
+        AppNotifications.list_broadcast_notifications() |> Enum.find(&(&1.id == notification.id))
+
+      assert entry.read_count == 1
+      assert entry.unread_count == recipients - 1
+      assert entry.read_count + entry.unread_count == entry.recipients_count
     end
   end
 end

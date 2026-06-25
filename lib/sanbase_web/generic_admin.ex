@@ -103,7 +103,8 @@ defmodule SanbaseWeb.GenericAdmin do
           index_fields: :all,
           new_fields: [],
           edit_fields: [],
-          funcs: %{}
+          funcs: %{},
+          csv_export: false
         }
         |> Map.merge(call_module_function_or_default(admin_module, :resource, [], %{}))
         |> Map.update(:actions, [], fn actions ->

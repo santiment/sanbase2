@@ -81,7 +81,12 @@ defmodule Sanbase.Cryptocompare.Handler do
         process_function.(http_response.body)
         |> maybe_remove_known_timestamps(timestamps, opts)
 
-      {:error_limited, %{value: rate_limited_seconds}} ->
+      {:error_limited, _info} ->
+        rate_limited_seconds =
+          http_response
+          |> HTTPHeaderUtils.rate_limit_reset_seconds()
+          |> capped_reset_seconds()
+
         do_handle_rate_limit(rate_limited_seconds, opts)
     end
   end
@@ -176,6 +181,26 @@ defmodule Sanbase.Cryptocompare.Handler do
   end
 
   defp maybe_remove_known_timestamps({:error, error}, _timestamps, _opts), do: {:error, error}
+
+  # Cryptocompare's monthly window can report a reset that is many days away.
+  # Pausing the whole queue for that long silently stops ingestion (which is
+  # exactly what caused funding rate data to go missing). Cap the pause and let
+  # the queue retry; if the limit is still hit it will simply pause again, and
+  # the long reset is surfaced in the logs.
+  @max_rate_limit_pause_seconds 3600
+
+  defp capped_reset_seconds(seconds)
+       when is_integer(seconds) and seconds > @max_rate_limit_pause_seconds do
+    Logger.warning(
+      "[Cryptocompare] Rate limit reset window is #{seconds}s. Capping pause to " <>
+        "#{@max_rate_limit_pause_seconds}s and will retry."
+    )
+
+    @max_rate_limit_pause_seconds
+  end
+
+  defp capped_reset_seconds(seconds) when is_integer(seconds) and seconds >= 0, do: seconds
+  defp capped_reset_seconds(_), do: 60
 
   defp do_handle_rate_limit(rate_limited_seconds, opts) do
     module = Keyword.fetch!(opts, :module)

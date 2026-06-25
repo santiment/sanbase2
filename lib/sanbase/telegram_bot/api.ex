@@ -33,7 +33,7 @@ defmodule Sanbase.TelegramBot.Api do
 
     params = if offset, do: Map.put(params, :offset, offset), else: params
 
-    request("getUpdates", params, recv_timeout: (timeout_seconds + 10) * 1000)
+    request("getUpdates", params, receive_timeout: (timeout_seconds + 10) * 1000)
   end
 
   def send_message(chat_id, text, opts \\ []) do
@@ -71,17 +71,19 @@ defmodule Sanbase.TelegramBot.Api do
 
   # Private functions
 
-  defp request(method, params, http_opts \\ []) do
+  defp request(method, params, req_opts \\ []) do
     url = "#{@base_url}/bot#{token()}/#{method}"
-    opts = Keyword.merge([timeout: 30_000, recv_timeout: 30_000], http_opts)
+    opts = Keyword.merge([json: params, receive_timeout: 30_000], req_opts)
 
-    HTTPoison.post(url, Jason.encode!(params), [{"Content-Type", "application/json"}], opts)
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, Jason.decode!(body)["result"]}
+    case Req.post(url, opts) do
+      {:ok, %{status: 200, body: body}} ->
+        {:ok, body["result"]}
 
-      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
-        Logger.warning("[TelegramQABot] #{method} failed status=#{status_code} body=#{body}")
+      {:ok, %{status: status_code, body: body}} ->
+        Logger.warning(
+          "[TelegramQABot] #{method} failed status=#{status_code} body=#{inspect(body)}"
+        )
+
         {:error, {:http_error, status_code, body}}
 
       {:error, error} ->

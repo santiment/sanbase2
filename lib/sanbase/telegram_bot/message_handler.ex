@@ -307,7 +307,8 @@ defmodule Sanbase.TelegramBot.MessageHandler do
       thread_id: conversation_id,
       thread_name: nil,
       msg_id: message["message_id"],
-      user_is_pro: false
+      user_is_pro: false,
+      platform: "telegram"
     }
   end
 

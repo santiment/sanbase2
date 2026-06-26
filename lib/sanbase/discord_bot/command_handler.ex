@@ -285,7 +285,8 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       thread_id: to_string(thread.id),
       thread_name: thread.name,
       msg_id: msg.id,
-      user_is_pro: user_is_pro
+      user_is_pro: user_is_pro,
+      platform: "discord"
     }
   end
 

@@ -438,7 +438,14 @@ defmodule Sanbase.Accounts.User do
   end
 
   def by_selector(selector, opts \\ [])
-  def by_selector(%{id: id}, opts), do: by_id(Sanbase.Math.to_integer(id), opts)
+
+  def by_selector(%{id: id}, opts) do
+    case Sanbase.Math.to_integer(id) do
+      user_id when is_integer(user_id) -> by_id(user_id, opts)
+      _ -> {:error, "Invalid user id provided in selector: #{inspect(id)}"}
+    end
+  end
+
   def by_selector(%{email: email}, opts), do: by_email(email, opts)
   def by_selector(%{username: username}, opts), do: by_username(username, opts)
   def by_selector(%{twitter_id: twitter_id}, opts), do: by_twitter_id(twitter_id, opts)

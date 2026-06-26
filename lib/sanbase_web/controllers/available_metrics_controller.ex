@@ -15,6 +15,14 @@ defmodule SanbaseWeb.AvailableMetricsController do
     |> send_resp(200, csv_content(filter_json))
   end
 
+  # The UI always sends a "filter" param (the download link serializes the
+  # current filter, defaulting to "{}"). A request without it can only be a
+  # direct/bot hit, so return 400 instead of raising Phoenix.ActionClauseError
+  # or doing the work of building a full CSV.
+  def export(conn, _params) do
+    send_resp(conn, 400, "Missing required \"filter\" parameter")
+  end
+
   defp csv_content(filter_json) do
     filter = Jason.decode!(filter_json)
     metrics_map = Sanbase.AvailableMetrics.get_metrics_map()

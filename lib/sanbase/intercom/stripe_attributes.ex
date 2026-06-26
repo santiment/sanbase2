@@ -82,7 +82,7 @@ defmodule Sanbase.Intercom.StripeAttributes do
   def users_with_trialing_subscriptions do
     from(
       s in Subscription,
-      where: s.status == "trialing",
+      where: s.status == :trialing,
       select: s.user_id
     )
     |> Repo.all()

@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Endpoint do
   @websocket_allowed_origins [
     "//*.santiment.net",
     "//*.santiment.network",
-    "//*.sanr.app",
+    "//*.scorearena.ai",
     "//*.sanitize.page",
     "//*.sanbase-admin.stage.san",
     "//sanbase-admin.stage.san",

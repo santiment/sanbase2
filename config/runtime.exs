@@ -119,7 +119,7 @@ if config_env() == :prod do
     check_origin: [
       "//*.santiment.net",
       "//*.santiment.network",
-      "//*.sanr.app",
+      "//*.scorearena.ai",
       "//*.sanitize.page",
       "//*.sanbase-admin.stage.san",
       "//*.sanbase-admin.production.san"

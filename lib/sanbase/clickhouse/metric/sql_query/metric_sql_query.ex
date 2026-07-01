@@ -46,15 +46,19 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {fixed_parameters_str, params} =
       maybe_get_fixed_parameters(metric, version, selector, params, opts ++ [trailing_and: true])
 
+    {computed_at_inner, computed_at_outer} = computed_at_columns(opts)
+
     sql =
       """
       SELECT
         #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
         #{aggregation(aggregation, "value", "dt")}
+        #{computed_at_outer}
       FROM(
         SELECT
           dt,
           argMax(value, computed_at) AS value
+          #{computed_at_inner}
         FROM {{table:inline}}
         WHERE
           #{finalized_data_filter_str(params.table, only_finalized_data)}
@@ -74,6 +78,29 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       """
 
     Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  # When `include_computed_at` is set, return the extra SELECT fragments that
+  # carry the latest `computed_at` up through the inner (per-dt) subquery and the
+  # outer (per-interval) aggregation. Both start with a comma so they can be
+  # appended after the value column(s). When unset, both are empty strings so the
+  # generated SQL is byte-identical to before.
+  #
+  # The inner aggregate is aliased `computed_at2` (not `computed_at`) on purpose:
+  # aliasing it `computed_at` would shadow the raw `computed_at` column that the
+  # sibling `argMax(value, computed_at)` uses as its tiebreaker, making ClickHouse
+  # resolve that argument to the aggregate alias and raise ILLEGAL_AGGREGATION
+  # ("aggregate function found inside another aggregate function").
+  # Each fragment goes on its own line in the query and carries a leading comma,
+  # so that when the feature is off (empty strings) no dangling comma is left
+  # behind and the generated SQL stays valid.
+  defp computed_at_columns(opts) do
+    if Keyword.get(opts, :include_computed_at, false) do
+      {", max(computed_at) AS computed_at2",
+       ", toUnixTimestamp(max(computed_at2)) AS computed_at"}
+    else
+      {"", ""}
+    end
   end
 
   defp maybe_get_fixed_parameters(_metric, _version, selector, params, _opts)
@@ -161,16 +188,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
     {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
 
+    {computed_at_inner, computed_at_outer} = computed_at_columns(opts)
+
     sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
       dictGetString('asset_metadata_dict', 'name', asset_id) AS slug,
       #{aggregation(aggregation, "value2", "dt")} AS value
+      #{computed_at_outer}
     FROM(
       SELECT
         asset_id,
         dt,
         argMax(value, computed_at) AS value2
+        #{computed_at_inner}
       FROM {{table:inline}}
       WHERE
         #{finalized_data_filter_str(params.table, only_finalized_data)}

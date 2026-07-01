@@ -604,15 +604,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # only when the client selects the `computedAt` field, so nothing to do there.
   # The `*Json` variants serialize the whole map, so `computed_at` would leak into
   # every payload - drop it unless the caller opted in by naming it in `fields`
-  # (in which case `maybe_rename_fields/3` already projected the keys explicitly).
-  defp maybe_drop_computed_at(result, false = _json_variant?, _args), do: result
+  # (when opted in, `maybe_rename_fields/3` has emitted it under the caller's key).
+  defp maybe_drop_computed_at(result, json_variant?, args) do
+    if json_variant? and not fields_include_computed_at?(args) do
+      Enum.map(result, &drop_computed_at/1)
+    else
+      result
+    end
+  end
 
-  defp maybe_drop_computed_at(result, true = _json_variant?, %{fields: map})
-       when is_map(map) and map_size(map) > 0,
-       do: result
+  defp fields_include_computed_at?(%{fields: fields}) when is_map(fields),
+    do: Map.has_key?(fields, :computed_at)
 
-  defp maybe_drop_computed_at(result, true = _json_variant?, _args),
-    do: Enum.map(result, &drop_computed_at/1)
+  defp fields_include_computed_at?(_args), do: false
 
   defp drop_computed_at(%{data: data} = point) when is_list(data),
     do: %{point | data: Enum.map(data, &Map.delete(&1, :computed_at))}

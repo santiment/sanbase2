@@ -43,16 +43,26 @@ defmodule Sanbase.MCP.DataCatalog do
   end
 
   def available_metrics() do
+    # A curated metric can be unavailable in a given environment (registry
+    # mismatch, deprecation). Skip those rather than crashing the whole catalog —
+    # otherwise a single missing metric 500s every MCP metric tool.
     @available_metrics
-    |> Enum.map(fn m ->
-      {:ok, metadata} = Sanbase.Metric.metadata(m.name)
-      # metatata.docs is a list of structs and structs cannot be serialized to JSON
-      docs = metadata.docs |> Enum.map(fn d -> %{url: d.link} end)
+    |> Enum.flat_map(fn m ->
+      case Sanbase.Metric.metadata(m.name) do
+        {:ok, metadata} ->
+          # metadata.docs is a list of structs and structs cannot be serialized to JSON
+          docs = metadata.docs |> Enum.map(fn d -> %{url: d.link} end)
 
-      m
-      |> Map.put(:documentation_urls, docs)
-      |> Map.put(:min_interval, metadata.min_interval)
-      |> Map.put(:default_aggregation, metadata.default_aggregation)
+          [
+            m
+            |> Map.put(:documentation_urls, docs)
+            |> Map.put(:min_interval, metadata.min_interval)
+            |> Map.put(:default_aggregation, metadata.default_aggregation)
+          ]
+
+        _error ->
+          []
+      end
     end)
   end
 

@@ -8,7 +8,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
-  alias Sanbase.MCP.{DataCatalog, Utils}
+  alias Sanbase.MCP.{DataCatalog, ToolError, Utils}
 
   @impl true
   def annotations do
@@ -145,11 +145,13 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     )
   end
 
+  # Validation failures are tagged [permanent] (ToolError): the same arguments can
+  # never succeed, so agent clients fix the arguments or move on instead of retrying.
   defp validate_metric(metric) do
     if DataCatalog.valid_metric?(metric) do
       :ok
     else
-      {:error, DataCatalog.metric_not_found_error(metric)}
+      {:error, ToolError.permanent(DataCatalog.metric_not_found_error(metric))}
     end
   end
 
@@ -162,17 +164,22 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
       _ ->
         {:error,
-         "Metric '#{metric}' does not support multiple slugs. Pass a single slug instead."}
+         ToolError.permanent(
+           "Metric '#{metric}' does not support multiple slugs. Pass a single slug instead."
+         )}
     end
   end
 
   defp validate_slugs([]) do
     {:error,
-     "The provided list of slugs is empty. Provide between 1 and #{@slugs_per_call_limit} slugs."}
+     ToolError.permanent(
+       "The provided list of slugs is empty. Provide between 1 and #{@slugs_per_call_limit} slugs."
+     )}
   end
 
   defp validate_slugs(slugs) when is_list(slugs) and length(slugs) > @slugs_per_call_limit do
-    {:error, "The list of slugs can contain at most #{@slugs_per_call_limit} slugs"}
+    {:error,
+     ToolError.permanent("The list of slugs can contain at most #{@slugs_per_call_limit} slugs")}
   end
 
   defp validate_slugs(slugs) when is_list(slugs) do
@@ -180,7 +187,12 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
       if DataCatalog.valid_slug?(slug) do
         {:cont, :ok}
       else
-        {:halt, {:error, "Slug '#{slug}' mistyped or not supported."}}
+        {:halt,
+         {:error,
+          ToolError.permanent(
+            "Slug '#{slug}' mistyped or not supported. Use the " <>
+              "metrics_and_assets_discovery_tool to resolve valid asset slugs."
+          )}}
       end
     end)
   end

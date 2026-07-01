@@ -6,11 +6,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
 
   @metric "daily_active_addresses"
 
-  # `computed_at` is ALWAYS selected in the generated ClickHouse SQL (so the rows
-  # returned by ClickHouse always carry it as the last column). Whether it is
-  # exposed is decided at the API layer:
+  # `computed_at` is ALWAYS selected in the generated ClickHouse SQL. Whether it
+  # is exposed is decided at the API layer:
   #   * typed fields  -> returned only when the client selects `computedAt`
-  #   * *Json fields  -> returned only when named in the `fields` argument
+  #   * *Json fields  -> returned only when `includeComputedAt: true` is passed
+  #                      (`fields` optionally renames the key; naming it there
+  #                      without the flag is an error)
 
   setup do
     %{user: user} =
@@ -31,18 +32,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
     ]
   end
 
-  describe "timeseriesData" do
+  describe "timeseriesData (typed)" do
     test "exposes computedAt when the field is selected", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
 
-      dt1 = ~U[2019-01-01 00:00:00Z]
-      dt2 = ~U[2019-01-02 00:00:00Z]
-      computed_at1 = ~U[2019-01-05 00:00:00Z]
-      computed_at2 = ~U[2019-01-06 00:00:00Z]
-
       rows = [
-        [DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)],
-        [DateTime.to_unix(dt2), 200.0, DateTime.to_unix(computed_at2)]
+        row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z]),
+        row(~U[2019-01-02 00:00:00Z], 200.0, ~U[2019-01-06 00:00:00Z])
       ]
 
       query = """
@@ -86,15 +82,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
          context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
 
-      dt1 = ~U[2019-01-01 00:00:00Z]
-      dt2 = ~U[2019-01-02 00:00:00Z]
-      computed_at1 = ~U[2019-01-05 00:00:00Z]
-      computed_at2 = ~U[2019-01-06 00:00:00Z]
-
-      # computed_at is always fetched, so ClickHouse returns the extra column
       rows = [
-        [DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)],
-        [DateTime.to_unix(dt2), 200.0, DateTime.to_unix(computed_at2)]
+        row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z]),
+        row(~U[2019-01-02 00:00:00Z], 200.0, ~U[2019-01-06 00:00:00Z])
       ]
 
       query = """
@@ -116,66 +106,108 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
           |> post("/graphql", query_skeleton(query, "getMetric"))
           |> json_response(200)
 
-        # GraphQL field selection filters computedAt out of the typed response.
         assert metric_data["timeseriesData"] == [
                  %{"datetime" => "2019-01-01T00:00:00Z", "value" => 100.0},
                  %{"datetime" => "2019-01-02T00:00:00Z", "value" => 200.0}
                ]
 
-        # ...but it is still always part of the query.
         assert Enum.join(metric_data["executedClickhouseSql"], "\n") =~ "AS computed_at"
       end)
     end
   end
 
   describe "timeseriesDataJson" do
-    test "does not leak computedAt when fields are not given", context do
+    test "defaults to datetime + value when nothing is selected", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+      rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
 
-      dt1 = ~U[2019-01-01 00:00:00Z]
-      computed_at1 = ~U[2019-01-05 00:00:00Z]
-      rows = [[DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)]]
+      result =
+        run_json(conn, json_query(slug, from, to, interval, []), rows, "timeseriesDataJson")
 
-      query = json_query(slug, from, to, interval, nil)
-
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          conn
-          |> post("/graphql", query_skeleton(query, "getMetric"))
-          |> json_response(200)
-          |> get_in(["data", "getMetric", "timeseriesDataJson"])
-
-        assert result == [%{"datetime" => "2019-01-01T00:00:00Z", "value" => 100.0}]
-      end)
+      assert result == [%{"datetime" => "2019-01-01T00:00:00Z", "value" => 100.0}]
     end
 
-    test "includes computedAt when named in the fields argument", context do
+    test "fields acts as a selector - returns only the named fields", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+      rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
 
-      dt1 = ~U[2019-01-01 00:00:00Z]
-      computed_at1 = ~U[2019-01-05 00:00:00Z]
-      rows = [[DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)]]
+      query = json_query(slug, from, to, interval, fields: ~s|{datetime: "d"}|)
+      result = run_json(conn, query, rows, "timeseriesDataJson")
+
+      # value is NOT included - only the named `datetime`
+      assert result == [%{"d" => "2019-01-01T00:00:00Z"}]
+    end
+
+    test "includeComputedAt appends computedAt to the default fields", context do
+      %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+      rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
+
+      query = json_query(slug, from, to, interval, include_computed_at: true)
+      result = run_json(conn, query, rows, "timeseriesDataJson")
+
+      assert result == [
+               %{
+                 "datetime" => "2019-01-01T00:00:00Z",
+                 "value" => 100.0,
+                 "computedAt" => "2019-01-05T00:00:00Z"
+               }
+             ]
+    end
+
+    test "includeComputedAt composes with a fields selection", context do
+      %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+      rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
 
       query =
-        json_query(slug, from, to, interval, ~s|{datetime: "d", value: "v", computedAt: "c"}|)
+        json_query(slug, from, to, interval,
+          fields: ~s|{datetime: "d"}|,
+          include_computed_at: true
+        )
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
+      result = run_json(conn, query, rows, "timeseriesDataJson")
+
+      # only the named `datetime`, plus computedAt - no value
+      assert result == [%{"d" => "2019-01-01T00:00:00Z", "computedAt" => "2019-01-05T00:00:00Z"}]
+    end
+
+    test "includeComputedAt renames computedAt when it is also named in fields", context do
+      %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+      rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
+
+      query =
+        json_query(slug, from, to, interval,
+          fields: ~s|{datetime: "d", value: "v", computedAt: "c"}|,
+          include_computed_at: true
+        )
+
+      result = run_json(conn, query, rows, "timeseriesDataJson")
+
+      # computedAt returned under the custom "c" key - no default "computedAt" key
+      assert result == [
+               %{"d" => "2019-01-01T00:00:00Z", "v" => 100.0, "c" => "2019-01-05T00:00:00Z"}
+             ]
+    end
+
+    test "naming computedAt in fields without includeComputedAt returns an error", context do
+      %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+      rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
+
+      query = json_query(slug, from, to, interval, fields: ~s|{datetime: "d", computedAt: "c"}|)
+
+      error_msg =
+        Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+        |> Sanbase.Mock.run_with_mocks(fn ->
           conn
           |> post("/graphql", query_skeleton(query, "getMetric"))
           |> json_response(200)
-          |> get_in(["data", "getMetric", "timeseriesDataJson"])
+          |> get_in(["errors", Access.at(0), "message"])
+        end)
 
-        assert result == [
-                 %{"d" => "2019-01-01T00:00:00Z", "v" => 100.0, "c" => "2019-01-05T00:00:00Z"}
-               ]
-      end)
+      assert error_msg =~ "includeComputedAt"
     end
   end
 
-  describe "timeseriesDataPerSlug" do
+  describe "timeseriesDataPerSlug (typed)" do
     test "exposes computedAt inside each data element when selected", context do
       %{conn: conn, from: from, to: to, project1: p1, project2: p2} = context
 
@@ -183,8 +215,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
       computed_at = ~U[2019-01-05 00:00:00Z]
 
       rows = [
-        [DateTime.to_unix(dt1), p1.slug, 400.0, DateTime.to_unix(computed_at)],
-        [DateTime.to_unix(dt1), p2.slug, 100.0, DateTime.to_unix(computed_at)]
+        per_slug_row(dt1, p1.slug, 400.0, computed_at),
+        per_slug_row(dt1, p2.slug, 100.0, computed_at)
       ]
 
       query = """
@@ -223,60 +255,67 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
   end
 
   describe "timeseriesDataPerSlugJson" do
-    test "does not leak computedAt when fields are not given", context do
+    test "does not include computedAt by default", context do
       %{conn: conn, from: from, to: to, project1: p1, project2: p2} = context
+      rows = [per_slug_row(~U[2019-01-01 00:00:00Z], p1.slug, 400, ~U[2019-01-05 00:00:00Z])]
 
-      dt1 = ~U[2019-01-01 00:00:00Z]
-      computed_at = ~U[2019-01-05 00:00:00Z]
-      rows = [[DateTime.to_unix(dt1), p1.slug, 400, DateTime.to_unix(computed_at)]]
+      query = per_slug_json_query(p1, p2, from, to, [])
+      result = run_json(conn, query, rows, "timeseriesDataPerSlugJson")
 
-      query = per_slug_json_query(p1, p2, from, to, nil)
-
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          conn
-          |> post("/graphql", query_skeleton(query, "getMetric"))
-          |> json_response(200)
-          |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
-
-        assert %{"data" => data} = result |> Enum.at(0)
-        assert %{"slug" => p1.slug, "value" => 400} in data
-        refute Enum.any?(data, &Map.has_key?(&1, "computedAt"))
-      end)
+      assert %{"data" => data} = result |> Enum.at(0)
+      assert %{"slug" => p1.slug, "value" => 400} in data
+      refute Enum.any?(data, &Map.has_key?(&1, "computedAt"))
     end
 
-    test "includes computedAt when named in the fields argument", context do
+    test "includeComputedAt appends computedAt inside each data element", context do
       %{conn: conn, from: from, to: to, project1: p1, project2: p2} = context
+      rows = [per_slug_row(~U[2019-01-01 00:00:00Z], p1.slug, 400, ~U[2019-01-05 00:00:00Z])]
 
-      dt1 = ~U[2019-01-01 00:00:00Z]
-      computed_at = ~U[2019-01-05 00:00:00Z]
-      rows = [[DateTime.to_unix(dt1), p1.slug, 400, DateTime.to_unix(computed_at)]]
+      query = per_slug_json_query(p1, p2, from, to, include_computed_at: true)
+      result = run_json(conn, query, rows, "timeseriesDataPerSlugJson")
+
+      assert %{"data" => data} = result |> Enum.at(0)
+      assert %{"slug" => p1.slug, "value" => 400, "computedAt" => "2019-01-05T00:00:00Z"} in data
+    end
+
+    test "includeComputedAt composes with a fields selection", context do
+      %{conn: conn, from: from, to: to, project1: p1, project2: p2} = context
+      rows = [per_slug_row(~U[2019-01-01 00:00:00Z], p1.slug, 400, ~U[2019-01-05 00:00:00Z])]
 
       query =
-        per_slug_json_query(
-          p1,
-          p2,
-          from,
-          to,
-          ~s|{data: "d", slug: "s", value: "v", computedAt: "c"}|
+        per_slug_json_query(p1, p2, from, to,
+          fields: ~s|{data: "d", slug: "s", value: "v"}|,
+          include_computed_at: true
         )
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          conn
-          |> post("/graphql", query_skeleton(query, "getMetric"))
-          |> json_response(200)
-          |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
+      result = run_json(conn, query, rows, "timeseriesDataPerSlugJson")
 
-        assert %{"d" => data} = result |> Enum.at(0)
-        assert %{"s" => p1.slug, "v" => 400, "c" => "2019-01-05T00:00:00Z"} in data
-      end)
+      # computedAt keeps its fixed key even though slug/value were renamed
+      assert %{"d" => data} = result |> Enum.at(0)
+      assert %{"s" => p1.slug, "v" => 400, "computedAt" => "2019-01-05T00:00:00Z"} in data
     end
   end
 
-  defp json_query(slug, from, to, interval, fields) do
+  defp row(dt, value, computed_at),
+    do: [DateTime.to_unix(dt), value, DateTime.to_unix(computed_at)]
+
+  defp per_slug_row(dt, slug, value, computed_at),
+    do: [DateTime.to_unix(dt), slug, value, DateTime.to_unix(computed_at)]
+
+  defp run_json(conn, query, rows, key) do
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      conn
+      |> post("/graphql", query_skeleton(query, "getMetric"))
+      |> json_response(200)
+      |> get_in(["data", "getMetric", key])
+    end)
+  end
+
+  defp json_query(slug, from, to, interval, opts) do
+    fields = Keyword.get(opts, :fields)
+    include_computed_at? = Keyword.get(opts, :include_computed_at, false)
+
     """
     {
       getMetric(metric: "#{@metric}"){
@@ -286,20 +325,25 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
           to: "#{to}"
           interval: "#{interval}"
           #{if fields, do: "fields: #{fields}"}
+          includeComputedAt: #{include_computed_at?}
         )
       }
     }
     """
   end
 
-  defp per_slug_json_query(p1, p2, from, to, fields) do
+  defp per_slug_json_query(p1, p2, from, to, opts) do
+    fields = Keyword.get(opts, :fields)
+    include_computed_at? = Keyword.get(opts, :include_computed_at, false)
+
     """
     {
       getMetric(metric: "#{@metric}"){
         timeseriesDataPerSlugJson(
           selector: {slugs: ["#{p1.slug}", "#{p2.slug}"]},
           from: "#{from}", to: "#{to}", interval: "1d"
-          #{if fields, do: "fields: #{fields}"})
+          #{if fields, do: "fields: #{fields}"}
+          includeComputedAt: #{include_computed_at?})
       }
     }
     """

@@ -140,6 +140,11 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         {:noreply,
          socket
          |> put_flash(:error, "Error syncing metrics: #{changeset_errors_string(changeset)}")}
+
+      {:error, error} when is_binary(error) ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Error syncing metrics: #{error}")}
     end
   end
 

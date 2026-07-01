@@ -73,6 +73,13 @@ defmodule Sanbase.Metric.Transform do
       [unix, value] ->
         %{datetime: DateTime.from_unix!(unix), value: value}
 
+      [unix, value, computed_at] ->
+        %{
+          datetime: DateTime.from_unix!(unix),
+          value: value,
+          computed_at: DateTime.from_unix!(computed_at)
+        }
+
       [unix, open, high, low, close] ->
         %{
           datetime: DateTime.from_unix!(unix),
@@ -82,6 +89,18 @@ defmodule Sanbase.Metric.Transform do
             low: low,
             close: close
           }
+        }
+
+      [unix, open, high, low, close, computed_at] ->
+        %{
+          datetime: DateTime.from_unix!(unix),
+          value_ohlc: %{
+            open: open,
+            high: high,
+            low: low,
+            close: close
+          },
+          computed_at: DateTime.from_unix!(computed_at)
         }
     end)
   end

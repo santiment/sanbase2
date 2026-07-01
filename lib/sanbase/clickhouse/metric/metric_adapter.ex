@@ -96,10 +96,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters, opts)
     |> ClickhouseRepo.query_reduce(
       %{},
-      fn [timestamp, slug, value], acc ->
-        datetime = DateTime.from_unix!(timestamp)
-        elem = %{slug: slug, value: value}
-        Map.update(acc, datetime, [elem], &[elem | &1])
+      fn
+        [timestamp, slug, value], acc ->
+          datetime = DateTime.from_unix!(timestamp)
+          elem = %{slug: slug, value: value}
+          Map.update(acc, datetime, [elem], &[elem | &1])
+
+        [timestamp, slug, value, computed_at], acc ->
+          datetime = DateTime.from_unix!(timestamp)
+          elem = %{slug: slug, value: value, computed_at: DateTime.from_unix!(computed_at)}
+          Map.update(acc, datetime, [elem], &[elem | &1])
       end
     )
     |> maybe_apply_function(fn list ->

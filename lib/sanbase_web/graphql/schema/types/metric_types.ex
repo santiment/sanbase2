@@ -133,6 +133,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:high, :string)
     field(:close, :string)
     field(:low, :string)
+    field(:computed_at, :string)
   end
 
   input_object :timeseries_data_per_slug_json_fields do
@@ -140,6 +141,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:data, :string)
     field(:slug, :string)
     field(:value, :string)
+    field(:computed_at, :string)
   end
 
   enum :metric_data_type do
@@ -170,6 +172,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:datetime, non_null(:datetime))
     field(:value, :float)
     field(:value_ohlc, :ohlc_data)
+    field(:computed_at, :datetime)
   end
 
   object :ohlc_data do
@@ -182,6 +185,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   object :slug_float_value_pair do
     field(:slug, non_null(:string))
     field(:value, :float)
+    field(:computed_at, :datetime)
   end
 
   object :metric_data_per_slug do

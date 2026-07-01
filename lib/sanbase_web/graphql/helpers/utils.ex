@@ -149,40 +149,6 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
   def requested_fields(_), do: MapSet.new([])
 
-  @doc ~s"""
-  Return true if `field_name` (given in snake_case or camelCase) is selected
-  anywhere in the GraphQL selection tree, at any nesting depth. Unlike
-  `requested_fields/1`, which only inspects the top-level selections, this walks
-  into nested selections. This is needed for fields whose data lives inside a
-  nested object - e.g. `computedAt` inside the `data` list of
-  `timeseriesDataPerSlug`.
-  """
-  @spec field_requested?(%Absinthe.Resolution{}, String.t()) :: boolean()
-  def field_requested?(%Absinthe.Resolution{} = resolution, field_name) do
-    target = Sanbase.Utils.Inflect.camelize(field_name, :lower)
-    do_field_requested?(resolution.definition.selections, target)
-  end
-
-  def field_requested?(_, _), do: false
-
-  defp do_field_requested?(selections, target) when is_list(selections) do
-    Enum.any?(selections, fn selection ->
-      name_match? =
-        case selection do
-          %{name: name} -> Sanbase.Utils.Inflect.camelize(name, :lower) == target
-          _ -> false
-        end
-
-      name_match? or
-        case selection do
-          %{selections: sub} -> do_field_requested?(sub, target)
-          _ -> false
-        end
-    end)
-  end
-
-  defp do_field_requested?(_, _), do: false
-
   # Private functions
 
   @fields [

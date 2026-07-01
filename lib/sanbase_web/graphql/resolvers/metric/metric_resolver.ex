@@ -266,16 +266,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def timeseries_data(_root, args, %{source: %{metric: metric, version: version}} = resolution) do
     requested_fields = requested_fields(resolution)
-    include_computed_at? = include_computed_at?(resolution, args)
-
-    fetch_timeseries_data(
-      metric,
-      version,
-      args,
-      requested_fields,
-      :timeseries_data,
-      include_computed_at?
-    )
+    fetch_timeseries_data(metric, version, args, requested_fields, :timeseries_data)
   rescue
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
@@ -287,21 +278,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric, version: version}} = resolution
       ) do
     requested_fields = requested_fields(resolution)
-    include_computed_at? = include_computed_at?(resolution, args)
 
     # A heap-capped fetch: on overrun the BEAM kills the worker with an
     # untrappable :killed exit, which we turn into a friendly error instead of a
-    # Sentry alert. See run_per_slug_in_bounded_process/5.
-    run_per_slug_in_bounded_process(
-      metric,
-      version,
-      args,
-      requested_fields,
-      include_computed_at?
-    )
+    # Sentry alert. See run_per_slug_in_bounded_process/4.
+    run_per_slug_in_bounded_process(metric, version, args, requested_fields)
   rescue
     # CatchableError raised during the per-slug fetch is handled inside the
-    # bounded worker (see run_per_slug_in_bounded_process/5) and returned as an
+    # bounded worker (see run_per_slug_in_bounded_process/4) and returned as an
     # {:error, message} tuple, so this clause is only a defensive fallback.
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
@@ -425,13 +409,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # request process - we just see the :DOWN and return a friendly error. Other
   # outcomes (a CatchableError, or an unexpected raise we still want in Sentry)
   # are caught in the worker and sent back, so inline behaviour is preserved.
-  defp run_per_slug_in_bounded_process(
-         metric,
-         version,
-         args,
-         requested_fields,
-         include_computed_at?
-       ) do
+  defp run_per_slug_in_bounded_process(metric, version, args, requested_fields) do
     parent = self()
     ref = make_ref()
 
@@ -459,8 +437,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
                version,
                args,
                requested_fields,
-               :timeseries_data_per_slug,
-               include_computed_at?
+               :timeseries_data_per_slug
              )}
           rescue
             e in [Sanbase.Metric.CatchableError] -> {:ok, {:error, Exception.message(e)}}
@@ -509,16 +486,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # timeseries_data and timeseries_data_per_slug are processed and fetched in
   # exactly the same way. The only difference is the function that is called
   # from the Metric module.
-  defp fetch_timeseries_data(
-         metric,
-         version,
-         args,
-         requested_fields,
-         function,
-         include_computed_at?
-       )
+  defp fetch_timeseries_data(metric, version, args, requested_fields, function)
        when function in [:timeseries_data, :timeseries_data_per_slug] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
+
+    # The `*Json` variants return a `:json` scalar, so they have no GraphQL
+    # sub-selections - an empty `requested_fields` means we're serving a JSON
+    # variant (a typed object field always selects at least one subfield).
+    json? = Enum.empty?(requested_fields)
 
     with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          {:ok, transform} <- MetricTransform.args_to_transform(args),
@@ -529,7 +504,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, opts} <- selector_args_to_opts(args),
          opts <- Keyword.put(opts, :only_finalized_data, only_finalized_data),
          opts <- Keyword.put(opts, :version, version),
-         opts <- Keyword.put(opts, :include_computed_at, include_computed_at?),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),
          {:ok, result} <-
@@ -537,7 +511,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, result} <- MetricTransform.apply_transform(transform, result),
          {:ok, result} <- fit_from_datetime(result, %{args | interval: interval}),
          {:ok, result} <- maybe_rename_fields(result, function, args) do
-      result = result |> Enum.reject(&is_nil/1)
+      result =
+        result
+        |> Enum.reject(&is_nil/1)
+        |> maybe_drop_computed_at(json?, args)
 
       {:ok, result}
     end
@@ -611,19 +588,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  # `computedAt` is requested when it appears anywhere in the GraphQL selection
-  # tree (for the typed fields - `computedAt` sits at the top level of
-  # `timeseriesData` but nested under `data` for `timeseriesDataPerSlug`), or
-  # when it is named in the `fields` argument (for the *Json variants, whose
-  # selection tree only contains the scalar itself).
-  defp include_computed_at?(resolution, args) do
-    field_requested?(resolution, "computed_at") or fields_include_computed_at?(args)
-  end
+  # `computed_at` is always fetched from ClickHouse. The typed fields expose it
+  # only when the client selects the `computedAt` field, so nothing to do there.
+  # The `*Json` variants serialize the whole map, so `computed_at` would leak into
+  # every payload - drop it unless the caller opted in by naming it in `fields`
+  # (in which case `maybe_rename_fields/3` already projected the keys explicitly).
+  defp maybe_drop_computed_at(result, false = _json?, _args), do: result
 
-  defp fields_include_computed_at?(%{fields: fields}) when is_map(fields),
-    do: Map.has_key?(fields, :computed_at)
+  defp maybe_drop_computed_at(result, true = _json?, %{fields: map})
+       when is_map(map) and map_size(map) > 0,
+       do: result
 
-  defp fields_include_computed_at?(_args), do: false
+  defp maybe_drop_computed_at(result, true = _json?, _args),
+    do: Enum.map(result, &drop_computed_at/1)
+
+  defp drop_computed_at(%{data: data} = point) when is_list(data),
+    do: %{point | data: Enum.map(data, &Map.delete(&1, :computed_at))}
+
+  defp drop_computed_at(point), do: Map.delete(point, :computed_at)
 
   defp transform_datetime_params(selector, metric, transform, args) do
     %{from: from, to: to, interval: interval} = args

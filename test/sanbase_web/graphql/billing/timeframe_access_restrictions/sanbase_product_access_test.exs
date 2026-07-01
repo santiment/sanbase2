@@ -7,7 +7,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   import Sanbase.TestHelpers
 
   alias Sanbase.Metric
-  alias Sanbase.Signal
   alias Sanbase.Clickhouse.TopHolders
 
   @triggers_free_limit_count 3
@@ -19,7 +18,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   setup_all_with_mocks([
     {Sanbase.Price, [:passthrough], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
-    {Sanbase.Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]},
     {TopHolders, [], [top_holders: fn _, _, _, _ -> top_holders_resp() end]},
     {Sanbase.Alert.UserTrigger, [:passthrough],
      [triggers_count_for: fn _ -> @triggers_free_limit_count end]}
@@ -58,19 +56,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       result = execute_query(context.conn, query, "historyPrice")
 
       assert_called(Sanbase.Price.timeseries_data(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access FREE signals for all time", context do
-      {from, to} = from_to(2500, 0)
-      slug = context.project.slug
-
-      signal = get_free_timeseries_element(context.next_integer.(), @product, :signal)
-      query = signal_query(signal, slug, from, to)
-
-      result = execute_query(context.conn, query, "getSignal")
-
-      assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -201,19 +186,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       result = execute_query(context.conn, query, "historyPrice")
 
       assert_called(Sanbase.Price.timeseries_data(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access FREE signals for all time", context do
-      {from, to} = from_to(2500, 0)
-      slug = context.project.slug
-
-      signal = get_free_timeseries_element(context.next_integer.(), @product, :signal)
-      query = signal_query(signal, slug, from, to)
-
-      result = execute_query(context.conn, query, "getSignal")
-
-      assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -559,23 +531,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
             to: "#{to}"
             interval: "30d"
             includeIncompleteData: true){
-              datetime
-              value
-          }
-        }
-      }
-    """
-  end
-
-  defp signal_query(signal, slug, from, to) do
-    """
-      {
-        getSignal(signal: "#{signal}") {
-          timeseriesData(
-            slug: "#{slug}"
-            from: "#{from}"
-            to: "#{to}"
-            interval: "30d"){
               datetime
               value
           }

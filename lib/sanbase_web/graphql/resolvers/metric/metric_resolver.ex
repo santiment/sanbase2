@@ -21,6 +21,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @max_heap_size_in_mbs 500
   @max_heap_size_in_words div(@max_heap_size_in_mbs * 1024 * 1024, @wordsize)
 
+  # The `*Json` schema fields return a raw `:json` scalar (the whole map is
+  # serialized), while the typed fields let GraphQL field selection filter keys.
+  # `timeseries_data/3` and `timeseries_data_per_slug/3` each back both a typed
+  # and a JSON field, so we look at which schema field is being resolved.
+  @json_field_identifiers [:timeseries_data_json, :timeseries_data_per_slug_json]
+
   def get_metric(_root, %{metric: metric} = args, resolution) do
     # TODO: Check that the version is also deprecated
     version = Map.get(args, :version, Sanbase.Metric.default_version())
@@ -266,7 +272,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def timeseries_data(_root, args, %{source: %{metric: metric, version: version}} = resolution) do
     requested_fields = requested_fields(resolution)
-    fetch_timeseries_data(metric, version, args, requested_fields, :timeseries_data)
+    json_variant? = json_variant?(resolution)
+
+    fetch_timeseries_data(
+      metric,
+      version,
+      args,
+      requested_fields,
+      :timeseries_data,
+      json_variant?
+    )
   rescue
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
@@ -278,14 +293,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric, version: version}} = resolution
       ) do
     requested_fields = requested_fields(resolution)
+    json_variant? = json_variant?(resolution)
 
     # A heap-capped fetch: on overrun the BEAM kills the worker with an
     # untrappable :killed exit, which we turn into a friendly error instead of a
-    # Sentry alert. See run_per_slug_in_bounded_process/4.
-    run_per_slug_in_bounded_process(metric, version, args, requested_fields)
+    # Sentry alert. See run_per_slug_in_bounded_process/5.
+    run_per_slug_in_bounded_process(metric, version, args, requested_fields, json_variant?)
   rescue
     # CatchableError raised during the per-slug fetch is handled inside the
-    # bounded worker (see run_per_slug_in_bounded_process/4) and returned as an
+    # bounded worker (see run_per_slug_in_bounded_process/5) and returned as an
     # {:error, message} tuple, so this clause is only a defensive fallback.
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
@@ -409,7 +425,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # request process - we just see the :DOWN and return a friendly error. Other
   # outcomes (a CatchableError, or an unexpected raise we still want in Sentry)
   # are caught in the worker and sent back, so inline behaviour is preserved.
-  defp run_per_slug_in_bounded_process(metric, version, args, requested_fields) do
+  defp run_per_slug_in_bounded_process(metric, version, args, requested_fields, json_variant?) do
     parent = self()
     ref = make_ref()
 
@@ -437,7 +453,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
                version,
                args,
                requested_fields,
-               :timeseries_data_per_slug
+               :timeseries_data_per_slug,
+               json_variant?
              )}
           rescue
             e in [Sanbase.Metric.CatchableError] -> {:ok, {:error, Exception.message(e)}}
@@ -486,14 +503,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # timeseries_data and timeseries_data_per_slug are processed and fetched in
   # exactly the same way. The only difference is the function that is called
   # from the Metric module.
-  defp fetch_timeseries_data(metric, version, args, requested_fields, function)
+  defp fetch_timeseries_data(metric, version, args, requested_fields, function, json_variant?)
        when function in [:timeseries_data, :timeseries_data_per_slug] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
-
-    # The `*Json` variants return a `:json` scalar, so they have no GraphQL
-    # sub-selections - an empty `requested_fields` means we're serving a JSON
-    # variant (a typed object field always selects at least one subfield).
-    json? = Enum.empty?(requested_fields)
 
     with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          {:ok, transform} <- MetricTransform.args_to_transform(args),
@@ -514,7 +526,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       result =
         result
         |> Enum.reject(&is_nil/1)
-        |> maybe_drop_computed_at(json?, args)
+        |> maybe_drop_computed_at(json_variant?, args)
 
       {:ok, result}
     end
@@ -593,19 +605,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # The `*Json` variants serialize the whole map, so `computed_at` would leak into
   # every payload - drop it unless the caller opted in by naming it in `fields`
   # (in which case `maybe_rename_fields/3` already projected the keys explicitly).
-  defp maybe_drop_computed_at(result, false = _json?, _args), do: result
+  defp maybe_drop_computed_at(result, false = _json_variant?, _args), do: result
 
-  defp maybe_drop_computed_at(result, true = _json?, %{fields: map})
+  defp maybe_drop_computed_at(result, true = _json_variant?, %{fields: map})
        when is_map(map) and map_size(map) > 0,
        do: result
 
-  defp maybe_drop_computed_at(result, true = _json?, _args),
+  defp maybe_drop_computed_at(result, true = _json_variant?, _args),
     do: Enum.map(result, &drop_computed_at/1)
 
   defp drop_computed_at(%{data: data} = point) when is_list(data),
     do: %{point | data: Enum.map(data, &Map.delete(&1, :computed_at))}
 
   defp drop_computed_at(point), do: Map.delete(point, :computed_at)
+
+  # Which schema field is being resolved - `timeseriesDataJson` /
+  # `timeseriesDataPerSlugJson` (raw `:json` scalar) or their typed counterparts.
+  defp json_variant?(%Absinthe.Resolution{definition: %{schema_node: %{identifier: identifier}}}),
+    do: identifier in @json_field_identifiers
 
   defp transform_datetime_params(selector, metric, transform, args) do
     %{from: from, to: to, interval: interval} = args

@@ -6,6 +6,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
 
   @metric "daily_active_addresses"
 
+  # `computed_at` is ALWAYS selected in the generated ClickHouse SQL (so the rows
+  # returned by ClickHouse always carry it as the last column). Whether it is
+  # exposed is decided at the API layer:
+  #   * typed fields  -> returned only when the client selects `computedAt`
+  #   * *Json fields  -> returned only when named in the `fields` argument
+
   setup do
     %{user: user} =
       insert(:subscription_pro_sanbase, user: insert(:user, metric_access_level: "alpha"))
@@ -34,7 +40,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
       computed_at1 = ~U[2019-01-05 00:00:00Z]
       computed_at2 = ~U[2019-01-06 00:00:00Z]
 
-      # `computed_at` is the 3rd column - matches the SQL built when the flag is on
       rows = [
         [DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)],
         [DateTime.to_unix(dt2), 200.0, DateTime.to_unix(computed_at2)]
@@ -73,21 +78,23 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
                  }
                ]
 
-        # The selection actually drove the SQL to select the computed_at column.
         assert Enum.join(metric_data["executedClickhouseSql"], "\n") =~ "AS computed_at"
       end)
     end
 
-    test "does not select the computed_at column when the field is not requested", context do
+    test "omits computedAt from the response when not selected, though the SQL still selects it",
+         context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
 
       dt1 = ~U[2019-01-01 00:00:00Z]
       dt2 = ~U[2019-01-02 00:00:00Z]
+      computed_at1 = ~U[2019-01-05 00:00:00Z]
+      computed_at2 = ~U[2019-01-06 00:00:00Z]
 
-      # Only 2 columns - matches the SQL built when the flag is off
+      # computed_at is always fetched, so ClickHouse returns the extra column
       rows = [
-        [DateTime.to_unix(dt1), 100.0],
-        [DateTime.to_unix(dt2), 200.0]
+        [DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)],
+        [DateTime.to_unix(dt2), 200.0, DateTime.to_unix(computed_at2)]
       ]
 
       query = """
@@ -109,55 +116,61 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
           |> post("/graphql", query_skeleton(query, "getMetric"))
           |> json_response(200)
 
+        # GraphQL field selection filters computedAt out of the typed response.
         assert metric_data["timeseriesData"] == [
                  %{"datetime" => "2019-01-01T00:00:00Z", "value" => 100.0},
                  %{"datetime" => "2019-01-02T00:00:00Z", "value" => 200.0}
                ]
 
-        refute Enum.join(metric_data["executedClickhouseSql"], "\n") =~ "AS computed_at"
+        # ...but it is still always part of the query.
+        assert Enum.join(metric_data["executedClickhouseSql"], "\n") =~ "AS computed_at"
       end)
     end
   end
 
   describe "timeseriesDataJson" do
-    test "includes computedAt only when named in the fields argument", context do
+    test "does not leak computedAt when fields are not given", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
 
       dt1 = ~U[2019-01-01 00:00:00Z]
       computed_at1 = ~U[2019-01-05 00:00:00Z]
+      rows = [[DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)]]
 
-      # Opted in: `fields` names computedAt -> flag on -> 3-column rows
-      rows_with = [[DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)]]
+      query = json_query(slug, from, to, interval, nil)
 
-      query_with =
-        json_query(slug, from, to, interval, ~s|{datetime: "d", value: "v", computedAt: "c"}|)
-
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows_with}})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           conn
-          |> post("/graphql", query_skeleton(query_with, "getMetric"))
+          |> post("/graphql", query_skeleton(query, "getMetric"))
+          |> json_response(200)
+          |> get_in(["data", "getMetric", "timeseriesDataJson"])
+
+        assert result == [%{"datetime" => "2019-01-01T00:00:00Z", "value" => 100.0}]
+      end)
+    end
+
+    test "includes computedAt when named in the fields argument", context do
+      %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+
+      dt1 = ~U[2019-01-01 00:00:00Z]
+      computed_at1 = ~U[2019-01-05 00:00:00Z]
+      rows = [[DateTime.to_unix(dt1), 100.0, DateTime.to_unix(computed_at1)]]
+
+      query =
+        json_query(slug, from, to, interval, ~s|{datetime: "d", value: "v", computedAt: "c"}|)
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(query, "getMetric"))
           |> json_response(200)
           |> get_in(["data", "getMetric", "timeseriesDataJson"])
 
         assert result == [
                  %{"d" => "2019-01-01T00:00:00Z", "v" => 100.0, "c" => "2019-01-05T00:00:00Z"}
                ]
-      end)
-
-      # Not opted in: `fields` omits computedAt -> flag off -> 2-column rows, no key leaks
-      rows_without = [[DateTime.to_unix(dt1), 100.0]]
-      query_without = json_query(slug, from, to, interval, ~s|{datetime: "d", value: "v"}|)
-
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows_without}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          conn
-          |> post("/graphql", query_skeleton(query_without, "getMetric"))
-          |> json_response(200)
-          |> get_in(["data", "getMetric", "timeseriesDataJson"])
-
-        assert result == [%{"d" => "2019-01-01T00:00:00Z", "v" => 100.0}]
       end)
     end
   end
@@ -169,7 +182,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
       dt1 = ~U[2019-01-01 00:00:00Z]
       computed_at = ~U[2019-01-05 00:00:00Z]
 
-      # `computed_at` is the 4th column - matches the SQL built when the flag is on
       rows = [
         [DateTime.to_unix(dt1), p1.slug, 400.0, DateTime.to_unix(computed_at)],
         [DateTime.to_unix(dt1), p2.slug, 100.0, DateTime.to_unix(computed_at)]
@@ -211,17 +223,37 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
   end
 
   describe "timeseriesDataPerSlugJson" do
-    test "includes computedAt only when named in the fields argument", context do
+    test "does not leak computedAt when fields are not given", context do
       %{conn: conn, from: from, to: to, project1: p1, project2: p2} = context
 
       dt1 = ~U[2019-01-01 00:00:00Z]
       computed_at = ~U[2019-01-05 00:00:00Z]
+      rows = [[DateTime.to_unix(dt1), p1.slug, 400, DateTime.to_unix(computed_at)]]
 
-      rows_with = [
-        [DateTime.to_unix(dt1), p1.slug, 400, DateTime.to_unix(computed_at)]
-      ]
+      query = per_slug_json_query(p1, p2, from, to, nil)
 
-      query_with =
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(query, "getMetric"))
+          |> json_response(200)
+          |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
+
+        assert %{"data" => data} = result |> Enum.at(0)
+        assert %{"slug" => p1.slug, "value" => 400} in data
+        refute Enum.any?(data, &Map.has_key?(&1, "computedAt"))
+      end)
+    end
+
+    test "includes computedAt when named in the fields argument", context do
+      %{conn: conn, from: from, to: to, project1: p1, project2: p2} = context
+
+      dt1 = ~U[2019-01-01 00:00:00Z]
+      computed_at = ~U[2019-01-05 00:00:00Z]
+      rows = [[DateTime.to_unix(dt1), p1.slug, 400, DateTime.to_unix(computed_at)]]
+
+      query =
         per_slug_json_query(
           p1,
           p2,
@@ -230,34 +262,16 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
           ~s|{data: "d", slug: "s", value: "v", computedAt: "c"}|
         )
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows_with}})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           conn
-          |> post("/graphql", query_skeleton(query_with, "getMetric"))
+          |> post("/graphql", query_skeleton(query, "getMetric"))
           |> json_response(200)
           |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
 
         assert %{"d" => data} = result |> Enum.at(0)
         assert %{"s" => p1.slug, "v" => 400, "c" => "2019-01-05T00:00:00Z"} in data
-      end)
-
-      # Not opted in -> flag off -> 3-column rows, no computedAt key
-      rows_without = [[DateTime.to_unix(dt1), p1.slug, 400]]
-
-      query_without =
-        per_slug_json_query(p1, p2, from, to, ~s|{data: "d", slug: "s", value: "v"}|)
-
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows_without}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          conn
-          |> post("/graphql", query_skeleton(query_without, "getMetric"))
-          |> json_response(200)
-          |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
-
-        assert %{"d" => data} = result |> Enum.at(0)
-        assert %{"s" => p1.slug, "v" => 400} in data
       end)
     end
   end
@@ -271,7 +285,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
           from: "#{from}"
           to: "#{to}"
           interval: "#{interval}"
-          fields: #{fields}
+          #{if fields, do: "fields: #{fields}"}
         )
       }
     }
@@ -285,7 +299,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
         timeseriesDataPerSlugJson(
           selector: {slugs: ["#{p1.slug}", "#{p2.slug}"]},
           from: "#{from}", to: "#{to}", interval: "1d"
-          fields: #{fields})
+          #{if fields, do: "fields: #{fields}"})
       }
     }
     """

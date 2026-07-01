@@ -535,51 +535,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  defp maybe_rename_fields(result, :timeseries_data, %{fields: map})
-       when is_map(map) and map_size(map) > 0 do
+  # For the JSON variants `fields` acts as a selector: only the fields named in
+  # it are returned, emitted under the caller-provided key. A named field that is
+  # absent on the datapoint (e.g. `value` for an OHLC series) is skipped.
+  defp maybe_rename_fields(result, :timeseries_data, %{fields: fields})
+       when is_map(fields) and map_size(fields) > 0 do
     result =
-      result
-      |> Enum.map(fn
-        %{datetime: d, value: v} = point ->
-          %{
-            Map.get(map, :datetime, :datetime) => d,
-            Map.get(map, :value, :value) => v
-          }
-          |> maybe_put_computed_at(map, point)
-
-        %{datetime: d, value_ohlc: ohlc} = point ->
-          %{
-            Map.get(map, :datetime, :datetime) => d,
-            Map.get(map, :value_ohlc, :value_ohlc) => %{
-              Map.get(map, :open, :open) => ohlc.open,
-              Map.get(map, :high, :high) => ohlc.high,
-              Map.get(map, :close, :close) => ohlc.close,
-              Map.get(map, :low, :low) => ohlc.low
-            }
-          }
-          |> maybe_put_computed_at(map, point)
+      Enum.map(result, fn point ->
+        %{}
+        |> put_selected_field(fields, :datetime, point)
+        |> put_selected_field(fields, :value, point)
+        |> put_selected_ohlc(fields, point)
+        |> put_selected_field(fields, :computed_at, point)
       end)
 
     {:ok, result}
   end
 
-  defp maybe_rename_fields(result, :timeseries_data_per_slug, %{fields: map})
-       when is_map(map) and map_size(map) > 0 do
+  defp maybe_rename_fields(result, :timeseries_data_per_slug, %{fields: fields})
+       when is_map(fields) and map_size(fields) > 0 do
     result =
-      result
-      |> Enum.map(fn %{datetime: datetime, data: data} ->
-        %{
-          Map.get(map, :datetime, :datetime) => datetime,
-          Map.get(map, :data, :data) =>
-            Enum.map(data, fn
-              %{value: value, slug: slug} = elem ->
-                %{
-                  Map.get(map, :value, :value) => value,
-                  Map.get(map, :slug, :slug) => slug
-                }
-                |> maybe_put_computed_at(map, elem)
-            end)
-        }
+      Enum.map(result, fn point ->
+        %{}
+        |> put_selected_field(fields, :datetime, point)
+        |> put_selected_data(fields, point)
       end)
 
     {:ok, result}
@@ -587,18 +566,57 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp maybe_rename_fields(result, _function, _args), do: {:ok, result}
 
-  # `computed_at` is opt-in for the JSON variants: it is included in the output
-  # only when the caller named it in the `fields` argument. When present, its key
-  # is renamed like the other fields.
-  defp maybe_put_computed_at(acc, fields_map, point) do
-    case {Map.has_key?(fields_map, :computed_at), point} do
-      {true, %{computed_at: computed_at}} ->
-        Map.put(acc, Map.get(fields_map, :computed_at, :computed_at), computed_at)
+  # Copy `field` from the datapoint into the accumulator under its caller-provided
+  # key, but only when it is both selected in `fields` and present on the point.
+  defp put_selected_field(acc, fields, field, point) do
+    case {Map.fetch(fields, field), Map.fetch(point, field)} do
+      {{:ok, out_key}, {:ok, value}} -> Map.put(acc, out_key, value)
+      _ -> acc
+    end
+  end
 
-      _ ->
+  # `value_ohlc` is a nested object; when selected, its inner keys are renamed via
+  # the `open`/`high`/`low`/`close` entries of `fields` (defaulting to their name).
+  defp put_selected_ohlc(acc, fields, %{value_ohlc: ohlc}) do
+    case Map.fetch(fields, :value_ohlc) do
+      {:ok, out_key} ->
+        nested = %{
+          Map.get(fields, :open, :open) => ohlc.open,
+          Map.get(fields, :high, :high) => ohlc.high,
+          Map.get(fields, :low, :low) => ohlc.low,
+          Map.get(fields, :close, :close) => ohlc.close
+        }
+
+        Map.put(acc, out_key, nested)
+
+      :error ->
         acc
     end
   end
+
+  defp put_selected_ohlc(acc, _fields, _point), do: acc
+
+  # `data` is a nested list; when selected, each element is projected over the
+  # selected `slug`/`value`/`computed_at` fields.
+  defp put_selected_data(acc, fields, %{data: data}) do
+    case Map.fetch(fields, :data) do
+      {:ok, out_key} ->
+        projected =
+          Enum.map(data, fn elem ->
+            %{}
+            |> put_selected_field(fields, :slug, elem)
+            |> put_selected_field(fields, :value, elem)
+            |> put_selected_field(fields, :computed_at, elem)
+          end)
+
+        Map.put(acc, out_key, projected)
+
+      :error ->
+        acc
+    end
+  end
+
+  defp put_selected_data(acc, _fields, _point), do: acc
 
   # `computed_at` is always fetched from ClickHouse. The typed fields expose it
   # only when the client selects the `computedAt` field, so nothing to do there.

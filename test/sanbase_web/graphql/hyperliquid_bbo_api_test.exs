@@ -189,6 +189,39 @@ defmodule SanbaseWeb.Graphql.HyperliquidBboApiTest do
     end
   end
 
+  describe "availableNonCryptoAssets" do
+    test "returns only non-crypto assets with a hyperliquid mapping", %{conn: conn} do
+      gold = insert(:non_crypto_asset, slug: "gold", name: "Gold", asset_type: :commodity)
+      sp500 = insert(:non_crypto_asset, slug: "sp500", name: "S&P 500", asset_type: :index)
+      _no_mapping = insert(:non_crypto_asset, slug: "silver", name: "Silver")
+      project = insert(:random_project, slug: "btc-project")
+
+      insert(:source_slug_mapping, source: "hyperliquid", slug: "GOLD", non_crypto_asset: gold)
+      insert(:source_slug_mapping, source: "hyperliquid", slug: "SPX", non_crypto_asset: sp500)
+      # A crypto project mapping on the same source must not leak in here.
+      insert(:source_slug_mapping, source: "hyperliquid", slug: "BTC", project: project)
+
+      query = """
+      {
+        hyperliquidBboPrices {
+          availableNonCryptoAssets { slug assetType }
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "hyperliquidBboPrices"))
+        |> json_response(200)
+        |> get_in(["data", "hyperliquidBboPrices", "availableNonCryptoAssets"])
+
+      assert Enum.sort_by(result, & &1["slug"]) == [
+               %{"slug" => "gold", "assetType" => "COMMODITY"},
+               %{"slug" => "sp500", "assetType" => "INDEX"}
+             ]
+    end
+  end
+
   defp run_timeseries_query(conn, slug, from, to, interval, extra_args \\ "") do
     extra = if extra_args == "", do: "", else: "\n        #{extra_args}"
 

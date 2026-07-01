@@ -413,8 +413,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     whose slug can be provided to the `timeseriesDataJson` (and co.) field to fetch
     the metric.
 
-    Currently returns all supported non-crypto assets, regardless of whether this
-    specific metric has data for them. A per-metric availability check is deferred.
+    Returns only the assets that actually have data for this metric, determined
+    per adapter by checking the `available_metrics` table.
     """
     field :available_non_crypto_assets, list_of(:non_crypto_asset) do
       cache_resolve(&MetricResolver.get_available_non_crypto_assets/3, ttl: 300)

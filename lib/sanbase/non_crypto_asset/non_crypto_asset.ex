@@ -37,6 +37,8 @@ defmodule Sanbase.NonCryptoAsset do
     timestamps()
   end
 
+  @type t :: %__MODULE__{}
+
   def asset_types(), do: @asset_types
 
   def changeset(%__MODULE__{} = asset, attrs \\ %{}) do
@@ -72,6 +74,12 @@ defmodule Sanbase.NonCryptoAsset do
   @spec id_by_slug(String.t()) :: non_neg_integer() | nil
   def id_by_slug(slug) when is_binary(slug) do
     from(a in __MODULE__, where: a.slug == ^slug, select: a.id) |> Repo.one()
+  end
+
+  @spec by_slugs([String.t()]) :: [t()]
+  def by_slugs(slugs) when is_list(slugs) do
+    from(a in __MODULE__, where: a.slug in ^slugs, order_by: [asc: a.name])
+    |> Repo.all()
   end
 
   @doc ~s"""

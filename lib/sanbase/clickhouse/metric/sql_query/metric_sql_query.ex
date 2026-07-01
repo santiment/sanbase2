@@ -530,6 +530,51 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  @doc ~s"""
+  Return the subset of `slugs` that have data for `metric_name` according to the
+  `available_metrics` table.
+
+  `metric_name` must be the metric name as stored in `metric_metadata_external`
+  — for registry-backed metrics that is the internal metric name, for price
+  metrics it is the metric name itself.
+  """
+  def available_slugs_for_metric_and_slugs_query(metric_name, slugs, opts)
+      when is_binary(metric_name) and is_list(slugs) do
+    version = Keyword.get(opts, :version, @default_version)
+    lookback_days = Keyword.get(opts, :lookback_days) || @default_lookback_days
+
+    sql = """
+    SELECT DISTINCT(name)
+    FROM asset_metadata FINAL
+    WHERE
+      -- this filter is used so the caller provides the list of supported non-crypto assets
+      -- clickhouse does not store which assets are crypto and which are non-crypto
+      name IN ({{slugs}}) AND
+      asset_id IN (
+        SELECT DISTINCT(asset_id)
+        FROM available_metrics
+        WHERE
+          #{versioned_metric_id_filter(metric_name, argument_name: "metric", version: version, version_arg_name: "version")} AND
+          end_dt > now() - INTERVAL {{lookback_days}} DAY
+      ) AND
+      asset_id NOT IN (
+        SELECT DISTINCT(asset_id)
+        FROM publicly_disabled_metrics
+        WHERE
+          #{metric_id_filter(metric_name, argument_name: "metric")}
+      )
+    """
+
+    params = %{
+      metric: metric_name,
+      version: version,
+      lookback_days: lookback_days,
+      slugs: slugs
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   def last_datetime_computed_at_query(metric, selector) do
     sql = """
     SELECT toUnixTimestamp(argMax(computed_at, dt))

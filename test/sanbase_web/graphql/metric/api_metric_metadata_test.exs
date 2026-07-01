@@ -6,14 +6,38 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
 
   alias Sanbase.Metric
 
-  test "returns all visible non-crypto assets for availableNonCryptoAssets", %{conn: conn} do
+  test "availableNonCryptoAssets returns only assets with data for the metric", %{conn: conn} do
     insert(:non_crypto_asset, slug: "gold", name: "Gold", ticker: "XAU", asset_type: :commodity)
     insert(:non_crypto_asset, slug: "sp500", name: "S&P 500", asset_type: :index)
     insert(:non_crypto_asset, slug: "hidden-asset", name: "Hidden", is_hidden: true)
 
+    # available_metrics reports data only for gold; sp500 has no data and the
+    # hidden asset is never a candidate.
+    rows = [["gold"]]
+
+    result =
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn -> available_non_crypto_assets(conn, "price_usd") end)
+
+    assert %{"slug" => "gold", "name" => "Gold", "assetType" => "COMMODITY"} in result
+    refute Enum.find(result, &(&1["slug"] == "sp500"))
+    refute Enum.find(result, &(&1["slug"] == "hidden-asset"))
+  end
+
+  test "availableNonCryptoAssets is empty when no asset has data for the metric", %{conn: conn} do
+    insert(:non_crypto_asset, slug: "gold", name: "Gold", asset_type: :commodity)
+
+    result =
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
+      |> Sanbase.Mock.run_with_mocks(fn -> available_non_crypto_assets(conn, "price_usd") end)
+
+    assert result == []
+  end
+
+  defp available_non_crypto_assets(conn, metric) do
     query = """
     {
-      getMetric(metric: "price_usd"){
+      getMetric(metric: "#{metric}"){
         metadata{
           availableNonCryptoAssets{ slug name assetType }
         }
@@ -21,15 +45,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query))
-      |> json_response(200)
-      |> get_in(["data", "getMetric", "metadata", "availableNonCryptoAssets"])
-
-    assert %{"slug" => "gold", "name" => "Gold", "assetType" => "COMMODITY"} in result
-    assert Enum.find(result, &(&1["slug"] == "sp500"))
-    refute Enum.find(result, &(&1["slug"] == "hidden-asset"))
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "getMetric", "metadata", "availableNonCryptoAssets"])
   end
 
   test "returns data for availableFounders", %{conn: conn} do

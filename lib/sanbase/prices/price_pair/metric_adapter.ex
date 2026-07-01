@@ -1,6 +1,8 @@
 defmodule Sanbase.PricePair.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
   alias Sanbase.PricePair
+  alias Sanbase.ClickhouseRepo
+  alias Sanbase.Clickhouse.MetricAdapter.SqlQuery
 
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc, :count]
   @default_aggregation :last
@@ -181,6 +183,16 @@ defmodule Sanbase.PricePair.MetricAdapter do
     Sanbase.Cache.get_or_store({__MODULE__, :available_slugs_for_metric, 600}, fn ->
       PricePair.available_slugs(quote_asset, opts)
     end)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def available_non_crypto_asset_slugs(_metric, [], _opts), do: {:ok, []}
+
+  def available_non_crypto_asset_slugs(metric, slugs, opts) when metric in @metrics do
+    # Price metrics are stored in `available_metrics` under their own name, so
+    # they need no registry translation.
+    SqlQuery.available_slugs_for_metric_and_slugs_query(metric, slugs, opts)
+    |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
   end
 
   @impl Sanbase.Metric.Behaviour

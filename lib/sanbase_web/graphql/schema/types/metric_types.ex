@@ -657,6 +657,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:only_finalized_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
       arg(:fields, :timeseries_data_json_fields)
+      arg(:include_computed_at, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, resolve_slugs_list: true)
@@ -676,6 +677,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:only_finalized_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
       arg(:fields, :timeseries_data_per_slug_json_fields)
+      arg(:include_computed_at, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval_selector_weight/3)
       middleware(AccessControl, resolve_slugs_list: true)

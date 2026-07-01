@@ -46,11 +46,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {fixed_parameters_str, params} =
       maybe_get_fixed_parameters(metric, version, selector, params, opts ++ [trailing_and: true])
 
-    # `computed_at` is always selected so the API layer can decide whether to
-    # expose it. The per-dt subquery aliases the aggregate `computed_at2` (not
-    # `computed_at`) on purpose: reusing `computed_at` would shadow the raw column
-    # that the sibling `argMax(value, computed_at)` uses as its tiebreaker and
-    # raise ILLEGAL_AGGREGATION ("aggregate found inside another aggregate").
+    # computed_at is always selected, but the API layer decides whether or not to return it
     sql =
       """
       SELECT

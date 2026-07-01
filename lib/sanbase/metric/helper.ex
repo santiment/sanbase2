@@ -172,6 +172,7 @@ defmodule Sanbase.Metric.Helper do
       |> put_if_implemented(module, :available_versions, 1)
       |> put_if_implemented(module, :available_label_fqns, 1)
       |> put_if_implemented(module, :available_label_fqns, 2)
+      |> put_if_implemented(module, :available_non_crypto_asset_slugs, 3)
       |> put_if_implemented(module, :deprecated_metrics_map, 0)
       |> put_if_implemented(module, :soft_deprecated_metrics_map, 0)
       |> put_if_implemented(module, :fixed_labels_parameters_metrics, 0)

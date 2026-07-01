@@ -243,6 +243,9 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_slugs(metric, opts) :: available_slugs_result
 
+  @callback available_non_crypto_asset_slugs(metric, slugs :: list(slug), opts) ::
+              available_slugs_result
+
   @callback available_versions(metric) :: available_versions_result()
 
   @callback available_metrics() :: list(metric)
@@ -291,6 +294,9 @@ defmodule Sanbase.Metric.Behaviour do
     # the following 2 callbacks are implemented
     available_label_fqns: 1,
     available_label_fqns: 2,
+    # Only adapters that can serve non-crypto assets (price / clickhouse)
+    # implement this; the rest yield no non-crypto assets.
+    available_non_crypto_asset_slugs: 3,
     # Non-ch metrics don't have versioning yet
     available_versions: 1
   ]

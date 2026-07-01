@@ -36,9 +36,9 @@ defmodule SanbaseWeb.Graphql.HyperliquidTypes do
   @desc ~s"""
   Entry point for Hyperliquid BBO (best bid / best offer) data.
 
-  Use `timeseriesData` to fetch a bucketed BBO timeseries for a given slug
-  and `availableProjects` to list projects backed by a Hyperliquid source
-  mapping.
+  Use `timeseriesData` to fetch a bucketed BBO timeseries for a given slug,
+  and `availableProjects` / `availableNonCryptoAssets` to list the crypto
+  projects and non-crypto assets backed by a Hyperliquid source mapping.
   """
   object :hyperliquid_bbo_data do
     @desc ~s"""
@@ -66,6 +66,14 @@ defmodule SanbaseWeb.Graphql.HyperliquidTypes do
     """
     field :available_projects, list_of(:project) do
       cache_resolve(&HyperliquidBboResolver.available_projects/3, ttl: 300)
+    end
+
+    @desc ~s"""
+    List of non-crypto assets (gold, SPX, …) that have a `hyperliquid` source
+    slug mapping and can be queried via `timeseriesData`.
+    """
+    field :available_non_crypto_assets, list_of(:non_crypto_asset) do
+      cache_resolve(&HyperliquidBboResolver.available_non_crypto_assets/3, ttl: 300)
     end
   end
 end

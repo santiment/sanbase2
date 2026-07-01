@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.HyperliquidBboResolver do
   alias Sanbase.Hyperliquid.Bbo.BboPrices
+  alias Sanbase.NonCryptoAsset
   alias Sanbase.Project
 
   @source "hyperliquid"
@@ -31,5 +32,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.HyperliquidBboResolver do
       |> Enum.sort(:asc)
 
     {:ok, Project.List.by_slugs(slugs)}
+  end
+
+  @doc ~s"""
+  Resolver for `hyperliquidBboPrices.availableNonCryptoAssets`. Returns the
+  non-crypto assets (gold, SPX, …) that have a `hyperliquid` source slug
+  mapping.
+  """
+  @spec available_non_crypto_assets(any(), map(), Absinthe.Resolution.t()) ::
+          {:ok, [%NonCryptoAsset{}]}
+  def available_non_crypto_assets(_root, _args, _resolution) do
+    slugs =
+      @source
+      |> Project.SourceSlugMapping.get_source_slug_mappings(return: :non_crypto_project_only)
+      |> Enum.map(fn {_source_slug, asset_slug} -> asset_slug end)
+      |> Enum.uniq()
+
+    {:ok, NonCryptoAsset.by_slugs(slugs)}
   end
 end

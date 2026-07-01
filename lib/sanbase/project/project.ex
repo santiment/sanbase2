@@ -155,7 +155,24 @@ defmodule Sanbase.Project do
     |> cast_assoc(:market_segments)
     |> cast_assoc(:ecosystems)
     |> unique_constraint(:slug)
+    |> validate_no_non_crypto_asset_slug_collision()
     |> maybe_add_hidden_since()
+  end
+
+  # Project and non-crypto asset slugs share a single namespace — a slug-keyed
+  # API must resolve to exactly one asset. `Sanbase.NonCryptoAsset` rejects
+  # slugs already taken by a project; reject the reverse here.
+  defp validate_no_non_crypto_asset_slug_collision(changeset) do
+    case get_change(changeset, :slug) do
+      nil ->
+        changeset
+
+      slug ->
+        case Sanbase.NonCryptoAsset.id_by_slug(slug) do
+          nil -> changeset
+          _id -> add_error(changeset, :slug, "already used by a non-crypto asset")
+        end
+    end
   end
 
   defp maybe_add_hidden_since(changeset) do
@@ -164,7 +181,7 @@ defmodule Sanbase.Project do
         changeset
         |> put_change(:hidden_since, DateTime.utc_now() |> DateTime.truncate(:second))
 
-      %{is_hiden: false} ->
+      %{is_hidden: false} ->
         changeset
         |> put_change(:hidden_since, nil)
 

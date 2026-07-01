@@ -2851,6 +2851,48 @@ ALTER SEQUENCE public.newsletter_tokens_id_seq OWNED BY public.newsletter_tokens
 
 
 --
+-- Name: non_crypto_assets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.non_crypto_assets (
+    id bigint NOT NULL,
+    slug character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    ticker character varying(255),
+    asset_type character varying(255) NOT NULL,
+    description text,
+    logo_url character varying(255),
+    website_link character varying(255),
+    is_hidden boolean DEFAULT false NOT NULL,
+    hidden_since timestamp(0) without time zone,
+    hidden_reason text,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
+);
+
+
+--
+-- Name: non_crypto_assets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.non_crypto_assets_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: non_crypto_assets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.non_crypto_assets_id_seq OWNED BY public.non_crypto_assets.id;
+
+
+--
 -- Name: notification_muted_users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4638,7 +4680,9 @@ CREATE TABLE public.source_slug_mappings (
     id bigint NOT NULL,
     source character varying(255) NOT NULL,
     slug character varying(255) NOT NULL,
-    project_id bigint
+    project_id bigint,
+    non_crypto_asset_id bigint,
+    CONSTRAINT exactly_one_asset_reference CHECK (((project_id IS NULL) <> (non_crypto_asset_id IS NULL)))
 );
 
 
@@ -6495,6 +6539,13 @@ ALTER TABLE ONLY public.newsletter_tokens ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: non_crypto_assets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.non_crypto_assets ALTER COLUMN id SET DEFAULT nextval('public.non_crypto_assets_id_seq'::regclass);
+
+
+--
 -- Name: notification_templates id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7659,6 +7710,14 @@ ALTER TABLE ONLY public.monitored_twitter_handles
 
 ALTER TABLE ONLY public.newsletter_tokens
     ADD CONSTRAINT newsletter_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: non_crypto_assets non_crypto_assets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.non_crypto_assets
+    ADD CONSTRAINT non_crypto_assets_pkey PRIMARY KEY (id);
 
 
 --
@@ -9240,6 +9299,20 @@ CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_t
 
 
 --
+-- Name: non_crypto_assets_asset_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX non_crypto_assets_asset_type_index ON public.non_crypto_assets USING btree (asset_type);
+
+
+--
+-- Name: non_crypto_assets_slug_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX non_crypto_assets_slug_index ON public.non_crypto_assets USING btree (slug);
+
+
+--
 -- Name: notification_muted_users_muted_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9349,6 +9422,13 @@ CREATE INDEX oban_jobs_state_queue_priority_scheduled_at_id_index ON public.oban
 --
 
 CREATE UNIQUE INDEX one_mapping_per_source ON public.source_slug_mappings USING btree (source, project_id);
+
+
+--
+-- Name: one_mapping_per_source_non_crypto_asset; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX one_mapping_per_source_non_crypto_asset ON public.source_slug_mappings USING btree (source, non_crypto_asset_id);
 
 
 --
@@ -11280,6 +11360,14 @@ ALTER TABLE ONLY public.signals_historical_activity
 
 
 --
+-- Name: source_slug_mappings source_slug_mappings_non_crypto_asset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.source_slug_mappings
+    ADD CONSTRAINT source_slug_mappings_non_crypto_asset_id_fkey FOREIGN KEY (non_crypto_asset_id) REFERENCES public.non_crypto_assets(id) ON DELETE CASCADE;
+
+
+--
 -- Name: source_slug_mappings source_slug_mappings_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12294,5 +12382,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260528120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260529120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260604120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260604130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260610120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260610120100);
 INSERT INTO public."schema_migrations" (version) VALUES (20260610170000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260612130000);

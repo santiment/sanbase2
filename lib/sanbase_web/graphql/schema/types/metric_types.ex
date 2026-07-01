@@ -409,6 +409,18 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     @desc ~s"""
+    List of non-crypto assets (stocks, commodities, indices, forex, funds, bonds)
+    whose slug can be provided to the `timeseriesDataJson` (and co.) field to fetch
+    the metric.
+
+    Returns only the assets that actually have data for this metric, determined
+    per adapter by checking the `available_metrics` table.
+    """
+    field :available_non_crypto_assets, list_of(:non_crypto_asset) do
+      cache_resolve(&MetricResolver.get_available_non_crypto_assets/3, ttl: 300)
+    end
+
+    @desc ~s"""
     List of label FQNs (Fully Qualified Names) that can be provided to the `timeseriesDataJson` (and co.)
     selector `labelFqn` field to fetch the metric for a specific label.
 

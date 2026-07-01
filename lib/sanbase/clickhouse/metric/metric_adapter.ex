@@ -357,6 +357,22 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def available_non_crypto_asset_slugs(_metric, [], _opts), do: {:ok, []}
+
+  def available_non_crypto_asset_slugs(metric, slugs, opts) do
+    # ClickHouse metrics are keyed by their internal metric name in
+    # `available_metrics`, so translate the public name through the registry.
+    case Map.get(Registry.name_to_metric_map(), metric) do
+      nil ->
+        {:ok, []}
+
+      internal_metric ->
+        available_slugs_for_metric_and_slugs_query(internal_metric, slugs, opts)
+        |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
+    end
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: Registry.aggregations_with_nil()
 
   @impl Sanbase.Metric.Behaviour

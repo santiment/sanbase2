@@ -629,6 +629,48 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  Return the slugs of visible non-crypto assets that have data for `metric`.
+
+  Dispatches to the metric's adapter: price metrics check the `available_metrics`
+  table by metric name, ClickHouse metrics via the registry. Adapters that do not
+  implement the optional callback (most of them) yield no slugs.
+  """
+  @spec available_non_crypto_asset_slugs(metric, opts) :: Type.available_slugs_result()
+  def available_non_crypto_asset_slugs(metric, opts \\ []) do
+    case Sanbase.NonCryptoAsset.slugs() do
+      [] ->
+        {:ok, []}
+
+      slugs ->
+        # TEMPORARY WORKAROUND: we provide the full list of non-crypto slugs from
+        # Postgres as the candidate set checked against `available_metrics`. This
+        # is needed only until non-crypto assets are present in ClickHouse
+        # `asset_metadata` — once they are, the available slugs can be derived
+        # from ClickHouse directly, without enumerating them here.
+        adapter_available_non_crypto_asset_slugs(metric, slugs, opts)
+    end
+  end
+
+  defp adapter_available_non_crypto_asset_slugs(metric, slugs, opts) do
+    case get_module(metric, opts: opts) do
+      nil ->
+        {:ok, []}
+
+      module when is_atom(module) ->
+        # Only price / clickhouse adapters implement this; the rest yield none.
+        if Map.get(
+             Helper.implemented_optional_functions(),
+             {module, :available_non_crypto_asset_slugs, 3},
+             false
+           ) do
+          module.available_non_crypto_asset_slugs(metric, slugs, opts)
+        else
+          {:ok, []}
+        end
+    end
+  end
+
   @spec available_label_fqns(metric) :: Type.available_label_fqns_result()
   def available_label_fqns(metric) do
     case get_module(metric) do
@@ -991,10 +1033,14 @@ defmodule Sanbase.Metric do
   # Find the metric name from the mapset which is closest to the given metric.
   # The found metric must have a jaro distance bigger than 0.8
   defp find_closest(mapset, metric) do
-    closest = Enum.max_by(mapset, &String.jaro_distance(metric, &1))
+    if Enum.empty?(mapset) do
+      nil
+    else
+      closest = Enum.max_by(mapset, &String.jaro_distance(metric, &1))
 
-    if String.jaro_distance(metric, closest) > 0.8 do
-      closest
+      if String.jaro_distance(metric, closest) > 0.8 do
+        closest
+      end
     end
   end
 

@@ -9,6 +9,10 @@ defmodule Sanbase.DiscordBot.Worker do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
+  def enabled?() do
+    Sanbase.Nostrum.enabled?()
+  end
+
   def init(:ok) do
     Process.send_after(self(), :work, 1000)
     {:ok, nil}

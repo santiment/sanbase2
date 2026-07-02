@@ -6,13 +6,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
 
   @metric "daily_active_addresses"
 
-  # `computed_at` is ALWAYS selected in the generated ClickHouse SQL. Whether it
-  # is exposed is decided at the API layer:
-  #   * typed fields  -> returned only when the client selects `computedAt`
-  #   * *Json fields  -> `fields` only RENAMES keys (all default fields always
-  #                      present); `computedAt` is returned only when
-  #                      `includeComputedAt: true` (renamable via `fields`;
-  #                      naming it there without the flag is an error)
+  # `computed_at` is always selected in the generated ClickHouse SQL, but it is
+  # exposed ONLY through the `*Json` fields, and only when `includeComputedAt: true`
+  # is passed. The deprecated typed fields (`timeseriesData` /
+  # `timeseriesDataPerSlug`) do not expose it at all. `fields` only renames keys.
 
   setup do
     %{user: user} =
@@ -33,92 +30,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
     ]
   end
 
-  describe "timeseriesData (typed)" do
-    test "exposes computedAt when the field is selected", context do
-      %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
-
-      rows = [
-        row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z]),
-        row(~U[2019-01-02 00:00:00Z], 200.0, ~U[2019-01-06 00:00:00Z])
-      ]
-
-      query = """
-      {
-        getMetric(metric: "#{@metric}", storeExecutedClickhouseSql: true){
-          timeseriesData(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{interval}"){
-            datetime
-            value
-            computedAt
-          }
-          executedClickhouseSql
-        }
-      }
-      """
-
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        %{"data" => %{"getMetric" => metric_data}} =
-          conn
-          |> post("/graphql", query_skeleton(query, "getMetric"))
-          |> json_response(200)
-
-        assert metric_data["timeseriesData"] == [
-                 %{
-                   "datetime" => "2019-01-01T00:00:00Z",
-                   "value" => 100.0,
-                   "computedAt" => "2019-01-05T00:00:00Z"
-                 },
-                 %{
-                   "datetime" => "2019-01-02T00:00:00Z",
-                   "value" => 200.0,
-                   "computedAt" => "2019-01-06T00:00:00Z"
-                 }
-               ]
-
-        assert Enum.join(metric_data["executedClickhouseSql"], "\n") =~ "AS computed_at"
-      end)
-    end
-
-    test "omits computedAt from the response when not selected, though the SQL still selects it",
-         context do
-      %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
-
-      rows = [
-        row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z]),
-        row(~U[2019-01-02 00:00:00Z], 200.0, ~U[2019-01-06 00:00:00Z])
-      ]
-
-      query = """
-      {
-        getMetric(metric: "#{@metric}", storeExecutedClickhouseSql: true){
-          timeseriesData(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{interval}"){
-            datetime
-            value
-          }
-          executedClickhouseSql
-        }
-      }
-      """
-
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        %{"data" => %{"getMetric" => metric_data}} =
-          conn
-          |> post("/graphql", query_skeleton(query, "getMetric"))
-          |> json_response(200)
-
-        assert metric_data["timeseriesData"] == [
-                 %{"datetime" => "2019-01-01T00:00:00Z", "value" => 100.0},
-                 %{"datetime" => "2019-01-02T00:00:00Z", "value" => 200.0}
-               ]
-
-        assert Enum.join(metric_data["executedClickhouseSql"], "\n") =~ "AS computed_at"
-      end)
-    end
-  end
-
   describe "timeseriesDataJson" do
-    test "defaults to datetime + value when nothing is selected", context do
+    test "defaults to datetime + value", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
       rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
 
@@ -139,7 +52,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
       assert result == [%{"d" => "2019-01-01T00:00:00Z", "value" => 100.0}]
     end
 
-    test "includeComputedAt appends computedAt to the default fields", context do
+    test "includeComputedAt appends computedAt", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
       rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
 
@@ -167,7 +80,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
 
       result = run_json(conn, query, rows, "timeseriesDataJson")
 
-      # datetime renamed to "d", value still present under its default key, plus computedAt
       assert result == [
                %{
                  "d" => "2019-01-01T00:00:00Z",
@@ -177,7 +89,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
              ]
     end
 
-    test "includeComputedAt renames computedAt when it is also named in fields", context do
+    test "includeComputedAt renames computedAt when it is named in fields", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
       rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
 
@@ -189,7 +101,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
 
       result = run_json(conn, query, rows, "timeseriesDataJson")
 
-      # computedAt returned under the custom "c" key - no default "computedAt" key
       assert result == [
                %{"d" => "2019-01-01T00:00:00Z", "v" => 100.0, "c" => "2019-01-05T00:00:00Z"}
              ]
@@ -211,53 +122,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
         end)
 
       assert error_msg =~ "includeComputedAt"
-    end
-  end
-
-  describe "timeseriesDataPerSlug (typed)" do
-    test "exposes computedAt inside each data element when selected", context do
-      %{conn: conn, from: from, to: to, project1: p1, project2: p2} = context
-
-      dt1 = ~U[2019-01-01 00:00:00Z]
-      computed_at = ~U[2019-01-05 00:00:00Z]
-
-      rows = [
-        per_slug_row(dt1, p1.slug, 400.0, computed_at),
-        per_slug_row(dt1, p2.slug, 100.0, computed_at)
-      ]
-
-      query = """
-        {
-          getMetric(metric: "#{@metric}", storeExecutedClickhouseSql: true){
-            timeseriesDataPerSlug(
-              selector: {slugs: ["#{p1.slug}", "#{p2.slug}"]},
-              from: "#{from}", to: "#{to}", interval: "1d"){
-                datetime
-                data{ slug value computedAt }
-              }
-            executedClickhouseSql
-          }
-        }
-      """
-
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        %{"data" => %{"getMetric" => metric_data}} =
-          conn
-          |> post("/graphql", query_skeleton(query, "getMetric"))
-          |> json_response(200)
-
-        assert %{"datetime" => dt_str, "data" => data} =
-                 metric_data["timeseriesDataPerSlug"] |> Enum.at(0)
-
-        assert dt_str |> Sanbase.Utils.DateTime.from_iso8601!() == dt1
-
-        assert %{"slug" => p1.slug, "value" => 400.0, "computedAt" => "2019-01-05T00:00:00Z"} in data
-
-        assert %{"slug" => p2.slug, "value" => 100.0, "computedAt" => "2019-01-05T00:00:00Z"} in data
-
-        assert Enum.join(metric_data["executedClickhouseSql"], "\n") =~ "AS computed_at"
-      end)
     end
   end
 

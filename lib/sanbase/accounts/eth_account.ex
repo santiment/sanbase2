@@ -126,13 +126,14 @@ defmodule Sanbase.Accounts.EthAccount do
 
   defp contract_data_map(contract) do
     with total_supply when is_float(total_supply) <- UniswapPair.total_supply(contract),
-         {_reserves0, _reserves1} = reserves <- UniswapPair.reserves(contract) do
+         {reserves0, reserves1} when is_float(reserves0) and is_float(reserves1) <-
+           UniswapPair.reserves(contract),
+         position when position in [0, 1] <- UniswapPair.get_san_position(contract) do
       %{
         total_supply: total_supply,
-        reserves: reserves |> elem(UniswapPair.get_san_position(contract))
+        reserves: elem({reserves0, reserves1}, position)
       }
     else
-      {:error, _} -> %{total_supply: 0.0, reserves: 0.0}
       _ -> %{total_supply: 0.0, reserves: 0.0}
     end
   end

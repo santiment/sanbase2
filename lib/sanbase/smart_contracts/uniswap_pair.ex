@@ -19,16 +19,22 @@ defmodule Sanbase.SmartContracts.UniswapPair do
     decimals
   end
 
-  @spec token0(address) :: address
+  @spec token0(address) :: address | {:error, any()}
   def token0(contract) do
-    [address] = call_contract(contract, "token0()", [], [:address])
-    "0x" <> Base.encode16(address, case: :lower)
+    call_contract(contract, "token0()", [], [:address])
+    |> case do
+      [address] -> "0x" <> Base.encode16(address, case: :lower)
+      {:error, _} = error -> error
+    end
   end
 
-  @spec token1(address) :: address
+  @spec token1(address) :: address | {:error, any()}
   def token1(contract) do
-    [address] = call_contract(contract, "token1()", [], [:address])
-    "0x" <> Base.encode16(address, case: :lower)
+    call_contract(contract, "token1()", [], [:address])
+    |> case do
+      [address] -> "0x" <> Base.encode16(address, case: :lower)
+      {:error, _} = error -> error
+    end
   end
 
   @spec reserves(address) :: {float(), float()} | {:error, any()}
@@ -80,14 +86,29 @@ defmodule Sanbase.SmartContracts.UniswapPair do
     |> Enum.map(fn [balance] -> [format_number(balance, @decimals)] end)
   end
 
-  @spec get_san_position(address) :: 0 | 1
+  @spec get_san_position(address) :: 0 | 1 | {:error, any()}
   def get_san_position(contract) do
+    san_contract = Sanbase.SantimentContract.contract()
+    token0 = token0(contract)
+    token1 = token1(contract)
+
     cond do
-      token0(contract) == Sanbase.SantimentContract.contract() ->
+      token0 == san_contract ->
         0
 
-      token1(contract) == Sanbase.SantimentContract.contract() ->
+      token1 == san_contract ->
         1
+
+      # Propagate the underlying RPC/transport error so callers and logs can
+      # distinguish a failed contract call from "SAN is not part of this pair".
+      match?({:error, _}, token0) ->
+        token0
+
+      match?({:error, _}, token1) ->
+        token1
+
+      true ->
+        {:error, :san_position_not_found}
     end
   end
 end

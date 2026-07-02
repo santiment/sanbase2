@@ -672,7 +672,7 @@ defmodule Sanbase.Metric do
   defp adapter_available_non_crypto_asset_slugs(metric, slugs, opts) do
     case get_module(metric, opts: opts) do
       nil ->
-        {:ok, []}
+        metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
         # Only price / clickhouse adapters implement this; the rest yield none.

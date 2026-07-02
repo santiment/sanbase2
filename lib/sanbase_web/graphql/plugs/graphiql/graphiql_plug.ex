@@ -66,7 +66,21 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   end
 
   defp static_path(path) do
-    SanbaseWeb.Endpoint.static_path(path)
+    case SanbaseWeb.Endpoint.static_path(path) do
+      # No digest manifest (dev) — append the bundle mtime so browsers
+      # re-fetch after a rebuild instead of reusing a stale cached copy.
+      ^path -> path <> "?v=" <> asset_version(path)
+      digested_path -> digested_path
+    end
+  end
+
+  defp asset_version(path) do
+    file = Application.app_dir(:sanbase, Path.join("priv/static", path))
+
+    case File.stat(file, time: :posix) do
+      {:ok, %File.Stat{mtime: mtime}} -> Integer.to_string(mtime)
+      {:error, _} -> "0"
+    end
   end
 
   defp html?(conn) do

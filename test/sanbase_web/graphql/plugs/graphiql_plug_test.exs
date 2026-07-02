@@ -46,8 +46,8 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlugTest do
         |> GraphiqlPlug.call(@graphiql_opts)
 
       body = conn.resp_body
-      assert body =~ ~r/src="\/assets\/graphiql[^"]*\.js"/
-      assert body =~ ~r/href="\/assets\/graphiql[^"]*\.css"/
+      assert body =~ ~r/src="\/assets\/graphiql[^"]*\.js(\?[^"]*)?"/
+      assert body =~ ~r/href="\/assets\/graphiql[^"]*\.css(\?[^"]*)?"/
     end
 
     test "sets Content-Security-Policy header", %{conn: conn} do

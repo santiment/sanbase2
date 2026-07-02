@@ -47,6 +47,9 @@ var styles = {
     color: "hsl(var(--color-neutral-60))",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   subtitle: {
     fontSize: "12px",
@@ -74,12 +77,25 @@ var styles = {
     letterSpacing: "0.6px",
     color: "hsl(var(--color-neutral-50))",
     font: "inherit",
+    textAlign: "left",
+    whiteSpace: "nowrap",
+    minWidth: 0,
+    overflow: "hidden",
   },
   sectionArrow: {
     fontSize: "9px",
     width: "12px",
     textAlign: "center",
     transition: "transform 0.15s",
+    flexShrink: 0,
+  },
+  sectionTitle: {
+    flex: 1,
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    textAlign: "left",
   },
   item: {
     appearance: "none",
@@ -100,11 +116,18 @@ var styles = {
   itemName: {
     fontWeight: 500,
     marginBottom: "2px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   itemDesc: {
     fontSize: "11px",
     color: "hsl(var(--color-neutral-50))",
     lineHeight: 1.3,
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
   },
 };
 
@@ -159,6 +182,7 @@ function ExamplesContent() {
           key: "sec-" + si,
           type: "button",
           style: styles.sectionHeader,
+          title: section.title,
           "aria-expanded": String(!isCollapsed),
           "aria-label": (isCollapsed ? "Expand" : "Collapse") + " " + section.title,
           onClick: function () { toggleSection(si); },
@@ -173,7 +197,7 @@ function ExamplesContent() {
           },
           "\u25BC"
         ),
-        section.title
+        React.createElement("span", { style: styles.sectionTitle }, section.title)
       )
     );
 
@@ -188,6 +212,7 @@ function ExamplesContent() {
               type: "button",
               style: styles.item,
               className: "graphiql-example-item",
+              title: example.name,
               "aria-label": "Load example: " + example.name,
               onClick: function () { handleClick(example); },
             },

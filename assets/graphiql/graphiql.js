@@ -19,6 +19,7 @@ import { GraphiQL, HISTORY_PLUGIN } from "graphiql";
 import { useMonaco } from "@graphiql/react";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
+import { SanHistory } from "./graphiql-history-plugin.js";
 import { ChartButton } from "./graphiql-chart-modal.js";
 import { TableButton } from "./graphiql-table-modal.js";
 import { isEffectivelyDark } from "./graphiql-theme.js";
@@ -240,6 +241,11 @@ observeTabBar();
 const explorer = explorerPlugin();
 const examples = examplesPlugin();
 
+// GraphiQL enables history recording only when the plugins array contains the
+// HISTORY_PLUGIN object itself (identity check in GraphiQL.js), so the custom
+// content component is swapped in place instead of passing a new plugin object.
+HISTORY_PLUGIN.content = SanHistory;
+
 // --- Render ---
 const root = createRoot(document.getElementById("graphiql"));
 root.render(
@@ -252,6 +258,7 @@ root.render(
       initialVariables: initialVariables || undefined,
       shouldPersistHeaders: false,
       defaultEditorToolsVisibility: true,
+      maxHistoryLength: 50,
       onEditQuery: onEditQuery,
       onEditVariables: onEditVariables,
     },

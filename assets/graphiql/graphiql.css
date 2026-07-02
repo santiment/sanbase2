@@ -157,7 +157,7 @@
 /* --- Plugin panel --- */
 #graphiql .graphiql-plugin {
   border-right: 1px solid var(--san-border);
-  min-width: 200px;
+  min-width: 240px;
 }
 
 /* --- Layout: surface background with bordered panels --- */
@@ -230,6 +230,135 @@
 #graphiql .graphiql-example-item:hover {
   background: hsla(var(--color-neutral-20), 0.5);
   border-color: var(--san-border);
+}
+
+/* --- History plugin --- */
+/* The built-in header contains a one-click Clear button; it is replaced by
+   .san-history-header + a confirm dialog in graphiql-history-plugin.js */
+#graphiql .graphiql-history-header {
+  display: none;
+}
+
+#graphiql .graphiql-history-items {
+  margin-top: 4px;
+}
+
+#graphiql .graphiql-history-item {
+  height: 26px;
+}
+
+#graphiql button.graphiql-history-item-label {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Actions hidden until row hover / keyboard focus */
+#graphiql button.graphiql-history-item-action {
+  display: none;
+  padding: 4px;
+}
+
+#graphiql .graphiql-history-item:hover button.graphiql-history-item-action,
+#graphiql .graphiql-history-item:focus-within button.graphiql-history-item-action {
+  display: flex;
+}
+
+/* Favorited star stays visible without hover */
+#graphiql button.graphiql-history-item-action[aria-label="Remove favorite"] {
+  display: flex;
+}
+
+#graphiql button.graphiql-history-item-action svg {
+  width: 12px;
+  height: 12px;
+}
+
+.san-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: hsl(var(--color-neutral-60));
+}
+
+.san-history-clear-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--san-text-muted);
+  cursor: pointer;
+}
+
+.san-history-clear-btn:hover:not(:disabled) {
+  color: #c0392b;
+  border-color: var(--san-border);
+}
+
+.san-history-clear-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* --- Clear-history confirm dialog --- */
+/* Rendered in a radix portal outside #graphiql, so selectors are unprefixed
+   and colors use GraphiQL --color-* vars (scoped onto .graphiql-dialog). */
+.san-confirm-body {
+  margin: 12px 0 0;
+  padding: 0 24px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: hsla(var(--color-neutral), var(--alpha-secondary));
+}
+
+.san-confirm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 24px 24px;
+}
+
+.san-confirm-cancel-btn {
+  background: none;
+  border: 1px solid hsla(var(--color-neutral), var(--alpha-background-heavy));
+  border-radius: 3px;
+  padding: 4px 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: hsl(var(--color-neutral));
+  cursor: pointer;
+}
+
+.san-confirm-cancel-btn:hover {
+  background: hsla(var(--color-neutral), var(--alpha-background-light));
+}
+
+.san-confirm-danger-btn {
+  background: #c0392b;
+  border: 1px solid #c0392b;
+  border-radius: 3px;
+  padding: 4px 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.san-confirm-danger-btn:hover {
+  background: #a93226;
+  border-color: #a93226;
 }
 
 /* --- Chart modal --- */
@@ -490,4 +619,15 @@
   font-size: 12px;
   font-family: system-ui, -apple-system, sans-serif;
   font-style: italic;
+}
+
+/* --- Narrow windows: reclaim panel margins --- */
+@media (max-width: 1100px) {
+  #graphiql .graphiql-editors {
+    margin: 4px 2px 4px 4px;
+  }
+
+  #graphiql .graphiql-response {
+    margin: 4px 4px 4px 2px;
+  }
 }

@@ -47,6 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HyperliquidBboResolver do
       |> Project.SourceSlugMapping.get_source_slug_mappings(return: :non_crypto_project_only)
       |> Enum.map(fn {_source_slug, asset_slug} -> asset_slug end)
       |> Enum.uniq()
+      |> Enum.sort(:asc)
 
     {:ok, NonCryptoAsset.by_slugs(slugs)}
   end

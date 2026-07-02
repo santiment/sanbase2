@@ -168,6 +168,8 @@ defmodule Sanbase.Price.MetricAdapter do
     |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
   end
 
+  def available_non_crypto_asset_slugs(_metric, _slugs, _opts), do: {:ok, []}
+
   @impl Sanbase.Metric.Behaviour
   def incomplete_metrics(), do: []
 

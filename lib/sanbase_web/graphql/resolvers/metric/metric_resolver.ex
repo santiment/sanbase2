@@ -142,10 +142,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def get_available_non_crypto_assets(_root, _args, %{source: %{metric: metric}}) do
+  def get_available_non_crypto_assets(_root, _args, %{source: %{metric: metric, version: version}}) do
     # Returns the non-crypto assets that actually have data for this metric,
     # determined per adapter by checking the `available_metrics` table.
-    with {:ok, slugs} <- Metric.available_non_crypto_asset_slugs(metric) do
+    with {:ok, slugs} <- Metric.available_non_crypto_asset_slugs(metric, version: version) do
       {:ok, Sanbase.NonCryptoAsset.by_slugs(slugs)}
     end
   end

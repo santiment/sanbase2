@@ -9,9 +9,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
   # `computed_at` is ALWAYS selected in the generated ClickHouse SQL. Whether it
   # is exposed is decided at the API layer:
   #   * typed fields  -> returned only when the client selects `computedAt`
-  #   * *Json fields  -> returned only when `includeComputedAt: true` is passed
-  #                      (`fields` optionally renames the key; naming it there
-  #                      without the flag is an error)
+  #   * *Json fields  -> `fields` only RENAMES keys (all default fields always
+  #                      present); `computedAt` is returned only when
+  #                      `includeComputedAt: true` (renamable via `fields`;
+  #                      naming it there without the flag is an error)
 
   setup do
     %{user: user} =
@@ -127,15 +128,15 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
       assert result == [%{"datetime" => "2019-01-01T00:00:00Z", "value" => 100.0}]
     end
 
-    test "fields acts as a selector - returns only the named fields", context do
+    test "fields only renames keys - unnamed fields keep their default key", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
       rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
 
       query = json_query(slug, from, to, interval, fields: ~s|{datetime: "d"}|)
       result = run_json(conn, query, rows, "timeseriesDataJson")
 
-      # value is NOT included - only the named `datetime`
-      assert result == [%{"d" => "2019-01-01T00:00:00Z"}]
+      # value is still present under its default key - fields renames, not selects
+      assert result == [%{"d" => "2019-01-01T00:00:00Z", "value" => 100.0}]
     end
 
     test "includeComputedAt appends computedAt to the default fields", context do
@@ -154,7 +155,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
              ]
     end
 
-    test "includeComputedAt composes with a fields selection", context do
+    test "includeComputedAt composes with fields renaming", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
       rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]
 
@@ -166,8 +167,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
 
       result = run_json(conn, query, rows, "timeseriesDataJson")
 
-      # only the named `datetime`, plus computedAt - no value
-      assert result == [%{"d" => "2019-01-01T00:00:00Z", "computedAt" => "2019-01-05T00:00:00Z"}]
+      # datetime renamed to "d", value still present under its default key, plus computedAt
+      assert result == [
+               %{
+                 "d" => "2019-01-01T00:00:00Z",
+                 "value" => 100.0,
+                 "computedAt" => "2019-01-05T00:00:00Z"
+               }
+             ]
     end
 
     test "includeComputedAt renames computedAt when it is also named in fields", context do
@@ -278,21 +285,22 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
       assert %{"slug" => p1.slug, "value" => 400, "computedAt" => "2019-01-05T00:00:00Z"} in data
     end
 
-    test "includeComputedAt composes with a fields selection", context do
+    test "renames inner fields and still returns data even when `data` is not named", context do
       %{conn: conn, from: from, to: to, project1: p1, project2: p2} = context
       rows = [per_slug_row(~U[2019-01-01 00:00:00Z], p1.slug, 400, ~U[2019-01-05 00:00:00Z])]
 
+      # names datetime/slug/value/computedAt but NOT `data` - since fields only
+      # renames (never drops), `data` still appears under its default key
       query =
         per_slug_json_query(p1, p2, from, to,
-          fields: ~s|{data: "d", slug: "s", value: "v"}|,
+          fields: ~s|{datetime: "d", slug: "s", value: "v", computedAt: "ca"}|,
           include_computed_at: true
         )
 
       result = run_json(conn, query, rows, "timeseriesDataPerSlugJson")
 
-      # computedAt keeps its fixed key even though slug/value were renamed
-      assert %{"d" => data} = result |> Enum.at(0)
-      assert %{"s" => p1.slug, "v" => 400, "computedAt" => "2019-01-05T00:00:00Z"} in data
+      assert %{"d" => _dt, "data" => data} = result |> Enum.at(0)
+      assert %{"s" => p1.slug, "v" => 400, "ca" => "2019-01-05T00:00:00Z"} in data
     end
   end
 

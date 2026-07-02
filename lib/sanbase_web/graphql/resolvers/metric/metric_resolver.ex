@@ -557,27 +557,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # keys (computed_at is present and exposed only when `computedAt` is selected).
   defp format_output(result, _function, _args, false = _json_variant?), do: result
 
-  # The `*Json` variants serialize the whole map, so we build each row explicitly:
-  # `fields` selects/renames the core columns (defaulting to datetime + value /
-  # datetime + data when omitted) and `include_computed_at` appends `computedAt`
-  # on top of that selection.
+  # The `*Json` variants serialize the whole map. `fields` only *renames* the
+  # output keys - every default field is always present; naming one just changes
+  # its key. `include_computed_at` additionally appends `computedAt` (renamable
+  # via the `computed_at` entry of `fields`).
   defp format_output(result, function, args, true = _json_variant?) do
     fields = Map.get(args, :fields) || %{}
-
-    # `computedAt` can be included two ways: named in `fields` (returned under the
-    # caller's key, as part of the selection) or via the `include_computed_at`
-    # flag (returned under the default `computedAt` key). The flag only appends
-    # when `fields` does not already name it, so the two never collide.
-    append_computed_at? =
-      Map.get(args, :include_computed_at, false) and not Map.has_key?(fields, :computed_at)
+    append_computed_at? = Map.get(args, :include_computed_at, false)
 
     Enum.map(result, &json_row(&1, function, fields, append_computed_at?))
   end
 
-  defp json_row(point, :timeseries_data, fields, append_computed_at?) do
-    point
-    |> select_timeseries_fields(fields)
-    |> maybe_append_computed_at(point, append_computed_at?)
+  defp json_row(%{value_ohlc: ohlc} = point, :timeseries_data, fields, append?) do
+    %{
+      output_key(fields, :datetime) => point.datetime,
+      output_key(fields, :value_ohlc) => %{
+        output_key(fields, :open) => ohlc.open,
+        output_key(fields, :high) => ohlc.high,
+        output_key(fields, :low) => ohlc.low,
+        output_key(fields, :close) => ohlc.close
+      }
+    }
+    |> maybe_put_computed_at(point, fields, append?)
+  end
+
+  defp json_row(%{value: value} = point, :timeseries_data, fields, append?) do
+    %{
+      output_key(fields, :datetime) => point.datetime,
+      output_key(fields, :value) => value
+    }
+    |> maybe_put_computed_at(point, fields, append?)
   end
 
   # For per-slug, `computed_at` belongs to each (datetime, slug) pair, so it is
@@ -585,88 +594,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp json_row(%{datetime: datetime, data: data}, :timeseries_data_per_slug, fields, append?) do
     elements =
       Enum.map(data, fn elem ->
-        elem
-        |> select_slug_fields(fields)
-        |> maybe_append_computed_at(elem, append?)
+        %{
+          output_key(fields, :slug) => elem.slug,
+          output_key(fields, :value) => elem.value
+        }
+        |> maybe_put_computed_at(elem, fields, append?)
       end)
 
-    %{}
-    |> put_or_default(fields, :datetime, datetime)
-    |> put_or_default(fields, :data, elements)
+    %{
+      output_key(fields, :datetime) => datetime,
+      output_key(fields, :data) => elements
+    }
   end
 
-  # No `fields` -> default columns (datetime + value/value_ohlc). Otherwise only
-  # the named columns (including `computed_at` when named), under the given keys.
-  defp select_timeseries_fields(point, fields) when map_size(fields) == 0,
-    do: Map.delete(point, :computed_at)
+  # The output key for `field`: the caller's rename from `fields`, else the field
+  # name itself.
+  defp output_key(fields, field), do: Map.get(fields, field, field)
 
-  defp select_timeseries_fields(point, fields) do
-    %{}
-    |> put_selected_field(fields, :datetime, point)
-    |> put_selected_field(fields, :value, point)
-    |> put_selected_ohlc(fields, point)
-    |> put_selected_field(fields, :computed_at, point)
-  end
+  # `include_computed_at` appends the compute timestamp, renamable via the
+  # `computed_at` entry of `fields` (default key `computedAt`); `nil` for adapters
+  # that do not track it.
+  defp maybe_put_computed_at(row, _source, _fields, false), do: row
 
-  defp select_slug_fields(elem, fields) when map_size(fields) == 0,
-    do: Map.take(elem, [:slug, :value])
-
-  defp select_slug_fields(elem, fields) do
-    %{}
-    |> put_selected_field(fields, :slug, elem)
-    |> put_selected_field(fields, :value, elem)
-    |> put_selected_field(fields, :computed_at, elem)
-  end
-
-  # Copy `field` from `source` under its caller-provided key, but only when it is
-  # both selected in `fields` and present on the datapoint (e.g. `value` is absent
-  # on an OHLC series).
-  defp put_selected_field(acc, fields, field, source) do
-    case {Map.fetch(fields, field), Map.fetch(source, field)} do
-      {{:ok, out_key}, {:ok, value}} -> Map.put(acc, out_key, value)
-      _ -> acc
-    end
-  end
-
-  # `value_ohlc` is a nested object; when selected, its inner keys are renamed via
-  # the `open`/`high`/`low`/`close` entries of `fields` (defaulting to their name).
-  defp put_selected_ohlc(acc, fields, %{value_ohlc: ohlc}) do
-    case Map.fetch(fields, :value_ohlc) do
-      {:ok, out_key} ->
-        nested = %{
-          Map.get(fields, :open, :open) => ohlc.open,
-          Map.get(fields, :high, :high) => ohlc.high,
-          Map.get(fields, :low, :low) => ohlc.low,
-          Map.get(fields, :close, :close) => ohlc.close
-        }
-
-        Map.put(acc, out_key, nested)
-
-      :error ->
-        acc
-    end
-  end
-
-  defp put_selected_ohlc(acc, _fields, _point), do: acc
-
-  # With no `fields` the value is kept under its default key; otherwise only when
-  # the field is named, under the caller-provided key.
-  defp put_or_default(acc, fields, field, value) when map_size(fields) == 0,
-    do: Map.put(acc, field, value)
-
-  defp put_or_default(acc, fields, field, value) do
-    case Map.fetch(fields, field) do
-      {:ok, out_key} -> Map.put(acc, out_key, value)
-      :error -> acc
-    end
-  end
-
-  # `include_computed_at` appends the compute timestamp under a fixed `computedAt`
-  # key (matching the typed field); `nil` for adapters that do not track it.
-  defp maybe_append_computed_at(row, _source, false), do: row
-
-  defp maybe_append_computed_at(row, source, true),
-    do: Map.put(row, :computedAt, Map.get(source, :computed_at))
+  defp maybe_put_computed_at(row, source, fields, true),
+    do: Map.put(row, Map.get(fields, :computed_at, :computedAt), Map.get(source, :computed_at))
 
   # Which schema field is being resolved - `timeseriesDataJson` /
   # `timeseriesDataPerSlugJson` (raw `:json` scalar) or their typed counterparts.

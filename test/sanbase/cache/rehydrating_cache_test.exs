@@ -15,14 +15,14 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
     # next test.
     #
     # Tests tune timing/limits via tags (e.g. `@tag run_interval: 20`,
-    # `@tag unused_key_pause_seconds: 0`); anything untagged uses the production
+    # `@tag unused_key_pause_ms: 0`); anything untagged uses the production
     # defaults baked into the module.
     opts =
       context
       |> Map.take([
         :run_interval,
-        :unused_key_pause_seconds,
-        :unused_key_drop_seconds,
+        :unused_key_pause_ms,
+        :unused_key_drop_ms,
         :max_spawns_per_run
       ])
       |> Enum.to_list()
@@ -244,7 +244,7 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
 
   describe "unused key lifecycle" do
     @tag run_interval: 20
-    @tag unused_key_pause_seconds: 0
+    @tag unused_key_pause_ms: 0
     test "stops refreshing a key that is no longer read" do
       key = {:rc_test, :pause_unused}
       counter = :counters.new(1, [])
@@ -265,13 +265,16 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
     end
 
     @tag run_interval: 20
-    @tag unused_key_drop_seconds: 0
+    @tag unused_key_drop_ms: 0
     test "forgets a key that has been unread past the drop threshold" do
       key = {:rc_test, :drop_unused}
       :ok = RehydratingCache.register_function(fn -> {:ok, :v} end, key, 60, 30)
 
-      # Give the run loop time to observe the key as unread and drop it.
-      Process.sleep(800)
+      # Give the run loop time to observe the key as unread and drop it. Sleep
+      # past a full second: last_access is second-granularity, so with a 0ms drop
+      # threshold the key only becomes droppable once the wall clock has advanced
+      # at least one second beyond registration.
+      Process.sleep(1_500)
 
       # Remove the stored value so the read cannot be served from the store; the
       # closure was forgotten, so the key is unregistered again.

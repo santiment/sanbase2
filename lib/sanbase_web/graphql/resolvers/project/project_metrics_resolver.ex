@@ -220,44 +220,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   defp register_and_get_via_rehydrating_cache(cache_key, fun, slug, query) do
     case rehydrating_cache_get(cache_key) do
-      {:ok, value} ->
-        {:ok, value}
-
-      {:nocache, {:ok, _value}} = value ->
-        value
-
       {:error, :not_registered} ->
         # Register the closure, then wait once for the first computation.
         case register_function(cache_key, fun, slug, query) do
-          :ok -> get_after_registration(cache_key, slug, query)
+          :ok -> handle_rehydrating_result(rehydrating_cache_get(cache_key), slug, query)
           :error -> still_computing_error(slug, query)
         end
 
-      {:error, :timeout} ->
-        # The value is being computed but was not ready within the wait budget.
-        still_computing_error(slug, query)
-
-      {:error, error} ->
-        # The computation completed with (or crashed into) a real error.
-        {:error, handle_graphql_error(query, slug, error)}
+      result ->
+        handle_rehydrating_result(result, slug, query)
     end
   end
 
-  defp get_after_registration(cache_key, slug, query) do
-    case rehydrating_cache_get(cache_key) do
-      {:ok, value} ->
-        {:ok, value}
+  defp handle_rehydrating_result({:ok, value}, _slug, _query), do: {:ok, value}
+  defp handle_rehydrating_result({:nocache, {:ok, _value}} = value, _slug, _query), do: value
 
-      {:nocache, {:ok, _value}} = value ->
-        value
+  # Both the initial not-ready timeout and a still-`:not_registered` result after
+  # we just registered mean the value is still being computed.
+  defp handle_rehydrating_result({:error, error}, slug, query)
+       when error in [:timeout, :not_registered],
+       do: still_computing_error(slug, query)
 
-      {:error, error} when error in [:timeout, :not_registered] ->
-        still_computing_error(slug, query)
-
-      {:error, error} ->
-        {:error, handle_graphql_error(query, slug, error)}
-    end
-  end
+  # The computation completed with (or crashed into) a real error.
+  defp handle_rehydrating_result({:error, error}, slug, query),
+    do: {:error, handle_graphql_error(query, slug, error)}
 
   defp rehydrating_cache_get(cache_key) do
     RehydratingCache.get(cache_key, @first_computation_wait, return_nocache: true)

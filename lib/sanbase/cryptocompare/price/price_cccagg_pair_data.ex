@@ -1,5 +1,6 @@
 defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
   alias Sanbase.Project
+  alias Sanbase.Utils.Config
 
   require Logger
 
@@ -115,10 +116,34 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
     end)
   end
 
-  defp raw_data() do
-    {:ok, %HTTPoison.Response{status_code: 200, body: body}} =
-      HTTPoison.get("https://min-api.cryptocompare.com/data/v2/cccagg/pairs")
+  @cccagg_pairs_url "https://min-api.cryptocompare.com/data/v2/cccagg/pairs"
 
-    body |> Jason.decode!() |> get_in(["Data", "pairs"])
+  defp raw_data() do
+    api_key = api_key()
+
+    if is_nil(api_key) or api_key == "" do
+      raise("""
+      Cannot fetch CCCAGG pairs: the Cryptocompare API key is not configured. \
+      Set the CRYPTOCOMPARE_API_KEY environment variable.\
+      """)
+    end
+
+    headers = [{"authorization", "Apikey #{api_key}"}]
+
+    # Req decodes the JSON response body automatically based on the content type.
+    case Req.get(@cccagg_pairs_url, headers: headers) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        get_in(body, ["Data", "pairs"])
+
+      {:ok, %Req.Response{status: status, body: body}} ->
+        raise(
+          "Cannot fetch CCCAGG pairs: Cryptocompare returned status #{status}: #{inspect(body)}"
+        )
+
+      {:error, error} ->
+        raise("Cannot fetch CCCAGG pairs: #{inspect(error)}")
+    end
   end
+
+  defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)
 end

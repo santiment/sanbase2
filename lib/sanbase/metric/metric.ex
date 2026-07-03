@@ -55,6 +55,14 @@ defmodule Sanbase.Metric do
   @default_version "1.0"
   def default_version(), do: @default_version
 
+  # Per-module timeout for the available-metrics fan-out. Modules run fully in
+  # parallel, so this bounds total latency at (slowest module) rather than the
+  # sum. Kept well under the resolver's wait budget so a single slow module
+  # yields a partial `:nocache` result (retried cheaply from the per-module
+  # cache) instead of failing the whole request. Trade-off: a module that
+  # consistently exceeds this leaves its metrics missing until it recovers.
+  @available_metrics_module_timeout 20_000
+
   @doc ~s"""
   Check if `metric` is a valid metric name.
   """
@@ -770,7 +778,7 @@ defmodule Sanbase.Metric do
     parallel_opts = [
       ordered: true,
       max_concurrency: 10,
-      timeout: 60_000,
+      timeout: @available_metrics_module_timeout,
       on_timeout: :kill_task
     ]
 
@@ -835,11 +843,8 @@ defmodule Sanbase.Metric do
       )
 
     case available_metrics do
-      {:nocache, {:ok, metrics}} ->
-        {:nocache, {:ok, metrics -- (Helper.histogram_metrics() ++ Helper.table_metrics())}}
-
-      {:ok, metrics} ->
-        {:ok, metrics -- (Helper.histogram_metrics() ++ Helper.table_metrics())}
+      {:nocache, {:ok, metrics}} -> {:nocache, {:ok, only_timeseries_metrics(metrics)}}
+      {:ok, metrics} -> {:ok, only_timeseries_metrics(metrics)}
     end
   end
 
@@ -858,11 +863,8 @@ defmodule Sanbase.Metric do
       )
 
     case available_metrics do
-      {:nocache, {:ok, metrics}} ->
-        {:nocache, {:ok, metrics -- (Helper.timeseries_metrics() ++ Helper.table_metrics())}}
-
-      {:ok, metrics} ->
-        {:ok, metrics -- (Helper.timeseries_metrics() ++ Helper.table_metrics())}
+      {:nocache, {:ok, metrics}} -> {:nocache, {:ok, only_histogram_metrics(metrics)}}
+      {:ok, metrics} -> {:ok, only_histogram_metrics(metrics)}
     end
   end
 
@@ -881,13 +883,35 @@ defmodule Sanbase.Metric do
       )
 
     case available_metrics do
-      {:nocache, {:ok, metrics}} ->
-        {:nocache, {:ok, metrics -- (Helper.timeseries_metrics() ++ Helper.histogram_metrics())}}
-
-      {:ok, metrics} ->
-        {:ok, metrics -- (Helper.timeseries_metrics() ++ Helper.histogram_metrics())}
+      {:nocache, {:ok, metrics}} -> {:nocache, {:ok, only_table_metrics(metrics)}}
+      {:ok, metrics} -> {:ok, only_table_metrics(metrics)}
     end
   end
+
+  @doc ~s"""
+  Keep only the timeseries metrics from a full available-metrics list.
+
+  The three `only_*` helpers derive a data-type subset from the combined
+  available-metrics list so callers can compute all subsets from a single
+  (cached) list instead of recomputing the fan-out per data type.
+  """
+  @spec only_timeseries_metrics(list(metric)) :: list(metric)
+  def only_timeseries_metrics(metrics),
+    do: metrics -- (Helper.histogram_metrics() ++ Helper.table_metrics())
+
+  @doc ~s"""
+  Keep only the histogram metrics from a full available-metrics list.
+  """
+  @spec only_histogram_metrics(list(metric)) :: list(metric)
+  def only_histogram_metrics(metrics),
+    do: metrics -- (Helper.timeseries_metrics() ++ Helper.table_metrics())
+
+  @doc ~s"""
+  Keep only the table metrics from a full available-metrics list.
+  """
+  @spec only_table_metrics(list(metric)) :: list(metric)
+  def only_table_metrics(metrics),
+    do: metrics -- (Helper.timeseries_metrics() ++ Helper.histogram_metrics())
 
   @doc ~s"""
   Get all available timeseries metrics

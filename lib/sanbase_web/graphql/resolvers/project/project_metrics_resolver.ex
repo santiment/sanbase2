@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
+  require Logger
+
   alias Sanbase.Project
   alias Sanbase.Metric
   alias Sanbase.Cache.RehydratingCache
@@ -14,18 +16,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   @refresh_time_delta 1800
   @refresh_time_max_offset 1800
 
+  # How long the resolver waits for the first computation of a slug's available
+  # metrics. Kept just under the GraphQL request timeout. The per-module fan-out
+  # inside the computation is bounded well below this, so a single wait is enough
+  # instead of several short polling attempts.
+  @first_computation_wait 29_000
+
   def available_label_fqns(%Project{slug: slug}, _args, _resolution) do
     Sanbase.Clickhouse.Label.label_fqns_with_asset(slug)
   end
 
   def available_metrics(%Project{} = project, _args, resolution),
-    do:
-      resolve_available(
-        project,
-        resolution,
-        :available_metrics,
-        &Metric.available_metrics_for_selector/2
-      )
+    do: resolve_available(project, resolution, :available_metrics, & &1)
 
   def available_timeseries_metrics(%Project{} = project, _args, resolution),
     do:
@@ -33,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         project,
         resolution,
         :available_timeseries_metrics,
-        &Metric.available_timeseries_metrics_for_slug/2
+        &Metric.only_timeseries_metrics/1
       )
 
   def available_histogram_metrics(%Project{} = project, _args, resolution),
@@ -42,7 +44,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         project,
         resolution,
         :available_histogram_metrics,
-        &Metric.available_histogram_metrics_for_slug/2
+        &Metric.only_histogram_metrics/1
       )
 
   def available_table_metrics(%Project{} = project, _args, resolution),
@@ -51,7 +53,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         project,
         resolution,
         :available_table_metrics,
-        &Metric.available_table_metrics_for_slug/2
+        &Metric.only_table_metrics/1
       )
 
   def available_metrics_extended(%Project{} = project, args, resolution) do
@@ -62,24 +64,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     end
   end
 
-  defp resolve_available(%Project{slug: slug}, resolution, query, metric_fn) do
+  defp resolve_available(%Project{slug: slug}, resolution, query, filter_fn) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
       user_metric_access_level = user_metric_access_level(resolution)
       lookback_days = user_available_metrics_lookback_days(resolution)
 
+      # A single cache key per (slug, access level, lookback) computes the full
+      # available-metrics list. The four fields (all/timeseries/histogram/table)
+      # then derive their subset from it via `filter_fn`. This registers one
+      # rehydrating closure per slug instead of four near-identical ones.
       cache_key =
-        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+        {__MODULE__, :available_metrics, slug, user_metric_access_level, lookback_days}
         |> Sanbase.Cache.hash()
 
       fun = fn ->
-        metric_fn.(%{slug: slug},
+        Metric.available_metrics_for_selector(%{slug: slug},
           user_metric_access_level: user_metric_access_level,
           lookback_days: lookback_days
         )
       end
 
-      maybe_register_and_get(cache_key, fun, slug, query)
+      case maybe_register_and_get(cache_key, fun, slug, query) do
+        {:ok, metrics} -> {:ok, filter_fn.(metrics)}
+        {:nocache, {:ok, metrics}} -> {:nocache, {:ok, filter_fn.(metrics)}}
+        {:error, error} -> {:error, error}
+      end
     end
   end
 
@@ -178,9 +188,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     end)
   end
 
-  # Get the available metrics from the rehydrating cache. If the function for computing it
-  # is not register - register it and get the result after that.
-  # It can make 5 attempts with 5 seconds timeout, after which it returns an error.
+  # Get the available metrics from the rehydrating cache. If the function that
+  # computes it is not registered yet, register it and wait once for the first
+  # computation.
   #
   # In the test environment `:use_rehydrating_cache` defaults to `false` so the resolver
   # takes the synchronous `Sanbase.Cache.get_or_store/2` fallback below. Rationale: the
@@ -192,11 +202,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   # `Sanbase.Application.Web`. Tests that need to exercise the RC wiring end-to-end flip
   # the flag back to `true` in their `setup` block and start a per-test
   # `RehydratingCache.Supervisor` via `start_supervised!`.
-  defp maybe_register_and_get(cache_key, fun, slug, query, attempts \\ 5)
-
-  defp maybe_register_and_get(cache_key, fun, slug, query, attempts) do
+  defp maybe_register_and_get(cache_key, fun, slug, query) do
     if rehydrating_cache_enabled?() do
-      register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts)
+      register_and_get_via_rehydrating_cache(cache_key, fun, slug, query)
     else
       # Synchronous fallback used in test only. `Sanbase.Cache.get_or_store/2` unwraps
       # `{:nocache, {:ok, value}}` to `{:ok, value}`, so full `:nocache` semantics are
@@ -210,50 +218,73 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     Application.get_env(:sanbase, :use_rehydrating_cache, true)
   end
 
-  defp register_and_get_via_rehydrating_cache(_cache_key, _fun, slug, query, 0) do
-    {:error,
-     handle_graphql_error(
-       query,
-       slug,
-       "timeout after 5 attempts waiting on RehydratingCache " <>
-         "(upstream adapter(s) likely slow — see prior 'slow module' warnings)"
-     )}
-  end
-
-  defp register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts) do
-    case RehydratingCache.get(cache_key, 5_000, return_nocache: true) do
-      {:nocache, {:ok, value}} ->
-        {:nocache, {:ok, value}}
-
+  defp register_and_get_via_rehydrating_cache(cache_key, fun, slug, query) do
+    case rehydrating_cache_get(cache_key) do
       {:ok, value} ->
         {:ok, value}
 
+      {:nocache, {:ok, _value}} = value ->
+        value
+
       {:error, :not_registered} ->
-        refresh_time_delta = @refresh_time_delta + :rand.uniform(@refresh_time_max_offset)
-
-        description = "#{query} for #{slug} from project metrics resolver"
-
-        RehydratingCache.register_function(
-          fun,
-          cache_key,
-          @ttl,
-          refresh_time_delta,
-          description
-        )
-
-        register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts - 1)
+        # Register the closure, then wait once for the first computation.
+        case register_function(cache_key, fun, slug, query) do
+          :ok -> get_after_registration(cache_key, slug, query)
+          :error -> still_computing_error(slug, query)
+        end
 
       {:error, :timeout} ->
-        # Recursively call itself. This is guaranteed to not continue forever
-        # as the graphql request will timeout at some point and stop the recursion
-        register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts - 1)
+        # The value is being computed but was not ready within the wait budget.
+        still_computing_error(slug, query)
 
       {:error, error} ->
-        # The computation completed with (or crashed into) a real error. Retrying
-        # would only re-serve the same error until the next scheduled run, so
-        # surface it now instead of burning the remaining attempts.
+        # The computation completed with (or crashed into) a real error.
         {:error, handle_graphql_error(query, slug, error)}
     end
+  end
+
+  defp get_after_registration(cache_key, slug, query) do
+    case rehydrating_cache_get(cache_key) do
+      {:ok, value} ->
+        {:ok, value}
+
+      {:nocache, {:ok, _value}} = value ->
+        value
+
+      {:error, error} when error in [:timeout, :not_registered] ->
+        still_computing_error(slug, query)
+
+      {:error, error} ->
+        {:error, handle_graphql_error(query, slug, error)}
+    end
+  end
+
+  defp rehydrating_cache_get(cache_key) do
+    RehydratingCache.get(cache_key, @first_computation_wait, return_nocache: true)
+  end
+
+  # Registering is a GenServer.call that can time out if the cache is overloaded;
+  # treat that as a soft failure rather than crashing the whole resolution.
+  defp register_function(cache_key, fun, slug, query) do
+    refresh_time_delta = @refresh_time_delta + :rand.uniform(@refresh_time_max_offset)
+    description = "#{query} for #{slug} from project metrics resolver"
+
+    RehydratingCache.register_function(fun, cache_key, @ttl, refresh_time_delta, description)
+    :ok
+  catch
+    :exit, _ -> :error
+  end
+
+  defp still_computing_error(slug, query) do
+    Logger.warning(
+      "[ProjectMetricsResolver] #{query} for #{slug} not ready within " <>
+        "#{@first_computation_wait}ms. If this persists, check the preceding " <>
+        "'available_metrics_for_selector: N module(s) failed' warnings for slow upstreams."
+    )
+
+    {:error,
+     "The list of available metrics for #{slug} is still being computed. " <>
+       "Please try again in a few seconds."}
   end
 
   defp add_metadata_to_metrics(metrics) do

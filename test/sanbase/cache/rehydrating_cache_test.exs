@@ -14,10 +14,20 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
     # Task.Supervisor — so no state (or in-progress task child) survives into the
     # next test.
     #
-    # Tests that need the periodic :run tick to fire quickly set a small interval
-    # via `@tag run_interval: <ms>`; everything else uses the production default.
-    run_interval = Map.get(context, :run_interval, 20_000)
-    start_supervised!({Sanbase.Cache.RehydratingCache.Supervisor, run_interval: run_interval})
+    # Tests tune timing/limits via tags (e.g. `@tag run_interval: 20`,
+    # `@tag unused_key_pause_seconds: 0`); anything untagged uses the production
+    # defaults baked into the module.
+    opts =
+      context
+      |> Map.take([
+        :run_interval,
+        :unused_key_pause_seconds,
+        :unused_key_drop_seconds,
+        :max_spawns_per_run
+      ])
+      |> Enum.to_list()
+
+    start_supervised!({Sanbase.Cache.RehydratingCache.Supervisor, opts})
     :ok
   end
 
@@ -229,6 +239,76 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
       runs = :counters.get(counter, 1)
       assert runs >= 2, "expected the function to retry at least a couple of times, got #{runs}"
       assert runs <= 15, "expected backoff to throttle retries, but ran #{runs} times"
+    end
+  end
+
+  describe "unused key lifecycle" do
+    @tag run_interval: 20
+    @tag unused_key_pause_seconds: 0
+    test "stops refreshing a key that is no longer read" do
+      key = {:rc_test, :pause_unused}
+      counter = :counters.new(1, [])
+
+      fun = fn ->
+        :ok = :counters.add(counter, 1, 1)
+        {:ok, :ran}
+      end
+
+      # Refresh every 1s, but the key counts as unused the moment it is not read.
+      # It runs once at registration and, since the test never reads it again,
+      # never refreshes.
+      :ok = RehydratingCache.register_function(fun, key, 60, 1)
+
+      Process.sleep(2_000)
+
+      assert :counters.get(counter, 1) == 1
+    end
+
+    @tag run_interval: 20
+    @tag unused_key_drop_seconds: 0
+    test "forgets a key that has been unread past the drop threshold" do
+      key = {:rc_test, :drop_unused}
+      :ok = RehydratingCache.register_function(fn -> {:ok, :v} end, key, 60, 30)
+
+      # Give the run loop time to observe the key as unread and drop it.
+      Process.sleep(800)
+
+      # Remove the stored value so the read cannot be served from the store; the
+      # closure was forgotten, so the key is unregistered again.
+      Sanbase.Cache.clear(Sanbase.Cache.RehydratingCache.Store.name(), key)
+
+      assert {:error, :not_registered} = RehydratingCache.get(key, 300)
+    end
+  end
+
+  describe "spawn cap" do
+    # Large run interval so ticks only fire when the test sends them manually.
+    @tag run_interval: 3_600_000
+    @tag max_spawns_per_run: 3
+    test "caps the number of tasks started in a single run tick" do
+      starts = :counters.new(1, [])
+      keys = for i <- 1..6, do: {:rc_test, :cap, i}
+
+      Enum.each(keys, fn key ->
+        fun = fn ->
+          :ok = :counters.add(starts, 1, 1)
+          {:ok, :v}
+        end
+
+        # refresh_time_delta = 1 so every key becomes due ~1s after registration.
+        :ok = RehydratingCache.register_function(fun, key, 60, 1)
+      end)
+
+      # Each function runs once on registration.
+      assert eventually(fn -> :counters.get(starts, 1) == 6 end)
+
+      # Let all six keys come due, then drive exactly one run tick.
+      Process.sleep(1_100)
+      send(RehydratingCache.name(), :run)
+      Process.sleep(300)
+
+      # Only max_spawns_per_run (3) additional tasks may start in that tick.
+      assert :counters.get(starts, 1) == 9
     end
   end
 

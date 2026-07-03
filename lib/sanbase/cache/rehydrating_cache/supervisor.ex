@@ -14,8 +14,9 @@ defmodule Sanbase.Cache.RehydratingCache.Supervisor do
     Supervisor.start_link(__MODULE__, opts, name: :__rehydrating_cache_supervisor__)
   end
 
-  def init(_opts) do
+  def init(opts) do
     task_supervisor_name = Sanbase.Cache.RehydratingCache.TaskSupervisor
+    worker_opts = Keyword.take(opts, [:run_interval]) ++ [task_supervisor: task_supervisor_name]
 
     children = [
       # ETS backed cache
@@ -34,7 +35,7 @@ defmodule Sanbase.Cache.RehydratingCache.Supervisor do
       {Task.Supervisor, [name: task_supervisor_name]},
 
       # Worker - schedule get/run
-      {Sanbase.Cache.RehydratingCache, task_supervisor: task_supervisor_name}
+      {Sanbase.Cache.RehydratingCache, worker_opts}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

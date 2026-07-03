@@ -247,6 +247,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         # Recursively call itself. This is guaranteed to not continue forever
         # as the graphql request will timeout at some point and stop the recursion
         register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts - 1)
+
+      {:error, error} ->
+        # The computation completed with (or crashed into) a real error. Retrying
+        # would only re-serve the same error until the next scheduled run, so
+        # surface it now instead of burning the remaining attempts.
+        {:error, handle_graphql_error(query, slug, error)}
     end
   end
 

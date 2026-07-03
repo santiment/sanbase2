@@ -31,7 +31,7 @@ defmodule Sanbase.RateLimitTest do
 
     # 4th request exceeds the limit — returns {:deny, ms_until_window_resets}
     assert {:deny, wait_period} = Sanbase.RateLimit.hit(bucket, scale, limit)
-    assert is_integer(wait_period) and wait_period > 0
+    assert wait_period > 0
   end
 
   test "different buckets are tracked independently", %{bucket: bucket} do

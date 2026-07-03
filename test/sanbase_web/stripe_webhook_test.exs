@@ -293,10 +293,19 @@ defmodule SanbaseWeb.StripeWebhookTest do
           charge_failed_json()
       end
 
-    build_conn()
-    |> put_req_header("content-type", "application/json")
-    |> put_req_header("stripe-signature", signature_header(payload, secret()))
-    |> post("/stripe_webhook", payload)
+    # stripity_stripe 3.2.0 emits a runtime `map.field` deprecation warning to
+    # stderr from Stripe.Converter while decoding the event. It's dependency
+    # internal and can't be fixed here, so swallow that stderr noise to keep the
+    # test output clean.
+    {conn, _stderr} =
+      ExUnit.CaptureIO.with_io(:stderr, fn ->
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("stripe-signature", signature_header(payload, secret()))
+        |> post("/stripe_webhook", payload)
+      end)
+
+    conn
   end
 
   defp signature_header(payload, secret) do

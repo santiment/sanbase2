@@ -106,6 +106,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesComputedAtTest do
              ]
     end
 
+    @tag capture_log: true
     test "naming computedAt in fields without includeComputedAt returns an error", context do
       %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
       rows = [row(~U[2019-01-01 00:00:00Z], 100.0, ~U[2019-01-05 00:00:00Z])]

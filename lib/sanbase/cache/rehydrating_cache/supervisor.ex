@@ -16,7 +16,14 @@ defmodule Sanbase.Cache.RehydratingCache.Supervisor do
 
   def init(opts) do
     task_supervisor_name = Sanbase.Cache.RehydratingCache.TaskSupervisor
-    worker_opts = Keyword.take(opts, [:run_interval]) ++ [task_supervisor: task_supervisor_name]
+
+    worker_opts =
+      Keyword.take(opts, [
+        :run_interval,
+        :unused_key_pause_seconds,
+        :unused_key_drop_seconds,
+        :max_spawns_per_run
+      ]) ++ [task_supervisor: task_supervisor_name]
 
     children = [
       # ETS backed cache

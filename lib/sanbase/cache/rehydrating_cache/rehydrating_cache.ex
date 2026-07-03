@@ -26,6 +26,19 @@ defmodule Sanbase.Cache.RehydratingCache do
   @purge_timeout_interval 30_000
   @function_runtime_timeout 5 * 1000 * 60
 
+  # Registered closures are refreshed forever, so keys that are no longer read
+  # would keep querying upstreams indefinitely. Once a key has not been read for
+  # `@unused_key_pause_seconds` its refresh is paused (a later `get` resumes it),
+  # and after `@unused_key_drop_seconds` it is forgotten entirely (a `get`
+  # re-registers it). Both are in seconds.
+  @unused_key_pause_seconds 86_400
+  @unused_key_drop_seconds 172_800
+
+  # Upper bound on new computation tasks started in a single :run tick. Prevents
+  # a thundering herd when many keys come due at once (e.g. after a refresh
+  # wave); the overflow stays due and runs on subsequent ticks.
+  @max_spawns_per_run 50
+
   defguard are_proper_function_arguments(fun, ttl, refresh_time_delta)
            when is_function(fun, 0) and is_integer(ttl) and ttl > 0 and
                   is_integer(refresh_time_delta) and
@@ -42,9 +55,14 @@ defmodule Sanbase.Cache.RehydratingCache do
     initial_state = %{
       init_time: Timex.now(),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
-      # Run interval is configurable so tests can drive :run ticks quickly
-      # instead of depending on the 20s production default.
+      # These knobs are configurable so tests can drive behavior quickly instead
+      # of depending on the production defaults.
       run_interval: Keyword.get(opts, :run_interval, @run_interval),
+      unused_key_pause_seconds:
+        Keyword.get(opts, :unused_key_pause_seconds, @unused_key_pause_seconds),
+      unused_key_drop_seconds:
+        Keyword.get(opts, :unused_key_drop_seconds, @unused_key_drop_seconds),
+      max_spawns_per_run: Keyword.get(opts, :max_spawns_per_run, @max_spawns_per_run),
       functions: %{},
       progress: %{},
       fails: %{},
@@ -52,6 +70,9 @@ defmodule Sanbase.Cache.RehydratingCache do
       # out retries (exponential backoff) so a persistently failing upstream is
       # not hammered every run interval. Reset to 0 on a clean `{:ok, _}`.
       backoffs: %{},
+      # Per-key unix timestamp of the last read. Drives pausing/dropping of keys
+      # that are no longer requested.
+      last_access: %{},
       waiting: %{}
     }
 
@@ -99,22 +120,30 @@ defmodule Sanbase.Cache.RehydratingCache do
   def get(key, timeout \\ 30_000, opts \\ []) when is_integer(timeout) and timeout > 0 do
     case Store.get(@store_name, key) do
       nil ->
+        # Miss goes through the GenServer, which records the access itself.
         GenServer.call(@name, {:get, key, timeout}, timeout)
         |> handle_get_response(opts)
 
       {:ok, value} ->
+        # Served straight from ETS without touching the GenServer, so tell it
+        # this key is still being read (otherwise its refresh would be paused).
+        touch(key)
         {:ok, value}
 
       {:nocache, {:ok, _value}} = value ->
+        touch(key)
         handle_get_response(value, opts)
 
       data ->
+        touch(key)
         data
     end
   catch
     :exit, {:timeout, _} ->
       {:error, :timeout}
   end
+
+  defp touch(key), do: GenServer.cast(@name, {:touch, key})
 
   defp handle_get_response(data, opts) do
     case data do
@@ -140,6 +169,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   def handle_call({:get, key, timeout}, from, state) do
+    state = put_last_access(state, key)
     # There a few different cases that need to be handled
     # 1. The value is present in the store - serve it
     # 2. Computation is in progress - add the caller to the wait list
@@ -194,6 +224,10 @@ defmodule Sanbase.Cache.RehydratingCache do
         new_state = do_register_function(state, fun_map)
         {:reply, :ok, new_state}
     end
+  end
+
+  def handle_cast({:touch, key}, state) do
+    {:noreply, put_last_access(state, key)}
   end
 
   def handle_info(:run, state) do
@@ -266,10 +300,12 @@ defmodule Sanbase.Cache.RehydratingCache do
 
     %{pid: pid} = run_function(self(), fun_map, state.task_supervisor)
     now = Timex.now()
-    new_progress = Map.put(state.progress, key, {:in_progress, pid, {now, DateTime.to_unix(now)}})
+    now_unix = DateTime.to_unix(now)
+    new_progress = Map.put(state.progress, key, {:in_progress, pid, {now, now_unix}})
     new_functions = Map.put(state.functions, key, fun_map)
+    new_last_access = Map.put(state.last_access, key, now_unix)
 
-    %{state | functions: new_functions, progress: new_progress}
+    %{state | functions: new_functions, progress: new_progress, last_access: new_last_access}
   end
 
   defp do_purge_timeouts(state) do
@@ -333,44 +369,111 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   # Walk over the functions and re-evaluate the ones that have to be re-evaluated.
   # Each branch computes the next progress *value* for the key and the reduce
-  # threads it into `acc`. Threading through `acc` (rather than rebuilding from
-  # `state.progress`) is essential: otherwise, when several keys are due in the
-  # same tick, only the last one keeps its `:in_progress` marker and the rest get
-  # spawned again on every tick.
+  # threads it into the progress accumulator. Threading through the accumulator
+  # (rather than rebuilding from `state.progress`) is essential: otherwise, when
+  # several keys are due in the same tick, only the last one keeps its
+  # `:in_progress` marker and the rest get spawned again on every tick.
+  #
+  # The reduce also collects keys to forget (unread for too long) and caps how
+  # many new tasks are spawned in a single tick.
   defp do_run(state) do
     now = Timex.now()
     now_unix = now |> DateTime.to_unix()
     state = Map.put(state, :now_unix, now_unix)
 
-    new_progress =
-      Enum.reduce(state.functions, %{}, fn {key, fun_map}, acc ->
-        progress_value =
-          case Map.get(state.progress, key, now_unix) do
-            :failed ->
-              # Task execution failed, retry immediatelly
-              run_function_get_updated_progress(state, key, fun_map)
+    {new_progress, drop_keys, _spawns} =
+      Enum.reduce(state.functions, {%{}, [], 0}, fn {key, fun_map},
+                                                    {progress_acc, drop_acc, spawns} ->
+        cond do
+          droppable_key?(state, key, now_unix) ->
+            {progress_acc, [key | drop_acc], spawns}
 
-            run_after_unix when is_integer(run_after_unix) and now_unix >= run_after_unix ->
-              # It is time to execute the function again
-              run_function_get_updated_progress(state, key, fun_map)
-
-            {:in_progress, _pid, {_started_datetime, _started_unix}} = in_progress ->
-              handle_in_progress_function_run(state, in_progress, key, fun_map)
-
-            nil ->
-              # No recorded progress. Should not happend.
-              run_function_get_updated_progress(state, key, fun_map)
-
-            run_after_unix when is_integer(run_after_unix) and now_unix < run_after_unix ->
-              # It's still not time to reevaluate the function again
-              run_after_unix
-          end
-
-        Map.put(acc, key, progress_value)
+          true ->
+            {progress_value, spawned?} = next_progress_value(state, key, fun_map, spawns)
+            spawns = if spawned?, do: spawns + 1, else: spawns
+            {Map.put(progress_acc, key, progress_value), drop_acc, spawns}
+        end
       end)
 
+    state = drop_unused_keys(state, drop_keys)
     Process.send_after(self(), :run, state.run_interval)
     %{state | progress: new_progress}
+  end
+
+  # Returns `{next_progress_value, spawned?}` for a key. `spawned?` is true only
+  # when a fresh computation task was started, so the caller can enforce the
+  # per-tick spawn cap.
+  defp next_progress_value(state, key, fun_map, spawns) do
+    now_unix = state.now_unix
+
+    case Map.get(state.progress, key, now_unix) do
+      :failed ->
+        # Task execution failed, retry (subject to pause/cap).
+        maybe_spawn(state, key, fun_map, spawns)
+
+      run_after_unix when is_integer(run_after_unix) and now_unix >= run_after_unix ->
+        # It is time to execute the function again (subject to pause/cap).
+        maybe_spawn(state, key, fun_map, spawns)
+
+      {:in_progress, _pid, {_started_datetime, _started_unix}} = in_progress ->
+        {handle_in_progress_function_run(state, in_progress, key, fun_map), false}
+
+      nil ->
+        # No recorded progress. Should not happend.
+        maybe_spawn(state, key, fun_map, spawns)
+
+      run_after_unix when is_integer(run_after_unix) and now_unix < run_after_unix ->
+        # It's still not time to reevaluate the function again
+        {run_after_unix, false}
+    end
+  end
+
+  defp maybe_spawn(state, key, fun_map, spawns) do
+    now_unix = state.now_unix
+
+    cond do
+      unused_key?(state, key, now_unix) ->
+        # Not read recently - pause refreshing and re-check after a refresh
+        # window. A `get` in the meantime touches the key and resumes it.
+        {now_unix + fun_map.refresh_time_delta, false}
+
+      spawns >= state.max_spawns_per_run ->
+        # Spawn budget for this tick is exhausted; stay due and run on a
+        # subsequent tick.
+        {now_unix, false}
+
+      true ->
+        {run_function_get_updated_progress(state, key, fun_map), true}
+    end
+  end
+
+  # A key is dropped once it has not been read for `unused_key_drop_seconds`, so
+  # forgotten keys stop consuming state and refresh cycles. In-progress keys are
+  # never dropped mid-flight. A later `get` simply re-registers the closure.
+  defp droppable_key?(state, key, now_unix) do
+    not match?({:in_progress, _, _}, Map.get(state.progress, key)) and
+      now_unix - Map.get(state.last_access, key, now_unix) > state.unused_key_drop_seconds
+  end
+
+  defp unused_key?(state, key, now_unix) do
+    now_unix - Map.get(state.last_access, key, now_unix) > state.unused_key_pause_seconds
+  end
+
+  defp drop_unused_keys(state, []), do: state
+
+  defp drop_unused_keys(state, keys) do
+    %{
+      state
+      | functions: Map.drop(state.functions, keys),
+        backoffs: Map.drop(state.backoffs, keys),
+        fails: Map.drop(state.fails, keys),
+        last_access: Map.drop(state.last_access, keys)
+    }
+  end
+
+  defp put_last_access(state, key) do
+    now_unix = Timex.now() |> DateTime.to_unix()
+    %{state | last_access: Map.put(state.last_access, key, now_unix)}
   end
 
   defp reply_to_waiting([], _), do: :ok

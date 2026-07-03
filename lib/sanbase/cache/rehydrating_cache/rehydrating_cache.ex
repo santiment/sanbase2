@@ -25,15 +25,14 @@ defmodule Sanbase.Cache.RehydratingCache do
   @run_interval 20_000
   @purge_timeout_interval 30_000
   @function_runtime_timeout 5 * 1000 * 60
-  @stats_log_interval :timer.minutes(30)
+  @stats_log_interval :timer.minutes(1)
 
   # Registered closures are refreshed forever, so keys that are no longer read
   # would keep querying upstreams indefinitely. Once a key has not been read for
-  # `@unused_key_pause_seconds` its refresh is paused (a later `get` resumes it),
-  # and after `@unused_key_drop_seconds` it is forgotten entirely (a `get`
-  # re-registers it). Both are in seconds.
-  @unused_key_pause_seconds 86_400
-  @unused_key_drop_seconds 172_800
+  # `@unused_key_pause_ms` its refresh is paused (a later `get` resumes it), and
+  # after `@unused_key_drop_ms` it is forgotten entirely (a `get` re-registers it).
+  @unused_key_pause_ms :timer.minutes(30)
+  @unused_key_drop_ms :timer.hours(3)
 
   # Upper bound on new computation tasks started in a single :run tick. Prevents
   # a thundering herd when many keys come due at once (e.g. after a refresh
@@ -59,10 +58,8 @@ defmodule Sanbase.Cache.RehydratingCache do
       # These knobs are configurable so tests can drive behavior quickly instead
       # of depending on the production defaults.
       run_interval: Keyword.get(opts, :run_interval, @run_interval),
-      unused_key_pause_seconds:
-        Keyword.get(opts, :unused_key_pause_seconds, @unused_key_pause_seconds),
-      unused_key_drop_seconds:
-        Keyword.get(opts, :unused_key_drop_seconds, @unused_key_drop_seconds),
+      unused_key_pause_ms: Keyword.get(opts, :unused_key_pause_ms, @unused_key_pause_ms),
+      unused_key_drop_ms: Keyword.get(opts, :unused_key_drop_ms, @unused_key_drop_ms),
       max_spawns_per_run: Keyword.get(opts, :max_spawns_per_run, @max_spawns_per_run),
       functions: %{},
       progress: %{},
@@ -145,6 +142,11 @@ defmodule Sanbase.Cache.RehydratingCache do
       {:error, :timeout}
   end
 
+  # A cast (not a call) so ETS-hit reads never block on the GenServer. The only
+  # caller of `get/3` is the GraphQL resolver, which itself sits behind Absinthe
+  # request caching, so cast volume here is low; if a high-QPS caller is ever
+  # added, move `last_access` to a directly-writable ETS table to keep reads off
+  # this process entirely.
   defp touch(key), do: GenServer.cast(@name, {:touch, key})
 
   defp handle_get_response(data, opts) do
@@ -280,8 +282,7 @@ defmodule Sanbase.Cache.RehydratingCache do
 
           # Free any callers parked on this key instead of letting them block
           # until their own timeout. They get an error and can retry.
-          {reply_to_list, new_waiting} = Map.pop(waiting, k, [])
-          reply_to_waiting(reply_to_list, {:error, :computation_failed})
+          new_waiting = pop_and_reply(waiting, k, {:error, :computation_failed})
 
           %{state | progress: new_progress, fails: new_fails, waiting: new_waiting}
 
@@ -348,7 +349,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   # (not the whole progress map). The datetime and unix timestamp are both kept:
   # the unix one is used in numeric checks/guards, the DateTime when inspecting
   # the state at runtime to debug/observe.
-  defp run_function_get_updated_progress(state, _key, fun_map) do
+  defp run_function_get_updated_progress(state, fun_map) do
     %{task_supervisor: task_supervisor, now_unix: now_unix} = state
     now_dt = DateTime.from_unix!(now_unix)
 
@@ -357,21 +358,21 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   # Returns the progress *value* for an already in-progress key.
-  defp handle_in_progress_function_run(state, in_progress, key, fun_map) do
+  defp handle_in_progress_function_run(state, in_progress, fun_map) do
     {:in_progress, pid, {_started_datetime, started_unix}} = in_progress
 
     case Process.alive?(pid) do
       false ->
         # If the process is dead but for some reason the progress is not
         # changed to some timestamp or to :failed, we rerun it
-        run_function_get_updated_progress(state, key, fun_map)
+        run_function_get_updated_progress(state, fun_map)
 
       true ->
         if state.now_unix - started_unix > @function_runtime_timeout do
           # Process computing the function is alive but it is taking
           # too long, maybe something is stuck. Restart the computation
           Process.exit(pid, :kill)
-          run_function_get_updated_progress(state, key, fun_map)
+          run_function_get_updated_progress(state, fun_map)
         else
           # Still running and within the runtime budget - keep the marker as is.
           in_progress
@@ -428,7 +429,7 @@ defmodule Sanbase.Cache.RehydratingCache do
         maybe_spawn(state, key, fun_map, spawns)
 
       {:in_progress, _pid, {_started_datetime, _started_unix}} = in_progress ->
-        {handle_in_progress_function_run(state, in_progress, key, fun_map), false}
+        {handle_in_progress_function_run(state, in_progress, fun_map), false}
 
       nil ->
         # No recorded progress. Should not happend.
@@ -455,20 +456,26 @@ defmodule Sanbase.Cache.RehydratingCache do
         {now_unix, false}
 
       true ->
-        {run_function_get_updated_progress(state, key, fun_map), true}
+        {run_function_get_updated_progress(state, fun_map), true}
     end
   end
 
-  # A key is dropped once it has not been read for `unused_key_drop_seconds`, so
+  # A key is dropped once it has not been read for `unused_key_drop_ms`, so
   # forgotten keys stop consuming state and refresh cycles. In-progress keys are
   # never dropped mid-flight. A later `get` simply re-registers the closure.
   defp droppable_key?(state, key, now_unix) do
     not match?({:in_progress, _, _}, Map.get(state.progress, key)) and
-      now_unix - Map.get(state.last_access, key, now_unix) > state.unused_key_drop_seconds
+      unread_ms(state, key, now_unix) > state.unused_key_drop_ms
   end
 
   defp unused_key?(state, key, now_unix) do
-    now_unix - Map.get(state.last_access, key, now_unix) > state.unused_key_pause_seconds
+    unread_ms(state, key, now_unix) > state.unused_key_pause_ms
+  end
+
+  # Milliseconds since the key was last read. `last_access` and `now_unix` are in
+  # unix seconds, so scale the difference up to compare against the ms thresholds.
+  defp unread_ms(state, key, now_unix) do
+    (now_unix - Map.get(state.last_access, key, now_unix)) * 1000
   end
 
   defp drop_unused_keys(state, []), do: state
@@ -484,8 +491,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   defp put_last_access(state, key) do
-    now_unix = Timex.now() |> DateTime.to_unix()
-    %{state | last_access: Map.put(state.last_access, key, now_unix)}
+    %{state | last_access: Map.put(state.last_access, key, System.system_time(:second))}
   end
 
   defp reply_to_waiting([], _), do: :ok
@@ -523,6 +529,21 @@ defmodule Sanbase.Cache.RehydratingCache do
     {now_unix + delay, fail_count}
   end
 
+  # Reply the given value to every caller parked on `key` and return the waiting
+  # map with that key removed.
+  defp pop_and_reply(waiting, key, value) do
+    {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
+    reply_to_waiting(reply_to_list, value)
+    new_waiting
+  end
+
+  # Schedule the next run with backoff and bump the fail counter. Returns the
+  # updated `{progress, backoffs}` maps; the two always move together.
+  defp progress_and_backoffs_after_failure(state, key, now_unix, refresh_time_delta) do
+    {next_run_unix, fail_count} = next_run_with_backoff(state, key, now_unix, refresh_time_delta)
+    {Map.put(state.progress, key, next_run_unix), Map.put(state.backoffs, key, fail_count)}
+  end
+
   defp run_function(pid, fun_map, task_supervisor) do
     Task.Supervisor.async_nolink(task_supervisor, fn ->
       %{function: fun} = fun_map
@@ -541,15 +562,12 @@ defmodule Sanbase.Cache.RehydratingCache do
     # Errors are not stored. Reply to the parked callers so they fail fast
     # instead of blocking until their own timeout, and back off the retry so a
     # persistently failing upstream is not re-run every tick.
-    %{progress: progress, waiting: waiting, backoffs: backoffs} = state
     %{key: key, refresh_time_delta: refresh_time_delta} = fun_map
 
-    {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
-    reply_to_waiting(reply_to_list, error)
+    new_waiting = pop_and_reply(state.waiting, key, error)
 
-    {next_run_unix, fail_count} = next_run_with_backoff(state, key, now_unix, refresh_time_delta)
-    new_progress = Map.put(progress, key, next_run_unix)
-    new_backoffs = Map.put(backoffs, key, fail_count)
+    {new_progress, new_backoffs} =
+      progress_and_backoffs_after_failure(state, key, now_unix, refresh_time_delta)
 
     {:noreply, %{state | progress: new_progress, waiting: new_waiting, backoffs: new_backoffs}}
   end
@@ -560,18 +578,15 @@ defmodule Sanbase.Cache.RehydratingCache do
     # :nocache (e.g. a slow/failing upstream module) is not recomputed on every
     # single run. A transient blip retries on the next tick; only persistent
     # failure stretches the interval.
-    %{progress: progress, waiting: waiting, functions: functions, backoffs: backoffs} = state
     %{key: key, ttl: ttl, refresh_time_delta: refresh_time_delta} = fun_map
 
-    {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
-    reply_to_waiting(reply_to_list, result)
-
+    new_waiting = pop_and_reply(state.waiting, key, result)
     new_fun_map = Map.update(fun_map, :nocache_refresh_count, 1, &(&1 + 1))
-    new_functions = Map.put(functions, key, new_fun_map)
+    new_functions = Map.put(state.functions, key, new_fun_map)
 
-    {next_run_unix, fail_count} = next_run_with_backoff(state, key, now_unix, refresh_time_delta)
-    new_progress = Map.put(progress, key, next_run_unix)
-    new_backoffs = Map.put(backoffs, key, fail_count)
+    {new_progress, new_backoffs} =
+      progress_and_backoffs_after_failure(state, key, now_unix, refresh_time_delta)
+
     Store.put(@store_name, key, result, ttl)
 
     {:noreply,
@@ -586,17 +601,14 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   defp store_result_handle_info({:ok, _value} = result, state, fun_map, now_unix) do
     # Put the value in the store. Send the result to the waiting callers.
-    %{progress: progress, waiting: waiting, functions: functions, backoffs: backoffs} = state
     %{key: key, refresh_time_delta: refresh_time_delta, ttl: ttl} = fun_map
 
-    {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
-    reply_to_waiting(reply_to_list, result)
-
+    new_waiting = pop_and_reply(state.waiting, key, result)
     new_fun_map = Map.update(fun_map, :refresh_count, 1, &(&1 + 1))
-    new_functions = Map.put(functions, key, new_fun_map)
-    new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
+    new_functions = Map.put(state.functions, key, new_fun_map)
+    new_progress = Map.put(state.progress, key, now_unix + refresh_time_delta)
     # Clean success clears the backoff so the next failure starts from scratch.
-    new_backoffs = Map.delete(backoffs, key)
+    new_backoffs = Map.delete(state.backoffs, key)
     Store.put(@store_name, key, result, ttl)
 
     {:noreply,
@@ -611,16 +623,13 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   defp store_result_handle_info(_, state, fun_map, now_unix) do
     # The function returned malformed result. Send error to the waiting callers.
-    %{progress: progress, waiting: waiting} = state
     %{key: key, refresh_time_delta: refresh_time_delta, ttl: ttl} = fun_map
 
     result = {:error, :malformed_result}
 
-    {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
-    reply_to_waiting(reply_to_list, result)
-
-    new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
-    Store.put(@store_name, key, {:error, :malformed_result}, ttl)
+    new_waiting = pop_and_reply(state.waiting, key, result)
+    new_progress = Map.put(state.progress, key, now_unix + refresh_time_delta)
+    Store.put(@store_name, key, result, ttl)
 
     {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
   end

@@ -63,6 +63,18 @@ defmodule Sanbase.Metric do
   # consistently exceeds this leaves its metrics missing until it recovers.
   @available_metrics_module_timeout 20_000
 
+  # Per-module available-metrics cache lifetime. An explicit multi-minute TTL
+  # (plus per-module/selector jitter) lets each module's list survive across the
+  # rehydrating-cache refreshes instead of expiring on the 5-minute default, so
+  # a refresh only recomputes genuinely stale modules and refresh waves across
+  # modules and slugs do not align.
+  @available_metrics_module_cache_ttl 1200
+  @available_metrics_module_cache_jitter 300
+
+  # Log a module whose available-metrics computation exceeds this, so the "slow
+  # upstream" hint in the resolver timeout maps to a concrete culprit.
+  @slow_module_log_threshold_ms 5_000
+
   @doc ~s"""
   Check if `metric` is a valid metric name.
   """
@@ -788,9 +800,19 @@ defmodule Sanbase.Metric do
          user_metric_access_level, lookback_days}
         |> Sanbase.Cache.hash()
 
-      Sanbase.Cache.get_or_store(cache_key, fn ->
-        module.available_metrics(selector, opts)
-        |> maybe_remove_experimental_metrics(user_metric_access_level)
+      ttl =
+        @available_metrics_module_cache_ttl +
+          :erlang.phash2({module, selector}, @available_metrics_module_cache_jitter)
+
+      Sanbase.Cache.get_or_store({cache_key, ttl}, fn ->
+        {elapsed_us, result} =
+          :timer.tc(fn ->
+            module.available_metrics(selector, opts)
+            |> maybe_remove_experimental_metrics(user_metric_access_level)
+          end)
+
+        maybe_log_slow_module(module, selector, elapsed_us)
+        result
       end)
     end
 
@@ -1194,6 +1216,19 @@ defmodule Sanbase.Metric do
         log_failed_modules(failed_modules, selector)
         {:nocache, {:ok, available_metrics}}
     end
+  end
+
+  defp maybe_log_slow_module(module, selector, elapsed_us) do
+    elapsed_ms = div(elapsed_us, 1000)
+
+    if elapsed_ms >= @slow_module_log_threshold_ms do
+      Logger.warning(
+        "slow available_metrics module: #{inspect(module)} took #{elapsed_ms}ms " <>
+          "for selector=#{inspect(selector)}"
+      )
+    end
+
+    :ok
   end
 
   defp log_failed_modules(failed_modules, selector) do

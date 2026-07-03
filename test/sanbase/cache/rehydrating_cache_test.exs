@@ -6,14 +6,18 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
 
   alias Sanbase.Cache.RehydratingCache
 
-  setup do
+  setup context do
     # Fresh supervisor per test. No manual `stop_supervised` needed: ExUnit tracks
     # everything started via `start_supervised!/1` under a test-owned supervisor
     # and shuts them down in reverse start order when the test exits (pass, fail,
     # or crash). That tears down the RC GenServer, its ConCache store, and the
     # Task.Supervisor — so no state (or in-progress task child) survives into the
     # next test.
-    start_supervised!(Sanbase.Cache.RehydratingCache.Supervisor)
+    #
+    # Tests that need the periodic :run tick to fire quickly set a small interval
+    # via `@tag run_interval: <ms>`; everything else uses the production default.
+    run_interval = Map.get(context, :run_interval, 20_000)
+    start_supervised!({Sanbase.Cache.RehydratingCache.Supervisor, run_interval: run_interval})
     :ok
   end
 
@@ -83,8 +87,10 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
 
       :ok = RehydratingCache.register_function(fun, key, 60, 30)
 
-      # First attempt dies — waiting caller times out.
-      assert {:error, :timeout} = RehydratingCache.get(key, 300)
+      # First attempt dies. The waiting caller is freed with an error — either
+      # the crash reply (if it was already parked) or a plain timeout (if it
+      # arrived after the crash was recorded). Both are acceptable here.
+      assert {:error, _} = RehydratingCache.get(key, 300)
 
       # Trigger a manual :run so the retry fires without waiting for the 20s tick.
       send(RehydratingCache.name(), :run)
@@ -147,6 +153,82 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
       :ok = RehydratingCache.register_function(fn -> {:nocache, {:ok, :fresh}} end, key, 60, 30)
 
       assert {:ok, :fresh} = RehydratingCache.get(key, 2_000)
+    end
+  end
+
+  describe "no duplicate spawns" do
+    @tag run_interval: 20
+    test "a slow function is not re-spawned while it is still in progress" do
+      # Register several functions whose in-progress markers used to be dropped
+      # by the do_run accumulator bug, causing a fresh task to be spawned on
+      # every tick while the previous one was still running. With a small run
+      # interval, many ticks fire during each function's sleep; each function
+      # must still start exactly once.
+      keys = for i <- 1..3, do: {:rc_test, :no_dup, i}
+      counters = Map.new(keys, fn key -> {key, :counters.new(1, [])} end)
+
+      Enum.each(keys, fn key ->
+        counter = counters[key]
+
+        fun = fn ->
+          :ok = :counters.add(counter, 1, 1)
+          Process.sleep(200)
+          {:ok, key}
+        end
+
+        # Large refresh_time_delta so no legitimate refresh happens during the test.
+        :ok = RehydratingCache.register_function(fun, key, 300, 250)
+      end)
+
+      # ~40 ticks worth of time. Under the bug each key would be spawned dozens
+      # of times; with the fix each is spawned exactly once.
+      Process.sleep(800)
+
+      Enum.each(keys, fn key ->
+        assert :counters.get(counters[key], 1) == 1
+      end)
+    end
+  end
+
+  describe "error result delivery" do
+    test "an error result is delivered to a waiting caller promptly" do
+      key = {:rc_test, :error_reply}
+
+      fun = fn ->
+        Process.sleep(100)
+        {:error, :boom}
+      end
+
+      :ok = RehydratingCache.register_function(fun, key, 60, 30)
+
+      # Before the fix this blocked until the caller's own timeout (returning
+      # {:error, :timeout}); now the error is forwarded as soon as it is produced.
+      assert {:error, :boom} = RehydratingCache.get(key, 2_000)
+    end
+  end
+
+  describe "retry backoff" do
+    @tag run_interval: 20
+    test "a persistently :nocache function is not re-run on every tick" do
+      key = {:rc_test, :backoff}
+      counter = :counters.new(1, [])
+
+      fun = fn ->
+        :ok = :counters.add(counter, 1, 1)
+        {:nocache, {:ok, :partial}}
+      end
+
+      # Small refresh_time_delta caps the backoff; ttl keeps the value around.
+      :ok = RehydratingCache.register_function(fun, key, 60, 5)
+
+      # Many ticks fire in this window. Without backoff the fun would run on
+      # every tick (dozens of times); with exponential backoff (1s, 2s, 4s, ...
+      # capped at refresh_time_delta) it runs only a handful of times.
+      Process.sleep(1_500)
+
+      runs = :counters.get(counter, 1)
+      assert runs >= 2, "expected the function to retry at least a couple of times, got #{runs}"
+      assert runs <= 15, "expected backoff to throttle retries, but ran #{runs} times"
     end
   end
 

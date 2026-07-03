@@ -42,9 +42,16 @@ defmodule Sanbase.Cache.RehydratingCache do
     initial_state = %{
       init_time: Timex.now(),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
+      # Run interval is configurable so tests can drive :run ticks quickly
+      # instead of depending on the 20s production default.
+      run_interval: Keyword.get(opts, :run_interval, @run_interval),
       functions: %{},
       progress: %{},
       fails: %{},
+      # Per-key count of consecutive non-`{:ok, _}` completions. Used to space
+      # out retries (exponential backoff) so a persistently failing upstream is
+      # not hammered every run interval. Reset to 0 on a clean `{:ok, _}`.
+      backoffs: %{},
       waiting: %{}
     }
 
@@ -214,7 +221,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   def handle_info({:DOWN, _ref, _, pid, reason}, state) do
-    %{progress: progress, fails: fails} = state
+    %{progress: progress, fails: fails, waiting: waiting} = state
 
     new_state =
       case Enum.find(progress, fn {_k, v} -> match?({:in_progress, ^pid, _}, v) end) do
@@ -225,7 +232,12 @@ defmodule Sanbase.Cache.RehydratingCache do
           new_fails =
             Map.update(fails, k, {1, reason}, fn {count, _last_reason} -> {count + 1, reason} end)
 
-          %{state | progress: new_progress, fails: new_fails}
+          # Free any callers parked on this key instead of letting them block
+          # until their own timeout. They get an error and can retry.
+          {reply_to_list, new_waiting} = Map.pop(waiting, k, [])
+          reply_to_waiting(reply_to_list, {:error, :computation_failed})
+
+          %{state | progress: new_progress, fails: new_fails, waiting: new_waiting}
 
         nil ->
           state
@@ -284,18 +296,22 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{state | waiting: new_waiting}
   end
 
-  defp run_function_get_updated_progress(state, key, fun_map) do
-    %{progress: progress, task_supervisor: task_supervisor, now_unix: now_unix} = state
+  # Spawns the computation task and returns the progress *value* for the key
+  # (not the whole progress map). The datetime and unix timestamp are both kept:
+  # the unix one is used in numeric checks/guards, the DateTime when inspecting
+  # the state at runtime to debug/observe.
+  defp run_function_get_updated_progress(state, _key, fun_map) do
+    %{task_supervisor: task_supervisor, now_unix: now_unix} = state
     now_dt = DateTime.from_unix!(now_unix)
 
     %{pid: pid} = run_function(self(), fun_map, task_supervisor)
-    # Put both the datetime and unix timestamp in the progress map. The unix is used
-    # in checks and guards as it is plain number comparisons. The DateTime is used
-    # when inspecting the state during runtime to debug/observe.
-    Map.put(progress, key, {:in_progress, pid, {now_dt, now_unix}})
+    {:in_progress, pid, {now_dt, now_unix}}
   end
 
-  defp handle_in_progress_function_run(state, pid, key, fun_map, started_unix) do
+  # Returns the progress *value* for an already in-progress key.
+  defp handle_in_progress_function_run(state, in_progress, key, fun_map) do
+    {:in_progress, pid, {_started_datetime, started_unix}} = in_progress
+
     case Process.alive?(pid) do
       false ->
         # If the process is dead but for some reason the progress is not
@@ -309,12 +325,18 @@ defmodule Sanbase.Cache.RehydratingCache do
           Process.exit(pid, :kill)
           run_function_get_updated_progress(state, key, fun_map)
         else
-          state.progress
+          # Still running and within the runtime budget - keep the marker as is.
+          in_progress
         end
     end
   end
 
-  # Walk over the functions and re-evaluate the ones that have to be re-evaluated
+  # Walk over the functions and re-evaluate the ones that have to be re-evaluated.
+  # Each branch computes the next progress *value* for the key and the reduce
+  # threads it into `acc`. Threading through `acc` (rather than rebuilding from
+  # `state.progress`) is essential: otherwise, when several keys are due in the
+  # same tick, only the last one keeps its `:in_progress` marker and the rest get
+  # spawned again on every tick.
   defp do_run(state) do
     now = Timex.now()
     now_unix = now |> DateTime.to_unix()
@@ -322,29 +344,32 @@ defmodule Sanbase.Cache.RehydratingCache do
 
     new_progress =
       Enum.reduce(state.functions, %{}, fn {key, fun_map}, acc ->
-        case Map.get(state.progress, key, now_unix) do
-          :failed ->
-            # Task execution failed, retry immediatelly
-            _progress = run_function_get_updated_progress(state, key, fun_map)
+        progress_value =
+          case Map.get(state.progress, key, now_unix) do
+            :failed ->
+              # Task execution failed, retry immediatelly
+              run_function_get_updated_progress(state, key, fun_map)
 
-          run_after_unix when is_integer(run_after_unix) and now_unix >= run_after_unix ->
-            # It is time to execute the function again
-            _progress = run_function_get_updated_progress(state, key, fun_map)
+            run_after_unix when is_integer(run_after_unix) and now_unix >= run_after_unix ->
+              # It is time to execute the function again
+              run_function_get_updated_progress(state, key, fun_map)
 
-          {:in_progress, pid, {_started_datetime, started_unix}} ->
-            handle_in_progress_function_run(state, pid, key, fun_map, started_unix)
+            {:in_progress, _pid, {_started_datetime, _started_unix}} = in_progress ->
+              handle_in_progress_function_run(state, in_progress, key, fun_map)
 
-          nil ->
-            # No recorded progress. Should not happend.
-            _progress = run_function_get_updated_progress(state, key, fun_map)
+            nil ->
+              # No recorded progress. Should not happend.
+              run_function_get_updated_progress(state, key, fun_map)
 
-          run_after_unix when is_integer(run_after_unix) and now_unix < run_after_unix ->
-            # It's still not time to reevaluate the function again
-            Map.put(acc, key, run_after_unix)
-        end
+            run_after_unix when is_integer(run_after_unix) and now_unix < run_after_unix ->
+              # It's still not time to reevaluate the function again
+              run_after_unix
+          end
+
+        Map.put(acc, key, progress_value)
       end)
 
-    Process.send_after(self(), :run, @run_interval)
+    Process.send_after(self(), :run, state.run_interval)
     %{state | progress: new_progress}
   end
 
@@ -368,6 +393,21 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{state | waiting: new_waiting}
   end
 
+  # Exponential backoff for the next re-evaluation of a failing/nocache key.
+  # The delay doubles with each consecutive failure, starting at one run
+  # interval, and is capped at the key's refresh_time_delta so a healthy refresh
+  # cadence is never exceeded. Returns `{next_run_unix, new_fail_count}`.
+  defp next_run_with_backoff(state, key, now_unix, max_delay_seconds) do
+    fail_count = Map.get(state.backoffs, key, 0) + 1
+    # Progress timestamps are second-granularity, so the base is at least 1s
+    # even when the run interval is sub-second (as in tests).
+    base_seconds = max(div(state.run_interval, 1000), 1)
+    exponent = min(fail_count - 1, 16)
+    delay = min(round(base_seconds * :math.pow(2, exponent)), max_delay_seconds)
+
+    {now_unix + delay, fail_count}
+  end
+
   defp run_function(pid, fun_map, task_supervisor) do
     Task.Supervisor.async_nolink(task_supervisor, fn ->
       %{function: fun} = fun_map
@@ -382,34 +422,56 @@ defmodule Sanbase.Cache.RehydratingCache do
   ## results.
   ##
 
-  defp store_result_handle_info({:error, _}, state, fun_map, now_unix) do
-    # Can be reevaluated immediately
-    new_progress = Map.put(state.progress, fun_map.key, now_unix)
-    {:noreply, %{state | progress: new_progress}}
+  defp store_result_handle_info({:error, _} = error, state, fun_map, now_unix) do
+    # Errors are not stored. Reply to the parked callers so they fail fast
+    # instead of blocking until their own timeout, and back off the retry so a
+    # persistently failing upstream is not re-run every tick.
+    %{progress: progress, waiting: waiting, backoffs: backoffs} = state
+    %{key: key, refresh_time_delta: refresh_time_delta} = fun_map
+
+    {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
+    reply_to_waiting(reply_to_list, error)
+
+    {next_run_unix, fail_count} = next_run_with_backoff(state, key, now_unix, refresh_time_delta)
+    new_progress = Map.put(progress, key, next_run_unix)
+    new_backoffs = Map.put(backoffs, key, fail_count)
+
+    {:noreply, %{state | progress: new_progress, waiting: new_waiting, backoffs: new_backoffs}}
   end
 
   defp store_result_handle_info({:nocache, {:ok, _value}} = result, state, fun_map, now_unix) do
-    # Store the result but let it be reevaluated immediately on the next run.
-    # This is to not calculate a function that always returns :nocache on
-    # every run.
-
-    %{progress: progress, waiting: waiting, functions: functions} = state
-    %{key: key, ttl: ttl} = fun_map
+    # Store and serve the (possibly partial) result, but do not treat it as a
+    # clean success: re-evaluate with backoff so a function that keeps returning
+    # :nocache (e.g. a slow/failing upstream module) is not recomputed on every
+    # single run. A transient blip retries on the next tick; only persistent
+    # failure stretches the interval.
+    %{progress: progress, waiting: waiting, functions: functions, backoffs: backoffs} = state
+    %{key: key, ttl: ttl, refresh_time_delta: refresh_time_delta} = fun_map
 
     {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
     reply_to_waiting(reply_to_list, result)
 
     new_fun_map = Map.update(fun_map, :nocache_refresh_count, 1, &(&1 + 1))
     new_functions = Map.put(functions, key, new_fun_map)
-    new_progress = Map.put(progress, key, now_unix)
+
+    {next_run_unix, fail_count} = next_run_with_backoff(state, key, now_unix, refresh_time_delta)
+    new_progress = Map.put(progress, key, next_run_unix)
+    new_backoffs = Map.put(backoffs, key, fail_count)
     Store.put(@store_name, key, result, ttl)
 
-    {:noreply, %{state | progress: new_progress, waiting: new_waiting, functions: new_functions}}
+    {:noreply,
+     %{
+       state
+       | progress: new_progress,
+         waiting: new_waiting,
+         functions: new_functions,
+         backoffs: new_backoffs
+     }}
   end
 
   defp store_result_handle_info({:ok, _value} = result, state, fun_map, now_unix) do
     # Put the value in the store. Send the result to the waiting callers.
-    %{progress: progress, waiting: waiting, functions: functions} = state
+    %{progress: progress, waiting: waiting, functions: functions, backoffs: backoffs} = state
     %{key: key, refresh_time_delta: refresh_time_delta, ttl: ttl} = fun_map
 
     {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
@@ -418,9 +480,18 @@ defmodule Sanbase.Cache.RehydratingCache do
     new_fun_map = Map.update(fun_map, :refresh_count, 1, &(&1 + 1))
     new_functions = Map.put(functions, key, new_fun_map)
     new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
+    # Clean success clears the backoff so the next failure starts from scratch.
+    new_backoffs = Map.delete(backoffs, key)
     Store.put(@store_name, key, result, ttl)
 
-    {:noreply, %{state | progress: new_progress, waiting: new_waiting, functions: new_functions}}
+    {:noreply,
+     %{
+       state
+       | progress: new_progress,
+         waiting: new_waiting,
+         functions: new_functions,
+         backoffs: new_backoffs
+     }}
   end
 
   defp store_result_handle_info(_, state, fun_map, now_unix) do

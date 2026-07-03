@@ -61,7 +61,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
     end
   end
 
-  test "some alerts trigger", context do
+  test "some alerts trigger", _context do
     test_pid = self()
 
     with_mocks [
@@ -80,8 +80,6 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
       # and assert on the amount_down one regardless of arrival order.
       assert_receive({:telegram_to_self, message1})
       assert_receive({:telegram_to_self, message2})
-
-      IO.inspect({message1, message2})
 
       amount_down_message =
         Enum.find([message1, message2], fn message ->

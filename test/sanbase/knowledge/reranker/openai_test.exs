@@ -1,6 +1,11 @@
 defmodule Sanbase.Knowledge.Reranker.OpenAITest do
   use ExUnit.Case, async: true
 
+  # The error-fallback tests intentionally exercise failure paths that log
+  # warnings. Capture the logs so the test output stays clean (they still
+  # surface on failure).
+  @moduletag capture_log: true
+
   alias Sanbase.Knowledge.Reranker.OpenAI
 
   defp candidates(),

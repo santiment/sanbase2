@@ -130,6 +130,7 @@ defmodule Sanbase.Alert.TriggerSendingTest do
   end
 
   describe "channel validation at create time" do
+    @tag capture_log: true
     test "rejects bare \"webhook\" string", context do
       %{user: user, project: project} = context
 
@@ -149,6 +150,7 @@ defmodule Sanbase.Alert.TriggerSendingTest do
                })
     end
 
+    @tag capture_log: true
     test "rejects bare \"telegram_channel\" string", context do
       %{user: user, project: project} = context
 

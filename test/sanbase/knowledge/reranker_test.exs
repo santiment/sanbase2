@@ -57,6 +57,7 @@ defmodule Sanbase.Knowledge.RerankerTest do
       assert Enum.map(result, & &1.id) == [3, 2]
     end
 
+    @tag capture_log: true
     test "falls back to input order truncated when backend errors", %{candidates: candidates} do
       result = Reranker.call("q", candidates, reranker: FailingStub, top_n: 2)
       assert length(result) == 2

@@ -82,6 +82,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     assert expected_record2 in prices
   end
 
+  @tag capture_log: true
   test "ticker fetcher does not try custom slugs after auth error" do
     parent = self()
 

@@ -25,6 +25,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   @run_interval 20_000
   @purge_timeout_interval 30_000
   @function_runtime_timeout 5 * 1000 * 60
+  @stats_log_interval :timer.minutes(30)
 
   # Registered closures are refreshed forever, so keys that are no longer read
   # would keep querying upstreams indefinitely. Once a key has not been read for
@@ -77,6 +78,7 @@ defmodule Sanbase.Cache.RehydratingCache do
     }
 
     Process.send_after(self(), :purge_timeouts, @purge_timeout_interval)
+    Process.send_after(self(), :log_stats, @stats_log_interval)
     {:ok, initial_state, {:continue, :initialize}}
   end
 
@@ -244,6 +246,16 @@ defmodule Sanbase.Cache.RehydratingCache do
   def handle_info(:purge_timeouts, state) do
     new_state = do_purge_timeouts(state)
     {:noreply, new_state}
+  end
+
+  def handle_info(:log_stats, state) do
+    Logger.info(
+      "[Rehydrating Cache] registered_functions=#{map_size(state.functions)} " <>
+        "waiting_keys=#{map_size(state.waiting)} backoff_keys=#{map_size(state.backoffs)}"
+    )
+
+    Process.send_after(self(), :log_stats, @stats_log_interval)
+    {:noreply, state}
   end
 
   def handle_info({ref, _}, state) when is_reference(ref) do

@@ -22,22 +22,22 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   def name(), do: @name
 
-  @run_interval 20_000
-  @purge_timeout_interval 30_000
-  @function_runtime_timeout 5 * 1000 * 60
+  @run_interval :timer.seconds(20)
+  @purge_timeout_interval :timer.seconds(30)
+  @function_runtime_timeout :timer.minutes(5)
   @stats_log_interval :timer.minutes(1)
 
   # Registered closures are refreshed forever, so keys that are no longer read
   # would keep querying upstreams indefinitely. Once a key has not been read for
   # `@unused_key_pause_ms` its refresh is paused (a later `get` resumes it), and
   # after `@unused_key_drop_ms` it is forgotten entirely (a `get` re-registers it).
-  @unused_key_pause_ms :timer.minutes(30)
+  @unused_key_pause_ms :timer.hours(1)
   @unused_key_drop_ms :timer.hours(3)
 
   # Upper bound on new computation tasks started in a single :run tick. Prevents
   # a thundering herd when many keys come due at once (e.g. after a refresh
   # wave); the overflow stays due and runs on subsequent ticks.
-  @max_spawns_per_run 50
+  @max_spawns_per_run 250
 
   defguard are_proper_function_arguments(fun, ttl, refresh_time_delta)
            when is_function(fun, 0) and is_integer(ttl) and ttl > 0 and
@@ -368,7 +368,7 @@ defmodule Sanbase.Cache.RehydratingCache do
         run_function_get_updated_progress(state, fun_map)
 
       true ->
-        if state.now_unix - started_unix > @function_runtime_timeout do
+        if elapsed_ms(started_unix, state.now_unix) > @function_runtime_timeout do
           # Process computing the function is alive but it is taking
           # too long, maybe something is stuck. Restart the computation
           Process.exit(pid, :kill)
@@ -472,11 +472,15 @@ defmodule Sanbase.Cache.RehydratingCache do
     unread_ms(state, key, now_unix) > state.unused_key_pause_ms
   end
 
-  # Milliseconds since the key was last read. `last_access` and `now_unix` are in
-  # unix seconds, so scale the difference up to compare against the ms thresholds.
+  # Milliseconds since the key was last read.
   defp unread_ms(state, key, now_unix) do
-    (now_unix - Map.get(state.last_access, key, now_unix)) * 1000
+    elapsed_ms(Map.get(state.last_access, key, now_unix), now_unix)
   end
+
+  # The cache's time domain (last_access, progress, ttl, refresh_time_delta) is
+  # unix seconds, while the interval module attributes are milliseconds
+  # (`:timer.*`). Convert a seconds elapsed span to ms so the two can be compared.
+  defp elapsed_ms(from_unix, now_unix), do: (now_unix - from_unix) * 1000
 
   defp drop_unused_keys(state, []), do: state
 

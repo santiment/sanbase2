@@ -20,6 +20,7 @@ defmodule Sanbase.Cache.RehydratingCache.Supervisor do
     worker_opts =
       Keyword.take(opts, [
         :run_interval,
+        :function_runtime_timeout,
         :unused_key_pause_ms,
         :unused_key_drop_ms,
         :max_spawns_per_run

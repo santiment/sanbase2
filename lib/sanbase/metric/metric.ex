@@ -71,6 +71,14 @@ defmodule Sanbase.Metric do
   @available_metrics_module_cache_ttl 1200
   @available_metrics_module_cache_jitter 300
 
+  # Cooldown (seconds) for a module whose available_metrics call failed or timed
+  # out. While the marker exists the module is skipped and contributes a
+  # `{:error, {:cooldown, reason}}` failure, keeping the combined result partial
+  # + `:nocache`. The RehydratingCache retries `:nocache` results on every tick,
+  # so this cooldown is what actually bounds the load on a failing upstream:
+  # at most one real call per module+selector per cooldown window.
+  @module_failure_cooldown_ttl 60
+
   # Log a module whose available-metrics computation exceeds this, so the "slow
   # upstream" hint in the resolver timeout maps to a concrete culprit.
   @slow_module_log_threshold_ms 5_000
@@ -804,15 +812,43 @@ defmodule Sanbase.Metric do
         @available_metrics_module_cache_ttl +
           :erlang.phash2({module, selector}, @available_metrics_module_cache_jitter)
 
+      # The cooldown check lives INSIDE the compute function on purpose: the
+      # get_or_store lock serializes concurrent computations of the same key, so
+      # once one caller's failure writes the marker (also inside the lock, below),
+      # a concurrent caller re-checks it after acquiring the lock and cannot
+      # probe the failing upstream a second time. A cached value bypasses both
+      # the lock and the check - cached results always win over cooldowns.
       Sanbase.Cache.get_or_store({cache_key, ttl}, fn ->
-        {elapsed_us, result} =
-          :timer.tc(fn ->
-            module.available_metrics(selector, opts)
-            |> maybe_remove_experimental_metrics(user_metric_access_level)
-          end)
+        cooldown_key =
+          module_cooldown_key(module, selector, user_metric_access_level, lookback_days)
 
-        maybe_log_slow_module(module, selector, elapsed_us)
-        result
+        case Sanbase.Cache.get(cooldown_key) do
+          {:module_failure_cooldown, reason} ->
+            # The module failed recently - don't hit the upstream again yet. The
+            # distinct :cooldown shape marks this failure as already-reported so
+            # it never re-arms the marker, letting it expire and the module be
+            # retried.
+            {:error, {:cooldown, reason}}
+
+          nil ->
+            {elapsed_us, result} =
+              :timer.tc(fn ->
+                module.available_metrics(selector, opts)
+                |> maybe_remove_experimental_metrics(user_metric_access_level)
+              end)
+
+            maybe_log_slow_module(module, selector, elapsed_us)
+
+            maybe_store_error_cooldown(
+              result,
+              module,
+              selector,
+              user_metric_access_level,
+              lookback_days
+            )
+
+            result
+        end
       end)
     end
 
@@ -824,7 +860,56 @@ defmodule Sanbase.Metric do
       |> Enum.zip(modules)
       |> Enum.map(fn {result, module} -> {module, result} end)
 
+    # `{:error, _}` results already wrote their cooldown marker inside
+    # parallel_fun. This caller-side pass covers only failures that could not
+    # self-report: a task killed on timeout (`on_timeout: :kill_task`) surfaces
+    # solely as `{:exit, :timeout}` here, and malformed non-ok/non-error returns
+    # are handled the same way.
+    store_failure_cooldowns(tagged_results, selector, user_metric_access_level, lookback_days)
+
     combine_metrics_in_modules(tagged_results, selector)
+  end
+
+  defp module_cooldown_key(module, selector, user_metric_access_level, lookback_days) do
+    {__MODULE__, :available_metrics_module_cooldown, module, selector, user_metric_access_level,
+     lookback_days}
+    |> Sanbase.Cache.hash()
+  end
+
+  defp maybe_store_error_cooldown({:error, reason}, module, selector, access_level, lookback_days) do
+    cooldown_key = module_cooldown_key(module, selector, access_level, lookback_days)
+
+    Sanbase.Cache.store(
+      {cooldown_key, @module_failure_cooldown_ttl},
+      {:module_failure_cooldown, reason}
+    )
+  end
+
+  defp maybe_store_error_cooldown(_result, _module, _selector, _access_level, _lookback_days),
+    do: :ok
+
+  # Cooldown markers for failures that could not write their own inside
+  # parallel_fun (killed/timed-out tasks, malformed returns). `{:error, _}`
+  # results are skipped: fresh errors self-reported already, and cooldown
+  # short-circuits must not renew the marker TTL or the module would never be
+  # retried.
+  defp store_failure_cooldowns(tagged_results, selector, user_metric_access_level, lookback_days) do
+    Enum.each(tagged_results, fn
+      {_module, {:ok, _}} ->
+        :ok
+
+      {_module, {:error, _}} ->
+        :ok
+
+      {module, failure} ->
+        cooldown_key =
+          module_cooldown_key(module, selector, user_metric_access_level, lookback_days)
+
+        Sanbase.Cache.store(
+          {cooldown_key, @module_failure_cooldown_ttl},
+          {:module_failure_cooldown, failure}
+        )
+    end)
   end
 
   @doc ~s"""
@@ -1151,9 +1236,27 @@ defmodule Sanbase.Metric do
   defp log_failed_modules(failed_modules, selector) do
     failures =
       failed_modules
-      |> Enum.map_join("; ", fn {module, result} -> "#{inspect(module)} -> #{inspect(result)}" end)
+      |> Enum.map_join("; ", fn
+        {module, {:error, {:cooldown, reason}}} ->
+          "#{inspect(module)} -> known-failing, in cooldown (#{inspect(reason)})"
 
-    Logger.warning(
+        {module, result} ->
+          "#{inspect(module)} -> #{inspect(result)}"
+      end)
+
+    # A retry where every failure is a cooldown short-circuit carries no new
+    # information (the fresh failure was already logged at warning when the
+    # marker was written), and with :nocache results retried on every run tick
+    # it would repeat several times a minute per key during an outage.
+    only_cooldowns? =
+      Enum.all?(failed_modules, fn {_module, result} ->
+        match?({:error, {:cooldown, _}}, result)
+      end)
+
+    level = if only_cooldowns?, do: :debug, else: :warning
+
+    Logger.log(
+      level,
       "available_metrics_for_selector: #{length(failed_modules)} module(s) failed " <>
         "for selector=#{inspect(selector)} failures=[#{failures}]"
     )

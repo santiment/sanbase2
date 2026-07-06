@@ -21,6 +21,7 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
       context
       |> Map.take([
         :run_interval,
+        :function_runtime_timeout,
         :unused_key_pause_ms,
         :unused_key_drop_ms,
         :max_spawns_per_run
@@ -217,10 +218,10 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
     end
   end
 
-  describe "retry backoff" do
+  describe "retry cadence" do
     @tag run_interval: 20
-    test "a persistently :nocache function is not re-run on every tick" do
-      key = {:rc_test, :backoff}
+    test "a persistently :nocache function is re-run on every tick" do
+      key = {:rc_test, :nocache_every_tick}
       counter = :counters.new(1, [])
 
       fun = fn ->
@@ -228,17 +229,73 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
         {:nocache, {:ok, :partial}}
       end
 
-      # Small refresh_time_delta caps the backoff; ttl keeps the value around.
+      :ok = RehydratingCache.register_function(fun, key, 60, 30)
+
+      # :nocache means "retry on the next tick" with no backoff, so with a 20ms
+      # run interval the fun reruns dozens of times in this window. The stored
+      # partial keeps being served meanwhile.
+      Process.sleep(1_500)
+
+      runs = :counters.get(counter, 1)
+      assert runs >= 10, "expected :nocache to retry on every tick, got only #{runs} runs"
+      assert {:nocache, {:ok, :partial}} = RehydratingCache.get(key, 200, return_nocache: true)
+    end
+
+    @tag run_interval: 20
+    @tag capture_log: true
+    test "a persistently failing function is retried with backoff" do
+      key = {:rc_test, :error_backoff}
+      counter = :counters.new(1, [])
+
+      fun = fn ->
+        :ok = :counters.add(counter, 1, 1)
+        {:error, :boom}
+      end
+
+      # Small refresh_time_delta caps the backoff; without backoff the fun would
+      # run on every 20ms tick (dozens of times). With backoff (1s, 2s, 4s, ...
+      # capped at refresh_time_delta = 5s) only a handful of runs fit here.
       :ok = RehydratingCache.register_function(fun, key, 60, 5)
 
-      # Many ticks fire in this window. Without backoff the fun would run on
-      # every tick (dozens of times); with exponential backoff (1s, 2s, 4s, ...
-      # capped at refresh_time_delta) it runs only a handful of times.
       Process.sleep(1_500)
 
       runs = :counters.get(counter, 1)
       assert runs >= 2, "expected the function to retry at least a couple of times, got #{runs}"
       assert runs <= 15, "expected backoff to throttle retries, but ran #{runs} times"
+    end
+
+    @tag run_interval: 20
+    @tag capture_log: true
+    test "a :nocache result resets the error backoff" do
+      key = {:rc_test, :backoff_reset}
+      # Runs: 1st -> error, 2nd -> error, 3rd -> nocache (resets), 4th+ -> error.
+      run_times = start_supervised!({Agent, fn -> [] end})
+
+      fun = fn ->
+        Agent.update(run_times, &[System.monotonic_time(:millisecond) | &1])
+        n = Agent.get(run_times, &length/1)
+
+        case n do
+          3 -> {:nocache, {:ok, :partial}}
+          _ -> {:error, :boom}
+        end
+      end
+
+      # refresh_time_delta = 60 so the backoff cap does not mask growth: without
+      # the reset the delay after run 3 would be 4s (fail count 3), with the
+      # reset it is ~0s (nocache -> next tick) and run 4's own delay is 1s again.
+      :ok = RehydratingCache.register_function(fun, key, 120, 60)
+
+      # Wait for 5 runs: 0s, +1s, +2s, +~0s (nocache), +1s => ~4-5s in total.
+      assert eventually(fn -> Agent.get(run_times, &length/1) >= 5 end, 80, 100)
+
+      [t5, t4, t3, _t2, _t1] = Agent.get(run_times, &Enum.take(&1, 5))
+
+      # Run 4 fires on the tick right after the :nocache run 3 (second
+      # granularity allows up to ~1s); without the reset it would be ~4s later.
+      assert t4 - t3 < 2_500, "expected next-tick rerun after :nocache, waited #{t4 - t3}ms"
+      # Run 5 comes after run 4's error with a RESET backoff (~1s, not ~4s+).
+      assert t5 - t4 < 2_500, "expected reset backoff after :nocache, waited #{t5 - t4}ms"
     end
   end
 
@@ -262,6 +319,30 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
       Process.sleep(2_000)
 
       assert :counters.get(counter, 1) == 1
+    end
+
+    @tag run_interval: 20
+    @tag unused_key_pause_ms: 0
+    test "a read resumes a paused key and it recomputes promptly" do
+      key = {:rc_test, :resume_paused}
+      counter = :counters.new(1, [])
+
+      fun = fn ->
+        :ok = :counters.add(counter, 1, 1)
+        {:ok, :counters.get(counter, 1)}
+      end
+
+      :ok = RehydratingCache.register_function(fun, key, 60, 1)
+
+      # Runs once at registration, then pauses (unread past the 0ms threshold).
+      Process.sleep(2_000)
+      assert :counters.get(counter, 1) == 1
+
+      # A read serves the stored value AND resumes the key as immediately due,
+      # so the recompute happens on the next tick rather than after a whole
+      # refresh window.
+      assert {:ok, 1} = RehydratingCache.get(key, 200)
+      assert eventually(fn -> :counters.get(counter, 1) >= 2 end)
     end
 
     @tag run_interval: 20
@@ -311,6 +392,38 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
       Process.sleep(300)
 
       # Only max_spawns_per_run (3) additional tasks may start in that tick.
+      assert :counters.get(starts, 1) == 9
+    end
+
+    # Large run interval so ticks only fire manually; 0 runtime timeout makes
+    # every in-progress task look "stuck" so restarts go through the cap.
+    @tag run_interval: 3_600_000
+    @tag function_runtime_timeout: 0
+    @tag max_spawns_per_run: 3
+    test "restarts of stuck tasks respect the spawn cap" do
+      starts = :counters.new(1, [])
+      keys = for i <- 1..6, do: {:rc_test, :stuck_cap, i}
+
+      Enum.each(keys, fn key ->
+        fun = fn ->
+          :ok = :counters.add(starts, 1, 1)
+          Process.sleep(60_000)
+          {:ok, :v}
+        end
+
+        :ok = RehydratingCache.register_function(fun, key, 60, 30)
+      end)
+
+      # Each task starts once on registration and then blocks (stuck).
+      assert eventually(fn -> :counters.get(starts, 1) == 6 end)
+
+      # Advance past a full second so the 0ms runtime timeout marks them stuck,
+      # then drive one tick. Without cap gating on the restart path all six would
+      # be killed and respawned; with it only max_spawns_per_run (3) restart.
+      Process.sleep(1_100)
+      send(RehydratingCache.name(), :run)
+      Process.sleep(300)
+
       assert :counters.get(starts, 1) == 9
     end
   end

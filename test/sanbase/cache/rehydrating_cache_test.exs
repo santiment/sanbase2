@@ -349,6 +349,8 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
     @tag unused_key_drop_ms: 0
     test "forgets a key that has been unread past the drop threshold" do
       key = {:rc_test, :drop_unused}
+      # ttl 60 so the stored value would long outlive the drop if it were not
+      # evicted - the read below must miss because of the drop, not a TTL lapse.
       :ok = RehydratingCache.register_function(fn -> {:ok, :v} end, key, 60, 30)
 
       # Give the run loop time to observe the key as unread and drop it. Sleep
@@ -357,10 +359,8 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
       # at least one second beyond registration.
       Process.sleep(1_500)
 
-      # Remove the stored value so the read cannot be served from the store; the
-      # closure was forgotten, so the key is unregistered again.
-      Sanbase.Cache.clear(Sanbase.Cache.RehydratingCache.Store.name(), key)
-
+      # Dropping evicts the stored value too, so the read cannot be served from
+      # the store and falls through to :not_registered.
       assert {:error, :not_registered} = RehydratingCache.get(key, 300)
     end
   end

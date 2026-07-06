@@ -8,4 +8,8 @@ defmodule Sanbase.Cache.RehydratingCache.Store do
   def get(store, key) do
     Sanbase.Cache.get(store, key)
   end
+
+  def delete(store, key) do
+    Sanbase.Cache.clear(store, key)
+  end
 end

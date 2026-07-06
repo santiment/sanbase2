@@ -36,6 +36,10 @@ defmodule Sanbase.Cache.RehydratingCache do
   # would keep querying upstreams indefinitely. Once a key has not been read for
   # `@unused_key_pause_ms` its refresh is paused (a later `get` resumes it), and
   # after `@unused_key_drop_ms` it is forgotten entirely (a `get` re-registers it).
+  #
+  # The pause threshold is intentionally >= the longest refresh cadence a caller
+  # uses (the project-metrics resolver refreshes every 30-60 min), so a key that
+  # is still in active rotation is never paused between two of its own refreshes.
   @unused_key_pause_ms :timer.hours(1)
   @unused_key_drop_ms :timer.hours(3)
 
@@ -505,6 +509,12 @@ defmodule Sanbase.Cache.RehydratingCache do
   defp drop_unused_keys(state, []), do: state
 
   defp drop_unused_keys(state, keys) do
+    # Evict the stored values too, not just the metadata. Otherwise `get/3`
+    # would keep serving the dropped key's value straight from the store (until
+    # its own TTL) and never fall through to :not_registered, so the caller
+    # would never re-register the function.
+    Enum.each(keys, &Store.delete(@store_name, &1))
+
     %{
       state
       | functions: Map.drop(state.functions, keys),

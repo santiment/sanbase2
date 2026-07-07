@@ -25,12 +25,13 @@ defmodule Sanbase.Metric do
   alias Sanbase.Metric.Helper
 
   alias Sanbase.Clickhouse.MetricAdapter.Registry
+  alias Sanbase.Metric.AvailableMetricsCircuitBreaker, as: CircuitBreaker
 
   @compile inline: [
              execute_if_aggregation_valid: 3,
              get_module: 1,
              get_module: 2,
-             combine_metrics_in_modules: 2
+             combine_metrics_in_modules: 4
            ]
 
   @type datetime :: DateTime.t()
@@ -70,18 +71,6 @@ defmodule Sanbase.Metric do
   # modules and slugs do not align.
   @available_metrics_module_cache_ttl 1200
   @available_metrics_module_cache_jitter 300
-
-  # Cooldown (seconds) for a module whose available_metrics call failed or timed
-  # out. While the marker exists the module is skipped and contributes a
-  # `{:error, {:cooldown, reason}}` failure, keeping the combined result partial
-  # + `:nocache`. The RehydratingCache retries `:nocache` results on every tick,
-  # so this cooldown is what actually bounds the load on a failing upstream:
-  # at most one real call per module+selector per cooldown window.
-  @module_failure_cooldown_ttl 60
-
-  # Log a module whose available-metrics computation exceeds this, so the "slow
-  # upstream" hint in the resolver timeout maps to a concrete culprit.
-  @slow_module_log_threshold_ms 5_000
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -812,104 +801,42 @@ defmodule Sanbase.Metric do
         @available_metrics_module_cache_ttl +
           :erlang.phash2({module, selector}, @available_metrics_module_cache_jitter)
 
-      # The cooldown check lives INSIDE the compute function on purpose: the
+      breaker_id = {module, selector, user_metric_access_level, lookback_days}
+
+      # CircuitBreaker.call runs INSIDE the compute function on purpose: the
       # get_or_store lock serializes concurrent computations of the same key, so
-      # once one caller's failure writes the marker (also inside the lock, below),
-      # a concurrent caller re-checks it after acquiring the lock and cannot
-      # probe the failing upstream a second time. A cached value bypasses both
-      # the lock and the check - cached results always win over cooldowns.
+      # once one caller's failure trips the breaker a concurrent caller re-checks
+      # it after acquiring the lock and cannot probe the failing upstream a
+      # second time. A cached value bypasses both - cached results always win.
       Sanbase.Cache.get_or_store({cache_key, ttl}, fn ->
-        cooldown_key =
-          module_cooldown_key(module, selector, user_metric_access_level, lookback_days)
-
-        case Sanbase.Cache.get(cooldown_key) do
-          {:module_failure_cooldown, reason} ->
-            # The module failed recently - don't hit the upstream again yet. The
-            # distinct :cooldown shape marks this failure as already-reported so
-            # it never re-arms the marker, letting it expire and the module be
-            # retried.
-            {:error, {:cooldown, reason}}
-
-          nil ->
-            {elapsed_us, result} =
-              :timer.tc(fn ->
-                module.available_metrics(selector, opts)
-                |> maybe_remove_experimental_metrics(user_metric_access_level)
-              end)
-
-            maybe_log_slow_module(module, selector, elapsed_us)
-
-            maybe_store_error_cooldown(
-              result,
-              module,
-              selector,
-              user_metric_access_level,
-              lookback_days
-            )
-
-            result
-        end
+        CircuitBreaker.call(breaker_id, fn ->
+          module.available_metrics(selector, opts)
+          |> maybe_remove_experimental_metrics(user_metric_access_level)
+        end)
       end)
     end
 
     modules = Helper.metric_modules()
+    results = Sanbase.Parallel.map(modules, parallel_fun, parallel_opts)
+    tagged_results = Enum.zip(modules, results)
 
-    tagged_results =
-      modules
-      |> Sanbase.Parallel.map(parallel_fun, parallel_opts)
-      |> Enum.zip(modules)
-      |> Enum.map(fn {result, module} -> {module, result} end)
+    # Failures that could not report themselves inside parallel_fun (a task
+    # killed on timeout surfaces solely as `{:exit, :timeout}` here) are scored
+    # from this caller-side pass.
+    _ =
+      CircuitBreaker.record_uncaught_failures(
+        tagged_results,
+        selector,
+        user_metric_access_level,
+        lookback_days
+      )
 
-    # `{:error, _}` results already wrote their cooldown marker inside
-    # parallel_fun. This caller-side pass covers only failures that could not
-    # self-report: a task killed on timeout (`on_timeout: :kill_task`) surfaces
-    # solely as `{:exit, :timeout}` here, and malformed non-ok/non-error returns
-    # are handled the same way.
-    store_failure_cooldowns(tagged_results, selector, user_metric_access_level, lookback_days)
-
-    combine_metrics_in_modules(tagged_results, selector)
-  end
-
-  defp module_cooldown_key(module, selector, user_metric_access_level, lookback_days) do
-    {__MODULE__, :available_metrics_module_cooldown, module, selector, user_metric_access_level,
-     lookback_days}
-    |> Sanbase.Cache.hash()
-  end
-
-  defp maybe_store_error_cooldown({:error, reason}, module, selector, access_level, lookback_days) do
-    cooldown_key = module_cooldown_key(module, selector, access_level, lookback_days)
-
-    Sanbase.Cache.store(
-      {cooldown_key, @module_failure_cooldown_ttl},
-      {:module_failure_cooldown, reason}
+    combine_metrics_in_modules(
+      tagged_results,
+      selector,
+      user_metric_access_level,
+      lookback_days
     )
-  end
-
-  defp maybe_store_error_cooldown(_result, _module, _selector, _access_level, _lookback_days),
-    do: :ok
-
-  # Cooldown markers for failures that could not write their own inside
-  # parallel_fun (killed/timed-out tasks, malformed returns). `{:error, _}`
-  # results are skipped: fresh errors self-reported already, and cooldown
-  # short-circuits must not renew the marker TTL or the module would never be
-  # retried.
-  defp store_failure_cooldowns(tagged_results, selector, user_metric_access_level, lookback_days) do
-    Enum.each(tagged_results, fn
-      {_module, {:ok, _}} ->
-        :ok
-
-      {_module, {:error, _}} ->
-        :ok
-
-      {module, failure} ->
-        cooldown_key =
-          module_cooldown_key(module, selector, user_metric_access_level, lookback_days)
-
-        Sanbase.Cache.store(
-          {cooldown_key, @module_failure_cooldown_ttl},
-          {:module_failure_cooldown, failure}
-        )
-    end)
   end
 
   @doc ~s"""
@@ -1191,16 +1118,23 @@ defmodule Sanbase.Metric do
     end
   end
 
-  defp combine_metrics_in_modules(tagged_results, selector) do
+  defp combine_metrics_in_modules(tagged_results, selector, access_level, lookback_days) do
     # `tagged_results` is a list of `{module, result}` pairs from parallel_fun.
-    # Wrap in `:nocache` if any module returned a non-`:ok` result so the next
-    # attempt retries.
+    # A module that did not return `{:ok, _}` (error, open-circuit short-circuit,
+    # a killed/timed-out task) contributes its last-known-good list instead of
+    # nothing, so a transient failure never removes a module's metrics from the
+    # combined result. The batch is still tagged `:nocache` whenever any module
+    # was not fresh, so the RehydratingCache keeps retrying until they recover.
     hidden = hidden_metrics()
 
     available_metrics =
-      Enum.flat_map(tagged_results, fn
-        {_module, {:ok, metrics}} -> metrics
-        _ -> []
+      tagged_results
+      |> Enum.flat_map(fn
+        {_module, {:ok, metrics}} ->
+          metrics
+
+        {module, _failure} ->
+          CircuitBreaker.last_good({module, selector, access_level, lookback_days})
       end)
       |> maybe_replace_metrics(selector)
       |> Enum.uniq()
@@ -1220,40 +1154,27 @@ defmodule Sanbase.Metric do
     end
   end
 
-  defp maybe_log_slow_module(module, selector, elapsed_us) do
-    elapsed_ms = div(elapsed_us, 1000)
-
-    if elapsed_ms >= @slow_module_log_threshold_ms do
-      Logger.warning(
-        "slow available_metrics module: #{inspect(module)} took #{elapsed_ms}ms " <>
-          "for selector=#{inspect(selector)}"
-      )
-    end
-
-    :ok
-  end
-
   defp log_failed_modules(failed_modules, selector) do
     failures =
       failed_modules
       |> Enum.map_join("; ", fn
-        {module, {:error, {:cooldown, reason}}} ->
-          "#{inspect(module)} -> known-failing, in cooldown (#{inspect(reason)})"
+        {module, {:error, {:circuit_open, reason}}} ->
+          "#{inspect(module)} -> known-failing, circuit open (#{inspect(reason)})"
 
         {module, result} ->
           "#{inspect(module)} -> #{inspect(result)}"
       end)
 
-    # A retry where every failure is a cooldown short-circuit carries no new
+    # A retry where every failure is an open-circuit short-circuit carries no new
     # information (the fresh failure was already logged at warning when the
-    # marker was written), and with :nocache results retried on every run tick
-    # it would repeat several times a minute per key during an outage.
-    only_cooldowns? =
+    # breaker tripped), and with :nocache results retried on every run tick it
+    # would repeat several times a minute per key during an outage.
+    only_open? =
       Enum.all?(failed_modules, fn {_module, result} ->
-        match?({:error, {:cooldown, _}}, result)
+        match?({:error, {:circuit_open, _}}, result)
       end)
 
-    level = if only_cooldowns?, do: :debug, else: :warning
+    level = if only_open?, do: :debug, else: :warning
 
     Logger.log(
       level,

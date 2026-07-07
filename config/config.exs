@@ -81,6 +81,9 @@ config :sanbase, Sanbase.RepoReader,
 
 config :sanbase, Sanbase.Price.Validator, enabled: {:system, "PRICE_VALIDATOR_ENABLED", true}
 
+config :sanbase, Sanbase.Metric.AvailableMetricsCircuitBreaker,
+  enabled: {:system, "AVAILABLE_METRICS_CIRCUIT_BREAKER_ENABLED", true}
+
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
 
 config :sanbase, Sanbase.Kafka,

@@ -47,33 +47,38 @@ defmodule Sanbase.Metric.AvailableMetricsCircuitBreaker do
 
   The whole mechanism can be disabled with the
   `AVAILABLE_METRICS_CIRCUIT_BREAKER_ENABLED` env var (see `enabled?/0`). When
-  disabled the breaker never opens, every probe is attempted, and no stale list
-  is served - i.e. the fan-out behaves as if this module were not here.
+  disabled the breaker never opens, nothing is scored, and no stale list is
+  served - every probe runs unguarded. Probe timing/slow-probe logging and
+  result normalization still apply: they are probe-execution concerns that
+  predate the breaker (normalization keeps a malformed module return from being
+  cached as a success), not breaker state.
   """
 
   require Logger
 
   alias Sanbase.Utils.Config
 
-  # Weighted failure scoring. Timeouts are the common failure mode (a slow
-  # ClickHouse query hitting the per-module 20s kill or the DB's own timeout)
-  # and usually resolve on their own, so they count less than a hard error.
+  @typedoc """
+  Identifies one breaker instance: the metric-adapter module plus the selector
+  and options that shape its available-metrics probe.
+  """
+  @type id ::
+          {module(), selector :: any(), access_level :: String.t(),
+           lookback_days :: non_neg_integer() | nil}
+
+  @type probe_result :: {:ok, list(String.t())} | {:error, any()}
+
+  # Failure weights and trip threshold - rationale in the moduledoc.
   @timeout_weight 1
   @error_weight 2
-
-  # Score at which the breaker trips: 6 consecutive timeouts (several minutes of
-  # sustained slowness at the ~20s refresh cadence) or 3 consecutive hard errors.
   @trip_threshold 6
 
-  # How long the breaker stays open (seconds) before a trial probe is allowed.
-  # Kept short on purpose: with the RehydratingCache re-running :nocache results
-  # every ~20s tick, 15s skips roughly one refresh cycle, so a module that was
-  # merely slow is retried within ~40s of the failed probe.
+  # Open window (seconds). 15s skips roughly one ~20s RehydratingCache refresh
+  # cycle, so a module that was merely slow is retried within ~40s.
   @open_ttl 15
 
-  # How long the score survives between failures. A gap longer than this without
-  # any failure lets the marker expire and the count start fresh (the TTL is
-  # refreshed on every recorded failure, so it is a sliding window).
+  # Sliding window (seconds) the score survives between failures: every recorded
+  # failure refreshes the TTL; a longer quiet gap starts the count fresh.
   @failure_window 180
 
   # Last-known-good list lifetime. Bounded by Sanbase.Cache's 24h max TTL.
@@ -99,7 +104,12 @@ defmodule Sanbase.Metric.AvailableMetricsCircuitBreaker do
   Meant to be called inside the working-cache's `get_or_store` compute function
   so the lock serializes the open-check against the failure write: a cached
   value bypasses both, so cached results always win.
+
+  When the breaker is disabled the probe always runs and nothing is scored;
+  timing, slow-probe logging and normalization apply regardless (see the
+  moduledoc).
   """
+  @spec call(id, (-> any())) :: probe_result
   def call({_module, _selector, _access_level, _lookback_days} = id, fun)
       when is_function(fun, 0) do
     case check(id) do
@@ -121,6 +131,7 @@ defmodule Sanbase.Metric.AvailableMetricsCircuitBreaker do
   `AVAILABLE_METRICS_CIRCUIT_BREAKER_ENABLED` env var (default enabled); when
   false, `call/2` always runs the probe unguarded and `last_good/1` returns `[]`.
   """
+  @spec enabled?() :: boolean()
   def enabled?() do
     value =
       :sanbase
@@ -137,6 +148,7 @@ defmodule Sanbase.Metric.AvailableMetricsCircuitBreaker do
   Current breaker state for `id`: `{:open, reason}` while tripped, `:closed`
   otherwise (always `:closed` when disabled).
   """
+  @spec check(id) :: :closed | {:open, any()}
   def check(id) do
     if enabled?() do
       case Sanbase.Cache.get(open_key(id)) do
@@ -156,6 +168,7 @@ defmodule Sanbase.Metric.AvailableMetricsCircuitBreaker do
   `{:error, {:circuit_open, _}}` so they cannot inflate the score while the
   breaker is already open.
   """
+  @spec record_uncaught_failures([{module(), any()}], any(), String.t(), any()) :: :ok
   def record_uncaught_failures(tagged_results, selector, access_level, lookback_days) do
     if enabled?() do
       Enum.each(tagged_results, fn
@@ -178,6 +191,7 @@ defmodule Sanbase.Metric.AvailableMetricsCircuitBreaker do
   breaker is disabled). Lets the fan-out keep a failing module's metrics in the
   combined result.
   """
+  @spec last_good(id) :: list(String.t())
   def last_good(id) do
     if enabled?() do
       case Sanbase.Cache.get(last_good_key(id)) do
@@ -192,6 +206,7 @@ defmodule Sanbase.Metric.AvailableMetricsCircuitBreaker do
   @doc """
   Current accumulated failure score for `id` (0 if none). Diagnostics/tests.
   """
+  @spec failure_score(id) :: non_neg_integer()
   def failure_score(id) do
     Sanbase.Cache.get(score_key(id)) || 0
   end
@@ -201,6 +216,7 @@ defmodule Sanbase.Metric.AvailableMetricsCircuitBreaker do
   probe runs immediately. Used by tests to simulate the open window expiring
   without waiting out the TTL.
   """
+  @spec close(id) :: :ok
   def close(id) do
     Sanbase.Cache.clear(open_key(id))
   end

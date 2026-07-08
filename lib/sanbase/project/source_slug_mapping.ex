@@ -66,13 +66,21 @@ defmodule Sanbase.Project.SourceSlugMapping do
       callers never accidentally pick up non-crypto assets.
     * `:non_crypto_project_only` — only rows mapped to a `Sanbase.NonCryptoAsset`.
     * `:all` — both, with `sanbase_slug` taken from whichever reference is set.
+
+  The `:include_hidden` option controls whether mappings of hidden projects /
+  non-crypto assets are included. It defaults to `false` — hidden assets are
+  excluded unless `include_hidden: true` is passed explicitly.
   """
-  @spec get_source_slug_mappings(String.t(), [{:return, return_filter()}]) ::
-          [{String.t(), String.t()}]
+  @spec get_source_slug_mappings(String.t(), [
+          {:return, return_filter()} | {:include_hidden, boolean()}
+        ]) :: [{String.t(), String.t()}]
   def get_source_slug_mappings(source, opts \\ []) do
-    opts
-    |> Keyword.get(:return, :crypto_project_only)
+    return = Keyword.get(opts, :return, :crypto_project_only)
+    include_hidden = Keyword.get(opts, :include_hidden, false)
+
+    return
     |> source_slug_mappings_query(source)
+    |> maybe_exclude_hidden(return, include_hidden)
     |> Repo.all()
   end
 
@@ -80,6 +88,7 @@ defmodule Sanbase.Project.SourceSlugMapping do
     from(
       ssm in __MODULE__,
       join: p in assoc(ssm, :project),
+      as: :project,
       where: ssm.source == ^source,
       select: {ssm.slug, p.slug}
     )
@@ -89,6 +98,7 @@ defmodule Sanbase.Project.SourceSlugMapping do
     from(
       ssm in __MODULE__,
       join: nca in assoc(ssm, :non_crypto_asset),
+      as: :non_crypto_asset,
       where: ssm.source == ^source,
       select: {ssm.slug, nca.slug}
     )
@@ -98,9 +108,33 @@ defmodule Sanbase.Project.SourceSlugMapping do
     from(
       ssm in __MODULE__,
       left_join: p in assoc(ssm, :project),
+      as: :project,
       left_join: nca in assoc(ssm, :non_crypto_asset),
+      as: :non_crypto_asset,
       where: ssm.source == ^source,
       select: {ssm.slug, coalesce(p.slug, nca.slug)}
+    )
+  end
+
+  defp maybe_exclude_hidden(query, _return, true), do: query
+
+  defp maybe_exclude_hidden(query, :crypto_project_only, false) do
+    # projects.is_hidden is nullable; NULL means visible.
+    where(query, [project: p], coalesce(p.is_hidden, false) == false)
+  end
+
+  defp maybe_exclude_hidden(query, :non_crypto_project_only, false) do
+    where(query, [non_crypto_asset: nca], nca.is_hidden == false)
+  end
+
+  defp maybe_exclude_hidden(query, :all, false) do
+    # Exactly one of p/nca is set per row, so the inner coalesce picks the
+    # hidden flag of whichever asset the row references. The outer coalesce
+    # to false covers projects.is_hidden being nullable (NULL means visible).
+    where(
+      query,
+      [project: p, non_crypto_asset: nca],
+      coalesce(coalesce(p.is_hidden, nca.is_hidden), false) == false
     )
   end
 

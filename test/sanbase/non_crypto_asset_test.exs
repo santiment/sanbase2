@@ -161,25 +161,24 @@ defmodule Sanbase.NonCryptoAssetTest do
 
     test "get_source_slug_mappings filters by the :return option" do
       asset = insert(:non_crypto_asset, slug: "gold")
+      hidden_asset = insert(:non_crypto_asset, slug: "hidden-gold", is_hidden: true)
       project = insert(:random_project, slug: "bitcoin")
+      hidden_project = insert(:random_project, slug: "hidden-coin", is_hidden: true)
 
-      {:ok, _} =
-        SourceSlugMapping.create(%{
-          source: "hyperliquid",
-          slug: "GOLD",
-          non_crypto_asset_id: asset.id
-        })
+      for {slug, attrs} <- [
+            {"GOLD", %{non_crypto_asset_id: asset.id}},
+            {"HGOLD", %{non_crypto_asset_id: hidden_asset.id}},
+            {"BTC", %{project_id: project.id}},
+            {"HCOIN", %{project_id: hidden_project.id}}
+          ] do
+        {:ok, _} =
+          SourceSlugMapping.create(Map.merge(%{source: "hyperliquid", slug: slug}, attrs))
+      end
 
-      {:ok, _} =
-        SourceSlugMapping.create(%{
-          source: "hyperliquid",
-          slug: "BTC",
-          project_id: project.id
-        })
-
-      # Default is crypto-project-only.
+      # Default is crypto-project-only, excluding hidden.
       default = SourceSlugMapping.get_source_slug_mappings("hyperliquid")
       assert {"BTC", "bitcoin"} in default
+      refute {"HCOIN", "hidden-coin"} in default
       refute {"GOLD", "gold"} in default
 
       crypto =
@@ -187,17 +186,49 @@ defmodule Sanbase.NonCryptoAssetTest do
 
       assert crypto == default
 
+      crypto_with_hidden =
+        SourceSlugMapping.get_source_slug_mappings("hyperliquid",
+          return: :crypto_project_only,
+          include_hidden: true
+        )
+
+      assert {"BTC", "bitcoin"} in crypto_with_hidden
+      assert {"HCOIN", "hidden-coin"} in crypto_with_hidden
+
       non_crypto =
         SourceSlugMapping.get_source_slug_mappings("hyperliquid",
           return: :non_crypto_project_only
         )
 
       assert {"GOLD", "gold"} in non_crypto
+      refute {"HGOLD", "hidden-gold"} in non_crypto
       refute {"BTC", "bitcoin"} in non_crypto
+
+      non_crypto_with_hidden =
+        SourceSlugMapping.get_source_slug_mappings("hyperliquid",
+          return: :non_crypto_project_only,
+          include_hidden: true
+        )
+
+      assert {"GOLD", "gold"} in non_crypto_with_hidden
+      assert {"HGOLD", "hidden-gold"} in non_crypto_with_hidden
 
       all = SourceSlugMapping.get_source_slug_mappings("hyperliquid", return: :all)
       assert {"GOLD", "gold"} in all
       assert {"BTC", "bitcoin"} in all
+      refute {"HGOLD", "hidden-gold"} in all
+      refute {"HCOIN", "hidden-coin"} in all
+
+      all_with_hidden =
+        SourceSlugMapping.get_source_slug_mappings("hyperliquid",
+          return: :all,
+          include_hidden: true
+        )
+
+      assert {"GOLD", "gold"} in all_with_hidden
+      assert {"BTC", "bitcoin"} in all_with_hidden
+      assert {"HGOLD", "hidden-gold"} in all_with_hidden
+      assert {"HCOIN", "hidden-coin"} in all_with_hidden
     end
   end
 end

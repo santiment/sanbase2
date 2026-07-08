@@ -419,7 +419,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
   defp load_mappings() do
     # Hyperliquid lists both crypto projects and non-crypto assets (gold, SPX,
-    # …), so subscribe to mappings of either kind.
+    # …), so subscribe to mappings of either kind. `:all` excludes hidden
+    # assets by default: hiding one stops its Kafka export on the next
+    # reconcile (≤60s), unhiding resumes it.
     rows = SourceSlugMapping.get_source_slug_mappings(@source, return: :all)
 
     slug_map =

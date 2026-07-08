@@ -8,12 +8,13 @@ defmodule SanbaseWeb.Graphql.Schema.NonCryptoAssetQueries do
   object :non_crypto_asset_queries do
     @desc ~s"""
     Fetch all non-crypto assets (stocks, commodities, indices, forex, funds,
-    bonds), optionally filtered by asset type.
+    bonds), optionally filtered by asset types. A single type is also accepted
+    (`assetTypes: INDEX` is coerced to a one-element list).
     """
     field :all_non_crypto_assets, list_of(:non_crypto_asset) do
       meta(access: :free)
 
-      arg(:asset_type, :non_crypto_asset_type)
+      arg(:asset_types, list_of(:non_crypto_asset_type))
 
       cache_resolve(&NonCryptoAssetResolver.all_non_crypto_assets/3)
     end

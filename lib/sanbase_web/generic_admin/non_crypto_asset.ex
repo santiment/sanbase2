@@ -17,14 +17,10 @@ defmodule SanbaseWeb.GenericAdmin.NonCryptoAsset do
     :hidden_reason
   ]
 
-  def non_crypto_asset_link(row) do
-    if row.non_crypto_asset_id do
-      SanbaseWeb.GenericAdmin.resource_link(
-        "non_crypto_assets",
-        row.non_crypto_asset_id,
-        row.non_crypto_asset.name
-      )
-    end
+  def non_crypto_asset_link(%{non_crypto_asset_id: nil}), do: nil
+
+  def non_crypto_asset_link(%{non_crypto_asset_id: id, non_crypto_asset: %{name: name}}) do
+    SanbaseWeb.GenericAdmin.resource_link("non_crypto_assets", id, name)
   end
 
   def resource() do

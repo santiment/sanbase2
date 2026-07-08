@@ -3,9 +3,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.NonCryptoAssetResolver do
 
   def all_non_crypto_assets(_root, args, _resolution) do
     opts =
-      case Map.get(args, :asset_type) do
+      case Map.get(args, :asset_types) do
         nil -> []
-        asset_type -> [asset_type: asset_type]
+        asset_types -> [asset_types: asset_types]
       end
 
     {:ok, NonCryptoAsset.list(opts)}

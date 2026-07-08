@@ -44,10 +44,25 @@ defmodule SanbaseWeb.Graphql.NonCryptoAssetApiTest do
     refute Enum.find(assets, &(&1["slug"] == "hidden-asset"))
   end
 
-  test "allNonCryptoAssets filters by asset type", context do
+  test "allNonCryptoAssets filters by asset types", context do
     query = """
     {
-      allNonCryptoAssets(assetType: INDEX) {
+      allNonCryptoAssets(assetTypes: [INDEX, COMMODITY]) {
+        slug
+      }
+    }
+    """
+
+    slugs = execute_query(context.conn, query, "allNonCryptoAssets") |> Enum.map(& &1["slug"])
+
+    assert "sp500" in slugs
+    assert "gold" in slugs
+  end
+
+  test "allNonCryptoAssets coerces a single asset type to a list", context do
+    query = """
+    {
+      allNonCryptoAssets(assetTypes: INDEX) {
         slug
       }
     }

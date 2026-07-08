@@ -108,6 +108,15 @@ defmodule Sanbase.NonCryptoAssetTest do
       assert context.gold.slug in slugs
       refute context.hidden.slug in slugs
     end
+
+    test "by_slugs excludes hidden assets unless asked", context do
+      all_slugs = [context.gold.slug, context.hidden.slug]
+
+      assert [%{slug: "gold"}] = NonCryptoAsset.by_slugs(all_slugs)
+
+      slugs = NonCryptoAsset.by_slugs(all_slugs, include_hidden: true) |> Enum.map(& &1.slug)
+      assert context.hidden.slug in slugs
+    end
   end
 
   describe "source slug mappings" do

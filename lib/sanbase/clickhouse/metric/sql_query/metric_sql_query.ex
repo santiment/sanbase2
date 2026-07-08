@@ -26,7 +26,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts) do
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     params = %{
       interval: maybe_str_to_sec(interval),
@@ -149,7 +149,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         filters,
         opts
       ) do
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     params = %{
       interval: maybe_str_to_sec(interval),
@@ -209,7 +209,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         _ -> from
       end
 
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     params = %{
       slugs: slugs,
@@ -273,7 +273,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       when operation in [:percent_up, :percent_down] do
     prev_from = DateTime.add(from, -DateTime.diff(to, from))
     threshold = threshold / 1.0
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     comparison =
       case operation do
@@ -321,7 +321,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, filters, opts) do
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     query_struct =
       aggregated_slugs_base_query(metric, version, from, to, aggregation, filters, opts)
@@ -337,7 +337,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   def slugs_order_query(metric, from, to, direction, aggregation, filters, opts)
       when direction in [:asc, :desc] do
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     query_struct =
       aggregated_slugs_base_query(metric, version, from, to, aggregation, filters, opts)
@@ -505,7 +505,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def available_slugs_for_metric_query(metric, opts) do
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
     lookback_days = Keyword.get(opts, :lookback_days) || @default_lookback_days
 
     sql = """
@@ -543,18 +543,23 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   `metric_name` must be the metric name as stored in `metric_metadata_external`
   — for registry-backed metrics that is the internal metric name, for price
   metrics it is the metric name itself.
+
+  We pass slugs explicitly as this function is used with non-crypto assets.
+  We want to fetch all the non-crypto assets that have value for a given metric.
+  For now the number of non-crypto assets is low and passing them as argument
+  is more efficient than returning thousands of assets and filter them in the backend.
+  The future solution would be to store in CH asset_metadata whether an asset is crypto
+  or non-crypto.
   """
   def available_slugs_for_metric_and_slugs_query(metric_name, slugs, opts)
       when is_binary(metric_name) and is_list(slugs) do
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
     lookback_days = Keyword.get(opts, :lookback_days) || @default_lookback_days
 
     sql = """
     SELECT DISTINCT(name)
     FROM asset_metadata FINAL
     WHERE
-      -- this filter is used so the caller provides the list of supported non-crypto assets
-      -- clickhouse does not store which assets are crypto and which are non-crypto
       name IN ({{slugs}}) AND
       asset_id IN (
         SELECT DISTINCT(asset_id)
@@ -599,7 +604,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def first_datetime_query(metric, nil, opts) do
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     sql = """
     SELECT
@@ -618,7 +623,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def first_datetime_query(metric, selector, opts) do
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     sql = """
     SELECT
@@ -770,7 +775,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   defp deduce_table(metric, opts) do
     table = Map.get(Registry.table_map(), metric)
-    version = Keyword.get(opts, :version, @default_version)
+    version = Keyword.get(opts, :version) || @default_version
 
     if version =~ "Experimental" do
       table <> "_experimental"

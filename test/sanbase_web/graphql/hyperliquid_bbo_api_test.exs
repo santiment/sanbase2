@@ -220,6 +220,31 @@ defmodule SanbaseWeb.Graphql.HyperliquidBboApiTest do
                %{"slug" => "sp500", "assetType" => "INDEX"}
              ]
     end
+
+    test "does not expose hidden non-crypto assets", %{conn: conn} do
+      gold = insert(:non_crypto_asset, slug: "gold", name: "Gold", asset_type: :commodity)
+      hidden = insert(:non_crypto_asset, slug: "hidden-asset", name: "Hidden", is_hidden: true)
+
+      insert(:source_slug_mapping, source: "hyperliquid", slug: "GOLD", non_crypto_asset: gold)
+      # Hidden assets keep their source slug mapping, but must not be served.
+      insert(:source_slug_mapping, source: "hyperliquid", slug: "HID", non_crypto_asset: hidden)
+
+      query = """
+      {
+        hyperliquidBboPrices {
+          availableNonCryptoAssets { slug }
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "hyperliquidBboPrices"))
+        |> json_response(200)
+        |> get_in(["data", "hyperliquidBboPrices", "availableNonCryptoAssets"])
+
+      assert result == [%{"slug" => "gold"}]
+    end
   end
 
   defp run_timeseries_query(conn, slug, from, to, interval, extra_args \\ "") do

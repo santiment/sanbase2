@@ -110,4 +110,11 @@ defmodule Sanbase.MetricTest do
       assert result == {:ok, @resp}
     end
   end
+
+  describe "available_non_crypto_asset_slugs/2" do
+    test "unknown metric returns an error even when no non-crypto assets exist" do
+      assert {:error, error} = Metric.available_non_crypto_asset_slugs("unknown_metric_xyz")
+      assert error =~ "The metric 'unknown_metric_xyz' is not supported"
+    end
+  end
 end

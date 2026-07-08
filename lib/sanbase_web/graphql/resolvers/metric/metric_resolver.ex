@@ -29,7 +29,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def get_metric(_root, %{metric: metric} = args, resolution) do
     # TODO: Check that the version is also deprecated
-    version = Map.get(args, :version, Sanbase.Metric.default_version())
+    # `||` (not a Map.get default) so an explicit `version: null` argument —
+    # present in args as nil — also falls back to the default version.
+    version = Map.get(args, :version) || Sanbase.Metric.default_version()
 
     with false <- Metric.hard_deprecated?(metric),
          true <- Metric.has_metric?(metric),

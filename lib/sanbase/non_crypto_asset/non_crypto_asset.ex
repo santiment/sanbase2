@@ -95,7 +95,8 @@ defmodule Sanbase.NonCryptoAsset do
   List non-crypto assets ordered by name.
 
   Options:
-    * `:asset_type` — only assets of the given type
+    * `:asset_types` — only assets of the given type(s); accepts a single type
+      or a list of types
     * `:include_hidden` — include hidden assets, defaults to `false`
   """
   @spec list(Keyword.t()) :: [%__MODULE__{}]
@@ -117,14 +118,14 @@ defmodule Sanbase.NonCryptoAsset do
 
   defp base_query(opts) do
     __MODULE__
-    |> maybe_filter_asset_type(Keyword.get(opts, :asset_type))
+    |> maybe_filter_asset_types(Keyword.get(opts, :asset_types))
     |> maybe_exclude_hidden(Keyword.get(opts, :include_hidden, false))
   end
 
-  defp maybe_filter_asset_type(query, nil), do: query
+  defp maybe_filter_asset_types(query, nil), do: query
 
-  defp maybe_filter_asset_type(query, asset_type) do
-    where(query, [a], a.asset_type == ^asset_type)
+  defp maybe_filter_asset_types(query, asset_types) do
+    where(query, [a], a.asset_type in ^List.wrap(asset_types))
   end
 
   defp maybe_exclude_hidden(query, true), do: query

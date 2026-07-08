@@ -97,9 +97,18 @@ defmodule Sanbase.NonCryptoAssetTest do
       assert context.hidden.slug in slugs
     end
 
-    test "list filters by asset type", context do
-      assert [%{slug: slug}] = NonCryptoAsset.list(asset_type: :index)
+    test "list filters by a single asset type", context do
+      assert [%{slug: slug}] = NonCryptoAsset.list(asset_types: :index)
       assert slug == context.sp500.slug
+    end
+
+    test "list filters by a list of asset types", context do
+      slugs = NonCryptoAsset.list(asset_types: [:index, :commodity]) |> Enum.map(& &1.slug)
+
+      assert context.gold.slug in slugs
+      assert context.sp500.slug in slugs
+
+      assert [] = NonCryptoAsset.list(asset_types: [:bond])
     end
 
     test "slugs returns visible slugs", context do

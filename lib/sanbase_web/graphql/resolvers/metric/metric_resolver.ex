@@ -137,17 +137,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_slugs(_root, _args, %{source: %{metric: metric, version: version}}),
     do: Metric.available_slugs(metric, version: version)
 
-  def get_available_projects(_root, _args, %{source: %{metric: metric, version: version}}) do
-    with {:ok, slugs} <- Metric.available_slugs(metric, version: version) do
+  def get_available_projects(
+        _root,
+        _args,
+        %{source: %{metric: metric, version: version}} = resolution
+      ) do
+    lookback_days = resolution_to_available_metrics_lookback_days(resolution)
+
+    with {:ok, slugs} <-
+           Metric.available_slugs(metric, version: version, lookback_days: lookback_days) do
       slugs = Enum.sort(slugs, :asc)
       {:ok, Sanbase.Project.List.by_slugs(slugs)}
     end
   end
 
-  def get_available_non_crypto_assets(_root, _args, %{source: %{metric: metric, version: version}}) do
+  def get_available_non_crypto_assets(
+        _root,
+        _args,
+        %{source: %{metric: metric, version: version}} = resolution
+      ) do
     # Returns the non-crypto assets that actually have data for this metric,
     # determined per adapter by checking the `available_metrics` table.
-    with {:ok, slugs} <- Metric.available_non_crypto_asset_slugs(metric, version: version) do
+    lookback_days = resolution_to_available_metrics_lookback_days(resolution)
+
+    with {:ok, slugs} <-
+           Metric.available_non_crypto_asset_slugs(metric,
+             version: version,
+             lookback_days: lookback_days
+           ) do
       {:ok, Sanbase.NonCryptoAsset.by_slugs(slugs)}
     end
   end

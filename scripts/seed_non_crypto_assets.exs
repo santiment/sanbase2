@@ -13,8 +13,10 @@
 # verified against the live Hyperliquid meta API (above) first. Run it
 # explicitly once verified, two ways:
 #
-#   1. As a script:
-#        mix run -e "SeedNonCryptoAssets.run()" scripts/seed_non_crypto_assets.exs
+#   1. As a script (the file must be loaded with -r BEFORE the -e expression;
+#      `mix run -e <expr> <file>` does NOT load the file — with -e present the
+#      trailing path is treated as plain argv):
+#        mix run -r scripts/seed_non_crypto_assets.exs -e "SeedNonCryptoAssets.run()"
 #
 #   2. Paste into iex:
 #        Paste the whole `defmodule ... end` block, then call:
@@ -94,4 +96,4 @@ defmodule SeedNonCryptoAssets do
 end
 
 # Intentionally not invoked on load — see the header note. Run explicitly with
-# `mix run -e "SeedNonCryptoAssets.run()" scripts/seed_non_crypto_assets.exs`.
+# `mix run -r scripts/seed_non_crypto_assets.exs -e "SeedNonCryptoAssets.run()"`.

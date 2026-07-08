@@ -34,6 +34,33 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
     assert result == []
   end
 
+  test "explicit null version falls back to the default version", %{conn: conn} do
+    insert(:non_crypto_asset, slug: "gold", name: "Gold", asset_type: :commodity)
+
+    query = """
+    {
+      getMetric(metric: "price_usd", version: null){
+        metadata{
+          availableNonCryptoAssets{ slug }
+        }
+      }
+    }
+    """
+
+    result =
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: [["gold"]]}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+      end)
+
+    refute Map.has_key?(result, "errors")
+
+    assert get_in(result, ["data", "getMetric", "metadata", "availableNonCryptoAssets"]) ==
+             [%{"slug" => "gold"}]
+  end
+
   defp available_non_crypto_assets(conn, metric) do
     query = """
     {

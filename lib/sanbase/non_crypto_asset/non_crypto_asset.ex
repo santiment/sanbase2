@@ -76,9 +76,18 @@ defmodule Sanbase.NonCryptoAsset do
     from(a in __MODULE__, where: a.slug == ^slug, select: a.id) |> Repo.one()
   end
 
-  @spec by_slugs([String.t()]) :: [t()]
-  def by_slugs(slugs) when is_list(slugs) do
-    from(a in __MODULE__, where: a.slug in ^slugs, order_by: [asc: a.name])
+  @doc ~s"""
+  Non-crypto assets with a slug in `slugs`, ordered by name.
+
+  Hidden assets are excluded by default (pass `include_hidden: true` to keep
+  them) so that callers deriving the slug list from elsewhere — e.g. source
+  slug mappings, which hidden assets still have — cannot leak hidden assets.
+  """
+  @spec by_slugs([String.t()], Keyword.t()) :: [t()]
+  def by_slugs(slugs, opts \\ []) when is_list(slugs) do
+    base_query(opts)
+    |> where([a], a.slug in ^slugs)
+    |> order_by([a], asc: a.name)
     |> Repo.all()
   end
 

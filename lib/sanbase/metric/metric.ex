@@ -655,21 +655,8 @@ defmodule Sanbase.Metric do
   """
   @spec available_non_crypto_asset_slugs(metric, opts) :: Type.available_slugs_result()
   def available_non_crypto_asset_slugs(metric, opts \\ []) do
-    case Sanbase.NonCryptoAsset.slugs() do
-      [] ->
-        {:ok, []}
-
-      slugs ->
-        # TEMPORARY WORKAROUND: we provide the full list of non-crypto slugs from
-        # Postgres as the candidate set checked against `available_metrics`. This
-        # is needed only until non-crypto assets are present in ClickHouse
-        # `asset_metadata` — once they are, the available slugs can be derived
-        # from ClickHouse directly, without enumerating them here.
-        adapter_available_non_crypto_asset_slugs(metric, slugs, opts)
-    end
-  end
-
-  defp adapter_available_non_crypto_asset_slugs(metric, slugs, opts) do
+    # Resolve the adapter before any short-circuit so an unknown metric always
+    # returns the metric-not-available error instead of an empty list.
     case get_module(metric, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -681,6 +668,14 @@ defmodule Sanbase.Metric do
              {module, :available_non_crypto_asset_slugs, 3},
              false
            ) do
+          # TEMPORARY WORKAROUND: we provide the full list of non-crypto slugs from
+          # Postgres as the candidate set checked against `available_metrics`. This
+          # is needed only until non-crypto assets are present in ClickHouse
+          # `asset_metadata` — once they are, the available slugs can be derived
+          # from ClickHouse directly, without enumerating them here.
+          #
+          # The adapters short-circuit an empty candidate list themselves.
+          slugs = Sanbase.NonCryptoAsset.slugs()
           module.available_non_crypto_asset_slugs(metric, slugs, opts)
         else
           {:ok, []}

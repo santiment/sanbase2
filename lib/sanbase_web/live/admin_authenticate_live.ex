@@ -85,6 +85,11 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
   end
 
   def handle_event("login", %{"email" => email}, socket) do
+    # Clear any stale flash (e.g. the "You must log in to access this page"
+    # error set by the redirect that brought the user here) so only the
+    # login result is shown.
+    socket = clear_flash(socket)
+
     case login(email) do
       {:ok, :login_email_sent} ->
         {:noreply,

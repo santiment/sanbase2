@@ -35,4 +35,19 @@ defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
       }
     }
   end
+
+  # The changeset blocks a confirmed-invalid hyperliquid coin outright (shown as
+  # a form error). When HL could not be reached to verify in time it lets the
+  # write through and marks the changeset; surface that as a warning here so the
+  # admin knows the mapping was saved without verification.
+  def after_filter(_record, %Ecto.Changeset{} = changeset, _changes) do
+    case Ecto.Changeset.get_change(changeset, :coin_verification) do
+      "unverified" ->
+        {:error,
+         "saved, but the coin could not be verified against the Hyperliquid universe (timed out). Double-check the slug."}
+
+      _ ->
+        :ok
+    end
+  end
 end

@@ -65,3 +65,6 @@ config :sanbase, Sanbase.Cryptocompare.FundingRate.HistoricalScheduler,
 config :sanbase, Sanbase.Hyperliquid.Bbo.WebsocketScraper,
   enabled?: {:system, "HYPERLIQUID_WS_ENABLED", "false"},
   coalesce_window_ms: {:system, "HYPERLIQUID_BBO_COALESCE_MS", "1000"}
+
+config :sanbase, Sanbase.Hyperliquid.Bbo.CoinUniverse,
+  verify_on_write?: {:system, "HYPERLIQUID_VERIFY_COINS_ON_WRITE", "true"}

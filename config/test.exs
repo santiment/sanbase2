@@ -172,6 +172,9 @@ config :sanbase, Sanbase.Hyperliquid.Bbo.WebsocketScraper,
   enabled?: "false",
   coalesce_window_ms: "1000"
 
+# Never reach out to Hyperliquid to verify coins during tests.
+config :sanbase, Sanbase.Hyperliquid.Bbo.CoinUniverse, verify_on_write?: "false"
+
 # So the router can read it compile time
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")
 

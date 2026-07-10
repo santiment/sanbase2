@@ -6,6 +6,7 @@ defmodule Sanbase.Project.SourceSlugMapping do
   import Ecto.Query
   import Ecto.Changeset
 
+  alias Sanbase.Hyperliquid.Bbo.CoinUniverse
   alias Sanbase.Repo
   alias Sanbase.Project
 
@@ -47,13 +48,13 @@ defmodule Sanbase.Project.SourceSlugMapping do
     slug_or_source_changed? = changed?(changeset, :slug) or changed?(changeset, :source)
 
     if changeset.valid? and slug_or_source_changed? and source == @hyperliquid_source and
-         is_binary(slug) do
-      case Sanbase.Hyperliquid.Bbo.WebsocketScraper.coin_supported?(slug) do
+         is_binary(slug) and CoinUniverse.verify_on_write?() do
+      case CoinUniverse.coin_supported?(slug) do
         :ok ->
           changeset
 
-        :unsupported ->
-          add_error(changeset, :slug, "\"#{slug}\" is not a coin in the Hyperliquid universe")
+        {:unsupported, suggestions} ->
+          add_error(changeset, :slug, unsupported_coin_message(slug, suggestions))
 
         :unverified ->
           Logger.warning(
@@ -65,6 +66,14 @@ defmodule Sanbase.Project.SourceSlugMapping do
     else
       changeset
     end
+  end
+
+  defp unsupported_coin_message(slug, []) do
+    "\"#{slug}\" is not a coin in the Hyperliquid universe"
+  end
+
+  defp unsupported_coin_message(slug, suggestions) do
+    unsupported_coin_message(slug, []) <> " (did you mean: #{Enum.join(suggestions, ", ")}?)"
   end
 
   defp validate_exactly_one_asset_reference(changeset) do

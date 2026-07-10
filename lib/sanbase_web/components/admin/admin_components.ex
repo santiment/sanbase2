@@ -47,7 +47,12 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <div class="flex justify-end">
       <.action_btn resource={@resource} label="Back" color={:white} />
-      <.btn label={if @type == "new", do: "Create", else: "Update"} href="#" type="submit" />
+      <.btn
+        label={if @type == "new", do: "Create", else: "Update"}
+        loading_label={if @type == "new", do: "Creating…", else: "Updating…"}
+        href="#"
+        type="submit"
+      />
     </div>
     """
   end
@@ -974,6 +979,7 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:href, :string, required: false, default: nil)
   attr(:label, :string, required: true)
   attr(:type, :string, required: false, default: "button")
+  attr(:loading_label, :string, required: false, default: nil)
 
   def btn(assigns) do
     if assigns.type != "submit" and is_nil(assigns.href) do
@@ -982,8 +988,22 @@ defmodule SanbaseWeb.AdminComponents do
     end
 
     ~H"""
-    <button :if={@type == "submit"} type="submit" class={btn_classes(@color, @size)}>
-      {@label}
+    <%!--
+      On submit (fires only after HTML validation passes, so it never blocks the
+      POST) show a spinner and disable the button — useful because saving can
+      block server-side while a hyperliquid coin is verified against HL.
+    --%>
+    <button
+      :if={@type == "submit"}
+      type="submit"
+      x-data="{ submitting: false }"
+      x-init="$el.form && $el.form.addEventListener('submit', () => { submitting = true })"
+      x-bind:disabled="submitting"
+      class={btn_classes(@color, @size)}
+    >
+      <span x-show="submitting" x-cloak class="loading loading-spinner loading-sm"></span>
+      <span x-show="!submitting">{@label}</span>
+      <span x-show="submitting" x-cloak>{@loading_label || @label}</span>
     </button>
     <.link :if={@type != "submit"} href={@href} class={btn_classes(@color, @size)}>
       {@label}

@@ -267,7 +267,8 @@ defmodule Sanbase.EventBus.EventValidation do
              :bulk_metric_registry_change,
              :create_metric_registry,
              :update_metric_registry,
-             :delete_metric_registry
+             :delete_metric_registry,
+             :metric_tag_change
            ] do
     true
   end

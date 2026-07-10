@@ -167,6 +167,10 @@ defmodule SanbaseWeb.Router do
         live("/groups", GroupLive.Index)
         live("/groups/new", GroupLive.Form, :new)
         live("/groups/edit/:id", GroupLive.Form, :edit)
+        live("/tags", TagLive.Index)
+        live("/tags/manage", TagLive.TagIndex)
+        live("/tags/new", TagLive.Form, :new)
+        live("/tags/edit/:id", TagLive.Form, :edit)
         live("/changelog", MetricChangelogLive)
 
         live("/categorization", CategorizationLive.Index)

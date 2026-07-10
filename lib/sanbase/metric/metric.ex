@@ -530,6 +530,17 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
+  Get the list of tag names attached to a given metric.
+
+  Tags are a controlled-vocabulary labeling mechanism used, among other things,
+  to expose a curated subset of metrics on bundle subscription plans.
+  """
+  @spec tags(metric) :: {:ok, [String.t()]}
+  def tags(metric) do
+    {:ok, Sanbase.Metric.Tag.tags_for_metric(metric)}
+  end
+
+  @doc ~s"""
   Get the complexity weight of a metric. This is a multiplier applied to the
   computed complexity. Clickhouse is faster compared to Elasticsearch for fetching
   timeseries data, so it has a smaller weight

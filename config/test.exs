@@ -78,7 +78,9 @@ config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
 
 config :sanbase, Sanbase.EventBus.MetricRegistrySubscriber,
   metric_registry_change_handler:
-    {Sanbase.EventBus.MetricRegistrySubscriber, :on_metric_registry_change_test_env}
+    {Sanbase.EventBus.MetricRegistrySubscriber, :on_metric_registry_change_test_env},
+  metric_tag_change_handler:
+    {Sanbase.EventBus.MetricRegistrySubscriber, :on_metric_tag_change_test_env}
 
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.TestServer

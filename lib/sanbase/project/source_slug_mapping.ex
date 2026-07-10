@@ -1,17 +1,26 @@
 defmodule Sanbase.Project.SourceSlugMapping do
   use Ecto.Schema
 
+  require Logger
+
   import Ecto.Query
   import Ecto.Changeset
 
   alias Sanbase.Repo
   alias Sanbase.Project
 
+  @hyperliquid_source "hyperliquid"
+
   @table "source_slug_mappings"
 
   schema @table do
     field(:source, :string)
     field(:slug, :string)
+
+    # Transient marker set by the changeset when a hyperliquid coin could not
+    # be verified against HL's universe in time. Read by the admin
+    # `after_filter/3` to surface a warning; never persisted.
+    field(:coin_verification, :string, virtual: true)
 
     belongs_to(:project, Project)
     belongs_to(:non_crypto_asset, Sanbase.NonCryptoAsset)
@@ -22,8 +31,40 @@ defmodule Sanbase.Project.SourceSlugMapping do
     |> cast(attrs, [:source, :slug, :project_id, :non_crypto_asset_id])
     |> validate_required([:source, :slug])
     |> validate_exactly_one_asset_reference()
+    |> validate_hyperliquid_coin()
     |> check_constraint(:project_id, name: :exactly_one_asset_reference)
     |> unique_constraint(:non_crypto_asset_id, name: :one_mapping_per_source_non_crypto_asset)
+  end
+
+  # For a new/changed `hyperliquid` mapping, block the write when Hyperliquid
+  # confirms the coin does not exist, and allow-but-warn when HL can't be
+  # reached in time. Only Hyperliquid can authoritatively say a coin is bad, so
+  # this is the one place that consults it synchronously. No network call is
+  # made for other sources, empty slugs, or unrelated changesets.
+  defp validate_hyperliquid_coin(changeset) do
+    slug = get_field(changeset, :slug)
+    source = get_field(changeset, :source)
+    slug_or_source_changed? = changed?(changeset, :slug) or changed?(changeset, :source)
+
+    if changeset.valid? and slug_or_source_changed? and source == @hyperliquid_source and
+         is_binary(slug) do
+      case Sanbase.Hyperliquid.Bbo.WebsocketScraper.coin_supported?(slug) do
+        :ok ->
+          changeset
+
+        :unsupported ->
+          add_error(changeset, :slug, "\"#{slug}\" is not a coin in the Hyperliquid universe")
+
+        :unverified ->
+          Logger.warning(
+            "[SourceSlugMapping] could not verify hyperliquid coin \"#{slug}\" against the HL universe (timeout/fetch error); saving without verification"
+          )
+
+          put_change(changeset, :coin_verification, "unverified")
+      end
+    else
+      changeset
+    end
   end
 
   defp validate_exactly_one_asset_reference(changeset) do

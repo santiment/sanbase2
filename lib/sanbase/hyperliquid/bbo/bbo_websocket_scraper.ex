@@ -55,15 +55,13 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   require Logger
 
   alias Sanbase.Hyperliquid.Bbo.BboPoint
+  alias Sanbase.Hyperliquid.Bbo.CoinUniverse
   alias Sanbase.Project.SourceSlugMapping
   alias Sanbase.Utils.Config
 
   @name :hyperliquid_bbo_scraper
   @exporter :hyperliquid_bbo_exporter
   @url "wss://api.hyperliquid.xyz/ws"
-  # REST endpoint that lists HL's full coin universe (perp `meta` + `spotMeta`).
-  # Used to authoritatively tell whether a coin we subscribe to actually exists.
-  @info_url "https://api.hyperliquid.xyz/info"
   @source "hyperliquid"
 
   # Outbound app-level ping; HL closes idle sockets ~60s.
@@ -79,9 +77,6 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   # Throttle for the (best-effort, non-blocking) coin-universe audit run from
   # reconcile, so a reconnect storm can't hammer the HL `info` endpoint.
   @audit_interval 300_000
-  # Upper bound on how long a synchronous single-coin verification (used when a
-  # mapping is created) may block before we give up and let the insert through.
-  @verify_timeout 5_000
 
   # Hyperliquid limits outbound client messages to 2000/min (~33/sec). We pace
   # subscribe/unsubscribe frames at 1 per 50ms = 20/sec = 1200/min — ~40%
@@ -132,14 +127,11 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       healthcheck_failures: 0,
       coalesce_window_ms: coalesce_window_ms(),
       timers: %{},
-      # Diagnostics. Per-connection counters are reset in handle_connect/2;
-      # reconnects is cumulative since boot. All read via Map.get/bump so a
-      # hot recompile against an old state term never raises.
+      # Diagnostics. connected_at/bbo_in are reset per connection in
+      # handle_connect/2; reconnects is cumulative since boot. Read via
+      # Map.get/bump so a hot recompile against an old state never raises.
       connected_at: nil,
-      msgs_out: 0,
-      frames_in: 0,
       bbo_in: 0,
-      errors_in: 0,
       reconnects: 0,
       last_audit_at: 0
     }
@@ -173,7 +165,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
           last_message_time: now
       }
       # Reset per-connection diagnostics; Map.merge is recompile-safe.
-      |> Map.merge(%{connected_at: now, msgs_out: 0, frames_in: 0, bbo_in: 0, errors_in: 0})
+      |> Map.merge(%{connected_at: now, bbo_in: 0})
       |> schedule_all_timers()
 
     send(self(), :reconcile_subscriptions)
@@ -189,14 +181,13 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     # Full `status` (not just :reason) surfaces a WS close code/reason if the
     # remote sent a close frame. `{:remote, :closed}` = abrupt TCP close with
     # NO close frame — typical of an infra/rate-limit drop rather than an app
-    # error. lifetime_ms tells us whether the socket dies on a fixed cadence
-    # (policy/limit) or randomly (network). bbo_in>0 means subscriptions worked
-    # and data was flowing right up to the drop (so mappings are fine).
+    # error. lifetime_ms shows whether the socket dies on a fixed cadence
+    # (policy/limit) or randomly (network); bbo_in>0 means data was flowing
+    # right up to the drop (so mappings are fine).
     Logger.warning(
       "[HyperliquidBboWS] disconnect status=#{inspect(status)} lifetime_ms=#{inspect(lifetime_ms)} " <>
-        "frames_in=#{Map.get(state, :frames_in, 0)} bbo_in=#{Map.get(state, :bbo_in, 0)} " <>
-        "errors_in=#{Map.get(state, :errors_in, 0)} msgs_out=#{Map.get(state, :msgs_out, 0)} " <>
-        "active_subs=#{MapSet.size(state.active_subs)} reconnects=#{Map.get(state, :reconnects, 0)} backoff=#{sleep_ms}ms"
+        "bbo_in=#{Map.get(state, :bbo_in, 0)} active_subs=#{MapSet.size(state.active_subs)} " <>
+        "reconnects=#{Map.get(state, :reconnects, 0)} backoff=#{sleep_ms}ms"
     )
 
     state =
@@ -222,7 +213,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   end
 
   def handle_frame({:text, json}, state) when is_binary(json) do
-    state = bump(%{state | last_message_time: System.system_time(:millisecond)}, :frames_in)
+    state = %{state | last_message_time: System.system_time(:millisecond)}
 
     case Jason.decode(json) do
       {:ok, decoded} ->
@@ -248,7 +239,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
   defp handle_decoded(%{"channel" => "error"} = msg, state) do
     Logger.warning("[HyperliquidBboWS] Error frame: #{inspect(msg)}")
-    {:ok, bump(state, :errors_in)}
+    {:ok, state}
   end
 
   defp handle_decoded(_msg, state), do: {:ok, state}
@@ -342,7 +333,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   # handle_info
 
   def handle_info(:ping, state) do
-    state = schedule(state, :ping, @ping_interval) |> bump(:msgs_out)
+    state = schedule(state, :ping, @ping_interval)
     frame = {:text, Jason.encode!(%{method: "ping"})}
     {:reply, frame, state}
   end
@@ -390,9 +381,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
     case :queue.out(state.pending_sub_queue) do
       {{:value, frame}, queue2} ->
-        state =
-          %{state | pending_sub_queue: queue2} |> maybe_schedule_flush_subs() |> bump(:msgs_out)
-
+        state = %{state | pending_sub_queue: queue2} |> maybe_schedule_flush_subs()
         {:reply, frame, state}
 
       {:empty, _} ->
@@ -424,24 +413,11 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:ok, state}
   end
 
-  # Refresh the `unsupported` set from an audit run. Only reconcile when the set
-  # actually changed, so an unchanged audit doesn't churn subscriptions. A fetch
-  # failure returns a non-map result and is ignored (keeps the previous set).
+  # Refresh the `unsupported` set from an audit run; the next scheduled reconcile
+  # (≤60s) applies it. A fetch failure returns a non-map result and is ignored,
+  # keeping the previous set.
   def handle_info({:audit_result, %{unsupported: unsupported}}, state) do
-    new_unsupported = MapSet.new(unsupported)
-    old_unsupported = Map.get(state, :unsupported, MapSet.new())
-    state = Map.put(state, :unsupported, new_unsupported)
-
-    if MapSet.equal?(new_unsupported, old_unsupported) do
-      {:ok, state}
-    else
-      Logger.info(
-        "[HyperliquidBboWS] unsupported set updated size=#{MapSet.size(new_unsupported)}; reconciling"
-      )
-
-      send(self(), :reconcile_subscriptions)
-      {:ok, state}
-    end
+    {:ok, Map.put(state, :unsupported, MapSet.new(unsupported))}
   end
 
   def handle_info({:audit_result, _}, state), do: {:ok, state}
@@ -498,7 +474,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
     if now - Map.get(state, :last_audit_at, 0) >= @audit_interval do
       parent = self()
-      Task.start(fn -> send(parent, {:audit_result, audit_coins(desired_set)}) end)
+      Task.start(fn -> send(parent, {:audit_result, CoinUniverse.audit(desired_set)}) end)
       Map.put(state, :last_audit_at, now)
     else
       state
@@ -516,153 +492,13 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     # reconcile (≤60s), unhiding resumes it.
     rows = SourceSlugMapping.get_source_slug_mappings(@source, return: :all)
 
-    {slug_map, nil_slug_coins} =
-      Enum.reduce(rows, {%{}, []}, fn {coin, slug}, {acc, nils} ->
-        nils = if is_nil(slug), do: [coin | nils], else: nils
-        {Map.update(acc, coin, [slug], &[slug | &1]), nils}
+    slug_map =
+      Enum.reduce(rows, %{}, fn {coin, slug}, acc ->
+        Map.update(acc, coin, [slug], &[slug | &1])
       end)
 
-    coins = Map.keys(slug_map)
-
-    # Surface anything that could make Hyperliquid reject a subscribe frame or
-    # that indicates a bad row on this environment only.
-    bad_coins = Enum.reject(coins, &valid_coin?/1)
-
-    if bad_coins != [] do
-      Logger.warning("[HyperliquidBboWS] invalid coins in mappings: #{inspect(bad_coins)}")
-    end
-
-    if nil_slug_coins != [] do
-      Logger.warning(
-        "[HyperliquidBboWS] #{length(nil_slug_coins)} mapping row(s) with no sanbase slug (project/non_crypto_asset missing or hidden): " <>
-          "coins=#{inspect(Enum.take(Enum.sort(nil_slug_coins), 30))}"
-      )
-    end
-
-    Logger.info("[HyperliquidBboWS] mappings loaded rows=#{length(rows)} coins=#{length(coins)}")
-
-    {MapSet.new(coins), slug_map}
+    {MapSet.new(Map.keys(slug_map)), slug_map}
   end
-
-  # A coin must be a non-empty, whitespace-free string for Hyperliquid to
-  # accept the subscribe frame; anything else is a bad mapping row.
-  defp valid_coin?(c) when is_binary(c), do: c != "" and String.trim(c) == c
-  defp valid_coin?(_), do: false
-
-  # Coin universe audit
-
-  @doc ~s"""
-  Cross-check the coins we would subscribe to against Hyperliquid's live
-  universe. Only Hyperliquid can say whether a coin is real, so this fetches
-  the perp `meta` and `spotMeta` from `#{@info_url}` and reports every desired
-  coin that Hyperliquid does not know about — the authoritative "bad coin"
-  list.
-
-  Safe to run from a remote console:
-
-      Sanbase.Hyperliquid.Bbo.WebsocketScraper.audit_coins()
-
-  Returns `%{desired: n, universe: n, unsupported: [coin, ...]}`, or
-  `{:error, reason}` if the universe could not be fetched.
-  """
-  def audit_coins(desired \\ nil) do
-    desired =
-      (desired || elem(load_mappings(), 0))
-      |> MapSet.new()
-      |> MapSet.to_list()
-      |> Enum.filter(&valid_coin?/1)
-
-    case fetch_universe() do
-      {:ok, universe} ->
-        unsupported = desired |> Enum.reject(&MapSet.member?(universe, &1)) |> Enum.sort()
-
-        if unsupported == [] do
-          Logger.info(
-            "[HyperliquidBboWS] coin audit OK — all #{length(desired)} coins present in HL universe (size=#{MapSet.size(universe)})"
-          )
-        else
-          Logger.warning(
-            "[HyperliquidBboWS] coin audit — #{length(unsupported)}/#{length(desired)} coin(s) NOT in HL universe (size=#{MapSet.size(universe)}): #{inspect(unsupported)}"
-          )
-        end
-
-        %{desired: length(desired), universe: MapSet.size(universe), unsupported: unsupported}
-
-      {:error, reason} = error ->
-        Logger.warning(
-          "[HyperliquidBboWS] coin audit failed to fetch HL universe: #{inspect(reason)}"
-        )
-
-        error
-    end
-  end
-
-  @doc ~s"""
-  Verify a single coin against Hyperliquid's live universe, bounded by
-  `timeout` ms. Meant for the mapping-creation path, where only Hyperliquid
-  can say whether a coin is real.
-
-  Returns:
-    * `:ok` — coin exists in the HL universe.
-    * `:unsupported` — HL was reached and does not know this coin.
-    * `:unverified` — HL could not be reached in time (timeout / fetch error);
-      caller should allow the write but warn.
-  """
-  @spec coin_supported?(String.t(), non_neg_integer()) :: :ok | :unsupported | :unverified
-  def coin_supported?(coin, timeout \\ @verify_timeout) when is_binary(coin) do
-    task = Task.async(fn -> fetch_universe() end)
-
-    case Task.yield(task, timeout) || Task.shutdown(task) do
-      {:ok, {:ok, universe}} -> if MapSet.member?(universe, coin), do: :ok, else: :unsupported
-      _ -> :unverified
-    end
-  end
-
-  # Union of perp coin names (`meta.universe`) and spot names + token names
-  # (`spotMeta.universe`/`spotMeta.tokens`), covering every `coin` form the
-  # bbo channel accepts. If one request fails we still return whatever the
-  # other returned so the audit stays useful.
-  defp fetch_universe() do
-    perp = info_request(%{type: "meta"})
-    spot = info_request(%{type: "spotMeta"})
-
-    perp_names =
-      case perp do
-        {:ok, body} -> universe_names(body)
-        _ -> []
-      end
-
-    spot_names =
-      case spot do
-        {:ok, body} -> universe_names(body) ++ token_names(body)
-        _ -> []
-      end
-
-    case {perp, spot} do
-      {{:error, reason}, {:error, _}} -> {:error, reason}
-      _ -> {:ok, MapSet.new(perp_names ++ spot_names)}
-    end
-  end
-
-  defp info_request(payload) do
-    case Req.post(@info_url, json: payload, receive_timeout: 10_000, retry: :transient) do
-      {:ok, %Req.Response{status: 200, body: body}} when is_map(body) -> {:ok, body}
-      {:ok, %Req.Response{status: status, body: body}} -> {:error, {:http_status, status, body}}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp universe_names(%{"universe" => universe}) when is_list(universe) do
-    for %{"name" => name} <- universe, is_binary(name), do: name
-  end
-
-  defp universe_names(_), do: []
-
-  defp token_names(%{"tokens" => tokens}) when is_list(tokens) do
-    for %{"name" => name} <- tokens, is_binary(name), do: name
-  end
-
-  defp token_names(_), do: []
 
   # Timers
 

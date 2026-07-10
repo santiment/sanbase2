@@ -78,6 +78,19 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     :ok
   end
 
+  def on_metric_tag_change() do
+    true = Sanbase.Metric.Tag.refresh_stored_terms()
+
+    :ok
+  end
+
+  def on_metric_tag_change_test_env() do
+    # In test env this is the handler in order to avoid Ecto DBConnection
+    # ownership errors
+    Logger.warning("Metric Tag Change event received")
+    :ok
+  end
+
   defp handle_event(
          %{data: %{event_type: event_type, inserts_count: i_count, updates_count: u_count}},
          event_shadow,
@@ -119,6 +132,26 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
       )
 
     :ok = apply(mod, fun, [event_type, metric])
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{data: %{event_type: :metric_tag_change}},
+         event_shadow,
+         state
+       ) do
+    Logger.info("Start refreshing stored terms from #{__MODULE__} due to metric tag change")
+
+    {mod, fun} =
+      Config.module_get(
+        __MODULE__,
+        :metric_tag_change_handler,
+        {__MODULE__, :on_metric_tag_change}
+      )
+
+    :ok = apply(mod, fun, [])
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state

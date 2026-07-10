@@ -9,6 +9,11 @@ defmodule Sanbase.Metric.Registry.EventEmitter do
     |> notify()
   end
 
+  def handle_event(_, event_type, _args) when event_type in [:metric_tag_change] do
+    %{event_type: event_type}
+    |> notify()
+  end
+
   def handle_event({:ok, map}, event_type, args)
       when event_type in [:bulk_metric_registry_change] do
     %{event_type: event_type}

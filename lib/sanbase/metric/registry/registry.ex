@@ -364,6 +364,7 @@ defmodule Sanbase.Metric.Registry do
     true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
     true = Sanbase.Metric.Helper.refresh_stored_terms()
     true = Sanbase.Billing.Plan.StandardAccessChecker.refresh_stored_terms()
+    true = Sanbase.Metric.Tag.refresh_stored_terms()
 
     :ok
   end

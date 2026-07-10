@@ -395,6 +395,15 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     @desc ~s"""
+    The list of tags (labels) attached to the metric. Tags are a
+    controlled-vocabulary labeling mechanism used, among other things, to expose
+    a curated subset of metrics on bundle subscription plans.
+    """
+    field :tags, non_null(list_of(non_null(:string))) do
+      cache_resolve(&MetricResolver.get_tags/3, ttl: 120)
+    end
+
+    @desc ~s"""
     List of slugs which can be provided to the `timeseriesDataJson` (and co.)
     field to fetch the metric.
     """

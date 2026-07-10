@@ -523,6 +523,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           text="UI Display Order"
           href={~p"/admin/metric_registry/display_order"}
         />
+        <AdminSharedComponents.nav_button
+          icon="hero-tag"
+          text="Tags"
+          href={~p"/admin/metric_registry/tags"}
+        />
       </div>
     </div>
     """

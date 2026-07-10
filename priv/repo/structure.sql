@@ -4,8 +4,8 @@
 
 \restrict ceqVK0DMuO2zoA4LQREjud7ms9ZRZ5kWQaf0GzzlrvFcsgf91OCiDidiVhAPYLm
 
--- Dumped from database version 17.10 (Homebrew)
--- Dumped by pg_dump version 17.10 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2711,6 +2711,73 @@ ALTER SEQUENCE public.metric_registry_sync_runs_id_seq OWNED BY public.metric_re
 
 
 --
+-- Name: metric_tag_mappings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_tag_mappings (
+    id bigint NOT NULL,
+    metric_registry_id bigint,
+    module character varying(255),
+    metric character varying(255),
+    tag_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    CONSTRAINT only_one_metric_identifier CHECK ((((metric_registry_id IS NOT NULL) AND (module IS NULL) AND (metric IS NULL)) OR ((metric_registry_id IS NULL) AND (module IS NOT NULL) AND (metric IS NOT NULL))))
+);
+
+
+--
+-- Name: metric_tag_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_tag_mappings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_tag_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_tag_mappings_id_seq OWNED BY public.metric_tag_mappings.id;
+
+
+--
+-- Name: metric_tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_tags (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: metric_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_tags_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_tags_id_seq OWNED BY public.metric_tags.id;
+
+
+--
 -- Name: metric_ui_metadata; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2868,8 +2935,7 @@ CREATE TABLE public.non_crypto_assets (
     hidden_reason text,
     metadata jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
+    updated_at timestamp without time zone NOT NULL
 );
 
 
@@ -6514,6 +6580,20 @@ ALTER TABLE ONLY public.metric_registry_sync_runs ALTER COLUMN id SET DEFAULT ne
 
 
 --
+-- Name: metric_tag_mappings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_tag_mappings ALTER COLUMN id SET DEFAULT nextval('public.metric_tag_mappings_id_seq'::regclass);
+
+
+--
+-- Name: metric_tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_tags ALTER COLUMN id SET DEFAULT nextval('public.metric_tags_id_seq'::regclass);
+
+
+--
 -- Name: metric_ui_metadata id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7681,6 +7761,22 @@ ALTER TABLE ONLY public.metric_registry
 
 ALTER TABLE ONLY public.metric_registry_sync_runs
     ADD CONSTRAINT metric_registry_sync_runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_tag_mappings metric_tag_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_tag_mappings
+    ADD CONSTRAINT metric_tag_mappings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_tags metric_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_tags
+    ADD CONSTRAINT metric_tags_pkey PRIMARY KEY (id);
 
 
 --
@@ -9271,6 +9367,34 @@ CREATE UNIQUE INDEX metric_registry_composite_unique_index ON public.metric_regi
 --
 
 CREATE UNIQUE INDEX metric_registry_sync_runs_uuid_sync_type_index ON public.metric_registry_sync_runs USING btree (uuid, sync_type);
+
+
+--
+-- Name: metric_tag_mappings_metric_registry_id_tag_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_tag_mappings_metric_registry_id_tag_id_index ON public.metric_tag_mappings USING btree (metric_registry_id, tag_id) WHERE (metric_registry_id IS NOT NULL);
+
+
+--
+-- Name: metric_tag_mappings_module_metric_tag_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_tag_mappings_module_metric_tag_id_index ON public.metric_tag_mappings USING btree (module, metric, tag_id) WHERE ((module IS NOT NULL) AND (metric IS NOT NULL));
+
+
+--
+-- Name: metric_tag_mappings_tag_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX metric_tag_mappings_tag_id_index ON public.metric_tag_mappings USING btree (tag_id);
+
+
+--
+-- Name: metric_tags_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_tags_name_index ON public.metric_tags USING btree (name);
 
 
 --
@@ -10898,6 +11022,22 @@ ALTER TABLE ONLY public.metric_registry_changelog
 
 
 --
+-- Name: metric_tag_mappings metric_tag_mappings_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_tag_mappings
+    ADD CONSTRAINT metric_tag_mappings_metric_registry_id_fkey FOREIGN KEY (metric_registry_id) REFERENCES public.metric_registry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: metric_tag_mappings metric_tag_mappings_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_tag_mappings
+    ADD CONSTRAINT metric_tag_mappings_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.metric_tags(id) ON DELETE CASCADE;
+
+
+--
 -- Name: metric_ui_metadata metric_ui_metadata_metric_category_mapping_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12396,4 +12536,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260610120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260610120100);
 INSERT INTO public."schema_migrations" (version) VALUES (20260610170000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260612130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260709120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260720115000);

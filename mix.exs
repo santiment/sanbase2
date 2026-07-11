@@ -45,9 +45,11 @@ defmodule Sanbase.Mixfile do
 
   defp deps() do
     [
-      {:absinthe_phoenix, "~> 2.0"},
+      {:absinthe_phoenix,
+       github: "IvanIvanoff/absinthe_phoenix", branch: "support-new-absinthe", override: true},
       {:absinthe_plug, "~> 1.5"},
-      {:absinthe, "~> 1.5"},
+      {:absinthe,
+       github: "santiment/absinthe", branch: "memory-footprint-improvements", override: true},
       {:brod, "~> 4.0"},
       {:browser, "~> 0.5"},
       {:cachex, "~> 3.0"},

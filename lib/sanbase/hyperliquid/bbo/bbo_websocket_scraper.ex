@@ -21,7 +21,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   2. **Reconcile (every 60s).** Loads `SourceSlugMapping` rows for
      `hyperliquid`, builds a `coin -> [slug, ...]` map, and diffs against
      `active_subs`. New coins get a `subscribe` frame queued; removed coins
-     get `unsubscribe` plus their `pending`/`last_emitted` entries pruned.
+     get `unsubscribe` plus their `coalesce_buffer`/`last_emitted` entries pruned.
 
   3. **Outbound pacing.** Sub/unsub frames are drained from the queue one per
      `@flush_subs_interval` (50ms) — Hyperliquid caps outbound at 2000/min.
@@ -32,9 +32,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
      to every slug mapped to that coin, and pushed via
      `KafkaExporter.persist_async/2`. Per coin: the first frame in a
      `coalesce_window_ms` window emits immediately; later frames in the same
-     window overwrite a `pending` slot (latest wins).
+     window overwrite a `coalesce_buffer` slot (latest wins).
 
-  5. **Coalesce flush (every 250ms).** Walks `pending` and emits any entry
+  5. **Coalesce flush (every 250ms).** Walks `coalesce_buffer` and emits any entry
      whose window has elapsed. Bounds the worst-case extra latency at the
      window boundary to one tick (~250ms).
 
@@ -45,7 +45,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
      `HealthcheckError` and the supervisor restarts it.
 
   7. **Disconnect.** `handle_disconnect/2` cancels timers, clears
-     `active_subs`/`pending_sub_queue`/`pending`/`last_emitted`/
+     `active_subs`/`pending_sub_queue`/`coalesce_buffer`/`last_emitted`/
      `healthcheck_failures`, sleeps the current backoff, then doubles it
      (capped at `@reconnect_max_ms`). Reconnect re-enters step 1.
   """
@@ -121,7 +121,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       slug_map: %{},
       pending_sub_queue: :queue.new(),
       last_emitted: %{},
-      pending: %{},
+      coalesce_buffer: %{},
       reconnect_backoff_ms: @reconnect_initial_ms,
       last_message_time: System.system_time(:millisecond),
       healthcheck_failures: 0,
@@ -133,8 +133,26 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       connected_at: nil,
       bbo_in: 0,
       reconnects: 0,
-      last_audit_at: 0
+      last_audit_at: 0,
+      # Diagnostics: per-coin record of the last point actually handed to the
+      # Kafka exporter — %{coin => %{point: map, exported_at_ms: ms, count: n}}.
+      # Never cleared (not on disconnect, not on unsubscribe) so it answers
+      # "has this coin ever exported, when, and how many times" via
+      # :sys.get_state/1 even after reconnects. Bounded by the mapped-coin set.
+      last_exported: %{}
     }
+  end
+
+  # Record a successful emit for diagnostics. Map.update with a default (not
+  # `%{state | ...}`) so a live process predating this key never raises.
+  defp record_exported(state, coin, data) do
+    entry = %{
+      point: data,
+      exported_at_ms: System.system_time(:millisecond),
+      count: get_in(state, [:last_exported, coin, :count]) |> Kernel.||(0) |> Kernel.+(1)
+    }
+
+    Map.update(state, :last_exported, %{coin => entry}, &Map.put(&1, coin, entry))
   end
 
   # Safe counter bump — creates the key at 1 if the running process predates it
@@ -196,7 +214,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       |> Map.merge(%{
         active_subs: MapSet.new(),
         pending_sub_queue: :queue.new(),
-        pending: %{},
+        coalesce_buffer: %{},
         last_emitted: %{},
         healthcheck_failures: 0
       })
@@ -272,10 +290,11 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
         %{
           state
           | last_emitted: Map.put(state.last_emitted, coin, now),
-            pending: Map.delete(state.pending, coin)
+            coalesce_buffer: Map.delete(state.coalesce_buffer, coin)
         }
+        |> record_exported(coin, point_data)
       else
-        %{state | pending: Map.put(state.pending, coin, point_data)}
+        %{state | coalesce_buffer: Map.put(state.coalesce_buffer, coin, point_data)}
       end
     else
       _ -> state
@@ -393,21 +412,31 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     now = System.system_time(:millisecond)
     window = state.coalesce_window_ms
 
-    {to_emit, still_pending} =
-      Enum.split_with(state.pending, fn {coin, _} ->
+    # Reconcile prunes the buffer only for coins that were in active_subs, so a
+    # coin buffered before its sub was confirmed can outlive its slug_map entry.
+    # Drop such coins instead of crashing on the emit lookup below.
+    buffer =
+      Enum.filter(state.coalesce_buffer, fn {coin, _} ->
+        Map.has_key?(state.slug_map, coin)
+      end)
+
+    {to_emit, still_buffered} =
+      Enum.split_with(buffer, fn {coin, _} ->
         last = Map.get(state.last_emitted, coin)
         is_nil(last) or now - last >= window
       end)
 
-    Enum.each(to_emit, fn {coin, data} ->
-      emit(Map.fetch!(state.slug_map, coin), data)
-    end)
+    state =
+      Enum.reduce(to_emit, state, fn {coin, data}, acc ->
+        emit(Map.fetch!(acc.slug_map, coin), data)
+        record_exported(acc, coin, data)
+      end)
 
     new_last_emitted =
       Enum.reduce(to_emit, state.last_emitted, fn {coin, _}, acc -> Map.put(acc, coin, now) end)
 
     state =
-      %{state | pending: Map.new(still_pending), last_emitted: new_last_emitted}
+      %{state | coalesce_buffer: Map.new(still_buffered), last_emitted: new_last_emitted}
       |> schedule(:flush_coalesced, @flush_coalesced_interval)
 
     {:ok, state}
@@ -458,7 +487,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       | slug_map: slug_map,
         pending_sub_queue: new_queue,
         last_emitted: Map.drop(state.last_emitted, dropped),
-        pending: Map.drop(state.pending, dropped)
+        coalesce_buffer: Map.drop(state.coalesce_buffer, dropped)
     }
     |> maybe_schedule_flush_subs()
     # Audit the FULL mapped set (not the reduced one) so a previously

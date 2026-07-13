@@ -40,6 +40,12 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           href={~p"/admin/metric_registry/sync"}
           icon="hero-arrow-uturn-left"
         />
+
+        <AdminSharedComponents.nav_button
+          text="Check Sync Drift"
+          href={~p"/admin/metric_registry/sync_drift"}
+          icon="hero-scale"
+        />
       </div>
       <.table id="metrics_registry_sync_runs" rows={@syncs}>
         <:col :let={row} label="Run Type">

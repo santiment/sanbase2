@@ -66,6 +66,12 @@ defmodule Sanbase.Metric.Registry.Permissions do
     true
   end
 
+  def check_permission(:run_sync_drift_check, _) do
+    # The drift check fetches the prod registry export and compares it
+    # against the local one, so it can be run only from stage or dev
+    stage_or_dev?()
+  end
+
   # Helpers
 
   defp stage_or_dev?() do

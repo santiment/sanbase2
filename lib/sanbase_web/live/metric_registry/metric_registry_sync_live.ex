@@ -55,6 +55,12 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
           href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"
         />
+
+        <AdminSharedComponents.nav_button
+          text="Check Sync Drift"
+          href={~p"/admin/metric_registry/sync_drift"}
+          icon="hero-scale"
+        />
       </div>
 
       <div class="flex items-center mb-4">

@@ -116,8 +116,13 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
   end
 
   defp login(email) do
-    if @compile_env in [:dev, :test] and
-         Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "dev" do
+    # The compile-time env alone decides. Deployed envs run releases compiled
+    # with MIX_ENV=prod, so they always use the email flow. Locally compiled
+    # code always uses direct login -- checking the runtime deployment_env
+    # here would only break local login when DEPLOYMENT_ENVIRONMENT is set to
+    # a non-dev value (e.g. when testing stage-only features), because the
+    # email flow can never work from localhost anyway.
+    if @compile_env in [:dev, :test] do
       direct_login(email)
     else
       send_email_login(email)

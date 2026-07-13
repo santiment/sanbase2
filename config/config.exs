@@ -330,7 +330,7 @@ config :ex_audit,
 
 config :sanbase, Sanbase.Metric.Registry.Sync,
   sync_secret: "secret_only_on_prod",
-  export_secret: "export_secret_only_on_prod"
+  export_secret: System.get_env("METRIC_REGISTRY_EXPORT_SECRET") || "export_secret_only_on_prod"
 
 # Import configs
 import_config "ueberauth_config.exs"

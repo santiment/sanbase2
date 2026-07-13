@@ -101,6 +101,12 @@ defmodule SanbaseWeb.MetricRegistryController do
     |> Enum.intersperse("\n")
   end
 
+  # Do not explode calendar structs into maps -- Jason encodes them
+  # as ISO8601 strings, the same way they are encoded in the sync content
+  defp transform(%DateTime{} = data), do: data
+  defp transform(%NaiveDateTime{} = data), do: data
+  defp transform(%Date{} = data), do: data
+
   defp transform(struct) when is_struct(struct) do
     struct
     |> Map.from_struct()

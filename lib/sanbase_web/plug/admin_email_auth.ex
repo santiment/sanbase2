@@ -35,9 +35,14 @@ defmodule SanbaseWeb.Plug.AdminEmailAuthPlug do
     end
   end
 
+  # The compile-time env alone decides, same as the login gate in
+  # SanbaseWeb.AdminAuthenticateLive. Deployed envs run releases compiled with
+  # MIX_ENV=prod, so the token flow is always enforced there. Checking the
+  # runtime deployment_env here would only break local login when
+  # DEPLOYMENT_ENVIRONMENT is set to a non-dev value (e.g. when testing
+  # stage-only features locally).
   defp passwordless_dev_login_allowed?() do
-    @compile_env in [:dev, :test] and
-      Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "dev"
+    @compile_env in [:dev, :test]
   end
 
   defp check_and_login(conn, email, token) do

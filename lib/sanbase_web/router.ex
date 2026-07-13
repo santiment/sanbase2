@@ -155,6 +155,7 @@ defmodule SanbaseWeb.Router do
         live("/new", MetricRegistryFormLive, :new)
         live("/sync", MetricRegistrySyncLive, :new)
         live("/sync_runs", MetricRegistrySyncRunsLive, :new)
+        live("/sync_drift", MetricRegistrySyncDriftLive)
         live("/sync/:sync_type/:uuid", MetricRegistrySyncRunDetailsLive, :new)
         live("/display_order", MetricDisplayOrderLive)
         live("/display_order/show/:metric_id", MetricDisplayOrderShowLive)

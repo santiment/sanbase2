@@ -233,6 +233,9 @@ defmodule Sanbase.Project.ListSelector do
   defp included_slugs_by_filters([%{name: "erc20"}], _filters_combinator), do: {:ok, :erc20}
 
   defp included_slugs_by_filters(filters, filters_combinator) when is_list(filters) do
+    # `on_timeout: :kill_task` turns a slow filter into an `{:exit, :timeout}`
+    # element instead of exiting the whole caller process (the default
+    # `on_timeout: :exit`), which was crashing the alerts evaluator tasks.
     result =
       filters
       |> Sanbase.Parallel.map(
@@ -247,10 +250,18 @@ defmodule Sanbase.Project.ListSelector do
         end,
         timeout: 60_000,
         ordered: false,
-        max_concurrency: 3
+        max_concurrency: 3,
+        on_timeout: :kill_task
       )
 
-    case Enum.find(result, &match?({:error, _}, &1)) do
+    error =
+      Enum.find(result, fn
+        {:error, _} -> true
+        {:exit, _} -> true
+        _ -> false
+      end)
+
+    case error do
       nil ->
         slugs =
           result
@@ -261,6 +272,10 @@ defmodule Sanbase.Project.ListSelector do
 
       {:error, error} ->
         {:error, error}
+
+      {:exit, reason} ->
+        {:error,
+         "One of the filters timed out or exited while being evaluated: #{inspect(reason)}"}
     end
   end
 

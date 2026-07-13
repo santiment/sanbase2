@@ -15,6 +15,7 @@ defmodule SanbaseWeb.DeepResearchLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.DeepResearch.{Client, EventParser, Timeline}
+  alias SanbaseWeb.DeepResearch.ChartRenderer
 
   @no_report_error "The research run finished without producing a report — the agent stopped " <>
                      "before delivering one (it may have hit a tool/iteration budget or been " <>
@@ -723,6 +724,36 @@ defmodule SanbaseWeb.DeepResearchLive do
     """
   end
 
+  defp timeline_block(%{block: {:chart, items}} = assigns) do
+    assigns = assign(assigns, :items, items)
+
+    ~H"""
+    <div class="space-y-3">
+      <div
+        :for={{chart, ci} <- Enum.with_index(@items)}
+        id={"dra-chart-#{@turn_id}-#{@index}-#{ci}"}
+        phx-hook="LightweightChart"
+        phx-update="ignore"
+        data-chart={
+          Jason.encode!(%{
+            slug: chart[:slug],
+            range: chart[:range],
+            summary: chart[:summary],
+            series: chart.series
+          })
+        }
+        class="overflow-hidden rounded-xl border border-base-300 bg-base-100"
+      >
+        <div class="flex items-center gap-2 border-b border-base-300 px-3.5 py-2 text-xs font-medium text-base-content/60">
+          <.icon name="hero-chart-bar" class="size-4 text-primary" />
+          <span class="text-base-content/80">{chart_caption(chart)}</span>
+        </div>
+        <div class="dra-chart-canvas w-full" style="height: 18rem;"></div>
+      </div>
+    </div>
+    """
+  end
+
   defp timeline_block(%{block: {:findings, items}} = assigns) do
     assigns = assign(assigns, :items, items)
 
@@ -1003,13 +1034,36 @@ defmodule SanbaseWeb.DeepResearchLive do
           <span class="hidden [.copied_&]:inline">Copied</span>
         </button>
       </div>
-      <div class="px-5 py-4">
-        <div class="prose prose-sm max-w-none">
-          {markdown(Timeline.reflow_sources(@report))}
-        </div>
+      <div class="space-y-4 px-5 py-4">
+        <%= for seg <- Timeline.split_charts(Timeline.reflow_sources(@report)) do %>
+          <%= case seg do %>
+            <% {:md, text} -> %>
+              <div class="prose prose-sm max-w-none">{markdown(text)}</div>
+            <% {:chart, spec} -> %>
+              {ChartRenderer.render(spec)}
+          <% end %>
+        <% end %>
       </div>
     </div>
     """
+  end
+
+  # A compact caption from a (timeline) chart's slug/range plus its series labels.
+  defp chart_caption(chart) do
+    base = [chart[:slug], chart[:range]] |> Enum.reject(&is_nil/1) |> Enum.join(" · ")
+
+    labels =
+      (chart.series || [])
+      |> Enum.map(&(&1["label"] || &1["name"]))
+      |> Enum.reject(&(&1 in [nil, ""]))
+      |> Enum.uniq()
+
+    case {base, labels} do
+      {"", []} -> "Chart"
+      {b, []} -> b
+      {"", ls} -> Enum.join(ls, " vs ")
+      {b, ls} -> "#{b} — #{Enum.join(ls, " vs ")}"
+    end
   end
 
   # -- view helpers ------------------------------------------------------------

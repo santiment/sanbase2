@@ -52,6 +52,24 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       assert [%{kind: :skill, name: "defi"}] = t.timeline
     end
 
+    test "charts dedupe by id (a re-emit replaces in place)" do
+      chart = %{
+        kind: :chart,
+        id: "c1",
+        slug: "bitcoin",
+        range: "90d",
+        summary: nil,
+        series: [%{"data" => []}]
+      }
+
+      t =
+        turn()
+        |> Timeline.apply_result(%{activity: chart})
+        |> Timeline.apply_result(%{activity: %{chart | range: "30d"}})
+
+      assert [%{kind: :chart, id: "c1", range: "30d"}] = t.timeline
+    end
+
     test "sources dedupe by url" do
       src = %{kind: :source, url: "https://a.com", title: "A", domain: "a.com"}
 
@@ -182,6 +200,18 @@ defmodule Sanbase.DeepResearch.TimelineTest do
 
       assert [{:tools, _, false}] = Timeline.segment(items)
     end
+
+    test "charts form their own always-visible block after the tools run" do
+      items = [
+        %{kind: :mcp, id: "m1", tool: "show_chart", done: true},
+        %{kind: :chart, id: "c1", slug: "bitcoin", range: "90d", series: [%{"data" => []}]}
+      ]
+
+      assert [
+               {:tools, [%{kind: :mcp}], false},
+               {:chart, [%{kind: :chart, id: "c1"}]}
+             ] = Timeline.segment(items)
+    end
   end
 
   describe "coalesce" do
@@ -232,6 +262,69 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       assert out =~ "- [2] B https://b.com"
       # The later section keeps its heading and prose — not folded into bullets.
       assert out =~ "## Appendix\nFollow-up on [1] and [2] with more detail.\n"
+    end
+  end
+
+  describe "split_charts" do
+    test "lifts a fenced chart block out as a parsed pie spec, keeping surrounding md" do
+      md =
+        "Intro paragraph.\n\n" <>
+          "```chart\n{\"type\":\"pie\",\"title\":\"By source\",\"slices\":[{\"label\":\"telegram\",\"value\":40},{\"label\":\"reddit\",\"value\":30}]}\n```\n\n" <>
+          "Closing paragraph."
+
+      assert [
+               {:md, "Intro paragraph.\n\n"},
+               {:chart, %{type: "pie", title: "By source", slices: slices}},
+               {:md, "\n\nClosing paragraph."}
+             ] = Timeline.split_charts(md)
+
+      assert slices == [%{label: "telegram", value: 40}, %{label: "reddit", value: 30}]
+    end
+
+    test "accepts data/count aliases and drops non-positive slices" do
+      md =
+        "```chart\n{\"data\":[{\"name\":\"twitter\",\"count\":12},{\"label\":\"x\",\"value\":0}]}\n```"
+
+      assert [{:chart, %{slices: [%{label: "twitter", value: 12}]}}] = Timeline.split_charts(md)
+    end
+
+    test "a malformed chart block stays as markdown (degrades to a code block)" do
+      md = "```chart\n{not valid json}\n```"
+      assert [{:md, ^md}] = Timeline.split_charts(md)
+    end
+
+    test "no fence -> a single md segment" do
+      assert [{:md, "plain report"}] = Timeline.split_charts("plain report")
+    end
+
+    test "parses a line spec with series points and a spike window" do
+      md =
+        "```chart\n{\"type\":\"line\",\"title\":\"Vol\",\"series\":[{\"label\":\"v\",\"points\":[{\"t\":1,\"v\":10},{\"t\":2,\"v\":80}]}],\"spike\":{\"from\":1,\"to\":2}}\n```"
+
+      assert [
+               {:chart,
+                %{
+                  type: "line",
+                  title: "Vol",
+                  series: [%{label: "v", points: [%{t: 1, v: 10}, %{t: 2, v: 80}]}],
+                  spike: %{from: 1, to: 2}
+                }}
+             ] = Timeline.split_charts(md)
+    end
+
+    test "accepts a flat points array (single series) with time/value aliases" do
+      md =
+        "```chart\n{\"type\":\"spike\",\"metric\":\"social_volume\",\"points\":[{\"time\":1,\"value\":5},{\"time\":2,\"value\":9}]}\n```"
+
+      assert [{:chart, %{type: "line", series: [%{label: "social_volume", points: pts}]}}] =
+               Timeline.split_charts(md)
+
+      assert pts == [%{t: 1, v: 5}, %{t: 2, v: 9}]
+    end
+
+    test "a line spec with fewer than two points stays markdown" do
+      md = "```chart\n{\"type\":\"line\",\"points\":[{\"t\":1,\"v\":5}]}\n```"
+      assert [{:md, ^md}] = Timeline.split_charts(md)
     end
   end
 end

@@ -17,7 +17,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   An empty map means "nothing to apply" (heartbeat / noise / tool message).
   """
 
-  @activity_types ~w(search_query search_results mcp_call mcp_result source skill status report clarification subagent_findings)
+  @activity_types ~w(search_query search_results mcp_call mcp_result tool_call tool_result source skill chart status report clarification subagent_findings)
 
   # Internal structured-output field names that can leak onto the messages channel.
   @structured_field_re ~r/need_clarification|allow_clarification|max_researcher|max_concurrent|search_api/i
@@ -101,7 +101,10 @@ defmodule Sanbase.DeepResearch.EventParser do
     }
   end
 
-  defp parse_activity_event(%{"type" => "mcp_call"} = obj) do
+  # MCP tools (`mcp_*`) and deployment-specific custom tools (`tool_*`, e.g.
+  # `social_messages`) are both data-tool calls — render them the same way so a
+  # custom tool's activity is no longer silently dropped.
+  defp parse_activity_event(%{"type" => type} = obj) when type in ["mcp_call", "tool_call"] do
     %{
       phase: :researching,
       activity: %{
@@ -113,7 +116,7 @@ defmodule Sanbase.DeepResearch.EventParser do
     }
   end
 
-  defp parse_activity_event(%{"type" => "mcp_result"} = obj) do
+  defp parse_activity_event(%{"type" => type} = obj) when type in ["mcp_result", "tool_result"] do
     %{
       activity: %{
         kind: :mcp_result,
@@ -141,6 +144,26 @@ defmodule Sanbase.DeepResearch.EventParser do
       phase: :researching,
       activity: %{kind: :skill, name: to_string(obj["name"] || ""), path: non_blank(obj["path"])}
     }
+  end
+
+  defp parse_activity_event(%{"type" => "chart"} = obj) do
+    series = if is_list(obj["series"]), do: Enum.filter(obj["series"], &is_map/1), else: []
+
+    if series == [] do
+      %{}
+    else
+      %{
+        phase: :researching,
+        activity: %{
+          kind: :chart,
+          id: obj["id"],
+          slug: non_blank(obj["slug"]),
+          range: non_blank(obj["range"]),
+          summary: if(is_map(obj["summary"]), do: obj["summary"], else: nil),
+          series: series
+        }
+      }
+    end
   end
 
   defp parse_activity_event(%{"type" => "subagent_findings"} = obj) do

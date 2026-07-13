@@ -16,6 +16,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `%{kind: :mcp, id, tool, args, ok, summary, done}`
     * `%{kind: :status, state, detail}`
     * `%{kind: :skill, name, path}`
+    * `%{kind: :chart, id, slug, range, summary, series}`
   """
 
   @phases [:idle, :planning, :researching, :writing, :awaiting_user]
@@ -179,6 +180,21 @@ defmodule Sanbase.DeepResearch.Timeline do
     end
   end
 
+  def reduce_timeline(prev, %{kind: :chart} = a) do
+    build = fn _existing ->
+      %{
+        kind: :chart,
+        id: a.id,
+        slug: a[:slug],
+        range: a[:range],
+        summary: a[:summary],
+        series: a.series
+      }
+    end
+
+    upsert_by_id(prev, :chart, a.id, build)
+  end
+
   def reduce_timeline(prev, %{kind: :subagent_findings} = a) do
     prev ++
       [
@@ -256,6 +272,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `{:narration, [thinking_item, ...]}` - contiguous run of thinking (visible prose)
     * `{:tools, [item, ...], running?}`    - contiguous run of search/mcp/status (folded)
     * `{:skill, [skill_item, ...]}`        - contiguous run of skills (always-visible chips)
+    * `{:chart, [chart_item, ...]}`        - contiguous run of charts (always-visible widgets)
     * `{:findings, [finding_item, ...]}`   - contiguous run of sub-agent findings (folded tables)
   """
   @spec segment([map()]) :: [tuple()]
@@ -265,6 +282,7 @@ defmodule Sanbase.DeepResearch.Timeline do
         case item.kind do
           :thinking -> {push_narration(flush_tools(blocks, tools), item), []}
           :skill -> {push_skill(flush_tools(blocks, tools), item), []}
+          :chart -> {push_chart(flush_tools(blocks, tools), item), []}
           :subagent_findings -> {push_findings(flush_tools(blocks, tools), item), []}
           _ -> {blocks, tools ++ [item]}
         end
@@ -288,6 +306,9 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   defp push_skill([{:skill, items} | rest], item), do: [{:skill, items ++ [item]} | rest]
   defp push_skill(blocks, item), do: [{:skill, [item]} | blocks]
+
+  defp push_chart([{:chart, items} | rest], item), do: [{:chart, items ++ [item]} | rest]
+  defp push_chart(blocks, item), do: [{:chart, [item]} | blocks]
 
   defp push_findings([{:findings, items} | rest], item),
     do: [{:findings, items ++ [item]} | rest]
@@ -343,6 +364,162 @@ defmodule Sanbase.DeepResearch.Timeline do
   end
 
   def reflow_sources(md), do: md
+
+  @chart_fence ~r/```chart[ \t]*\n(.*?)\n?```/s
+
+  @doc """
+  Split report markdown into ordered render segments, lifting fenced
+  ` ```chart ` blocks out as parsed chart specs:
+
+    * `{:md, text}`    - a markdown run
+    * `{:chart, spec}` - `%{type: "pie", title: String.t() | nil, slices: [%{label, value}]}`
+
+  A fenced block whose body is not a valid chart spec is left as markdown, so a
+  malformed block degrades to a visible code block rather than vanishing.
+  """
+  @spec split_charts(String.t()) :: [{:md, String.t()} | {:chart, map()}]
+  def split_charts(md) when is_binary(md), do: md |> do_split_charts([]) |> Enum.reverse()
+  def split_charts(_), do: []
+
+  defp do_split_charts(md, acc) do
+    case Regex.run(@chart_fence, md, return: :index) do
+      [{ms, ml}, {gs, gl}] ->
+        pre = binary_part(md, 0, ms)
+        body = binary_part(md, gs, gl)
+        full = binary_part(md, ms, ml)
+        rest = binary_part(md, ms + ml, byte_size(md) - ms - ml)
+
+        acc
+        |> push_md(pre)
+        |> push_chart(body, full)
+        |> then(&do_split_charts(rest, &1))
+
+      _ ->
+        push_md(acc, md)
+    end
+  end
+
+  defp push_md(acc, text) do
+    if String.trim(text) == "", do: acc, else: [{:md, text} | acc]
+  end
+
+  defp push_chart(acc, body, full) do
+    case parse_chart_spec(body) do
+      {:ok, spec} -> [{:chart, spec} | acc]
+      :error -> [{:md, full} | acc]
+    end
+  end
+
+  defp parse_chart_spec(body) do
+    case Jason.decode(String.trim(body)) do
+      {:ok, obj} when is_map(obj) -> build_spec(to_string(obj["type"] || "pie"), obj)
+      _ -> :error
+    end
+  end
+
+  defp build_spec("pie", obj) do
+    case chart_slices(obj) do
+      [] -> :error
+      slices -> {:ok, %{type: "pie", title: chart_title(obj), slices: slices}}
+    end
+  end
+
+  defp build_spec(type, obj) when type in ["line", "area", "spike"] do
+    case chart_series(obj) do
+      [] ->
+        :error
+
+      series ->
+        {:ok, %{type: "line", title: chart_title(obj), series: series, spike: chart_spike(obj)}}
+    end
+  end
+
+  defp build_spec(_type, _obj), do: :error
+
+  defp chart_title(obj) do
+    case obj["title"] do
+      t when is_binary(t) -> blank_to_nil(String.trim(t))
+      _ -> nil
+    end
+  end
+
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(s), do: s
+
+  defp chart_slices(obj) do
+    raw = obj["slices"] || obj["data"] || []
+
+    if is_list(raw) do
+      raw
+      |> Enum.map(&one_slice/1)
+      |> Enum.reject(&(is_nil(&1) or &1.label == "" or &1.value <= 0))
+    else
+      []
+    end
+  end
+
+  defp one_slice(s) when is_map(s) do
+    label = to_string(s["label"] || s["name"] || "")
+
+    case s["value"] || s["count"] do
+      v when is_number(v) -> %{label: label, value: v}
+      _ -> nil
+    end
+  end
+
+  defp one_slice(_), do: nil
+
+  # `series: [%{label, points: [%{t, v}]}]`, or a flat `points: [...]` (single series).
+  defp chart_series(obj) do
+    raw =
+      cond do
+        is_list(obj["series"]) ->
+          obj["series"]
+
+        is_list(obj["points"]) ->
+          [%{"label" => obj["label"] || obj["metric"], "points" => obj["points"]}]
+
+        true ->
+          []
+      end
+
+    raw
+    |> Enum.map(&one_series/1)
+    |> Enum.reject(&(is_nil(&1) or length(&1.points) < 2))
+  end
+
+  defp one_series(s) when is_map(s) do
+    points =
+      case s["points"] do
+        list when is_list(list) -> list |> Enum.map(&one_point/1) |> Enum.reject(&is_nil/1)
+        _ -> []
+      end
+
+    %{label: blank_to_nil(to_string(s["label"] || s["name"] || "")), points: points}
+  end
+
+  defp one_series(_), do: nil
+
+  defp one_point(p) when is_map(p) do
+    with t when is_number(t) <- num(p["t"] || p["time"] || p["x"]),
+         v when is_number(v) <- num(p["v"] || p["value"] || p["y"]) do
+      %{t: t, v: v}
+    else
+      _ -> nil
+    end
+  end
+
+  defp one_point(_), do: nil
+
+  defp chart_spike(obj) do
+    case obj["spike"] do
+      %{"from" => f, "to" => t} when is_number(f) and is_number(t) -> %{from: f, to: t}
+      _ -> nil
+    end
+  end
+
+  defp num(n) when is_number(n), do: n
+  defp num(_), do: nil
 
   # The Sources block ends at the next Markdown heading (if any) — anything after
   # it is a separate section and must be left untouched, even if it has citation

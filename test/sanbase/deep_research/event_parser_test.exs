@@ -58,6 +58,25 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                })
     end
 
+    test "custom-tool tool_call/tool_result render like mcp calls" do
+      assert %{activity: %{kind: :mcp_call, tool: "social_messages", args: %{"asset" => "btc"}}} =
+               EventParser.parse(%{
+                 "type" => "tool_call",
+                 "id" => "t1",
+                 "tool" => "social_messages",
+                 "args" => %{"asset" => "btc"}
+               })
+
+      assert %{activity: %{kind: :mcp_result, ok: true, summary: "done"}} =
+               EventParser.parse(%{
+                 "type" => "tool_result",
+                 "id" => "t1",
+                 "tool" => "social_messages",
+                 "ok" => true,
+                 "summary" => "done"
+               })
+    end
+
     test "clarification sets awaiting_user and filters blank questions" do
       assert EventParser.parse(%{
                "type" => "clarification",
@@ -99,6 +118,39 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                  phase: :researching,
                  activity: %{kind: :skill, name: "defi", path: "/skills/defi"}
                }
+    end
+
+    test "chart event carries phase + activity with series" do
+      assert EventParser.parse(%{
+               "type" => "chart",
+               "id" => "c1",
+               "slug" => "bitcoin",
+               "range" => "90d",
+               "series" => [
+                 %{"style" => "candles", "pane" => 0, "data" => [%{"time" => 1, "close" => 2}]}
+               ]
+             }) ==
+               %{
+                 phase: :researching,
+                 activity: %{
+                   kind: :chart,
+                   id: "c1",
+                   slug: "bitcoin",
+                   range: "90d",
+                   summary: nil,
+                   series: [
+                     %{
+                       "style" => "candles",
+                       "pane" => 0,
+                       "data" => [%{"time" => 1, "close" => 2}]
+                     }
+                   ]
+                 }
+               }
+    end
+
+    test "chart event with no usable series is ignored" do
+      assert EventParser.parse(%{"type" => "chart", "id" => "c1", "series" => []}) == %{}
     end
 
     test "source event" do

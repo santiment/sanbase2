@@ -31,7 +31,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       slug_map: %{},
       pending_sub_queue: :queue.new(),
       last_emitted: %{},
-      pending: %{},
+      coalesce_buffer: %{},
       reconnect_backoff_ms: 1000,
       last_message_time: System.system_time(:millisecond),
       healthcheck_failures: 0,
@@ -127,7 +127,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
 
       assert drain_topic() == []
       assert new_state.last_emitted == %{}
-      assert new_state.pending == %{}
+      assert new_state.coalesce_buffer == %{}
     end
 
     test "multi-slug fanout: one coin -> N slugs emits N Kafka rows" do
@@ -159,7 +159,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
 
       assert length(drain_topic()) == 1
       assert Map.has_key?(new_state.last_emitted, "BTC")
-      assert new_state.pending == %{}
+      assert new_state.coalesce_buffer == %{}
     end
 
     test "burst within window: 1 immediate emit + buffered latest" do
@@ -203,8 +203,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       Sanbase.InMemoryKafka.Producer.clear_state()
 
       # Last buffered frame retained
-      assert state.pending["BTC"].bid_price == 62008.0
-      assert state.pending["BTC"].ask_price == 62009.0
+      assert state.coalesce_buffer["BTC"].bid_price == 62008.0
+      assert state.coalesce_buffer["BTC"].ask_price == 62009.0
 
       # Force the window to have elapsed by backdating last_emitted
       now = System.system_time(:millisecond)
@@ -217,7 +217,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert decoded["bid_price"] == 62008.0
       assert decoded["ask_price"] == 62009.0
       assert decoded["timestamp_ms"] == 1_700_000_000_400
-      assert state.pending == %{}
+      assert state.coalesce_buffer == %{}
     end
 
     test "timestamp_ms equals frame data.time for both immediate and buffer-flushed emits" do
@@ -249,6 +249,37 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert Jason.decode!(json)["timestamp_ms"] == 1_700_000_000_500
     end
 
+    test "flush drops buffered coin whose slug mapping was removed" do
+      state = build_state(slug_map: %{"BTC" => ["bitcoin"]}, coalesce_window_ms: 1000)
+
+      # First frame emits, second lands in the buffer
+      {:ok, state} =
+        WebsocketScraper.handle_frame(
+          bbo_frame("BTC", 1_700_000_000_000, side(62000, 1.0), side(62001, 1.0)),
+          state
+        )
+
+      {:ok, state} =
+        WebsocketScraper.handle_frame(
+          bbo_frame("BTC", 1_700_000_000_100, side(62002, 1.0), side(62003, 1.0)),
+          state
+        )
+
+      assert Map.has_key?(state.coalesce_buffer, "BTC")
+      assert length(drain_topic()) == 1
+      Sanbase.InMemoryKafka.Producer.clear_state()
+
+      # Mapping removed (e.g. reconcile with the coin never in active_subs),
+      # window elapsed — flush must drop the entry instead of raising
+      now = System.system_time(:millisecond)
+      state = %{state | slug_map: %{}, last_emitted: %{"BTC" => now - 2_000}}
+
+      {:ok, state} = WebsocketScraper.handle_info(:flush_coalesced, state)
+
+      assert drain_topic() == []
+      assert state.coalesce_buffer == %{}
+    end
+
     test "frame after window emits immediately" do
       slug_map = %{"BTC" => ["bitcoin"]}
       state = build_state(slug_map: slug_map, coalesce_window_ms: 1000)
@@ -264,7 +295,73 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
 
       assert length(drain_topic()) == 1
       assert new_state.last_emitted["BTC"] >= now
-      assert new_state.pending == %{}
+      assert new_state.coalesce_buffer == %{}
+    end
+  end
+
+  describe "last_exported diagnostics" do
+    test "immediate emit records point, export timestamp and count" do
+      state = build_state(slug_map: %{"xyz:GOLD" => ["gold"]})
+
+      {:ok, state} =
+        WebsocketScraper.handle_frame(
+          bbo_frame("xyz:GOLD", 1_700_000_000_000, side(4087.4, 2.8), side(4087.5, 0.01)),
+          state
+        )
+
+      assert %{point: point, exported_at_ms: at, count: 1} = state.last_exported["xyz:GOLD"]
+      assert point.coin == "xyz:GOLD"
+      assert point.timestamp_ms == 1_700_000_000_000
+      assert point.bid_price == 4087.4
+      assert is_integer(at)
+
+      # The recorded point is the one that reached Kafka
+      assert [{_key, json}] = drain_topic()
+      assert Jason.decode!(json)["timestamp_ms"] == 1_700_000_000_000
+    end
+
+    test "buffer flush records the flushed point and increments count" do
+      state = build_state(slug_map: %{"xyz:GOLD" => ["gold"]})
+
+      {:ok, state} =
+        WebsocketScraper.handle_frame(
+          bbo_frame("xyz:GOLD", 1_700_000_000_000, side(4087.4, 1.0), side(4087.5, 1.0)),
+          state
+        )
+
+      # Within the window: buffered, not exported yet
+      {:ok, state} =
+        WebsocketScraper.handle_frame(
+          bbo_frame("xyz:GOLD", 1_700_000_000_100, side(4088.0, 1.0), side(4088.1, 1.0)),
+          state
+        )
+
+      assert state.last_exported["xyz:GOLD"].count == 1
+
+      now = System.system_time(:millisecond)
+      state = put_in(state.last_emitted["xyz:GOLD"], now - 2_000)
+
+      {:ok, state} = WebsocketScraper.handle_info(:flush_coalesced, state)
+
+      assert %{point: point, count: 2} = state.last_exported["xyz:GOLD"]
+      assert point.timestamp_ms == 1_700_000_000_100
+      assert point.bid_price == 4088.0
+      assert state.coalesce_buffer == %{}
+    end
+
+    test "live state predating the last_exported key does not raise" do
+      # Simulates a hot-recompiled process whose state lacks :last_exported
+      state =
+        build_state(slug_map: %{"BTC" => ["bitcoin"]})
+        |> Map.delete(:last_exported)
+
+      {:ok, state} =
+        WebsocketScraper.handle_frame(
+          bbo_frame("BTC", 1_700_000_000_000, side(62000, 1.0), side(62001, 1.0)),
+          state
+        )
+
+      assert state.last_exported["BTC"].count == 1
     end
   end
 
@@ -348,7 +445,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert methods_by_coin == %{"ETH" => "subscribe", "OLD" => "unsubscribe"}
     end
 
-    test "unsubscribed coin's pending and last_emitted entries are pruned" do
+    test "unsubscribed coin's coalesce_buffer and last_emitted entries are pruned" do
       btc = insert(:project, %{name: "Bitcoin", slug: "bitcoin"})
 
       Sanbase.Project.SourceSlugMapping.create(%{
@@ -361,7 +458,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
         build_state(
           active_subs: MapSet.new(["BTC", "DROPME"]),
           last_emitted: %{"BTC" => 100, "DROPME" => 200},
-          pending: %{
+          coalesce_buffer: %{
             "BTC" => %{coin: "BTC"},
             "DROPME" => %{coin: "DROPME"}
           }
@@ -370,9 +467,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       {:ok, state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
 
       refute Map.has_key?(state.last_emitted, "DROPME")
-      refute Map.has_key?(state.pending, "DROPME")
+      refute Map.has_key?(state.coalesce_buffer, "DROPME")
       assert Map.has_key?(state.last_emitted, "BTC")
-      assert Map.has_key?(state.pending, "BTC")
+      assert Map.has_key?(state.coalesce_buffer, "BTC")
     end
   end
 
@@ -497,7 +594,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
         build_state(
           active_subs: MapSet.new(["BTC", "ETH"]),
           pending_sub_queue: :queue.in({:text, "x"}, :queue.new()),
-          pending: %{"BTC" => %{coin: "BTC"}},
+          coalesce_buffer: %{"BTC" => %{coin: "BTC"}},
           last_emitted: %{"BTC" => 1},
           healthcheck_failures: 4,
           reconnect_backoff_ms: 1
@@ -508,7 +605,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
 
       assert new_state.active_subs == MapSet.new()
       assert :queue.is_empty(new_state.pending_sub_queue)
-      assert new_state.pending == %{}
+      assert new_state.coalesce_buffer == %{}
       assert new_state.last_emitted == %{}
       assert new_state.healthcheck_failures == 0
       assert new_state.reconnect_backoff_ms == 2

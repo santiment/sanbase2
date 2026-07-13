@@ -90,5 +90,35 @@ defmodule SanbaseWeb.Admin.UserOverviewTest do
     test "errors for a missing user id" do
       assert {:error, _} = UserOverview.get(-1)
     end
+
+    test "activity combines last jwt and apikey call datetimes" do
+      user = insert(:user)
+      jwt_dt = ~U[2026-06-17 10:01:54Z]
+      apikey_dt = ~U[2026-04-20 09:16:19Z]
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Clickhouse.ApiCallData.last_api_call_datetime_per_auth_method/1,
+        {:ok, %{"jwt" => jwt_dt, "apikey" => apikey_dt}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, overview} = UserOverview.get(user.id)
+
+        assert overview.activity.last_sanbase_at == jwt_dt
+        assert overview.activity.last_api_at == apikey_dt
+        assert overview.activity.last_active_at == jwt_dt
+        assert overview.activity.error == nil
+      end)
+    end
+
+    test "activity degrades gracefully when ClickHouse is unavailable" do
+      user = insert(:user)
+
+      assert {:ok, overview} = UserOverview.get(user.id)
+
+      assert overview.activity.last_active_at == nil
+      assert overview.activity.last_sanbase_at == nil
+      assert overview.activity.last_api_at == nil
+      assert overview.activity.error =~ "unavailable"
+    end
   end
 end

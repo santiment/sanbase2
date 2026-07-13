@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Admin.UserOverview do
   @moduledoc """
-  A single user's full footprint for the admin overview page: subscription
+  A single user's full footprint for the admin overview page: last activity
+  (Sanbase webapp vs external API, from ClickHouse api_call_data), subscription
   status (current + past, paid?), everything they've created with a "depth"
   measure for each (chart metric count, watchlist asset count, dashboard
   widget count), plus the abuse `Flags`.
@@ -58,7 +59,7 @@ defmodule SanbaseWeb.Admin.UserOverview do
   @doc "Cached per-user overview. Returns `{:ok, map}` or `{:error, term}`."
   @spec get(non_neg_integer()) :: {:ok, map()} | {:error, term()}
   def get(user_id) when is_integer(user_id) do
-    cache_key = {__MODULE__, :get, user_id, :v1} |> Sanbase.Cache.hash()
+    cache_key = {__MODULE__, :get, user_id, :v2} |> Sanbase.Cache.hash()
     Sanbase.Cache.get_or_store({cache_key, @ttl_seconds}, fn -> compute(user_id) end)
   end
 
@@ -118,12 +119,50 @@ defmodule SanbaseWeb.Admin.UserOverview do
         inserted_at: user.inserted_at,
         is_team: is_team
       },
+      activity: activity(user.id),
       subscription: subscription,
       creations: creations,
       totals: totals,
       flags: flags,
       computed_at: DateTime.utc_now()
     }
+  end
+
+  # ── Activity ─────────────────────────────────────────────────────────────
+
+  # Last seen datetimes from the ClickHouse api_call_data table. Every webapp
+  # request is a JWT-authenticated API call, so `jwt` covers Sanbase usage and
+  # `apikey` covers external API usage; their max is product-independent
+  # "last active at". A ClickHouse failure must not take down the whole page.
+  defp activity(user_id) do
+    case Sanbase.Clickhouse.ApiCallData.last_api_call_datetime_per_auth_method(user_id) do
+      {:ok, map} ->
+        last_sanbase_at = map["jwt"]
+        last_api_at = map["apikey"]
+
+        last_active_at =
+          [last_sanbase_at, last_api_at]
+          |> Enum.reject(&is_nil/1)
+          |> case do
+            [] -> nil
+            list -> Enum.max(list, DateTime)
+          end
+
+        %{
+          last_active_at: last_active_at,
+          last_sanbase_at: last_sanbase_at,
+          last_api_at: last_api_at,
+          error: nil
+        }
+
+      {:error, _reason} ->
+        %{
+          last_active_at: nil,
+          last_sanbase_at: nil,
+          last_api_at: nil,
+          error: "Activity data unavailable (ClickHouse error)"
+        }
+    end
   end
 
   # ── Subscriptions ────────────────────────────────────────────────────────

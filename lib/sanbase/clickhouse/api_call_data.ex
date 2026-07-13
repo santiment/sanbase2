@@ -42,6 +42,21 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     |> maybe_unwrap_ok_value()
   end
 
+  @doc ~s"""
+  Get the datetime of the most recent api call of a user, grouped by auth
+  method. `jwt` calls come from the Sanbase webapp, `apikey` calls from
+  external API usage (scripts, Sansheets, etc.)
+  """
+  @spec last_api_call_datetime_per_auth_method(non_neg_integer()) ::
+          {:ok, %{String.t() => DateTime.t()}} | {:error, String.t()}
+  def last_api_call_datetime_per_auth_method(user_id) do
+    query_struct = last_api_call_datetime_per_auth_method_query(user_id)
+
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [auth_method, timestamp], acc ->
+      Map.put(acc, auth_method, DateTime.from_unix!(timestamp))
+    end)
+  end
+
   @spec active_users_count(DateTime.t(), DateTime.t()) ::
           {:ok, number()} | {:error, String.t()}
   def active_users_count(from, to) do
@@ -178,6 +193,17 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  defp last_api_call_datetime_per_auth_method_query(user_id) do
+    sql = """
+    SELECT auth_method, toUnixTimestamp(max(dt))
+    FROM #{@table}
+    WHERE user_id = {{user_id}}
+    GROUP BY auth_method
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, %{user_id: user_id})
   end
 
   defp maybe_filter_auth_method(:all), do: ""

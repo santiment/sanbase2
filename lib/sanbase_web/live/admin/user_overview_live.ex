@@ -92,6 +92,7 @@ defmodule SanbaseWeb.Admin.UserOverviewLive do
         </:failed>
 
         <.user_header user={ov.user} flags={ov.flags} />
+        <.activity_panel activity={ov.activity} />
         <.subscription_panel subscription={ov.subscription} />
         <.creations_summary creations={ov.creations} totals={ov.totals} />
         <.depth_tables creations={ov.creations} />
@@ -141,6 +142,29 @@ defmodule SanbaseWeb.Admin.UserOverviewLive do
           {flag_label(key)}
         </span>
       </div>
+    </section>
+    """
+  end
+
+  attr :activity, :map, required: true
+
+  defp activity_panel(assigns) do
+    ~H"""
+    <section>
+      <.section_heading>Activity</.section_heading>
+      <div class="grid gap-2 grid-cols-1 sm:grid-cols-3">
+        <.stat_card
+          label="Last active (any)"
+          value={fmt_ago(@activity.last_active_at)}
+          accent={activity_accent(@activity.last_active_at)}
+        />
+        <.stat_card label="Last Sanbase activity" value={fmt_ago(@activity.last_sanbase_at)} />
+        <.stat_card label="Last API call" value={fmt_ago(@activity.last_api_at)} />
+      </div>
+      <p :if={@activity.error} class="text-xs text-warning mt-1">{@activity.error}</p>
+      <p class="text-xs text-base-content/50 mt-1">
+        Sanbase = JWT-authenticated calls, API = apikey-authenticated calls (ClickHouse api_call_data).
+      </p>
     </section>
     """
   end
@@ -394,6 +418,28 @@ defmodule SanbaseWeb.Admin.UserOverviewLive do
 
   defp fmt_date(nil), do: "—"
   defp fmt_date(dt), do: Calendar.strftime(dt, "%Y-%m-%d")
+
+  defp fmt_ago(nil), do: "—"
+
+  defp fmt_ago(%DateTime{} = dt) do
+    days = DateTime.diff(DateTime.utc_now(), dt, :day)
+
+    rel =
+      cond do
+        days <= 0 -> "today"
+        days == 1 -> "1d ago"
+        days < 365 -> "#{days}d ago"
+        true -> "#{Float.round(days / 365, 1)}y ago"
+      end
+
+    "#{Calendar.strftime(dt, "%Y-%m-%d")} (#{rel})"
+  end
+
+  defp activity_accent(nil), do: nil
+
+  defp activity_accent(%DateTime{} = dt) do
+    if DateTime.diff(DateTime.utc_now(), dt, :day) > 90, do: "text-warning", else: nil
+  end
 
   defp flag_label(:huge_chart), do: "Huge chart"
   defp flag_label(:deep_chart), do: "Deep chart"

@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Admin.UserOverview do
   @doc "Cached per-user overview. Returns `{:ok, map}` or `{:error, term}`."
   @spec get(non_neg_integer()) :: {:ok, map()} | {:error, term()}
   def get(user_id) when is_integer(user_id) do
-    cache_key = {__MODULE__, :get, user_id, :v2} |> Sanbase.Cache.hash()
+    cache_key = {__MODULE__, :get, user_id, :v3} |> Sanbase.Cache.hash()
     Sanbase.Cache.get_or_store({cache_key, @ttl_seconds}, fn -> compute(user_id) end)
   end
 
@@ -180,7 +180,17 @@ defmodule SanbaseWeb.Admin.UserOverview do
     current = Enum.filter(all, &(&1.status in [:active, :past_due, :trialing]))
     is_paid = Enum.any?(all, &(&1.status in @paid_statuses))
 
-    %{is_paid: is_paid, current: current, all: all}
+    # `is_paid` (used by the abuse flags) means "actually paying" — trials are
+    # not paid. The `tier` is display-only, so a trialing user shows TRIAL
+    # instead of a contradictory FREE badge next to trialing subscriptions.
+    tier =
+      cond do
+        is_paid -> :paid
+        Enum.any?(all, &(&1.status == :trialing)) -> :trial
+        true -> :free
+      end
+
+    %{is_paid: is_paid, tier: tier, current: current, all: all}
   end
 
   defp subscription_row(%Subscription{} = s) do

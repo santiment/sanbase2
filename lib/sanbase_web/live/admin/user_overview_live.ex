@@ -176,8 +176,8 @@ defmodule SanbaseWeb.Admin.UserOverviewLive do
     <section class="space-y-2">
       <div class="flex items-center gap-2">
         <.section_heading>Subscription</.section_heading>
-        <span class={["badge badge-sm", (@subscription.is_paid && "badge-success") || "badge-ghost"]}>
-          {(@subscription.is_paid && "PAID") || "FREE"}
+        <span class={["badge badge-sm", tier_class(@subscription.tier)]}>
+          {tier_label(@subscription.tier)}
         </span>
       </div>
 
@@ -418,6 +418,14 @@ defmodule SanbaseWeb.Admin.UserOverviewLive do
 
   defp fmt_date(nil), do: "—"
   defp fmt_date(dt), do: Calendar.strftime(dt, "%Y-%m-%d")
+
+  defp tier_label(:paid), do: "PAID"
+  defp tier_label(:trial), do: "TRIAL"
+  defp tier_label(:free), do: "FREE"
+
+  defp tier_class(:paid), do: "badge-success"
+  defp tier_class(:trial), do: "badge-info"
+  defp tier_class(:free), do: "badge-ghost"
 
   defp fmt_ago(nil), do: "—"
 

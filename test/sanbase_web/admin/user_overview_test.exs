@@ -62,6 +62,7 @@ defmodule SanbaseWeb.Admin.UserOverviewTest do
       assert {:ok, overview} = UserOverview.get(user.id)
 
       refute overview.subscription.is_paid
+      assert overview.subscription.tier == :free
       flag_keys = Enum.map(overview.flags, &elem(&1, 0))
       assert :huge_chart in flag_keys
       assert :free_power_user in flag_keys
@@ -75,9 +76,21 @@ defmodule SanbaseWeb.Admin.UserOverviewTest do
       assert {:ok, overview} = UserOverview.get(user.id)
 
       assert overview.subscription.is_paid
+      assert overview.subscription.tier == :paid
       flag_keys = Enum.map(overview.flags, &elem(&1, 0))
       assert :huge_chart in flag_keys
       refute :free_power_user in flag_keys
+    end
+
+    test "a trialing user shows tier :trial but is not paid" do
+      user = insert(:user, email: "trial@example.com")
+      insert(:subscription_pro_sanbase, user: user, status: "trialing")
+
+      assert {:ok, overview} = UserOverview.get(user.id)
+
+      refute overview.subscription.is_paid
+      assert overview.subscription.tier == :trial
+      assert [%{status: :trialing}] = overview.subscription.current
     end
 
     test "marks @santiment.net users as team" do

@@ -79,19 +79,19 @@ defmodule SanbaseWeb.MetricRegistrySyncDriftLive do
         prod records: {@result.remote_count}, identical: {@result.identical_count}.
       </div>
 
-      <div :if={no_drift?(@result)} class="text-primary font-bold text-xl">
+      <div :if={Drift.no_drift?(@result)} class="text-primary font-bold text-xl">
         No drift detected. Stage and prod registries are in sync.
       </div>
 
       <div :if={@result.extra_on_prod != []}>
-        <span class="text-error font-bold text-xl">
-          Records existing only on PROD ({length(@result.extra_on_prod)})
-        </span>
-        <div class="text-sm text-base-content/50 max-w-3xl">
-          The sync never deletes records, so these are either orphans left after a
+        <.section_header
+          title="Records existing only on PROD"
+          count={length(@result.extra_on_prod)}
+          color="text-error"
+          description="The sync never deletes records, so these are either orphans left after a
           rename/deletion on stage, or records manually created on prod. They can
-          only be cleaned up manually.
-        </div>
+          only be cleaned up manually."
+        />
         <.table id="extra_on_prod" rows={@result.extra_on_prod}>
           <:col :let={row} label="Metric">{row.key.metric}</:col>
           <:col :let={row} label="Data Type">{row.key.data_type}</:col>
@@ -100,39 +100,41 @@ defmodule SanbaseWeb.MetricRegistrySyncDriftLive do
       </div>
 
       <div :if={@result.missing_on_prod != []}>
-        <span class="text-warning font-bold text-xl">
-          Records missing on PROD ({length(@result.missing_on_prod)})
-        </span>
-        <div class="text-sm text-base-content/50 max-w-3xl">
-          Records marked as "pending sync" are new/renamed records that are expected to
-          appear on prod after the next sync. Records without it claim to be synced,
-          so they indicate a manual intervention (e.g. deleted on prod).
-        </div>
+        <.section_header
+          title="Records missing on PROD"
+          count={length(@result.missing_on_prod)}
+          color="text-warning"
+          description={
+            ~s(Records marked as "PENDING SYNC" are new/renamed records that are expected to
+          appear on prod after the next sync. Records marked as "MANUAL DRIFT" claim to be synced,
+          so they indicate a manual intervention, e.g. deleted on prod.)
+          }
+        />
         <.table id="missing_on_prod" rows={@result.missing_on_prod}>
           <:col :let={row} label="ID">{row.id}</:col>
           <:col :let={row} label="Metric">{row.key.metric}</:col>
           <:col :let={row} label="Data Type">{row.key.data_type}</:col>
           <:col :let={row} label="Fixed Parameters">{inspect(row.key.fixed_parameters)}</:col>
           <:col :let={row} label="Status">
-            <.drift_status_badge pending_sync?={row.pending_sync?} />
+            <AdminSharedComponents.status_badge status={drift_status(row)} />
           </:col>
         </.table>
       </div>
 
       <div :if={@result.changed != []}>
-        <span class="text-warning font-bold text-xl">
-          Records with different content ({length(@result.changed)})
-        </span>
-        <div class="text-sm text-base-content/50 max-w-3xl">
-          The diff shows what needs to change on prod so it matches stage. Records
-          marked as "pending sync" have local changes awaiting sync. Records without
-          it claim to be synced, so they indicate a manual intervention on either side.
-        </div>
+        <.section_header
+          title="Records with different content"
+          count={length(@result.changed)}
+          color="text-warning"
+          description={~s(The diff shows what needs to change on prod so it matches stage. Records
+          marked as "PENDING SYNC" have local changes awaiting sync. Records marked as
+          "MANUAL DRIFT" claim to be synced, so they indicate a manual intervention on either side.)}
+        />
         <.table id="changed" rows={@result.changed}>
           <:col :let={row} label="ID">{row.id}</:col>
           <:col :let={row} label="Metric">{row.key.metric}</:col>
           <:col :let={row} label="Status">
-            <.drift_status_badge pending_sync?={row.pending_sync?} />
+            <AdminSharedComponents.status_badge status={drift_status(row)} />
           </:col>
           <:col :let={row} label="Diff (prod -> stage)">
             {Sanbase.ExAudit.Patch.format_patch(%{patch: row.diff})}
@@ -143,11 +145,20 @@ defmodule SanbaseWeb.MetricRegistrySyncDriftLive do
     """
   end
 
-  defp drift_status_badge(assigns) do
+  attr :title, :string, required: true
+  attr :count, :integer, required: true
+  attr :color, :string, required: true
+  attr :description, :string, required: true
+
+  defp section_header(assigns) do
     ~H"""
-    <span :if={@pending_sync?} class="badge badge-warning">pending sync</span>
-    <span :if={!@pending_sync?} class="badge badge-error">manual drift</span>
+    <span class={["font-bold text-xl", @color]}>{@title} ({@count})</span>
+    <div class="text-sm text-base-content/50 max-w-3xl">{@description}</div>
     """
+  end
+
+  defp drift_status(row) do
+    if row.pending_sync?, do: "pending_sync", else: "manual_drift"
   end
 
   @impl true
@@ -173,9 +184,5 @@ defmodule SanbaseWeb.MetricRegistrySyncDriftLive do
 
   def handle_async(:drift_check, {:exit, reason}, socket) do
     {:noreply, assign(socket, error: "Drift check crashed: #{inspect(reason)}", running?: false)}
-  end
-
-  defp no_drift?(result) do
-    result.missing_on_prod == [] and result.extra_on_prod == [] and result.changed == []
   end
 end

@@ -148,7 +148,7 @@ defmodule Sanbase.Metric.Registry.Sync do
       Enum.map(changesets, fn changeset ->
         old = changeset.data
         new = changeset |> Ecto.Changeset.apply_changes()
-        key = Map.take(Map.from_struct(new), [:metric, :data_type, :fixed_parameters])
+        key = Registry.identity_key(new)
 
         # When sync is applied, the logic for applying function also handles
         # the sync status related fields. They are not important for the actual changes

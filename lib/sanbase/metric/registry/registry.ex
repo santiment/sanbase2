@@ -312,6 +312,47 @@ defmodule Sanbase.Metric.Registry do
   end
 
   @doc ~s"""
+  The identity of a record across environments. The ids differ between
+  stage and prod, so this triple is what identifies the same logical record
+  on both sides. Accepts a struct or a string-keyed map (e.g. a decoded
+  JSON export).
+  """
+  @spec identity_key(t() | map()) :: %{
+          metric: String.t(),
+          data_type: String.t(),
+          fixed_parameters: map()
+        }
+  def identity_key(%__MODULE__{} = registry) do
+    Map.take(Map.from_struct(registry), [:metric, :data_type, :fixed_parameters])
+  end
+
+  def identity_key(%{"metric" => _} = map) do
+    %{
+      metric: Map.fetch!(map, "metric"),
+      data_type: Map.fetch!(map, "data_type"),
+      fixed_parameters: Map.fetch!(map, "fixed_parameters")
+    }
+  end
+
+  @doc ~s"""
+  Convert a struct to a plain string-keyed map containing only the fields
+  that are subject to syncing, as defined by the Jason.Encoder derive.
+  """
+  @spec to_synced_map(t()) :: map()
+  def to_synced_map(%__MODULE__{} = registry) do
+    registry |> Jason.encode!() |> Jason.decode!()
+  end
+
+  @doc ~s"""
+  The names (as strings) of the fields that are subject to syncing,
+  derived from the Jason.Encoder so there is a single source of truth.
+  """
+  @spec synced_field_names() :: [String.t()]
+  def synced_field_names() do
+    to_synced_map(%__MODULE__{}) |> Map.keys()
+  end
+
+  @doc ~s"""
   Invoke all the necessary refresh functions to ensure the data stored
   in persistent_term is refreshed.
   """

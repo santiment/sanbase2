@@ -138,6 +138,8 @@ defmodule SanbaseWeb.AdminSharedComponents do
   defp status_variant("approved"), do: "badge-success"
   defp status_variant("declined"), do: "badge-error"
   defp status_variant("pending_approval"), do: "badge-warning"
+  defp status_variant("pending_sync"), do: "badge-warning"
+  defp status_variant("manual_drift"), do: "badge-error"
   defp status_variant(_), do: "badge-ghost"
 
   attr :current_user, :map, required: true

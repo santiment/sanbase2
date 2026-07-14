@@ -324,7 +324,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
              assigns.metric_registry.id,
              assigns.metric_registry.last_sync_datetime
            ) do
-      metric_registry_map = Jason.encode!(assigns.metric_registry) |> Jason.decode!()
+      metric_registry_map = Sanbase.Metric.Registry.to_synced_map(assigns.metric_registry)
 
       diff_changes =
         ExAudit.Diff.diff(old_state_json, metric_registry_map)

@@ -16,7 +16,7 @@ defmodule SanbaseWeb.MetricRegistryDiffLive do
         "not_synced" ->
           case Registry.Changelog.state_before_last_sync(id, last_sync_datetime) do
             {:ok, old_state_json} ->
-              metric_registry_map = Jason.encode!(metric_registry) |> Jason.decode!()
+              metric_registry_map = Registry.to_synced_map(metric_registry)
 
               diff_changes =
                 ExAudit.Diff.diff(old_state_json, metric_registry_map)

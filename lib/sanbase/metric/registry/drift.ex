@@ -28,7 +28,6 @@ defmodule Sanbase.Metric.Registry.Drift do
   alias Sanbase.Utils.Config
 
   @receive_timeout 60_000
-  @env_local_fields ["id", "is_verified", "sync_status", "last_sync_datetime"]
 
   @type key :: %{metric: String.t(), data_type: String.t(), fixed_parameters: map()}
 
@@ -63,6 +62,11 @@ defmodule Sanbase.Metric.Registry.Drift do
     end
   end
 
+  @spec no_drift?(result()) :: boolean()
+  def no_drift?(result) do
+    result.missing_on_prod == [] and result.extra_on_prod == [] and result.changed == []
+  end
+
   # Private functions
 
   defp compare(local_entries, remote_entries) do
@@ -71,6 +75,7 @@ defmodule Sanbase.Metric.Registry.Drift do
 
     local_keys = local_by_key |> Map.keys() |> MapSet.new()
     remote_keys = remote_by_key |> Map.keys() |> MapSet.new()
+    common_keys = MapSet.intersection(local_keys, remote_keys)
 
     missing_on_prod =
       MapSet.difference(local_keys, remote_keys)
@@ -84,15 +89,15 @@ defmodule Sanbase.Metric.Registry.Drift do
           pending_sync?: local.sync_status == "not_synced"
         }
       end)
-      |> Enum.sort_by(& &1.key.metric)
+      |> sort_by_metric()
 
     extra_on_prod =
       MapSet.difference(remote_keys, local_keys)
       |> Enum.map(fn key -> %{key: key} end)
-      |> Enum.sort_by(& &1.key.metric)
+      |> sort_by_metric()
 
     changed =
-      MapSet.intersection(local_keys, remote_keys)
+      common_keys
       |> Enum.reduce([], fn key, acc ->
         local = local_by_key[key]
         remote = remote_by_key[key]
@@ -115,29 +120,28 @@ defmodule Sanbase.Metric.Registry.Drift do
             [entry | acc]
         end
       end)
-      |> Enum.sort_by(& &1.key.metric)
+      |> sort_by_metric()
 
     %{
       checked_at: DateTime.utc_now() |> DateTime.truncate(:second),
       local_count: length(local_entries),
       remote_count: length(remote_entries),
-      identical_count:
-        MapSet.intersection(local_keys, remote_keys) |> MapSet.size() |> Kernel.-(length(changed)),
+      identical_count: MapSet.size(common_keys) - length(changed),
       missing_on_prod: missing_on_prod,
       extra_on_prod: extra_on_prod,
       changed: changed
     }
   end
 
+  defp sort_by_metric(list), do: Enum.sort_by(list, & &1.key.metric)
+
   defp local_entries() do
     Registry.all()
     |> Enum.map(fn %Registry{} = registry ->
-      # Encoding and decoding the struct produces a map with only the fields
-      # that are subject to syncing (see the Jason.Encoder derive in Registry)
-      content = registry |> Jason.encode!() |> Jason.decode!()
+      content = Registry.to_synced_map(registry)
 
       %{
-        key: content_key(content),
+        key: Registry.identity_key(content),
         id: registry.id,
         sync_status: registry.sync_status,
         content: content
@@ -160,13 +164,22 @@ defmodule Sanbase.Metric.Registry.Drift do
   end
 
   defp parse_ndjson_export(body) do
+    # The export also contains env-local fields like id and sync_status.
+    # Keep only the synced fields, so the comparison matches the local
+    # content and additions to the schema don't need updates here.
+    synced_field_names = Registry.synced_field_names()
+
     entries =
       body
       |> String.split("\n", trim: true)
-      |> Enum.map(&Jason.decode!/1)
-      |> Enum.map(fn map ->
-        content = map |> Map.drop(@env_local_fields) |> normalize_content()
-        %{key: content_key(content), content: content}
+      |> Enum.map(fn line ->
+        content =
+          line
+          |> Jason.decode!()
+          |> Map.take(synced_field_names)
+          |> normalize_content()
+
+        %{key: Registry.identity_key(content), content: content}
       end)
 
     {:ok, entries}
@@ -175,6 +188,9 @@ defmodule Sanbase.Metric.Registry.Drift do
       {:error, "Failed to decode the prod metric registry export. Error: #{Exception.message(e)}"}
   end
 
+  # Normalizes only top-level values on purpose: the only DateTime field in
+  # the schema (hard_deprecate_after) is top-level; none of the embeds
+  # contain calendar types.
   defp normalize_content(content) when is_map(content) do
     Map.new(content, fn {key, value} -> {key, normalize_value(value)} end)
   end
@@ -196,14 +212,6 @@ defmodule Sanbase.Metric.Registry.Drift do
   end
 
   defp normalize_value(value), do: value
-
-  defp content_key(content) when is_map(content) do
-    %{
-      metric: Map.fetch!(content, "metric"),
-      data_type: Map.fetch!(content, "data_type"),
-      fixed_parameters: Map.fetch!(content, "fixed_parameters")
-    }
-  end
 
   # The drift check is read-only, so unlike the sync it does not need any
   # environment write-safety guards. The only restriction is that it cannot

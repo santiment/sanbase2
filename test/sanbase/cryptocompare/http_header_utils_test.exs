@@ -57,4 +57,33 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtilsTest do
       assert HTTPHeaderUtils.rate_limit_reset_seconds(resp(remaining, nil)) == 60
     end
   end
+
+  describe "missing or malformed rate limit headers" do
+    test "rate_limited?/1 returns false when the Remaining-All header is missing" do
+      resp = %HTTPoison.Response{status_code: 200, body: "", headers: []}
+
+      assert HTTPHeaderUtils.rate_limited?(resp) == false
+      assert HTTPHeaderUtils.rate_limit_reset_seconds(resp) == nil
+    end
+
+    test "rate_limited?/1 returns false when the Remaining-All header is unparseable" do
+      resp = resp("not a rate limit header", @reset)
+
+      assert HTTPHeaderUtils.rate_limited?(resp) == false
+    end
+
+    test "get_biggest_ratelimited_window/1 falls back to 60s when the Reset-All header is missing" do
+      remaining =
+        "100, 0;window=1, 50;window=60, 1000;window=3600, 5000;window=86400, 99999;window=2592000"
+
+      assert HTTPHeaderUtils.get_biggest_ratelimited_window(resp(remaining, nil)) == 60
+    end
+
+    test "get_biggest_ratelimited_window/1 falls back to 60s when the Reset-All header is unparseable" do
+      remaining =
+        "100, 0;window=1, 50;window=60, 1000;window=3600, 5000;window=86400, 99999;window=2592000"
+
+      assert HTTPHeaderUtils.get_biggest_ratelimited_window(resp(remaining, "garbage")) == 60
+    end
+  end
 end

@@ -63,33 +63,30 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
     end
   end
 
+  @default_reset_seconds 60
+
   def get_biggest_ratelimited_window(resp) do
-    get_header(resp, "X-RateLimit-Reset-All")
-    |> elem(1)
-    |> parse_value_list()
-    |> Enum.max_by(& &1.value)
-    |> Map.get(:value)
+    with {_header, value} <- get_header(resp, "X-RateLimit-Reset-All"),
+         [_ | _] = list <- parse_value_list(value) do
+      list |> Enum.max_by(& &1.value) |> Map.get(:value)
+    else
+      # Header missing or unparseable
+      _ -> @default_reset_seconds
+    end
   end
 
   def rate_limited?(resp) do
     # If any of the rate limit periods has 0 remaining requests
     # it means that the rate limit is reached
-    zero_remainings =
-      get_header(resp, "X-RateLimit-Remaining-All")
-      |> elem(1)
-      |> parse_value_list()
-      |> Enum.filter(&(&1.value == 0))
-
-    case zero_remainings do
-      [] ->
-        false
-
-      list ->
-        {:error_limited, Enum.max_by(list, & &1.time_period)}
+    with {_header, value} <- get_header(resp, "X-RateLimit-Remaining-All"),
+         list when is_list(list) <- parse_value_list(value),
+         [_ | _] = zero_remainings <- Enum.filter(list, &(&1.value == 0)) do
+      {:error_limited, Enum.max_by(zero_remainings, & &1.time_period)}
+    else
+      # Header missing, unparseable or no exhausted windows
+      _ -> false
     end
   end
-
-  @default_reset_seconds 60
 
   @doc ~s"""
   How many seconds to wait before retrying after a rate limit was hit.

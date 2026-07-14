@@ -342,7 +342,17 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
       # so the recompute happens on the next tick rather than after a whole
       # refresh window.
       assert {:ok, 1} = RehydratingCache.get(key, 200)
-      assert eventually(fn -> :counters.get(counter, 1) >= 2 end)
+
+      # Keep reading while waiting for the recompute. last_access is
+      # second-granularity, so a single touch landing just before a wall-clock
+      # second boundary can look a full second old on the next tick and
+      # (with pause threshold 0) re-pause the key before it spawns. Repeated
+      # reads — what a real consumer does — re-resume it until a tick lands
+      # within the same second as a touch.
+      assert eventually(fn ->
+               {:ok, _} = RehydratingCache.get(key, 200)
+               :counters.get(counter, 1) >= 2
+             end)
     end
 
     @tag run_interval: 20

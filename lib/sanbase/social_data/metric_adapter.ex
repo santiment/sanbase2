@@ -359,6 +359,17 @@ defmodule Sanbase.SocialData.MetricAdapter do
     {:ok, ~U[2009-01-01 00:00:00Z]}
   end
 
+  def first_datetime("social_active_users", selector, _opts) do
+    case selector do
+      %{source: source} when is_binary(source) ->
+        source_first_datetime(source)
+
+      _ ->
+        {:error,
+         "The selector must have a source field when fetching social_active_users first datetime"}
+    end
+  end
+
   def first_datetime(metric, _selector, _opts) do
     {_metric, source} = SocialHelper.split_by_source(metric)
     source |> source_first_datetime()
@@ -376,6 +387,13 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
   defp source_first_datetime("youtube_videos"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("4chan"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+  defp source_first_datetime("farcaster"), do: {:ok, ~U[2024-01-01 00:00:00Z]}
+  # twitter_crypto is not a source itself, but a source selector value of social_active_users
+  defp source_first_datetime("twitter_crypto"), do: source_first_datetime("twitter")
+
+  defp source_first_datetime(source) do
+    {:error, "The source #{inspect(source)} does not have a first datetime defined"}
+  end
 
   defp docs_links(metric) do
     list =

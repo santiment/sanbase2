@@ -2,9 +2,11 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   use Sanbase.DataCase, async: true
 
   import ExUnit.CaptureLog
+  import Mock
   import Sanbase.Factory
 
   alias Sanbase.ExternalServices.ProjectInfo
+  alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Project
   alias Sanbase.Model.Ico
   alias Sanbase.Repo
@@ -152,6 +154,88 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
                project
              )
            end) =~ "has already been taken"
+  end
+
+  test "from_project sets the infrastructure code" do
+    project = insert(:random_erc20_project)
+
+    assert ProjectInfo.from_project(project).infrastructure_code == "ETH"
+  end
+
+  test "fetch_from_ethereum_node fetches data for ethereum contracts" do
+    project_info = %ProjectInfo{
+      slug: "santiment",
+      main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
+      infrastructure_code: "ETH"
+    }
+
+    Sanbase.Mock.prepare_mock2(&Ethauth.total_supply/1, {:ok, 83_000_000})
+    |> Sanbase.Mock.prepare_mock2(&Ethauth.token_decimals/1, {:ok, 18})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      project_info = ProjectInfo.fetch_from_ethereum_node(project_info)
+
+      assert project_info.total_supply == 83_000_000
+      assert project_info.token_decimals == 18
+    end)
+  end
+
+  test "fetch_from_ethereum_node fetches data when the infrastructure is not set" do
+    project_info = %ProjectInfo{
+      slug: "santiment",
+      main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
+      infrastructure_code: nil
+    }
+
+    Sanbase.Mock.prepare_mock2(&Ethauth.total_supply/1, {:ok, 83_000_000})
+    |> Sanbase.Mock.prepare_mock2(&Ethauth.token_decimals/1, {:ok, 18})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      project_info = ProjectInfo.fetch_from_ethereum_node(project_info)
+
+      assert project_info.total_supply == 83_000_000
+      assert project_info.token_decimals == 18
+    end)
+  end
+
+  test "fetch_from_ethereum_node skips contracts that are not ethereum addresses" do
+    project_info = %ProjectInfo{
+      slug: "some-solana-project",
+      main_contract_address: "HNg5PYJmtqcmzXrv6S9zP1CDKk5BgDuyFBxbvNApump",
+      infrastructure_code: nil
+    }
+
+    Sanbase.Mock.prepare_mock2(&Ethauth.total_supply/1, {:ok, 83_000_000})
+    |> Sanbase.Mock.prepare_mock2(&Ethauth.token_decimals/1, {:ok, 18})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      log =
+        capture_log(fn ->
+          assert ProjectInfo.fetch_from_ethereum_node(project_info) == project_info
+        end)
+
+      assert log =~ "Skip fetching on-chain data for some-solana-project"
+      assert_not_called(Ethauth.total_supply(:_))
+      assert_not_called(Ethauth.token_decimals(:_))
+    end)
+  end
+
+  test "fetch_from_ethereum_node skips contracts on non-ethereum infrastructure" do
+    project_info = %ProjectInfo{
+      slug: "some-bnb-project",
+      main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
+      infrastructure_code: "BNB"
+    }
+
+    Sanbase.Mock.prepare_mock2(&Ethauth.total_supply/1, {:ok, 83_000_000})
+    |> Sanbase.Mock.prepare_mock2(&Ethauth.token_decimals/1, {:ok, 18})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      log =
+        capture_log(fn ->
+          assert ProjectInfo.fetch_from_ethereum_node(project_info) == project_info
+        end)
+
+      assert log =~ "Skip fetching on-chain data for some-bnb-project"
+      assert_not_called(Ethauth.total_supply(:_))
+      assert_not_called(Ethauth.token_decimals(:_))
+    end)
   end
 
   test "updating the project info of a project with a contract address" do

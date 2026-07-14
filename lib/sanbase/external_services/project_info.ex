@@ -25,6 +25,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     :facebook_link,
     :whitepaper_link,
     :main_contract_address,
+    :infrastructure_code,
     :ticker,
     :creation_transaction,
     :contract_block_number,
@@ -77,6 +78,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       project
       |> Map.from_struct()
       |> Map.put(:main_contract_address, main_contract_address)
+      |> Map.put(:infrastructure_code, infrastructure_code(project))
       |> Map.to_list()
 
     project_info =
@@ -102,11 +104,23 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     end
   end
 
-  def fetch_from_ethereum_node(%ProjectInfo{} = project_info) do
-    project_info
-    |> fetch_token_decimals()
-    |> fetch_total_supply()
+  def fetch_from_ethereum_node(%ProjectInfo{main_contract_address: contract} = project_info)
+      when is_binary(contract) do
+    if ethereum_contract?(project_info) do
+      project_info
+      |> fetch_token_decimals()
+      |> fetch_total_supply()
+    else
+      Logger.info(
+        "[ProjectInfo] Skip fetching on-chain data for #{project_info.slug}. " <>
+          "The contract #{contract} is not an Ethereum contract address."
+      )
+
+      project_info
+    end
   end
+
+  def fetch_from_ethereum_node(%ProjectInfo{} = project_info), do: project_info
 
   def fetch_contract_info(%ProjectInfo{main_contract_address: nil} = project_info),
     do: project_info
@@ -226,6 +240,26 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   end
 
   defp fetch_token_decimals(%ProjectInfo{} = project_info), do: project_info
+
+  defp ethereum_contract?(%ProjectInfo{main_contract_address: contract} = project_info)
+       when is_binary(contract) do
+    ethereum_infrastructure?(project_info.infrastructure_code) and
+      Regex.match?(Sanbase.BlockchainAddress.ethereum_regex(), contract)
+  end
+
+  defp ethereum_contract?(_), do: false
+
+  # Projects without an infrastructure record cannot be ruled out as
+  # non-Ethereum, so only the address format check applies to them.
+  defp ethereum_infrastructure?(nil), do: true
+  defp ethereum_infrastructure?(code) when is_binary(code), do: String.upcase(code) == "ETH"
+
+  defp infrastructure_code(%Project{} = project) do
+    case Project.infrastructure(project) do
+      %{code: code} when is_binary(code) -> code
+      _ -> nil
+    end
+  end
 
   defp fetch_block_number(%ProjectInfo{creation_transaction: nil} = project_info),
     do: project_info

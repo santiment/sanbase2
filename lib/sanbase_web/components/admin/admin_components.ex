@@ -1155,9 +1155,7 @@ defmodule SanbaseWeb.AdminComponents do
 
   def td_show(assigns) do
     ~H"""
-    <td class={@class}>
-      {@value}
-    </td>
+    <td class={@class}>{@value}</td>
     """
   end
 

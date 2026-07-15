@@ -125,14 +125,21 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
   defp search_users(query) when byte_size(query) < 2, do: []
 
   defp search_users(query) do
+    query = String.trim(query)
     pattern = "%" <> query <> "%"
 
-    from(u in User,
-      where: ilike(u.email, ^pattern) or ilike(u.username, ^pattern),
-      order_by: [desc: u.id],
-      limit: 8,
-      select: %{id: u.id, email: u.email, username: u.username}
-    )
+    base =
+      from(u in User,
+        where: ilike(u.email, ^pattern) or ilike(u.username, ^pattern),
+        order_by: [desc: u.id],
+        limit: 8,
+        select: %{id: u.id, email: u.email, username: u.username}
+      )
+
+    case Integer.parse(query) do
+      {id, ""} -> from(u in base, or_where: u.id == ^id)
+      _ -> base
+    end
     |> Sanbase.Repo.all()
   end
 
@@ -230,7 +237,7 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                   <.step_badge n={1} done={step_done?(:user, assigns)} />
                   <div class="flex-1">
                     <h2 class="font-semibold">User</h2>
-                    <p class="text-xs text-base-content/60">Search by email or username</p>
+                    <p class="text-xs text-base-content/60">Search by email, username or user ID</p>
                   </div>
                 </div>
 
@@ -257,7 +264,7 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                       value={@user_query}
                       phx-keyup="search_user"
                       phx-debounce="200"
-                      placeholder="email@example.com or username"
+                      placeholder="email@example.com, username or user ID"
                       autocomplete="off"
                     />
                   </label>

@@ -6,6 +6,10 @@ defmodule Sanbase.Clickhouse.ApiCallData do
 
   @type auth_method :: :all | :apikey | :jwt | :basic
 
+  @last_api_call_lookback_days 365
+
+  def last_api_call_lookback_days(), do: @last_api_call_lookback_days
+
   import Sanbase.Utils.Transform,
     only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
 
@@ -46,6 +50,11 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   Get the datetime of the most recent api call of a user, grouped by auth
   method. `jwt` calls come from the Sanbase webapp, `apikey` calls from
   external API usage (scripts, Sansheets, etc.)
+
+  Looks back #{@last_api_call_lookback_days} days: the table's sorting key
+  starts with `dt`, so an unbounded per-user query scans all ~7 years
+  (measured 24s vs 7s with this bound). A user with no calls in the window
+  is absent from the result map.
   """
   @spec last_api_call_datetime_per_auth_method(non_neg_integer()) ::
           {:ok, %{String.t() => DateTime.t()}} | {:error, String.t()}
@@ -196,14 +205,16 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   end
 
   defp last_api_call_datetime_per_auth_method_query(user_id) do
+    from = DateTime.utc_now() |> DateTime.add(-@last_api_call_lookback_days, :day)
+
     sql = """
     SELECT auth_method, toUnixTimestamp(max(dt))
     FROM #{@table}
-    WHERE user_id = {{user_id}}
+    WHERE dt >= toDateTime({{from}}) AND user_id = {{user_id}}
     GROUP BY auth_method
     """
 
-    Sanbase.Clickhouse.Query.new(sql, %{user_id: user_id})
+    Sanbase.Clickhouse.Query.new(sql, %{user_id: user_id, from: from})
   end
 
   defp maybe_filter_auth_method(:all), do: ""

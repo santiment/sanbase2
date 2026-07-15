@@ -130,10 +130,12 @@ defmodule SanbaseWeb.Admin.UserOverview do
 
   # ── Activity ─────────────────────────────────────────────────────────────
 
-  # Last seen datetimes from the ClickHouse api_call_data table. Every webapp
-  # request is a JWT-authenticated API call, so `jwt` covers Sanbase usage and
-  # `apikey` covers external API usage; their max is product-independent
-  # "last active at". A ClickHouse failure must not take down the whole page.
+  # Last seen datetimes from the ClickHouse api_call_data table, bounded to
+  # the last `ApiCallData.last_api_call_lookback_days/0` days (nil = no calls
+  # in the window). Every webapp request is a JWT-authenticated API call, so
+  # `jwt` covers Sanbase usage and `apikey` covers external API usage; their
+  # max is product-independent "last active at". A ClickHouse failure must
+  # not take down the whole page.
   defp activity(user_id) do
     case Sanbase.Clickhouse.ApiCallData.last_api_call_datetime_per_auth_method(user_id) do
       {:ok, map} ->

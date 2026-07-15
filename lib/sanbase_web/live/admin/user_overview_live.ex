@@ -163,7 +163,9 @@ defmodule SanbaseWeb.Admin.UserOverviewLive do
       </div>
       <p :if={@activity.error} class="text-xs text-warning mt-1">{@activity.error}</p>
       <p class="text-xs text-base-content/50 mt-1">
-        Sanbase = JWT-authenticated calls, API = apikey-authenticated calls (ClickHouse api_call_data).
+        Based on API calls in the last {activity_lookback_days()} days — Sanbase = JWT-authenticated
+        calls, API = apikey-authenticated calls. "—" means no calls in that window (the user may
+        still have older activity).
       </p>
     </section>
     """
@@ -418,6 +420,9 @@ defmodule SanbaseWeb.Admin.UserOverviewLive do
 
   defp fmt_date(nil), do: "—"
   defp fmt_date(dt), do: Calendar.strftime(dt, "%Y-%m-%d")
+
+  defp activity_lookback_days(),
+    do: Sanbase.Clickhouse.ApiCallData.last_api_call_lookback_days()
 
   defp tier_label(:paid), do: "PAID"
   defp tier_label(:trial), do: "TRIAL"

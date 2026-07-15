@@ -14,9 +14,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
   ## Lifecycle
 
-  1. **Boot.** `start_link/0` opens the WebSocket. On `handle_connect/2` the
-     reconnect backoff is reset, all periodic timers are armed, and an
-     immediate `:reconcile_subscriptions` is sent to populate subs.
+  1. **Boot.** `start_link/0` opens the WebSocket. On `handle_connect/2` all
+     periodic timers are armed and an immediate `:reconcile_subscriptions` is
+     sent to populate subs.
 
   2. **Reconcile (every 60s).** Loads `SourceSlugMapping` rows for
      `hyperliquid`, builds a `coin -> [slug, ...]` map, and diffs against
@@ -46,8 +46,15 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
   7. **Disconnect.** `handle_disconnect/2` cancels timers, clears
      `active_subs`/`pending_sub_queue`/`coalesce_buffer`/`last_emitted`/
-     `healthcheck_failures`, sleeps the current backoff, then doubles it
-     (capped at `@reconnect_max_ms`). Reconnect re-enters step 1.
+     `healthcheck_failures`, then sleeps a backoff (plus jitter) before
+     reconnecting. The backoff doubles per disconnect (total sleep, jitter
+     included, capped at `@reconnect_max_ms`) and resets to
+     `@reconnect_initial_ms` only after a
+     connection survives `@stable_connection_ms` — a connection that dies
+     young keeps backing off, so a remote that kills us seconds after connect
+     (e.g. per-IP rate limiting) slows us down instead of locking us into a
+     reconnect storm that keeps the IP over the limit. Reconnect re-enters
+     step 1.
   """
 
   use WebSockex
@@ -89,8 +96,21 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   @coalesce_window_default_ms 1_000
   # First reconnect delay; doubles per consecutive disconnect, capped below.
   @reconnect_initial_ms 1_000
-  # Upper bound on the exponential reconnect backoff.
-  @reconnect_max_ms 30_000
+  # Hard ceiling on a single reconnect sleep, jitter included.
+  @reconnect_max_ms 20_000
+  # A connection must live this long before the next disconnect starts the
+  # backoff over from @reconnect_initial_ms; anything shorter keeps doubling.
+  @stable_connection_ms 60_000
+  # Cap on the random jitter added to each reconnect sleep, so instances
+  # sharing an egress IP don't reconnect in lockstep (HL limits are per IP,
+  # aggregated across every client behind it).
+  @reconnect_jitter_max_ms 1_000
+  # The exponential part of the backoff caps here so base + jitter never
+  # exceeds @reconnect_max_ms.
+  @reconnect_base_cap_ms @reconnect_max_ms - @reconnect_jitter_max_ms
+  # Rolling window for counting our own connects, matching the window of HL's
+  # "30 new connections per minute per IP" limit.
+  @connects_window_ms 60_000
 
   def child_spec(_opts \\ []) do
     %{id: __MODULE__, start: {__MODULE__, :start_link, []}}
@@ -118,6 +138,11 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       # a storm never re-subscribes to known-bad coins. Refreshed each audit, so
       # a coin re-listed on HL is picked back up automatically.
       unsupported: MapSet.new(),
+      # Coins that were already awaiting a subscribe confirmation at the end
+      # of the previous reconcile round. warn_unconfirmed/2 only flags coins
+      # present in BOTH rounds, so a coin queued for the first time this
+      # round is never reported as "never confirmed". Cleared on disconnect.
+      prev_unconfirmed: MapSet.new(),
       slug_map: %{},
       pending_sub_queue: :queue.new(),
       last_emitted: %{},
@@ -133,6 +158,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       connected_at: nil,
       bbo_in: 0,
       reconnects: 0,
+      # Timestamps (ms) of successful connects in the last minute, newest
+      # first — compared against HL's 30 new connections/min/IP limit.
+      connect_times: [],
       last_audit_at: 0,
       # Diagnostics: per-coin record of the last point actually handed to the
       # Kafka exporter — %{coin => %{point: map, exported_at_ms: ms, count: n}}.
@@ -172,18 +200,30 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   def handle_connect(_conn, state) do
     now = System.system_time(:millisecond)
 
+    connect_times =
+      [now | Map.get(state, :connect_times, [])]
+      |> Enum.take_while(&(now - &1 < @connects_window_ms))
+
     Logger.info(
-      "[HyperliquidBboWS] connected reconnects=#{Map.get(state, :reconnects, 0)} backoff_was=#{state.reconnect_backoff_ms}ms"
+      "[HyperliquidBboWS] connected reconnects=#{Map.get(state, :reconnects, 0)} " <>
+        "backoff_was=#{state.reconnect_backoff_ms}ms connects_last_60s=#{length(connect_times)} " <>
+        "(HL allows 30 new conns/min per IP, all clients behind the IP combined)"
     )
 
     state =
-      %{
-        state
-        | reconnect_backoff_ms: @reconnect_initial_ms,
-          last_message_time: now
-      }
-      # Reset per-connection diagnostics; Map.merge is recompile-safe.
-      |> Map.merge(%{connected_at: now, bbo_in: 0})
+      %{state | last_message_time: now}
+      # Reset per-connection diagnostics; Map.merge is recompile-safe. The
+      # reconnect backoff is deliberately NOT reset here — only a connection
+      # that survives @stable_connection_ms earns a reset (handle_disconnect),
+      # otherwise a remote that drops us seconds after connect pins the
+      # backoff at its minimum forever. connected_at is monotonic because the
+      # backoff-reset decision depends on it — an NTP step of the wall clock
+      # must not fake a "stable" lifetime.
+      |> Map.merge(%{
+        connected_at: System.monotonic_time(:millisecond),
+        bbo_in: 0,
+        connect_times: connect_times
+      })
       |> schedule_all_timers()
 
     send(self(), :reconcile_subscriptions)
@@ -191,20 +231,32 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   end
 
   def handle_disconnect(status, state) do
-    sleep_ms = state.reconnect_backoff_ms
-    now = System.system_time(:millisecond)
     connected_at = Map.get(state, :connected_at)
-    lifetime_ms = if connected_at, do: now - connected_at, else: nil
 
-    # Full `status` (not just :reason) surfaces a WS close code/reason if the
-    # remote sent a close frame. `{:remote, :closed}` = abrupt TCP close with
-    # NO close frame — typical of an infra/rate-limit drop rather than an app
-    # error. lifetime_ms shows whether the socket dies on a fixed cadence
+    lifetime_ms =
+      if connected_at, do: System.monotonic_time(:millisecond) - connected_at, else: nil
+
+    # WebSockex always passes a connection-status map here; crash loudly if
+    # that contract ever changes rather than guessing at the shape.
+    reason = Map.get(status, :reason)
+    attempt = Map.get(status, :attempt_number, 1)
+
+    {base_ms, next_backoff_ms} = backoff_plan(state.reconnect_backoff_ms, lifetime_ms, attempt)
+    # Jitter de-syncs instances sharing an egress IP; proportional to the
+    # backoff so a healthy single reconnect stays fast, and bounded so
+    # base + jitter never exceeds @reconnect_max_ms.
+    sleep_ms = base_ms + :rand.uniform(min(base_ms, @reconnect_jitter_max_ms))
+
+    # lifetime_ms shows whether the socket dies on a fixed cadence
     # (policy/limit) or randomly (network); bbo_in>0 means data was flowing
-    # right up to the drop (so mappings are fine).
+    # right up to the drop (so mappings are fine); pending_subs>0 means we
+    # died mid-drain of the subscribe queue.
     Logger.warning(
-      "[HyperliquidBboWS] disconnect status=#{inspect(status)} lifetime_ms=#{inspect(lifetime_ms)} " <>
+      "[HyperliquidBboWS] disconnect cause=#{disconnect_cause(reason)} attempt=#{attempt} " <>
+        "lifetime_ms=#{inspect(lifetime_ms)} " <>
+        "last_frame_age_ms=#{System.system_time(:millisecond) - state.last_message_time} " <>
         "bbo_in=#{Map.get(state, :bbo_in, 0)} active_subs=#{MapSet.size(state.active_subs)} " <>
+        "pending_subs=#{:queue.len(state.pending_sub_queue)} " <>
         "reconnects=#{Map.get(state, :reconnects, 0)} backoff=#{sleep_ms}ms"
     )
 
@@ -216,14 +268,53 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
         pending_sub_queue: :queue.new(),
         coalesce_buffer: %{},
         last_emitted: %{},
-        healthcheck_failures: 0
+        healthcheck_failures: 0,
+        connected_at: nil,
+        prev_unconfirmed: MapSet.new(),
+        reconnect_backoff_ms: next_backoff_ms
       })
-      |> Map.update!(:reconnect_backoff_ms, fn ms -> min(ms * 2, @reconnect_max_ms) end)
       |> bump(:reconnects)
 
     Process.sleep(sleep_ms)
     {:reconnect, state}
   end
+
+  @doc false
+  # The reconnect schedule after a disconnect: `{sleep_base_ms, next_backoff_ms}`.
+  # `sleep_base_ms` is slept now (plus jitter); `next_backoff_ms` is stored for
+  # the disconnect after this one, so the ladder walks
+  # @reconnect_initial_ms, 2x, 4x, ... up to @reconnect_base_cap_ms. Only a
+  # dropped live connection (attempt == 1) that survived @stable_connection_ms
+  # restarts the ladder; short-lived connections and failed reconnect attempts
+  # (attempt > 1, where lifetime_ms is nil) keep climbing. Public only for
+  # tests — handle_disconnect/2 can't be exercised without a real 1s+ sleep.
+  def backoff_plan(current_backoff_ms, lifetime_ms, attempt) do
+    stable? = attempt == 1 and is_integer(lifetime_ms) and lifetime_ms >= @stable_connection_ms
+
+    base_ms =
+      if stable?,
+        do: @reconnect_initial_ms,
+        else: min(current_backoff_ms, @reconnect_base_cap_ms)
+
+    {base_ms, min(base_ms * 2, @reconnect_base_cap_ms)}
+  end
+
+  # The remote's stated reason for the drop, in words. `{:remote, :closed}` is
+  # an abrupt TCP close with NO WebSocket close frame — the remote never said
+  # why; no more detail exists on the wire. HL/CloudFront drop connections
+  # this way when per-IP limits are exceeded (10 concurrent conns, 30 new
+  # conns/min, 2000 client msgs/min, 1000 subs — aggregated over every client
+  # behind the IP), so persistent short lifetimes + this cause usually mean
+  # IP-level rate limiting rather than an app error. A graceful close frame
+  # (code + message) surfaces via the clause below.
+  defp disconnect_cause({:remote, :closed}),
+    do: "remote dropped TCP without a close frame (no reason on wire; rate-limit/infra style)"
+
+  defp disconnect_cause({:remote, code, msg}),
+    do: "remote sent close frame code=#{inspect(code)} msg=#{inspect(msg)}"
+
+  defp disconnect_cause({:local, reason}), do: "closed by our side: #{inspect(reason)}"
+  defp disconnect_cause(other), do: inspect(other)
 
   def terminate(reason, _state) do
     Logger.warning("[HyperliquidBboWS] terminate reason=#{inspect(reason)}")
@@ -464,6 +555,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     to_subscribe = MapSet.difference(desired_set, state.active_subs)
     to_unsubscribe = MapSet.difference(state.active_subs, desired_set)
 
+    warn_unconfirmed(state, to_subscribe)
+
     if MapSet.size(to_subscribe) > 0 or MapSet.size(to_unsubscribe) > 0 do
       Logger.info(
         "[HyperliquidBboWS] reconcile +sub=#{MapSet.size(to_subscribe)} -unsub=#{MapSet.size(to_unsubscribe)} desired=#{MapSet.size(desired_set)} excluded_unsupported=#{MapSet.size(unsupported)}"
@@ -489,10 +582,44 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
         last_emitted: Map.drop(state.last_emitted, dropped),
         coalesce_buffer: Map.drop(state.coalesce_buffer, dropped)
     }
+    |> Map.put(:prev_unconfirmed, to_subscribe)
     |> maybe_schedule_flush_subs()
     # Audit the FULL mapped set (not the reduced one) so a previously
     # unsupported coin that HL re-lists is detected and re-included.
     |> maybe_audit_coins(full_desired)
+  end
+
+  # Ground truth on coin support: a subscribe frame sent long ago that never
+  # got a subscriptionResponse means HL silently ignored it. The universe
+  # audit can overcount — spot *token* names pass it, but `bbo` only accepts
+  # tradeable pair names (perps like "BTC"/"xyz:GOLD", spot pairs like
+  # "@107") — so this is the check that proves a coin actually streams. Warns
+  # only about coins already awaiting confirmation on the PREVIOUS reconcile
+  # round (a coin appearing in to_subscribe for the first time hasn't even
+  # had its subscribe frame queued yet — that happens after this check), and
+  # only once the connection has outlived a couple of reconcile rounds with
+  # an empty outbound queue; during connection churn it stays silent.
+  defp warn_unconfirmed(state, to_subscribe) do
+    still_unconfirmed =
+      MapSet.intersection(to_subscribe, Map.get(state, :prev_unconfirmed, MapSet.new()))
+
+    connected_at = Map.get(state, :connected_at)
+
+    age_ms =
+      if connected_at, do: System.monotonic_time(:millisecond) - connected_at, else: 0
+
+    if age_ms > 2 * @reconcile_interval and MapSet.size(still_unconfirmed) > 0 and
+         :queue.is_empty(state.pending_sub_queue) do
+      coins = still_unconfirmed |> MapSet.to_list() |> Enum.sort()
+
+      Logger.warning(
+        "[HyperliquidBboWS] #{length(coins)} coin(s) never confirmed by HL " <>
+          "after #{div(age_ms, 1000)}s connected (subscribe sent, no subscriptionResponse): " <>
+          "#{inspect(coins)}"
+      )
+    end
+
+    :ok
   end
 
   # Run the coin-universe audit off the WS process (so the HTTP call never

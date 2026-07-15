@@ -609,6 +609,48 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert new_state.last_emitted == %{}
       assert new_state.healthcheck_failures == 0
       assert new_state.reconnect_backoff_ms == 2
+      assert new_state.prev_unconfirmed == MapSet.new()
+    end
+
+    test "short-lived connection keeps doubling the backoff and clears connected_at" do
+      state =
+        build_state(
+          connected_at: System.monotonic_time(:millisecond) - 3_000,
+          reconnect_backoff_ms: 4
+        )
+
+      {:reconnect, new_state} =
+        WebsocketScraper.handle_disconnect(%{reason: {:remote, :closed}}, state)
+
+      assert new_state.reconnect_backoff_ms == 8
+      assert new_state.connected_at == nil
+    end
+  end
+
+  # The stable-reset paths are tested through backoff_plan/3 because
+  # handle_disconnect/2 sleeps its result for real — the reset branch would
+  # block the suite for @reconnect_initial_ms (1s) plus jitter per test.
+  describe "backoff_plan/3" do
+    test "connection that lived past the stable threshold restarts the ladder" do
+      assert {1_000, 2_000} = WebsocketScraper.backoff_plan(16_000, 120_000, 1)
+    end
+
+    test "short lifetime keeps climbing the ladder" do
+      assert {4_000, 8_000} = WebsocketScraper.backoff_plan(4_000, 3_000, 1)
+    end
+
+    test "failed reconnect attempt (attempt_number > 1) never restarts the ladder" do
+      assert {4_000, 8_000} = WebsocketScraper.backoff_plan(4_000, 120_000, 2)
+    end
+
+    test "nil lifetime (no live connection was dropped) keeps climbing" do
+      assert {4_000, 8_000} = WebsocketScraper.backoff_plan(4_000, nil, 1)
+    end
+
+    test "sleep base plus max jitter never exceeds the 20s ceiling" do
+      {base, next} = WebsocketScraper.backoff_plan(1_000_000, 3_000, 1)
+      assert base + 1_000 <= 20_000
+      assert next + 1_000 <= 20_000
     end
   end
 
@@ -623,8 +665,12 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
 
       {:ok, new_state} = WebsocketScraper.handle_connect(:fake_conn, state)
 
-      assert new_state.reconnect_backoff_ms == 1_000
+      # Backoff must survive connect — it only resets after a connection
+      # proves stable (see handle_disconnect), else a flapping remote keeps
+      # the reconnect loop at full speed forever.
+      assert new_state.reconnect_backoff_ms == 16_000
       assert new_state.last_message_time > 0
+      assert [_connected_now] = new_state.connect_times
 
       for key <- [:ping, :healthcheck, :flush_coalesced, :reconcile_subscriptions] do
         assert Map.has_key?(new_state.timers, key), "missing #{key} timer"

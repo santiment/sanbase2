@@ -130,14 +130,14 @@ defmodule Sanbase.Hyperliquid.Bbo.QuarantineTest do
       {q, :noop} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, now + 1_300)
 
       {q, {:subscribe, "X"}} =
-        Quarantine.probe_tick(q, MapSet.new(), 60_000, true, now + 2_500)
+        Quarantine.probe_tick(q, MapSet.new(), 60_000, true, now + 2_600)
 
       assert Quarantine.probing_coins(q) == ["X", "OK"]
 
       # Crash 250ms after X's probe: only X (age 250 <= strike window) is
-      # struck -> convicted; OK's older probe (age 1750 > strike window) is
+      # struck -> convicted; OK's older probe (age 1850 > strike window) is
       # not blamed and stays on probation for a clean re-probe.
-      q = Quarantine.handle_crash(%{q | recent_sends: []}, MapSet.new(), now + 2_750)
+      q = Quarantine.handle_crash(%{q | recent_sends: []}, MapSet.new(), now + 2_850)
 
       assert Map.get(q.quarantined, "X") =~ "probe conviction"
       assert q.probation == ["OK"]
@@ -202,9 +202,24 @@ defmodule Sanbase.Hyperliquid.Bbo.QuarantineTest do
       # 300ms after A's probe: too soon for B.
       {q, :noop} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, 1_300)
       # A full spacing after: B starts while A still awaits its verdict.
-      {q, {:subscribe, "B"}} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, 2_500)
+      {q, {:subscribe, "B"}} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, 2_600)
 
       assert Quarantine.probing_coins(q) == ["B", "A"]
+    end
+
+    test "a crash at the spacing boundary blames only the newest probe" do
+      put_ignored("")
+      # A at t=0, B at t=1600 (spacing). Crash at t=1600: A age equals spacing
+      # and sits outside the 1500ms strike window; only B is struck.
+      q = %Quarantine{
+        probation: ["A", "B"],
+        probing: [%{coin: "B", started_ms: 1_600}, %{coin: "A", started_ms: 0}]
+      }
+
+      q = Quarantine.handle_crash(%{q | recent_sends: []}, MapSet.new(), 1_600)
+
+      assert q.probe_strikes == %{"B" => 1}
+      assert q.probation == ["A", "B"]
     end
   end
 

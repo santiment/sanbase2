@@ -135,6 +135,20 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert decoded["ask_volume"] == nil
     end
 
+    test "malformed side is rejected atomically (no partial price/volume export)" do
+      state = build_state(slug_map: %{"BTC" => ["bitcoin"]})
+
+      # Parseable price but garbage volume: the whole bid side must be nil,
+      # and since the ask is missing too, nothing is exported.
+      {:ok, _state} =
+        WebsocketScraper.handle_frame(
+          bbo_frame("BTC", 1_700_000_000_000, %{"px" => "62000", "sz" => "bad", "n" => 1}, nil),
+          state
+        )
+
+      assert drain_topic() == []
+    end
+
     test "both sides null is skipped" do
       state = build_state(slug_map: %{"BTC" => ["bitcoin"]})
 
@@ -1004,6 +1018,45 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
              }
 
       assert new_state.quarantine.probation == ["Y"]
+    end
+
+    test "audit exclusion triggers an immediate reconcile and drops the queued subscribe" do
+      state = build_state(pending_sub_queue: :queue.in({"subscribe", "BTC"}, :queue.new()))
+
+      result = %{desired: 1, universe: 10, unsupported: ["BTC"], reasons: %{"BTC" => "r"}}
+      {:ok, state} = WebsocketScraper.handle_info({:audit_result, result}, state)
+
+      # New exclusions don't wait for the 60s reconcile tick.
+      assert_receive :reconcile_subscriptions
+
+      # The already-queued frame is dropped at send time ({:ok, _}, no reply)
+      # and never recorded as sent.
+      assert {:ok, new_state} = WebsocketScraper.handle_info(:flush_subs, state)
+      assert :queue.is_empty(new_state.pending_sub_queue)
+      assert new_state.quarantine.recent_sends == []
+    end
+
+    test "probation drops a queued bulk subscribe but lets the probe frame through" do
+      # Bulk-queued subscribe for a coin that got probated meanwhile: dropped.
+      state =
+        build_state(
+          pending_sub_queue: :queue.in({"subscribe", "X"}, :queue.new()),
+          probation: ["X"]
+        )
+
+      assert {:ok, new_state} = WebsocketScraper.handle_info(:flush_subs, state)
+      assert new_state.quarantine.recent_sends == []
+
+      # The probe's own frame (coin marked in-flight) is sent normally.
+      state =
+        build_state(
+          pending_sub_queue: :queue.in({"subscribe", "X"}, :queue.new()),
+          probation: ["X"],
+          probing: [%{coin: "X", started_ms: System.system_time(:millisecond)}]
+        )
+
+      assert {:reply, {:text, _}, new_state} = WebsocketScraper.handle_info(:flush_subs, state)
+      assert [%{coin: "X"}] = new_state.quarantine.recent_sends
     end
 
     test "failed audit keeps the previous verdicts" do

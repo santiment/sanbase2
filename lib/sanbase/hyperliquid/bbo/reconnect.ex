@@ -34,6 +34,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Reconnect do
   @connects_window_ms 60_000
 
   @doc "The backoff a fresh process starts from."
+  @spec initial_backoff_ms() :: pos_integer()
   def initial_backoff_ms(), do: @initial_ms
 
   @doc ~s"""
@@ -45,6 +46,8 @@ defmodule Sanbase.Hyperliquid.Bbo.Reconnect do
   the ladder; short-lived connections and failed reconnect attempts
   (attempt > 1, where lifetime_ms is nil) keep climbing.
   """
+  @spec plan(pos_integer(), non_neg_integer() | nil, pos_integer()) ::
+          {pos_integer(), pos_integer()}
   def plan(current_backoff_ms, lifetime_ms, attempt) do
     stable? = attempt == 1 and is_integer(lifetime_ms) and lifetime_ms >= @stable_connection_ms
 
@@ -61,6 +64,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Reconnect do
   a healthy single reconnect stays fast, and bounded so base + jitter never
   exceeds #{@max_ms}ms.
   """
+  @spec jitter_ms(pos_integer()) :: pos_integer()
   def jitter_ms(base_ms), do: :rand.uniform(min(base_ms, @jitter_max_ms))
 
   @doc ~s"""
@@ -68,6 +72,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Reconnect do
   #{@connects_window_ms}ms window — the count is compared against HL's
   30 new connections/min/IP limit in the connect log.
   """
+  @spec track_connect([integer()], integer()) :: [integer()]
   def track_connect(connect_times, now) do
     [now | connect_times]
     |> Enum.take_while(&(now - &1 < @connects_window_ms))
@@ -82,6 +87,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Reconnect do
   IP), so persistent short lifetimes with this cause usually mean IP-level
   rate limiting rather than an app error.
   """
+  @spec describe_cause(term()) :: String.t()
   def describe_cause({:remote, :closed}),
     do: "remote dropped TCP without a close frame (no reason on wire; rate-limit/infra style)"
 

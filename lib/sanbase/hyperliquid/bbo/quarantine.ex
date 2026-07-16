@@ -1,4 +1,7 @@
 defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
+  # Declared before @moduledoc so the docs can interpolate it.
+  @probe_strikes_to_convict 2
+
   @moduledoc ~s"""
   Coin discipline for the Hyperliquid BBO scraper: which coins must not be
   subscribed, why, and the probation → probe → verdict workflow that decides
@@ -19,7 +22,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
       (unknown to HL, spot-token-only, ...). Replaced wholesale via
       `apply_audit/2` so a coin HL re-lists recovers automatically.
     * `quarantined` — probe convictions: the coin's solo subscribe killed the
-      connection `#{2}` times, or HL silently ignores it. Never
+      connection `#{@probe_strikes_to_convict}` times, or HL silently ignores it. Never
       auto-refreshed; a process restart clears it.
     * `ignored_coins/0` — operator escape hatch via the
       `HYPERLIQUID_IGNORED_COINS` env var (comma-separated coin names).
@@ -36,9 +39,9 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   excluded from bulk subscribing and re-tried by probes (`probe_tick/5`) on a
   settled connection. Probes are PIPELINED: a new probe starts every
   `@probe_spacing_ms` while earlier ones await their `@probe_verdict_ms`
-  verdicts (~1 coin per 1.5s, a typical 5-8 coin sweep drains in ~10s).
-  Attribution stays unambiguous because the strike window never exceeds the
-  spacing, so a crash implicates at most one in-flight probe:
+  verdicts (~1 coin per 1.6s, a typical 5-8 coin sweep drains in ~10s).
+  Attribution stays unambiguous because the strike window is strictly smaller
+  than the spacing, so a crash implicates at most one in-flight probe:
 
     * crash within `@probe_strike_window_ms` of the probe → a strike; at
       `@probe_strikes_to_convict` strikes the coin is quarantined (two, so a
@@ -73,17 +76,17 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   # strike; later crashes are infra noise (the coin keeps its probation
   # spot, no strike). Kill lag is typically 200-300ms but jitters higher —
   # observed kills near 500ms went unattributed and left strike counts stuck
-  # below conviction, so the window carries generous margin. Equal to
-  # @probe_spacing_ms so a crash implicates AT MOST ONE in-flight probe.
+  # below conviction, so the window carries generous margin. Strictly less
+  # than @probe_spacing_ms so a crash at the exact spacing boundary cannot
+  # blame two in-flight probes (ages 0 and spacing both fit a `<= spacing`
+  # window).
   @probe_strike_window_ms 1_500
   # Minimum gap between consecutive probe starts. Probes are pipelined — a
   # new one starts every spacing while earlier ones await verdicts — so a
-  # probation sweep drains at ~1 coin per 1.5s (typical 5-8 coin sweep in
-  # ~10s). Must not be smaller than @probe_strike_window_ms, else a crash
-  # could implicate several probes at once.
-  @probe_spacing_ms 1_500
-  # Probe crashes before conviction; see moduledoc.
-  @probe_strikes_to_convict 2
+  # probation sweep drains at ~1 coin per 1.6s (typical 5-8 coin sweep in
+  # ~10s). Must exceed @probe_strike_window_ms, else a crash could implicate
+  # several probes at once.
+  @probe_spacing_ms 1_600
   # Don't start a probe until the connection has been up this long with an
   # empty outbound queue, so the verdict isn't polluted by startup churn.
   @probe_min_uptime_ms 10_000
@@ -162,9 +165,9 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
 
     # A probe's strike/verdict clock restarts when its frame actually reaches
     # the wire. started_ms is first set at QUEUE time, but the flush pacing
-    # can burn up to 200ms before the send — added to the 200-300ms kill lag
-    # that eats the whole 500ms strike window, and real kills would go
-    # unattributed (strikes stuck below conviction forever).
+    # can burn up to 200ms before the send — added to the kill lag that can
+    # approach the strike window, and real kills would go unattributed
+    # (strikes stuck below conviction forever).
     probing =
       Enum.map(q.probing, fn
         %{coin: ^coin} = probe -> %{probe | started_ms: now}

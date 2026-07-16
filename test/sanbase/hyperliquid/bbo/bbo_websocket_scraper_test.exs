@@ -57,7 +57,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
   end
 
   defp sub_send(coin, ms_ago) do
-    %{coin: coin, slugs: [], sent_at_ms: System.system_time(:millisecond) - ms_ago}
+    %{coin: coin, slugs: [], sent_at_ms: System.monotonic_time(:millisecond) - ms_ago}
   end
 
   defp side(px, sz), do: %{"px" => to_string(px), "sz" => to_string(sz), "n" => 1}
@@ -799,7 +799,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
     end
 
     test "probe survival with confirmation clears the coin back to normal" do
-      now = System.system_time(:millisecond)
+      now = System.monotonic_time(:millisecond)
 
       state =
         build_state(
@@ -818,7 +818,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
     end
 
     test "probe survival without confirmation quarantines the silently-ignored coin" do
-      now = System.system_time(:millisecond)
+      now = System.monotonic_time(:millisecond)
 
       state =
         build_state(
@@ -834,7 +834,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
     end
 
     test "crash during probe strikes; second strike convicts and quarantines" do
-      now = System.system_time(:millisecond)
+      now = System.monotonic_time(:millisecond)
 
       state =
         build_state(
@@ -855,7 +855,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
         state
         | quarantine: %{
             state.quarantine
-            | probing: [%{coin: "X", started_ms: System.system_time(:millisecond) - 250}]
+            | probing: [%{coin: "X", started_ms: System.monotonic_time(:millisecond) - 250}]
           }
       }
 
@@ -867,7 +867,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
     end
 
     test "crash long after the probe subscribe is not attributed to it" do
-      now = System.system_time(:millisecond)
+      now = System.monotonic_time(:millisecond)
 
       state =
         build_state(
@@ -922,7 +922,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       state =
         build_state(
           probation: ["BTC"],
-          probing: [%{coin: "BTC", started_ms: System.system_time(:millisecond)}],
+          probing: [%{coin: "BTC", started_ms: System.monotonic_time(:millisecond)}],
           active_subs: MapSet.new(["BTC"])
         )
 
@@ -942,7 +942,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       state =
         build_state(
           probation: ["X"],
-          probing: [%{coin: "X", started_ms: System.system_time(:millisecond)}]
+          probing: [%{coin: "X", started_ms: System.monotonic_time(:millisecond)}]
         )
 
       {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
@@ -1001,7 +1001,10 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
     @describetag capture_log: true
 
     test "audit_result replaces audit_excluded and prunes probation" do
-      state = build_state(probation: ["BAD", "Y"], audit_excluded: %{"OLD" => "gone"})
+      ref = make_ref()
+
+      state =
+        build_state(probation: ["BAD", "Y"], audit_excluded: %{"OLD" => "gone"}, audit_ref: ref)
 
       result = %{
         desired: 3,
@@ -1010,7 +1013,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
         reasons: %{"BAD" => "only a spot token on HL (no perp market)"}
       }
 
-      {:ok, new_state} = WebsocketScraper.handle_info({:audit_result, result}, state)
+      {:ok, new_state} = WebsocketScraper.handle_info({:audit_result, ref, result}, state)
 
       # Replaced, not merged — "OLD" recovered; "BAD" left probation too.
       assert new_state.quarantine.audit_excluded == %{
@@ -1021,10 +1024,16 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
     end
 
     test "audit exclusion triggers an immediate reconcile and drops the queued subscribe" do
-      state = build_state(pending_sub_queue: :queue.in({"subscribe", "BTC"}, :queue.new()))
+      ref = make_ref()
+
+      state =
+        build_state(
+          pending_sub_queue: :queue.in({"subscribe", "BTC"}, :queue.new()),
+          audit_ref: ref
+        )
 
       result = %{desired: 1, universe: 10, unsupported: ["BTC"], reasons: %{"BTC" => "r"}}
-      {:ok, state} = WebsocketScraper.handle_info({:audit_result, result}, state)
+      {:ok, state} = WebsocketScraper.handle_info({:audit_result, ref, result}, state)
 
       # New exclusions don't wait for the 60s reconcile tick.
       assert_receive :reconcile_subscriptions
@@ -1034,6 +1043,39 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert {:ok, new_state} = WebsocketScraper.handle_info(:flush_subs, state)
       assert :queue.is_empty(new_state.pending_sub_queue)
       assert new_state.quarantine.recent_sends == []
+    end
+
+    test "audit recovery (empty reasons) also triggers an immediate reconcile" do
+      ref = make_ref()
+      state = build_state(audit_excluded: %{"BTC" => "r"}, audit_ref: ref)
+
+      result = %{desired: 1, universe: 10, unsupported: [], reasons: %{}}
+      {:ok, new_state} = WebsocketScraper.handle_info({:audit_result, ref, result}, state)
+
+      assert_receive :reconcile_subscriptions
+      assert new_state.quarantine.audit_excluded == %{}
+    end
+
+    test "unchanged audit exclusion set does not trigger reconcile" do
+      ref = make_ref()
+      state = build_state(audit_excluded: %{"BTC" => "r"}, audit_ref: ref)
+
+      result = %{desired: 1, universe: 10, unsupported: ["BTC"], reasons: %{"BTC" => "r"}}
+      {:ok, _} = WebsocketScraper.handle_info({:audit_result, ref, result}, state)
+
+      refute_receive :reconcile_subscriptions, 50
+    end
+
+    test "a stale audit result (superseded by a newer audit) is ignored" do
+      state = build_state(audit_excluded: %{"KEEP" => "r"}, audit_ref: make_ref())
+
+      stale_result = %{desired: 1, universe: 10, unsupported: [], reasons: %{}}
+
+      {:ok, new_state} =
+        WebsocketScraper.handle_info({:audit_result, make_ref(), stale_result}, state)
+
+      assert new_state.quarantine.audit_excluded == %{"KEEP" => "r"}
+      refute_receive :reconcile_subscriptions, 50
     end
 
     test "probation drops a queued bulk subscribe but lets the probe frame through" do
@@ -1052,7 +1094,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
         build_state(
           pending_sub_queue: :queue.in({"subscribe", "X"}, :queue.new()),
           probation: ["X"],
-          probing: [%{coin: "X", started_ms: System.system_time(:millisecond)}]
+          probing: [%{coin: "X", started_ms: System.monotonic_time(:millisecond)}]
         )
 
       assert {:reply, {:text, _}, new_state} = WebsocketScraper.handle_info(:flush_subs, state)
@@ -1060,10 +1102,11 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
     end
 
     test "failed audit keeps the previous verdicts" do
-      state = build_state(audit_excluded: %{"BAD" => "reason"})
+      ref = make_ref()
+      state = build_state(audit_excluded: %{"BAD" => "reason"}, audit_ref: ref)
 
       {:ok, new_state} =
-        WebsocketScraper.handle_info({:audit_result, {:error, :nxdomain}}, state)
+        WebsocketScraper.handle_info({:audit_result, ref, {:error, :nxdomain}}, state)
 
       assert new_state.quarantine.audit_excluded == %{"BAD" => "reason"}
     end
@@ -1090,7 +1133,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
         WebsocketScraper.handle_connect(:fake_conn, build_state(last_audit_at: recent))
 
       assert new_state.last_audit_at == recent
-      refute_receive {:audit_result, _}, 100
+      refute_receive {:audit_result, _, _}, 100
     end
 
     test "connect starts an audit when the gap has passed" do
@@ -1102,7 +1145,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
           WebsocketScraper.handle_connect(:fake_conn, build_state(last_audit_at: stale))
 
         assert new_state.last_audit_at > stale
-        assert_receive {:audit_result, %{reasons: %{}}}, 1_000
+        assert_receive {:audit_result, _ref, %{reasons: %{}}}, 1_000
       end
     end
 
@@ -1111,7 +1154,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
 
       assert Map.get(new_state, :last_audit_at, 0) == 0
-      refute_receive {:audit_result, _}, 100
+      refute_receive {:audit_result, _, _}, 100
     end
   end
 

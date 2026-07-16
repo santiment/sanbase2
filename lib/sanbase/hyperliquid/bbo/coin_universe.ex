@@ -45,6 +45,7 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
   against HL's live universe (a synchronous HTTP call). Off in tests so the
   suite never reaches out to Hyperliquid.
   """
+  @spec verify_on_write?() :: boolean()
   def verify_on_write?() do
     Config.module_get(__MODULE__, :verify_on_write?)
     |> to_string()
@@ -68,6 +69,13 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
   reasons: %{coin => reason}}`, or `{:error, reason}` if the universe could
   not be fetched.
   """
+  @type audit_ok :: %{
+          desired: non_neg_integer(),
+          universe: non_neg_integer(),
+          unsupported: [String.t()],
+          reasons: %{optional(String.t()) => String.t()}
+        }
+  @spec audit(MapSet.t(String.t()) | nil) :: audit_ok() | {:error, term()}
   def audit(desired \\ nil) do
     desired = MapSet.to_list(desired || mapped_coins())
 

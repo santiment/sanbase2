@@ -53,8 +53,8 @@ defmodule Sanbase.Project.SourceSlugMapping do
         :ok ->
           changeset
 
-        {:unsupported, suggestions} ->
-          add_error(changeset, :slug, unsupported_coin_message(slug, suggestions))
+        {:unsupported, reason, suggestions} ->
+          add_error(changeset, :slug, unsupported_coin_message(slug, reason, suggestions))
 
         :unverified ->
           Logger.warning(
@@ -68,12 +68,23 @@ defmodule Sanbase.Project.SourceSlugMapping do
     end
   end
 
-  defp unsupported_coin_message(slug, []) do
+  defp unsupported_coin_message(slug, :spot_token_only, []) do
+    "\"#{slug}\" exists on Hyperliquid only as a spot token — it has no perp market " <>
+      "and no spot pair, so the bbo stream cannot carry it"
+  end
+
+  defp unsupported_coin_message(slug, :spot_token_only, pairs) do
+    "\"#{slug}\" exists on Hyperliquid only as a spot token (no perp market); " <>
+      "the bbo stream needs a tradeable pair name — map it as: #{Enum.join(pairs, ", ")}"
+  end
+
+  defp unsupported_coin_message(slug, :not_in_universe, []) do
     "\"#{slug}\" is not a coin in the Hyperliquid universe"
   end
 
-  defp unsupported_coin_message(slug, suggestions) do
-    unsupported_coin_message(slug, []) <> " (did you mean: #{Enum.join(suggestions, ", ")}?)"
+  defp unsupported_coin_message(slug, :not_in_universe, suggestions) do
+    unsupported_coin_message(slug, :not_in_universe, []) <>
+      " (did you mean: #{Enum.join(suggestions, ", ")}?)"
   end
 
   defp validate_exactly_one_asset_reference(changeset) do

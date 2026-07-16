@@ -8,6 +8,14 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
   stocks, commodities, FX and other RWAs live (namespaced like `"xyz:GOLD"`) —
   and spot. No single endpoint returns all of them, so we list the dexs and
   union one `meta` request per dex with `spotMeta`.
+
+  A name is valid for the `bbo` channel only if it is a *tradeable pair*: a
+  perp name (`"BTC"`, `"xyz:GOLD"`) or a spot pair name (`"@107"`,
+  `"PURR/USDC"`). Spot *token* names (`spotMeta.tokens[].name`, e.g. a bare
+  `"ANSEM"`) are deliberately NOT part of the valid set — a token with no perp
+  market cannot be streamed under its bare name, and subscribing it is at best
+  silently ignored. Such coins are flagged with a dedicated reason and, when
+  the token has spot pairs, the pair names to use instead.
   """
 
   require Logger
@@ -47,33 +55,45 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
 
   @doc ~s"""
   Cross-check the coins we would subscribe to against Hyperliquid's live
-  universe (every perp dex plus spot). Logs and returns every coin HL does not
-  know about — the authoritative "bad coin" list. With no argument it loads the
-  `#{@source}` mappings itself, so it's safe from a remote console:
+  universe (every perp dex plus spot). Logs and returns every coin that cannot
+  be streamed over `bbo`, each with the reason — either not known to HL at
+  all, or existing only as a spot token with no perp market (in which case the
+  reason names the spot pair(s) to map instead, when any exist). With no
+  argument it loads the `#{@source}` mappings itself, so it's safe from a
+  remote console:
 
       Sanbase.Hyperliquid.Bbo.CoinUniverse.audit()
 
-  Returns `%{desired: n, universe: n, unsupported: [coin, ...]}`, or
-  `{:error, reason}` if the universe could not be fetched.
+  Returns `%{desired: n, universe: n, unsupported: [coin, ...],
+  reasons: %{coin => reason}}`, or `{:error, reason}` if the universe could
+  not be fetched.
   """
   def audit(desired \\ nil) do
     desired = MapSet.to_list(desired || mapped_coins())
 
     case fetch() do
-      {:ok, universe} ->
-        unsupported = desired |> Enum.reject(&MapSet.member?(universe, &1)) |> Enum.sort()
+      {:ok, %{valid: valid} = universe} ->
+        unsupported = desired |> Enum.reject(&MapSet.member?(valid, &1)) |> Enum.sort()
+        reasons = Map.new(unsupported, fn coin -> {coin, unsupported_reason(coin, universe)} end)
 
         if unsupported == [] do
           Logger.info(
-            "[HyperliquidCoinUniverse] audit OK — all #{length(desired)} coins present (universe=#{MapSet.size(universe)})"
+            "[HyperliquidCoinUniverse] audit OK — all #{length(desired)} coins subscribable (universe=#{MapSet.size(valid)})"
           )
         else
+          details = Enum.map_join(unsupported, "; ", fn coin -> "#{coin}: #{reasons[coin]}" end)
+
           Logger.warning(
-            "[HyperliquidCoinUniverse] #{length(unsupported)}/#{length(desired)} coin(s) NOT in HL universe (universe=#{MapSet.size(universe)}): #{inspect(unsupported)}"
+            "[HyperliquidCoinUniverse] #{length(unsupported)}/#{length(desired)} coin(s) not subscribable over bbo (universe=#{MapSet.size(valid)}): #{details}"
           )
         end
 
-        %{desired: length(desired), universe: MapSet.size(universe), unsupported: unsupported}
+        %{
+          desired: length(desired),
+          universe: MapSet.size(valid),
+          unsupported: unsupported,
+          reasons: reasons
+        }
 
       {:error, reason} = error ->
         Logger.warning(
@@ -84,27 +104,56 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
     end
   end
 
+  defp unsupported_reason(coin, %{spot_tokens: spot_tokens, token_pairs: token_pairs}) do
+    if MapSet.member?(spot_tokens, coin) do
+      case Map.get(token_pairs, coin, []) do
+        [] ->
+          "only a spot token on HL (no perp market, no spot pair) — bbo cannot stream it"
+
+        pairs ->
+          "only a spot token on HL (no perp market) — bbo needs a pair name, " <>
+            "map it as: #{Enum.join(Enum.take(pairs, @suggestion_limit), ", ")}"
+      end
+    else
+      "not in Hyperliquid's universe"
+    end
+  end
+
   @doc ~s"""
   Verify a single coin against Hyperliquid's live universe, bounded by
   `timeout` ms. Meant for the mapping-creation path.
 
   Returns:
-    * `:ok` — coin exists in the HL universe.
-    * `{:unsupported, suggestions}` — HL was reached and does not know this
-      coin; `suggestions` are the closest known names (Jaro), possibly empty.
+    * `:ok` — coin is a bbo-subscribable name (perp or spot pair).
+    * `{:unsupported, :spot_token_only, suggestions}` — HL knows the name only
+      as a spot token with no perp market; `suggestions` are the spot pair
+      names to map instead (possibly empty).
+    * `{:unsupported, :not_in_universe, suggestions}` — HL does not know this
+      name at all; `suggestions` are the closest known names (Jaro), possibly
+      empty.
     * `:unverified` — HL could not be reached in time (timeout / fetch error);
       caller should allow the write but warn.
   """
   @spec coin_supported?(String.t(), non_neg_integer()) ::
-          :ok | {:unsupported, [String.t()]} | :unverified
+          :ok
+          | {:unsupported, :spot_token_only | :not_in_universe, [String.t()]}
+          | :unverified
   def coin_supported?(coin, timeout \\ @verify_timeout) when is_binary(coin) do
     task = Task.async(fn -> fetch() end)
 
     case Task.yield(task, timeout) || Task.shutdown(task) do
-      {:ok, {:ok, universe}} ->
-        if MapSet.member?(universe, coin),
-          do: :ok,
-          else: {:unsupported, closest_coins(coin, universe)}
+      {:ok, {:ok, %{valid: valid, spot_tokens: spot_tokens, token_pairs: token_pairs}}} ->
+        cond do
+          MapSet.member?(valid, coin) ->
+            :ok
+
+          MapSet.member?(spot_tokens, coin) ->
+            pairs = Map.get(token_pairs, coin, []) |> Enum.take(@suggestion_limit)
+            {:unsupported, :spot_token_only, pairs}
+
+          true ->
+            {:unsupported, :not_in_universe, closest_coins(coin, valid)}
+        end
 
       _ ->
         :unverified
@@ -138,9 +187,15 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
     |> Enum.map(fn {candidate, _distance} -> candidate end)
   end
 
-  # The full set of coins the bbo channel accepts, unioned across every perp dex
-  # (primary + each builder dex from `perpDexs`, which lists the primary as
-  # `null` and builder dexs as maps with a "name") and spot.
+  # The categorized universe:
+  #   valid       — names the bbo channel accepts: perp names from every dex
+  #                 (primary + each builder dex from `perpDexs`, which lists
+  #                 the primary as `null` and builder dexs as maps with a
+  #                 "name") plus spot PAIR names ("@107", "PURR/USDC").
+  #   spot_tokens — spot token names ("PURR"); NOT valid for bbo, tracked so
+  #                 a token-only mapping gets a precise reason.
+  #   token_pairs — %{token name => [spot pair names it is the base of]}, for
+  #                 "map it as @107 instead" suggestions.
   #
   # EVERY request must succeed — a partial fetch would omit part of the universe
   # and wrongly flag real coins as unsupported (blocking valid mapping creates
@@ -154,6 +209,8 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
           _ -> %{type: "meta"}
         end)
 
+      # Order is preserved by Task.async_stream, so results align with
+      # [spotMeta | meta_requests].
       results =
         [%{type: "spotMeta"} | meta_requests]
         |> Task.async_stream(&info_request/1,
@@ -167,7 +224,15 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
         end)
 
       if Enum.all?(results, &match?({:ok, _}, &1)) do
-        {:ok, results |> Enum.flat_map(fn {:ok, body} -> coin_names(body) end) |> MapSet.new()}
+        [{:ok, spot_body} | meta_oks] = results
+        perp_names = Enum.flat_map(meta_oks, fn {:ok, body} -> universe_names(body) end)
+
+        {:ok,
+         %{
+           valid: MapSet.new(perp_names ++ universe_names(spot_body)),
+           spot_tokens: MapSet.new(token_names(spot_body)),
+           token_pairs: token_pair_map(spot_body)
+         }}
       else
         {:error, :incomplete_universe}
       end
@@ -189,16 +254,46 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
     end
   end
 
-  # Coin names in a `meta`/`spotMeta` body: `universe[].name` (perp or spot) plus
-  # spot `tokens[].name`.
-  defp coin_names(body) when is_map(body) do
-    Enum.flat_map(["universe", "tokens"], fn key ->
-      case Map.get(body, key) do
-        list when is_list(list) -> for %{"name" => name} <- list, is_binary(name), do: name
-        _ -> []
-      end
+  # Tradeable pair names in a `meta`/`spotMeta` body: `universe[].name`
+  # (perp names or spot pair names, depending on the endpoint).
+  defp universe_names(body), do: names_at(body, "universe")
+
+  # Spot token names (`spotMeta.tokens[].name`) — deliberately kept separate
+  # from the valid set; see the moduledoc.
+  defp token_names(body), do: names_at(body, "tokens")
+
+  defp names_at(body, key) when is_map(body) do
+    case Map.get(body, key) do
+      list when is_list(list) -> for %{"name" => name} <- list, is_binary(name), do: name
+      _ -> []
+    end
+  end
+
+  defp names_at(_, _), do: []
+
+  # %{token name => [spot pair names]} for pairs where the token is the BASE
+  # (`universe[].tokens` is `[base_index, quote_index]`), so an unsupported
+  # bare token can be reported with the pair name(s) to map instead.
+  defp token_pair_map(body) when is_map(body) do
+    index_to_name =
+      for %{"name" => name, "index" => index} <- Map.get(body, "tokens", []) |> List.wrap(),
+          is_binary(name) and is_integer(index),
+          into: %{},
+          do: {index, name}
+
+    Map.get(body, "universe", [])
+    |> List.wrap()
+    |> Enum.reduce(%{}, fn
+      %{"name" => pair, "tokens" => [base, _quote]}, acc when is_binary(pair) ->
+        case Map.get(index_to_name, base) do
+          nil -> acc
+          token -> Map.update(acc, token, [pair], &(&1 ++ [pair]))
+        end
+
+      _, acc ->
+        acc
     end)
   end
 
-  defp coin_names(_), do: []
+  defp token_pair_map(_), do: %{}
 end

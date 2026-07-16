@@ -67,8 +67,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
      step 1.
 
   7. **Probes (`:probe_next`, every 500ms).** `Quarantine.probe_tick/5`
-     re-tries probation coins on a settled connection — pipelined, ~2
-     coins/s — and tells this process which subscribe frame to queue.
+     re-tries probation coins on a settled connection — pipelined, paced by
+     Quarantine's spacing — and tells this process which subscribe frame to
+     queue.
   """
 
   use WebSockex
@@ -562,6 +563,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     # (those are re-tried by the probe worker, never by the bulk subscribe).
     desired_set =
       full_desired
+      |> MapSet.put("ANSEM")
       |> MapSet.difference(MapSet.new(Map.keys(excluded)))
       |> MapSet.difference(MapSet.new(probation))
 

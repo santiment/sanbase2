@@ -68,3 +68,11 @@ config :sanbase, Sanbase.Hyperliquid.Bbo.WebsocketScraper,
 
 config :sanbase, Sanbase.Hyperliquid.Bbo.CoinUniverse,
   verify_on_write?: {:system, "HYPERLIQUID_VERIFY_COINS_ON_WRITE", "true"}
+
+# ignored_coins: comma-separated coin names the BBO scraper must never
+# subscribe to — operator escape hatch for coins whose subscribe kills the
+# connection. enabled?: toggles the probation/probe/conviction workflow
+# (the ignore list and the universe audit stay active regardless).
+config :sanbase, Sanbase.Hyperliquid.Bbo.Quarantine,
+  ignored_coins: {:system, "HYPERLIQUID_IGNORED_COINS", ""},
+  enabled?: {:system, "HYPERLIQUID_QUARANTINE_ENABLED", "true"}

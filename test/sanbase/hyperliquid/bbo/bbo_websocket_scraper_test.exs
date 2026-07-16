@@ -1,12 +1,24 @@
 defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
   use Sanbase.DataCase, async: false
 
+  import Mock
   import Sanbase.Factory
 
+  alias Sanbase.Hyperliquid.Bbo.Quarantine
   alias Sanbase.Hyperliquid.Bbo.WebsocketScraper
 
   @topic "hyperliquid_bbo_prices"
   @exporter :hyperliquid_bbo_exporter
+
+  # Overrides for these keys build the Quarantine struct inside the state.
+  @quarantine_keys [
+    :probation,
+    :probing,
+    :probe_strikes,
+    :quarantined,
+    :audit_excluded,
+    :recent_sends
+  ]
 
   setup do
     Sanbase.InMemoryKafka.Producer.clear_state()
@@ -26,6 +38,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
   end
 
   defp build_state(overrides \\ []) do
+    {q_overrides, rest} = overrides |> Map.new() |> Map.split(@quarantine_keys)
+
     %{
       active_subs: MapSet.new(),
       slug_map: %{},
@@ -36,9 +50,14 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       last_message_time: System.system_time(:millisecond),
       healthcheck_failures: 0,
       coalesce_window_ms: 1000,
-      timers: %{}
+      timers: %{},
+      quarantine: struct!(Quarantine, q_overrides)
     }
-    |> Map.merge(Map.new(overrides))
+    |> Map.merge(rest)
+  end
+
+  defp sub_send(coin, ms_ago) do
+    %{coin: coin, slugs: [], sent_at_ms: System.system_time(:millisecond) - ms_ago}
   end
 
   defp side(px, sz), do: %{"px" => to_string(px), "sz" => to_string(sz), "n" => 1}
@@ -434,13 +453,10 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
 
       assert state.slug_map == %{"BTC" => ["bitcoin"], "ETH" => ["ethereum"]}
 
-      queued =
+      methods_by_coin =
         state.pending_sub_queue
         |> :queue.to_list()
-        |> Enum.map(fn {:text, json} -> Jason.decode!(json) end)
-
-      methods_by_coin =
-        Enum.into(queued, %{}, fn %{"method" => m, "subscription" => %{"coin" => c}} -> {c, m} end)
+        |> Enum.into(%{}, fn {method, coin} -> {coin, method} end)
 
       assert methods_by_coin == %{"ETH" => "subscribe", "OLD" => "unsubscribe"}
     end
@@ -474,13 +490,17 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
   end
 
   describe "flush_subs" do
-    test "drains one queued frame per tick via reply" do
-      frame = {:text, Jason.encode!(%{"foo" => 1})}
-      queue = :queue.in(frame, :queue.new())
+    test "drains one queued entry per tick, replying with the built frame" do
+      queue = :queue.in({"subscribe", "BTC"}, :queue.new())
       state = build_state(pending_sub_queue: queue)
 
-      assert {:reply, ^frame, new_state} =
+      assert {:reply, {:text, json}, new_state} =
                WebsocketScraper.handle_info(:flush_subs, state)
+
+      assert Jason.decode!(json) == %{
+               "method" => "subscribe",
+               "subscription" => %{"type" => "bbo", "coin" => "BTC"}
+             }
 
       assert :queue.is_empty(new_state.pending_sub_queue)
     end
@@ -489,15 +509,57 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       state = build_state()
       assert {:ok, _new_state} = WebsocketScraper.handle_info(:flush_subs, state)
     end
+
+    test "records sent subscribes in the quarantine send log, newest first" do
+      queue =
+        Enum.reduce(
+          [
+            {"subscribe", "A"},
+            {"subscribe", "B"},
+            {"unsubscribe", "SKIP"},
+            {"subscribe", "C"},
+            {"subscribe", "D"},
+            {"subscribe", "E"},
+            {"subscribe", "F"}
+          ],
+          :queue.new(),
+          &:queue.in/2
+        )
+
+      state = build_state(pending_sub_queue: queue, slug_map: %{"A" => ["a-slug"]})
+
+      state =
+        Enum.reduce(1..7, state, fn _, acc ->
+          {:reply, _frame, acc} = WebsocketScraper.handle_info(:flush_subs, acc)
+          acc
+        end)
+
+      recent = state.quarantine.recent_sends
+      assert Enum.map(recent, & &1.coin) == ["F", "E", "D", "C", "B", "A"]
+      assert Enum.all?(recent, &is_integer(&1.sent_at_ms))
+
+      # Slugs resolved from slug_map at send time; unmapped coins get [].
+      assert Enum.map(recent, & &1.slugs) == [[], [], [], [], [], ["a-slug"]]
+    end
+
+    test "the send log stores slugs from slug_map at send time" do
+      queue = :queue.in({"subscribe", "BTC"}, :queue.new())
+
+      state =
+        build_state(pending_sub_queue: queue, slug_map: %{"BTC" => ["bitcoin", "btc-alias"]})
+
+      {:reply, _frame, new_state} = WebsocketScraper.handle_info(:flush_subs, state)
+
+      assert [%{coin: "BTC", slugs: ["bitcoin", "btc-alias"]}] = new_state.quarantine.recent_sends
+    end
   end
 
   describe "flush_subs scheduling" do
     test "draining last frame stops the timer (no re-arm)" do
-      frame = {:text, "x"}
-      queue = :queue.in(frame, :queue.new())
+      queue = :queue.in({"subscribe", "x"}, :queue.new())
       state = build_state(pending_sub_queue: queue, timers: %{flush_subs: make_ref()})
 
-      assert {:reply, ^frame, new_state} =
+      assert {:reply, {:text, _}, new_state} =
                WebsocketScraper.handle_info(:flush_subs, state)
 
       refute Map.has_key?(new_state.timers, :flush_subs)
@@ -505,13 +567,14 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
     end
 
     test "draining when more remain re-arms the timer" do
-      frame_a = {:text, "a"}
-      frame_b = {:text, "b"}
-      queue = :queue.from_list([frame_a, frame_b])
+      queue = :queue.from_list([{"subscribe", "a"}, {"unsubscribe", "b"}])
       state = build_state(pending_sub_queue: queue, timers: %{flush_subs: make_ref()})
 
-      assert {:reply, ^frame_a, new_state} =
+      assert {:reply, {:text, json}, new_state} =
                WebsocketScraper.handle_info(:flush_subs, state)
+
+      assert %{"method" => "subscribe", "subscription" => %{"coin" => "a"}} =
+               Jason.decode!(json)
 
       assert Map.has_key?(new_state.timers, :flush_subs)
       assert :queue.len(new_state.pending_sub_queue) == 1
@@ -589,11 +652,11 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
   describe "handle_disconnect" do
     @describetag capture_log: true
 
-    test "clears in-flight state, resets healthcheck failures, doubles backoff" do
+    test "clears in-flight state, resets healthcheck failures, grows backoff" do
       state =
         build_state(
           active_subs: MapSet.new(["BTC", "ETH"]),
-          pending_sub_queue: :queue.in({:text, "x"}, :queue.new()),
+          pending_sub_queue: :queue.in({"subscribe", "x"}, :queue.new()),
           coalesce_buffer: %{"BTC" => %{coin: "BTC"}},
           last_emitted: %{"BTC" => 1},
           healthcheck_failures: 4,
@@ -612,7 +675,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert new_state.prev_unconfirmed == MapSet.new()
     end
 
-    test "short-lived connection keeps doubling the backoff and clears connected_at" do
+    test "short-lived connection keeps growing the backoff and clears connected_at" do
       state =
         build_state(
           connected_at: System.monotonic_time(:millisecond) - 3_000,
@@ -622,35 +685,380 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       {:reconnect, new_state} =
         WebsocketScraper.handle_disconnect(%{reason: {:remote, :closed}}, state)
 
-      assert new_state.reconnect_backoff_ms == 8
+      assert new_state.reconnect_backoff_ms == 5
       assert new_state.connected_at == nil
     end
   end
 
-  # The stable-reset paths are tested through backoff_plan/3 because
-  # handle_disconnect/2 sleeps its result for real — the reset branch would
-  # block the suite for @reconnect_initial_ms (1s) plus jitter per test.
-  describe "backoff_plan/3" do
-    test "connection that lived past the stable threshold restarts the ladder" do
-      assert {1_000, 2_000} = WebsocketScraper.backoff_plan(16_000, 120_000, 1)
+  describe "probation and probing" do
+    @describetag capture_log: true
+
+    test "disconnect puts unconfirmed subscribes sent within the window on probation" do
+      state =
+        build_state(
+          recent_sends: [sub_send("A", 100), sub_send("B", 300), sub_send("OLD", 10_000)],
+          reconnect_backoff_ms: 1
+        )
+
+      {:reconnect, new_state} = WebsocketScraper.handle_disconnect(%{reason: :test}, state)
+
+      assert new_state.quarantine.probation == ["A", "B"]
     end
 
-    test "short lifetime keeps climbing the ladder" do
-      assert {4_000, 8_000} = WebsocketScraper.backoff_plan(4_000, 3_000, 1)
+    test "confirmed coins (in active_subs) never go on probation" do
+      state =
+        build_state(
+          recent_sends: [sub_send("A", 100), sub_send("B", 300)],
+          active_subs: MapSet.new(["A"]),
+          reconnect_backoff_ms: 1
+        )
+
+      {:reconnect, new_state} = WebsocketScraper.handle_disconnect(%{reason: :test}, state)
+
+      assert new_state.quarantine.probation == ["B"]
     end
 
-    test "failed reconnect attempt (attempt_number > 1) never restarts the ladder" do
-      assert {4_000, 8_000} = WebsocketScraper.backoff_plan(4_000, 120_000, 2)
+    test "probation coins are not re-added and excluded coins never enter" do
+      state =
+        build_state(
+          recent_sends: [sub_send("A", 100), sub_send("Q", 200), sub_send("X", 300)],
+          probation: ["A"],
+          quarantined: %{"Q" => "test reason"},
+          audit_excluded: %{"X" => "audit reason"},
+          reconnect_backoff_ms: 1
+        )
+
+      {:reconnect, new_state} = WebsocketScraper.handle_disconnect(%{reason: :test}, state)
+
+      assert new_state.quarantine.probation == ["A"]
     end
 
-    test "nil lifetime (no live connection was dropped) keeps climbing" do
-      assert {4_000, 8_000} = WebsocketScraper.backoff_plan(4_000, nil, 1)
+    test "failed reconnect attempt (attempt_number > 1) leaves probation untouched" do
+      state =
+        build_state(
+          recent_sends: [sub_send("B", 100)],
+          probation: ["A"],
+          reconnect_backoff_ms: 1
+        )
+
+      {:reconnect, new_state} =
+        WebsocketScraper.handle_disconnect(%{reason: :test, attempt_number: 2}, state)
+
+      assert new_state.quarantine.probation == ["A"]
     end
 
-    test "sleep base plus max jitter never exceeds the 20s ceiling" do
-      {base, next} = WebsocketScraper.backoff_plan(1_000_000, 3_000, 1)
-      assert base + 1_000 <= 20_000
-      assert next + 1_000 <= 20_000
+    test "probe_next starts a probe on a settled connection" do
+      state =
+        build_state(
+          probation: ["X", "Y"],
+          connected_at: System.monotonic_time(:millisecond) - 60_000
+        )
+
+      {:ok, new_state} = WebsocketScraper.handle_info(:probe_next, state)
+
+      assert [%{coin: "X", started_ms: _}] = new_state.quarantine.probing
+      assert :queue.to_list(new_state.pending_sub_queue) == [{"subscribe", "X"}]
+      # Coin stays in probation until its verdict.
+      assert new_state.quarantine.probation == ["X", "Y"]
+      assert Map.has_key?(new_state.timers, :probe_next)
+    end
+
+    test "probe_next does not start a probe while the outbound queue drains or uptime is low" do
+      draining =
+        build_state(
+          probation: ["X"],
+          connected_at: System.monotonic_time(:millisecond) - 60_000,
+          pending_sub_queue: :queue.in({"subscribe", "OTHER"}, :queue.new())
+        )
+
+      {:ok, state1} = WebsocketScraper.handle_info(:probe_next, draining)
+      assert state1.quarantine.probing == []
+
+      young =
+        build_state(
+          probation: ["X"],
+          connected_at: System.monotonic_time(:millisecond) - 1_000
+        )
+
+      {:ok, state2} = WebsocketScraper.handle_info(:probe_next, young)
+      assert state2.quarantine.probing == []
+    end
+
+    test "probe survival with confirmation clears the coin back to normal" do
+      now = System.system_time(:millisecond)
+
+      state =
+        build_state(
+          probation: ["X", "Y"],
+          probing: [%{coin: "X", started_ms: now - 20_000}],
+          probe_strikes: %{"X" => 1},
+          active_subs: MapSet.new(["X"])
+        )
+
+      {:ok, new_state} = WebsocketScraper.handle_info(:probe_next, state)
+
+      assert new_state.quarantine.probing == []
+      assert new_state.quarantine.probation == ["Y"]
+      assert new_state.quarantine.probe_strikes == %{}
+      refute Map.has_key?(new_state.quarantine.quarantined, "X")
+    end
+
+    test "probe survival without confirmation quarantines the silently-ignored coin" do
+      now = System.system_time(:millisecond)
+
+      state =
+        build_state(
+          probation: ["X"],
+          probing: [%{coin: "X", started_ms: now - 20_000}]
+        )
+
+      {:ok, new_state} = WebsocketScraper.handle_info(:probe_next, state)
+
+      assert new_state.quarantine.probing == []
+      assert new_state.quarantine.probation == []
+      assert Map.get(new_state.quarantine.quarantined, "X") =~ "never confirmed"
+    end
+
+    test "crash during probe strikes; second strike convicts and quarantines" do
+      now = System.system_time(:millisecond)
+
+      state =
+        build_state(
+          probation: ["X", "Y"],
+          probing: [%{coin: "X", started_ms: now - 250}],
+          reconnect_backoff_ms: 1
+        )
+
+      {:reconnect, state} = WebsocketScraper.handle_disconnect(%{reason: :test}, state)
+
+      assert state.quarantine.probing == []
+      assert state.quarantine.probe_strikes == %{"X" => 1}
+      # First strike: retried after the other suspects.
+      assert state.quarantine.probation == ["Y", "X"]
+      refute Map.has_key?(state.quarantine.quarantined, "X")
+
+      state = %{
+        state
+        | quarantine: %{
+            state.quarantine
+            | probing: [%{coin: "X", started_ms: System.system_time(:millisecond) - 250}]
+          }
+      }
+
+      {:reconnect, state} = WebsocketScraper.handle_disconnect(%{reason: :test}, state)
+
+      assert Map.get(state.quarantine.quarantined, "X") =~ "probe conviction"
+      assert state.quarantine.probation == ["Y"]
+      assert state.quarantine.probe_strikes == %{}
+    end
+
+    test "crash long after the probe subscribe is not attributed to it" do
+      now = System.system_time(:millisecond)
+
+      state =
+        build_state(
+          probation: ["X"],
+          probing: [%{coin: "X", started_ms: now - 60_000}],
+          reconnect_backoff_ms: 1
+        )
+
+      {:reconnect, new_state} = WebsocketScraper.handle_disconnect(%{reason: :test}, state)
+
+      assert new_state.quarantine.probing == []
+      assert new_state.quarantine.probe_strikes == %{}
+      assert new_state.quarantine.probation == ["X"]
+    end
+
+    test "coin unconfirmed across two reconcile rounds moves to probation instead of re-queueing" do
+      btc = insert(:project, %{name: "Bitcoin", slug: "bitcoin"})
+
+      Sanbase.Project.SourceSlugMapping.create(%{
+        source: "hyperliquid",
+        slug: "BTC",
+        project_id: btc.id
+      })
+
+      state =
+        build_state(
+          prev_unconfirmed: MapSet.new(["BTC"]),
+          connected_at: System.monotonic_time(:millisecond) - 300_000
+        )
+
+      {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
+
+      assert new_state.quarantine.probation == ["BTC"]
+      assert :queue.is_empty(new_state.pending_sub_queue)
+    end
+
+    test "reconcile does not subscribe probation coins but keeps the probing coin subscribed" do
+      btc = insert(:project, %{name: "Bitcoin", slug: "bitcoin"})
+
+      Sanbase.Project.SourceSlugMapping.create(%{
+        source: "hyperliquid",
+        slug: "BTC",
+        project_id: btc.id
+      })
+
+      # On probation, not subscribed -> reconcile must not queue it.
+      state = build_state(probation: ["BTC"])
+      {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
+      assert :queue.is_empty(new_state.pending_sub_queue)
+
+      # Mid-probe and confirmed -> reconcile must not unsubscribe it.
+      state =
+        build_state(
+          probation: ["BTC"],
+          probing: [%{coin: "BTC", started_ms: System.system_time(:millisecond)}],
+          active_subs: MapSet.new(["BTC"])
+        )
+
+      {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
+      assert :queue.is_empty(new_state.pending_sub_queue)
+    end
+
+    test "reconcile defers new bulk subscribes while a probe is in flight" do
+      eth = insert(:project, %{name: "Ethereum", slug: "ethereum"})
+
+      Sanbase.Project.SourceSlugMapping.create(%{
+        source: "hyperliquid",
+        slug: "ETH",
+        project_id: eth.id
+      })
+
+      state =
+        build_state(
+          probation: ["X"],
+          probing: [%{coin: "X", started_ms: System.system_time(:millisecond)}]
+        )
+
+      {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
+
+      # ETH's subscribe waits for the probe verdict; nothing marked pending.
+      assert :queue.is_empty(new_state.pending_sub_queue)
+      assert new_state.prev_unconfirmed == MapSet.new()
+    end
+
+    test "reconcile does not subscribe quarantined coins and unsubscribes active ones" do
+      btc = insert(:project, %{name: "Bitcoin", slug: "bitcoin"})
+
+      Sanbase.Project.SourceSlugMapping.create(%{
+        source: "hyperliquid",
+        slug: "BTC",
+        project_id: btc.id
+      })
+
+      state =
+        build_state(
+          active_subs: MapSet.new(["BTC"]),
+          quarantined: %{"BTC" => "test reason"}
+        )
+
+      {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
+
+      assert :queue.to_list(new_state.pending_sub_queue) == [{"unsubscribe", "BTC"}]
+    end
+
+    test "reconcile never subscribes coins ignored via HYPERLIQUID_IGNORED_COINS" do
+      original = Application.get_env(:sanbase, Quarantine)
+      Application.put_env(:sanbase, Quarantine, ignored_coins: "ANSEM, OTHER")
+
+      on_exit(fn ->
+        if is_nil(original),
+          do: Application.delete_env(:sanbase, Quarantine),
+          else: Application.put_env(:sanbase, Quarantine, original)
+      end)
+
+      ansem = insert(:project, %{name: "Ansem", slug: "sol-the-black-bull"})
+
+      Sanbase.Project.SourceSlugMapping.create(%{
+        source: "hyperliquid",
+        slug: "ANSEM",
+        project_id: ansem.id
+      })
+
+      state = build_state()
+      {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
+
+      assert :queue.is_empty(new_state.pending_sub_queue)
+    end
+  end
+
+  describe "audit flow" do
+    @describetag capture_log: true
+
+    test "audit_result replaces audit_excluded and prunes probation" do
+      state = build_state(probation: ["BAD", "Y"], audit_excluded: %{"OLD" => "gone"})
+
+      result = %{
+        desired: 3,
+        universe: 100,
+        unsupported: ["BAD"],
+        reasons: %{"BAD" => "only a spot token on HL (no perp market)"}
+      }
+
+      {:ok, new_state} = WebsocketScraper.handle_info({:audit_result, result}, state)
+
+      # Replaced, not merged — "OLD" recovered; "BAD" left probation too.
+      assert new_state.quarantine.audit_excluded == %{
+               "BAD" => "only a spot token on HL (no perp market)"
+             }
+
+      assert new_state.quarantine.probation == ["Y"]
+    end
+
+    test "failed audit keeps the previous verdicts" do
+      state = build_state(audit_excluded: %{"BAD" => "reason"})
+
+      {:ok, new_state} =
+        WebsocketScraper.handle_info({:audit_result, {:error, :nxdomain}}, state)
+
+      assert new_state.quarantine.audit_excluded == %{"BAD" => "reason"}
+    end
+
+    test "reconcile respects audit exclusions: no subscribe, unsubscribes active" do
+      btc = insert(:project, %{name: "Bitcoin", slug: "bitcoin"})
+
+      Sanbase.Project.SourceSlugMapping.create(%{
+        source: "hyperliquid",
+        slug: "BTC",
+        project_id: btc.id
+      })
+
+      state = build_state(active_subs: MapSet.new(["BTC"]), audit_excluded: %{"BTC" => "r"})
+      {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
+
+      assert :queue.to_list(new_state.pending_sub_queue) == [{"unsubscribe", "BTC"}]
+    end
+
+    test "connect does not start an audit again within the minimum gap" do
+      recent = System.system_time(:millisecond) - 1_000
+
+      {:ok, new_state} =
+        WebsocketScraper.handle_connect(:fake_conn, build_state(last_audit_at: recent))
+
+      assert new_state.last_audit_at == recent
+      refute_receive {:audit_result, _}, 100
+    end
+
+    test "connect starts an audit when the gap has passed" do
+      with_mock Sanbase.Hyperliquid.Bbo.CoinUniverse,
+        audit: fn -> %{desired: 0, universe: 1, unsupported: [], reasons: %{}} end do
+        stale = System.system_time(:millisecond) - 60_000
+
+        {:ok, new_state} =
+          WebsocketScraper.handle_connect(:fake_conn, build_state(last_audit_at: stale))
+
+        assert new_state.last_audit_at > stale
+        assert_receive {:audit_result, %{reasons: %{}}}, 1_000
+      end
+    end
+
+    test "reconcile no longer triggers audits" do
+      state = build_state()
+      {:ok, new_state} = WebsocketScraper.handle_info(:reconcile_subscriptions, state)
+
+      assert Map.get(new_state, :last_audit_at, 0) == 0
+      refute_receive {:audit_result, _}, 100
     end
   end
 
@@ -660,7 +1068,10 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
         build_state(
           reconnect_backoff_ms: 16_000,
           last_message_time: 0,
-          timers: %{}
+          timers: %{},
+          # Fresh audit — keeps handle_connect from spawning a real audit
+          # task (HTTP + DB) inside the test.
+          last_audit_at: System.system_time(:millisecond)
         )
 
       {:ok, new_state} = WebsocketScraper.handle_connect(:fake_conn, state)
@@ -672,7 +1083,14 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert new_state.last_message_time > 0
       assert [_connected_now] = new_state.connect_times
 
-      for key <- [:ping, :healthcheck, :flush_coalesced, :reconcile_subscriptions] do
+      for key <- [
+            :ping,
+            :healthcheck,
+            :flush_coalesced,
+            :reconcile_subscriptions,
+            :probe_next,
+            :audit
+          ] do
         assert Map.has_key?(new_state.timers, key), "missing #{key} timer"
       end
 

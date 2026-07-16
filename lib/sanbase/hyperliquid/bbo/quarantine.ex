@@ -36,9 +36,9 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   excluded from bulk subscribing and re-tried by probes (`probe_tick/5`) on a
   settled connection. Probes are PIPELINED: a new probe starts every
   `@probe_spacing_ms` while earlier ones await their `@probe_verdict_ms`
-  verdicts (~2 coins/s, a 20-coin sweep drains in ~11s). Attribution stays
-  unambiguous because the kill lands within 200-300ms — always younger than
-  the spacing — so a crash implicates at most one in-flight probe:
+  verdicts (~1 coin per 1.5s, a typical 5-8 coin sweep drains in ~10s).
+  Attribution stays unambiguous because the strike window never exceeds the
+  spacing, so a crash implicates at most one in-flight probe:
 
     * crash within `@probe_strike_window_ms` of the probe → a strike; at
       `@probe_strikes_to_convict` strikes the coin is quarantined (two, so a
@@ -64,23 +64,24 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   # rather than ever missing the trigger.
   @suspect_window_ms 1_500
   # A probed coin that got confirmed and whose connection is still alive this
-  # long after the probe subscribe is innocent. This is the floor: the kill
-  # lands within 200-300ms of the subscribe, the queued frame reaches the
-  # wire up to 200ms after the clock starts, and the confirmation needs a
-  # round trip — below ~1s a verdict can't tell "innocent" from "kill still
-  # in flight", and a wrong clearance costs a full crash.
-  @probe_verdict_ms 1_000
-  # A crash more than this after a probe subscribe is NOT attributed to that
-  # probe — the coin keeps its probation spot, no strike. Kept tight (the
-  # kill lands in 200-300ms) so random infra drops can't rack up false
-  # strikes, and equal to @probe_spacing_ms so a crash implicates AT MOST ONE
-  # in-flight probe even with pipelining.
-  @probe_strike_window_ms 500
+  # long after the probe subscribe hit the wire (track_send/4 restarts the
+  # clock at the actual send) is innocent. Must exceed
+  # @probe_strike_window_ms — a coin must never be cleared innocent while a
+  # kill could still be attributed to its probe.
+  @probe_verdict_ms 2_000
+  # A crash within this window after a probe subscribe is that probe's
+  # strike; later crashes are infra noise (the coin keeps its probation
+  # spot, no strike). Kill lag is typically 200-300ms but jitters higher —
+  # observed kills near 500ms went unattributed and left strike counts stuck
+  # below conviction, so the window carries generous margin. Equal to
+  # @probe_spacing_ms so a crash implicates AT MOST ONE in-flight probe.
+  @probe_strike_window_ms 1_500
   # Minimum gap between consecutive probe starts. Probes are pipelined — a
   # new one starts every spacing while earlier ones await verdicts — so a
-  # probation sweep drains at ~2 coins/s (20 coins in ~11s). Must exceed the
-  # observed 200-300ms kill lag so a crash points at exactly one probe.
-  @probe_spacing_ms 500
+  # probation sweep drains at ~1 coin per 1.5s (typical 5-8 coin sweep in
+  # ~10s). Must not be smaller than @probe_strike_window_ms, else a crash
+  # could implicate several probes at once.
+  @probe_spacing_ms 1_500
   # Probe crashes before conviction; see moduledoc.
   @probe_strikes_to_convict 2
   # Don't start a probe until the connection has been up this long with an
@@ -158,7 +159,23 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   @spec track_send(t(), coin(), [String.t()], integer()) :: t()
   def track_send(%__MODULE__{} = q, coin, slugs, now) do
     entry = %{coin: coin, slugs: slugs, sent_at_ms: now}
-    %{q | recent_sends: Enum.take([entry | q.recent_sends], @recent_sends_size)}
+
+    # A probe's strike/verdict clock restarts when its frame actually reaches
+    # the wire. started_ms is first set at QUEUE time, but the flush pacing
+    # can burn up to 200ms before the send — added to the 200-300ms kill lag
+    # that eats the whole 500ms strike window, and real kills would go
+    # unattributed (strikes stuck below conviction forever).
+    probing =
+      Enum.map(q.probing, fn
+        %{coin: ^coin} = probe -> %{probe | started_ms: now}
+        probe -> probe
+      end)
+
+    %{
+      q
+      | probing: probing,
+        recent_sends: Enum.take([entry | q.recent_sends], @recent_sends_size)
+    }
   end
 
   @doc "Reset the per-connection crash evidence; call on every (re)connect."

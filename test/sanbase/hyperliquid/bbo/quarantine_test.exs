@@ -130,22 +130,22 @@ defmodule Sanbase.Hyperliquid.Bbo.QuarantineTest do
       {q, :noop} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, now + 1_300)
 
       {q, {:subscribe, "X"}} =
-        Quarantine.probe_tick(q, MapSet.new(), 60_000, true, now + 1_500)
+        Quarantine.probe_tick(q, MapSet.new(), 60_000, true, now + 2_500)
 
       assert Quarantine.probing_coins(q) == ["X", "OK"]
 
       # Crash 250ms after X's probe: only X (age 250 <= strike window) is
-      # struck -> convicted; OK's older probe is not blamed and stays on
-      # probation for a clean re-probe.
-      q = Quarantine.handle_crash(%{q | recent_sends: []}, MapSet.new(), now + 1_750)
+      # struck -> convicted; OK's older probe (age 1750 > strike window) is
+      # not blamed and stays on probation for a clean re-probe.
+      q = Quarantine.handle_crash(%{q | recent_sends: []}, MapSet.new(), now + 2_750)
 
       assert Map.get(q.quarantined, "X") =~ "probe conviction"
       assert q.probation == ["OK"]
       assert q.probe_strikes == %{}
 
       # OK re-probes and survives with confirmation: cleared.
-      {q, {:subscribe, "OK"}} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, now + 2_000)
-      {q, :noop} = Quarantine.probe_tick(q, MapSet.new(["OK"]), 60_000, true, now + 3_100)
+      {q, {:subscribe, "OK"}} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, now + 3_000)
+      {q, :noop} = Quarantine.probe_tick(q, MapSet.new(["OK"]), 60_000, true, now + 5_100)
 
       assert q.probation == []
       assert Quarantine.probing_coins(q) == []
@@ -180,14 +180,29 @@ defmodule Sanbase.Hyperliquid.Bbo.QuarantineTest do
       assert {^q, :noop} = Quarantine.probe_tick(q, MapSet.new(), 60_000, false, 0)
     end
 
+    test "the strike clock restarts when the probe frame is actually sent" do
+      put_ignored("")
+      # Probe queued at t=0; the send only happens at t=1400.
+      q = %Quarantine{probation: ["X"], probing: [%{coin: "X", started_ms: 0}]}
+      q = Quarantine.track_send(q, "X", [], 1_400)
+
+      # Kill lands 300ms after the send (t=1700). Measured from queue time
+      # that is outside the strike window — the send-time restart is what
+      # keeps the kill attributable.
+      q = Quarantine.handle_crash(q, MapSet.new(), 1_700)
+
+      assert q.probe_strikes == %{"X" => 1}
+      assert q.probation == ["X"]
+    end
+
     test "no new probe before the spacing since the newest in-flight one" do
       put_ignored("")
       q = %Quarantine{probation: ["A", "B"], probing: [%{coin: "A", started_ms: 1_000}]}
 
       # 300ms after A's probe: too soon for B.
       {q, :noop} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, 1_300)
-      # 500ms after: B starts while A still awaits its verdict.
-      {q, {:subscribe, "B"}} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, 1_500)
+      # A full spacing after: B starts while A still awaits its verdict.
+      {q, {:subscribe, "B"}} = Quarantine.probe_tick(q, MapSet.new(), 60_000, true, 2_500)
 
       assert Quarantine.probing_coins(q) == ["B", "A"]
     end

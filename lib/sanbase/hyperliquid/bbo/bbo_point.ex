@@ -51,8 +51,13 @@ defmodule Sanbase.Hyperliquid.Bbo.BboPoint do
     end
   end
 
+  # A side is all-or-nothing: exporting a price without its volume (or a
+  # half-parsed "1oops" price) would violate the struct invariant above.
   defp parse_side(%{"px" => px, "sz" => sz}) do
-    {parse_float(px), parse_float(sz)}
+    case {parse_float(px), parse_float(sz)} do
+      {price, volume} when is_float(price) and is_float(volume) -> {price, volume}
+      _ -> {nil, nil}
+    end
   end
 
   defp parse_side(_), do: {nil, nil}
@@ -61,8 +66,8 @@ defmodule Sanbase.Hyperliquid.Bbo.BboPoint do
 
   defp parse_float(s) when is_binary(s) do
     case Float.parse(s) do
-      {f, _} -> f
-      :error -> nil
+      {f, ""} -> f
+      _ -> nil
     end
   end
 

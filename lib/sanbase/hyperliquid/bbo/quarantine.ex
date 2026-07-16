@@ -30,7 +30,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   ## Probation → probe → verdict
 
   A crash puts every unconfirmed subscribe sent within `@suspect_window_ms`
-  of death on `probation` (`handle_crash/4`) — the whole window, not just the
+  of death on `probation` (`handle_crash/3`) — the whole window, not just the
   newest send, because the TCP drop can lag the offending subscribe by a few
   pacing ticks, letting innocent frames go out after it. Probation coins are
   excluded from bulk subscribing and re-tried by probes (`probe_tick/5`) on a
@@ -105,7 +105,10 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
             recent_sends: []
 
   @type t :: %__MODULE__{}
+  @type coin :: String.t()
+  @type reason :: String.t()
 
+  @spec new() :: t()
   def new(), do: %__MODULE__{}
 
   @doc ~s"""
@@ -116,6 +119,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   `HYPERLIQUID_IGNORED_COINS` list still apply (they are separate features
   that only share the `excluded/1` merge).
   """
+  @spec enabled?() :: boolean()
   def enabled?() do
     Config.module_get(__MODULE__, :enabled?, "true")
     |> Config.parse_boolean_value()
@@ -123,6 +127,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   end
 
   @doc "How close to a disconnect a subscribe must be to count as a suspect."
+  @spec suspect_window_ms() :: pos_integer()
   def suspect_window_ms(), do: @suspect_window_ms
 
   @doc ~s"""
@@ -130,6 +135,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   coins, the latest audit verdicts, probe convictions (later sources win the
   reason on overlap).
   """
+  @spec excluded(t()) :: %{coin() => reason()}
   def excluded(%__MODULE__{} = q) do
     ignored_coins()
     |> Map.merge(q.audit_excluded)
@@ -137,9 +143,11 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   end
 
   @doc "Coins awaiting an individual probe, head probed first."
+  @spec probation(t()) :: [coin()]
   def probation(%__MODULE__{} = q), do: q.probation
 
   @doc "Coins whose probes are in flight, newest first (empty when idle)."
+  @spec probing_coins(t()) :: [coin()]
   def probing_coins(%__MODULE__{} = q), do: Enum.map(q.probing, & &1.coin)
 
   @doc ~s"""
@@ -147,12 +155,14 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   first, capped at #{@recent_sends_size}). Slugs are resolved by the caller
   at send time — the slug map may differ by crash time.
   """
+  @spec track_send(t(), coin(), [String.t()], integer()) :: t()
   def track_send(%__MODULE__{} = q, coin, slugs, now) do
     entry = %{coin: coin, slugs: slugs, sent_at_ms: now}
     %{q | recent_sends: Enum.take([entry | q.recent_sends], @recent_sends_size)}
   end
 
   @doc "Reset the per-connection crash evidence; call on every (re)connect."
+  @spec on_connect(t()) :: t()
   def on_connect(%__MODULE__{} = q), do: %{q | recent_sends: []}
 
   @doc ~s"""
@@ -160,6 +170,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   disconnect consistently follows the same coin/slug with a small ms_ago,
   that subscription is the trigger.
   """
+  @spec recent_sends_summary(t(), integer(), pos_integer()) :: String.t()
   def recent_sends_summary(%__MODULE__{} = q, now, limit \\ 5) do
     q.recent_sends
     |> Enum.take(limit)
@@ -172,6 +183,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   Operator-managed ignore list from the `HYPERLIQUID_IGNORED_COINS` env var
   (comma-separated coin names), as `%{coin => reason}`.
   """
+  @spec ignored_coins() :: %{coin() => reason()}
   def ignored_coins() do
     Config.module_get(__MODULE__, :ignored_coins)
     |> to_string()
@@ -190,6 +202,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   probation. `active_subs` are the confirmed coins — confirmed means
   innocent.
   """
+  @spec handle_crash(t(), MapSet.t(coin()), integer()) :: t()
   def handle_crash(%__MODULE__{} = q, active_subs, now) do
     if enabled?() do
       q = resolve_probe_crash(q, now)
@@ -215,6 +228,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   `why`. Probation coins are excluded from bulk subscribing and re-tried one
   at a time by `probe_tick/5`.
   """
+  @spec probate(t(), [coin()], String.t()) :: t()
   def probate(%__MODULE__{} = q, coins, why) do
     excluded = excluded(q)
 
@@ -240,6 +254,7 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   HL re-lists recovers automatically; coins the audit condemned leave
   probation too — the audit's reason beats a probe verdict.
   """
+  @spec apply_audit(t(), %{coin() => reason()}) :: t()
   def apply_audit(%__MODULE__{} = q, reasons) when is_map(reasons) do
     if map_size(reasons) > 0 do
       Logger.warning(
@@ -257,11 +272,13 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   @doc ~s"""
   The probe worker step, called on the scraper's `:probe_next` tick. Either
   resolves the in-flight probe's survival verdict (crash verdicts arrive via
-  `handle_crash/4`) or, when the connection is settled — up at least
+  `handle_crash/3`) or, when the connection is settled — up at least
   #{@probe_min_uptime_ms}ms with an empty outbound queue — starts the next
   probe. Returns `{q, {:subscribe, coin} | :noop}`; the scraper queues the
   subscribe frame.
   """
+  @spec probe_tick(t(), MapSet.t(coin()), non_neg_integer(), boolean(), integer()) ::
+          {t(), {:subscribe, coin()} | :noop}
   def probe_tick(%__MODULE__{} = q, active_subs, uptime_ms, queue_empty?, now) do
     if enabled?(),
       do: do_probe_tick(q, active_subs, uptime_ms, queue_empty?, now),

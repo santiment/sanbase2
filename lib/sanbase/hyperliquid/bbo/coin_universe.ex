@@ -139,7 +139,9 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
           | {:unsupported, :spot_token_only | :not_in_universe, [String.t()]}
           | :unverified
   def coin_supported?(coin, timeout \\ @verify_timeout) when is_binary(coin) do
-    task = Task.async(fn -> fetch() end)
+    # async_nolink: a crash inside fetch/0 must degrade to :unverified, not
+    # take down the caller (a changeset validation) with it.
+    task = Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn -> fetch() end)
 
     case Task.yield(task, timeout) || Task.shutdown(task) do
       {:ok, {:ok, %{valid: valid, spot_tokens: spot_tokens, token_pairs: token_pairs}}} ->

@@ -121,8 +121,21 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
   def start_link() do
     state = initial_state()
-    Logger.info("[HyperliquidBboWS] starting url=#{@url}")
-    WebSockex.start_link(@url, __MODULE__, state, name: @name)
+
+    # The pid identifies the process INSTANCE: a new pid in these logs means
+    # a supervisor restart (fresh state — quarantine/probation forgotten),
+    # while reconnects keep the pid. Logged here and on every
+    # connect/disconnect/terminate line to make restarts vs reconnects
+    # obvious.
+    case WebSockex.start_link(@url, __MODULE__, state, name: @name) do
+      {:ok, pid} = ok ->
+        Logger.info("[HyperliquidBboWS] started pid=#{inspect(pid)} url=#{@url}")
+        ok
+
+      {:error, reason} = error ->
+        Logger.warning("[HyperliquidBboWS] failed to start: #{inspect(reason)}")
+        error
+    end
   end
 
   def enabled?() do
@@ -188,7 +201,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     connect_times = Reconnect.track_connect(Map.get(state, :connect_times, []), now)
 
     Logger.info(
-      "[HyperliquidBboWS] connected reconnects=#{Map.get(state, :reconnects, 0)} " <>
+      "[HyperliquidBboWS] connected pid=#{inspect(self())} " <>
+        "reconnects=#{Map.get(state, :reconnects, 0)} " <>
         "backoff_was=#{state.reconnect_backoff_ms}ms connects_last_60s=#{length(connect_times)} " <>
         "(HL allows 30 new conns/min per IP, all clients behind the IP combined)"
     )
@@ -238,7 +252,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     # died mid-drain of the subscribe queue; last_subs_sent points at the
     # trigger when the same coin keeps preceding the crash.
     Logger.warning(
-      "[HyperliquidBboWS] disconnect cause=#{Reconnect.describe_cause(reason)} attempt=#{attempt} " <>
+      "[HyperliquidBboWS] disconnect pid=#{inspect(self())} " <>
+        "cause=#{Reconnect.describe_cause(reason)} attempt=#{attempt} " <>
         "lifetime_ms=#{inspect(lifetime_ms)} " <>
         "last_frame_age_ms=#{now - state.last_message_time} " <>
         "bbo_in=#{Map.get(state, :bbo_in, 0)} active_subs=#{MapSet.size(state.active_subs)} " <>
@@ -269,8 +284,13 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:reconnect, state}
   end
 
+  # A terminate log with a pid that never reappears = the supervisor started
+  # a REPLACEMENT process with fresh state (quarantine/probation forgotten).
   def terminate(reason, _state) do
-    Logger.warning("[HyperliquidBboWS] terminate reason=#{inspect(reason)}")
+    Logger.warning(
+      "[HyperliquidBboWS] terminate pid=#{inspect(self())} reason=#{inspect(reason)}"
+    )
+
     :ok
   end
 
@@ -453,12 +473,23 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
     case :queue.out(state.pending_sub_queue) do
       {{:value, {method, coin}}, queue2} ->
-        state =
-          %{state | pending_sub_queue: queue2}
-          |> track_sub_send(method, coin)
-          |> maybe_schedule_flush_subs()
+        state = %{state | pending_sub_queue: queue2}
 
-        {:reply, sub_frame(method, coin), state}
+        if send_banned?(state, method, coin) do
+          Logger.info(
+            "[HyperliquidBboWS] dropping queued subscribe coin=#{coin} — " <>
+              "excluded or probated after it was queued"
+          )
+
+          {:ok, maybe_schedule_flush_subs(state)}
+        else
+          state =
+            state
+            |> track_sub_send(method, coin)
+            |> maybe_schedule_flush_subs()
+
+          {:reply, sub_frame(method, coin), state}
+        end
 
       {:empty, _} ->
         {:ok, state}
@@ -503,10 +534,14 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:ok, state |> maybe_start_audit() |> schedule(:audit, @audit_interval)}
   end
 
-  # An audit verdict from the separate audit process — Quarantine applies it;
-  # the next reconcile (≤60s) unsubscribes anything newly excluded. A failed
-  # audit sends an error tuple and keeps the previous verdicts.
+  # An audit verdict from the separate audit process — Quarantine applies it.
+  # New exclusions trigger an immediate reconcile (instead of waiting out the
+  # 60s tick) so actively subscribed offenders are unsubscribed right away;
+  # already-queued subscribes are dropped at send time by send_banned?/3. A
+  # failed audit sends an error tuple and keeps the previous verdicts.
   def handle_info({:audit_result, %{reasons: reasons}}, state) do
+    if map_size(reasons) > 0, do: send(self(), :reconcile_subscriptions)
+
     {:ok, Map.put(state, :quarantine, Quarantine.apply_audit(quarantine_state(state), reasons))}
   end
 
@@ -653,6 +688,20 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:text, Jason.encode!(%{method: method, subscription: %{type: "bbo", coin: coin}})}
   end
 
+  # A subscribe queued before an audit verdict, conviction or probation
+  # landed must not reach the wire — the queue can lag reconcile's decision
+  # by (queue length x @flush_subs_interval). Unsubscribes always pass, and
+  # so do probe subscribes: their coin is on probation by design, marked
+  # in-flight in Quarantine before the frame is queued.
+  defp send_banned?(state, "subscribe", coin) do
+    q = quarantine_state(state)
+
+    Map.has_key?(Quarantine.excluded(q), coin) or
+      (coin in Quarantine.probation(q) and coin not in Quarantine.probing_coins(q))
+  end
+
+  defp send_banned?(_state, _method, _coin), do: false
+
   # Quarantine glue
 
   # Crash forensics — probe verdicts and probation live in Quarantine; this
@@ -690,17 +739,26 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     end
   end
 
-  # Run the universe audit in its own process (the HTTP calls must never
-  # block frame handling), at most once per @audit_min_gap_ms no matter what
-  # triggers it — last_audit_at survives disconnects, so a crash-connect loop
-  # stays rate-limited. The task audits the FULL mapped set (audit/0 loads it
-  # itself) and sends {:audit_result, ...} back to this process.
+  # Run the universe audit in its own supervised process (the HTTP calls
+  # must never block frame handling; the supervisor makes a crash visible),
+  # at most once per @audit_min_gap_ms no matter what triggers it —
+  # last_audit_at survives disconnects, so a crash-connect loop stays
+  # rate-limited. The timestamp deliberately advances at SPAWN, not at
+  # result receipt: the gap bounds requests against HL, and a crashed audit
+  # is retried by the next :audit tick anyway (fetch failures don't crash —
+  # they return an error tuple that keeps the previous verdicts). The task
+  # audits the FULL mapped set (audit/0 loads it itself) and sends
+  # {:audit_result, ...} back to this process.
   defp maybe_start_audit(state) do
     now = System.system_time(:millisecond)
 
     if now - Map.get(state, :last_audit_at, 0) >= @audit_min_gap_ms do
       parent = self()
-      Task.start(fn -> send(parent, {:audit_result, CoinUniverse.audit()}) end)
+
+      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+        send(parent, {:audit_result, CoinUniverse.audit()})
+      end)
+
       Map.put(state, :last_audit_at, now)
     else
       state

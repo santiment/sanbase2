@@ -27,13 +27,11 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtilsTest do
 
     test "waits for the exhausted short window, not the longest overall window" do
       # only the per-second window is exhausted -> wait 1s (its reset), not the
-      # ~14 day monthly reset that get_biggest_ratelimited_window/1 would return.
+      # ~14 day monthly reset, which is the biggest reset value in the header.
       remaining =
         "100, 0;window=1, 50;window=60, 1000;window=3600, 5000;window=86400, 99999;window=2592000"
 
       assert HTTPHeaderUtils.rate_limit_reset_seconds(resp(remaining, @reset)) == 1
-      # contrast with the pre-existing function that ignores which window is exhausted
-      assert HTTPHeaderUtils.get_biggest_ratelimited_window(resp(remaining, @reset)) == 1_200_000
     end
 
     test "uses the reset of the exhausted window" do
@@ -72,18 +70,11 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtilsTest do
       assert HTTPHeaderUtils.rate_limited?(resp) == false
     end
 
-    test "get_biggest_ratelimited_window/1 falls back to 60s when the Reset-All header is missing" do
+    test "rate_limit_reset_seconds/1 falls back to 60s when the Reset-All header is unparseable" do
       remaining =
         "100, 0;window=1, 50;window=60, 1000;window=3600, 5000;window=86400, 99999;window=2592000"
 
-      assert HTTPHeaderUtils.get_biggest_ratelimited_window(resp(remaining, nil)) == 60
-    end
-
-    test "get_biggest_ratelimited_window/1 falls back to 60s when the Reset-All header is unparseable" do
-      remaining =
-        "100, 0;window=1, 50;window=60, 1000;window=3600, 5000;window=86400, 99999;window=2592000"
-
-      assert HTTPHeaderUtils.get_biggest_ratelimited_window(resp(remaining, "garbage")) == 60
+      assert HTTPHeaderUtils.rate_limit_reset_seconds(resp(remaining, "garbage")) == 60
     end
   end
 end

@@ -65,16 +65,6 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
 
   @default_reset_seconds 60
 
-  def get_biggest_ratelimited_window(resp) do
-    with {_header, value} <- get_header(resp, "X-RateLimit-Reset-All"),
-         [_ | _] = list <- parse_value_list(value) do
-      list |> Enum.max_by(& &1.value) |> Map.get(:value)
-    else
-      # Header missing or unparseable
-      _ -> @default_reset_seconds
-    end
-  end
-
   def rate_limited?(resp) do
     # If any of the rate limit periods has 0 remaining requests
     # it means that the rate limit is reached
@@ -95,10 +85,9 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
   takes the one with the longest period (the binding constraint) and returns that
   window's reset time from `X-RateLimit-Reset-All`.
 
-  Unlike `get_biggest_ratelimited_window/1`, which returns the largest reset across
-  *all* windows (e.g. the monthly window, which can be many days away even for a
-  brief per-second burst limit), this returns the reset for the window that is
-  actually exhausted.
+  Note that this deliberately ignores the resets of non-exhausted windows: the
+  largest reset overall (e.g. the monthly window) can be many days away even
+  for a brief per-second burst limit.
 
   Returns `nil` when the response is not rate limited, and falls back to
   `#{@default_reset_seconds}` seconds when the reset header is missing or unparseable.

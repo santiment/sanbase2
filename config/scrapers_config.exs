@@ -30,6 +30,8 @@ config :sanbase, Oban.Scrapers,
     # Cryptocompare funding rate queues
     cryptocompare_funding_rate_historical_jobs_queue: [limit: 10, paused: true],
     cryptocompare_funding_rate_historical_jobs_pause_resume_queue: 1,
+    # Watchdog that resumes cryptocompare queues stuck in paused state
+    cryptocompare_watchdog_queue: 1,
     # Twitter queues
     twitter_followers_migration_queue: [limit: 25, paused: true]
   ],
@@ -46,7 +48,8 @@ config :sanbase, Oban.Scrapers,
        {"0 * * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
         args: %{"type" => "schedule_historical_open_interest_jobs"}, max_attempts: 10},
        {"0 * * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
-        args: %{"type" => "schedule_historical_funding_rate_jobs"}, max_attempts: 10}
+        args: %{"type" => "schedule_historical_funding_rate_jobs"}, max_attempts: 10},
+       {"*/10 * * * *", Sanbase.Cryptocompare.QueueWatchdogWorker}
      ]}
   ]
 

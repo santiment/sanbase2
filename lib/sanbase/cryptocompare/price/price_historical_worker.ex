@@ -19,6 +19,7 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
     max_attempts: 20,
     unique: [period: 7 * 86_400]
 
+  alias Sanbase.Cryptocompare.Handler
   alias Sanbase.Cryptocompare.HTTPHeaderUtils
 
   require Logger
@@ -29,6 +30,12 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
 
   def queue(), do: :cryptocompare_historical_jobs_queue
   def conf_name(), do: @oban_conf_name
+
+  def pause_resume_worker(),
+    do: Sanbase.Cryptocompare.Price.PauseResumeWorker
+
+  def historical_scheduler(),
+    do: Sanbase.Cryptocompare.Price.HistoricalScheduler
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args, attempt: attempt}) do
@@ -116,7 +123,8 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
     assets
   end
 
-  @spec get_data(String.t(), String.t(), String.t()) :: {:error, HTTPoison.Error.t()} | {:ok, any}
+  @spec get_data(String.t(), String.t(), String.t()) ::
+          {:ok, any} | {:snooze, non_neg_integer()} | :snooze | {:error, any}
   def get_data(base_asset, quote_asset, date) do
     query_params = [
       fsym: base_asset,
@@ -132,37 +140,18 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
     case HTTPoison.get(url, headers, recv_timeout: 15_000) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body} = resp} ->
         case HTTPHeaderUtils.rate_limited?(resp) do
-          false ->
-            csv_to_ohlcv_list(body)
-
-          {:error_limited, _} ->
-            Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
-            reset_after_seconds = HTTPHeaderUtils.get_biggest_ratelimited_window(resp)
-            enqueue_resume_worker(reset_after_seconds)
-            {:snooze, reset_after_seconds}
+          false -> csv_to_ohlcv_list(body)
+          {:error_limited, _} -> Handler.handle_rate_limit(resp, module: __MODULE__)
         end
+
+      {:ok, %HTTPoison.Response{status_code: 429} = resp} ->
+        Handler.handle_rate_limit(resp, module: __MODULE__)
+
+      {:ok, %HTTPoison.Response{status_code: status_code}} ->
+        {:error, "Unexpected status code #{status_code} from the Cryptocompare API"}
 
       {:error, error} ->
         {:error, error}
-    end
-  end
-
-  defp enqueue_resume_worker(reset_after_seconds) do
-    data =
-      %{"type" => "resume"}
-      |> Sanbase.Cryptocompare.Price.PauseResumeWorker.new(schedule_in: reset_after_seconds)
-
-    case Oban.insert(@oban_conf_name, data) do
-      {:ok, _job} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error(
-          "[Cryptocompare Historical] Failed to enqueue PauseResumeWorker: #{inspect(reason)}. " <>
-            "Resuming queue immediately to avoid permanent pause."
-        )
-
-        Sanbase.Cryptocompare.Price.HistoricalScheduler.resume()
     end
   end
 

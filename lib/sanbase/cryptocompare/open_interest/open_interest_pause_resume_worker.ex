@@ -10,15 +10,18 @@ defmodule Sanbase.Cryptocompare.OpenInterest.PauseResumeWorker do
 
   require Logger
 
+  alias Sanbase.Cryptocompare.Handler
+  alias Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler
+
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"type" => "resume"}}) do
     Logger.info("[Cryptocompare OpenInterest] Resuming historical jobs queue after rate limit.")
-    Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.resume()
+    Handler.resume_and_verify(HistoricalScheduler)
   end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"type" => "pause"}}) do
     Logger.info("[Cryptocompare OpenInterest] Pausing historical jobs queue.")
-    Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.pause()
+    HistoricalScheduler.pause()
   end
 end

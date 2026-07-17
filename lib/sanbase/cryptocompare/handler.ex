@@ -27,6 +27,7 @@ defmodule Sanbase.Cryptocompare.Handler do
           {:error, HTTPoison.Error.t()}
           | {:error, :first_timestamp_reached}
           | {:error, :service_unavailable}
+          | {:error, String.t()}
           | {:snooze, non_neg_integer()}
           | {:ok, min_timestamp :: non_neg_integer(), data_list :: list()}
   def get_data(url, process_json_response_function, opts)
@@ -52,6 +53,14 @@ defmodule Sanbase.Cryptocompare.Handler do
       {:ok, %{status_code: 503}} ->
         # Service temporarily unavailable
         {:error, :service_unavailable}
+
+      {:ok, %{status_code: 429} = http_response} ->
+        # The 429 responses carry the same X-RateLimit-* headers as the 200
+        # ones, so the reset seconds can be extracted the same way.
+        handle_rate_limit(http_response, opts)
+
+      {:ok, %{status_code: status_code}} ->
+        {:error, "Unexpected status code #{status_code} from the Cryptocompare API"}
 
       {:error, error} ->
         {:error, error}
@@ -82,12 +91,7 @@ defmodule Sanbase.Cryptocompare.Handler do
         |> maybe_remove_known_timestamps(timestamps, opts)
 
       {:error_limited, _info} ->
-        rate_limited_seconds =
-          http_response
-          |> HTTPHeaderUtils.rate_limit_reset_seconds()
-          |> capped_reset_seconds()
-
-        do_handle_rate_limit(rate_limited_seconds, opts)
+        handle_rate_limit(http_response, opts)
     end
   end
 
@@ -202,17 +206,56 @@ defmodule Sanbase.Cryptocompare.Handler do
   defp capped_reset_seconds(seconds) when is_integer(seconds) and seconds >= 0, do: seconds
   defp capped_reset_seconds(_), do: 60
 
-  defp do_handle_rate_limit(rate_limited_seconds, opts) do
+  @doc ~s"""
+  Handle a rate-limited response for the historical worker `module` given in
+  `opts`: pause the module's historical queue, schedule a job that resumes it
+  after the (capped) rate limit reset, and return `{:snooze, seconds}` so the
+  job that hit the limit is retried after the queue is running again.
+  """
+  def handle_rate_limit(http_response, opts) do
     module = Keyword.fetch!(opts, :module)
-    oban_conf_name = module.conf_name()
-    historical_scheduler = module.historical_scheduler()
-    pause_resume_worker = module.pause_resume_worker()
 
-    :ok = historical_scheduler.pause()
+    rate_limited_seconds =
+      http_response
+      |> HTTPHeaderUtils.rate_limit_reset_seconds()
+      |> capped_reset_seconds()
 
-    data = pause_resume_worker.new(%{"type" => "resume"}, schedule_in: rate_limited_seconds)
+    :ok = module.historical_scheduler().pause()
+    :ok = schedule_resume_job(module, rate_limited_seconds)
 
-    case Oban.insert(oban_conf_name, data) do
+    {:snooze, rate_limited_seconds}
+  end
+
+  # States in which an existing resume job is guaranteed to still run in the
+  # future, i.e. after the pause that is being handled right now.
+  @pending_resume_states ~w[available scheduled retryable]
+
+  @doc ~s"""
+  Schedule a `resume` job for the historical queue of the given worker `module`
+  that was just paused.
+
+  The insert can be discarded due to the worker's uniqueness constraint. That is
+  harmless when the conflicting job is still pending (it will resume the queue
+  later), but if it conflicts with a job that is currently `executing`, that job
+  may have already resumed the queue *before* our pause landed. In that case no
+  future resume exists and the queue would stay paused forever, so the queue is
+  resumed immediately; if the rate limit is still hit it will simply pause again.
+  """
+  def schedule_resume_job(module, schedule_in_seconds) do
+    data =
+      module.pause_resume_worker().new(%{"type" => "resume"}, schedule_in: schedule_in_seconds)
+
+    case Oban.insert(module.conf_name(), data) do
+      {:ok, %Oban.Job{conflict?: true, state: state}}
+      when state not in @pending_resume_states ->
+        Logger.warning(
+          "[Cryptocompare] Resume job insert conflicted with a resume job in state #{state}. " <>
+            "Resuming queue immediately to avoid permanent pause."
+        )
+
+        module.historical_scheduler().resume()
+        :ok
+
       {:ok, _job} ->
         :ok
 
@@ -222,9 +265,32 @@ defmodule Sanbase.Cryptocompare.Handler do
             "Resuming queue immediately to avoid permanent pause."
         )
 
-        historical_scheduler.resume()
+        module.historical_scheduler().resume()
+        :ok
     end
+  end
 
-    {:snooze, rate_limited_seconds}
+  # Give the async resume signal time to reach the queue producer before checking.
+  @resume_propagation_ms 1000
+
+  @doc ~s"""
+  Resume the scheduler's queue and verify the resume actually landed.
+
+  The resume signal is delivered asynchronously through the Oban notifier and is
+  silently lost if the notifier connection is down at that moment. Returning an
+  error from here makes the calling Oban job retry, which re-sends the signal.
+
+  Returns `:ok` when the queue is not running on this node — there is no local
+  producer to verify in that case.
+  """
+  def resume_and_verify(historical_scheduler) do
+    :ok = historical_scheduler.resume()
+
+    Process.sleep(@resume_propagation_ms)
+
+    case Oban.check_queue(historical_scheduler.conf_name(), queue: historical_scheduler.queue()) do
+      %{paused: true} -> {:error, :queue_still_paused}
+      _ -> :ok
+    end
   end
 end

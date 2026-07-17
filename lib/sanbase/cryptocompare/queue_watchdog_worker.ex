@@ -25,6 +25,8 @@ defmodule Sanbase.Cryptocompare.QueueWatchdogWorker do
 
   require Logger
 
+  alias Sanbase.Cryptocompare.Handler
+
   # The historical workers expose historical_scheduler/0 and
   # pause_resume_worker/0 — the same callbacks Handler.handle_rate_limit/2 uses.
   @historical_workers [
@@ -39,8 +41,20 @@ defmodule Sanbase.Cryptocompare.QueueWatchdogWorker do
 
   @impl Oban.Worker
   def perform(_job) do
-    Enum.each(@historical_workers, &resume_if_stuck/1)
-    :ok
+    unconfirmed =
+      @historical_workers
+      |> Enum.map(&resume_if_stuck/1)
+      |> Enum.reject(&(&1 == :ok))
+
+    case unconfirmed do
+      [] ->
+        :ok
+
+      _ ->
+        # Fail the job so Oban retries it (and the next cron tick is another
+        # chance anyway).
+        {:error, :queue_resume_not_confirmed}
+    end
   end
 
   defp resume_if_stuck(historical_worker) do
@@ -60,13 +74,27 @@ defmodule Sanbase.Cryptocompare.QueueWatchdogWorker do
           "pending resume job. Resuming it."
       )
 
-      scheduler.resume()
+      Handler.resume_and_verify(scheduler)
     else
       _ -> :ok
     end
   end
 
-  @doc false
+  @doc ~s"""
+  Check whether a `resume` job of the given pause/resume worker exists in a
+  state in which it either will run or is running right now.
+
+  Used by the watchdog to avoid interfering with an in-flight recovery.
+
+  ## Example
+
+      QueueWatchdogWorker.pending_resume_job_exists?(
+        :oban_scrapers,
+        Sanbase.Cryptocompare.OpenInterest.PauseResumeWorker
+      )
+      #=> false
+  """
+  @spec pending_resume_job_exists?(atom(), module()) :: boolean()
   def pending_resume_job_exists?(oban_conf_name, pause_resume_worker) do
     worker_name = Oban.Worker.to_string(pause_resume_worker)
 

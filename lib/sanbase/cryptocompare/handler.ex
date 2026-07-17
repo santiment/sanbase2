@@ -222,7 +222,19 @@ defmodule Sanbase.Cryptocompare.Handler do
   `opts`: pause the module's historical queue, schedule a job that resumes it
   after the (capped) rate limit reset, and return `{:snooze, seconds}` so the
   job that hit the limit is retried after the queue is running again.
+
+  Returns an error when a recovery resume could not be confirmed, so the
+  calling Oban job fails and re-runs the pause/schedule cycle on retry.
+
+  ## Example
+
+      case Handler.handle_rate_limit(http_response, module: __MODULE__) do
+        {:snooze, seconds} -> {:snooze, seconds}
+        {:error, _} = error -> error
+      end
   """
+  @spec handle_rate_limit(HTTPoison.Response.t(), Keyword.t()) ::
+          {:snooze, non_neg_integer()} | {:error, :queue_still_paused}
   def handle_rate_limit(http_response, opts) do
     module = Keyword.fetch!(opts, :module)
 
@@ -232,9 +244,16 @@ defmodule Sanbase.Cryptocompare.Handler do
       |> capped_reset_seconds()
 
     :ok = module.historical_scheduler().pause()
-    :ok = schedule_resume_job(module, rate_limited_seconds)
 
-    {:snooze, rate_limited_seconds}
+    case schedule_resume_job(module, rate_limited_seconds) do
+      :ok ->
+        {:snooze, rate_limited_seconds}
+
+      {:error, _reason} = error ->
+        # The recovery resume was not confirmed. Fail the job so Oban retries
+        # it and re-runs the pause/schedule cycle; the watchdog is the backstop.
+        error
+    end
   end
 
   # States in which an existing resume job is guaranteed to still run in the
@@ -250,8 +269,15 @@ defmodule Sanbase.Cryptocompare.Handler do
   later), but if it conflicts with a job that is currently `executing`, that job
   may have already resumed the queue *before* our pause landed. In that case no
   future resume exists and the queue would stay paused forever, so the queue is
-  resumed immediately; if the rate limit is still hit it will simply pause again.
+  resumed immediately (and verified); if the rate limit is still hit it will
+  simply pause again.
+
+  ## Example
+
+      :ok = Handler.schedule_resume_job(OpenInterest.HistoricalWorker, 60)
   """
+  @spec schedule_resume_job(module(), non_neg_integer()) ::
+          :ok | {:error, :queue_still_paused}
   def schedule_resume_job(module, schedule_in_seconds) do
     data =
       module.pause_resume_worker().new(%{"type" => "resume"}, schedule_in: schedule_in_seconds)
@@ -264,8 +290,7 @@ defmodule Sanbase.Cryptocompare.Handler do
             "Resuming queue immediately to avoid permanent pause."
         )
 
-        module.historical_scheduler().resume()
-        :ok
+        resume_and_verify(module.historical_scheduler())
 
       {:ok, _job} ->
         :ok
@@ -276,8 +301,7 @@ defmodule Sanbase.Cryptocompare.Handler do
             "Resuming queue immediately to avoid permanent pause."
         )
 
-        module.historical_scheduler().resume()
-        :ok
+        resume_and_verify(module.historical_scheduler())
     end
   end
 
@@ -293,7 +317,12 @@ defmodule Sanbase.Cryptocompare.Handler do
 
   Returns `:ok` when the queue is not running on this node — there is no local
   producer to verify in that case.
+
+  ## Example
+
+      :ok = Handler.resume_and_verify(OpenInterest.HistoricalScheduler)
   """
+  @spec resume_and_verify(module()) :: :ok | {:error, :queue_still_paused}
   def resume_and_verify(historical_scheduler) do
     :ok = historical_scheduler.resume()
 

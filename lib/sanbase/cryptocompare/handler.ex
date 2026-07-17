@@ -1,4 +1,15 @@
 defmodule Sanbase.Cryptocompare.Handler do
+  @moduledoc ~s"""
+  Shared logic for the Cryptocompare historical scraper workers: fetching data
+  and handling rate limits by pausing/resuming the Oban queues.
+
+  The pause/resume machinery (conflict-aware resume scheduling, post-resume
+  verification, the QueueWatchdogWorker and the Lifeline plugin) exists because
+  OSS Oban's pause/resume is an ephemeral fire-and-forget signal, not managed
+  state. See docs/cryptocompare-queue-pause-resume.md for the full design and
+  the failure modes each layer covers.
+  """
+
   alias Sanbase.Cryptocompare.HTTPHeaderUtils
   alias Sanbase.Cryptocompare.ExporterProgress
   alias Sanbase.Utils.Config

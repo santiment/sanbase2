@@ -16,6 +16,8 @@ defmodule Sanbase.Cryptocompare.QueueWatchdogWorker do
   Any of these leaves the queue paused forever and the exporter silently stops
   until the pod is restarted. This worker runs periodically via Oban cron and
   resumes any enabled queue that is paused without a pending resume job.
+
+  See docs/cryptocompare-queue-pause-resume.md for the full design rationale.
   """
   use Oban.Worker, queue: :cryptocompare_watchdog_queue, max_attempts: 3
 

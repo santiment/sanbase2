@@ -31,9 +31,19 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
   def queue(), do: :cryptocompare_historical_jobs_queue
   def conf_name(), do: @oban_conf_name
 
+  @doc ~s"""
+  The Oban worker that pauses/resumes this worker's queue after rate limits.
+  Part of the callbacks `Sanbase.Cryptocompare.Handler` uses via `module:`.
+  """
+  @spec pause_resume_worker() :: module()
   def pause_resume_worker(),
     do: Sanbase.Cryptocompare.Price.PauseResumeWorker
 
+  @doc ~s"""
+  The GenServer that owns pause/resume/enabled? for this worker's queue.
+  Part of the callbacks `Sanbase.Cryptocompare.Handler` uses via `module:`.
+  """
+  @spec historical_scheduler() :: module()
   def historical_scheduler(),
     do: Sanbase.Cryptocompare.Price.HistoricalScheduler
 
@@ -123,6 +133,22 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
     assets
   end
 
+  @doc ~s"""
+  Fetch one day of minute OHLCV data for the pair from the Cryptocompare
+  min-api.
+
+  Returns:
+  - `{:ok, ohlcv_list}` on success
+  - `{:snooze, seconds}` when rate limited — the queue is paused and a resume
+    job is scheduled via `Sanbase.Cryptocompare.Handler.handle_rate_limit/2`
+  - `:snooze` when the API returns a JSON error payload instead of CSV
+  - `{:error, reason}` on HTTP errors or unexpected status codes
+
+  ## Example
+
+      get_data("BTC", "USD", "2024-01-01")
+      #=> {:ok, [%{time: 1704067200, open: ..., high: ..., ...} | _]}
+  """
   @spec get_data(String.t(), String.t(), String.t()) ::
           {:ok, any} | {:snooze, non_neg_integer()} | :snooze | {:error, any}
   def get_data(base_asset, quote_asset, date) do

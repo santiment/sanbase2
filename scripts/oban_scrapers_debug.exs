@@ -103,9 +103,9 @@ defmodule ObanScrapersDebug do
     """)
 
     if d.executing != [] do
-      IO.puts("    executing (oldest first, max 15):")
+      IO.puts("    executing (#{length(d.executing)} total, oldest first, max 15 shown):")
 
-      Enum.each(d.executing, fn j ->
+      Enum.each(Enum.take(d.executing, 15), fn j ->
         mark = if j in d.orphans, do: "  <-- ORPHAN (dead node)", else: ""
 
         IO.puts(
@@ -216,9 +216,24 @@ defmodule ObanScrapersDebug do
         do: " #{recent} are <7d old and BLOCK unique re-inserts of the same market/instrument.",
         else: " All older than the 7d unique window, so they block nothing — just zombie rows."
 
-    "#{length(orphans)} ORPHANED executing job(s) (no Lifeline plugin -> never rescued)." <>
+    lifeline_note =
+      case lifeline_rescue_after_ms() do
+        nil -> " (no Lifeline plugin -> never rescued)"
+        ms -> " (Lifeline rescues them ~#{div(ms, 60_000)}m after attempted_at)"
+      end
+
+    "#{length(orphans)} ORPHANED executing job(s)#{lifeline_note}." <>
       unique_note <>
       " Fix: ObanScrapersDebug.cancel_orphans(:#{metric}, confirm: true) (or retry_orphans)."
+  end
+
+  defp lifeline_rescue_after_ms() do
+    Oban.config(@conf_name).plugins
+    |> Enum.find_value(fn
+      {Oban.Plugins.Lifeline, opts} -> Keyword.get(opts, :rescue_after, :timer.minutes(60))
+      Oban.Plugins.Lifeline -> :timer.minutes(60)
+      _ -> nil
+    end)
   end
 
   defp check_flow(%{main_meta: nil}), do: nil
@@ -400,7 +415,10 @@ defmodule ObanScrapersDebug do
   end
 
   defp pad_count(counts, state, width \\ 5) do
-    counts |> Map.get(state, empty_row()) |> Map.get(:count) |> to_string()
+    counts
+    |> Map.get(state, empty_row())
+    |> Map.get(:count)
+    |> to_string()
     |> String.pad_leading(width)
   end
 
@@ -536,7 +554,10 @@ defmodule ObanScrapersDebug do
 
     Enum.each(rows, fn {key, max_ts, updated_at} ->
       newest = DateTime.from_unix!(max_ts)
-      IO.puts("  #{String.pad_trailing(key, 45)} data up to #{newest} (row updated #{rel(updated_at)})")
+
+      IO.puts(
+        "  #{String.pad_trailing(key, 45)} data up to #{newest} (row updated #{rel(updated_at)})"
+      )
     end)
 
     :ok
@@ -702,7 +723,12 @@ defmodule ObanScrapersDebug do
           fragment("?[1] != ?", j.attempted_by, ^conf.node) and
           j.id not in ^running_ids,
       order_by: [asc: j.attempted_at],
-      select: %{id: j.id, attempted_at: j.attempted_at, attempted_by: j.attempted_by, args: j.args}
+      select: %{
+        id: j.id,
+        attempted_at: j.attempted_at,
+        attempted_by: j.attempted_by,
+        args: j.args
+      }
     )
   end
 
@@ -713,7 +739,9 @@ defmodule ObanScrapersDebug do
   defp with_conf(fun) do
     case safe(fn -> Oban.config(@conf_name) end, nil) do
       nil ->
-        IO.puts("!! #{inspect(@conf_name)} not running on this node — attach to the scrapers pod.")
+        IO.puts(
+          "!! #{inspect(@conf_name)} not running on this node — attach to the scrapers pod."
+        )
 
       conf ->
         fun.(conf)
@@ -746,14 +774,21 @@ defmodule ObanScrapersDebug do
     ) || {0, nil, nil}
   end
 
+  # Fetch enough rows that saturation checks (vs the producer limit, up to 25)
+  # and orphan counts stay accurate; only the first 15 are displayed.
   defp executing_jobs(conf, queue) do
     Oban.Repo.all(
       conf,
       from(j in Oban.Job,
         where: j.queue == ^to_string(queue) and j.state == "executing",
         order_by: [asc: j.attempted_at],
-        limit: 15,
-        select: %{id: j.id, attempted_at: j.attempted_at, attempted_by: j.attempted_by, args: j.args}
+        limit: 200,
+        select: %{
+          id: j.id,
+          attempted_at: j.attempted_at,
+          attempted_by: j.attempted_by,
+          args: j.args
+        }
       )
     )
   end
@@ -783,7 +818,13 @@ defmodule ObanScrapersDebug do
         where: j.queue == ^to_string(pr_queue),
         order_by: [desc: j.id],
         limit: 5,
-        select: %{id: j.id, state: j.state, args: j.args, scheduled_at: j.scheduled_at, completed_at: j.completed_at}
+        select: %{
+          id: j.id,
+          state: j.state,
+          args: j.args,
+          scheduled_at: j.scheduled_at,
+          completed_at: j.completed_at
+        }
       )
     )
   end

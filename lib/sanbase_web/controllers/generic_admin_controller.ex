@@ -62,6 +62,7 @@ defmodule SanbaseWeb.GenericAdminController do
       {"Ecosystem Project Labels Suggestions", ~p"/forms/suggest_ecosystems"},
       {"User Forms", ~p"/forms"},
       {"Admin Forms", ~p"/admin/admin_forms"},
+      {"Major Topics", ~p"/admin/major_topics"},
       {"Metric Registry", ~p"/admin/metric_registry"},
       {"SES Events", ~p"/admin/ses_events"},
       {"User Roles", ~p"/admin/user_roles"},

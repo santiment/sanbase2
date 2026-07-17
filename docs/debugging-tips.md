@@ -92,3 +92,48 @@ But the Stack Dump of the `application_controller` process has the following:
 ```
 
 From this we now have a clear idea what might be wrong: `pool size must be greater or equal to 1, got 0`
+
+## Debugging stuck Oban scraper queues
+
+The cryptocompare funding rate / open interest / price historical queues run
+on the `:oban_scrapers` instance in the scrapers pod. When one of them appears
+stuck (no new data exported), use `scripts/oban_scrapers_debug.exs`:
+
+```sh
+kubectl exec -it <scrapers-pod> -- bin/sanbase remote
+# then paste the entire contents of scripts/oban_scrapers_debug.exs
+```
+
+```elixir
+ObanScrapersDebug.report()                 # overview + verdict per queue
+ObanScrapersDebug.deep_dive(:funding_rate) # stacktraces of executing jobs, notifier/stager state
+ObanScrapersDebug.watch(:funding_rate)     # one status line per 5s — is it moving?
+ObanScrapersDebug.history(:funding_rate)   # hourly throughput vs rate-limit hits
+ObanScrapersDebug.errors(:funding_rate)    # tally of recent job errors
+ObanScrapersDebug.lag(:funding_rate)       # instruments furthest behind
+```
+
+All of the above are read-only. The full command list is in the script header.
+
+### How these queues get stuck
+
+The queues are defined `paused: true` and resumed at boot by their
+`HistoricalScheduler` when the env flag enables them. On a 429 from the
+Cryptocompare API the handler pauses the queue and schedules a `resume` job
+in the `*_pause_resume_queue`. Known failure modes, all detected by
+`report/0`'s VERDICT section:
+
+- **Paused with no pending resume job** — stuck until manually resumed:
+  `ObanScrapersDebug.force_resume(:funding_rate)`.
+- **Notifier `:isolated`** — pause/resume signals travel over Postgres
+  `pg_notify`; when the LISTEN connection is down the resume job completes but
+  the producer never receives the signal and stays paused. A pod restart
+  re-establishes it.
+- **Orphaned `executing` jobs** — a deploy kills a pod mid-job and the row
+  stays `executing` forever. `Oban.Plugins.Lifeline` (rescue_after: 90m)
+  rescues them automatically; for manual cleanup of ancient orphans use
+  `ObanScrapersDebug.cancel_orphans(:funding_rate, confirm: true)` — cancel,
+  don't retry, old orphans: retrying restarts historical backfill chains.
+- **Everything snoozed** — rate limited; jobs wake on their own, no action.
+- **Stale cron feed** — the hourly `AddHistoricalJobsWorker` insert stopped;
+  cron runs only on the Oban leader node.

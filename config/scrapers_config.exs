@@ -41,6 +41,12 @@ config :sanbase, Oban.Scrapers,
     # causes the oban_jobs table (and its GIN indexes) to bloat, leading to
     # progressively higher Postgres CPU usage.
     {Oban.Plugins.Pruner, max_age: 7 * 86_400},
+    # Rescue jobs orphaned in the `executing` state by dead pods (e.g. a deploy
+    # kills a pod mid-job): back to available, or discarded when attempts are
+    # exhausted. Lifeline is purely time-based, so rescue_after must exceed the
+    # longest legitimate execution on this instance — AddHistoricalJobsWorker
+    # has a 60m timeout, hence 90m. Runs on the leader, checks once a minute.
+    {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(90)},
     {Oban.Plugins.Cron,
      crontab: [
        {"0 3 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,

@@ -130,5 +130,35 @@
       "SANAPI": "free",
       "SANBASE": "free"
     }
+  },
+  {
+    "human_readable_name": "Anomaly: Social Dominance Spike",
+    "name": "anomaly_social_dominance_spike",
+    "signal": "social_dominance_spike",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
+  },
+  {
+    "human_readable_name": "Anomaly: Price - Network Activity Divergence",
+    "name": "anomaly_price_network_activity_divergence",
+    "signal": "price_network_activity_divergence",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   }
 ]

@@ -475,20 +475,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.market_segment/3)
     end
 
-    # TODO: Debug why this breaks a test after updating cachex 3.4 -> 4.1
-    # field :market_segment, :string do
-    #   # Introduce a different function name so it does not share cache with the
-    #   # :market_segments as they query the same data
-    #   cache_resolve(
-    #     dataloader(SanbaseRepo, :market_segments,
-    #       callback: fn query, _project, _args ->
-    #         {:ok, query |> Enum.map(& &1.name) |> List.first()}
-    #       end
-    #     ),
-    #     fun_name: :market_segment
-    #   )
-    # end
-
     field :market_segments, list_of(:string) do
       cache_resolve(&ProjectResolver.market_segments/3)
     end

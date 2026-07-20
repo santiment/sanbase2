@@ -320,9 +320,10 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
       end)
     end
 
-    # Exactly one computation runs
+    # Errors are not cached, so the callers serialized behind the per-key lock
+    # each retry the computation (matching the Cachex v3 provider semantics).
+    # The computation runs between 1 and n times, never more.
     assert_receive :computed, 5000
-    refute_receive :computed
 
     # Every caller gets the error
     results =
@@ -332,6 +333,12 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
       end)
 
     assert Enum.all?(results, &(&1 == {:error, "transient failure"}))
+
+    computed_count =
+      1 +
+        Enum.count(1..(n - 1), fn _ -> receive(do: (:computed -> true), after: (0 -> false)) end)
+
+    assert computed_count <= n
   end
 
   test "an error result is not cached — the next call retries the computation" do
@@ -599,7 +606,8 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
         CacheProvider.store(name, "key_#{i}", {:ok, i})
       end
 
-      # Evented hook is async; let the mailbox drain.
+      # Bound enforcement prunes in a spawned single-flight process; give it
+      # a moment to finish.
       Process.sleep(100)
 
       count = CacheProvider.count(name)
@@ -612,6 +620,38 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
     test "uses defaults when no config params are provided" do
       CacheProvider.store(@cache_name, "default_ttl_key", {:ok, "v"})
       assert {:ok, "v"} == CacheProvider.get(@cache_name, "default_ttl_key")
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # oversized values — entries whose compressed size exceeds the cap are not
+  # cached, protecting the memory bound that max_entries alone cannot express
+  # ---------------------------------------------------------------------------
+
+  describe "oversized values" do
+    # ~1MB of random bytes; random data does not compress below the 500kb cap
+    defp oversized_value(), do: {:ok, :crypto.strong_rand_bytes(1_000_000)}
+
+    test "store does not cache values whose compressed size exceeds the cap" do
+      CacheProvider.store(@cache_name, "huge_key", oversized_value())
+      assert nil == CacheProvider.get(@cache_name, "huge_key")
+    end
+
+    test "get_or_store returns an oversized value without caching it" do
+      value = oversized_value()
+      counter = :counters.new(1, [])
+
+      compute = fn ->
+        :counters.add(counter, 1, 1)
+        value
+      end
+
+      assert value == CacheProvider.get_or_store(@cache_name, "huge_gos_key", compute, & &1)
+      assert nil == CacheProvider.get(@cache_name, "huge_gos_key")
+
+      # Not cached, so a second call computes again
+      assert value == CacheProvider.get_or_store(@cache_name, "huge_gos_key", compute, & &1)
+      assert 2 == :counters.get(counter, 1)
     end
   end
 end

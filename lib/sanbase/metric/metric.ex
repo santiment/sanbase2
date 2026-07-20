@@ -262,21 +262,23 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        aggregation = Keyword.get(opts, :aggregation, nil)
+        with :ok <- check_metric_data_type(metric, :timeseries) do
+          aggregation = Keyword.get(opts, :aggregation, nil)
 
-        fun = fn ->
-          module.timeseries_data(
-            metric,
-            selector,
-            from,
-            to,
-            interval,
-            opts
-          )
-          |> maybe_round_floats(:timeseries_data)
+          fun = fn ->
+            module.timeseries_data(
+              metric,
+              selector,
+              from,
+              to,
+              interval,
+              opts
+            )
+            |> maybe_round_floats(:timeseries_data)
+          end
+
+          execute_if_aggregation_valid(fun, metric, aggregation)
         end
-
-        execute_if_aggregation_valid(fun, metric, aggregation)
     end
   end
 
@@ -300,23 +302,25 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        aggregation = Keyword.get(opts, :aggregation, nil)
+        with :ok <- check_metric_data_type(metric, :timeseries) do
+          aggregation = Keyword.get(opts, :aggregation, nil)
 
-        fun = fn ->
-          module.timeseries_data_per_slug(
-            metric,
-            selector,
-            from,
-            to,
-            interval,
-            opts
-          )
-          |> maybe_round_floats(:timeseries_data_per_slug)
+          fun = fn ->
+            module.timeseries_data_per_slug(
+              metric,
+              selector,
+              from,
+              to,
+              interval,
+              opts
+            )
+            |> maybe_round_floats(:timeseries_data_per_slug)
+          end
+
+          execute_if_aggregation_valid(fun, metric, aggregation)
+          |> maybe_sort(:datetime, :asc)
+          |> maybe_apply_function(&sort_data_field_by_slug_asc/1)
         end
-
-        execute_if_aggregation_valid(fun, metric, aggregation)
-        |> maybe_sort(:datetime, :asc)
-        |> maybe_apply_function(&sort_data_field_by_slug_asc/1)
     end
   end
 
@@ -337,20 +341,22 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        aggregation = Keyword.get(opts, :aggregation, nil)
+        with :ok <- check_metric_data_type(metric, :timeseries) do
+          aggregation = Keyword.get(opts, :aggregation, nil)
 
-        fun = fn ->
-          module.aggregated_timeseries_data(
-            metric,
-            selector,
-            from,
-            to,
-            opts
-          )
-          |> maybe_round_floats(:aggregated_timeseries_data)
+          fun = fn ->
+            module.aggregated_timeseries_data(
+              metric,
+              selector,
+              from,
+              to,
+              opts
+            )
+            |> maybe_round_floats(:aggregated_timeseries_data)
+          end
+
+          execute_if_aggregation_valid(fun, metric, aggregation)
         end
-
-        execute_if_aggregation_valid(fun, metric, aggregation)
     end
   end
 
@@ -461,14 +467,16 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :histogram)
 
       module when is_atom(module) ->
-        module.histogram_data(
-          metric,
-          selector,
-          from,
-          to,
-          interval,
-          limit
-        )
+        with :ok <- check_metric_data_type(metric, :histogram) do
+          module.histogram_data(
+            metric,
+            selector,
+            from,
+            to,
+            interval,
+            limit
+          )
+        end
     end
   end
 
@@ -489,19 +497,21 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :table)
 
       module when is_atom(module) ->
-        aggregation = Keyword.get(opts, :aggregation, nil)
+        with :ok <- check_metric_data_type(metric, :table) do
+          aggregation = Keyword.get(opts, :aggregation, nil)
 
-        fun = fn ->
-          module.table_data(
-            metric,
-            selector,
-            from,
-            to,
-            opts
-          )
+          fun = fn ->
+            module.table_data(
+              metric,
+              selector,
+              from,
+              to,
+              opts
+            )
+          end
+
+          execute_if_aggregation_valid(fun, metric, aggregation)
         end
-
-        execute_if_aggregation_valid(fun, metric, aggregation)
     end
   end
 
@@ -979,6 +989,34 @@ defmodule Sanbase.Metric do
   def min_plan_map(), do: Helper.min_plan_map()
 
   # Private functions
+
+  # The metric -> module dispatch does not take the metric's data type into
+  # account, so without this check a histogram metric requested as timeseries
+  # (or vice versa) is dispatched to the wrong fetch function and fails deep
+  # in the SQL generation with a hard to understand error.
+  defp check_metric_data_type(metric, expected_type) do
+    case Map.get(Helper.metric_to_data_types_map(), metric) do
+      nil ->
+        # The metric is not part of any data type list. Do not error here,
+        # but let the called module handle it.
+        :ok
+
+      data_types ->
+        if expected_type in data_types do
+          :ok
+        else
+          actual_type = List.first(data_types)
+
+          {:error,
+           "The metric '#{metric}' is a #{actual_type} metric, not a #{expected_type} metric. " <>
+             "Use the #{data_type_fetch_field(actual_type)} field to fetch it."}
+        end
+    end
+  end
+
+  defp data_type_fetch_field(:timeseries), do: "timeseriesData"
+  defp data_type_fetch_field(:histogram), do: "histogramData"
+  defp data_type_fetch_field(:table), do: "tableData"
 
   defp metric_not_available_error(metric, opts \\ [])
 

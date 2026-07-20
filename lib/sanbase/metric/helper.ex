@@ -44,6 +44,7 @@ defmodule Sanbase.Metric.Helper do
   def implemented_optional_functions(), do: get(:implemented_optional_functions)
   def incomplete_metrics(), do: get(:incomplete_metrics)
   def metric_modules(), do: @modules
+  def metric_to_data_types_map(), do: get(:metric_to_data_types_map)
   def metric_to_module_map(), do: get(:metric_to_module_map)
   def metric_to_modules_map(), do: get(:metric_to_modules_map)
   def metrics(), do: get(:metrics)
@@ -71,6 +72,7 @@ defmodule Sanbase.Metric.Helper do
     {:histogram_metrics_mapset, []},
     {:implemented_optional_functions, []},
     {:incomplete_metrics, []},
+    {:metric_to_data_types_map, []},
     {:metric_to_module_map, []},
     {:metric_to_modules_map, []},
     {:metrics, []},
@@ -200,6 +202,23 @@ defmodule Sanbase.Metric.Helper do
 
   defp compute(:metric_to_module_map, []) do
     build_metric_to_module_map(@modules, :available_metrics)
+  end
+
+  # A metric name can be exposed by multiple modules, in theory with different
+  # data types, so the value is a list of types.
+  defp compute(:metric_to_data_types_map, []) do
+    type_getters = [
+      timeseries: :available_timeseries_metrics,
+      histogram: :available_histogram_metrics,
+      table: :available_table_metrics
+    ]
+
+    for module <- @modules,
+        {data_type, getter_fun} <- type_getters,
+        metric <- apply(module, getter_fun, []),
+        reduce: %{} do
+      acc -> Map.update(acc, metric, [data_type], &Enum.uniq([data_type | &1]))
+    end
   end
 
   defp compute(:metric_to_modules_map, []) do

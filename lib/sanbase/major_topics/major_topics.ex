@@ -16,6 +16,7 @@ defmodule Sanbase.MajorTopics do
 
   @draft TopicBatch.draft_state()
   @published TopicBatch.published_state()
+  @week TopicBatch.week_granularity()
 
   @spec list_batches(keyword()) :: [TopicBatch.t()]
   def list_batches(opts \\ []) do
@@ -42,28 +43,29 @@ defmodule Sanbase.MajorTopics do
     |> Repo.preload(topics: from(t in MajorTopic, order_by: [asc: t.position, asc: t.id]))
   end
 
-  @spec latest_published_batch() :: TopicBatch.t() | nil
-  def latest_published_batch do
-    from(b in TopicBatch,
-      where: b.state == ^@published,
-      order_by: [desc: b.interval_start, desc: b.id],
-      limit: 1
-    )
+  @doc """
+  The most recent published batch eligible for the requested granularity, or
+  `nil` when no eligible batch has been published.
+  """
+  @spec latest_published_batch(String.t()) :: TopicBatch.t() | nil
+  def latest_published_batch(granularity \\ @week) do
+    published_batches(granularity)
+    |> order_by([b], desc: b.interval_start, desc: b.id)
+    |> limit(1)
     |> Repo.one()
     |> preload_active_topics()
   end
 
   @doc """
-  Fetch the published batch at the given `interval_start`. Returns `nil` if no
-  such batch exists or is not yet published.
+  Fetch the published batch at the given `interval_start` when it is eligible
+  for the requested granularity. Returns `nil` otherwise.
   """
-  @spec get_published_batch_at(Date.t()) :: TopicBatch.t() | nil
-  def get_published_batch_at(%Date{} = interval_start) do
-    from(b in TopicBatch,
-      where: b.state == ^@published and b.interval_start == ^interval_start,
-      order_by: [desc: b.inserted_at, desc: b.id],
-      limit: 1
-    )
+  @spec get_published_batch_at(Date.t(), String.t()) :: TopicBatch.t() | nil
+  def get_published_batch_at(%Date{} = interval_start, granularity \\ @week) do
+    published_batches(granularity)
+    |> where([b], b.interval_start == ^interval_start)
+    |> order_by([b], desc: b.inserted_at, desc: b.id)
+    |> limit(1)
     |> Repo.one()
     |> preload_active_topics()
   end
@@ -72,21 +74,22 @@ defmodule Sanbase.MajorTopics do
   `interval_start` of the published batch whose start is closest to one step
   before `current_start`. Step size is 7 days when `granularity` is `"week"`,
   1 day when `"day"`. Used as the `previousIntervalStart` cursor.
+
+  Only batches eligible for `granularity` are considered.
   """
   @spec previous_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
   def previous_published_interval_start(granularity, %Date{} = current_start) do
     target = Date.add(current_start, -pagination_step_days(granularity))
 
-    from(b in TopicBatch,
-      where: b.state == ^@published and b.interval_start < ^current_start,
-      order_by: [
-        asc: fragment("abs(? - ?)", b.interval_start, ^target),
-        desc: b.interval_start,
-        desc: b.id
-      ],
-      limit: 1,
-      select: b.interval_start
+    published_batches(granularity)
+    |> where([b], b.interval_start < ^current_start)
+    |> order_by([b],
+      asc: fragment("abs(? - ?)", b.interval_start, ^target),
+      desc: b.interval_start,
+      desc: b.id
     )
+    |> limit(1)
+    |> select([b], b.interval_start)
     |> Repo.one()
   end
 
@@ -94,22 +97,31 @@ defmodule Sanbase.MajorTopics do
   `interval_start` of the published batch whose start is closest to one step
   after `current_start` (7 days for week, 1 day for day granularity), among
   batches with a later start. Used as the `nextIntervalStart` cursor.
+
+  Only batches eligible for `granularity` are considered.
   """
   @spec next_published_interval_start(String.t(), Date.t()) :: Date.t() | nil
   def next_published_interval_start(granularity, %Date{} = current_start) do
     target = Date.add(current_start, pagination_step_days(granularity))
 
-    from(b in TopicBatch,
-      where: b.state == ^@published and b.interval_start > ^current_start,
-      order_by: [
-        asc: fragment("abs(? - ?)", b.interval_start, ^target),
-        asc: b.interval_start,
-        asc: b.id
-      ],
-      limit: 1,
-      select: b.interval_start
+    published_batches(granularity)
+    |> where([b], b.interval_start > ^current_start)
+    |> order_by([b],
+      asc: fragment("abs(? - ?)", b.interval_start, ^target),
+      asc: b.interval_start,
+      asc: b.id
     )
+    |> limit(1)
+    |> select([b], b.interval_start)
     |> Repo.one()
+  end
+
+  defp published_batches(granularity) do
+    publication_scopes = TopicBatch.publication_scopes_for_granularity(granularity)
+
+    from(b in TopicBatch,
+      where: b.state == ^@published and b.publication_scope in ^publication_scopes
+    )
   end
 
   defp pagination_step_days("week"), do: 7
@@ -234,18 +246,19 @@ defmodule Sanbase.MajorTopics do
   end
 
   @doc """
-  Transition a draft batch to `published`. Returns `{:error, :already_published}`
-  if the batch is not in draft.
+  Transition a draft batch to `published` with the moderator-selected
+  publication scope. Returns `{:error, :already_published}` if the batch is not
+  in draft.
   """
-  @spec publish_batch(TopicBatch.t(), integer() | nil) ::
+  @spec publish_batch(TopicBatch.t(), integer() | nil, String.t()) ::
           {:ok, TopicBatch.t()} | {:error, :already_published | Ecto.Changeset.t()}
-  def publish_batch(%TopicBatch{state: @draft} = batch, user_id) do
+  def publish_batch(%TopicBatch{state: @draft} = batch, user_id, publication_scope) do
     batch
-    |> TopicBatch.publish_changeset(user_id)
+    |> TopicBatch.publish_changeset(user_id, publication_scope)
     |> Repo.update()
   end
 
-  def publish_batch(%TopicBatch{}, _user_id), do: {:error, :already_published}
+  def publish_batch(%TopicBatch{}, _user_id, _publication_scope), do: {:error, :already_published}
 
   @doc """
   Re-query ClickHouse for the given batch and refresh the stored `top_words`

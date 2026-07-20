@@ -2,6 +2,10 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
   use SanbaseWeb, :live_view
 
   alias Sanbase.MajorTopics
+  alias Sanbase.MajorTopics.TopicBatch
+
+  @daily_only_scope TopicBatch.daily_only_scope()
+  @daily_weekly_scope TopicBatch.daily_weekly_scope()
 
   def mount(%{"id" => id}, _session, socket) do
     batch = MajorTopics.get_batch!(id)
@@ -12,6 +16,8 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
        :page_title,
        "Batch #{Date.to_iso8601(batch.interval_start)} → #{Date.to_iso8601(batch.interval_end)}"
      )
+     |> assign(:daily_only_scope, @daily_only_scope)
+     |> assign(:daily_weekly_scope, @daily_weekly_scope)
      |> assign(:current_user, socket.assigns[:current_user])
      |> assign_batch(batch)}
   end
@@ -101,14 +107,17 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
     end
   end
 
-  def handle_event("publish", _params, socket) do
+  def handle_event("publish", %{"scope" => publication_scope}, socket) do
     user_id = current_user_id(socket)
 
-    case MajorTopics.publish_batch(socket.assigns.batch, user_id) do
+    case MajorTopics.publish_batch(socket.assigns.batch, user_id, publication_scope) do
       {:ok, _batch} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Batch published")
+         |> put_flash(
+           :info,
+           "Batch published for #{publication_scope_label(publication_scope)}"
+         )
          |> assign_batch(MajorTopics.get_batch!(socket.assigns.batch.id))}
 
       {:error, :already_published} ->
@@ -117,6 +126,10 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
       {:error, changeset} ->
         {:noreply, put_flash(socket, :error, "Publish failed: #{inspect(changeset.errors)}")}
     end
+  end
+
+  def handle_event("publish", _params, socket) do
+    {:noreply, put_flash(socket, :error, "Choose a publication scope")}
   end
 
   defp find_topic_in_batch(socket, id) do
@@ -162,17 +175,44 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
           </div>
         </div>
 
-        <div>
-          <button
+        <div class="flex flex-col items-end gap-2">
+          <div
             :if={@batch.state == "draft" and @active_count > 0}
-            phx-click="publish"
-            data-confirm="Publish this batch? It will become the latest live batch on the public GraphQL API."
-            class="btn btn-primary"
+            class="flex flex-wrap justify-end gap-2"
           >
-            Publish batch
-          </button>
-          <span :if={@batch.state == "published"} class="badge badge-success">
-            Live on GraphQL
+            <button
+              id="publish-daily-only"
+              phx-click="publish"
+              phx-value-scope={@daily_only_scope}
+              data-confirm="Publish this batch for daily views only?"
+              class="btn btn-outline"
+            >
+              Publish as Daily only
+            </button>
+            <button
+              id="publish-daily-weekly"
+              phx-click="publish"
+              phx-value-scope={@daily_weekly_scope}
+              data-confirm={daily_weekly_confirmation(@active_count)}
+              class="btn btn-primary"
+            >
+              Publish as Daily + weekly
+            </button>
+          </div>
+          <p
+            :if={@batch.state == "draft" and @active_count > 0 and @active_count < 20}
+            id="daily-weekly-topic-warning"
+            class="max-w-md text-right text-xs text-warning"
+          >
+            Daily + weekly normally targets 20 active topics. You can still publish this batch
+            with {@active_count}.
+          </p>
+          <span
+            :if={@batch.state == "published"}
+            id="publication-scope"
+            class="badge badge-success"
+          >
+            Live: {publication_scope_label(@batch.publication_scope)}
           </span>
         </div>
       </div>
@@ -304,6 +344,19 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
   defp state_badge("published"), do: "badge-success"
   defp state_badge("draft"), do: "badge-warning"
   defp state_badge(_), do: "badge-neutral"
+
+  defp publication_scope_label(@daily_only_scope), do: "Daily only"
+  defp publication_scope_label("weekly_only"), do: "Weekly only"
+  defp publication_scope_label(@daily_weekly_scope), do: "Daily + weekly"
+  defp publication_scope_label(_), do: "Unclassified"
+
+  defp daily_weekly_confirmation(active_count) when active_count < 20 do
+    "Only #{active_count} active topics remain; weekly views normally target 20. Publish for Daily + weekly anyway?"
+  end
+
+  defp daily_weekly_confirmation(_active_count) do
+    "Publish this batch for both daily and weekly views?"
+  end
 
   defp row_highlight_style(topic, red_ids, yellow_ids) do
     cond do

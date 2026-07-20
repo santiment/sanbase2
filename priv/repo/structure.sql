@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict DSVVRM5GqlF7bqzO2NnrfRXsYq00qnHVdA9lx9UTL5XyVIALGCJptdm9WNlU31T
+\restrict ceqVK0DMuO2zoA4LQREjud7ms9ZRZ5kWQaf0GzzlrvFcsgf91OCiDidiVhAPYLm
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -5045,7 +5045,10 @@ CREATE TABLE public.topic_batches (
     published_by_id bigint,
     fetched_at timestamp(0) without time zone NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    publication_scope character varying(255),
+    CONSTRAINT published_topic_batches_require_publication_scope CHECK ((((state)::text <> 'published'::text) OR (publication_scope IS NOT NULL))),
+    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY ((ARRAY['daily_only'::character varying, 'weekly_only'::character varying, 'daily_weekly'::character varying])::text[]))))
 );
 
 
@@ -9894,6 +9897,13 @@ CREATE INDEX topic_batches_state_interval_start_index ON public.topic_batches US
 
 
 --
+-- Name: topic_batches_state_publication_scope_interval_start_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX topic_batches_state_publication_scope_interval_start_index ON public.topic_batches USING btree (state, publication_scope, interval_start);
+
+
+--
 -- Name: topic_batches_state_published_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11803,7 +11813,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict DSVVRM5GqlF7bqzO2NnrfRXsYq00qnHVdA9lx9UTL5XyVIALGCJptdm9WNlU31T
+\unrestrict ceqVK0DMuO2zoA4LQREjud7ms9ZRZ5kWQaf0GzzlrvFcsgf91OCiDidiVhAPYLm
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12386,3 +12396,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260610120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260610120100);
 INSERT INTO public."schema_migrations" (version) VALUES (20260610170000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260612130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260720115000);

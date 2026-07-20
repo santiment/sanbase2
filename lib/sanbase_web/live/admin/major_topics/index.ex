@@ -40,8 +40,9 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Index do
     <div class="p-6 max-w-7xl">
       <p class="text-sm text-base-content/70 mb-4">
         Daily snapshot of crypto narratives fetched from ClickHouse. The most recent draft batch
-        can be moderated (edit labels, remove rows) and published; only the latest published
-        batch is exposed via the public GraphQL API.
+        can be moderated (edit labels, remove rows) and published for daily views only or for both
+        daily and weekly views. The public GraphQL API serves the latest eligible batch for each
+        requested granularity.
       </p>
 
       <div :if={@batches == []} class="text-center py-12 bg-base-200 rounded-box">
@@ -59,6 +60,7 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Index do
               <th>Source</th>
               <th>Version</th>
               <th>State</th>
+              <th>Publication</th>
               <th>Fetched</th>
               <th>Published</th>
               <th class="text-right">Actions</th>
@@ -73,6 +75,11 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Index do
               <td>{batch.version}</td>
               <td>
                 <span class={["badge badge-sm", state_badge(batch.state)]}>{batch.state}</span>
+              </td>
+              <td>
+                <span class="badge badge-sm badge-outline">
+                  {publication_scope_label(batch.publication_scope)}
+                </span>
               </td>
               <td class="text-xs">{Calendar.strftime(batch.fetched_at, "%Y-%m-%d %H:%M UTC")}</td>
               <td class="text-xs">
@@ -129,4 +136,9 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Index do
   defp state_badge("published"), do: "badge-success"
   defp state_badge("draft"), do: "badge-warning"
   defp state_badge(_), do: "badge-neutral"
+
+  defp publication_scope_label("daily_only"), do: "Daily only"
+  defp publication_scope_label("weekly_only"), do: "Weekly only"
+  defp publication_scope_label("daily_weekly"), do: "Daily + weekly"
+  defp publication_scope_label(_), do: "Not published"
 end

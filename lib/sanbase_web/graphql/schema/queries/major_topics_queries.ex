@@ -24,10 +24,17 @@ defmodule SanbaseWeb.Graphql.Schema.MajorTopicsQueries do
          per batch.
 
     Use `limit` to cap how many topic `datasets` are returned (by moderator
-    `position`, default 20). `labels` are derived only from the returned topics.
+    `position`, default 20). It does not affect which batch is selected.
+    `labels` are derived only from the returned topics.
 
-    Returns `null` when no batch exists for the given `intervalStart`, or when
-    nothing has been published yet.
+    Moderators explicitly publish each batch for daily views only or for both
+    daily and weekly views. Historical batches are weekly-only. DAY requests
+    consider daily-only and daily+weekly batches; WEEK requests consider
+    weekly-only and daily+weekly batches. This eligibility rule also applies to
+    pagination cursors.
+
+    Returns `null` when no eligible published batch matches the given
+    `intervalStart`, or when no eligible batch has been published yet.
     """
     field :major_topics_batch, :major_topics_batch do
       arg(:granularity, non_null(:topic_granularity))

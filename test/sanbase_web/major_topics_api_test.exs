@@ -5,6 +5,11 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.MajorTopics
+  alias Sanbase.MajorTopics.TopicBatch
+
+  @daily_only_scope TopicBatch.daily_only_scope()
+  @weekly_only_scope TopicBatch.weekly_only_scope()
+  @daily_weekly_scope TopicBatch.daily_weekly_scope()
 
   setup do
     {:ok, conn: build_conn(), user: insert(:user)}
@@ -62,7 +67,7 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
       assert result == nil
     end
 
-    test "granularity affects pagination step only, not which batch is returned", %{
+    test "granularity changes pagination step for batches eligible to both views", %{
       conn: conn,
       user: user
     } do
@@ -128,6 +133,130 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
       assert length(result["datasets"]) == 5
       assert Enum.map(result["datasets"], & &1["label"]) == Enum.map(0..4, &"Topic #{&1}")
     end
+
+    test "weekly skips a newer daily-only batch while daily returns it", %{
+      conn: conn,
+      user: user
+    } do
+      weekly =
+        publish(
+          payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+          user.id,
+          @daily_weekly_scope
+        )
+
+      daily =
+        publish(
+          payload_for("2026-05-11T00:00:00/2026-05-18T00:00:00"),
+          user.id,
+          @daily_only_scope
+        )
+
+      week_result = execute_query(conn, batch_query(granularity: "WEEK"), "majorTopicsBatch")
+      day_result = execute_query(conn, batch_query(granularity: "DAY"), "majorTopicsBatch")
+
+      assert week_result["intervalStart"] == Date.to_iso8601(weekly.interval_start)
+      assert day_result["intervalStart"] == Date.to_iso8601(daily.interval_start)
+    end
+
+    test "historical weekly-only batches are hidden from daily requests", %{
+      conn: conn,
+      user: user
+    } do
+      publish_historical_weekly(
+        payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+        user.id
+      )
+
+      week_result = execute_query(conn, batch_query(granularity: "WEEK"), "majorTopicsBatch")
+      day_result = execute_query(conn, batch_query(granularity: "DAY"), "majorTopicsBatch")
+
+      assert week_result["intervalStart"] == "2026-05-04"
+      assert day_result == nil
+    end
+
+    test "weekly pagination cursors skip daily-only batches", %{conn: conn, user: user} do
+      publish(payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"), user.id)
+
+      publish(
+        payload_for("2026-05-11T00:00:00/2026-05-18T00:00:00"),
+        user.id,
+        @daily_only_scope
+      )
+
+      publish(payload_for("2026-05-18T00:00:00/2026-05-25T00:00:00"), user.id)
+
+      result =
+        execute_query(
+          conn,
+          batch_query(granularity: "WEEK", interval_start: "2026-05-18"),
+          "majorTopicsBatch"
+        )
+
+      assert result["intervalStart"] == "2026-05-18"
+      assert result["previousIntervalStart"] == "2026-05-04"
+
+      result =
+        execute_query(
+          conn,
+          batch_query(granularity: "WEEK", interval_start: "2026-05-04"),
+          "majorTopicsBatch"
+        )
+
+      assert result["nextIntervalStart"] == "2026-05-18"
+    end
+
+    test "exact cursor returns daily-only batch for DAY and nil for WEEK", %{
+      conn: conn,
+      user: user
+    } do
+      publish(
+        payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+        user.id,
+        @daily_only_scope
+      )
+
+      week_result =
+        execute_query(
+          conn,
+          batch_query(granularity: "WEEK", interval_start: "2026-05-04"),
+          "majorTopicsBatch"
+        )
+
+      day_result =
+        execute_query(
+          conn,
+          batch_query(granularity: "DAY", interval_start: "2026-05-04"),
+          "majorTopicsBatch"
+        )
+
+      assert week_result == nil
+      assert day_result["intervalStart"] == "2026-05-04"
+    end
+
+    test "limit only truncates datasets and never changes batch selection", %{
+      conn: conn,
+      user: user
+    } do
+      publish(
+        payload_with_topic_count(25, "2026-05-04T00:00:00/2026-05-11T00:00:00"),
+        user.id
+      )
+
+      latest =
+        publish(payload_for("2026-05-11T00:00:00/2026-05-18T00:00:00"), user.id)
+
+      default_result =
+        execute_query(conn, batch_query(granularity: "WEEK"), "majorTopicsBatch")
+
+      limited_result =
+        execute_query(conn, batch_query(granularity: "WEEK", limit: 1), "majorTopicsBatch")
+
+      assert default_result["intervalStart"] == Date.to_iso8601(latest.interval_start)
+      assert limited_result["intervalStart"] == Date.to_iso8601(latest.interval_start)
+      assert length(default_result["datasets"]) == 2
+      assert length(limited_result["datasets"]) == 1
+    end
   end
 
   describe "getLatestMajorTopics (deprecated)" do
@@ -144,11 +273,48 @@ defmodule SanbaseWeb.Graphql.MajorTopicsApiTest do
       assert result["intervalEnd"] == "2026-05-11"
       assert result["granularity"] == "WEEK"
     end
+
+    test "does not return daily-only batches", %{conn: conn, user: user} do
+      publish(
+        payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+        user.id,
+        @daily_only_scope
+      )
+
+      assert execute_query(conn, legacy_query(), "getLatestMajorTopics") == nil
+    end
+
+    test "returns historical weekly-only batches", %{conn: conn, user: user} do
+      publish_historical_weekly(
+        payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+        user.id
+      )
+
+      result = execute_query(conn, legacy_query(), "getLatestMajorTopics")
+
+      assert result["intervalStart"] == "2026-05-04"
+    end
   end
 
-  defp publish(payload, user_id) do
+  defp publish(payload, user_id, publication_scope \\ @daily_weekly_scope) do
     {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload)
-    {:ok, batch} = MajorTopics.publish_batch(batch, user_id)
+    {:ok, batch} = MajorTopics.publish_batch(batch, user_id, publication_scope)
+    batch
+  end
+
+  defp publish_historical_weekly(payload, user_id) do
+    {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload)
+
+    {:ok, batch} =
+      batch
+      |> Ecto.Changeset.change(
+        state: "published",
+        publication_scope: @weekly_only_scope,
+        published_at: DateTime.utc_now() |> DateTime.truncate(:second),
+        published_by_id: user_id
+      )
+      |> Sanbase.Repo.update()
+
     batch
   end
 

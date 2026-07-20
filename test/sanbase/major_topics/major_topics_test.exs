@@ -8,6 +8,10 @@ defmodule Sanbase.MajorTopicsTest do
   alias Sanbase.MajorTopics.ClickhouseFetcher
   alias Sanbase.MajorTopics.TopicBatch
 
+  @daily_only_scope TopicBatch.daily_only_scope()
+  @weekly_only_scope TopicBatch.weekly_only_scope()
+  @daily_weekly_scope TopicBatch.daily_weekly_scope()
+
   describe "top_words_string/1" do
     test "picks top 10 by score and joins comma-separated" do
       words_score = [
@@ -87,7 +91,7 @@ defmodule Sanbase.MajorTopicsTest do
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload)
       user = insert(:user)
 
-      {:ok, _published} = MajorTopics.publish_batch(batch, user.id)
+      {:ok, _published} = MajorTopics.publish_batch(batch, user.id, @daily_weekly_scope)
 
       tiny = Map.put(payload, :topics, [])
       {:ok, batch_after} = MajorTopics.upsert_batch_from_payload(tiny)
@@ -98,13 +102,14 @@ defmodule Sanbase.MajorTopicsTest do
     end
   end
 
-  describe "publish_batch/2" do
+  describe "publish_batch/3" do
     test "transitions draft → published" do
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(sample_payload())
       user = insert(:user)
 
-      assert {:ok, batch} = MajorTopics.publish_batch(batch, user.id)
+      assert {:ok, batch} = MajorTopics.publish_batch(batch, user.id, @daily_weekly_scope)
       assert batch.state == "published"
+      assert batch.publication_scope == @daily_weekly_scope
       assert batch.published_by_id == user.id
       assert %DateTime{} = batch.published_at
     end
@@ -112,9 +117,26 @@ defmodule Sanbase.MajorTopicsTest do
     test "errors when already published" do
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(sample_payload())
       user = insert(:user)
-      {:ok, batch} = MajorTopics.publish_batch(batch, user.id)
+      {:ok, batch} = MajorTopics.publish_batch(batch, user.id, @daily_weekly_scope)
 
-      assert {:error, :already_published} = MajorTopics.publish_batch(batch, user.id)
+      assert {:error, :already_published} =
+               MajorTopics.publish_batch(batch, user.id, @daily_only_scope)
+    end
+
+    test "requires a valid publication scope" do
+      {:ok, batch} = MajorTopics.upsert_batch_from_payload(sample_payload())
+      user = insert(:user)
+
+      assert {:error, changeset} = MajorTopics.publish_batch(batch, user.id, "unknown")
+      assert "is invalid" in errors_on(changeset).publication_scope
+
+      assert {:error, changeset} = MajorTopics.publish_batch(batch, user.id, nil)
+      assert "can't be blank" in errors_on(changeset).publication_scope
+
+      assert {:error, changeset} =
+               MajorTopics.publish_batch(batch, user.id, @weekly_only_scope)
+
+      assert "is invalid" in errors_on(changeset).publication_scope
     end
   end
 
@@ -149,7 +171,7 @@ defmodule Sanbase.MajorTopicsTest do
       user = insert(:user)
 
       {:ok, b1} = MajorTopics.upsert_batch_from_payload(sample_payload())
-      {:ok, b1} = MajorTopics.publish_batch(b1, user.id)
+      {:ok, b1} = MajorTopics.publish_batch(b1, user.id, @daily_weekly_scope)
 
       newer =
         sample_payload()
@@ -158,7 +180,7 @@ defmodule Sanbase.MajorTopicsTest do
       {:ok, b2} = MajorTopics.upsert_batch_from_payload(newer)
       [first_topic, _] = MajorTopics.get_batch!(b2.id).topics
       {:ok, _} = MajorTopics.mark_topic_removed(first_topic)
-      {:ok, _} = MajorTopics.publish_batch(b2, user.id)
+      {:ok, _} = MajorTopics.publish_batch(b2, user.id, @daily_weekly_scope)
 
       latest = MajorTopics.latest_published_batch()
       assert latest.id == b2.id
@@ -176,7 +198,7 @@ defmodule Sanbase.MajorTopicsTest do
     test "returns the published batch keyed by interval_start" do
       user = insert(:user)
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(sample_payload())
-      {:ok, _} = MajorTopics.publish_batch(batch, user.id)
+      {:ok, _} = MajorTopics.publish_batch(batch, user.id, @daily_weekly_scope)
 
       result = MajorTopics.get_published_batch_at(~D[2026-05-04])
       assert result.id == batch.id
@@ -248,7 +270,7 @@ defmodule Sanbase.MajorTopicsTest do
 
       publish = fn interval ->
         {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload_for(interval))
-        {:ok, _} = MajorTopics.publish_batch(batch, user.id)
+        {:ok, _} = MajorTopics.publish_batch(batch, user.id, @daily_weekly_scope)
       end
 
       publish.("2026-04-30T00:00:00/2026-05-07T00:00:00")
@@ -269,7 +291,7 @@ defmodule Sanbase.MajorTopicsTest do
 
       publish = fn interval ->
         {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload_for(interval))
-        {:ok, _} = MajorTopics.publish_batch(batch, user.id)
+        {:ok, _} = MajorTopics.publish_batch(batch, user.id, @daily_weekly_scope)
       end
 
       publish.("2026-04-30T00:00:00/2026-05-07T00:00:00")
@@ -287,11 +309,110 @@ defmodule Sanbase.MajorTopicsTest do
     end
   end
 
+  describe "batch selection by publication scope" do
+    setup do
+      {:ok, user: insert(:user)}
+    end
+
+    test "weekly latest skips newer daily-only batches while daily latest includes them", %{
+      user: user
+    } do
+      weekly =
+        publish_payload(
+          payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+          user.id,
+          @daily_weekly_scope
+        )
+
+      daily =
+        publish_payload(
+          payload_for("2026-05-11T00:00:00/2026-05-18T00:00:00"),
+          user.id,
+          @daily_only_scope
+        )
+
+      assert MajorTopics.latest_published_batch("week").id == weekly.id
+      assert MajorTopics.latest_published_batch("day").id == daily.id
+    end
+
+    test "weekly latest returns nil when only daily-only batches are published", %{user: user} do
+      daily =
+        publish_payload(
+          payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+          user.id,
+          @daily_only_scope
+        )
+
+      assert MajorTopics.latest_published_batch("week") == nil
+      assert MajorTopics.latest_published_batch("day").id == daily.id
+    end
+
+    test "historical weekly-only batches are excluded from daily views", %{user: user} do
+      weekly =
+        publish_historical_weekly_payload(
+          payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+          user.id
+        )
+
+      assert MajorTopics.latest_published_batch("week").id == weekly.id
+      assert MajorTopics.latest_published_batch("day") == nil
+      assert MajorTopics.get_published_batch_at(~D[2026-05-04], "week").id == weekly.id
+      assert MajorTopics.get_published_batch_at(~D[2026-05-04], "day") == nil
+    end
+
+    test "exact cursor lookup enforces publication scope", %{user: user} do
+      daily =
+        publish_payload(
+          payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+          user.id,
+          @daily_only_scope
+        )
+
+      assert MajorTopics.get_published_batch_at(~D[2026-05-04], "week") == nil
+      assert MajorTopics.get_published_batch_at(~D[2026-05-04], "day").id == daily.id
+    end
+
+    test "weekly cursors skip daily-only batches while daily cursors include them", %{user: user} do
+      _weekly_before =
+        publish_payload(
+          payload_for("2026-05-04T00:00:00/2026-05-11T00:00:00"),
+          user.id,
+          @daily_weekly_scope
+        )
+
+      _daily =
+        publish_payload(
+          payload_for("2026-05-11T00:00:00/2026-05-18T00:00:00"),
+          user.id,
+          @daily_only_scope
+        )
+
+      _weekly_after =
+        publish_payload(
+          payload_for("2026-05-18T00:00:00/2026-05-25T00:00:00"),
+          user.id,
+          @daily_weekly_scope
+        )
+
+      assert MajorTopics.previous_published_interval_start("week", ~D[2026-05-18]) ==
+               ~D[2026-05-04]
+
+      assert MajorTopics.next_published_interval_start("week", ~D[2026-05-04]) ==
+               ~D[2026-05-18]
+
+      assert MajorTopics.previous_published_interval_start("day", ~D[2026-05-18]) ==
+               ~D[2026-05-11]
+
+      assert MajorTopics.next_published_interval_start("day", ~D[2026-05-04]) ==
+               ~D[2026-05-11]
+    end
+  end
+
   describe "BatchSerializer.to_payload/1,2" do
     test "produces labels + datasets shape aligned on the union of dts" do
       user = insert(:user)
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(sample_payload())
-      {:ok, _} = MajorTopics.publish_batch(batch, user.id)
+      {:ok, _} = MajorTopics.publish_batch(batch, user.id, @daily_weekly_scope)
 
       payload =
         batch |> Sanbase.Repo.preload(:topics) |> BatchSerializer.to_payload(granularity: "week")
@@ -444,9 +565,25 @@ defmodule Sanbase.MajorTopicsTest do
     })
   end
 
-  defp publish_payload(payload, user_id) do
+  defp publish_payload(payload, user_id, publication_scope \\ @daily_weekly_scope) do
     {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload)
-    {:ok, batch} = MajorTopics.publish_batch(batch, user_id)
+    {:ok, batch} = MajorTopics.publish_batch(batch, user_id, publication_scope)
+    batch
+  end
+
+  defp publish_historical_weekly_payload(payload, user_id) do
+    {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload)
+
+    {:ok, batch} =
+      batch
+      |> Ecto.Changeset.change(
+        state: "published",
+        publication_scope: @weekly_only_scope,
+        published_at: DateTime.utc_now() |> DateTime.truncate(:second),
+        published_by_id: user_id
+      )
+      |> Sanbase.Repo.update()
+
     batch
   end
 end

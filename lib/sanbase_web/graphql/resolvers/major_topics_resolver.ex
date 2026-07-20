@@ -21,12 +21,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MajorTopicsResolver do
   end
 
   defp fetch_and_wrap(granularity, nil, limit) do
-    MajorTopics.latest_published_batch()
+    MajorTopics.latest_published_batch(granularity)
     |> wrap_with_cursors(granularity, limit)
   end
 
   defp fetch_and_wrap(granularity, %Date{} = interval_start, limit) do
-    MajorTopics.get_published_batch_at(interval_start)
+    MajorTopics.get_published_batch_at(interval_start, granularity)
     |> wrap_with_cursors(granularity, limit)
   end
 

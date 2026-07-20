@@ -436,6 +436,29 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     end
   end
 
+  @tag capture_log: true
+  test "returns error when fetching a histogram metric as timeseries", context do
+    %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+
+    # Regression test: this used to reach the timeseries SQL generation and
+    # crash with a FunctionClauseError instead of returning an error
+    %{"errors" => [%{"message" => error_message}]} =
+      get_timeseries_metric_json(
+        conn,
+        "age_distribution",
+        %{slug: slug},
+        from,
+        to,
+        interval,
+        :last,
+        nil
+      )
+
+    assert error_message =~
+             "The metric 'age_distribution' is a histogram metric, not a timeseries metric. " <>
+               "Use the histogramData field to fetch it."
+  end
+
   test "returns error when slug is not given", context do
     %{conn: conn, from: from, to: to, interval: interval} = context
     aggregation = :avg

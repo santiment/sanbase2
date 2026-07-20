@@ -111,6 +111,59 @@ defmodule Sanbase.MetricTest do
     end
   end
 
+  describe "data type mismatch" do
+    test "cannot fetch a histogram metric as timeseries", %{project: project} do
+      assert {:error, error} =
+               Metric.timeseries_data("age_distribution", %{slug: project.slug}, @from, @to, "1d")
+
+      assert error =~
+               "The metric 'age_distribution' is a histogram metric, not a timeseries metric. " <>
+                 "Use the histogramData field to fetch it."
+    end
+
+    test "cannot fetch a histogram metric as timeseries per slug", %{project: project} do
+      assert {:error, error} =
+               Metric.timeseries_data_per_slug(
+                 "price_histogram",
+                 %{slug: project.slug},
+                 @from,
+                 @to,
+                 "1d"
+               )
+
+      assert error =~
+               "The metric 'price_histogram' is a histogram metric, not a timeseries metric."
+    end
+
+    test "cannot fetch a histogram metric as aggregated timeseries", %{project: project} do
+      assert {:error, error} =
+               Metric.aggregated_timeseries_data(
+                 "spent_coins_cost",
+                 %{slug: project.slug},
+                 @from,
+                 @to
+               )
+
+      assert error =~
+               "The metric 'spent_coins_cost' is a histogram metric, not a timeseries metric."
+    end
+
+    test "cannot fetch a timeseries metric as histogram", %{project: project} do
+      assert {:error, error} =
+               Metric.histogram_data(
+                 "daily_active_addresses",
+                 %{slug: project.slug},
+                 @from,
+                 @to,
+                 "1d"
+               )
+
+      assert error =~
+               "The metric 'daily_active_addresses' is a timeseries metric, not a histogram metric. " <>
+                 "Use the timeseriesData field to fetch it."
+    end
+  end
+
   describe "available_non_crypto_asset_slugs/2" do
     test "unknown metric returns an error even when no non-crypto assets exist" do
       assert {:error, error} = Metric.available_non_crypto_asset_slugs("unknown_metric_xyz")

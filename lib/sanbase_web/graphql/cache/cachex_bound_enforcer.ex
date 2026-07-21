@@ -27,6 +27,8 @@ defmodule SanbaseWeb.Graphql.CachexBoundEnforcer do
       a write is always correct for a cache and keeps the memory bound hard.
   """
 
+  require Logger
+
   # Writes should be shed once the cache exceeds max_entries by this ratio —
   # the point where the async pruner has demonstrably fallen behind a burst.
   @hard_limit_ratio 1.1
@@ -88,7 +90,13 @@ defmodule SanbaseWeb.Graphql.CachexBoundEnforcer do
           rescue
             # The cache can be stopping while a prune is in flight; there is
             # nothing to enforce in that case.
-            _ -> :ok
+            _e in Cachex.Error ->
+              :ok
+
+            e ->
+              Logger.warning(
+                "CachexBoundEnforcer prune for #{inspect(cache)} failed: #{Exception.message(e)}"
+              )
           after
             :atomics.put(prune_flag, 1, 0)
           end

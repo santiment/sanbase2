@@ -185,7 +185,7 @@ below threshold; server memory bounded (watch below).
 `SanbaseWeb.Graphql.CacheMonitor` (started in `web`/`all` containers) logs a
 stats line every minute:
 
-```
+```text
 GraphQL cache stats: entries=152340 table_memory_mb=27.4 payload_mb=214.8
 ```
 

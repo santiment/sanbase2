@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   alias SanbaseWeb.Graphql.CachexBoundEnforcer
   alias SanbaseWeb.Graphql.CachexKeyLock
 
-  @default_max_entries 2_000_000
+  @default_max_entries 50_000
   @default_reclaim_ratio 0.3
   @default_ttl_seconds 300
   @default_expiration_interval_seconds 10

@@ -39,9 +39,12 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   # results can dominate the memory bound that max_entries alone cannot express.
   @max_compressed_bytes 500_000
 
-  # Lock losers poll the cache at this interval, waiting for the lock holder's
-  # value to land; give up (raise) after the timeout.
-  @lock_poll_interval_ms 50
+  # Lock losers poll the cache waiting for the lock holder's value to land.
+  # The interval starts small so short computations are picked up quickly and
+  # doubles up to a cap so long computations don't cause wake-up churn; give
+  # up (raise) after the timeout.
+  @lock_poll_initial_ms 10
+  @lock_poll_max_ms 100
   @lock_wait_timeout_ms 60_000
 
   @impl SanbaseWeb.Graphql.CacheProvider
@@ -105,10 +108,29 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
 
   @impl SanbaseWeb.Graphql.CacheProvider
   def get(cache, key) do
-    case Cachex.get(cache, true_key(key)) do
-      {:ok, compressed} when is_binary(compressed) -> decompress_value(compressed)
-      _ -> nil
+    case lookup(cache, true_key(key)) do
+      {:hit, value} -> value
+      :miss -> nil
     end
+  end
+
+  @doc """
+  The total byte size of the compressed values stored in the cache.
+
+  Unlike `size/1` (the ETS table memory, which counts only per-entry overhead
+  because the gzipped values are refc binaries stored off-table), this walks
+  the whole table — O(n), ~40ms per 200k entries. Meant for periodic
+  monitoring, never for hot paths.
+  """
+  @spec payload_bytes(atom()) :: non_neg_integer()
+  def payload_bytes(cache) do
+    query = Cachex.Query.build(output: :value)
+    {:ok, stream} = Cachex.stream(cache, query)
+
+    Enum.reduce(stream, 0, fn
+      value, acc when is_binary(value) -> acc + byte_size(value)
+      _value, acc -> acc
+    end)
   end
 
   @impl SanbaseWeb.Graphql.CacheProvider
@@ -131,34 +153,28 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   def get_or_store(cache, key, func, cache_modify_middleware) do
     true_key = true_key(key)
 
-    case Cachex.get(cache, true_key) do
-      {:ok, compressed} when is_binary(compressed) ->
-        decompress_value(compressed)
+    # The function runs in the caller process (see moduledoc), guarded by a
+    # per-key lock. Lock losers do not queue: they poll the cache and return
+    # as soon as the winner's value lands, retrying the lock only if the
+    # winner cached nothing (error/nocache results).
+    try_with_lock = fn ->
+      CachexKeyLock.try_with_lock(cache, true_key, fn ->
+        # Re-check inside the lock: a previous holder may have cached the value
+        case lookup(cache, true_key) do
+          {:hit, value} -> value
+          :miss -> execute_and_maybe_cache(cache, key, true_key, func, cache_modify_middleware)
+        end
+      end)
+    end
 
-      _ ->
-        get_or_execute_locked(cache, key, true_key, func, cache_modify_middleware, 0)
+    case lookup(cache, true_key) do
+      {:hit, value} -> value
+      :miss -> lock_or_poll(cache, true_key, try_with_lock, 0, @lock_poll_initial_ms)
     end
   end
 
-  # Per-key stampede protection via Cachex's Locksmith locks. The fallback runs
-  # in the caller process so Absinthe's Dataloader batching and process-dict
-  # signals (e.g. :do_not_cache_query) are preserved. Losers of the lock race
-  # do NOT queue on the lock: they poll the cache (a cheap ETS read) and return
-  # as soon as the winner's value lands, retrying the lock only if the winner
-  # finished without caching anything (error/nocache results).
-  defp get_or_execute_locked(cache, key, true_key, func, cache_modify_middleware, waited_ms) do
-    locked_fun = fn ->
-      # Re-check inside the lock: the previous holder may have cached the value
-      case Cachex.get(cache, true_key) do
-        {:ok, compressed} when is_binary(compressed) ->
-          decompress_value(compressed)
-
-        _ ->
-          execute_and_maybe_cache(cache, key, true_key, func, cache_modify_middleware)
-      end
-    end
-
-    case CachexKeyLock.try_with_lock(cache, true_key, locked_fun) do
+  defp lock_or_poll(cache, true_key, try_with_lock, waited_ms, interval_ms) do
+    case try_with_lock.() do
       {:executed, result} ->
         result
 
@@ -167,20 +183,19 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
           raise "Timeout waiting for the cache lock for key #{inspect(true_key)}"
         end
 
-        Process.sleep(@lock_poll_interval_ms)
+        Process.sleep(interval_ms)
 
-        case Cachex.get(cache, true_key) do
-          {:ok, compressed} when is_binary(compressed) ->
-            decompress_value(compressed)
+        case lookup(cache, true_key) do
+          {:hit, value} ->
+            value
 
-          _ ->
-            get_or_execute_locked(
+          :miss ->
+            lock_or_poll(
               cache,
-              key,
               true_key,
-              func,
-              cache_modify_middleware,
-              waited_ms + @lock_poll_interval_ms
+              try_with_lock,
+              waited_ms + interval_ms,
+              min(interval_ms * 2, @lock_poll_max_ms)
             )
         end
     end
@@ -219,7 +234,17 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     if byte_size(compressed) < @max_compressed_bytes and
          CachexBoundEnforcer.enforce(cache) != :over_hard_limit do
       Cachex.put(cache, true_key, compressed, put_opts)
+      # Both enforce calls are needed: the one above sheds writes when far
+      # over the bound, this one triggers pruning if this write crossed it
       CachexBoundEnforcer.enforce(cache)
+    end
+  end
+
+  # All cached values are compressed binaries; anything else is a miss.
+  defp lookup(cache, true_key) do
+    case Cachex.get(cache, true_key) do
+      {:ok, compressed} when is_binary(compressed) -> {:hit, decompress_value(compressed)}
+      _ -> :miss
     end
   end
 

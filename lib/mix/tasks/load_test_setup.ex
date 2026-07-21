@@ -30,6 +30,8 @@ defmodule Mix.Tasks.LoadTest.Setup do
 
   @impl Mix.Task
   def run(args) do
+    Mix.Task.run("app.config")
+    Sanbase.LoadTest.DbGuard.ensure_local_database!()
     Mix.Task.run("app.start")
 
     opts = parse_args(args)
@@ -74,11 +76,8 @@ defmodule Mix.Tasks.LoadTest.Setup do
   defp ensure_subscription(user) do
     case Sanbase.Billing.Subscription.current_subscription(user, @sanapi_product_id) do
       nil ->
-        # Insert directly via changeset to skip event emission — the billing event
-        # validator rejects :fiat subscriptions with a nil stripe_subscription_id.
-        %Sanbase.Billing.Subscription{}
+        %Sanbase.Billing.Subscription{user_id: user.id}
         |> Sanbase.Billing.Subscription.changeset(%{
-          user_id: user.id,
           plan_id: @business_pro_monthly_plan_id,
           status: "active",
           current_period_end: Timex.shift(Timex.now(), years: 1),

@@ -54,7 +54,6 @@ defmodule SanbaseWeb.Graphql.CacheMonitor do
   alias SanbaseWeb.Graphql.CachexProvider
 
   @default_interval :timer.minutes(1)
-  @default_max_payload_mb 1024
   # Sweep below the bound by this margin so sweeps don't re-trigger every tick
   @sweep_margin 0.9
 
@@ -67,7 +66,8 @@ defmodule SanbaseWeb.Graphql.CacheMonitor do
     state = %{
       cache: Keyword.get(opts, :cache, :graphql_cache),
       interval: Keyword.get(opts, :interval, @default_interval),
-      max_payload_bytes: Keyword.get(opts, :max_payload_mb, @default_max_payload_mb) * 1024 * 1024
+      max_payload_bytes:
+        Keyword.get(opts, :max_payload_mb, CachexProvider.max_payload_mb()) * 1024 * 1024
     }
 
     schedule(state.interval)

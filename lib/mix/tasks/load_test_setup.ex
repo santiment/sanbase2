@@ -46,20 +46,24 @@ defmodule Mix.Tasks.LoadTest.Setup do
       Enum.map(1..count, fn i ->
         email = "loadtest_#{i}@sanload.test"
 
-        {:ok, user} =
-          Sanbase.Accounts.User.find_or_insert_by(:email, email, %{
-            username: "loadtest_#{i}",
-            privacy_policy_accepted: true
-          })
+        with {:ok, user} <-
+               Sanbase.Accounts.User.find_or_insert_by(:email, email, %{
+                 username: "loadtest_#{i}",
+                 privacy_policy_accepted: true
+               }),
+             {:ok, _subscription} <- ensure_subscription(user),
+             {:ok, apikey} <- Sanbase.Accounts.Apikey.generate_apikey(user) do
+          if no_rate_limits, do: disable_rate_limits(user)
 
-        ensure_subscription(user)
-        if no_rate_limits, do: disable_rate_limits(user)
-
-        {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
-
-        Mix.shell().info("  User #{i}: #{email} -> apikey + Business Pro#{label}")
-        apikey
+          Mix.shell().info("  User #{i}: #{email} -> apikey + Business Pro#{label}")
+          apikey
+        else
+          {:error, reason} ->
+            Mix.shell().error("  User #{i}: #{email} failed: #{inspect(reason)}")
+            nil
+        end
       end)
+      |> Enum.reject(&is_nil/1)
 
     output_path = Path.join([File.cwd!(), "load_test", "data", "apikeys.json"])
     File.write!(output_path, Jason.encode!(apikeys, pretty: true))
@@ -80,10 +84,10 @@ defmodule Mix.Tasks.LoadTest.Setup do
           current_period_end: Timex.shift(Timex.now(), years: 1),
           type: :fiat
         })
-        |> Sanbase.Repo.insert!()
+        |> Sanbase.Repo.insert()
 
-      _subscription ->
-        :ok
+      subscription ->
+        {:ok, subscription}
     end
   end
 

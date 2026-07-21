@@ -101,6 +101,15 @@ defmodule SanbaseWeb.Graphql.Cache do
   @doc " The size of the cache in megabytes"
   def size(), do: CacheProvider.size(@cache_name)
 
+  @doc """
+  The true byte size of all compressed values in the cache.
+
+  O(n) table walk (~40ms per 200k entries) — meant to be called on demand,
+  never from hot paths or tight polling loops. See `CachexProvider.payload_bytes/1`
+  for why this cannot be a maintained counter.
+  """
+  def payload_bytes(), do: CacheProvider.payload_bytes(@cache_name)
+
   @doc "The number of entries in the cache"
   def count(), do: CacheProvider.count(@cache_name)
 

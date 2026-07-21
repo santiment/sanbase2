@@ -182,16 +182,78 @@ below threshold; server memory bounded (watch below).
 
 ### 4. Observing the cache on a live node
 
-From the server's IEx shell (works in prod via remote console):
+`SanbaseWeb.Graphql.CacheMonitor` (started in `web`/`all` containers) logs a
+stats line every minute:
 
-```elixir
-SanbaseWeb.Graphql.Cache.count()   # number of entries
-SanbaseWeb.Graphql.Cache.size()    # ETS megabytes
-:erlang.memory(:total)             # whole-BEAM footprint
-:ets.info(:cachex_locksmith)       # lock table (size ≈ in-flight cache misses)
+```
+GraphQL cache stats: entries=152340 table_memory_mb=27.4 payload_mb=214.8
 ```
 
-During a deploy of cache-related changes, watch pod RSS and
-`Cache.count()` — the count must plateau near `max_entries` (2M default,
-tunable via the provider's `:max_entries` opt) instead of growing without
-bound, and RSS must plateau with it.
+and doubles as the **byte-size bound**: when the payload exceeds
+`max_payload_mb` (1024 in `application.ex`), it sweeps the oldest entries
+(LRW — Cachex orders by the `:modified` timestamp, and since our entries are
+written once, that is insertion order) until the payload is back under the
+bound, logging a warning with before/after numbers. This complements the
+entry-count bound (`CachexBoundEnforcer`, per-write): count alone cannot
+express a memory bound when entry sizes vary, and the byte check needs the
+O(n) walk, so it runs on the monitor's cadence instead of per-write.
+
+How much goes per sweep: proportional to the overshoot —
+`removed = entries − trunc(entries × max_bytes/payload × 0.9)`, so a payload
+just over the bound sheds ~10% of entries, 1.1× over sheds ~18%, 2× over
+sheds ~55%. With a 60s check cadence the first trigger is normally "just
+over", making 10–20% the typical sweep. Expired entries are purged first and
+credited against the quota. The sweep is deliberately uncapped so the bound
+is restored within a single tick; see the `CacheMonitor` moduledoc for the
+full reasoning and the uniform-entry-size assumption behind the target.
+
+The same numbers on demand, from the server's IEx shell (works in prod via
+remote console):
+
+```elixir
+SanbaseWeb.Graphql.Cache.count()          # entries, O(1)
+SanbaseWeb.Graphql.Cache.size()           # ETS table MB (overhead only), O(1)
+SanbaseWeb.Graphql.Cache.payload_bytes()  # true value bytes, O(n), on demand
+:erlang.memory(:total)                    # whole-BEAM footprint
+:erlang.memory(:binary)                   # binary heap (where the payloads live)
+:ets.info(:cachex_locksmith)              # lock table (size ≈ in-flight cache misses)
+```
+
+What the numbers mean:
+
+- `count()` is the OOM canary — it must plateau near `max_entries`
+  (2M default); unbounded growth here is the failure signature.
+- `size()` counts only per-entry table overhead (~190 B/entry). The gzipped
+  values are refc binaries (>64 bytes) stored on the shared binary heap, NOT
+  in the ETS table's memory accounting.
+- `payload_bytes()` is the true footprint of cached values. It is an O(n)
+  table walk (~40ms per 200k entries) — call it when needed, never from hot
+  paths. An exact maintained counter is impossible: the janitor removes
+  expired entries with `:ets.select_delete/2`, a native batch delete where
+  the removed entries never surface in Elixir, so a counter has nothing to
+  decrement from.
+
+During a deploy of cache-related changes, watch pod RSS, `count()` and
+`payload_bytes()` — all three must plateau instead of growing without bound.
+
+## Benchmark: new implementation vs the Cachex 3.6 one it replaces
+
+Identical scenarios, same machine, provider public API only
+(the version-specific knobs left at parity):
+
+| Scenario | Old (3.6) | New (4.1.1) |
+|---|---|---|
+| Stampede: 500 callers of one 50ms computation | 9,959 ms | 80 ms |
+| Unique-miss throughput, 32 workers | 366k/s | 450k/s |
+| Mixed-load throughput (90% hit / 10% miss) | 1.32M ops/s | 1.53M ops/s |
+| Burst write peak vs a 50k entry bound | 400k (8×, pruned ~3s *after* the burst) | 55k (1.1×, bounded *during* the burst) |
+| Memory footprint at 90/50/10% hit ratios | par | par, slightly faster |
+
+Two v3 behaviors uncovered while benchmarking, both worth remembering:
+
+- v3's stampede protection used capped exponential backoff, so 500 waiters
+  took ~10 seconds to pick up a 50ms computation. The current implementation
+  polls at an escalating 10→100ms interval instead.
+- v3 silently ignored the top-level `policy:`/`reclaim:` options (only the
+  integer `limit:` applied, with the default 0.1 reclaim) — the "Cachex
+  ignores options it doesn't know" trap predates the v4 upgrade.

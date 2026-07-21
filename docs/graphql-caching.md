@@ -78,7 +78,7 @@ are released immediately by a per-lock guard process.
 
 | Setting | Default | Where |
 |---|---|---|
-| `max_entries` | 2,000,000 | `CachexProvider` |
+| `max_entries` | 50,000 | `CachexProvider` |
 | `reclaim` on prune | 0.3 | `CachexProvider` |
 | default TTL | 300s | `CachexProvider` |
 | per-entry size cap | 500kb compressed | `CachexProvider` |

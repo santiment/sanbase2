@@ -18,6 +18,8 @@ defmodule Mix.Tasks.LoadTest.SeedProjects do
 
   @impl Mix.Task
   def run(_args) do
+    Mix.Task.run("app.config")
+    Sanbase.LoadTest.DbGuard.ensure_local_database!()
     Mix.Task.run("app.start")
 
     Mix.shell().info("Seeding load test projects...")

@@ -27,6 +27,8 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
 
   import Cachex.Spec
 
+  require Logger
+
   alias SanbaseWeb.Graphql.CachexBoundEnforcer
   alias SanbaseWeb.Graphql.CachexKeyLock
 
@@ -39,10 +41,19 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   # results can dominate the memory bound that max_entries alone cannot express.
   @max_compressed_bytes 500_000
 
+  # The byte-size bound of the whole cache, enforced periodically by
+  # SanbaseWeb.Graphql.CacheMonitor
+  @max_payload_mb 1024
+
+  @doc "The byte-size bound of the cache payload, in megabytes."
+  @spec max_payload_mb() :: pos_integer()
+  def max_payload_mb(), do: @max_payload_mb
+
   # Lock losers poll the cache waiting for the lock holder's value to land.
   # The interval starts small so short computations are picked up quickly and
-  # doubles up to a cap so long computations don't cause wake-up churn; give
-  # up (raise) after the timeout.
+  # doubles up to a cap so long computations don't cause wake-up churn. After
+  # the timeout the waiter gives up on the lock and computes the value itself
+  # (see lock_or_poll/5) — a duplicate computation, never a user-facing error.
   @lock_poll_initial_ms 10
   @lock_poll_max_ms 100
   @lock_wait_timeout_ms 60_000
@@ -121,6 +132,11 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   because the gzipped values are refc binaries stored off-table), this walks
   the whole table — O(n), ~40ms per 200k entries. Meant for periodic
   monitoring, never for hot paths.
+
+  A maintained O(1) counter is not possible: puts could increment it, but the
+  Cachex janitor removes expired entries with `:ets.select_delete/2` — a
+  native batch delete where the removed entries never surface in Elixir, so
+  there is nothing to decrement from.
   """
   @spec payload_bytes(atom()) :: non_neg_integer()
   def payload_bytes(cache) do
@@ -167,22 +183,37 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
       end)
     end
 
+    execute_unlocked = fn ->
+      execute_and_maybe_cache(cache, key, true_key, func, cache_modify_middleware)
+    end
+
     case lookup(cache, true_key) do
-      {:hit, value} -> value
-      :miss -> lock_or_poll(cache, true_key, try_with_lock, 0, @lock_poll_initial_ms)
+      {:hit, value} ->
+        value
+
+      :miss ->
+        lock_or_poll(cache, true_key, try_with_lock, execute_unlocked, 0, @lock_poll_initial_ms)
     end
   end
 
-  defp lock_or_poll(cache, true_key, try_with_lock, waited_ms, interval_ms) do
+  defp lock_or_poll(cache, true_key, try_with_lock, execute_unlocked, waited_ms, interval_ms) do
     case try_with_lock.() do
       {:executed, result} ->
         result
 
-      :locked ->
-        if waited_ms >= @lock_wait_timeout_ms do
-          raise "Timeout waiting for the cache lock for key #{inspect(true_key)}"
-        end
+      :locked when waited_ms >= @lock_wait_timeout_ms ->
+        # The lock holder is computing for over a minute. Rather than failing
+        # the request (the old provider raised here — the top Sentry error for
+        # years), compute the value ourselves without the lock. A duplicate
+        # computation is strictly better than an error.
+        Logger.warning(
+          "Cache lock for key #{inspect(true_key)} held longer than " <>
+            "#{@lock_wait_timeout_ms}ms — computing without the lock"
+        )
 
+        execute_unlocked.()
+
+      :locked ->
         Process.sleep(interval_ms)
 
         case lookup(cache, true_key) do
@@ -194,6 +225,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
               cache,
               true_key,
               try_with_lock,
+              execute_unlocked,
               waited_ms + interval_ms,
               min(interval_ms * 2, @lock_poll_max_ms)
             )

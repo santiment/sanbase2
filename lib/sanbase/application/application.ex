@@ -377,10 +377,10 @@ defmodule Sanbase.Application do
         fn -> container_type() in ["web", "all"] end
       ),
 
-      # Periodically log GraphQL cache statistics and sweep oldest entries
-      # if the payload byte size exceeds the bound
+      # Periodically log GraphQL cache statistics and sweep oldest entries if
+      # the payload byte size exceeds CachexProvider.max_payload_mb()
       start_if(
-        fn -> {SanbaseWeb.Graphql.CacheMonitor, [max_payload_mb: 1024]} end,
+        fn -> SanbaseWeb.Graphql.CacheMonitor end,
         fn -> container_type() in ["web", "all"] end
       ),
 

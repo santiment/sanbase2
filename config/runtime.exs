@@ -19,6 +19,13 @@ config :sanbase, Sanbase.TemplateMailer,
   api_key: System.get_env("MAILJET_API_KEY"),
   secret: System.get_env("MAILJET_API_SECRET")
 
+# Mailjet list that the API-client onboarding email is triggered from. Defaults
+# to the dev list; production must set MAILJET_API_BUSINESS_ONBOARDING_LIST_ID to
+# the production list id so dev/stage never write to the production list.
+config :sanbase, Sanbase.Email.MailjetApi,
+  api_business_onboarding_list_id:
+    System.get_env("MAILJET_API_BUSINESS_ONBOARDING_LIST_ID", "10331324")
+
 config :sanbase, Sanbase.SimpleMailer,
   adapter: Swoosh.Adapters.AmazonSES,
   region: "eu-west-1",

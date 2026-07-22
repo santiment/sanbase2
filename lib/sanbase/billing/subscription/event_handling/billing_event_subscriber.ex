@@ -41,7 +41,8 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     :update_api_call_limit_table,
     :send_discord_notification,
     :unfreeze_user_frozen_alerts,
-    :sanbase_pro_started
+    :sanbase_pro_started,
+    :api_business_onboarding_email
   ]
 
   @doc false
@@ -121,6 +122,16 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
       false ->
         :ok
     end
+  end
+
+  # Add new API Business-or-higher subscribers to the Mailjet onboarding list.
+  # Handles both :create_subscription (checkout) and :update_subscription (e.g. a
+  # sub that flips from incomplete to active, or a PRO -> BUSINESS_PRO upgrade).
+  defp do_handle(:api_business_onboarding_email, event_type, event)
+       when event_type in [:create_subscription, :update_subscription] do
+    event.data.subscription_id
+    |> Sanbase.Billing.Subscription.by_id()
+    |> Sanbase.Email.ApiBusinessOnboardingList.maybe_add()
   end
 
   defp do_handle(_type, _event_type, _event) do

@@ -83,7 +83,7 @@ defmodule Sanbase.Email.MailjetApi do
   @spec send_campaign(atom(), String.t(), keyword()) :: :ok | {:error, term()}
   def send_campaign(list_atom, html_content, opts \\ []) do
     campaign_url = @base_url <> "campaigndraft"
-    list_id = @mailjet_lists[list_atom]
+    list_id = resolve_list_id(list_atom)
 
     # Default sender information can be overridden through opts
     title = Keyword.get(opts, :title, "Metric Updates")
@@ -198,21 +198,29 @@ defmodule Sanbase.Email.MailjetApi do
   end
 
   def fetch_list_emails(list_atom) do
-    list_id = @mailjet_lists[list_atom]
-    url = @base_url <> "contact"
+    case resolve_list_id(list_atom) do
+      nil ->
+        {:error, :list_not_configured}
 
-    case Req.get!(url,
-           headers: headers(),
-           params: [ContactsList: list_id, limit: 1000]
-         ) do
-      %{status: 200, body: %{"Data" => data}} ->
-        emails = Enum.map(data, & &1["Email"])
-        Logger.info("Successfully fetched #{length(emails)} emails from list #{list_atom}")
-        {:ok, emails}
+      list_id ->
+        url = @base_url <> "contact"
 
-      %{status: _status} = response ->
-        Logger.error("Error fetching emails from Mailjet list #{list_atom}: #{inspect(response)}")
-        {:error, response.body}
+        case Req.get!(url,
+               headers: headers(),
+               params: [ContactsList: list_id, limit: 1000]
+             ) do
+          %{status: 200, body: %{"Data" => data}} ->
+            emails = Enum.map(data, & &1["Email"])
+            Logger.info("Successfully fetched #{length(emails)} emails from list #{list_atom}")
+            {:ok, emails}
+
+          %{status: _status} = response ->
+            Logger.error(
+              "Error fetching emails from Mailjet list #{list_atom}: #{inspect(response)}"
+            )
+
+            {:error, response.body}
+        end
     end
   rescue
     error ->
@@ -226,20 +234,51 @@ defmodule Sanbase.Email.MailjetApi do
   # private
 
   defp subscribe_unsubscribe(list_atom, email_or_emails, action) do
-    action_map = %{subscribe: "addnoforce", unsubscribe: "remove"}
+    case resolve_list_id(list_atom) do
+      nil ->
+        Logger.info(
+          "Mailjet list #{inspect(list_atom)} is not configured for this environment; skipping #{action}."
+        )
 
-    contacts =
-      email_or_emails
-      |> List.wrap()
-      |> Enum.map(fn email -> %{"Email" => email} end)
+        :ok
 
-    %{
-      "Contacts" => contacts,
-      "Action" => action_map[action]
-    }
-    |> Jason.encode!()
-    |> manage_subscription(@mailjet_lists[list_atom], action)
+      list_id ->
+        action_map = %{subscribe: "addnoforce", unsubscribe: "remove"}
+
+        contacts =
+          email_or_emails
+          |> List.wrap()
+          |> Enum.map(fn email -> %{"Email" => email} end)
+
+        %{
+          "Contacts" => contacts,
+          "Action" => action_map[action]
+        }
+        |> Jason.encode!()
+        |> manage_subscription(list_id, action)
+    end
   end
+
+  # Resolves a list atom to its Mailjet list id. Most lists have static ids; the
+  # api_business_onboarding list id is provided per-environment via config so
+  # that dev/stage never write to the production list (nil => calls no-op).
+  defp resolve_list_id(:api_business_onboarding) do
+    case Config.module_get(__MODULE__, :api_business_onboarding_list_id, nil) do
+      id when is_integer(id) ->
+        id
+
+      id when is_binary(id) ->
+        case Integer.parse(id) do
+          {int, _} -> int
+          :error -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp resolve_list_id(list_atom), do: @mailjet_lists[list_atom]
 
   defp manage_subscription(body_json, list_id, action) do
     HTTPoison.post(

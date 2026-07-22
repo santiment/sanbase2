@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict B7Ef0db99hwr7brfPeMed3GSiayBEa0cY7WvNYmh18AZYbQlYgG8C7epLwUT4DN
+\restrict XP6pVduheaDRBBkaZ6HpOhne2In9KIqJ5gQ6dyVZYDCrKWKCvRSTZX6snaQD76v
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -2939,7 +2939,8 @@ CREATE TABLE public.node_memory_stats (
     sample_duration_ms integer NOT NULL,
     details jsonb DEFAULT '{}'::jsonb NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    rss_hwm_bytes bigint
 );
 
 
@@ -2981,7 +2982,7 @@ CREATE TABLE public.non_crypto_assets (
     metadata jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
+    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY (ARRAY[('stock'::character varying)::text, ('commodity'::character varying)::text, ('index'::character varying)::text, ('forex'::character varying)::text, ('fund'::character varying)::text, ('bond'::character varying)::text, ('other'::character varying)::text])))
 );
 
 
@@ -12028,7 +12029,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict B7Ef0db99hwr7brfPeMed3GSiayBEa0cY7WvNYmh18AZYbQlYgG8C7epLwUT4DN
+\unrestrict XP6pVduheaDRBBkaZ6HpOhne2In9KIqJ5gQ6dyVZYDCrKWKCvRSTZX6snaQD76v
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12614,3 +12615,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260612130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260709120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260720115000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260722130000);

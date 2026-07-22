@@ -12,16 +12,45 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.GenericAdminHTML, only: [stat_card: 1]
+  import SanbaseWeb.Admin.TimeseriesChart, only: [timeseries_chart: 1]
 
   alias Sanbase.Monitoring.MemoryStat
+  alias SanbaseWeb.Admin.TimeseriesChart
 
   @live_window_minutes 5
   @series_hours 24
-  @samples_shown 120
+  @samples_shown 20
   @refresh_interval 60_000
 
-  @diff_metrics [
+  @chart_metric_options [
+    {"OS RSS", "rss_bytes"},
+    {"RSS high-water", "rss_hwm_bytes"},
+    {"VM total", "vm_total_bytes"},
+    {"VM processes", "vm_processes_bytes"},
+    {"VM binary", "vm_binary_bytes"},
+    {"VM ETS", "vm_ets_bytes"},
+    {"Process count", "process_count"}
+  ]
+
+  @pod_chart_modes [
+    {"Buckets", "buckets"},
+    {"Layers (leak vs ratchet)", "layers"},
+    {"Alloc utilization %", "util"}
+  ]
+
+  @chart_window_options [
+    {"1h", 1},
+    {"6h", 6},
+    {"24h", 24},
+    {"3d", 72},
+    {"7d", 168}
+  ]
+
+  # includes two derived components computed per sample in incarnation_stats/2:
+  # carrier slack (allocated − used) and native/other (RSS − allocated)
+  @stat_metrics [
     {:rss_bytes, "OS RSS", :bytes},
+    {:rss_hwm_bytes, "RSS high-water", :bytes},
     {:vm_total_bytes, "VM total", :bytes},
     {:vm_processes_bytes, "VM processes", :bytes},
     {:vm_binary_bytes, "VM binary", :bytes},
@@ -29,6 +58,8 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
     {:vm_code_bytes, "VM code", :bytes},
     {:alloc_used_bytes, "Alloc used (blocks)", :bytes},
     {:alloc_allocated_bytes, "Alloc allocated (carriers)", :bytes},
+    {:carrier_slack_bytes, "Carrier slack (allocated − used)", :bytes},
+    {:native_other_bytes, "Native/other (RSS − allocated)", :bytes},
     {:process_count, "Process count", :count},
     {:atom_count, "Atom count", :count}
   ]
@@ -42,7 +73,15 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
        page_title: "Memory Stats",
        live_window_minutes: @live_window_minutes,
        series_hours: @series_hours,
-       samples_shown: @samples_shown
+       samples_shown: @samples_shown,
+       # nil = auto: RSS when available, else VM total (RSS needs /proc, so
+       # it is absent on macOS dev). Becomes a list once the user toggles one.
+       chart_metrics: nil,
+       chart_hours: 24,
+       chart_metric_options: @chart_metric_options,
+       chart_window_options: @chart_window_options,
+       pod_chart_mode: "buckets",
+       pod_chart_modes: @pod_chart_modes
      )}
   end
 
@@ -59,56 +98,240 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
     {:noreply, load_data(socket)}
   end
 
+  @impl true
+  def handle_event("toggle-metric", %{"metric" => metric}, socket) do
+    if Enum.any?(@chart_metric_options, fn {_label, m} -> m == metric end) do
+      current = socket.assigns.chart_metrics_effective
+
+      new_metrics =
+        cond do
+          # never deselect the last remaining metric
+          metric in current and length(current) == 1 -> current
+          metric in current -> current -- [metric]
+          # counts cannot share an axis with bytes — process_count is exclusive
+          metric == "process_count" -> [metric]
+          true -> [metric | current -- ["process_count"]]
+        end
+        # normalize to the option order so series order/colors stay stable
+        |> then(fn list ->
+          for {_label, value} <- @chart_metric_options, value in list, do: value
+        end)
+
+      {:noreply,
+       socket
+       |> assign(:chart_metrics, new_metrics)
+       |> load_data()}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("chart-window", %{"hours" => hours}, socket) do
+    hours =
+      case Enum.find(@chart_window_options, fn {_label, h} -> to_string(h) == hours end) do
+        {_label, h} -> h
+        nil -> 24
+      end
+
+    {:noreply,
+     socket
+     |> assign(:chart_hours, hours)
+     |> load_data()}
+  end
+
+  # Sent by the TimeseriesChart hook once it is mounted and listening —
+  # data pushed before that (from mount/handle_params) may be dropped.
+  @impl true
+  def handle_event("chart-ready", %{"id" => _id}, socket) do
+    {:noreply, push_chart_events(socket)}
+  end
+
+  @impl true
+  def handle_event("pod-chart-mode", %{"mode" => mode}, socket) do
+    mode =
+      if Enum.any?(@pod_chart_modes, fn {_label, m} -> m == mode end),
+        do: mode,
+        else: "buckets"
+
+    {:noreply,
+     socket
+     |> assign(:pod_chart_mode, mode)
+     |> load_data()}
+  end
+
   defp load_data(socket) do
     pods = MemoryStat.latest_per_pod(@live_window_minutes)
     selected_pod = socket.assigns.selected_pod
 
     socket = assign(socket, :pods, pods)
 
-    case Enum.find(pods, &(&1.pod_name == selected_pod)) do
+    socket =
+      assign(
+        socket,
+        :chart_metrics_effective,
+        effective_metrics(socket.assigns.chart_metrics, pods)
+      )
+
+    # A pod missing from the live list may still have recorded history
+    # (Deployment pods get replaced on every rollout) — show it, with a
+    # staleness warning on top, until the rows are pruned.
+    {latest, stale?} =
+      case Enum.find(pods, &(&1.pod_name == selected_pod)) do
+        nil when is_binary(selected_pod) -> {MemoryStat.latest_for_pod(selected_pod), true}
+        live -> {live, false}
+      end
+
+    socket =
+      case latest do
+        nil ->
+          assign(socket,
+            selected: nil,
+            selected_stale: false,
+            series: [],
+            window_stats: nil,
+            details_stat: nil
+          )
+
+        latest ->
+          series = MemoryStat.pod_series(selected_pod, @series_hours)
+
+          assign(socket,
+            selected: latest,
+            selected_stale: stale?,
+            series: series,
+            window_stats: incarnation_stats(series, latest),
+            details_stat: MemoryStat.latest_details(selected_pod)
+          )
+      end
+
+    push_chart_events(socket)
+  end
+
+  # RSS is the primary prod metric but needs /proc; when no live pod reports
+  # it (macOS dev), auto-default to VM total instead of showing a blank chart
+  defp effective_metrics(nil, pods) do
+    if pods != [] and Enum.all?(pods, &is_nil(&1.rss_bytes)),
+      do: ["vm_total_bytes"],
+      else: ["rss_bytes"]
+  end
+
+  defp effective_metrics(metrics, _pods), do: metrics
+
+  defp push_chart_events(socket) do
+    %{pods: pods, selected: selected, chart_metrics_effective: metrics, chart_hours: hours} =
+      socket.assigns
+
+    socket =
+      case pods do
+        [] ->
+          socket
+
+        pods ->
+          pod_names = Enum.map(pods, & &1.pod_name)
+
+          series =
+            Enum.flat_map(metrics, fn metric ->
+              metric_atom = chart_metric_atom(metric)
+
+              MemoryStat.multi_pod_metric_series(pod_names, metric_atom, hours)
+              |> Enum.map(fn s -> %{s | name: series_name(s.name, metric, metrics)} end)
+            end)
+
+          TimeseriesChart.push_data(socket, "overview-chart", series,
+            value_kind: overview_value_kind(metrics)
+          )
+      end
+
+    case selected do
       nil ->
-        assign(socket, selected: nil, series: [], diff_rows: nil, details_stat: nil)
+        socket
 
-      latest ->
-        series = MemoryStat.pod_series(selected_pod, @series_hours)
+      %{pod_name: pod_name} ->
+        {series, kind} =
+          case socket.assigns.pod_chart_mode do
+            "layers" -> {MemoryStat.pod_layers_series(pod_name, hours), :bytes}
+            "util" -> {MemoryStat.pod_alloc_util_series(pod_name, hours), :percent}
+            _ -> {MemoryStat.pod_buckets_series(pod_name, hours), :bytes}
+          end
 
-        assign(socket,
-          selected: latest,
-          series: series,
-          diff_rows: incarnation_diff(series, latest),
-          details_stat: MemoryStat.latest_details(selected_pod)
-        )
+        TimeseriesChart.push_data(socket, "pod-chart", series, value_kind: kind)
     end
   end
 
-  # Diff oldest-vs-newest sample of the CURRENT BEAM incarnation only —
-  # stitching across a restart would show a bogus huge drop.
-  defp incarnation_diff(series, latest) do
-    case Enum.filter(series, &(&1.beam_started_at == latest.beam_started_at)) do
-      [first | _] = same when length(same) > 1 ->
-        last = List.last(same)
+  defp chart_metric_atom(metric_string) do
+    Enum.find(MemoryStat.chart_metrics(), :rss_bytes, &(Atom.to_string(&1) == metric_string))
+  end
 
-        %{
-          from: first.inserted_at,
-          to: last.inserted_at,
-          rows:
-            for {key, label, kind} <- @diff_metrics,
-                first_value = Map.get(first, key),
-                last_value = Map.get(last, key),
-                is_integer(first_value) and is_integer(last_value) do
-              %{
-                label: label,
-                kind: kind,
-                first: first_value,
-                last: last_value,
-                delta: last_value - first_value
-              }
-            end
-        }
+  # one metric -> series named by pod; several -> "pod · metric"
+  defp series_name(pod_name, _metric, [_single]), do: pod_name
 
-      _ ->
-        nil
+  defp series_name(pod_name, metric, _metrics),
+    do: "#{pod_name} · #{chart_metric_label(metric)}"
+
+  defp overview_value_kind(["process_count"]), do: :count
+  defp overview_value_kind(_metrics), do: :bytes
+
+  # Per-metric stats over the CURRENT BEAM incarnation only (a restart resets
+  # memory, so mixing incarnations is meaningless). Point-in-time diffs are
+  # traffic noise — the trend column instead compares the AVERAGE of the first
+  # 10% of samples with the average of the last 10%, which smooths out the
+  # second-to-second load swings and answers "is it actually growing".
+  defp incarnation_stats(series, latest) do
+    same =
+      series
+      |> Enum.filter(&(&1.beam_started_at == latest.beam_started_at))
+      |> Enum.map(&Map.merge(&1, derived_components(&1)))
+
+    if length(same) >= 10 do
+      edge_count = max(div(length(same), 10), 5)
+
+      %{
+        from: List.first(same).inserted_at,
+        to: List.last(same).inserted_at,
+        edge_count: edge_count,
+        rows:
+          for {key, label, kind} <- @stat_metrics,
+              values = for(row <- same, v = Map.get(row, key), is_integer(v), do: v),
+              values != [] do
+            start_avg = avg(Enum.take(values, edge_count))
+            now_avg = avg(Enum.take(values, -edge_count))
+
+            %{
+              label: label,
+              kind: kind,
+              min: Enum.min(values),
+              avg: avg(values),
+              max: Enum.max(values),
+              start_avg: start_avg,
+              now_avg: now_avg,
+              delta: now_avg - start_avg
+            }
+          end
+      }
+    else
+      nil
     end
+  end
+
+  defp avg(values), do: div(Enum.sum(values), length(values))
+
+  # Where does RSS growth actually live? Carrier slack = allocator carriers
+  # not filled with live data (ratchet/fragmentation); native/other = memory
+  # the VM's own accounting cannot see (NIFs, OpenSSL, code mappings).
+  defp derived_components(row) do
+    %{
+      carrier_slack_bytes: safe_sub(row.alloc_allocated_bytes, row.alloc_used_bytes),
+      native_other_bytes: safe_sub(row.rss_bytes, row.alloc_allocated_bytes)
+    }
+  end
+
+  defp safe_sub(a, b) when is_integer(a) and is_integer(b), do: a - b
+  defp safe_sub(_, _), do: nil
+
+  defp pod_chart_mode_label(mode) do
+    {label, _} = List.keyfind(@pod_chart_modes, mode, 1, {"Buckets", "buckets"})
+    label
   end
 
   @impl true
@@ -179,9 +402,51 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
         </div>
       </section>
 
+      <section :if={@pods != []}>
+        <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60">
+            {chart_metrics_label(@chart_metrics_effective)} · all live pods · last {chart_window_label(
+              @chart_hours
+            )}
+          </h2>
+          <div class="flex flex-wrap items-center gap-1">
+            <.toggle_badge
+              :for={{label, value} <- @chart_metric_options}
+              label={label}
+              selected={value in @chart_metrics_effective}
+              click="toggle-metric"
+              value_name="metric"
+              value={value}
+            />
+            <span class="mx-1 text-base-content/30">·</span>
+            <.toggle_badge
+              :for={{label, value} <- @chart_window_options}
+              label={label}
+              selected={value == @chart_hours}
+              click="chart-window"
+              value_name="hours"
+              value={value}
+            />
+          </div>
+        </div>
+        <div class="bg-base-100 border border-base-300 rounded p-3">
+          <.timeseries_chart id="overview-chart" height="320px" />
+        </div>
+        <p class="text-xs text-base-content/50 mt-1">
+          Click badges to combine byte metrics on one chart; process count plots alone
+          (different unit, one axis).
+        </p>
+      </section>
+
       <div :if={@selected_pod && is_nil(@selected)} class="alert alert-warning">
-        Pod {@selected_pod} has not reported in the last {@live_window_minutes} minutes.
-        It may have been replaced by a newer deployment.
+        No samples recorded for pod {@selected_pod}.
+      </div>
+
+      <div :if={@selected && @selected_stale} class="alert alert-warning">
+        Pod {@selected.pod_name} has not reported in the last {@live_window_minutes} minutes —
+        it was likely replaced by a newer deployment or stopped. Last sample {age(
+          @selected.inserted_at
+        )} ago; showing its recorded history below.
       </div>
 
       <%= if @selected do %>
@@ -195,30 +460,72 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
             <.stat_card label="ETS" value={fmt_bytes(@selected.vm_ets_bytes)} />
             <.stat_card label="Process count" value={@selected.process_count} />
             <.stat_card label="Atoms" value={@selected.atom_count} />
-            <.stat_card label="Uptime" value={uptime(@selected.beam_started_at)} />
+            <.stat_card
+              label="Uptime"
+              value={uptime(@selected.beam_started_at, @selected.inserted_at)}
+            />
           </div>
         </section>
 
-        <section :if={@diff_rows}>
+        <section>
+          <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60">
+              {@selected.pod_name} · {pod_chart_mode_label(@pod_chart_mode)} · last {chart_window_label(
+                @chart_hours
+              )}
+            </h2>
+            <div class="flex flex-wrap items-center gap-1">
+              <.toggle_badge
+                :for={{label, value} <- @pod_chart_modes}
+                label={label}
+                selected={value == @pod_chart_mode}
+                click="pod-chart-mode"
+                value_name="mode"
+                value={value}
+              />
+            </div>
+          </div>
+          <div class="bg-base-100 border border-base-300 rounded p-3">
+            <.timeseries_chart id="pod-chart" height="280px" />
+          </div>
+          <p :if={@pod_chart_mode == "layers"} class="text-xs text-base-content/50 mt-1">
+            Reading the gaps: allocated − used = carrier slack (spike ratchet / fragmentation —
+            not a leak); RSS − allocated = native/NIF memory the VM cannot see; RSS converging
+            toward a flat early high-water = a past spike set the level. Only growth in
+            "used"/"VM total" is live data your code holds.
+          </p>
+          <p :if={@pod_chart_mode == "util"} class="text-xs text-base-content/50 mt-1">
+            Falling utilization while RSS rises = fragmentation or carrier ratchet.
+            Stable high utilization = memory holds real data — check the Buckets view.
+          </p>
+        </section>
+
+        <section :if={@window_stats}>
           <.section_heading>
-            Change over current incarnation
-            ({fmt_time(@diff_rows.from)} → {fmt_time(@diff_rows.to)} UTC)
+            Window stats, current incarnation
+            ({fmt_time(@window_stats.from)} → {fmt_time(@window_stats.to)} UTC)
           </.section_heading>
           <div class="overflow-x-auto bg-base-100 border border-base-300 rounded">
             <table class="table table-sm">
               <thead>
                 <tr class="text-base-content/60">
                   <th>Metric</th>
-                  <th class="text-right">Start</th>
-                  <th class="text-right">Now</th>
-                  <th class="text-right">Change</th>
+                  <th class="text-right">Min</th>
+                  <th class="text-right">Avg</th>
+                  <th class="text-right">Max</th>
+                  <th class="text-right">Start avg</th>
+                  <th class="text-right">Now avg</th>
+                  <th class="text-right">Trend</th>
                 </tr>
               </thead>
               <tbody>
-                <tr :for={row <- @diff_rows.rows} class="hover:bg-base-200">
+                <tr :for={row <- @window_stats.rows} class="hover:bg-base-200">
                   <td class="font-medium">{row.label}</td>
-                  <td class="text-right tabular-nums">{fmt_metric(row.first, row.kind)}</td>
-                  <td class="text-right tabular-nums">{fmt_metric(row.last, row.kind)}</td>
+                  <td class="text-right tabular-nums">{fmt_metric(row.min, row.kind)}</td>
+                  <td class="text-right tabular-nums">{fmt_metric(row.avg, row.kind)}</td>
+                  <td class="text-right tabular-nums">{fmt_metric(row.max, row.kind)}</td>
+                  <td class="text-right tabular-nums">{fmt_metric(row.start_avg, row.kind)}</td>
+                  <td class="text-right tabular-nums">{fmt_metric(row.now_avg, row.kind)}</td>
                   <td class={["text-right tabular-nums", delta_class(row.delta)]}>
                     {fmt_delta(row.delta, row.kind)}
                   </td>
@@ -226,6 +533,11 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
               </tbody>
             </table>
           </div>
+          <p class="text-xs text-base-content/50 mt-1">
+            Trend = average of the last {@window_stats.edge_count} samples minus average of the
+            first {@window_stats.edge_count} — smooths out per-minute traffic swings; a steadily
+            positive trend across refreshes is the leak signal, not any single diff.
+          </p>
         </section>
 
         <div :if={details(@details_stat) != %{}} class="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -329,6 +641,28 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
     """
   end
 
+  attr(:label, :string, required: true)
+  attr(:selected, :boolean, required: true)
+  attr(:click, :string, required: true)
+  attr(:value_name, :string, required: true)
+  attr(:value, :any, required: true)
+
+  defp toggle_badge(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click={@click}
+      {%{"phx-value-#{@value_name}" => @value}}
+      class={[
+        "badge badge-lg cursor-pointer select-none",
+        (@selected && "badge-primary") || "badge-outline text-base-content/70"
+      ]}
+    >
+      {@label}
+    </button>
+    """
+  end
+
   slot(:inner_block, required: true)
 
   defp section_heading(assigns) do
@@ -341,6 +675,20 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
 
   defp details(nil), do: %{}
   defp details(stat), do: stat.details || %{}
+
+  defp chart_metric_label(metric) do
+    {label, _} = List.keyfind(@chart_metric_options, metric, 1, {"OS RSS", "rss_bytes"})
+    label
+  end
+
+  defp chart_metrics_label(metrics) do
+    metrics |> Enum.map(&chart_metric_label/1) |> Enum.join(" + ")
+  end
+
+  defp chart_window_label(hours) do
+    {label, _} = List.keyfind(@chart_window_options, hours, 1, {"24h", 24})
+    label
+  end
 
   defp alloc_unused(%{alloc_used_bytes: used, alloc_allocated_bytes: allocated})
        when is_integer(used) and is_integer(allocated),
@@ -372,7 +720,17 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
   defp fmt_time(%NaiveDateTime{} = ndt), do: Calendar.strftime(ndt, "%m-%d %H:%M")
 
   defp uptime(%DateTime{} = started_at) do
-    seconds = DateTime.diff(DateTime.utc_now(), started_at)
+    format_duration(DateTime.diff(DateTime.utc_now(), started_at))
+  end
+
+  # uptime as of a specific sample — a stale pod's uptime must not keep
+  # growing after the pod died
+  defp uptime(%DateTime{} = started_at, %NaiveDateTime{} = as_of) do
+    as_of = DateTime.from_naive!(as_of, "Etc/UTC")
+    format_duration(DateTime.diff(as_of, started_at))
+  end
+
+  defp format_duration(seconds) do
     days = div(seconds, 86_400)
     hours = div(rem(seconds, 86_400), 3600)
     minutes = div(rem(seconds, 3600), 60)

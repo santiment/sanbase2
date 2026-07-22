@@ -15,8 +15,9 @@ defmodule Sanbase.Monitoring.MemorySnapshotTest do
     assert is_integer(snapshot.atom_count) and snapshot.atom_count > 0
     assert is_integer(snapshot.duration_ms) and snapshot.duration_ms >= 0
 
-    # rss is nil where /proc is unavailable (macOS)
+    # rss/hwm are nil where /proc is unavailable (macOS)
     assert is_nil(snapshot.rss_bytes) or is_integer(snapshot.rss_bytes)
+    assert is_nil(snapshot.rss_hwm_bytes) or is_integer(snapshot.rss_hwm_bytes)
 
     # not requested by default — it is the expensive part
     assert is_nil(snapshot.process_groups)

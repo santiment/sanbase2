@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ceqVK0DMuO2zoA4LQREjud7ms9ZRZ5kWQaf0GzzlrvFcsgf91OCiDidiVhAPYLm
+\restrict B7Ef0db99hwr7brfPeMed3GSiayBEa0cY7WvNYmh18AZYbQlYgG8C7epLwUT4DN
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -2915,6 +2915,51 @@ CREATE SEQUENCE public.newsletter_tokens_id_seq
 --
 
 ALTER SEQUENCE public.newsletter_tokens_id_seq OWNED BY public.newsletter_tokens.id;
+
+
+--
+-- Name: node_memory_stats; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.node_memory_stats (
+    id bigint NOT NULL,
+    pod_name character varying(255) NOT NULL,
+    container_type character varying(255) NOT NULL,
+    beam_started_at timestamp(0) without time zone NOT NULL,
+    rss_bytes bigint,
+    vm_total_bytes bigint NOT NULL,
+    vm_processes_bytes bigint NOT NULL,
+    vm_binary_bytes bigint NOT NULL,
+    vm_ets_bytes bigint NOT NULL,
+    vm_code_bytes bigint NOT NULL,
+    alloc_used_bytes bigint,
+    alloc_allocated_bytes bigint,
+    process_count integer NOT NULL,
+    atom_count integer NOT NULL,
+    sample_duration_ms integer NOT NULL,
+    details jsonb DEFAULT '{}'::jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: node_memory_stats_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.node_memory_stats_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: node_memory_stats_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.node_memory_stats_id_seq OWNED BY public.node_memory_stats.id;
 
 
 --
@@ -6623,6 +6668,13 @@ ALTER TABLE ONLY public.newsletter_tokens ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: node_memory_stats id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.node_memory_stats ALTER COLUMN id SET DEFAULT nextval('public.node_memory_stats_id_seq'::regclass);
+
+
+--
 -- Name: non_crypto_assets id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7810,6 +7862,14 @@ ALTER TABLE ONLY public.monitored_twitter_handles
 
 ALTER TABLE ONLY public.newsletter_tokens
     ADD CONSTRAINT newsletter_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: node_memory_stats node_memory_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.node_memory_stats
+    ADD CONSTRAINT node_memory_stats_pkey PRIMARY KEY (id);
 
 
 --
@@ -9424,6 +9484,20 @@ CREATE UNIQUE INDEX metrics_name_index ON public.metrics USING btree (name);
 --
 
 CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_twitter_handles USING btree (handle);
+
+
+--
+-- Name: node_memory_stats_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX node_memory_stats_inserted_at_index ON public.node_memory_stats USING btree (inserted_at);
+
+
+--
+-- Name: node_memory_stats_pod_name_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX node_memory_stats_pod_name_inserted_at_index ON public.node_memory_stats USING btree (pod_name, inserted_at);
 
 
 --
@@ -11954,7 +12028,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ceqVK0DMuO2zoA4LQREjud7ms9ZRZ5kWQaf0GzzlrvFcsgf91OCiDidiVhAPYLm
+\unrestrict B7Ef0db99hwr7brfPeMed3GSiayBEa0cY7WvNYmh18AZYbQlYgG8C7epLwUT4DN
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12539,3 +12613,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260610170000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260612130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260709120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260720115000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260722120000);

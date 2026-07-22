@@ -297,6 +297,7 @@ defmodule SanbaseWeb.Router do
       live("/ses_events", Admin.SesEventsLive)
       live("/api_business_onboarding", Admin.ApiBusinessOnboardingLive)
       live("/mcp_tool_invocations", Admin.McpToolInvocationsLive)
+      live("/memory_stats", Admin.MemoryStatsLive)
       live("/user_stats", UserStatsLive)
       live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
       live("/user_roles", Admin.UserRolesLive, :index)

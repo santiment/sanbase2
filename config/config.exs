@@ -284,6 +284,12 @@ config :sanbase, Sanbase.Affiliate.FirstPromoterApi,
   api_id: {:system, "FIRST_PROMOTER_API_ID"},
   api_key: {:system, "FIRST_PROMOTER_API_KEY"}
 
+# Per-pod BEAM/OS memory sampling recorded to Postgres every minute,
+# shown on the admin panel at /admin/memory_stats
+config :sanbase, Sanbase.Monitoring.MemoryCollector,
+  enabled: true,
+  retention_days: 7
+
 config :sanbase, Oban.Web,
   repo: Sanbase.Repo,
   queues: [

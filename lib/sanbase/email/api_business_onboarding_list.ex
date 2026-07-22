@@ -190,16 +190,23 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
   end
 
   defp user_has_eligible_subscription?(user_id) do
-    from(s in Subscription,
-      join: p in assoc(s, :plan),
-      where: s.user_id == ^user_id,
-      where: s.status == :active,
-      where: p.product_id == ^Product.product_api(),
-      where: p.name in ^@business_plan_names or like(p.name, "CUSTOM%"),
-      select: s.id,
-      limit: 1
-    )
-    |> Repo.exists?()
+    case onboarding_since() do
+      nil ->
+        false
+
+      since ->
+        from(s in Subscription,
+          join: p in assoc(s, :plan),
+          where: s.user_id == ^user_id,
+          where: s.status == :active,
+          where: s.inserted_at >= ^since,
+          where: p.product_id == ^Product.product_api(),
+          where: p.name in ^@business_plan_names or like(p.name, "CUSTOM%"),
+          select: s.id,
+          limit: 1
+        )
+        |> Repo.exists?()
+    end
   end
 
   defp business_or_higher_api_plan?(%{product_id: product_id, name: name})
@@ -226,11 +233,11 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
 
   defp onboarding_since do
     case Config.module_get(__MODULE__, :api_business_onboarding_since, nil) do
-      %DateTime{} = dt ->
-        dt
-
       %NaiveDateTime{} = ndt ->
-        DateTime.from_naive!(ndt, "Etc/UTC")
+        NaiveDateTime.truncate(ndt, :second)
+
+      %DateTime{} = dt ->
+        DateTime.to_naive(DateTime.truncate(dt, :second))
 
       value when is_binary(value) and value != "" ->
         parse_since(value)
@@ -243,12 +250,12 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
   defp parse_since(value) do
     case DateTime.from_iso8601(value) do
       {:ok, dt, _} ->
-        DateTime.truncate(dt, :second)
+        DateTime.to_naive(DateTime.truncate(dt, :second))
 
       {:error, _} ->
         case NaiveDateTime.from_iso8601(value) do
           {:ok, ndt} ->
-            DateTime.from_naive!(ndt, "Etc/UTC") |> DateTime.truncate(:second)
+            NaiveDateTime.truncate(ndt, :second)
 
           {:error, _} ->
             Logger.warning(

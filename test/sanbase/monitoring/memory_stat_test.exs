@@ -13,6 +13,7 @@ defmodule Sanbase.Monitoring.MemoryStatTest do
         container_type: "web",
         beam_started_at: @beam_started_at,
         rss_bytes: 1_500_000_000,
+        rss_hwm_bytes: 2_500_000_000,
         vm_total_bytes: 1_200_000_000,
         vm_processes_bytes: 500_000_000,
         vm_binary_bytes: 200_000_000,
@@ -94,6 +95,75 @@ defmodule Sanbase.Monitoring.MemoryStatTest do
     assert {1, _} = MemoryStat.prune(7)
     assert Sanbase.Repo.get(MemoryStat, old.id) == nil
     assert Sanbase.Repo.get(MemoryStat, fresh.id)
+  end
+
+  test "multi_pod_metric_series/3 returns per-pod points for one metric" do
+    {:ok, _} = MemoryStat.store(valid_attrs(%{rss_bytes: 100}))
+    {:ok, _} = MemoryStat.store(valid_attrs(%{rss_bytes: 200}))
+    {:ok, _} = MemoryStat.store(valid_attrs(%{pod_name: "sanbase-web-1", rss_bytes: 300}))
+    # nil values are dropped from the series
+    {:ok, _} = MemoryStat.store(valid_attrs(%{pod_name: "sanbase-web-1", rss_bytes: nil}))
+
+    series =
+      MemoryStat.multi_pod_metric_series(["sanbase-web-0", "sanbase-web-1"], :rss_bytes, 24)
+
+    assert [
+             %{name: "sanbase-web-0", points: [[t1, 100], [_t2, 200]]},
+             %{name: "sanbase-web-1", points: [[_t3, 300]]}
+           ] = series
+
+    assert is_integer(t1)
+  end
+
+  test "multi_pod_metric_series/4 downsamples long series" do
+    for i <- 1..10, do: {:ok, _} = MemoryStat.store(valid_attrs(%{rss_bytes: i}))
+
+    [%{points: points}] =
+      MemoryStat.multi_pod_metric_series(["sanbase-web-0"], :rss_bytes, 24, 5)
+
+    assert length(points) == 5
+    assert [[_, 1], [_, 3], [_, 5], [_, 7], [_, 9]] = points
+  end
+
+  test "pod_layers_series/2 returns the accounting layers incl. RSS high-water" do
+    {:ok, _} = MemoryStat.store(valid_attrs())
+
+    series = MemoryStat.pod_layers_series("sanbase-web-0", 24)
+
+    assert Enum.map(series, & &1.name) == [
+             "RSS high-water",
+             "OS RSS",
+             "Alloc allocated (carriers)",
+             "Alloc used (blocks)",
+             "VM total"
+           ]
+
+    assert %{name: "RSS high-water", points: [[_, 2_500_000_000]]} = hd(series)
+  end
+
+  test "pod_alloc_util_series/2 returns used/allocated percent, skipping nil rows" do
+    # 1.1e9 / 1.4e9 = 78.6%
+    {:ok, _} = MemoryStat.store(valid_attrs())
+    {:ok, _} = MemoryStat.store(valid_attrs(%{alloc_used_bytes: nil, alloc_allocated_bytes: nil}))
+
+    assert [%{name: "Allocator utilization", points: [[_, 78.6]]}] =
+             MemoryStat.pod_alloc_util_series("sanbase-web-0", 24)
+  end
+
+  test "pod_buckets_series/2 returns one series per byte metric" do
+    {:ok, _} = MemoryStat.store(valid_attrs())
+
+    series = MemoryStat.pod_buckets_series("sanbase-web-0", 24)
+
+    assert Enum.map(series, & &1.name) == [
+             "OS RSS",
+             "VM total",
+             "VM processes",
+             "VM binary",
+             "VM ETS"
+           ]
+
+    assert %{name: "VM total", points: [[_, 1_200_000_000]]} = Enum.at(series, 1)
   end
 
   test "collector sample/2 collects and stores a row for this node" do

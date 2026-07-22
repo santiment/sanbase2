@@ -39,6 +39,7 @@ defmodule Sanbase.Monitoring.MemorySnapshot do
 
     memory = Map.new(:erlang.memory())
     {alloc_used, alloc_allocated} = allocator_totals()
+    proc_status = proc_status_bytes()
 
     process_groups =
       if Keyword.get(opts, :include_process_groups, false),
@@ -46,7 +47,8 @@ defmodule Sanbase.Monitoring.MemorySnapshot do
         else: nil
 
     %{
-      rss_bytes: rss_bytes(),
+      rss_bytes: proc_status.rss_bytes,
+      rss_hwm_bytes: proc_status.rss_hwm_bytes,
       vm_total_bytes: memory[:total],
       vm_processes_bytes: memory[:processes],
       vm_binary_bytes: memory[:binary],
@@ -68,10 +70,35 @@ defmodule Sanbase.Monitoring.MemorySnapshot do
   """
   @spec rss_bytes() :: non_neg_integer() | nil
   def rss_bytes() do
-    with {:ok, content} <- File.read("/proc/#{System.pid()}/status"),
-         [_, kb] <- Regex.run(~r/^VmRSS:\s+(\d+) kB$/m, content) do
-      String.to_integer(kb) * 1024
-    else
+    proc_status_bytes().rss_bytes
+  end
+
+  @doc """
+  VmRSS (current) and VmHWM (peak since process start, never decreases) of
+  the beam process from `/proc`. Both `nil` where /proc is unavailable
+  (macOS dev). RSS converging toward an HWM set by an early spike is the
+  carrier high-water ratchet, not a leak.
+  """
+  @spec proc_status_bytes() :: %{
+          rss_bytes: non_neg_integer() | nil,
+          rss_hwm_bytes: non_neg_integer() | nil
+        }
+  def proc_status_bytes() do
+    case File.read("/proc/#{System.pid()}/status") do
+      {:ok, content} ->
+        %{
+          rss_bytes: proc_status_kb_value(content, "VmRSS"),
+          rss_hwm_bytes: proc_status_kb_value(content, "VmHWM")
+        }
+
+      _ ->
+        %{rss_bytes: nil, rss_hwm_bytes: nil}
+    end
+  end
+
+  defp proc_status_kb_value(content, name) do
+    case Regex.run(~r/^#{name}:\s+(\d+) kB$/m, content) do
+      [_, kb] -> String.to_integer(kb) * 1024
       _ -> nil
     end
   end

@@ -87,6 +87,7 @@ defmodule Sanbase.Monitoring.MemoryCollector do
         container_type: state.container_type,
         beam_started_at: state.beam_started_at,
         rss_bytes: snapshot.rss_bytes,
+        rss_hwm_bytes: snapshot.rss_hwm_bytes,
         vm_total_bytes: snapshot.vm_total_bytes,
         vm_processes_bytes: snapshot.vm_processes_bytes,
         vm_binary_bytes: snapshot.vm_binary_bytes,

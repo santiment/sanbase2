@@ -213,6 +213,10 @@ config :sanbase, Sanbase.MCP.Restrictions,
     max: %{minute: 10_000, hour: 10_000, day: 10_000, month: 10_000}
   }
 
+# The memory collector GenServer must not run during tests; the modules are
+# tested by calling them directly
+config :sanbase, Sanbase.Monitoring.MemoryCollector, enabled: false
+
 # Configure test environment for OpenAI client mocking
 config :sanbase, :openai_client, Sanbase.AI.MockOpenAIClient
 

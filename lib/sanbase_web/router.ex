@@ -291,6 +291,7 @@ defmodule SanbaseWeb.Router do
 
     live_session :admin_panel_misc, on_mount: @admin_panel_on_mount do
       live("/ses_events", Admin.SesEventsLive)
+      live("/api_business_onboarding", Admin.ApiBusinessOnboardingLive)
       live("/mcp_tool_invocations", Admin.McpToolInvocationsLive)
       live("/user_stats", UserStatsLive)
       live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)

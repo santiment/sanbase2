@@ -41,7 +41,8 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     :update_api_call_limit_table,
     :send_discord_notification,
     :unfreeze_user_frozen_alerts,
-    :sanbase_pro_started
+    :sanbase_pro_started,
+    :api_business_onboarding_email
   ]
 
   @doc false
@@ -119,6 +120,27 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
         :ok = Sanbase.Alert.UserTrigger.unfreeze_user_frozen_alerts(event.data.user_id)
 
       false ->
+        :ok
+    end
+  end
+
+  defp do_handle(:api_business_onboarding_email, event_type, event)
+       when event_type in [:create_subscription, :update_subscription] do
+    changeset =
+      Sanbase.Email.ApiBusinessOnboardingWorker.new(%{
+        subscription_id: event.data.subscription_id
+      })
+
+    case Oban.insert(:oban_web, changeset) do
+      {:ok, _job} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error(
+          "[BillingEventSubscriber] Failed to enqueue API business onboarding job " <>
+            "for subscription #{inspect(event.data.subscription_id)}: #{inspect(reason)}"
+        )
+
         :ok
     end
   end

@@ -26,6 +26,13 @@ config :sanbase, Sanbase.Email.MailjetApi,
   api_business_onboarding_list_id:
     System.get_env("MAILJET_API_BUSINESS_ONBOARDING_LIST_ID", "10331324")
 
+# Launch cutoff for API Business onboarding list reconcile. Subscriptions with
+# inserted_at before this datetime are never backfilled into the Mailjet list.
+# Override with MAILJET_API_BUSINESS_ONBOARDING_SINCE when needed.
+config :sanbase, Sanbase.Email.ApiBusinessOnboardingList,
+  api_business_onboarding_since:
+    System.get_env("MAILJET_API_BUSINESS_ONBOARDING_SINCE", "2026-07-22T00:00:00Z")
+
 config :sanbase, Sanbase.SimpleMailer,
   adapter: Swoosh.Adapters.AmazonSES,
   region: "eu-west-1",

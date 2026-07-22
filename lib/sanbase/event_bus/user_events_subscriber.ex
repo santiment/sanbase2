@@ -106,6 +106,17 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
+         %{data: %{event_type: :update_email, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    Sanbase.Email.ApiBusinessOnboardingList.maybe_add_user(user_id)
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
          %{data: %{event_type: :subscribe_metric_updates, user_id: user_id}},
          event_shadow,
          state

@@ -107,6 +107,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "20 * * * *",
       task: {Sanbase.Accounts.User, :sync_subscribed_users_with_changed_email, []}
     ],
+    reconcile_api_business_onboarding_list: [
+      schedule: "15 4 * * *",
+      task: {Sanbase.Email.ApiBusinessOnboardingList, :reconcile, []}
+    ],
     update_all_uniswap_san_staked_users: [
       schedule: "4-59/30 * * * *",
       task: {Sanbase.Accounts.User.UniswapStaking, :update_all_uniswap_san_staked_users, []}

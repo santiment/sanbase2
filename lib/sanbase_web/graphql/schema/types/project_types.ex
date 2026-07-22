@@ -471,6 +471,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :market_segment, :string do
+      deprecate("The field marketSegment is deprecated. Use marketSegments instead")
       cache_resolve(&ProjectResolver.market_segment/3)
     end
 

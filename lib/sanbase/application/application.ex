@@ -377,6 +377,13 @@ defmodule Sanbase.Application do
         fn -> container_type() in ["web", "all"] end
       ),
 
+      # Periodically log GraphQL cache statistics and sweep oldest entries if
+      # the payload byte size exceeds CachexProvider.max_payload_mb()
+      start_if(
+        fn -> SanbaseWeb.Graphql.CacheMonitor end,
+        fn -> container_type() in ["web", "all"] end
+      ),
+
       # Service for fast checking if a slug is valid
       # `:available_slugs_module` option changes the module
       # used in test env to another one, this one is unused

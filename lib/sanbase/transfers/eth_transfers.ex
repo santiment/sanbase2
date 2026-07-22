@@ -174,8 +174,8 @@ defmodule Sanbase.Transfers.EthTransfers do
       WHERE
         type = 'call' AND
         dt >= toDateTime({{from}}) AND
-        dt < toDateTime({{to}})
-        WHERE value > {{value_filter}} * #{@eth_decimals}
+        dt < toDateTime({{to}}) AND
+        value > {{value_filter}} * #{@eth_decimals}
     )
     GROUP BY from, type, to, dt, transactionHash, internalTxPosition
     ORDER BY value DESC

@@ -47,6 +47,7 @@ defmodule Sanbase.Accounts.User.UniswapStakingTest do
       |> Sanbase.Mock.prepare_mock2(&UniswapPair.total_supply/1, error)
       |> Sanbase.Mock.prepare_mock2(&UniswapPair.reserves/1, {5.0, 3.0})
       |> Sanbase.Mock.prepare_mock2(&UniswapPair.get_san_position/1, 0)
+      |> prepare_sentry_exception_mock(self())
       |> Sanbase.Mock.run_with_mocks(fn ->
         capture_log(fn ->
           assert {:error, %Mint.TransportError{reason: :nxdomain}} =
@@ -55,6 +56,9 @@ defmodule Sanbase.Accounts.User.UniswapStakingTest do
 
         assert [%UniswapStaking{san_staked: 5.0}] =
                  UniswapStaking.fetch_all_uniswap_staked_users()
+
+        assert_receive {:sentry_exception, %UniswapStaking.UpdateError{message: message}}
+        assert message =~ ":nxdomain"
       end)
     end
 
@@ -70,6 +74,7 @@ defmodule Sanbase.Accounts.User.UniswapStakingTest do
       |> Sanbase.Mock.prepare_mock2(&UniswapPair.total_supply/1, 10.0)
       |> Sanbase.Mock.prepare_mock2(&UniswapPair.reserves/1, {5.0, 3.0})
       |> Sanbase.Mock.prepare_mock2(&UniswapPair.get_san_position/1, 0)
+      |> prepare_sentry_exception_mock(self())
       |> Sanbase.Mock.run_with_mocks(fn ->
         capture_log(fn ->
           assert {:error, %Mint.TransportError{reason: :nxdomain}} =
@@ -78,8 +83,18 @@ defmodule Sanbase.Accounts.User.UniswapStakingTest do
 
         assert [%UniswapStaking{san_staked: 5.0}] =
                  UniswapStaking.fetch_all_uniswap_staked_users()
+
+        assert_receive {:sentry_exception, %UniswapStaking.UpdateError{message: message}}
+        assert message =~ ":nxdomain"
       end)
     end
+  end
+
+  defp prepare_sentry_exception_mock(mock_state, test_pid) do
+    Sanbase.Mock.prepare_mock(mock_state, Sentry, :capture_exception, fn exception, _opts ->
+      send(test_pid, {:sentry_exception, exception})
+      {:ok, "mocked"}
+    end)
   end
 
   describe "UniswapPair.balances_of/2" do

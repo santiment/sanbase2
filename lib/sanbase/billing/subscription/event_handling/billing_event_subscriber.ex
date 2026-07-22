@@ -124,14 +124,25 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     end
   end
 
-  # Add new API Business-or-higher subscribers to the Mailjet onboarding list.
-  # Handles both :create_subscription (checkout) and :update_subscription (e.g. a
-  # sub that flips from incomplete to active, or a PRO -> BUSINESS_PRO upgrade).
   defp do_handle(:api_business_onboarding_email, event_type, event)
        when event_type in [:create_subscription, :update_subscription] do
-    event.data.subscription_id
-    |> Sanbase.Billing.Subscription.by_id()
-    |> Sanbase.Email.ApiBusinessOnboardingList.maybe_add()
+    changeset =
+      Sanbase.Email.ApiBusinessOnboardingWorker.new(%{
+        subscription_id: event.data.subscription_id
+      })
+
+    case Oban.insert(:oban_web, changeset) do
+      {:ok, _job} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error(
+          "[BillingEventSubscriber] Failed to enqueue API business onboarding job " <>
+            "for subscription #{inspect(event.data.subscription_id)}: #{inspect(reason)}"
+        )
+
+        :ok
+    end
   end
 
   defp do_handle(_type, _event_type, _event) do

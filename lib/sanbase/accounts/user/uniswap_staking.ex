@@ -32,6 +32,17 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   @doc """
   Fetch all users with conncted wallets, fetch their total staked
   SAN tokens and update.
+
+  If fetching the staked tokens fails, the update is aborted and the
+  currently stored records are left untouched.
+
+  ## Examples
+
+      iex> UniswapStaking.update_all_uniswap_san_staked_users()
+      {:ok, {2, nil}}
+
+      iex> UniswapStaking.update_all_uniswap_san_staked_users()
+      {:error, %Mint.TransportError{reason: :nxdomain}}
   """
   @spec update_all_uniswap_san_staked_users() ::
           {:ok, {integer(), nil | [term()]}} | {:error, any()}
@@ -40,22 +51,35 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     users = User.fetch_all_users_with_eth_account()
-    users_staked_map = fetch_uniswap_san_staked(users)
 
-    users_san_staked =
-      users
-      |> Enum.map(fn user ->
-        san_staked = user_san_staked_amount(user, users_staked_map)
+    case fetch_uniswap_san_staked(users) do
+      {:ok, users_staked_map} ->
+        users_san_staked =
+          users
+          |> Enum.map(fn user ->
+            san_staked = user_san_staked_amount(user, users_staked_map)
 
-        %{
-          user_id: user.id,
-          san_staked: san_staked,
-          inserted_at: naive_now,
-          updated_at: naive_now
-        }
-      end)
-      |> Enum.filter(&(&1.san_staked > 0.0))
+            %{
+              user_id: user.id,
+              san_staked: san_staked,
+              inserted_at: naive_now,
+              updated_at: naive_now
+            }
+          end)
+          |> Enum.filter(&(&1.san_staked > 0.0))
 
+        store_uniswap_san_staked_users(users_san_staked)
+
+      {:error, reason} ->
+        Logger.error(
+          "Finished update_all_uniswap_san_staked_users error, could not fetch staked balances: #{inspect(reason)}"
+        )
+
+        {:error, reason}
+    end
+  end
+
+  defp store_uniswap_san_staked_users(users_san_staked) do
     Repo.transaction(fn ->
       Repo.delete_all(__MODULE__)
 
@@ -100,8 +124,15 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
       Enum.flat_map(users, fn user -> Enum.map(user.eth_accounts, fn acc -> acc.address end) end)
 
     UniswapPair.all_pair_contracts()
-    |> Enum.map(&EthAccount.san_staked_addresses(addresses, &1))
-    |> Enum.reduce(%{}, &Map.merge(&1, &2, fn _k, v1, v2 -> v1 + v2 end))
+    |> Enum.reduce_while({:ok, %{}}, fn contract, {:ok, acc} ->
+      case EthAccount.san_staked_addresses(addresses, contract) do
+        {:ok, staked_map} ->
+          {:cont, {:ok, Map.merge(acc, staked_map, fn _k, v1, v2 -> v1 + v2 end)}}
+
+        {:error, _} = error ->
+          {:halt, error}
+      end
+    end)
   end
 
   defp calc_uniswap_san_staked_user(user) do

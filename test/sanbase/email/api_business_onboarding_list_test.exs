@@ -111,4 +111,134 @@ defmodule Sanbase.Email.ApiBusinessOnboardingListTest do
       refute ApiBusinessOnboardingList.eligible?(nil)
     end
   end
+
+  describe "maybe_add_user/1" do
+    @since ~N[2025-01-01 00:00:00]
+
+    setup do
+      previous = Application.get_env(:sanbase, ApiBusinessOnboardingList, [])
+
+      Application.put_env(
+        :sanbase,
+        ApiBusinessOnboardingList,
+        Keyword.put(previous, :api_business_onboarding_since, @since)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:sanbase, ApiBusinessOnboardingList, previous)
+      end)
+
+      :ok
+    end
+
+    test "adds the current email when the user has an eligible post-cutoff subscription" do
+      user = insert(:user, email: "new@example.com")
+      insert(:subscription_business_pro_monthly, user: user)
+
+      expect(MockMailjetApi, :subscribe, fn @list, "new@example.com" -> :ok end)
+
+      assert :ok = ApiBusinessOnboardingList.maybe_add_user(user.id)
+    end
+
+    test "does not subscribe when the user has no eligible subscription" do
+      user = insert(:user, email: "user@example.com")
+      insert(:subscription_pro, user: user)
+
+      assert :ok = ApiBusinessOnboardingList.maybe_add_user(user.id)
+    end
+
+    test "does not subscribe when the eligible subscription is pre-cutoff" do
+      user = insert(:user, email: "historical@example.com")
+      sub = insert(:subscription_business_pro_monthly, user: user)
+
+      sub
+      |> Ecto.Changeset.change(%{inserted_at: ~N[2020-01-01 00:00:00]})
+      |> Sanbase.Repo.update!()
+
+      assert :ok = ApiBusinessOnboardingList.maybe_add_user(user.id)
+    end
+  end
+
+  describe "reconcile/0" do
+    @since ~N[2025-01-01 00:00:00]
+
+    setup do
+      previous = Application.get_env(:sanbase, ApiBusinessOnboardingList, [])
+
+      Application.put_env(
+        :sanbase,
+        ApiBusinessOnboardingList,
+        Keyword.put(previous, :api_business_onboarding_since, @since)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:sanbase, ApiBusinessOnboardingList, previous)
+      end)
+
+      :ok
+    end
+
+    test "adds only missing post-cutoff eligible emails and reports extras" do
+      missing_user = insert(:user, email: "missing@example.com")
+      present_user = insert(:user, email: "present@example.com")
+      old_user = insert(:user, email: "historical@example.com")
+
+      insert(:subscription_business_pro_monthly, user: missing_user)
+      insert(:subscription_business_pro_monthly, user: present_user)
+
+      old_sub = insert(:subscription_business_pro_monthly, user: old_user)
+
+      old_sub
+      |> Ecto.Changeset.change(%{inserted_at: ~N[2020-01-01 00:00:00]})
+      |> Sanbase.Repo.update!()
+
+      expect(MockMailjetApi, :fetch_list_emails, fn @list ->
+        {:ok, ["present@example.com", "stale@example.com"]}
+      end)
+
+      expect(MockMailjetApi, :subscribe, fn @list, emails ->
+        assert Enum.sort(List.wrap(emails)) == ["missing@example.com"]
+        :ok
+      end)
+
+      assert %{
+               added: 1,
+               missing_emails: ["missing@example.com"],
+               extra_count: 1
+             } = ApiBusinessOnboardingList.reconcile()
+    end
+
+    test "is idempotent when Mailjet already has all desired members" do
+      user = insert(:user, email: "present@example.com")
+      insert(:subscription_business_pro_monthly, user: user)
+
+      expect(MockMailjetApi, :fetch_list_emails, fn @list ->
+        {:ok, ["present@example.com"]}
+      end)
+
+      assert %{added: 0, missing_emails: [], extra_count: 0} =
+               ApiBusinessOnboardingList.reconcile()
+    end
+
+    test "skips adds when the launch cutoff is not configured" do
+      Application.put_env(:sanbase, ApiBusinessOnboardingList, [])
+
+      user = insert(:user, email: "biz@example.com")
+      insert(:subscription_business_pro_monthly, user: user)
+
+      assert %{added: 0, missing_emails: [], extra_count: 0} =
+               ApiBusinessOnboardingList.reconcile()
+    end
+
+    test "does not include pre-cutoff eligible subscriptions in desired emails" do
+      user = insert(:user, email: "historical@example.com")
+      sub = insert(:subscription_business_pro_monthly, user: user)
+
+      sub
+      |> Ecto.Changeset.change(%{inserted_at: ~N[2020-01-01 00:00:00]})
+      |> Sanbase.Repo.update!()
+
+      assert ApiBusinessOnboardingList.eligible_user_emails() == []
+    end
+  end
 end

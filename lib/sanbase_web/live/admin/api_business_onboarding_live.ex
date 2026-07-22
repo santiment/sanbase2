@@ -5,10 +5,6 @@ defmodule SanbaseWeb.Admin.ApiBusinessOnboardingLive do
   alias Sanbase.Email.ApiBusinessOnboardingList
   alias Sanbase.Email.MailjetApi
 
-  # Mailjet's contact endpoint returns at most this many rows per request; when we
-  # get exactly this many the real list may be larger and the view is truncated.
-  @page_limit 1000
-
   @impl true
   def mount(_params, _session, socket) do
     socket = assign(socket, :page_title, "API Business Onboarding List")
@@ -38,8 +34,7 @@ defmodule SanbaseWeb.Admin.ApiBusinessOnboardingLive do
            %{
              contacts: %{
                emails: sorted,
-               count: length(sorted),
-               truncated?: length(sorted) >= @page_limit
+               count: length(sorted)
              }
            }}
 
@@ -51,8 +46,6 @@ defmodule SanbaseWeb.Admin.ApiBusinessOnboardingLive do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, :page_limit, @page_limit)
-
     ~H"""
     <div class="flex flex-col w-full px-4 py-6">
       <div class="flex items-center justify-between mb-4">
@@ -76,18 +69,9 @@ defmodule SanbaseWeb.Admin.ApiBusinessOnboardingLive do
           </div>
         </:failed>
 
-        <div :if={contacts.truncated?} class="alert alert-warning mb-3">
-          <span>
-            Showing the first {@page_limit} contacts only - the list is larger and this view
-            is truncated.
-          </span>
-        </div>
-
         <div class="mb-3">
           <span class="text-sm text-base-content/60">
-            {if contacts.truncated?,
-              do: "#{contacts.count}+ contacts",
-              else: "#{contacts.count} contacts"}
+            {contacts.count} contacts
           </span>
         </div>
 

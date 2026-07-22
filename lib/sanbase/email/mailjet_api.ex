@@ -12,6 +12,7 @@ defmodule Sanbase.Email.MailjetApi do
   alias Sanbase.Utils.Config
 
   @base_url "https://api.mailjet.com/v3/REST/"
+  @default_fetch_page_limit 1000
   @bi_weekly_list_id -1
   @monthly_newsletter_list_id 61_085
   @mailjet_sanr_list_id 10_321_582
@@ -203,23 +204,13 @@ defmodule Sanbase.Email.MailjetApi do
         {:error, :list_not_configured}
 
       list_id ->
-        url = @base_url <> "contact"
-
-        case Req.get!(url,
-               headers: headers(),
-               params: [ContactsList: list_id, limit: 1000]
-             ) do
-          %{status: 200, body: %{"Data" => data}} ->
-            emails = Enum.map(data, & &1["Email"])
+        case fetch_all_list_emails(list_id, 0, []) do
+          {:ok, emails} ->
             Logger.info("Successfully fetched #{length(emails)} emails from list #{list_atom}")
             {:ok, emails}
 
-          %{status: _status} = response ->
-            Logger.error(
-              "Error fetching emails from Mailjet list #{list_atom}: #{inspect(response)}"
-            )
-
-            {:error, response.body}
+          {:error, _} = error ->
+            error
         end
     end
   rescue
@@ -232,6 +223,58 @@ defmodule Sanbase.Email.MailjetApi do
   end
 
   # private
+
+  defp fetch_all_list_emails(list_id, offset, acc) do
+    page_limit = fetch_page_limit()
+
+    case fetch_list_emails_page(list_id, offset, page_limit) do
+      {:ok, emails} when length(emails) < page_limit ->
+        {:ok, acc ++ emails}
+
+      {:ok, emails} ->
+        fetch_all_list_emails(list_id, offset + page_limit, acc ++ emails)
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp fetch_list_emails_page(list_id, offset, page_limit) do
+    url = @base_url <> "contact"
+
+    opts =
+      [
+        headers: headers(),
+        params: [ContactsList: list_id, Limit: page_limit, Offset: offset]
+      ] ++ req_options()
+
+    case Req.get!(url, opts) do
+      %{status: 200, body: %{"Data" => data}} ->
+        {:ok, Enum.map(data, & &1["Email"])}
+
+      %{status: _status} = response ->
+        Logger.error(
+          "Error fetching emails from Mailjet list id #{list_id}: #{inspect(response)}"
+        )
+
+        {:error, response.body}
+    end
+  end
+
+  defp fetch_page_limit do
+    case Application.get_env(:sanbase, __MODULE__, [])
+         |> Keyword.get(:fetch_list_page_limit, @default_fetch_page_limit) do
+      n when is_integer(n) and n > 0 -> n
+      _ -> @default_fetch_page_limit
+    end
+  end
+
+  defp req_options do
+    case Application.get_env(:sanbase, __MODULE__, []) |> Keyword.get(:req_options, []) do
+      opts when is_list(opts) -> opts
+      _ -> []
+    end
+  end
 
   defp subscribe_unsubscribe(list_atom, email_or_emails, action) do
     case resolve_list_id(list_atom) do

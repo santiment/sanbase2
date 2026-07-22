@@ -1,4 +1,8 @@
 defmodule Sanbase.Accounts.User.UniswapStaking do
+  defmodule UpdateError do
+    defexception [:message]
+  end
+
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -75,8 +79,25 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
           "Finished update_all_uniswap_san_staked_users error, could not fetch staked balances: #{inspect(reason)}"
         )
 
+        report_update_error(reason)
+
         {:error, reason}
     end
+  end
+
+  # The Logger.error alone does not reach Sentry, as capturing of log
+  # messages is not enabled. Raise and rescue a dedicated exception so
+  # Sentry gets a real exception event with a stacktrace and a broken
+  # RPC node does not degrade the staking updates silently.
+  defp report_update_error(reason) do
+    raise UpdateError,
+      message: "Failed to fetch Uniswap SAN staked balances, update aborted: #{inspect(reason)}"
+  rescue
+    e ->
+      Sentry.capture_exception(e,
+        stacktrace: __STACKTRACE__,
+        extra: %{reason: inspect(reason)}
+      )
   end
 
   defp store_uniswap_san_staked_users(users_san_staked) do

@@ -39,9 +39,12 @@ config :sanbase, SanbaseWeb.Endpoint,
     ]
   ]
 
+# truncate must be an integer, not :infinity — Logger.Formatter passes it verbatim
+# as :chars_limit to Erlang report callbacks, and io_lib only accepts an integer
+# or :unlimited there, so :infinity makes every OTP report crash the formatter
 config :logger,
   level: :debug,
-  truncate: :infinity
+  truncate: 1_000_000
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$time][$level][$metadata] $message\n"

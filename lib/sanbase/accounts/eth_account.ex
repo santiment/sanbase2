@@ -2,6 +2,7 @@ defmodule Sanbase.Accounts.EthAccount do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   alias Sanbase.Repo
   alias Sanbase.SmartContracts.UniswapPair
@@ -99,27 +100,60 @@ defmodule Sanbase.Accounts.EthAccount do
   end
 
   @doc """
-  Fetch wallet staked SAN tokens for given Uniswap pair contract
+  Fetch wallet staked SAN tokens for given Uniswap pair contract.
+
+  A failed contract call is treated as no staked tokens, so this function is
+  suitable only for best-effort read paths, not for persisting data.
   """
   @spec san_staked_address(String.t(), String.t()) :: float()
   def san_staked_address(address, contract) when is_binary(address) and is_binary(contract) do
-    UniswapPair.balance_of(address, contract)
-    |> calculate_san_staked(contract_data_map(contract))
+    case contract_data_map(contract) do
+      {:ok, data_map} ->
+        UniswapPair.balance_of(address, contract)
+        |> calculate_san_staked(data_map)
+
+      {:error, _} ->
+        +0.0
+    end
   end
 
-  def san_staked_addresses(addresses, contract) when is_list(addresses) and is_binary(contract) do
-    data_map = contract_data_map(contract)
+  @doc """
+  Fetch the staked SAN tokens of each address for the given Uniswap pair
+  contract.
 
-    # Batch size of 90 to fixe: "batch limit 100 exceeded (can increase by --rpc.batch.limit)
-    result =
+  The addresses are queried in batches of 90, as the RPC node rejects
+  batches larger than 100 requests. Any failed contract call fails the
+  whole function, so an RPC outage cannot be mistaken for zero balances.
+
+  ## Examples
+
+      iex> EthAccount.san_staked_addresses([addr1, addr2], contract)
+      {:ok, %{addr1 => 150.0, addr2 => 0.0}}
+
+      iex> EthAccount.san_staked_addresses([addr1, addr2], contract)
+      {:error, %Mint.TransportError{reason: :nxdomain}}
+  """
+  @spec san_staked_addresses([String.t()], String.t()) ::
+          {:ok, %{String.t() => float()}} | {:error, any()}
+  def san_staked_addresses(addresses, contract) when is_list(addresses) and is_binary(contract) do
+    with {:ok, data_map} <- contract_data_map(contract) do
       addresses
       |> Enum.chunk_every(90)
-      |> Enum.flat_map(&UniswapPair.balances_of(&1, contract))
+      |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
+        case UniswapPair.balances_of(chunk, contract) do
+          {:ok, balances} -> {:cont, {:ok, [balances | acc]}}
+          {:error, _} = error -> {:halt, error}
+        end
+      end)
+      |> maybe_apply_function(fn balances_chunks ->
+        balances = balances_chunks |> Enum.reverse() |> List.flatten()
 
-    Enum.zip(addresses, result)
-    |> Map.new(fn {addr, [balance]} ->
-      {addr, calculate_san_staked(balance, data_map)}
-    end)
+        Enum.zip(addresses, balances)
+        |> Map.new(fn {addr, balance} ->
+          {addr, calculate_san_staked(balance, data_map)}
+        end)
+      end)
+    end
   end
 
   # Helpers
@@ -129,12 +163,14 @@ defmodule Sanbase.Accounts.EthAccount do
          {reserves0, reserves1} when is_float(reserves0) and is_float(reserves1) <-
            UniswapPair.reserves(contract),
          position when position in [0, 1] <- UniswapPair.get_san_position(contract) do
-      %{
-        total_supply: total_supply,
-        reserves: elem({reserves0, reserves1}, position)
-      }
+      {:ok,
+       %{
+         total_supply: total_supply,
+         reserves: elem({reserves0, reserves1}, position)
+       }}
     else
-      _ -> %{total_supply: 0.0, reserves: 0.0}
+      {:error, _} = error -> error
+      unexpected -> {:error, {:invalid_contract_data, unexpected}}
     end
   end
 

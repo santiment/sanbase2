@@ -236,16 +236,23 @@ defmodule Sanbase.Clickhouse.Github do
   is mapped back to the slug it belongs to, so a slug with multiple
   organizations appears in multiple pairs. Slugs without any activity in the
   time period are not present in the result.
+
+  Options:
+    - `:order_by` (`:dev_activity` | `:github_activity`) - Sort the result by
+      the given stat in descending order.
   """
   @spec github_activity_stats(
           list({String.t(), String.t()}),
           DateTime.t(),
-          DateTime.t()
+          DateTime.t(),
+          Keyword.t()
         ) :: {:ok, list(map())} | {:error, String.t()}
-  def github_activity_stats([], _from, _to), do: {:ok, []}
+  def github_activity_stats(owner_slug_pairs, from, to, opts \\ [])
 
-  def github_activity_stats(owner_slug_pairs, from, to) do
-    query_struct = github_activity_stats_query(owner_slug_pairs, from, to)
+  def github_activity_stats([], _from, _to, _opts), do: {:ok, []}
+
+  def github_activity_stats(owner_slug_pairs, from, to, opts) do
+    query_struct = github_activity_stats_query(owner_slug_pairs, from, to, opts)
 
     ClickhouseRepo.query_transform(
       query_struct,

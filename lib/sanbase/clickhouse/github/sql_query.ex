@@ -301,8 +301,20 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def github_activity_stats_query(owner_slug_pairs, from, to) do
+  @stats_order_by_columns %{
+    dev_activity: "dev_activity",
+    github_activity: "github_activity"
+  }
+
+  def github_activity_stats_query(owner_slug_pairs, from, to, opts \\ []) do
     {owners, slugs} = Enum.unzip(owner_slug_pairs)
+    order_by = Keyword.get(opts, :order_by)
+
+    order_by_str =
+      case Map.fetch(@stats_order_by_columns, order_by) do
+        {:ok, column} -> "ORDER BY #{column} DESC"
+        :error -> ""
+      end
 
     sql = """
     SELECT
@@ -318,8 +330,9 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     WHERE
       owner IN ({{owners}}) AND
       dt >= toDateTime({{from}}) AND
-      dt < toDateTime({{to}})
+      dt <= toDateTime({{to}})
     GROUP BY slug
+    #{order_by_str}
     """
 
     params = %{

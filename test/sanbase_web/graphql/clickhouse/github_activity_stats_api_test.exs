@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
     }
   end
 
-  test "get github activity stats", context do
+  test "get github activity stats for a list of slugs", context do
     rows = [
       [context.p1.slug, 1000, 1500, 20, 30, 100, 200, 3],
       [context.p2.slug, 2000, 3000, 40, 60, 300, 500, 5]
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
       data =
         get_github_activity_stats(
           context.conn,
-          [context.p1.slug, context.p2.slug],
+          %{slugs: [context.p1.slug, context.p2.slug], map_as_input_object: true},
           context.from,
           context.to
         )
@@ -89,7 +89,10 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
       data =
         get_github_activity_stats(
           context.conn,
-          [context.p3.slug, context.p1.slug, context.p2.slug],
+          %{
+            slugs: [context.p3.slug, context.p1.slug, context.p2.slug],
+            map_as_input_object: true
+          },
           context.from,
           context.to
         )
@@ -114,19 +117,126 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
     end)
   end
 
+  test "get github activity stats for the top N projects", context do
+    # The ranking comes from Sanbase.Metric.slugs_order over the precomputed
+    # dev_activity_1d/github_activity_1d metrics. Only the top N slugs are
+    # then sent to the stats query
+    ranked_slugs = [context.p2.slug, context.p1.slug, context.p3.slug]
+
+    stats_rows = [
+      [context.p2.slug, 2000, 3000, 40, 60, 300, 500, 5],
+      [context.p1.slug, 1500, 2500, 20, 30, 100, 200, 3]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/5, {:ok, ranked_slugs})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: stats_rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      data =
+        get_github_activity_stats(
+          context.conn,
+          %{top_n: 2, sort_by: :dev_activity, map_as_input_object: true},
+          context.from,
+          context.to
+        )
+        |> get_in(["data", "githubActivityStats"])
+
+      assert [
+               %{"slug" => slug1, "devActivity" => 2000},
+               %{"slug" => slug2, "devActivity" => 1500}
+             ] = data
+
+      assert slug1 == context.p2.slug
+      assert slug2 == context.p1.slug
+    end)
+  end
+
+  test "error when the selector has both slugs and topN", context do
+    %{"errors" => [error]} =
+      get_github_activity_stats(
+        context.conn,
+        %{slugs: [context.p1.slug], top_n: 10, sort_by: :dev_activity, map_as_input_object: true},
+        context.from,
+        context.to
+      )
+
+    assert error["message"] =~ "exactly one of the fields slugs and topN, not both"
+  end
+
+  test "error when the selector has neither slugs nor topN", context do
+    %{"errors" => [error]} =
+      get_github_activity_stats(
+        context.conn,
+        %{sort_by: :dev_activity, map_as_input_object: true},
+        context.from,
+        context.to
+      )
+
+    assert error["message"] =~ "exactly one of the fields slugs and topN"
+  end
+
+  test "error when topN is used without sortBy", context do
+    %{"errors" => [error]} =
+      get_github_activity_stats(
+        context.conn,
+        %{top_n: 10, map_as_input_object: true},
+        context.from,
+        context.to
+      )
+
+    assert error["message"] =~ "must have the sortBy field when topN is used"
+  end
+
+  test "error when topN is too big", context do
+    %{"errors" => [error]} =
+      get_github_activity_stats(
+        context.conn,
+        %{top_n: 101, sort_by: :github_activity, map_as_input_object: true},
+        context.from,
+        context.to
+      )
+
+    assert error["message"] =~ "topN must be between 1 and 100"
+  end
+
+  test "the current day data is included", context do
+    now = DateTime.utc_now()
+    rows = [[context.p1.slug, 1000, 1500, 20, 30, 100, 200, 3]]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      data =
+        get_github_activity_stats(
+          context.conn,
+          %{slugs: [context.p1.slug], map_as_input_object: true},
+          Timex.beginning_of_day(now),
+          now
+        )
+        |> get_in(["data", "githubActivityStats"])
+
+      assert [%{"slug" => _, "devActivity" => 1000}] = data
+    end)
+  end
+
   test "error when too many slugs are provided", context do
     slugs = Enum.map(1..101, fn i -> "slug-#{i}" end)
 
     %{"errors" => [error]} =
-      get_github_activity_stats(context.conn, slugs, context.from, context.to)
+      get_github_activity_stats(
+        context.conn,
+        %{slugs: slugs, map_as_input_object: true},
+        context.from,
+        context.to
+      )
 
     assert error["message"] =~ "more than 100 slugs"
   end
 
-  defp get_github_activity_stats(conn, slugs, from, to) do
+  defp get_github_activity_stats(conn, selector, from, to, extra_args \\ %{}) do
+    args = Map.merge(%{selector: selector, from: from, to: to}, extra_args)
+
     query = """
     {
-      githubActivityStats(#{map_to_args(%{slugs: slugs, from: from, to: to})}){
+      githubActivityStats(#{map_to_args(args)}){
         slug
         devActivity
         githubActivity

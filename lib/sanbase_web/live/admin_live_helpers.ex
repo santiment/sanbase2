@@ -99,6 +99,7 @@ defmodule SanbaseWeb.AdminLiveHelpers do
   Filters metric maps (with `:metric` and `:human_readable_name` keys) by a
   case-insensitive query matching either field. An empty query is a no-op.
   """
+  @spec filter_by_search([map()], String.t()) :: [map()]
   def filter_by_search(metrics, ""), do: metrics
 
   def filter_by_search(metrics, query) do
@@ -114,6 +115,7 @@ defmodule SanbaseWeb.AdminLiveHelpers do
   @doc """
   Filters metric maps by `:source_type` ("registry"/"code"). "all" is a no-op.
   """
+  @spec filter_by_source([map()], String.t()) :: [map()]
   def filter_by_source(metrics, "all"), do: metrics
   def filter_by_source(metrics, source), do: Enum.filter(metrics, &(&1.source_type == source))
 
@@ -122,9 +124,12 @@ defmodule SanbaseWeb.AdminLiveHelpers do
   The 4-arity version also skips values equal to the given default, keeping
   URLs free of parameters that match the initial filter state.
   """
+  @spec maybe_add_param(map(), String.t(), term()) :: map()
   def maybe_add_param(params, _key, ""), do: params
   def maybe_add_param(params, key, value), do: Map.put(params, key, value)
 
+  @spec maybe_add_param(map(), String.t(), term(), term()) :: map()
+  def maybe_add_param(params, _key, "", _default), do: params
   def maybe_add_param(params, _key, value, default) when value == default, do: params
   def maybe_add_param(params, key, value, _default), do: Map.put(params, key, value)
 end

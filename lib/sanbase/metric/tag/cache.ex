@@ -45,34 +45,42 @@ defmodule Sanbase.Metric.Tag.Cache do
   end
 
   @doc """
-  Recomputes and stores all cached maps in `:persistent_term`.
+  Recomputes the cached maps and stores them in `:persistent_term`.
 
-  The metric -> tags map is derived from the tag -> metrics map computed in the
-  same call, so the two stored terms are always consistent with each other.
+  Both maps are derived from a single computation and published as one
+  persistent-term value, so readers always observe a mutually consistent
+  snapshot. Event-driven refreshes are serialized by the event bus subscriber
+  process (`Sanbase.EventBus.MetricRegistrySubscriber`), which processes
+  `metric_tag_change` events one at a time.
   """
   @spec refresh_stored_terms() :: true
   def refresh_stored_terms() do
     Logger.info("Refreshing stored terms in #{inspect(__MODULE__)}")
 
     tag_to_metrics_map = compute_tag_to_metrics_map()
-    :persistent_term.put(key(:tag_to_metrics_map), tag_to_metrics_map)
-    :persistent_term.put(key(:metric_to_tags_map), invert_tag_to_metrics_map(tag_to_metrics_map))
+
+    snapshot = %{
+      tag_to_metrics_map: tag_to_metrics_map,
+      metric_to_tags_map: invert_tag_to_metrics_map(tag_to_metrics_map)
+    }
+
+    :persistent_term.put(key(), snapshot)
 
     true
   end
 
   # Private
 
-  defp key(fun), do: {__MODULE__, fun}
+  defp key(), do: {__MODULE__, :snapshot}
 
   defp get(map_name) do
-    case :persistent_term.get(key(map_name), :undefined) do
+    case :persistent_term.get(key(), :undefined) do
       :undefined ->
         refresh_stored_terms()
-        :persistent_term.get(key(map_name))
+        Map.fetch!(:persistent_term.get(key()), map_name)
 
-      data ->
-        data
+      snapshot ->
+        Map.fetch!(snapshot, map_name)
     end
   end
 

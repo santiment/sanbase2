@@ -17,20 +17,19 @@ defmodule SanbaseWeb.CategorizationLiveTest do
   end
 
   test "renders the metrics table", %{conn: conn} do
-    {:ok, _view, html} = live(conn, "/admin/metric_registry/categorization")
+    {:ok, view, _html} = live(conn, "/admin/metric_registry/categorization")
 
-    assert html =~ "Metric Categorization"
-    assert html =~ "price_usd"
+    assert has_element?(view, "div", "Metric Categorization")
+    assert has_element?(view, "td div", "price_usd")
   end
 
   test "filters by not-categorized status", %{conn: conn} do
     {:ok, view, _html} = live(conn, "/admin/metric_registry/categorization")
 
-    html =
-      view
-      |> element("form[phx-change=\"filter\"]")
-      |> render_change(%{"status" => "not_categorized"})
+    view
+    |> element("form[phx-change=\"filter\"]")
+    |> render_change(%{"status" => "not_categorized"})
 
-    assert html =~ "price_usd"
+    assert has_element?(view, "td div", "price_usd")
   end
 end

@@ -22,23 +22,23 @@ defmodule SanbaseWeb.TagLive.Form do
     |> assign(
       page_title: "Create New Tag",
       tag: %MetricTag{},
+      form: to_form(MetricTag.changeset(%MetricTag{}, %{}), as: :tag),
       action: :new
     )
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    id = String.to_integer(id)
-
-    case Tag.get_tag(id) do
-      {:ok, tag} ->
-        socket
-        |> assign(
-          page_title: "Edit Tag",
-          tag: tag,
-          action: :edit
-        )
-
-      {:error, _} ->
+    with {id, ""} <- Integer.parse(id),
+         {:ok, tag} <- Tag.get_tag(id) do
+      socket
+      |> assign(
+        page_title: "Edit Tag",
+        tag: tag,
+        form: to_form(MetricTag.changeset(tag, %{}), as: :tag),
+        action: :edit
+      )
+    else
+      _ ->
         socket
         |> put_flash(:error, "Tag not found")
         |> push_navigate(to: ~p"/admin/metric_registry/tags/manage")
@@ -61,14 +61,9 @@ defmodule SanbaseWeb.TagLive.Form do
         />
       </div>
 
-      <.simple_form for={%{}} as={:tag} phx-submit="save">
-        <.input type="text" name="name" value={@tag.name} label="Tag Name" />
-        <.input
-          type="textarea"
-          name="description"
-          value={@tag.description}
-          label="Description"
-        />
+      <.simple_form for={@form} phx-submit="save">
+        <.input type="text" field={@form[:name]} label="Tag Name" />
+        <.input type="textarea" field={@form[:description]} label="Description" />
 
         <.button type="submit">Save</.button>
       </.simple_form>
@@ -77,13 +72,11 @@ defmodule SanbaseWeb.TagLive.Form do
   end
 
   @impl true
-  def handle_event("save", %{"name" => name} = params, socket) do
-    attrs = %{name: name, description: Map.get(params, "description")}
-
+  def handle_event("save", %{"tag" => params}, socket) do
     result =
       case socket.assigns.action do
-        :new -> Tag.create_tag(attrs)
-        :edit -> Tag.update_tag(socket.assigns.tag, attrs)
+        :new -> Tag.create_tag(params)
+        :edit -> Tag.update_tag(socket.assigns.tag, params)
       end
 
     case result do
@@ -97,7 +90,7 @@ defmodule SanbaseWeb.TagLive.Form do
         {:noreply,
          socket
          |> put_flash(:error, format_errors(changeset))
-         |> assign(tag: struct(socket.assigns.tag, attrs))}
+         |> assign(form: to_form(changeset, as: :tag))}
     end
   end
 end

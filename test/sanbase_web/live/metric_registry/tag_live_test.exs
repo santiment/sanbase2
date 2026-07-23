@@ -59,6 +59,38 @@ defmodule SanbaseWeb.TagLiveTest do
 
       assert html =~ "price_usd"
     end
+
+    test "tagged row stays visible and highlighted under the not_tagged filter", %{
+      conn: conn,
+      tag: tag
+    } do
+      {:ok, view, _html} = live(conn, "/admin/metric_registry/tags")
+
+      view
+      |> element("form[phx-change=\"filter\"]")
+      |> render_change(%{"status" => "not_tagged"})
+
+      # Tagging the metric makes it stop matching the filter, but the row is
+      # kept visible and marked as changed so the action can be undone in place
+      html =
+        view
+        |> element(
+          ~s|button[phx-click="add_tag"][phx-value-metric="price_usd"][phx-value-tag_id="#{tag.id}"]|
+        )
+        |> render_click()
+
+      assert html =~ ~s|phx-value-metric="price_usd"|
+      assert html =~ "changed"
+      assert html =~ "bg-info/10"
+
+      # Changing the filters drops the pinned row
+      html =
+        view
+        |> element("form[phx-change=\"filter\"]")
+        |> render_change(%{"status" => "not_tagged", "search" => "price"})
+
+      refute html =~ ~s|phx-value-metric="price_usd"|
+    end
   end
 
   describe "manage tags page" do

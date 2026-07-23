@@ -1,9 +1,11 @@
 defmodule SanbaseWeb.TagLive.Index do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers,
+    only: [filter_by_search: 2, filter_by_source: 2, maybe_add_param: 3, maybe_add_param: 4]
+
+  alias Sanbase.Metric.Catalog
   alias Sanbase.Metric.Tag
-  alias Sanbase.Metric.Registry
-  alias Sanbase.Metric.Helper
   alias SanbaseWeb.AdminSharedComponents
 
   @impl true
@@ -19,9 +21,11 @@ defmodule SanbaseWeb.TagLive.Index do
        filter_source: "all",
        filter_status: "all",
        filter_tag: "all",
+       recently_changed: MapSet.new(),
        loading: true
      )
-     |> load_data()}
+     |> load_catalog()
+     |> refresh_tag_annotations()}
   end
 
   @impl true
@@ -236,10 +240,18 @@ defmodule SanbaseWeb.TagLive.Index do
     assigns = assign(assigns, available_tags: available_tags)
 
     ~H"""
-    <tr class="hover:bg-base-200">
+    <tr class={[
+      "hover:bg-base-200 transition-colors duration-700",
+      @metric.recently_changed? && "bg-info/10"
+    ]}>
       <td class="max-w-[360px] break-words">
         <div class="flex flex-col">
-          <div class="text-sm font-medium">{@metric.metric}</div>
+          <div class="flex items-center gap-2">
+            <div class="text-sm font-medium">{@metric.metric}</div>
+            <span :if={@metric.recently_changed?} class="badge badge-xs badge-info badge-soft">
+              changed
+            </span>
+          </div>
           <div class="text-xs text-base-content/60">{@metric.human_readable_name}</div>
           <div :if={@metric.variants_count >= 2} class="text-xs text-secondary">
             ({@metric.variants_count} variants)
@@ -261,15 +273,12 @@ defmodule SanbaseWeb.TagLive.Index do
           Not tagged
         </div>
         <div class="flex flex-wrap gap-1">
-          <span
-            :for={tag <- @metric.tags}
-            class="badge badge-sm badge-primary badge-soft gap-1"
-          >
+          <span :for={tag <- @metric.tags} class="badge badge-sm badge-secondary gap-1">
             {tag.tag_name}
             <button
               phx-click="remove_tag"
               phx-value-mapping_id={tag.mapping_id}
-              class="hover:text-error"
+              class="cursor-pointer hover:text-error"
               data-confirm={"Remove tag '#{tag.tag_name}' from #{@metric.metric}?"}
               aria-label="Remove tag"
             >
@@ -287,7 +296,7 @@ defmodule SanbaseWeb.TagLive.Index do
             phx-value-registry_id={@metric.source_id}
             phx-value-module={@metric.module}
             phx-value-metric={@metric.metric}
-            class="badge badge-sm badge-ghost hover:badge-primary hover:badge-soft"
+            class="badge badge-sm badge-secondary badge-soft cursor-pointer transition-colors hover:bg-secondary! hover:text-secondary-content!"
           >
             + {tag.name}
           </button>
@@ -309,7 +318,12 @@ defmodule SanbaseWeb.TagLive.Index do
       |> maybe_add_param("status", params["status"] || "all", "all")
       |> maybe_add_param("tag", params["tag"] || "all", "all")
 
-    {:noreply, push_patch(socket, to: ~p"/admin/metric_registry/tags?#{query_params}")}
+    # Changing the filters is a deliberate view change - drop the rows kept
+    # visible only because they were recently tagged/untagged.
+    {:noreply,
+     socket
+     |> assign(recently_changed: MapSet.new())
+     |> push_patch(to: ~p"/admin/metric_registry/tags?#{query_params}")}
   end
 
   def handle_event("add_tag", params, socket) do
@@ -326,8 +340,12 @@ defmodule SanbaseWeb.TagLive.Index do
       end
 
     case Tag.create_mapping(attrs) do
-      {:ok, _} ->
-        {:noreply, socket |> load_data() |> apply_filters()}
+      {:ok, mapping} ->
+        {:noreply,
+         socket
+         |> mark_recently_changed(mapping)
+         |> refresh_tag_annotations()
+         |> apply_filters()}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to add tag (it may already be assigned)")}
@@ -340,80 +358,36 @@ defmodule SanbaseWeb.TagLive.Index do
     case Tag.get_mapping(id) do
       {:ok, mapping} ->
         Tag.delete_mapping(mapping)
-        {:noreply, socket |> load_data() |> apply_filters()}
+
+        {:noreply,
+         socket
+         |> mark_recently_changed(mapping)
+         |> refresh_tag_annotations()
+         |> apply_filters()}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Mapping not found")}
     end
   end
 
-  defp load_data(socket) do
+  # The catalog itself (registry rows + code metrics) does not change when tags
+  # are (un)assigned, so it is loaded once on mount. Tag events only need
+  # refresh_tag_annotations/1.
+  defp load_catalog(socket) do
+    assign(socket, catalog: Catalog.all_metrics(), loading: false)
+  end
+
+  defp refresh_tag_annotations(socket) do
     tags = Tag.list_tags()
-    mappings = Tag.list_all_mappings()
+    mappings_index = Tag.list_all_mappings() |> Catalog.index_mappings()
 
-    mappings_by_registry_id =
-      mappings
-      |> Enum.filter(& &1.metric_registry_id)
-      |> Enum.group_by(& &1.metric_registry_id)
+    metrics =
+      Enum.map(socket.assigns.catalog, fn entry ->
+        mappings = Catalog.mappings_for_entry(entry, mappings_index)
+        Map.merge(entry, %{tags: mappings_to_tags(mappings), tagged?: mappings != []})
+      end)
 
-    mappings_by_module_metric =
-      mappings
-      |> Enum.filter(&(&1.module && &1.metric))
-      |> Enum.group_by(&{&1.module, &1.metric})
-
-    registry_metrics = get_registry_metrics(mappings_by_registry_id)
-    code_metrics = get_code_metrics(mappings_by_module_metric)
-
-    all_metrics = Enum.sort_by(registry_metrics ++ code_metrics, & &1.metric, :asc)
-
-    assign(socket, metrics: all_metrics, tags: tags, loading: false)
-  end
-
-  defp get_registry_metrics(mappings_by_registry_id) do
-    Registry.all()
-    |> Enum.map(fn registry ->
-      mappings = Map.get(mappings_by_registry_id, registry.id, [])
-
-      %{
-        metric: registry.metric,
-        human_readable_name: registry.human_readable_name,
-        source_type: "registry",
-        source_display: "Registry",
-        source_id: registry.id,
-        module: nil,
-        tags: mappings_to_tags(mappings),
-        tagged?: mappings != [],
-        variants_count: max(1, length(registry.parameters))
-      }
-    end)
-  end
-
-  defp get_code_metrics(mappings_by_module_metric) do
-    registry_metrics_mapset =
-      Registry.all()
-      |> Registry.resolve()
-      |> Enum.map(& &1.metric)
-      |> MapSet.new()
-
-    Helper.metric_to_module_map()
-    |> Enum.reject(fn {metric, _module} -> metric in registry_metrics_mapset end)
-    |> Enum.map(fn {metric, module} ->
-      module_str = inspect(module)
-      mappings = Map.get(mappings_by_module_metric, {module_str, metric}, [])
-      {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(metric)
-
-      %{
-        metric: metric,
-        human_readable_name: human_readable_name,
-        source_type: "code",
-        source_display: format_module_name(module),
-        source_id: nil,
-        module: module_str,
-        tags: mappings_to_tags(mappings),
-        tagged?: mappings != [],
-        variants_count: 1
-      }
-    end)
+    assign(socket, metrics: metrics, tags: tags)
   end
 
   defp mappings_to_tags(mappings) do
@@ -430,33 +404,42 @@ defmodule SanbaseWeb.TagLive.Index do
       search_query: search_query,
       filter_source: filter_source,
       filter_status: filter_status,
-      filter_tag: filter_tag
+      filter_tag: filter_tag,
+      recently_changed: recently_changed
     } = socket.assigns
 
-    filtered_metrics =
+    matching_keys =
       metrics
       |> filter_by_search(search_query)
       |> filter_by_source(filter_source)
       |> filter_by_status(filter_status)
       |> filter_by_tag(filter_tag)
+      |> MapSet.new(&Catalog.entry_key/1)
+
+    # Rows that were just tagged/untagged stay visible (highlighted) even when
+    # they no longer match the filters, so an accidental change can be undone
+    # in place. They are dropped once the filters change.
+    filtered_metrics =
+      metrics
+      |> Enum.filter(fn metric ->
+        key = Catalog.entry_key(metric)
+        MapSet.member?(matching_keys, key) or MapSet.member?(recently_changed, key)
+      end)
+      |> Enum.map(fn metric ->
+        Map.put(
+          metric,
+          :recently_changed?,
+          MapSet.member?(recently_changed, Catalog.entry_key(metric))
+        )
+      end)
 
     assign(socket, filtered_metrics: filtered_metrics)
   end
 
-  defp filter_by_search(metrics, ""), do: metrics
-
-  defp filter_by_search(metrics, query) do
-    query_lower = String.downcase(query)
-
-    Enum.filter(metrics, fn metric ->
-      String.contains?(String.downcase(metric.metric), query_lower) ||
-        (metric.human_readable_name &&
-           String.contains?(String.downcase(metric.human_readable_name), query_lower))
-    end)
+  defp mark_recently_changed(socket, mapping) do
+    key = Catalog.entry_key(mapping)
+    assign(socket, recently_changed: MapSet.put(socket.assigns.recently_changed, key))
   end
-
-  defp filter_by_source(metrics, "all"), do: metrics
-  defp filter_by_source(metrics, source), do: Enum.filter(metrics, &(&1.source_type == source))
 
   defp filter_by_status(metrics, "all"), do: metrics
   defp filter_by_status(metrics, "tagged"), do: Enum.filter(metrics, & &1.tagged?)
@@ -469,17 +452,4 @@ defmodule SanbaseWeb.TagLive.Index do
     tag_id = String.to_integer(tag_id)
     Enum.filter(metrics, fn m -> Enum.any?(m.tags, &(&1.tag_id == tag_id)) end)
   end
-
-  defp format_module_name(module) do
-    module
-    |> inspect()
-    |> String.split(".")
-    |> List.last()
-  end
-
-  defp maybe_add_param(params, _key, ""), do: params
-  defp maybe_add_param(params, key, value), do: Map.put(params, key, value)
-
-  defp maybe_add_param(params, _key, value, default) when value == default, do: params
-  defp maybe_add_param(params, key, value, _default), do: Map.put(params, key, value)
 end

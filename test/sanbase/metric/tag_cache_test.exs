@@ -1,24 +1,10 @@
 defmodule Sanbase.Metric.Tag.CacheTest do
   use Sanbase.DataCase, async: false
 
+  import Sanbase.MetricRegistryHelpers, only: [create_registry_metric: 1]
+
   alias Sanbase.Metric.Tag
   alias Sanbase.Metric.Tag.Cache
-
-  defp create_registry_metric(attrs) do
-    defaults = %{
-      internal_metric: Map.fetch!(attrs, :metric) <> "_internal",
-      human_readable_name: "Human name",
-      min_interval: "5m",
-      tables: [%{name: "daily_metrics_v2"}],
-      default_aggregation: "avg",
-      access: "free",
-      has_incomplete_data: false,
-      data_type: "timeseries"
-    }
-
-    {:ok, registry} = Sanbase.Metric.Registry.create(Map.merge(defaults, attrs))
-    registry
-  end
 
   test "module/metric mapping resolves to the concrete metric name" do
     {:ok, tag} = Tag.create_tag(%{name: "cache_module_tag"})

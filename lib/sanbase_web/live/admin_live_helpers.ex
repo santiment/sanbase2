@@ -7,6 +7,8 @@ defmodule SanbaseWeb.AdminLiveHelpers do
   - In-memory row updates by ID
   - Changeset error flash messages
   - Integer parsing with defaults
+  - Filtering metric catalog entries (see `Sanbase.Metric.Catalog`)
+  - Building URL query params from filter values
   """
 
   import Phoenix.LiveView, only: [put_flash: 3]
@@ -92,4 +94,37 @@ defmodule SanbaseWeb.AdminLiveHelpers do
       :error -> default
     end
   end
+
+  @doc """
+  Filters metric maps (with `:metric` and `:human_readable_name` keys) by a
+  case-insensitive query matching either field. An empty query is a no-op.
+  """
+  def filter_by_search(metrics, ""), do: metrics
+
+  def filter_by_search(metrics, query) do
+    query_lower = String.downcase(query)
+
+    Enum.filter(metrics, fn metric ->
+      String.contains?(String.downcase(metric.metric), query_lower) ||
+        (metric.human_readable_name &&
+           String.contains?(String.downcase(metric.human_readable_name), query_lower))
+    end)
+  end
+
+  @doc """
+  Filters metric maps by `:source_type` ("registry"/"code"). "all" is a no-op.
+  """
+  def filter_by_source(metrics, "all"), do: metrics
+  def filter_by_source(metrics, source), do: Enum.filter(metrics, &(&1.source_type == source))
+
+  @doc """
+  Puts `key => value` into a URL query params map, skipping empty values.
+  The 4-arity version also skips values equal to the given default, keeping
+  URLs free of parameters that match the initial filter state.
+  """
+  def maybe_add_param(params, _key, ""), do: params
+  def maybe_add_param(params, key, value), do: Map.put(params, key, value)
+
+  def maybe_add_param(params, _key, value, default) when value == default, do: params
+  def maybe_add_param(params, key, value, _default), do: Map.put(params, key, value)
 end

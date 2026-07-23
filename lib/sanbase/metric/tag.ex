@@ -107,6 +107,12 @@ defmodule Sanbase.Metric.Tag do
   @spec list_all_mappings() :: [MetricTagMapping.t()]
   def list_all_mappings(), do: MetricTagMapping.list_all()
 
+  @doc """
+  Returns a map of tag id to the number of mappings carrying that tag.
+  """
+  @spec count_mappings_per_tag() :: %{integer() => non_neg_integer()}
+  def count_mappings_per_tag(), do: MetricTagMapping.count_per_tag()
+
   # Access / resolution (delegated to the persistent-term cache)
 
   @doc """

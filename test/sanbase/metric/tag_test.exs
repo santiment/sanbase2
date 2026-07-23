@@ -1,24 +1,9 @@
 defmodule Sanbase.Metric.TagTest do
   use Sanbase.DataCase, async: false
 
+  import Sanbase.MetricRegistryHelpers, only: [create_registry_metric: 1]
+
   alias Sanbase.Metric.Tag
-
-  defp create_registry_metric(metric) do
-    {:ok, registry} =
-      Sanbase.Metric.Registry.create(%{
-        metric: metric,
-        internal_metric: metric <> "_internal",
-        human_readable_name: "Human name for #{metric}",
-        min_interval: "5m",
-        tables: [%{name: "daily_metrics_v2"}],
-        default_aggregation: "avg",
-        access: "free",
-        has_incomplete_data: false,
-        data_type: "timeseries"
-      })
-
-    registry
-  end
 
   describe "tag CRUD" do
     test "create, get, update and delete a tag" do

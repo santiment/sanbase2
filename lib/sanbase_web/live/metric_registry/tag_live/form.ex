@@ -97,7 +97,7 @@ defmodule SanbaseWeb.TagLive.Form do
         {:noreply,
          socket
          |> put_flash(:error, format_errors(changeset))
-         |> assign(tag: %{socket.assigns.tag | name: name, description: attrs.description})}
+         |> assign(tag: struct(socket.assigns.tag, attrs))}
     end
   end
 end

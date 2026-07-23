@@ -1,10 +1,12 @@
 defmodule SanbaseWeb.CategorizationLive.Index do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers,
+    only: [filter_by_search: 2, filter_by_source: 2, maybe_add_param: 3, maybe_add_param: 4]
+
+  alias Sanbase.Metric.Catalog
   alias Sanbase.Metric.Category
   alias Sanbase.Metric.Category.MetricCategoryMapping
-  alias Sanbase.Metric.Registry
-  alias Sanbase.Metric.Helper
   alias SanbaseWeb.AdminSharedComponents
 
   @impl true
@@ -515,31 +517,42 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       |> Enum.map(fn {key, _} -> key end)
       |> MapSet.new()
 
-    mappings_by_registry_id =
+    mappings_index =
       mappings
-      |> Enum.filter(& &1.metric_registry_id)
-      |> Enum.group_by(& &1.metric_registry_id)
+      |> Enum.filter(&(&1.metric_registry_id || (&1.module && &1.metric)))
+      |> Catalog.index_mappings()
 
-    mappings_by_module_metric =
-      mappings
-      |> Enum.filter(&(&1.module && &1.metric))
-      |> Enum.group_by(&{&1.module, &1.metric})
+    all_metrics =
+      Catalog.all_metrics()
+      |> Enum.flat_map(fn entry ->
+        mappings = Catalog.mappings_for_entry(entry, mappings_index)
 
-    registry_metrics =
-      get_registry_metrics(
-        mappings_by_registry_id,
-        ui_metadata_by_mapping_id,
-        multi_category_registry_ids
-      )
+        is_multi_category? =
+          multi_category?(entry, multi_category_registry_ids, multi_category_module_metrics)
 
-    code_metrics =
-      get_code_metrics(
-        mappings_by_module_metric,
-        ui_metadata_by_mapping_id,
-        multi_category_module_metrics
-      )
+        case mappings do
+          [] ->
+            [
+              annotate_with_categorization(
+                entry,
+                nil,
+                ui_metadata_by_mapping_id,
+                is_multi_category?
+              )
+            ]
 
-    all_metrics = registry_metrics ++ code_metrics
+          mappings ->
+            Enum.map(
+              mappings,
+              &annotate_with_categorization(
+                entry,
+                &1,
+                ui_metadata_by_mapping_id,
+                is_multi_category?
+              )
+            )
+        end
+      end)
 
     all_metrics =
       Enum.sort_by(
@@ -567,65 +580,26 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     )
   end
 
-  defp get_registry_metrics(
-         mappings_by_registry_id,
-         ui_metadata_by_mapping_id,
-         multi_category_registry_ids
-       ) do
-    Registry.all()
-    |> Enum.flat_map(fn registry ->
-      mappings = Map.get(mappings_by_registry_id, registry.id, [])
-      is_multi_category? = MapSet.member?(multi_category_registry_ids, registry.id)
+  defp multi_category?(%{source_type: "registry"} = entry, registry_ids, _module_metrics),
+    do: MapSet.member?(registry_ids, entry.source_id)
 
-      case mappings do
-        [] ->
-          [
-            build_registry_metric_map(
-              registry,
-              nil,
-              ui_metadata_by_mapping_id,
-              is_multi_category?
-            )
-          ]
+  defp multi_category?(%{source_type: "code"} = entry, _registry_ids, module_metrics),
+    do: MapSet.member?(module_metrics, {entry.module, entry.metric})
 
-        mappings ->
-          Enum.map(mappings, fn mapping ->
-            build_registry_metric_map(
-              registry,
-              mapping,
-              ui_metadata_by_mapping_id,
-              is_multi_category?
-            )
-          end)
-      end
-    end)
-  end
-
-  defp build_registry_metric_map(
-         registry,
-         mapping,
-         ui_metadata_by_mapping_id,
-         is_multi_category?
-       ) do
+  defp annotate_with_categorization(entry, mapping, ui_metadata_by_mapping_id, is_multi_category?) do
     ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
 
     has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
     show_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
     all_variants_have_ui_metadata? =
-      if registry.parameters == [] do
-        has_ui_metadata?
-      else
-        has_ui_metadata? and length(ui_metadata_list) == length(registry.parameters)
+      case entry do
+        %{source_type: "code"} -> true
+        %{parameters_count: 0} -> has_ui_metadata?
+        %{parameters_count: count} -> has_ui_metadata? and length(ui_metadata_list) == count
       end
 
-    %{
-      metric: registry.metric,
-      human_readable_name: registry.human_readable_name,
-      source_type: "registry",
-      source_display: "Registry",
-      source_id: registry.id,
-      module: nil,
+    Map.merge(entry, %{
       mapping: mapping,
       mapping_id: mapping && mapping.id,
       category_id: mapping && mapping.category_id,
@@ -639,96 +613,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       has_ui_metadata?: has_ui_metadata?,
       all_variants_have_ui_metadata?: all_variants_have_ui_metadata?,
       show_on_sanbase?: show_on_sanbase?,
-      variants_count: max(1, length(registry.parameters)),
       is_multi_category?: is_multi_category?
-    }
-  end
-
-  defp get_code_metrics(
-         mappings_by_module_metric,
-         ui_metadata_by_mapping_id,
-         multi_category_module_metrics
-       ) do
-    registry_metrics_mapset =
-      Registry.all()
-      |> Registry.resolve()
-      |> Enum.map(& &1.metric)
-      |> MapSet.new()
-
-    metric_to_module_map = Helper.metric_to_module_map()
-
-    metric_to_module_map
-    |> Enum.reject(fn {metric, _module} -> metric in registry_metrics_mapset end)
-    |> Enum.flat_map(fn {metric, module} ->
-      module_str = inspect(module)
-      mappings = Map.get(mappings_by_module_metric, {module_str, metric}, [])
-      is_multi_category? = MapSet.member?(multi_category_module_metrics, {module_str, metric})
-
-      case mappings do
-        [] ->
-          [
-            build_code_metric_map(
-              metric,
-              module,
-              module_str,
-              nil,
-              ui_metadata_by_mapping_id,
-              is_multi_category?
-            )
-          ]
-
-        mappings ->
-          Enum.map(mappings, fn mapping ->
-            build_code_metric_map(
-              metric,
-              module,
-              module_str,
-              mapping,
-              ui_metadata_by_mapping_id,
-              is_multi_category?
-            )
-          end)
-      end
-    end)
-  end
-
-  defp build_code_metric_map(
-         metric,
-         module,
-         module_str,
-         mapping,
-         ui_metadata_by_mapping_id,
-         is_multi_category?
-       ) do
-    ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
-    {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(metric)
-
-    has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
-    show_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
-
-    %{
-      metric: metric,
-      human_readable_name: human_readable_name,
-      source_type: "code",
-      source_display: format_module_name(module),
-      source_id: nil,
-      module: module_str,
-      mapping: mapping,
-      mapping_id: mapping && mapping.id,
-      category_id: mapping && mapping.category_id,
-      category_name: mapping && mapping.category && mapping.category.name,
-      category_display_order: mapping && mapping.category && mapping.category.display_order,
-      group_id: mapping && mapping.group_id,
-      group_name: mapping && mapping.group && mapping.group.name,
-      group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
-      display_order: mapping && mapping.display_order,
-      categorized?: not is_nil(mapping),
-      has_ui_metadata?: has_ui_metadata?,
-      all_variants_have_ui_metadata?: true,
-      show_on_sanbase?: show_on_sanbase?,
-      variants_count: 1,
-      is_multi_category?: is_multi_category?
-    }
+    })
   end
 
   defp apply_filters(socket) do
@@ -753,21 +639,6 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
     assign(socket, filtered_metrics: filtered_metrics)
   end
-
-  defp filter_by_search(metrics, ""), do: metrics
-
-  defp filter_by_search(metrics, query) do
-    query_lower = String.downcase(query)
-
-    Enum.filter(metrics, fn metric ->
-      String.contains?(String.downcase(metric.metric), query_lower) ||
-        (metric.human_readable_name &&
-           String.contains?(String.downcase(metric.human_readable_name), query_lower))
-    end)
-  end
-
-  defp filter_by_source(metrics, "all"), do: metrics
-  defp filter_by_source(metrics, source), do: Enum.filter(metrics, &(&1.source_type == source))
 
   defp filter_by_status(metrics, "all"), do: metrics
 
@@ -815,13 +686,6 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   defp filter_by_sanbase_display(metrics, "hidden"),
     do: Enum.filter(metrics, &(not &1.show_on_sanbase?))
 
-  defp format_module_name(module) do
-    module
-    |> inspect()
-    |> String.split(".")
-    |> List.last()
-  end
-
   defp build_new_params(metric) do
     params = %{}
 
@@ -836,10 +700,4 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
     params
   end
-
-  defp maybe_add_param(params, _key, ""), do: params
-  defp maybe_add_param(params, key, value), do: Map.put(params, key, value)
-
-  defp maybe_add_param(params, _key, value, default) when value == default, do: params
-  defp maybe_add_param(params, key, value, _default), do: Map.put(params, key, value)
 end

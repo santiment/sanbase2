@@ -22,11 +22,11 @@ defmodule SanbaseWeb.TagLiveTest do
 
   describe "tagging dashboard" do
     test "renders the metrics table", %{conn: conn} do
-      {:ok, _view, html} = live(conn, "/admin/metric_registry/tags")
+      {:ok, view, _html} = live(conn, "/admin/metric_registry/tags")
 
-      assert html =~ "Metric Tagging"
-      assert html =~ "price_usd"
-      assert html =~ "basic_test_tag"
+      assert has_element?(view, "div", "Metric Tagging")
+      assert has_element?(view, "td div", "price_usd")
+      assert has_element?(view, ~s|button[phx-click="add_tag"]|, "basic_test_tag")
     end
 
     test "adding and removing a tag on a code metric", %{conn: conn, tag: tag} do
@@ -52,12 +52,11 @@ defmodule SanbaseWeb.TagLiveTest do
     test "filters by not-tagged status", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/admin/metric_registry/tags")
 
-      html =
-        view
-        |> element("form[phx-change=\"filter\"]")
-        |> render_change(%{"status" => "not_tagged"})
+      view
+      |> element("form[phx-change=\"filter\"]")
+      |> render_change(%{"status" => "not_tagged"})
 
-      assert html =~ "price_usd"
+      assert has_element?(view, "td div", "price_usd")
     end
 
     test "tagged row stays visible and highlighted under the not_tagged filter", %{
@@ -72,33 +71,32 @@ defmodule SanbaseWeb.TagLiveTest do
 
       # Tagging the metric makes it stop matching the filter, but the row is
       # kept visible and marked as changed so the action can be undone in place
-      html =
-        view
-        |> element(
-          ~s|button[phx-click="add_tag"][phx-value-metric="price_usd"][phx-value-tag_id="#{tag.id}"]|
-        )
-        |> render_click()
+      view
+      |> element(
+        ~s|button[phx-click="add_tag"][phx-value-metric="price_usd"][phx-value-tag_id="#{tag.id}"]|
+      )
+      |> render_click()
 
-      assert html =~ ~s|phx-value-metric="price_usd"|
-      assert html =~ "changed"
-      assert html =~ "bg-info/10"
+      assert has_element?(view, "td div", "price_usd")
+      assert has_element?(view, "span.badge", "changed")
+      assert has_element?(view, ~s|tr[class*="bg-info/10"]|)
 
       # Changing the filters drops the pinned row
-      html =
-        view
-        |> element("form[phx-change=\"filter\"]")
-        |> render_change(%{"status" => "not_tagged", "search" => "price"})
+      view
+      |> element("form[phx-change=\"filter\"]")
+      |> render_change(%{"status" => "not_tagged", "search" => "price"})
 
-      refute html =~ ~s|phx-value-metric="price_usd"|
+      refute has_element?(view, ~s|tr[class*="bg-info/10"]|)
+      refute has_element?(view, "span.badge", "changed")
     end
   end
 
   describe "manage tags page" do
     test "lists tags", %{conn: conn} do
-      {:ok, _view, html} = live(conn, "/admin/metric_registry/tags/manage")
+      {:ok, view, _html} = live(conn, "/admin/metric_registry/tags/manage")
 
-      assert html =~ "Manage Tags"
-      assert html =~ "basic_test_tag"
+      assert has_element?(view, "div", "Manage Tags")
+      assert has_element?(view, "td span.badge", "basic_test_tag")
     end
 
     test "deletes a tag", %{conn: conn, tag: tag} do

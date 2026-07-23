@@ -301,6 +301,38 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  def github_activity_stats_query(owner_slug_pairs, from, to) do
+    {owners, slugs} = Enum.unzip(owner_slug_pairs)
+
+    sql = """
+    SELECT
+      transform(owner, {{owners}}, {{slugs}}, '') AS slug,
+      toUInt64(uniqExactIf((owner, repo, dt, event), event NOT IN ({{non_dev_events}}))) AS dev_activity,
+      toUInt64(uniqExact((owner, repo, dt, event))) AS github_activity,
+      toUInt64(uniqExactIf(actor, event NOT IN ({{non_dev_events}}))) AS dev_activity_contributors_count,
+      toUInt64(uniqExact(actor)) AS github_activity_contributors_count,
+      toUInt64(uniqExactIf((owner, repo, dt, event), endsWith(actor, '[bot]') AND event NOT IN ({{non_dev_events}}))) AS bot_dev_activity,
+      toUInt64(uniqExactIf((owner, repo, dt, event), endsWith(actor, '[bot]'))) AS bot_github_activity,
+      toUInt64(uniqExactIf(actor, endsWith(actor, '[bot]'))) AS bot_contributors_count
+    FROM #{@table}
+    WHERE
+      owner IN ({{owners}}) AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
+    GROUP BY slug
+    """
+
+    params = %{
+      owners: owners |> Enum.map(&String.downcase/1),
+      slugs: slugs,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      non_dev_events: @non_dev_events
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   defp wrap_aggregated_in_zero_filling_query(query) do
     """
     SELECT owner, SUM(value)

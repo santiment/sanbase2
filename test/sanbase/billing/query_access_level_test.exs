@@ -123,6 +123,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_user,
           :get_user_dashboards,
           :get_webinars,
+          :github_activity_stats,
           :historical_balance,
           :historical_trigger_points,
           :history_price,

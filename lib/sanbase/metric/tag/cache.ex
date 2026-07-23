@@ -18,8 +18,6 @@ defmodule Sanbase.Metric.Tag.Cache do
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Tag.MetricTagMapping
 
-  @functions [:tag_to_metrics_map, :metric_to_tags_map]
-
   @doc """
   Returns the `MapSet` of concrete metric names carrying the given tag.
   """
@@ -48,11 +46,18 @@ defmodule Sanbase.Metric.Tag.Cache do
 
   @doc """
   Recomputes and stores all cached maps in `:persistent_term`.
+
+  The metric -> tags map is derived from the tag -> metrics map computed in the
+  same call, so the two stored terms are always consistent with each other.
   """
   @spec refresh_stored_terms() :: true
   def refresh_stored_terms() do
     Logger.info("Refreshing stored terms in #{inspect(__MODULE__)}")
-    Enum.each(@functions, fn fun -> :persistent_term.put(key(fun), compute(fun)) end)
+
+    tag_to_metrics_map = compute_tag_to_metrics_map()
+    :persistent_term.put(key(:tag_to_metrics_map), tag_to_metrics_map)
+    :persistent_term.put(key(:metric_to_tags_map), invert_tag_to_metrics_map(tag_to_metrics_map))
+
     true
   end
 
@@ -60,25 +65,27 @@ defmodule Sanbase.Metric.Tag.Cache do
 
   defp key(fun), do: {__MODULE__, fun}
 
-  defp get(fun) do
-    case :persistent_term.get(key(fun), :undefined) do
+  defp get(map_name) do
+    case :persistent_term.get(key(map_name), :undefined) do
       :undefined ->
-        data = compute(fun)
-        :persistent_term.put(key(fun), data)
-        data
+        refresh_stored_terms()
+        :persistent_term.get(key(map_name))
 
       data ->
         data
     end
   end
 
-  defp compute(:tag_to_metrics_map) do
-    MetricTagMapping.list_all()
+  defp compute_tag_to_metrics_map() do
+    mappings = MetricTagMapping.list_all()
+    resolved_names_by_registry_id = batch_resolve_registries(mappings)
+
+    mappings
     |> Enum.group_by(& &1.tag.name)
     |> Map.new(fn {tag_name, mappings} ->
       metric_names =
         mappings
-        |> Enum.flat_map(&resolve_mapping_metric_names/1)
+        |> Enum.flat_map(&mapping_metric_names(&1, resolved_names_by_registry_id))
         |> MapSet.new()
 
       {tag_name, metric_names}
@@ -92,23 +99,36 @@ defmodule Sanbase.Metric.Tag.Cache do
       %{}
   end
 
-  defp compute(:metric_to_tags_map) do
-    get(:tag_to_metrics_map)
+  defp invert_tag_to_metrics_map(tag_to_metrics_map) do
+    tag_to_metrics_map
     |> Enum.flat_map(fn {tag_name, metric_names} ->
       Enum.map(metric_names, fn metric -> {metric, tag_name} end)
     end)
     |> Enum.group_by(fn {metric, _tag} -> metric end, fn {_metric, tag} -> tag end)
   end
 
-  defp resolve_mapping_metric_names(%MetricTagMapping{metric_registry: %Registry{} = registry}) do
-    {resolved, _errors} = Registry.resolve_safe([registry])
-    Enum.map(resolved, & &1.metric)
+  defp batch_resolve_registries(mappings) do
+    registries =
+      for %MetricTagMapping{metric_registry: %Registry{} = registry} <- mappings,
+          uniq: true,
+          do: registry
+
+    {resolved, _errors} = Registry.resolve_safe(registries)
+
+    Enum.group_by(resolved, & &1.id, & &1.metric)
   end
 
-  defp resolve_mapping_metric_names(%MetricTagMapping{module: module, metric: metric})
+  defp mapping_metric_names(
+         %MetricTagMapping{metric_registry: %Registry{} = registry},
+         resolved_names_by_registry_id
+       ) do
+    Map.get(resolved_names_by_registry_id, registry.id, [])
+  end
+
+  defp mapping_metric_names(%MetricTagMapping{module: module, metric: metric}, _resolved)
        when is_binary(module) and is_binary(metric) do
     [metric]
   end
 
-  defp resolve_mapping_metric_names(_), do: []
+  defp mapping_metric_names(_, _resolved), do: []
 end

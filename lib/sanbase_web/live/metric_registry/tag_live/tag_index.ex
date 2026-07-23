@@ -13,12 +13,7 @@ defmodule SanbaseWeb.TagLive.TagIndex do
   end
 
   defp load_data(socket) do
-    tags = Tag.list_tags()
-
-    counts =
-      Enum.into(tags, %{}, fn tag -> {tag.id, length(Tag.list_mappings_by_tag(tag.id))} end)
-
-    assign(socket, tags: tags, counts: counts)
+    assign(socket, tags: Tag.list_tags(), counts: Tag.count_mappings_per_tag())
   end
 
   @impl true
@@ -43,7 +38,9 @@ defmodule SanbaseWeb.TagLive.TagIndex do
           </thead>
           <tbody>
             <tr :for={tag <- @tags} class="hover:bg-base-200">
-              <td class="font-medium">{tag.name}</td>
+              <td>
+                <span class="badge badge-sm badge-secondary">{tag.name}</span>
+              </td>
               <td class="text-base-content/60">{tag.description}</td>
               <td class="text-center">{Map.get(@counts, tag.id, 0)}</td>
               <td>

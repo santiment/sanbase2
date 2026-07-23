@@ -79,6 +79,52 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  # Unlike timeseries_data_query/8, rows are NOT deduplicated by computed_at
+  # (no argMax) and NOT aggregated by interval/asset - if an asset/metric/dt
+  # has multiple values with different computed_at, all of them are returned.
+  def timeseries_data_with_duplicates_query(metric, selector, from, to, filters, opts) do
+    version = Keyword.get(opts, :version) || @default_version
+
+    params = %{
+      metric: Map.get(Registry.name_to_metric_map(), metric),
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      selector: asset_filter_value(selector),
+      version: version,
+      table: deduce_table(metric, opts)
+    }
+
+    only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
+
+    {additional_filters, params} =
+      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
+
+    {fixed_parameters_str, params} =
+      maybe_get_fixed_parameters(metric, version, selector, params, opts ++ [trailing_and: true])
+
+    sql =
+      """
+      SELECT
+        toUnixTimestamp(dt) AS t,
+        value,
+        toUnixTimestamp(computed_at) AS computed_at
+      FROM {{table:inline}}
+      WHERE
+        #{finalized_data_filter_str(params.table, only_finalized_data)}
+        #{fixed_parameters_str}
+        #{additional_filters}
+        #{maybe_add_is_not_nan_check(params.table, column_name: "value", trailing_and: true)}
+        isNotNull(value) AND
+        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
+        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
+        #{asset_id_filter(selector, argument_name: "selector", allow_missing_slug: true)} AND
+        #{versioned_metric_id_filter(metric, argument_name: "metric", version: version, version_arg_name: "version")}
+      ORDER BY dt, computed_at
+      """
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   defp maybe_get_fixed_parameters(_metric, _version, selector, params, _opts)
        when is_map_key(selector, :label_fqn) or is_map_key(selector, :label_fqns) do
     # In some cases like 'historical_balance_centralized_exchanges' the

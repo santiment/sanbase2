@@ -156,6 +156,19 @@ defmodule Sanbase.Metric.Behaviour do
             ) ::
               timeseries_data_result
 
+  # Like timeseries_data/6, but the result is not deduplicated by computed_at -
+  # if an asset/metric/dt has multiple values with different computed_at, all
+  # of them are returned. Each point includes a :computed_at key.
+  @callback timeseries_data_with_duplicates(
+              metric :: metric(),
+              selector :: selector,
+              from :: DatetTime.t(),
+              to :: DateTime.t(),
+              interval :: interval(),
+              opts :: opts
+            ) ::
+              timeseries_data_result
+
   @callback timeseries_data_per_slug(
               metric :: metric(),
               selector :: selector,
@@ -281,6 +294,9 @@ defmodule Sanbase.Metric.Behaviour do
   @optional_callbacks [
     histogram_data: 6,
     table_data: 5,
+    # Only the Clickhouse adapter can return data with duplicated dt values
+    # (multiple values with different computed_at for the same dt)
+    timeseries_data_with_duplicates: 6,
     deprecated_metrics_map: 0,
     fixed_labels_parameters_metrics: 0,
     soft_deprecated_metrics_map: 0,

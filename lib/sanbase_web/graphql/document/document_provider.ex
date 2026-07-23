@@ -338,6 +338,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
         [
           "timeseries_data",
           "timeseries_data_json",
+          "timeseries_data_json_with_duplicates",
           "timeseries_data_per_slug",
           "timeseries_data_per_slug_json",
           "aggregated_timeseries_data"

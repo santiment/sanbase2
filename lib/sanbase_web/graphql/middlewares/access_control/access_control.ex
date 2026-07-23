@@ -620,6 +620,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     :aggregated_timeseries_data,
     :timeseries_data,
     :timeseries_data_json,
+    :timeseries_data_json_with_duplicates,
     :timeseries_data_per_slug,
     :timeseries_data_per_slug_json,
     :table_data,

@@ -5,7 +5,7 @@ defmodule Sanbase.Metric.Registry.EventEmitter do
   def topic(), do: @topic
 
   def handle_event(_, event_type, _args)
-      when event_type in [:metrics_failed_to_load, :metric_tag_change] do
+      when event_type in [:metrics_failed_to_load] do
     %{event_type: event_type}
     |> notify()
   end

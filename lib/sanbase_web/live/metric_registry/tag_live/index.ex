@@ -14,15 +14,7 @@ defmodule SanbaseWeb.TagLive.Index do
      socket
      |> assign(
        page_title: "Metric Tagging",
-       metrics: [],
-       filtered_metrics: [],
-       tags: [],
-       search_query: "",
-       filter_source: "all",
-       filter_status: "all",
-       filter_tag: "all",
-       recently_changed: MapSet.new(),
-       loading: true
+       recently_changed: MapSet.new()
      )
      |> load_catalog()
      |> refresh_tag_annotations()}
@@ -66,12 +58,7 @@ defmodule SanbaseWeb.TagLive.Index do
 
       <.metrics_stats metrics={@metrics} filtered_metrics={@filtered_metrics} />
 
-      <.metrics_table :if={!@loading} filtered_metrics={@filtered_metrics} tags={@tags} />
-
-      <div :if={@loading} class="flex justify-center items-center py-12">
-        <span class="loading loading-spinner loading-lg text-primary"></span>
-        <p class="ml-4 text-base-content/70">Loading metrics...</p>
-      </div>
+      <.metrics_table filtered_metrics={@filtered_metrics} />
     </div>
     """
   end
@@ -104,25 +91,9 @@ defmodule SanbaseWeb.TagLive.Index do
     <div class="card bg-base-100 border border-base-300 shadow p-4 my-4">
       <.simple_form for={%{}} as={:filters} phx-change="filter">
         <div class="flex flex-col sm:flex-row sm:flex-wrap gap-4">
-          <.input
-            type="text"
-            name="search"
-            value={@search_query}
-            label="Search metrics"
-            placeholder="Type metric name..."
-            phx-debounce="300"
-          />
-
-          <.input
-            type="select"
-            name="source"
-            value={@filter_source}
-            label="Source"
-            options={[
-              {"All Sources", "all"},
-              {"Registry", "registry"},
-              {"Code Module", "code"}
-            ]}
+          <AdminSharedComponents.metric_catalog_filter_inputs
+            search_query={@search_query}
+            filter_source={@filter_source}
           />
 
           <.input
@@ -203,7 +174,6 @@ defmodule SanbaseWeb.TagLive.Index do
   end
 
   attr :filtered_metrics, :list, required: true
-  attr :tags, :list, required: true
 
   def metrics_table(assigns) do
     ~H"""
@@ -219,7 +189,7 @@ defmodule SanbaseWeb.TagLive.Index do
             </tr>
           </thead>
           <tbody>
-            <.metric_row :for={metric <- @filtered_metrics} metric={metric} tags={@tags} />
+            <.metric_row :for={metric <- @filtered_metrics} metric={metric} />
           </tbody>
         </table>
       </div>
@@ -232,13 +202,8 @@ defmodule SanbaseWeb.TagLive.Index do
   end
 
   attr :metric, :map, required: true
-  attr :tags, :list, required: true
 
   def metric_row(assigns) do
-    assigned_tag_ids = MapSet.new(assigns.metric.tags, & &1.tag_id)
-    available_tags = Enum.reject(assigns.tags, &MapSet.member?(assigned_tag_ids, &1.id))
-    assigns = assign(assigns, available_tags: available_tags)
-
     ~H"""
     <tr class={[
       "hover:bg-base-200 transition-colors duration-700",
@@ -259,14 +224,11 @@ defmodule SanbaseWeb.TagLive.Index do
         </div>
       </td>
       <td>
-        <span :if={@metric.source_type == "registry"} class="badge badge-sm badge-info badge-soft">
-          <.link navigate={~p"/admin/metric_registry/show/#{@metric.source_id}"}>
-            {@metric.source_display}
-          </.link>
-        </span>
-        <span :if={@metric.source_type == "code"} class="badge badge-sm badge-secondary badge-soft">
-          {@metric.source_display}
-        </span>
+        <AdminSharedComponents.metric_source_badge
+          source_type={@metric.source_type}
+          source_display={@metric.source_display}
+          source_id={@metric.source_id}
+        />
       </td>
       <td class="max-w-[320px]">
         <div :if={@metric.tags == []} class="text-sm text-base-content/40 italic">
@@ -290,7 +252,7 @@ defmodule SanbaseWeb.TagLive.Index do
       <td>
         <div class="flex flex-wrap gap-1">
           <button
-            :for={tag <- @available_tags}
+            :for={tag <- @metric.available_tags}
             phx-click="add_tag"
             phx-value-tag_id={tag.id}
             phx-value-registry_id={@metric.source_id}
@@ -300,7 +262,7 @@ defmodule SanbaseWeb.TagLive.Index do
           >
             + {tag.name}
           </button>
-          <span :if={@available_tags == []} class="text-xs text-base-content/40 italic">
+          <span :if={@metric.available_tags == []} class="text-xs text-base-content/40 italic">
             All tags assigned
           </span>
         </div>
@@ -374,7 +336,7 @@ defmodule SanbaseWeb.TagLive.Index do
   # are (un)assigned, so it is loaded once on mount. Tag events only need
   # refresh_tag_annotations/1.
   defp load_catalog(socket) do
-    assign(socket, catalog: Catalog.all_metrics(), loading: false)
+    assign(socket, catalog: Catalog.all_metrics())
   end
 
   defp refresh_tag_annotations(socket) do
@@ -383,8 +345,16 @@ defmodule SanbaseWeb.TagLive.Index do
 
     metrics =
       Enum.map(socket.assigns.catalog, fn entry ->
-        mappings = Catalog.mappings_for_entry(entry, mappings_index)
-        Map.merge(entry, %{tags: mappings_to_tags(mappings), tagged?: mappings != []})
+        metric_tags =
+          Catalog.mappings_for_entry(entry, mappings_index) |> mappings_to_tags()
+
+        assigned_tag_ids = MapSet.new(metric_tags, & &1.tag_id)
+
+        Map.merge(entry, %{
+          tags: metric_tags,
+          tagged?: metric_tags != [],
+          available_tags: Enum.reject(tags, &MapSet.member?(assigned_tag_ids, &1.id))
+        })
       end)
 
     assign(socket, metrics: metrics, tags: tags)
@@ -420,17 +390,14 @@ defmodule SanbaseWeb.TagLive.Index do
     # they no longer match the filters, so an accidental change can be undone
     # in place. They are dropped once the filters change.
     filtered_metrics =
-      metrics
-      |> Enum.filter(fn metric ->
+      Enum.flat_map(metrics, fn metric ->
         key = Catalog.entry_key(metric)
-        MapSet.member?(matching_keys, key) or MapSet.member?(recently_changed, key)
-      end)
-      |> Enum.map(fn metric ->
-        Map.put(
-          metric,
-          :recently_changed?,
-          MapSet.member?(recently_changed, Catalog.entry_key(metric))
-        )
+
+        cond do
+          MapSet.member?(recently_changed, key) -> [Map.put(metric, :recently_changed?, true)]
+          MapSet.member?(matching_keys, key) -> [Map.put(metric, :recently_changed?, false)]
+          true -> []
+        end
       end)
 
     assign(socket, filtered_metrics: filtered_metrics)

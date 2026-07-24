@@ -132,24 +132,4 @@ defmodule Sanbase.Metric.Tag.MetricTagMapping do
     |> Repo.all()
     |> Map.new()
   end
-
-  @doc """
-  Creates a mapping by metric registry id.
-  """
-  @spec create_by_metric_registry_id(integer(), integer()) ::
-          {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create_by_metric_registry_id(metric_registry_id, tag_id)
-      when is_integer(metric_registry_id) and is_integer(tag_id) do
-    create(%{metric_registry_id: metric_registry_id, tag_id: tag_id})
-  end
-
-  @doc """
-  Creates a mapping by module and metric.
-  """
-  @spec create_by_module_and_metric(String.t(), String.t(), integer()) ::
-          {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create_by_module_and_metric(module, metric, tag_id)
-      when is_binary(module) and is_binary(metric) and is_integer(tag_id) do
-    create(%{module: module, metric: metric, tag_id: tag_id})
-  end
 end

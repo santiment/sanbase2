@@ -365,6 +365,10 @@ defmodule Sanbase.Metric.Registry do
     true = Sanbase.Metric.Helper.refresh_stored_terms()
     true = Sanbase.Billing.Plan.StandardAccessChecker.refresh_stored_terms()
     true = Sanbase.Metric.Tag.refresh_stored_terms()
+    # The custom/bundle plan caches resolve their metric sets through the
+    # registry and the tag mappings refreshed above. Returns the list of
+    # plans; it signals failure by raising.
+    Sanbase.Billing.Plan.CustomPlan.Loader.put_plans_in_persistent_term()
 
     :ok
   end

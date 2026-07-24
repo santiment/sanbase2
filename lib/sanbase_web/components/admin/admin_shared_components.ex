@@ -12,6 +12,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
   - Date displays (created/updated)
   """
   use Phoenix.Component
+  use SanbaseWeb, :verified_routes
 
   alias SanbaseWeb.CoreComponents
 
@@ -282,6 +283,60 @@ defmodule SanbaseWeb.AdminSharedComponents do
         <span class="text-base-content/70 text-sm">{@updated_duration} ago</span>
       </div>
     </div>
+    """
+  end
+
+  @doc """
+  Badge for a metric catalog entry's source: a link to the registry record for
+  registry-backed metrics, a plain badge for code-defined ones.
+  """
+  attr :source_type, :string, required: true
+  attr :source_display, :string, required: true
+  attr :source_id, :integer, default: nil
+
+  def metric_source_badge(assigns) do
+    ~H"""
+    <span :if={@source_type == "registry"} class="badge badge-sm badge-info badge-soft">
+      <.link navigate={~p"/admin/metric_registry/show/#{@source_id}"}>
+        {@source_display}
+      </.link>
+    </span>
+    <span :if={@source_type == "code"} class="badge badge-sm badge-secondary badge-soft">
+      {@source_display}
+    </span>
+    """
+  end
+
+  @doc """
+  The search + source filter inputs shared by the metric catalog admin pages
+  (categorization, tagging). Meant to be rendered inside a `simple_form` with
+  `phx-change="filter"`; page-specific filter selects stay in the page.
+  """
+  attr :search_query, :string, required: true
+  attr :filter_source, :string, required: true
+
+  def metric_catalog_filter_inputs(assigns) do
+    ~H"""
+    <CoreComponents.input
+      type="text"
+      name="search"
+      value={@search_query}
+      label="Search metrics"
+      placeholder="Type metric name..."
+      phx-debounce="300"
+    />
+
+    <CoreComponents.input
+      type="select"
+      name="source"
+      value={@filter_source}
+      label="Source"
+      options={[
+        {"All Sources", "all"},
+        {"Registry", "registry"},
+        {"Code Module", "code"}
+      ]}
+    />
     """
   end
 end

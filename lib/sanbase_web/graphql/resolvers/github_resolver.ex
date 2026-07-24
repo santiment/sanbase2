@@ -4,6 +4,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
 
   @max_projects 100
 
+  # The ordering can contain slugs that cannot appear in the result - slugs
+  # without a project in our database, slugs of hidden projects or of
+  # projects without github organizations. The ordered slugs are checked
+  # against the database in batches of topN * overshoot factor slugs, so in
+  # the common case a single check fills all topN spots.
+  @overshoot_factor 2
+
   def github_activity_stats(_root, %{selector: selector, from: from, to: to}, _resolution) do
     slugs = Map.get(selector, :slugs)
     top_n = Map.get(selector, :top_n)
@@ -81,10 +88,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
 
         with {:ok, slugs} <- Sanbase.Metric.slugs_order(metric, from, to, :desc, opts) do
           slugs
-          |> Enum.take(top_n)
+          |> take_top_n(top_n)
           |> slugs_stats(sort_by, from, to)
         end
     end
+  end
+
+  # Take the first top_n slugs of projects that exist, are not hidden and
+  # have github organizations. The ranking is checked against the database
+  # in batches of top_n * overshoot factor slugs, digging deeper into it
+  # until the top_n spots are filled or the ranking is exhausted. The order
+  # of the slugs is preserved.
+  defp take_top_n(slugs, top_n) do
+    slugs
+    |> Stream.chunk_every(top_n * @overshoot_factor)
+    |> Enum.reduce_while([], fn chunk, acc ->
+      acc = acc ++ remove_hidden_and_without_github_orgs(chunk)
+
+      if length(acc) >= top_n, do: {:halt, acc}, else: {:cont, acc}
+    end)
+    |> Enum.take(top_n)
+  end
+
+  # Keep only the slugs of projects that exist, are not hidden and have
+  # github organizations. The order of the slugs is preserved.
+  defp remove_hidden_and_without_github_orgs(slugs) do
+    slugs_with_github_orgs =
+      Project.List.by_slugs(slugs,
+        include_hidden: false,
+        preload?: true,
+        preload: [:github_organizations]
+      )
+      |> Enum.filter(fn project -> project.github_organizations != [] end)
+      |> MapSet.new(& &1.slug)
+
+    Enum.filter(slugs, &MapSet.member?(slugs_with_github_orgs, &1))
   end
 
   # Projects without github organizations or without any activity in the

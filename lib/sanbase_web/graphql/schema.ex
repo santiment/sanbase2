@@ -141,7 +141,11 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.ChangelogQueries)
 
   def dataloader(request_context \\ nil) do
-    Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
+    # No `timeout:` here on purpose — Dataloader ignores the loader-level
+    # option and computes its run timeout as max(source timeouts) + 1s.
+    # Timeouts are configured on the sources themselves (SanbaseRepo 35s,
+    # SanbaseDataloader 105s). See docs/timeouts.md.
+    Dataloader.new(get_policy: :return_nil_on_error)
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data(request_context))
   end

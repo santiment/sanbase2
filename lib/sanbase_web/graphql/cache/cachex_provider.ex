@@ -54,9 +54,18 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   # doubles up to a cap so long computations don't cause wake-up churn. After
   # the timeout the waiter gives up on the lock and computes the value itself
   # (see lock_or_poll/5) — a duplicate computation, never a user-facing error.
+  #
+  # The timeout must exceed the ClickHouse query budget (100s, config.exs):
+  # a live lock means its holder is still computing, and the holder's work is
+  # bounded by that budget — so a waiter that keeps waiting always gets the
+  # value sooner than it could recompute it. With the timeout below the CH
+  # budget the fallback fired precisely for slow (60-100s) computations,
+  # starting a duplicate that the async-resolver budget (105s) then killed.
+  # Leaked locks don't need the timeout at all — the monitor-based guard
+  # releases them instantly. See docs/timeouts.md.
   @lock_poll_initial_ms 10
   @lock_poll_max_ms 100
-  @lock_wait_timeout_ms 60_000
+  @lock_wait_timeout_ms 102_000
 
   @impl SanbaseWeb.Graphql.CacheProvider
   def start_link(opts) do

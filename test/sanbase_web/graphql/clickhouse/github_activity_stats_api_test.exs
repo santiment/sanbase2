@@ -118,10 +118,60 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
   end
 
   test "get github activity stats for the top N projects", context do
+    hidden_project =
+      insert(:random_project, %{
+        is_hidden: true,
+        github_organizations: [build(:github_organization)]
+      })
+
     # The ranking comes from Sanbase.Metric.slugs_order over the precomputed
-    # dev_activity_1d/github_activity_1d metrics. Only the top N slugs are
-    # then sent to the stats query
-    ranked_slugs = [context.p2.slug, context.p1.slug, context.p3.slug]
+    # dev_activity_1d/github_activity_1d metrics. Slugs without a project,
+    # with a hidden project or with a project without github organizations (p3)
+    # are dropped and do not take up topN spots. Only the top N slugs that can
+    # appear in the result are sent to the stats query
+    ranked_slugs = [
+      "slug-without-a-project",
+      hidden_project.slug,
+      context.p3.slug,
+      context.p2.slug,
+      context.p1.slug
+    ]
+
+    stats_rows = [
+      [context.p2.slug, 2000, 3000, 40, 60, 300, 500, 5],
+      [context.p1.slug, 1500, 2500, 20, 30, 100, 200, 3]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/5, {:ok, ranked_slugs})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: stats_rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      data =
+        get_github_activity_stats(
+          context.conn,
+          %{top_n: 2, sort_by: :dev_activity, map_as_input_object: true},
+          context.from,
+          context.to
+        )
+        |> get_in(["data", "githubActivityStats"])
+
+      assert [
+               %{"slug" => slug1, "devActivity" => 2000},
+               %{"slug" => slug2, "devActivity" => 1500}
+             ] = data
+
+      assert slug1 == context.p2.slug
+      assert slug2 == context.p1.slug
+    end)
+  end
+
+  test "top N digs deeper into the ranking when the top slugs cannot appear in the result",
+       context do
+    # More slugs without a project than the first overfetched batch
+    # (overshoot factor * topN) can absorb. The slugs with github
+    # organizations must still fill all topN spots
+    ranked_slugs =
+      Enum.map(1..11, fn i -> "slug-without-a-project-#{i}" end) ++
+        [context.p2.slug, context.p1.slug]
 
     stats_rows = [
       [context.p2.slug, 2000, 3000, 40, 60, 300, 500, 5],

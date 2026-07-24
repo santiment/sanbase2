@@ -104,11 +104,17 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
       end
 
     ~H"""
-    <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-11 sm:w-full">
+    <div class="w-full overflow-x-auto px-4 sm:px-0">
+      <table class="mt-11 w-max min-w-full text-left">
         <thead class="text-sm text-left leading-6 text-base-content/60">
           <tr>
-            <th :for={col <- @col} class="p-0 pr-6 pb-4 font-normal">
+            <th
+              :for={{col, i} <- Enum.with_index(@col)}
+              class={[
+                "p-0 pr-6 pb-4 font-normal whitespace-nowrap",
+                i == 0 && "sticky left-0 z-20 bg-base-100"
+              ]}
+            >
               <.popover
                 display_text={col[:label]}
                 popover_target={col[:popover_target]}
@@ -127,7 +133,12 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
             <td
               :for={{col, i} <- Enum.with_index(@col)}
               phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", col[:col_class], @row_click && "hover:cursor-pointer"]}
+              class={[
+                "relative p-0",
+                col[:col_class],
+                @row_click && "hover:cursor-pointer",
+                i == 0 && "sticky left-0 z-10 bg-base-100 group-hover:bg-base-200"
+              ]}
             >
               <div class="block py-4 px-6">
                 <span class={[
@@ -135,7 +146,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
                   i == 0 && "-left-8 sm:rounded-l-xl",
                   i == length(@col) - 1 && @action == [] && "-right-8 sm:rounded-r-xl"
                 ]} />
-                <span class={["relative", i == 0 && "text-base-content"]}>
+                <span class={["relative", i == 0 && "font-medium text-base-content"]}>
                   {render_slot(col, @row_item.(row))}
                 </span>
               </div>

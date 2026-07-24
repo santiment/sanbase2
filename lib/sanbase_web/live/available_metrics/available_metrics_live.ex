@@ -78,7 +78,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Name"
           popover_target="popover-name"
           popover_target_text={get_popover_text(%{key: "Name"})}
-          col_class="max-w-[320px] break-all"
+          col_class="min-w-[18rem] whitespace-nowrap"
         >
           {row.metric}
         </:col>
@@ -87,7 +87,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Internal Name"
           popover_target="popover-internal-name"
           popover_target_text={get_popover_text(%{key: "Internal Name"})}
-          col_class="max-w-[320px] break-all"
+          col_class="min-w-[16rem] whitespace-nowrap"
         >
           {row.internal_name}
         </:col>
@@ -96,7 +96,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Category"
           popover_target="popover-category"
           popover_target_text={get_popover_text(%{key: "Category"})}
-          col_class="max-w-[200px]"
+          col_class="min-w-[10rem] whitespace-nowrap"
         >
           <.categorization_names names={category_names(row.categories)} />
         </:col>
@@ -105,7 +105,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Group"
           popover_target="popover-group"
           popover_target_text={get_popover_text(%{key: "Group"})}
-          col_class="max-w-[200px]"
+          col_class="min-w-[10rem] whitespace-nowrap"
         >
           <.categorization_names names={group_names(row.categories)} />
         </:col>
@@ -114,6 +114,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Frequency"
           popover_target="popover-frequency"
           popover_target_text={get_popover_text(%{key: "Frequency"})}
+          col_class="whitespace-nowrap"
         >
           {row.frequency}
         </:col>
@@ -123,6 +124,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Stabilization Period"
           popover_target="popover-stabilization-period"
           popover_target_text={get_popover_text(%{key: "Stabilization Period"})}
+          col_class="whitespace-nowrap"
         >
           {row.stabilization_period}
         </:col>
@@ -132,6 +134,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Can Mutate"
           popover_target="popover-can-mutate"
           popover_target_text={get_popover_text(%{key: "Can Mutate"})}
+          col_class="whitespace-nowrap"
         >
           {row.can_mutate}
         </:col>
@@ -140,6 +143,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Selectors"
           popover_target="popover-selectors"
           popover_target_text={get_popover_text(%{key: "Available Selectors"})}
+          col_class="min-w-[8rem] whitespace-nowrap"
         >
           <.available_selectors selectors={row.available_selectors} />
         </:col>
@@ -148,6 +152,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Default Aggregation"
           popover_target="popover-default-aggregation"
           popover_target_text={get_popover_text(%{key: "Default Aggregation"})}
+          col_class="whitespace-nowrap"
         >
           {row.default_aggregation |> to_string() |> String.upcase()}
         </:col>
@@ -156,13 +161,14 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Access"
           popover_target="popover-access"
           popover_target_text={get_popover_text(%{key: "Access"})}
+          col_class="whitespace-nowrap"
         >
           <.metric_access access={row.access} />
         </:col>
         <:col
           :let={row}
           label="Available Assets"
-          col_class="max-w-[200px]"
+          col_class="min-w-[14rem] whitespace-nowrap"
           popover_target="popover-available-assets"
           popover_target_text={get_popover_text(%{key: "Available Assets"})}
         >
@@ -173,6 +179,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Docs"
           popover_target="popover-docs"
           popover_target_text={get_popover_text(%{key: "Docs"})}
+          col_class="whitespace-nowrap"
         >
           <.docs_links docs={row.docs} />
         </:col>
@@ -181,6 +188,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           label="Metric Details"
           popover_target="popover-metric-details"
           popover_target_text={get_popover_text(%{key: "Metric Details"})}
+          col_class="whitespace-nowrap"
         >
           <.metric_details_button metric={row.metric} />
         </:col>
@@ -387,13 +395,17 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   end
 
   defp available_selectors(assigns) do
+    assigns =
+      assign(assigns,
+        selectors_str:
+          assigns.selectors
+          |> List.wrap()
+          |> Enum.map(&(&1 |> to_string() |> String.upcase()))
+          |> Enum.join(", ")
+      )
+
     ~H"""
-    <pre>
-    <%= @selectors
-    |> List.wrap()
-    |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
-    |> Enum.join("\n") %>
-    </pre>
+    <span>{@selectors_str}</span>
     """
   end
 

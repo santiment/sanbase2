@@ -99,13 +99,4 @@ defmodule Sanbase.Metric.Tag.MetricTag do
     query = from(t in __MODULE__, order_by: [asc: t.name])
     Repo.all(query)
   end
-
-  @doc """
-  Lists all tag names.
-  """
-  @spec list_names() :: [String.t()]
-  def list_names() do
-    query = from(t in __MODULE__, order_by: [asc: t.name], select: t.name)
-    Repo.all(query)
-  end
 end

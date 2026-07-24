@@ -7,7 +7,7 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
 
   require Logger
 
-  def topics(), do: ["metric_registry_events"]
+  def topics(), do: ["metric_registry_events", "metric_tag_events"]
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -80,6 +80,9 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
 
   def on_metric_tag_change() do
     true = Sanbase.Metric.Tag.refresh_stored_terms()
+    # The custom/bundle plan caches resolve their metric sets through the tag
+    # mappings refreshed above.
+    Sanbase.Billing.Plan.CustomPlan.Loader.put_plans_in_persistent_term()
 
     :ok
   end

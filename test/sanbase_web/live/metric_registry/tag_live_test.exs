@@ -2,18 +2,11 @@ defmodule SanbaseWeb.TagLiveTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
-  import Sanbase.Factory
 
   alias Sanbase.Metric.Tag
 
   setup do
-    user = insert(:user)
-    metric_registry_role = insert(:role_metric_registry_owner)
-    admin_role = insert(:role_admin_panel_viewer)
-    Sanbase.Accounts.UserRole.create(user.id, metric_registry_role.id)
-    Sanbase.Accounts.UserRole.create(user.id, admin_role.id)
-    {:ok, jwt_tokens} = SanbaseWeb.Guardian.get_jwt_tokens(user)
-    conn = Plug.Test.init_test_session(build_conn(), jwt_tokens)
+    conn = Sanbase.MetricRegistryHelpers.metric_registry_admin_conn()
 
     {:ok, tag} = Tag.create_tag(%{name: "basic_test_tag", description: "tag for tests"})
 

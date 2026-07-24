@@ -13,18 +13,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(
-       page_title: "Metric Categorization",
-       metrics: [],
-       filtered_metrics: [],
-       search_query: "",
-       filter_source: "all",
-       filter_status: "all",
-       filter_ui_metadata: "all",
-       filter_sanbase_display: "all",
-       selected_category_id: nil,
-       loading: true
-     )
+     |> assign(page_title: "Metric Categorization")
      |> load_data()}
   end
 
@@ -79,16 +68,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
       <.metrics_stats metrics={@metrics} filtered_metrics={@filtered_metrics} />
 
-      <.metrics_table
-        :if={!@loading}
-        filtered_metrics={@filtered_metrics}
-        categories_colors={@categories_colors}
-      />
-
-      <div :if={@loading} class="flex justify-center items-center py-12">
-        <span class="loading loading-spinner loading-lg text-primary"></span>
-        <p class="ml-4 text-base-content/70">Loading metrics...</p>
-      </div>
+      <.metrics_table filtered_metrics={@filtered_metrics} categories_colors={@categories_colors} />
     </div>
     """
   end
@@ -133,25 +113,9 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     <div class="card bg-base-100 border border-base-300 shadow p-4 my-4">
       <.simple_form for={%{}} as={:filters} phx-change="filter">
         <div class="flex flex-col sm:flex-row sm:flex-wrap gap-4">
-          <.input
-            type="text"
-            name="search"
-            value={@search_query}
-            label="Search metrics"
-            placeholder="Type metric name..."
-            phx-debounce="300"
-          />
-
-          <.input
-            type="select"
-            name="source"
-            value={@filter_source}
-            label="Source"
-            options={[
-              {"All Sources", "all"},
-              {"Registry", "registry"},
-              {"Code Module", "code"}
-            ]}
+          <AdminSharedComponents.metric_catalog_filter_inputs
+            search_query={@search_query}
+            filter_source={@filter_source}
           />
 
           <.input
@@ -352,15 +316,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         </div>
       </td>
       <td>
-        <span :if={@metric.source_type == "registry"} class="badge badge-sm badge-info badge-soft">
-          <.link navigate={~p"/admin/metric_registry/show/#{@metric.source_id}"}>
-            {@metric.source_display}
-          </.link>
-        </span>
-
-        <span :if={@metric.source_type == "code"} class="badge badge-sm badge-secondary badge-soft">
-          {@metric.source_display}
-        </span>
+        <AdminSharedComponents.metric_source_badge
+          source_type={@metric.source_type}
+          source_display={@metric.source_display}
+          source_id={@metric.source_id}
+        />
       </td>
       <td>
         <div :if={@metric.category_name} class="text-sm">
@@ -501,26 +461,15 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       ui_metadata_list
       |> Enum.group_by(& &1.metric_category_mapping_id)
 
-    multi_category_registry_ids =
-      mappings
-      |> Enum.reject(&is_nil(&1.metric_registry_id))
-      |> Enum.group_by(& &1.metric_registry_id)
-      |> Enum.filter(fn {_id, mapping_list} -> length(mapping_list) > 1 end)
-      |> Enum.map(fn {id, _} -> id end)
-      |> MapSet.new()
-
-    multi_category_module_metrics =
-      mappings
-      |> Enum.reject(&(is_nil(&1.module) || &1.module == "__none__"))
-      |> Enum.group_by(&{&1.module, &1.metric})
-      |> Enum.filter(fn {_key, mapping_list} -> length(mapping_list) > 1 end)
-      |> Enum.map(fn {key, _} -> key end)
-      |> MapSet.new()
-
     mappings_index =
       mappings
       |> Enum.filter(&(&1.metric_registry_id || (&1.module && &1.metric)))
       |> Catalog.index_mappings()
+
+    multi_category_keys =
+      mappings_index
+      |> Enum.filter(fn {_key, mapping_list} -> length(mapping_list) > 1 end)
+      |> MapSet.new(fn {key, _} -> key end)
 
     all_metrics =
       Catalog.all_metrics()
@@ -528,7 +477,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         mappings = Catalog.mappings_for_entry(entry, mappings_index)
 
         is_multi_category? =
-          multi_category?(entry, multi_category_registry_ids, multi_category_module_metrics)
+          MapSet.member?(multi_category_keys, Catalog.entry_key(entry))
 
         case mappings do
           [] ->
@@ -575,16 +524,9 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     |> assign(
       metrics: all_metrics,
       categories: categories,
-      categories_colors: categories_colors,
-      loading: false
+      categories_colors: categories_colors
     )
   end
-
-  defp multi_category?(%{source_type: "registry"} = entry, registry_ids, _module_metrics),
-    do: MapSet.member?(registry_ids, entry.source_id)
-
-  defp multi_category?(%{source_type: "code"} = entry, _registry_ids, module_metrics),
-    do: MapSet.member?(module_metrics, {entry.module, entry.metric})
 
   defp annotate_with_categorization(entry, mapping, ui_metadata_by_mapping_id, is_multi_category?) do
     ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
@@ -594,7 +536,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
     all_variants_have_ui_metadata? =
       case entry do
-        %{source_type: "code"} -> true
+        %{source_type: "code"} -> has_ui_metadata?
         %{parameters_count: 0} -> has_ui_metadata?
         %{parameters_count: count} -> has_ui_metadata? and length(ui_metadata_list) == count
       end

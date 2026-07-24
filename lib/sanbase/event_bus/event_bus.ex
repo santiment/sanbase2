@@ -43,6 +43,7 @@ defmodule Sanbase.EventBus do
     :user_events,
     :watchlist_events,
     :metric_registry_events,
+    :metric_tag_events,
     :vote_events
   ]
 

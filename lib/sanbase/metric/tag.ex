@@ -11,10 +11,19 @@ defmodule Sanbase.Metric.Tag do
   resolution lives in `Sanbase.Metric.Tag.Cache`.
   """
 
+  alias Sanbase.Repo
   alias Sanbase.Metric.Tag.MetricTag
   alias Sanbase.Metric.Tag.MetricTagMapping
   alias Sanbase.Metric.Tag.Cache
-  alias Sanbase.Metric.Registry.EventEmitter
+  alias Sanbase.Metric.Tag.EventEmitter
+
+  @vocabulary_tags [
+    %{name: "basic", description: "Metrics exposed on the Basic bundle plan"},
+    %{name: "development_data", description: "Development activity metrics"},
+    %{name: "market_data", description: "Price and market metrics"},
+    %{name: "social_data", description: "Social volume and sentiment metrics"},
+    %{name: "onchain_data", description: "Onchain and blockchain metrics"}
+  ]
 
   # Tag operations
 
@@ -64,6 +73,25 @@ defmodule Sanbase.Metric.Tag do
   """
   @spec list_tags() :: [MetricTag.t()]
   def list_tags(), do: MetricTag.list_all()
+
+  @doc """
+  Idempotently inserts the seed vocabulary tags.
+
+  Production databases get these from the migration that created the
+  `metric_tags` table. Databases created by loading `structure.sql` (like the
+  test database) contain no data, so the seeds must be applied separately.
+  """
+  @spec seed_vocabulary_tags() :: :ok
+  def seed_vocabulary_tags() do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    entries =
+      Enum.map(@vocabulary_tags, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
+
+    Repo.insert_all(MetricTag, entries, on_conflict: :nothing, conflict_target: :name)
+
+    :ok
+  end
 
   # Mapping operations
 
@@ -134,18 +162,17 @@ defmodule Sanbase.Metric.Tag do
   def tags_for_metric(metric), do: Cache.tags_for_metric(metric)
 
   @doc """
-  Refreshes the persistent-term caches that depend on tags. Also refreshes the
-  custom/bundle plan caches, since a bundle plan's resolved metric set depends
-  on the tag -> metric mapping.
+  Refreshes the persistent-term tag -> metric caches.
+
+  Callers reacting to tag or registry changes must also refresh the caches
+  that are derived from tags — the custom/bundle plan caches
+  (`Sanbase.Billing.Plan.CustomPlan.Loader`) — see
+  `Sanbase.Metric.Registry.refresh_stored_terms/0` and
+  `Sanbase.EventBus.MetricRegistrySubscriber.on_metric_tag_change/0`.
   """
   @spec refresh_stored_terms() :: true
   def refresh_stored_terms() do
-    true = Cache.refresh_stored_terms()
-    # Side-effecting: repopulates the bundle/custom-plan persistent_term caches,
-    # whose resolved metric sets depend on the tag -> metric mapping. Returns a
-    # list, not a status; it signals failure by raising.
-    Sanbase.Billing.Plan.CustomPlan.Loader.put_plans_in_persistent_term()
-    true
+    Cache.refresh_stored_terms()
   end
 
   # Private

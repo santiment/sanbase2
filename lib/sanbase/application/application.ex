@@ -363,7 +363,11 @@ defmodule Sanbase.Application do
          name: Sanbase.Cache.name(),
          ttl_check_interval: :timer.seconds(30),
          global_ttl: :timer.minutes(5),
-         acquire_lock_timeout: 60_000
+         # Must exceed the ClickHouse query budget (100s) — a waiter that
+         # outlasts the lock holder gets the value instead of exiting with a
+         # timeout while the holder is still legitimately computing.
+         # See docs/timeouts.md.
+         acquire_lock_timeout: 102_000
        ]},
 
       # Start the graphQL in-memory cache

@@ -105,11 +105,13 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
   parity_url = System.get_env("PARITY_URL")
 
+  # The timeout chain must be ordered outside-in (see docs/timeouts.md):
+  # web: LB > cowboy idle_timeout (120s) > async resolvers (105s) > CH query (100s)
+  # mcp: cowboy idle_timeout (180s) > Anubis request_timeout (150s) > task work (120s)
   # MCP tool calls (e.g. combined_trends_tool) can run long due to document
-  # collection + AI summarization. The timeout chain must be ordered:
-  # Cowboy idle_timeout (180s) > Anubis request_timeout (150s) > task work (120s)
+  # collection + AI summarization.
   idle_timeout =
-    if System.get_env("CONTAINER_TYPE") == "mcp", do: 180_000, else: 100_000
+    if System.get_env("CONTAINER_TYPE") == "mcp", do: 180_000, else: 120_000
 
   config :sanbase, SanbaseWeb.Endpoint,
     url: [host: host, port: port],

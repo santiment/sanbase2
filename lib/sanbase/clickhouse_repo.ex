@@ -218,6 +218,25 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   @masked_error_message "Cannot execute database query. If issue persists please contact Santiment Support."
+
+  @timeout_error_message """
+  The query took too long and was cancelled. An API call that requests many \
+  fields or subqueries executes many database queries whose runtimes add up — \
+  try requesting fewer fields per call, narrowing the from/to range, using a \
+  bigger interval, or splitting the call into several smaller ones. If the \
+  issue persists please contact Santiment Support.\
+  """
+
+  @doc false
+  # Timeout-class errors get a meaningful user-facing message instead of the
+  # generic masked one: DBConnection queue/checkout timeouts, query timeouts
+  # and ClickHouse-side TIMEOUT_EXCEEDED all match.
+  def timeout_error?(message) when is_binary(message) do
+    message =~ ~r/timed? ?out|TIMEOUT_EXCEEDED|Code: 159|dropped from queue/i
+  end
+
+  def timeout_error?(_), do: false
+
   defp log_and_return_error_from_exception(
          %{} = exception,
          function_executed,
@@ -247,7 +266,7 @@ defmodule Sanbase.ClickhouseRepo do
       """)
     end
 
-    {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
+    {:error, "[#{log_id}] #{user_facing_error_message(error_message, propagate_error)}"}
   end
 
   defp log_and_return_error(error, function_executed, opts) do
@@ -266,7 +285,15 @@ defmodule Sanbase.ClickhouseRepo do
       )
     end
 
-    {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
+    {:error, "[#{log_id}] #{user_facing_error_message(error_message, propagate_error)}"}
+  end
+
+  defp user_facing_error_message(error_message, propagate_error) do
+    cond do
+      propagate_error -> error_message
+      timeout_error?(error_message) -> @timeout_error_message
+      true -> @masked_error_message
+    end
   end
 
   # Prefer the ctx explicitly threaded through `opts` (set by the

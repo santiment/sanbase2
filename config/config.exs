@@ -128,10 +128,13 @@ config :sanbase, Sanbase.ClickhouseRepo,
   max_overflow: 3,
   scheme: :http
 
+# Same queue budgets as the read-write repo: under pool saturation requests
+# are dropped from the queue fast (with a user-facing timeout message) instead
+# of queueing for minutes past the connection's lifetime. See docs/timeouts.md.
 clickhouse_read_only_opts = [
   adapter: Ecto.Adapters.Postgres,
-  queue_target: 60_000,
-  queue_interval: 60_000,
+  queue_target: 10_000,
+  queue_interval: 30_000,
   timeout: 100_000,
   max_overflow: 3,
   scheme: :http

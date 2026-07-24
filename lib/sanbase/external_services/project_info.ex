@@ -241,8 +241,6 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp fetch_token_decimals(%ProjectInfo{} = project_info), do: project_info
 
-  # The only caller guards on `is_binary(main_contract_address)`, so no
-  # fallback clause is needed (a catch-all is flagged as unreachable).
   defp ethereum_contract?(%ProjectInfo{main_contract_address: contract} = project_info)
        when is_binary(contract) do
     ethereum_infrastructure?(project_info.infrastructure_code) and

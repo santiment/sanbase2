@@ -85,11 +85,14 @@ defmodule Sanbase.AvailableMetrics do
     metrics = Sanbase.Metric.available_metrics()
     metric_to_supported_assets_map = metric_to_available_slugs_maps()
     access_map = Sanbase.Metric.Helper.access_map()
+    metric_to_categories = metric_to_categories_map()
 
     metrics
     |> Enum.map(fn metric ->
       {:ok, m} = Sanbase.Metric.metadata(metric)
       {:ok, available_selectors} = Sanbase.Metric.available_selectors(metric)
+
+      categories = Map.get(metric_to_categories, m.metric, [])
 
       %{
         metric: m.metric,
@@ -106,7 +109,8 @@ defmodule Sanbase.AvailableMetrics do
         sanapi_access: "free",
         available_selectors: available_selectors,
         required_selectors: m.required_selectors,
-        access: Map.get(access_map, metric)
+        access: Map.get(access_map, metric),
+        categories: categories
       }
     end)
     |> Enum.sort_by(& &1.metric, :asc)
@@ -135,6 +139,7 @@ defmodule Sanbase.AvailableMetrics do
     |> maybe_apply_filter(:match_metric_name, filters)
     |> maybe_apply_filter(:metric_supports_asset, filters)
     |> maybe_apply_filter(:only_asset_metrics, filters)
+    |> maybe_apply_filter(:categorization, filters)
   end
 
   defp maybe_apply_filter(metrics, :only_with_docs, %{"only_with_docs" => "on"}) do
@@ -168,10 +173,118 @@ defmodule Sanbase.AvailableMetrics do
     |> Enum.filter(&(&1.available_assets != [] and :slug in &1.available_selectors))
   end
 
+  defp maybe_apply_filter(metrics, :categorization, filters) do
+    category_id = normalize_filter_id(Map.get(filters, "category_id"))
+    group_id = normalize_filter_id(Map.get(filters, "group_id"))
+
+    if category_id == :all and group_id == :all do
+      metrics
+    else
+      Enum.filter(metrics, &matches_categorization?(&1.categories || [], category_id, group_id))
+    end
+  end
+
   defp maybe_apply_filter(metrics, _, _), do: metrics
+
+  defp matches_categorization?(_categories, :all, :all), do: true
+
+  defp matches_categorization?(categories, :none, _group_id), do: categories == []
+
+  defp matches_categorization?(categories, :all, :none) do
+    Enum.any?(categories, &is_nil(&1.group_id))
+  end
+
+  defp matches_categorization?(categories, category_id, :all) when is_integer(category_id) do
+    Enum.any?(categories, &(&1.category_id == category_id))
+  end
+
+  defp matches_categorization?(categories, category_id, :none) when is_integer(category_id) do
+    Enum.any?(categories, &(&1.category_id == category_id and is_nil(&1.group_id)))
+  end
+
+  defp matches_categorization?(categories, :all, group_id) when is_integer(group_id) do
+    Enum.any?(categories, &(&1.group_id == group_id))
+  end
+
+  defp matches_categorization?(categories, category_id, group_id)
+       when is_integer(category_id) and is_integer(group_id) do
+    Enum.any?(categories, &(&1.category_id == category_id and &1.group_id == group_id))
+  end
+
+  defp normalize_filter_id(nil), do: :all
+  defp normalize_filter_id(""), do: :all
+  defp normalize_filter_id("all"), do: :all
+  defp normalize_filter_id("none"), do: :none
+
+  defp normalize_filter_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {int, ""} -> int
+      _ -> :all
+    end
+  end
+
+  defp normalize_filter_id(id) when is_integer(id), do: id
+  defp normalize_filter_id(_), do: :all
 
   defp metric_to_available_slugs_maps() do
     Sanbase.Repo.all(__MODULE__)
     |> Map.new(&{&1.metric, &1.available_slugs})
+  end
+
+  defp metric_to_categories_map do
+    alias Sanbase.Metric.Category.MetricCategoryMapping
+    alias Sanbase.Metric.Registry
+
+    mappings = MetricCategoryMapping.list_all()
+
+    registry_id_to_public_names =
+      mappings
+      |> Enum.map(& &1.metric_registry_id)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+      |> Registry.by_ids()
+      |> Enum.reduce(%{}, fn registry, acc ->
+        public_names =
+          registry
+          |> Registry.resolve_registry()
+          |> Enum.map(& &1.metric)
+
+        Map.put(acc, registry.id, public_names)
+      end)
+
+    Enum.reduce(mappings, %{}, fn mapping, acc ->
+      categorization = %{
+        category_id: mapping.category_id,
+        category_name: mapping.category && mapping.category.name,
+        group_id: mapping.group_id,
+        group_name: mapping.group && mapping.group.name
+      }
+
+      public_names =
+        cond do
+          mapping.metric_registry_id ->
+            Map.get(registry_id_to_public_names, mapping.metric_registry_id, [])
+
+          is_binary(mapping.metric) ->
+            [mapping.metric]
+
+          true ->
+            []
+        end
+
+      Enum.reduce(public_names, acc, fn name, inner_acc ->
+        Map.update(inner_acc, name, [categorization], fn existing ->
+          if Enum.any?(
+               existing,
+               &(&1.category_id == categorization.category_id and
+                   &1.group_id == categorization.group_id)
+             ) do
+            existing
+          else
+            [categorization | existing]
+          end
+        end)
+      end)
+    end)
   end
 end

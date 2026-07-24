@@ -3,10 +3,14 @@ defmodule SanbaseWeb.AvailableMetricsLive do
 
   import SanbaseWeb.AvailableMetricsDescription
   alias SanbaseWeb.AvailableMetricsComponents
+  alias Sanbase.Metric.Category.MetricCategory
+  alias Sanbase.Metric.Category.MetricGroup
 
   @impl true
   def mount(_params, _session, socket) do
     metrics_map = Sanbase.AvailableMetrics.get_metrics_map()
+    categories = MetricCategory.list_ordered()
+    groups_by_category = groups_by_category_id()
 
     default_filter = %{"only_asset_metrics" => "on", "only_with_docs" => "on"}
 
@@ -21,7 +25,10 @@ defmodule SanbaseWeb.AvailableMetricsLive do
        page_title: "Santiment | Available Metrics",
        visible_metrics: visible_metrics,
        metrics_map: metrics_map,
-       filter: default_filter
+       filter: default_filter,
+       categories: categories,
+       groups_by_category: groups_by_category,
+       groups_for_selected_category: []
      )}
   end
 
@@ -49,7 +56,11 @@ defmodule SanbaseWeb.AvailableMetricsLive do
 
     ~H"""
     <div class="flex flex-col items-start justify-evenly">
-      <.filters filter={@filter} />
+      <.filters
+        filter={@filter}
+        categories={@categories}
+        groups_for_selected_category={@groups_for_selected_category}
+      />
       <div class="text-base-content/50 text-sm py-2">
         <div>
           Showing {length(@visible_metrics)} metrics
@@ -79,6 +90,24 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           col_class="max-w-[320px] break-all"
         >
           {row.internal_name}
+        </:col>
+        <:col
+          :let={row}
+          label="Category"
+          popover_target="popover-category"
+          popover_target_text={get_popover_text(%{key: "Category"})}
+          col_class="max-w-[200px]"
+        >
+          <.categorization_names names={category_names(row.categories)} />
+        </:col>
+        <:col
+          :let={row}
+          label="Group"
+          popover_target="popover-group"
+          popover_target_text={get_popover_text(%{key: "Group"})}
+          col_class="max-w-[200px]"
+        >
+          <.categorization_names names={group_names(row.categories)} />
         </:col>
         <:col
           :let={row}
@@ -162,6 +191,8 @@ defmodule SanbaseWeb.AvailableMetricsLive do
 
   @impl true
   def handle_event("apply_filters", params, socket) do
+    params = maybe_reset_group_for_category(params, socket.assigns.groups_by_category)
+
     visible_metrics =
       socket.assigns.metrics_map
       |> Sanbase.AvailableMetrics.apply_filters(params)
@@ -171,7 +202,9 @@ defmodule SanbaseWeb.AvailableMetricsLive do
      socket
      |> assign(
        visible_metrics: visible_metrics,
-       filter: params
+       filter: params,
+       groups_for_selected_category:
+         groups_for_category(params, socket.assigns.groups_by_category)
      )}
   end
 
@@ -238,6 +271,46 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           input_checked={@filter["only_with_docs"] == "on"}
           input_label="Only with docs"
         />
+
+        <div>
+          <select
+            id="category-filter"
+            name="category_id"
+            class="select select-bordered select-sm w-56"
+          >
+            <option value="all" selected={category_selected?(@filter["category_id"], "all")}>
+              All categories
+            </option>
+            <option value="none" selected={@filter["category_id"] == "none"}>
+              Uncategorized
+            </option>
+            <option
+              :for={category <- @categories}
+              value={category.id}
+              selected={to_string(@filter["category_id"]) == to_string(category.id)}
+            >
+              {category.name}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <select id="group-filter" name="group_id" class="select select-bordered select-sm w-56">
+            <option value="all" selected={group_selected?(@filter["group_id"], "all")}>
+              All groups
+            </option>
+            <option value="none" selected={@filter["group_id"] == "none"}>
+              Ungrouped
+            </option>
+            <option
+              :for={group <- @groups_for_selected_category}
+              value={group.id}
+              selected={to_string(@filter["group_id"]) == to_string(group.id)}
+            >
+              {group.name}
+            </option>
+          </select>
+        </div>
 
         <div>
           <input
@@ -337,5 +410,77 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     ~H"""
     <span>{@access_string}</span>
     """
+  end
+
+  defp categorization_names(assigns) do
+    ~H"""
+    <span :if={@names == []} class="text-base-content/40">—</span>
+    <span :if={@names != []}>{Enum.join(@names, ", ")}</span>
+    """
+  end
+
+  defp category_names(categories) do
+    categories
+    |> Enum.map(& &1.category_name)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp group_names(categories) do
+    categories
+    |> Enum.map(& &1.group_name)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp category_selected?(nil, "all"), do: true
+  defp category_selected?("", "all"), do: true
+  defp category_selected?("all", "all"), do: true
+  defp category_selected?(value, expected), do: value == expected
+
+  defp group_selected?(nil, "all"), do: true
+  defp group_selected?("", "all"), do: true
+  defp group_selected?("all", "all"), do: true
+  defp group_selected?(value, expected), do: value == expected
+
+  defp groups_by_category_id do
+    MetricGroup.list_with_category()
+    |> Enum.group_by(& &1.category_id)
+  end
+
+  defp groups_for_category(filter, groups_by_category) do
+    case Map.get(filter, "category_id") do
+      category_id when category_id in [nil, "", "all", "none"] ->
+        []
+
+      category_id when is_binary(category_id) ->
+        case Integer.parse(category_id) do
+          {id, ""} -> Map.get(groups_by_category, id, [])
+          _ -> []
+        end
+
+      category_id when is_integer(category_id) ->
+        Map.get(groups_by_category, category_id, [])
+
+      _ ->
+        []
+    end
+  end
+
+  defp maybe_reset_group_for_category(params, groups_by_category) do
+    group_id = Map.get(params, "group_id")
+    groups = groups_for_category(params, groups_by_category)
+    valid_group_ids = MapSet.new(groups, &to_string(&1.id))
+
+    cond do
+      group_id in [nil, "", "all", "none"] ->
+        params
+
+      MapSet.member?(valid_group_ids, to_string(group_id)) ->
+        params
+
+      true ->
+        Map.put(params, "group_id", "all")
+    end
   end
 end

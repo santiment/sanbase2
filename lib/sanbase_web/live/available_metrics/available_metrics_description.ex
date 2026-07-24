@@ -50,6 +50,26 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Category"} = assigns) do
+    ~H"""
+    <pre>
+    The top-level organizational category of the metric from the metric
+    registry categorization (for example Market, Social, On-chain).
+    A metric can belong to more than one category.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Group"} = assigns) do
+    ~H"""
+    <pre>
+    The group within a category that the metric belongs to
+    (for example Pricing, Volume, Social dominance).
+    A metric can belong to more than one group.
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Human Readable Name"} = assigns) do
     ~H"""
     <pre>

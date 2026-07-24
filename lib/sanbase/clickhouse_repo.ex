@@ -222,7 +222,7 @@ defmodule Sanbase.ClickhouseRepo do
          %{} = exception,
          function_executed,
          stacktrace,
-         opts \\ []
+         opts
        ) do
     propagate_error = Keyword.get(opts, :propagate_error, false)
 
@@ -250,7 +250,7 @@ defmodule Sanbase.ClickhouseRepo do
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
 
-  defp log_and_return_error(error, function_executed, opts \\ []) do
+  defp log_and_return_error(error, function_executed, opts) do
     propagate_error = Keyword.get(opts, :propagate_error, false)
     log_id = UUID.uuid4()
 

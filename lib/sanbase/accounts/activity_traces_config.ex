@@ -4,9 +4,21 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   pipeline.
 
   Each flag guards exactly one place where an NDA-protected user's
-  activity is hidden. Flip a flag to `false` to disable masking on that
-  surface — e.g. to debug a specific protected user's request — without
-  touching the call site.
+  activity is hidden. To disable masking on one surface without touching
+  the call site, either flip the flag in `@config` or override it at
+  runtime. The runtime override mutates the global application env, so
+  it affects ALL protected requests on the node — not just the one being
+  debugged — until it is removed:
+
+      # Disable one surface (node-wide, for every protected request):
+      Application.put_env(:sanbase, Sanbase.Accounts.ActivityTracesConfig,
+        hide_logger: false
+      )
+
+      # Restore the compile-time defaults when done:
+      Application.delete_env(:sanbase, Sanbase.Accounts.ActivityTracesConfig)
+
+  Override values must be booleans; `enabled?/1` raises otherwise.
 
   Masking at a surface applies only when BOTH conditions hold:
 
@@ -64,9 +76,14 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   def config(), do: @config
 
   @doc """
-  Whether masking is enabled for `flag`. Each flag compiles to its own
-  clause returning a literal, so this is a constant-time lookup with no
-  map access on the hot path.
+  Whether masking is enabled for `flag`, honoring runtime overrides from
+  the application env. Raises for unknown flags and for non-boolean
+  runtime overrides.
+
+  The runtime-env indirection is also what keeps the type checker from
+  proving the result: with every `@config` value being `true`, a pure
+  compile-time lookup makes every call site's conditional provably
+  always-true and each one emits a warning.
 
   ## Examples
 
@@ -74,8 +91,19 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
       true
   """
   @spec enabled?(flag()) :: boolean()
-  for {flag, value} <- @config do
-    def enabled?(unquote(flag)), do: unquote(value)
+  def enabled?(flag) when is_map_key(@config, flag) do
+    :sanbase
+    |> Application.get_env(__MODULE__, [])
+    |> Keyword.get(flag, Map.fetch!(@config, flag))
+    |> case do
+      value when is_boolean(value) ->
+        value
+
+      other ->
+        raise ArgumentError,
+              "expected a boolean runtime override for #{inspect(flag)} in the " <>
+                "#{inspect(__MODULE__)} application env, got: #{inspect(other)}"
+    end
   end
 
   @doc """

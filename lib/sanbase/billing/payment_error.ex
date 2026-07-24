@@ -102,10 +102,7 @@ defmodule Sanbase.Billing.PaymentError do
   def user_message(nil), do: nil
 
   def user_message(error) do
-    case safe_code(error) do
-      nil -> nil
-      code -> Map.get(@messages, code, @generic_message)
-    end
+    Map.get(@messages, safe_code(error), @generic_message)
   end
 
   @doc """

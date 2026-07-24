@@ -15,10 +15,25 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
         hide_logger: false
       )
 
+      # Apply it immediately (reads are cached, see below):
+      Sanbase.Accounts.ActivityTracesConfig.reload()
+
       # Restore the compile-time defaults when done:
       Application.delete_env(:sanbase, Sanbase.Accounts.ActivityTracesConfig)
+      Sanbase.Accounts.ActivityTracesConfig.reload()
 
-  Override values must be booleans; `enabled?/1` raises otherwise.
+  Override values must be booleans and keys must be known flags;
+  anything else raises when the override is (re)loaded.
+
+  ## Caching
+
+  `enabled?/1` does not read the application env directly. The resolved
+  flag map (defaults merged with the override) is cached in
+  `:persistent_term`, so the hot path is a copy-free, lock-free read.
+  The cache entry expires after #{div(:timer.minutes(60), 60_000)}
+  minutes and is rebuilt lazily on the next read; call `reload/0` to
+  rebuild it immediately. The cache is an internal detail of this
+  module — nothing outside it should touch the persistent-term key.
 
   Masking at a surface applies only when BOTH conditions hold:
 
@@ -54,6 +69,10 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
     hide_interpolated_sql: true
   }
 
+  # Cached resolved config: {resolved_map, expires_at_monotonic_ms}.
+  @pt_key {__MODULE__, :resolved_config}
+  @ttl_ms :timer.minutes(60)
+
   @type flag ::
           :hide_logger
           | :hide_ch_query_log
@@ -65,7 +84,8 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
           | :hide_interpolated_sql
 
   @doc """
-  The full flag map.
+  The compile-time default flag map. Runtime overrides are NOT applied
+  here — use `enabled?/1` for the effective value.
 
   ## Examples
 
@@ -77,11 +97,12 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
 
   @doc """
   Whether masking is enabled for `flag`, honoring runtime overrides from
-  the application env. Raises for unknown flags and for non-boolean
-  runtime overrides.
+  the application env (through the persistent-term cache). Raises for
+  unknown flags, and raises `ArgumentError` when a rebuild finds an
+  invalid override (unknown key or non-boolean value).
 
-  The runtime-env indirection is also what keeps the type checker from
-  proving the result: with every `@config` value being `true`, a pure
+  The cache indirection is also what keeps the type checker from proving
+  the result: with every `@config` value being `true`, a pure
   compile-time lookup makes every call site's conditional provably
   always-true and each one emits a warning.
 
@@ -92,18 +113,7 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   """
   @spec enabled?(flag()) :: boolean()
   def enabled?(flag) when is_map_key(@config, flag) do
-    :sanbase
-    |> Application.get_env(__MODULE__, [])
-    |> Keyword.get(flag, Map.fetch!(@config, flag))
-    |> case do
-      value when is_boolean(value) ->
-        value
-
-      other ->
-        raise ArgumentError,
-              "expected a boolean runtime override for #{inspect(flag)} in the " <>
-                "#{inspect(__MODULE__)} application env, got: #{inspect(other)}"
-    end
+    Map.fetch!(resolved_config(), flag)
   end
 
   @doc """
@@ -119,5 +129,57 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   @spec hidden?(flag(), RequestContext.t() | term()) :: boolean()
   def hidden?(flag, ctx) do
     enabled?(flag) and RequestContext.activity_traces_hidden?(ctx)
+  end
+
+  @doc """
+  Rebuild the resolved flag map from the compile-time defaults and the
+  application env override, store it in the cache, and reset its TTL.
+
+  Call this after `Application.put_env/3` / `Application.delete_env/2`
+  to apply the change immediately instead of waiting for the TTL to
+  expire. Raises `ArgumentError` when the override contains an unknown
+  flag or a non-boolean value.
+  """
+  @spec reload() :: :ok
+  def reload() do
+    _resolved = store_resolved_config()
+    :ok
+  end
+
+  defp resolved_config() do
+    case :persistent_term.get(@pt_key, nil) do
+      {resolved, expires_at} ->
+        if System.monotonic_time(:millisecond) < expires_at,
+          do: resolved,
+          else: store_resolved_config()
+
+      nil ->
+        store_resolved_config()
+    end
+  end
+
+  # Concurrent readers hitting an expired entry may race several puts;
+  # each stores an equally fresh map, so last-write-wins is harmless.
+  defp store_resolved_config() do
+    resolved = build_resolved_config()
+    expires_at = System.monotonic_time(:millisecond) + @ttl_ms
+    :persistent_term.put(@pt_key, {resolved, expires_at})
+    resolved
+  end
+
+  defp build_resolved_config() do
+    :sanbase
+    |> Application.get_env(__MODULE__, [])
+    |> Enum.reduce(@config, fn
+      {flag, value}, acc when is_map_key(@config, flag) and is_boolean(value) ->
+        Map.put(acc, flag, value)
+
+      {flag, value}, _acc ->
+        raise ArgumentError,
+              "invalid runtime override #{inspect(flag)} => #{inspect(value)} " <>
+                "in the #{inspect(__MODULE__)} application env. Overrides must " <>
+                "use known flags (#{Enum.map_join(Map.keys(@config), ", ", &inspect/1)}) " <>
+                "and boolean values."
+    end)
   end
 end

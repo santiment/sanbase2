@@ -301,38 +301,55 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  @stats_order_by_columns %{
-    dev_activity: "dev_activity",
-    github_activity: "github_activity"
-  }
+  # A github event is identified by the (owner, repo, dt, event) tuple. The same
+  # event can be present more than once in the table, so the activity is the
+  # number of unique tuples and not the number of rows.
+  @event_id "(owner, repo, dt, event)"
+  @dev_event "event NOT IN ({{non_dev_events}})"
+  @bot_actor "endsWith(actor, '[bot]')"
 
-  def github_activity_stats_query(owner_slug_pairs, from, to, opts \\ []) do
+  # The single source of truth for the stats - the names and the order of the
+  # columns selected by github_activity_stats_query/3.
+  @stats_columns [
+    dev_activity: "uniqExactIf(#{@event_id}, #{@dev_event})",
+    github_activity: "uniqExact(#{@event_id})",
+    dev_activity_contributors_count: "uniqExactIf(actor, #{@dev_event})",
+    github_activity_contributors_count: "uniqExact(actor)",
+    bot_dev_activity: "uniqExactIf(#{@event_id}, #{@bot_actor} AND #{@dev_event})",
+    bot_github_activity: "uniqExactIf(#{@event_id}, #{@bot_actor})",
+    bot_contributors_count: "uniqExactIf(actor, #{@bot_actor})"
+  ]
+
+  @doc ~s"""
+  The names of the stats columns, in the order they are selected by
+  github_activity_stats_query/3.
+  """
+  def stats_columns(), do: Keyword.keys(@stats_columns)
+
+  @doc ~s"""
+  Compute the stats for every slug in the `{github_organization, slug}` pairs.
+
+  The organizations are mapped back to their slug, so that the rows of all
+  organizations of a slug are aggregated together into a single result row.
+  """
+  def github_activity_stats_query(owner_slug_pairs, from, to) do
     {owners, slugs} = Enum.unzip(owner_slug_pairs)
-    order_by = Keyword.get(opts, :order_by)
 
-    order_by_str =
-      case Map.fetch(@stats_order_by_columns, order_by) do
-        {:ok, column} -> "ORDER BY #{column} DESC"
-        :error -> ""
-      end
+    stats_select =
+      Enum.map_join(@stats_columns, ",\n  ", fn {name, expr} ->
+        "toUInt64(#{expr}) AS #{name}"
+      end)
 
     sql = """
     SELECT
       transform(owner, {{owners}}, {{slugs}}, '') AS slug,
-      toUInt64(uniqExactIf((owner, repo, dt, event), event NOT IN ({{non_dev_events}}))) AS dev_activity,
-      toUInt64(uniqExact((owner, repo, dt, event))) AS github_activity,
-      toUInt64(uniqExactIf(actor, event NOT IN ({{non_dev_events}}))) AS dev_activity_contributors_count,
-      toUInt64(uniqExact(actor)) AS github_activity_contributors_count,
-      toUInt64(uniqExactIf((owner, repo, dt, event), endsWith(actor, '[bot]') AND event NOT IN ({{non_dev_events}}))) AS bot_dev_activity,
-      toUInt64(uniqExactIf((owner, repo, dt, event), endsWith(actor, '[bot]'))) AS bot_github_activity,
-      toUInt64(uniqExactIf(actor, endsWith(actor, '[bot]'))) AS bot_contributors_count
+      #{stats_select}
     FROM #{@table}
     WHERE
       owner IN ({{owners}}) AND
       dt >= toDateTime({{from}}) AND
       dt <= toDateTime({{to}})
     GROUP BY slug
-    #{order_by_str}
     """
 
     params = %{

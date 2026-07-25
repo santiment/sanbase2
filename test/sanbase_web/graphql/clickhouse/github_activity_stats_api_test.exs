@@ -117,6 +117,33 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
     end)
   end
 
+  test "sortBy sorts the result in descending order", context do
+    rows = [
+      [context.p1.slug, 1000, 3000, 20, 30, 100, 200, 3],
+      [context.p2.slug, 2000, 1500, 40, 60, 300, 500, 5]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      stats =
+        get_github_activity_stats(
+          context.conn,
+          %{
+            slugs: [context.p3.slug, context.p1.slug, context.p2.slug],
+            sort_by: :dev_activity,
+            map_as_input_object: true
+          },
+          context.from,
+          context.to
+        )
+        |> get_in(["data", "githubActivityStats"])
+
+      # p3 has no data, so it is last with its zero values
+      assert Enum.map(stats, & &1["slug"]) == [context.p2.slug, context.p1.slug, context.p3.slug]
+      assert Enum.map(stats, & &1["devActivity"]) == [2000, 1000, 0]
+    end)
+  end
+
   test "get github activity stats for the top N projects", context do
     hidden_project =
       insert(:random_project, %{
@@ -142,7 +169,7 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
       [context.p1.slug, 1500, 2500, 20, 30, 100, 200, 3]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/5, {:ok, ranked_slugs})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/4, {:ok, ranked_slugs})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: stats_rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
@@ -166,11 +193,10 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
 
   test "top N digs deeper into the ranking when the top slugs cannot appear in the result",
        context do
-    # More slugs without a project than the first overfetched batch
-    # (overshoot factor * topN) can absorb. The slugs with github
-    # organizations must still fill all topN spots
+    # More slugs without a project than a single batch of the ranking can
+    # absorb. The slugs with github organizations must still fill all topN spots
     ranked_slugs =
-      Enum.map(1..11, fn i -> "slug-without-a-project-#{i}" end) ++
+      Enum.map(1..250, fn i -> "slug-without-a-project-#{i}" end) ++
         [context.p2.slug, context.p1.slug]
 
     stats_rows = [
@@ -178,7 +204,7 @@ defmodule SanbaseWeb.Graphql.GithubActivityStatsApiTest do
       [context.p1.slug, 1500, 2500, 20, 30, 100, 200, 3]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/5, {:ok, ranked_slugs})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/4, {:ok, ranked_slugs})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: stats_rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =

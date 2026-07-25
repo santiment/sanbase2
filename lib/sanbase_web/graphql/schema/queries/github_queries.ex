@@ -10,17 +10,18 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
 
   object :github_queries do
     @desc ~s"""
-    Aggregated github activity stats for a list of projects in a given
-    time period. Returns one entry per project with the total dev/github
-    activity and contributors count, as well as the same numbers computed
-    only for bot accounts.
+    Aggregated github activity stats for a list of projects in a given time
+    period. Returns one entry per project with the total dev/github activity
+    and contributors count, as well as the same numbers computed only for bot
+    accounts - actors whose name ends with `[bot]`. The bot numbers are a
+    subset of the totals, they are not subtracted from them.
 
-    The projects are selected either explicitly, by providing a list of
-    slugs, or dynamically, by providing topN and sortBy, which returns the
-    top N projects ranked by the given stat in the time period.
+    The projects are selected either explicitly, by providing a list of slugs,
+    or dynamically, by providing topN and sortBy, which returns the top N
+    projects ranked by the given stat in the time period.
 
-    When slugs are provided, projects without github organizations or
-    without any activity in the time period are returned with zero values.
+    When slugs are provided, projects without github organizations or without
+    any activity in the time period are returned with zero values.
     """
     field :github_activity_stats, list_of(:github_activity_stats) do
       meta(access: :free)

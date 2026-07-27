@@ -246,6 +246,27 @@ defmodule Sanbase.Monitoring.MemoryStat do
   defp downsample(points, _max_points), do: points
 
   @doc """
+  Every pod present in the retention window, with its oldest and newest
+  snapshot times and sample count, newest-reporting first. Powers the
+  "known pods" history list shown when pods are not live.
+  """
+  def known_pods(limit \\ 100) do
+    from(s in __MODULE__,
+      group_by: [s.pod_name, s.container_type],
+      select: %{
+        pod_name: s.pod_name,
+        container_type: s.container_type,
+        first_seen: min(s.inserted_at),
+        last_seen: max(s.inserted_at),
+        samples: count(s.id)
+      },
+      order_by: [desc: max(s.inserted_at)],
+      limit: ^limit
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Most recent sample of one pod regardless of how long ago it reported —
   used to show history of pods that stopped reporting (replaced by a newer
   deployment) and whose rows are not yet pruned.

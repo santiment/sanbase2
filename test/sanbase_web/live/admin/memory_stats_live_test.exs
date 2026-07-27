@@ -109,6 +109,26 @@ defmodule SanbaseWeb.Admin.MemoryStatsLiveTest do
     refute html =~ "latest sample"
   end
 
+  test "known pods table lists non-live pods with oldest/newest snapshots", %{conn: conn} do
+    insert_stat(%{pod_name: "sanbase-live-pod"})
+    old = insert_stat(%{pod_name: "sanbase-old-deploy"})
+
+    stale_time = NaiveDateTime.utc_now() |> NaiveDateTime.add(-3600, :second)
+
+    Sanbase.Repo.update_all(
+      from(s in MemoryStat, where: s.id == ^old.id),
+      set: [inserted_at: stale_time]
+    )
+
+    {:ok, _view, html} = live(conn, "/admin/memory_stats")
+
+    assert html =~ "Known pods, not reporting now"
+    assert html =~ "sanbase-old-deploy"
+    # live pod is not repeated in the known-pods table section
+    refute html =~ ~r/Known pods.*sanbase-live-pod.*OS RSS · all live pods/s
+    assert html =~ "Oldest snapshot (UTC)"
+  end
+
   test "a stale pod shows the warning AND its recorded history", %{conn: conn} do
     stat = insert_stat(%{pod_name: "sanbase-old-deploy"})
 

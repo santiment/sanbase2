@@ -62,6 +62,11 @@ defmodule Sanbase.Monitoring.MemoryStat do
     timestamps()
   end
 
+  @doc """
+  Changeset for one sample. Only the identity and VM-wide fields are required:
+  RSS needs /proc (absent on macOS dev) and the allocator totals depend on the
+  allocator format, so both may legitimately be nil.
+  """
   def changeset(%__MODULE__{} = stat, attrs) do
     stat
     |> cast(attrs, @cast_fields)
@@ -80,6 +85,9 @@ defmodule Sanbase.Monitoring.MemoryStat do
     ])
   end
 
+  @doc """
+  Insert one sample. Returns `{:ok, stat}` or `{:error, changeset}`.
+  """
   def store(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
@@ -158,6 +166,10 @@ defmodule Sanbase.Monitoring.MemoryStat do
     :process_count
   ]
 
+  @doc """
+  Fields `multi_pod_metric_series/4` accepts. Interpolated into a query
+  fragment, so the allowed list is fixed here rather than taken from callers.
+  """
   def chart_metrics(), do: @chart_metrics
 
   @doc """

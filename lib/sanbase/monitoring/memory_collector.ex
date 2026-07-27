@@ -125,7 +125,9 @@ defmodule Sanbase.Monitoring.MemoryCollector do
 
     case result do
       {:ok, stat} ->
-        Logger.info(
+        # debug, not info: every pod would otherwise log a line a minute
+        # forever, and the row it just wrote is the record that matters
+        Logger.debug(
           "[MemoryCollector] sample pod=#{state.pod_name} rss=#{mb(snapshot.rss_bytes)} " <>
             "total=#{mb(snapshot.vm_total_bytes)} processes=#{mb(snapshot.vm_processes_bytes)} " <>
             "binary=#{mb(snapshot.vm_binary_bytes)} ets=#{mb(snapshot.vm_ets_bytes)} " <>

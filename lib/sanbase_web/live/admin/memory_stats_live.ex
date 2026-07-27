@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
   import SanbaseWeb.GenericAdminHTML, only: [stat_card: 1]
   import SanbaseWeb.Admin.TimeseriesChart, only: [timeseries_chart: 1]
 
+  alias Sanbase.Monitoring.MemoryCollector
   alias Sanbase.Monitoring.MemoryStat
   alias SanbaseWeb.Admin.TimeseriesChart
 
@@ -103,7 +104,8 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
        chart_metric_options: @chart_metric_options,
        chart_window_options: @chart_window_options,
        pod_chart_mode: "buckets",
-       pod_chart_modes: @pod_chart_modes
+       pod_chart_modes: @pod_chart_modes,
+       collector_enabled: MemoryCollector.enabled?()
      )}
   end
 
@@ -419,7 +421,15 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
         </p>
       </div>
 
-      <section>
+      <div :if={!@collector_enabled} id="collector-disabled-warning" class="alert alert-warning">
+        <span>
+          Memory collection is off on this pod — no new samples are being recorded. Set
+          <code class="font-mono font-semibold">MEMORY_COLLECTOR_ENABLED=true</code>
+          and restart to enable it. Anything below is history kept from before it was turned off.
+        </span>
+      </div>
+
+      <section id="live-pods">
         <.section_heading>
           Live pods (reported in the last {@live_window_minutes} min)
         </.section_heading>
@@ -444,6 +454,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
             <tbody>
               <tr
                 :for={pod <- @pods}
+                id={"live-pod-#{pod.pod_name}"}
                 class={[
                   "hover:bg-base-200",
                   @selected_pod == pod.pod_name && "bg-base-200 font-medium"
@@ -466,7 +477,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
                 <td class="text-right tabular-nums">{pod.sample_duration_ms}</td>
                 <td class="text-right tabular-nums">{age(pod.inserted_at)}</td>
               </tr>
-              <tr :if={@pods == []}>
+              <tr :if={@pods == []} id="no-pods">
                 <td colspan="12" class="text-center text-base-content/50">
                   No pods reported recently. Is Sanbase.Monitoring.MemoryCollector enabled?
                 </td>
@@ -476,7 +487,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
         </div>
       </section>
 
-      <section :if={@known_pods != []}>
+      <section :if={@known_pods != []} id="known-pods">
         <.section_heading>
           Known pods, not reporting now (history kept until pruned)
         </.section_heading>
@@ -493,7 +504,11 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
               </tr>
             </thead>
             <tbody>
-              <tr :for={pod <- @known_pods} class="hover:bg-base-200">
+              <tr
+                :for={pod <- @known_pods}
+                id={"known-pod-#{pod.pod_name}"}
+                class="hover:bg-base-200"
+              >
                 <td>
                   <.link patch={~p"/admin/memory_stats?pod=#{pod.pod_name}"} class="link">
                     {pod.pod_name}
@@ -510,9 +525,12 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
         </div>
       </section>
 
-      <section :if={@pods != []}>
+      <section :if={@pods != []} id="overview-chart-section">
         <div class="flex flex-col items-start mb-2 gap-2">
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60">
+          <h2
+            id="overview-chart-title"
+            class="text-sm font-semibold uppercase tracking-wide text-base-content/60"
+          >
             {chart_metrics_label(@chart_metrics_effective)} · all live pods · last {chart_window_label(
               @chart_hours
             )}
@@ -546,19 +564,23 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
         </p>
       </section>
 
-      <div :if={@selected_pod && is_nil(@selected)} class="alert alert-warning">
+      <div
+        :if={@selected_pod && is_nil(@selected)}
+        id="no-samples-warning"
+        class="alert alert-warning"
+      >
         No samples recorded for pod {@selected_pod}.
       </div>
 
-      <div :if={@selected && @selected_stale} class="alert alert-warning">
+      <div :if={@selected && @selected_stale} id="stale-pod-warning" class="alert alert-warning">
         Pod {@selected.pod_name} has not reported in the last {@live_window_minutes} minutes —
         it was likely replaced by a newer deployment or stopped. Last sample {age(
           @selected.inserted_at
         )} ago; showing its recorded history below.
       </div>
 
-      <%= if @selected do %>
-        <section>
+      <div :if={@selected} class="space-y-4">
+        <section id="latest-sample">
           <.section_heading>{@selected.pod_name} · latest sample</.section_heading>
           <div class="grid gap-2 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
             <.stat_card label="OS RSS" value={fmt_bytes(@selected.rss_bytes)} />
@@ -575,9 +597,12 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
           </div>
         </section>
 
-        <section>
+        <section id="pod-chart-section">
           <div class="flex flex-col items-start mb-2 gap-2">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60">
+            <h2
+              id="pod-chart-title"
+              class="text-sm font-semibold uppercase tracking-wide text-base-content/60"
+            >
               {@selected.pod_name} · {pod_chart_mode_label(@pod_chart_mode)} · last {chart_window_label(
                 @chart_hours
               )}
@@ -608,7 +633,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
           </p>
         </section>
 
-        <section :if={@window_stats}>
+        <section :if={@window_stats} id="window-stats">
           <.section_heading>
             Window stats, current incarnation
             ({fmt_time(@window_stats.from)} → {fmt_time(@window_stats.to)} UTC)
@@ -650,7 +675,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
         </section>
 
         <div :if={details(@details_stat) != %{}} class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <section :if={details(@details_stat)["top_ets"]}>
+          <section :if={details(@details_stat)["top_ets"]} id="top-ets">
             <.section_heading>
               Top ETS tables ({fmt_time(@details_stat.inserted_at)} UTC)
             </.section_heading>
@@ -676,7 +701,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
             </div>
           </section>
 
-          <section :if={details(@details_stat)["process_groups"]}>
+          <section :if={details(@details_stat)["process_groups"]} id="process-groups">
             <.section_heading>
               Top process groups ({fmt_time(@details_stat.inserted_at)} UTC)
             </.section_heading>
@@ -704,7 +729,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
           </section>
         </div>
 
-        <section>
+        <section id="recent-samples">
           <.section_heading>
             Recent samples (last {min(length(@series), @samples_shown)} of {length(@series)} in {@series_hours}h,
             newest first)
@@ -745,7 +770,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
             </table>
           </div>
         </section>
-      <% end %>
+      </div>
     </div>
     """
   end

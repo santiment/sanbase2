@@ -225,7 +225,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
         ~s/#{key.(k)}: [#{atom_list_str}]/
 
       {k, v} ->
-        ~s/#{key.(k)}: #{inspect(v)}/
+        # The inspect limit must be disabled, otherwise long lists are rendered
+        # with a trailing `...`, which produces an invalid GraphQL document
+        ~s/#{key.(k)}: #{inspect(v, limit: :infinity, printable_limit: :infinity)}/
     end)
     |> Enum.join(", ")
   end

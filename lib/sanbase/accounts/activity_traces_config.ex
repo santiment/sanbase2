@@ -4,44 +4,22 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   pipeline.
 
   Each flag guards exactly one place where an NDA-protected user's
-  activity is hidden. To disable masking on one surface without touching
-  the call site, either flip the flag in `@config` or override it at
-  runtime. Both the application env and the reload are node-local, so on
-  a multi-node deployment repeat this on every node that matters:
+  activity is hidden. Defaults live in `@config`; a flag can be
+  overridden at runtime (node-local):
 
-      # Disable one surface (for every protected request on this node):
       Application.put_env(:sanbase, Sanbase.Accounts.ActivityTracesConfig,
         hide_logger: false
       )
-
-      # Apply it immediately (reads are cached, see below):
       Sanbase.Accounts.ActivityTracesConfig.reload()
 
-      # Restore the compile-time defaults when done:
-      Application.delete_env(:sanbase, Sanbase.Accounts.ActivityTracesConfig)
-      Sanbase.Accounts.ActivityTracesConfig.reload()
+  The resolved map is cached via `Sanbase.Cache.PersistentTermTtl` for
+  60 minutes; `reload/0` applies env changes immediately. Invalid
+  overrides (unknown flag or non-boolean value) raise on (re)load.
 
-  Override values must be booleans and keys must be known flags;
-  anything else raises when the override is (re)loaded.
-
-  ## Caching
-
-  `enabled?/1` does not read the application env directly. The resolved
-  flag map (defaults merged with the override) is cached via
-  `Sanbase.Cache.PersistentTermTtl`, so the hot path is a copy-free,
-  lock-free read. The cache entry expires after 60 minutes and is
-  rebuilt lazily on the next read; call `reload/0` to rebuild it
-  immediately.
-
-  Masking at a surface applies only when BOTH conditions hold:
-
-    1. the user is protected
-       (`Sanbase.RequestContext.activity_traces_hidden?/1`), and
-    2. the surface's flag here is enabled.
-
-  Call sites that have a `RequestContext` should use `hidden?/2`, which
-  combines both checks. The logger filter and the Intercom batch export
-  establish "is protected" by other means and only need `enabled?/1`.
+  Masking applies only when the user is protected
+  (`Sanbase.RequestContext.activity_traces_hidden?/1`) AND the surface's
+  flag is enabled. Use `hidden?/2` where a `RequestContext` is
+  available, `enabled?/1` where "is protected" is established otherwise.
   """
 
   alias Sanbase.Cache.PersistentTermTtl
@@ -58,9 +36,7 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
     hide_chat_logs: true,
     # Kafka api_call_data: mask query/selector/token/ip/sizes in the export.
     hide_kafka_api_call_data: true,
-    # Skip all Intercom-bound exports: the CRM contact/stats batch
-    # (sanbase_user_intercom_attributes) and per-request trackEvents
-    # writes (user_events Kafka topic + Postgres).
+    # Skip Intercom-bound exports: attributes batch + trackEvents writes.
     hide_intercom: true,
     # MCP: mask tool_name/params/client/session in tool_invocations.
     hide_mcp_tool_invocations: true,
@@ -82,8 +58,8 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
           | :hide_interpolated_sql
 
   @doc """
-  The compile-time default flag map. Runtime overrides are NOT applied
-  here — use `enabled?/1` for the effective value.
+  The compile-time default flag map, without runtime overrides — use
+  `enabled?/1` for the effective value.
 
   ## Examples
 
@@ -94,15 +70,13 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   def config(), do: @config
 
   @doc """
-  Whether masking is enabled for `flag`, honoring runtime overrides from
-  the application env (through the cache). Raises for unknown flags, and
-  raises `ArgumentError` when a rebuild finds an invalid override
-  (unknown key or non-boolean value).
+  Whether masking is enabled for `flag`, honoring runtime overrides.
+  Raises on unknown flags, and `ArgumentError` when a cache rebuild
+  finds an invalid override.
 
-  The cache indirection is also what keeps the type checker from proving
-  the result: with every `@config` value being `true`, a pure
-  compile-time lookup makes every call site's conditional provably
-  always-true and each one emits a warning.
+  Reading through the cache (not the `@config` literals) also keeps the
+  type checker from proving call-site conditionals always-true and
+  warning about them.
 
   ## Examples
 
@@ -117,11 +91,9 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   @doc """
   True when `ctx` identifies a protected user AND masking for `flag` is
   enabled. The single check every `RequestContext`-aware masking site
-  should use. Non-struct / `nil` `ctx` is treated as not protected.
-
-  The context check runs first: it is a bare struct-field read, so the
-  majority (non-protected) traffic short-circuits without touching the
-  config cache.
+  should use. Non-struct / `nil` `ctx` is treated as not protected. The
+  context is checked first so non-protected traffic skips the config
+  cache.
 
   ## Examples
 
@@ -134,13 +106,10 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   end
 
   @doc """
-  Rebuild the resolved flag map from the compile-time defaults and the
-  application env override, store it in the cache, and reset its TTL.
-
-  Call this after `Application.put_env/3` / `Application.delete_env/2`
-  to apply the change immediately instead of waiting for the TTL to
-  expire. Node-local, like the env itself. Raises `ArgumentError` when
-  the override contains an unknown flag or a non-boolean value.
+  Rebuild the cached flag map from the defaults plus the application
+  env override, resetting the TTL. Call after `Application.put_env/3` /
+  `delete_env/2` to apply the change immediately. Node-local. Raises
+  `ArgumentError` on an invalid override.
   """
   @spec reload() :: :ok
   def reload() do
@@ -149,8 +118,8 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   end
 
   @doc """
-  Back-dates the cached entry past the TTL so the next read rebuilds it
-  from the application env. Used by tests; also handy for ops.
+  Expire the cached entry so the next read rebuilds it. For tests and
+  ops.
   """
   @spec expire_cache!() :: :ok
   def expire_cache!(), do: PersistentTermTtl.expire(@pt_key)

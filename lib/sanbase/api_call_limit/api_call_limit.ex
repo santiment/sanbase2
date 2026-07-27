@@ -507,21 +507,31 @@ defmodule Sanbase.ApiCallLimit do
     }
   end
 
-  defp plan_has_limits?(plan) do
+  # Public (but undocumented) so that the plan -> limits resolution can be
+  # exercised directly by the access-matrix characterization fixture and the
+  # plan-type dispatch smoke matrix. Not part of the public API.
+  @doc false
+  def plan_has_limits?(plan) do
     case plan do
       plan when plan in @plans_without_limits ->
         false
 
-      "sanapi_custom_" <> _ ->
-        [product_code, plan_name] = plan |> String.upcase() |> String.split("_", parts: 2)
-
-        case Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name, product_code) do
-          %{"has_limits" => false} -> false
-          _ -> true
-        end
-
       _ ->
-        true
+        case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
+          :bundle ->
+            Sanbase.Billing.Plan.Bundle.not_implemented!(:plan_has_limits?, plan)
+
+          :custom ->
+            [product_code, plan_name] = plan |> String.upcase() |> String.split("_", parts: 2)
+
+            case Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name, product_code) do
+              %{"has_limits" => false} -> false
+              _ -> true
+            end
+
+          :standard ->
+            true
+        end
     end
   end
 
@@ -537,9 +547,13 @@ defmodule Sanbase.ApiCallLimit do
            Sanbase.Utils.IP.localhost?(remote_ip))
   end
 
-  defp plan_to_api_call_limits(plan) do
-    case plan do
-      "sanapi_custom_" <> _ ->
+  @doc false
+  def plan_to_api_call_limits(plan) do
+    case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
+      :bundle ->
+        Sanbase.Billing.Plan.Bundle.not_implemented!(:plan_to_api_call_limits, plan)
+
+      :custom ->
         "sanapi_" <> plan_name = plan
         plan_name = String.upcase(plan_name)
 
@@ -548,7 +562,7 @@ defmodule Sanbase.ApiCallLimit do
 
         %{month: month, hour: hour, minute: minute}
 
-      _ ->
+      :standard ->
         %{
           month: @api_call_limits_per_month[plan],
           hour: @api_call_limits_per_hour[plan],
@@ -557,9 +571,13 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp plan_to_response_size_limits(plan) do
-    case plan do
-      "sanapi_custom_" <> _ ->
+  @doc false
+  def plan_to_response_size_limits(plan) do
+    case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
+      :bundle ->
+        Sanbase.Billing.Plan.Bundle.not_implemented!(:plan_to_response_size_limits, plan)
+
+      :custom ->
         "sanapi_" <> plan_name = plan
         plan_name = String.upcase(plan_name)
 
@@ -569,7 +587,7 @@ defmodule Sanbase.ApiCallLimit do
         # Not using hour/minute limits for now
         %{month: month}
 
-      _ ->
+      :standard ->
         %{
           month: @response_size_limits_mb_per_month[plan]
         }

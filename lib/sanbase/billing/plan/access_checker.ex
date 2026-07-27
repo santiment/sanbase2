@@ -7,7 +7,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @type product_code :: String.t()
   @type plan_name :: String.t()
 
-  alias Sanbase.Billing.Plan.{CustomAccessChecker, StandardAccessChecker}
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Plan.{BundleAccessChecker, CustomAccessChecker, StandardAccessChecker}
 
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
@@ -24,11 +25,14 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   """
   @spec plan_has_access?(query_or_argument, requested_product, plan_name) :: boolean()
   def plan_has_access?(query_or_argument, requested_product, plan_name) do
-    case plan_name do
-      "CUSTOM_" <> _ ->
+    case Plan.type(plan_name) do
+      :bundle ->
+        BundleAccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name)
+
+      :custom ->
         CustomAccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name)
 
-      _ ->
+      :standard ->
         StandardAccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name)
     end
   end
@@ -46,15 +50,22 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def get_available_metrics_for_plan(plan_name, product_code, restriction_type \\ :all)
 
   def get_available_metrics_for_plan(plan_name, product_code, restriction_type) do
-    case plan_name do
-      "CUSTOM_" <> _ ->
+    case Plan.type(plan_name) do
+      :bundle ->
+        BundleAccessChecker.get_available_metrics_for_plan(
+          plan_name,
+          product_code,
+          restriction_type
+        )
+
+      :custom ->
         CustomAccessChecker.get_available_metrics_for_plan(
           plan_name,
           product_code,
           restriction_type
         )
 
-      _ ->
+      :standard ->
         StandardAccessChecker.get_available_metrics_for_plan(
           plan_name,
           product_code,
@@ -88,8 +99,16 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
         subscription_product,
         plan_name
       ) do
-    case plan_name do
-      "CUSTOM_" <> _ ->
+    case Plan.type(plan_name) do
+      :bundle ->
+        BundleAccessChecker.historical_data_in_days(
+          query_or_argument,
+          requested_product,
+          subscription_product,
+          plan_name
+        )
+
+      :custom ->
         CustomAccessChecker.historical_data_in_days(
           query_or_argument,
           requested_product,
@@ -97,7 +116,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           plan_name
         )
 
-      _ ->
+      :standard ->
         StandardAccessChecker.historical_data_in_days(
           query_or_argument,
           requested_product,
@@ -124,8 +143,16 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
         subscription_product,
         plan_name
       ) do
-    case plan_name do
-      "CUSTOM_" <> _ ->
+    case Plan.type(plan_name) do
+      :bundle ->
+        BundleAccessChecker.realtime_data_cut_off_in_days(
+          query_or_argument,
+          requested_product,
+          subscription_product,
+          plan_name
+        )
+
+      :custom ->
         CustomAccessChecker.realtime_data_cut_off_in_days(
           query_or_argument,
           requested_product,
@@ -133,7 +160,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           plan_name
         )
 
-      _ ->
+      :standard ->
         StandardAccessChecker.realtime_data_cut_off_in_days(
           query_or_argument,
           requested_product,

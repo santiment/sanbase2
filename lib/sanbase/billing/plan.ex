@@ -140,15 +140,109 @@ defmodule Sanbase.Billing.Plan do
     "PREMIUM"
   ]
 
+  @bundle_prefix "BUNDLE"
+  @custom_prefix "CUSTOM_"
+
   def plan_name(%__MODULE__{} = plan) do
     case plan.name do
       name when name in @same_name_plans -> name
       "ESSENTIAL" -> "BASIC"
       "CUSTOM_" <> _ = name -> name
+      @bundle_prefix <> _ = name -> name
     end
   end
 
   def plan_name(_), do: "FREE"
+
+  @typedoc ~s"""
+  How a plan is dispatched in the access and quota layers.
+
+    * `:standard` - the ordinal plan ladder (FREE < BASIC < PRO < ...). Access is
+      declared per metric/query/signal via `min_plan` in the GraphQL schema and
+      compared ordinally.
+    * `:custom` - a bespoke `CUSTOM_*` plan. Access is an explicit allow-list
+      stored in the plan's embedded `Restrictions`.
+    * `:bundle` - a composable `BUNDLE*` plan. Access is decoded from the
+      subscription's items. See `docs/composable-api-plans-handover.md`.
+
+  Note that the plan named exactly `"CUSTOM"` is `:standard` - it is a rung on
+  the ladder, not a bespoke plan.
+  """
+  @type plan_type :: :standard | :custom | :bundle
+
+  @doc ~s"""
+  Classify a canonical plan name (the output of `plan_name/1`) for dispatch.
+
+  This is the single seam for plan-type dispatch. Every access or quota function
+  that needs to behave differently per plan type should `case` on this rather
+  than pattern-matching the name itself, so that:
+
+    * `rg "Plan.type"` enumerates every plan-type-aware site, and
+    * dispatch happens on an atom from a closed type, so a missing clause can be
+      caught by Dialyzer instead of raising `CaseClauseError` at runtime.
+
+  ## Examples
+
+      iex> Sanbase.Billing.Plan.type("PRO")
+      :standard
+
+      iex> Sanbase.Billing.Plan.type("CUSTOM")
+      :standard
+
+      iex> Sanbase.Billing.Plan.type("CUSTOM_ACME")
+      :custom
+
+      iex> Sanbase.Billing.Plan.type("BUNDLE_API")
+      :bundle
+
+  ## Non-binary input
+
+  This function is total: anything that is not a recognised prefix is
+  `:standard`, including non-binary terms. That is deliberate rather than
+  lenient-by-accident - it preserves the behavior of the `case plan_name do
+  "CUSTOM_" <> _ -> ...; _ -> ... end` blocks this replaced, which accepted any
+  term and fell through to the standard ladder.
+
+  It does mean a caller that passes the wrong argument gets `:standard` instead
+  of a crash. There is at least one such caller today:
+  `SanbaseWeb.Graphql.TestHelpers.fully_restricted_metrics_for_plan/2` passes
+  `plan_has_access?/3`'s arguments in the wrong order, so the plan name it
+  supplies is actually a `{:metric, name}` tuple. Adding a guard here would turn
+  that into a `FunctionClauseError`, which is a behavior change, so it is left
+  as a separate fix.
+  """
+  @spec type(term()) :: plan_type()
+  def type(@bundle_prefix <> _), do: :bundle
+  def type(@custom_prefix <> _), do: :custom
+  def type(_plan_name), do: :standard
+
+  @doc ~s"""
+  Classify an `api_call_limits.api_calls_limit_plan` value.
+
+  Those strings are product-prefixed and downcased (`"sanapi_pro"`,
+  `"sanapi_custom_acme"`) rather than canonical plan names, so they need
+  unwrapping before `type/1` applies.
+
+  `:custom` is only ever returned for the SanAPI prefix. `CUSTOM_*` plans can
+  only exist on the API product (see `create_custom_api_plan/1`), and the quota
+  code has always keyed on `"sanapi_custom_"` specifically - classifying a
+  hypothetical `"sanbase_custom_*"` as `:custom` would change existing behavior.
+  `:bundle` is recognised under both prefixes, since it is new and has no
+  backward-compatibility constraint.
+
+  Like `type/1`, this is total - see the note there on why.
+  """
+  @spec type_of_api_call_limit_plan(term()) :: plan_type()
+  def type_of_api_call_limit_plan("sanapi_" <> rest), do: type(String.upcase(rest))
+
+  def type_of_api_call_limit_plan("sanbase_" <> rest) do
+    case type(String.upcase(rest)) do
+      :bundle -> :bundle
+      _ -> :standard
+    end
+  end
+
+  def type_of_api_call_limit_plan(_plan), do: :standard
 
   def plan_full_name(plan) do
     plan = plan |> Repo.preload(:product)

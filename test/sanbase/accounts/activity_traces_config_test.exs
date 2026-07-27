@@ -27,11 +27,10 @@ defmodule Sanbase.Accounts.ActivityTracesConfigTest do
   end
 
   test "a runtime override takes effect after reload/0" do
-    # Warm the cache with the defaults so the override is observably stale.
+    # Warm the cache so the override is stale until reload.
     Config.reload()
     Application.put_env(:sanbase, Config, hide_logger: false)
 
-    # The cached value is served until the TTL expires or reload/0 runs.
     assert Config.enabled?(:hide_logger)
 
     Config.reload()

@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.CreateNodeMemoryStats do
   use Ecto.Migration
 
-  def change do
+  def change() do
     create table(:node_memory_stats) do
       add(:pod_name, :string, null: false)
       add(:container_type, :string, null: false)

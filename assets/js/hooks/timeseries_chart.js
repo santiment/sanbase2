@@ -130,7 +130,11 @@ export const TimeseriesChart = {
       this.chart = null
     }
 
-    const totalPoints = this.data.series.reduce((n, s) => n + s.points.length, 0)
+    // a point with a null value is a reporting gap, not a data point
+    const totalPoints = this.data.series.reduce(
+      (n, s) => n + s.points.filter(([, v]) => v !== null).length,
+      0
+    )
     if (totalPoints === 0) {
       this.chartEl.style.display = "none"
       this.emptyEl.classList.remove("hidden")
@@ -179,8 +183,13 @@ export const TimeseriesChart = {
         lastValueVisible: false,
         crosshairMarkerRadius: 4,
       })
-      line.setData(s.points.map(([t, v]) => ({ time: t, value: v })))
-      const last = s.points.length > 0 ? s.points[s.points.length - 1][1] : null
+      // {time} with no value is a whitespace point: it breaks the line at a
+      // reporting gap instead of drawing straight through it
+      line.setData(
+        s.points.map(([t, v]) => (v === null ? { time: t } : { time: t, value: v }))
+      )
+      const lastPoint = s.points.filter(([, v]) => v !== null).pop()
+      const last = lastPoint ? lastPoint[1] : null
       return { name: s.name, color: color, line: line, lastValue: last }
     })
 

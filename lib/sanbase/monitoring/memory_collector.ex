@@ -19,11 +19,11 @@ defmodule Sanbase.Monitoring.MemoryCollector do
 
   use GenServer
 
-  require Logger
-
   alias Sanbase.Monitoring.MemorySnapshot
   alias Sanbase.Monitoring.MemoryStat
   alias Sanbase.Utils.Config
+
+  require Logger
 
   @default_interval :timer.minutes(1)
   @default_retention_days 90
@@ -35,10 +35,26 @@ defmodule Sanbase.Monitoring.MemoryCollector do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end
 
+  @doc """
+  Whether this pod should collect samples. Enabled unless
+  `MEMORY_COLLECTOR_ENABLED` says otherwise; an unrecognized value keeps
+  collection on rather than silently turning off fleet-wide monitoring.
+  """
   def enabled?() do
-    Config.module_get(__MODULE__, :enabled, false)
-    |> Config.parse_boolean_value()
-    |> Kernel.||(false)
+    value = Config.module_get(__MODULE__, :enabled, true)
+
+    case Config.parse_boolean_value(value) do
+      nil ->
+        Logger.warning(
+          "[MemoryCollector] unrecognized MEMORY_COLLECTOR_ENABLED value #{inspect(value)}, " <>
+            "expected one of true/false/1/0 — staying enabled"
+        )
+
+        true
+
+      boolean ->
+        boolean
+    end
   end
 
   @impl GenServer
@@ -60,16 +76,21 @@ defmodule Sanbase.Monitoring.MemoryCollector do
   def handle_info(:sample, state) do
     state = %{state | tick: state.tick + 1}
 
-    include_process_groups = rem(state.tick, @process_groups_every_nth) == 1
-    in_task(fn -> sample(state, include_process_groups) end)
+    in_task(fn -> sample(state, collect_process_groups?(state.tick)) end)
 
-    if rem(state.tick, @prune_every_nth) == 0 do
+    if prune_due?(state.tick) do
       in_task(fn -> prune(state) end)
     end
 
     schedule(state.interval)
     {:noreply, state}
   end
+
+  @doc false
+  def collect_process_groups?(tick), do: rem(tick, @process_groups_every_nth) == 1
+
+  @doc false
+  def prune_due?(tick), do: rem(tick, @prune_every_nth) == 0
 
   # Public only for tests — the collector itself always calls this in a Task.
   @doc false
@@ -138,9 +159,32 @@ defmodule Sanbase.Monitoring.MemoryCollector do
     :ok
   end
 
+  # A bad value must not leave `retention_days` as something `MemoryStat.prune/1`
+  # cannot match on — the FunctionClauseError would be swallowed by in_task/1
+  # and pruning would stop for the lifetime of the pod.
   defp retention_days_from_config() do
     Config.module_get(__MODULE__, :retention_days, @default_retention_days)
-    |> Sanbase.Math.to_integer(@default_retention_days)
+    |> parse_retention_days()
+  end
+
+  defp parse_retention_days(days) when is_integer(days) and days > 0, do: days
+
+  defp parse_retention_days(value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {days, ""} when days > 0 -> days
+      _ -> invalid_retention_days(value)
+    end
+  end
+
+  defp parse_retention_days(value), do: invalid_retention_days(value)
+
+  defp invalid_retention_days(value) do
+    Logger.warning(
+      "[MemoryCollector] invalid MEMORY_COLLECTOR_RETENTION_DAYS value #{inspect(value)}, " <>
+        "expected a positive integer — falling back to #{@default_retention_days} days"
+    )
+
+    @default_retention_days
   end
 
   @doc false

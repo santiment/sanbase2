@@ -36,6 +36,8 @@ defmodule Sanbase.Monitoring.MemoryStat do
     :sample_duration_ms
   ]
 
+  @cast_fields [:details | @scalar_fields]
+
   schema "node_memory_stats" do
     field(:pod_name, :string)
     field(:container_type, :string)
@@ -62,7 +64,7 @@ defmodule Sanbase.Monitoring.MemoryStat do
 
   def changeset(%__MODULE__{} = stat, attrs) do
     stat
-    |> cast(attrs, @scalar_fields ++ [:details])
+    |> cast(attrs, @cast_fields)
     |> validate_required([
       :pod_name,
       :container_type,
@@ -84,14 +86,35 @@ defmodule Sanbase.Monitoring.MemoryStat do
     |> Repo.insert()
   end
 
+  # Deleting in batches keeps one statement from locking a large row range:
+  # at steady state a run removes ~1h of rows, but lowering the retention
+  # window makes the next run delete everything between the old and new one.
+  @prune_batch_size 10_000
+
   @doc """
-  Delete samples older than `days`. Safe to run concurrently from many pods.
+  Delete samples older than `days`, in batches. Returns `{deleted_count, nil}`.
+  Safe to run concurrently from many pods.
   """
   def prune(days) when is_integer(days) and days > 0 do
     cutoff = NaiveDateTime.utc_now() |> NaiveDateTime.add(-days * 86_400, :second)
 
-    from(s in __MODULE__, where: s.inserted_at < ^cutoff)
-    |> Repo.delete_all()
+    {prune_batches(cutoff, 0), nil}
+  end
+
+  defp prune_batches(cutoff, deleted_so_far) do
+    ids =
+      from(s in __MODULE__,
+        where: s.inserted_at < ^cutoff,
+        select: s.id,
+        limit: @prune_batch_size
+      )
+
+    {deleted, _} = from(s in __MODULE__, where: s.id in subquery(ids)) |> Repo.delete_all()
+
+    case deleted do
+      @prune_batch_size -> prune_batches(cutoff, deleted_so_far + deleted)
+      _ -> deleted_so_far + deleted
+    end
   end
 
   @doc """
@@ -140,118 +163,130 @@ defmodule Sanbase.Monitoring.MemoryStat do
   @doc """
   One metric across many pods over the last `hours`, for charting:
   `[%{name: pod_name, points: [[unix_seconds, value], ...]}]`, points oldest
-  first, nil values dropped. Series longer than `max_points` are downsampled
-  by taking every Nth point.
+  first. A point with a nil value is a real gap in reporting and is kept as
+  one, so the chart breaks the line instead of drawing through the outage.
+
+  Aggregated into time buckets by Postgres rather than fetched raw: over a
+  7d window that is ~1500 rows per pod instead of ~10k. Each bucket keeps its
+  peak, because the minute-long spikes are the point of the chart.
   """
   def multi_pod_metric_series(pod_names, metric, hours, max_points \\ 1500)
       when metric in @chart_metrics do
     cutoff = NaiveDateTime.utc_now() |> NaiveDateTime.add(-hours * 3600, :second)
+    seconds = bucket_seconds(hours, max_points)
 
     from(s in __MODULE__,
       where: s.pod_name in ^pod_names and s.inserted_at > ^cutoff,
-      order_by: [asc: s.inserted_at],
-      select: {s.pod_name, s.inserted_at, field(s, ^metric)}
+      group_by: [s.pod_name, selected_as(:bucket)],
+      order_by: [asc: s.pod_name, asc: selected_as(:bucket)],
+      select: {
+        s.pod_name,
+        selected_as(
+          fragment(
+            "(floor(extract(epoch from ?) / ?) * ?)::bigint",
+            s.inserted_at,
+            ^seconds,
+            ^seconds
+          ),
+          :bucket
+        ),
+        max(field(s, ^metric))
+      }
     )
     |> Repo.all()
-    |> Enum.group_by(fn {pod, _t, _v} -> pod end)
+    |> Enum.group_by(fn {pod, _bucket, _v} -> pod end)
     |> Enum.sort_by(fn {pod, _rows} -> pod end)
     |> Enum.map(fn {pod, rows} ->
-      points =
-        for {_pod, t, v} <- rows, is_integer(v), do: [to_unix(t), v]
-
-      %{name: pod, points: downsample(points, max_points)}
+      %{name: pod, points: for({_pod, bucket, v} <- rows, do: [bucket, v])}
     end)
   end
 
-  @doc """
-  The VM memory buckets of one pod over the last `hours`:
-  `[%{name: label, points: [[unix_seconds, value], ...]}]`. Answers "which
-  bucket of live data grows".
-  """
-  def pod_buckets_series(pod_name, hours, max_points \\ 1500) do
-    pod_series(pod_name, hours)
-    |> series_for_keys(
-      [
-        {"OS RSS", :rss_bytes},
-        {"VM total", :vm_total_bytes},
-        {"VM processes", :vm_processes_bytes},
-        {"VM binary", :vm_binary_bytes},
-        {"VM ETS", :vm_ets_bytes}
-      ],
-      max_points
-    )
+  # Floor at half the one-minute sampling interval so that on short windows
+  # consecutive samples always land in buckets of their own — bucketing must
+  # not cost resolution the raw data actually has.
+  @min_bucket_seconds 30
+
+  defp bucket_seconds(hours, max_points) do
+    Enum.max([div(hours * 3600, max_points), @min_bucket_seconds])
   end
 
   @doc """
-  The three memory-accounting layers of one pod (plus the RSS high-water
-  mark) over the last `hours`. The gaps name the cause of RSS growth:
-  allocated − used = carrier slack (spike ratchet / fragmentation, not a
-  leak); RSS − allocated = native/NIF memory invisible to the VM; RSS
-  converging toward a flat early high-water = past spike, not a leak.
+  Chart series built from rows already fetched with `pod_series/2`, one entry
+  per `{label, getter}` pair: `[%{name: label, points: [[unix_seconds, value],
+  ...]}]`. `getter` is either a field of the row or a function of the whole
+  row, for values derived from several fields (see `utilization/1`).
+
+  Samples that did not record a value stay in the series as nil points:
+  dropping them would make the chart draw a straight line across the gap,
+  which reads as "steady" when it actually means "no data".
   """
-  def pod_layers_series(pod_name, hours, max_points \\ 1500) do
-    pod_series(pod_name, hours)
-    |> series_for_keys(
-      [
-        {"RSS high-water", :rss_hwm_bytes},
-        {"OS RSS", :rss_bytes},
-        {"Alloc allocated (carriers)", :alloc_allocated_bytes},
-        {"Alloc used (blocks)", :alloc_used_bytes},
-        {"VM total", :vm_total_bytes}
-      ],
-      max_points
-    )
-  end
-
-  @doc """
-  Allocator utilization (used blocks / allocated carriers) of one pod as a
-  percent series. Falling utilization while RSS rises = fragmentation or
-  carrier ratchet — RSS growth without matching live-data growth.
-  """
-  def pod_alloc_util_series(pod_name, hours, max_points \\ 1500) do
-    points =
-      for row <- pod_series(pod_name, hours),
-          is_integer(row.alloc_used_bytes),
-          is_integer(row.alloc_allocated_bytes),
-          row.alloc_allocated_bytes > 0 do
-        [
-          to_unix(row.inserted_at),
-          Float.round(row.alloc_used_bytes / row.alloc_allocated_bytes * 100, 1)
-        ]
-      end
-
-    [%{name: "Allocator utilization", points: downsample(points, max_points)}]
-  end
-
-  defp series_for_keys(rows, label_keys, max_points) do
-    for {label, key} <- label_keys do
+  def labeled_series(rows, labeled_getters, max_points \\ 1500) do
+    for {label, getter} <- labeled_getters do
       points =
-        for row <- rows, v = Map.get(row, key), is_integer(v) do
-          [to_unix(row.inserted_at), v]
+        for row <- rows do
+          [to_unix(row.inserted_at), get_value(row, getter)]
         end
 
       %{name: label, points: downsample(points, max_points)}
     end
   end
 
+  defp get_value(row, getter) when is_function(getter, 1), do: getter.(row)
+  defp get_value(row, key) when is_atom(key), do: Map.get(row, key)
+
+  @doc """
+  Allocator utilization of one sample (used blocks / allocated carriers) as a
+  percent, `nil` when the allocator stats are missing. Falling utilization
+  while RSS rises = fragmentation or carrier ratchet — RSS growth without
+  matching live-data growth.
+  """
+  def utilization(%{alloc_used_bytes: used, alloc_allocated_bytes: allocated})
+      when is_integer(used) and is_integer(allocated) and allocated > 0 do
+    Float.round(used / allocated * 100, 1)
+  end
+
+  def utilization(_row), do: nil
+
   defp to_unix(%NaiveDateTime{} = ndt) do
     ndt |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
   end
 
+  # Keep the peak of each bucket instead of every Nth point: a stride drops
+  # whole samples, and the one-minute spike it happens to skip is exactly what
+  # someone opens this dashboard to find.
   defp downsample(points, max_points) when length(points) > max_points do
     step = ceil(length(points) / max_points)
-    Enum.take_every(points, step)
+
+    points
+    |> Enum.chunk_every(step)
+    |> Enum.map(&bucket_peak/1)
   end
 
   defp downsample(points, _max_points), do: points
 
+  defp bucket_peak([[time, _value] | _] = bucket) do
+    case Enum.reject(bucket, fn [_t, value] -> is_nil(value) end) do
+      [] -> [time, nil]
+      values -> Enum.max_by(values, fn [_t, value] -> value end)
+    end
+  end
+
+  @known_pods_days 7
+
   @doc """
-  Every pod present in the retention window, with its oldest and newest
+  Every pod that reported within the last `days`, with its oldest and newest
   snapshot times and sample count, newest-reporting first. Powers the
   "known pods" history list shown when pods are not live.
+
+  Bounded on purpose: this aggregates without an index-only path (the group
+  includes `container_type`), so scanning the full retention window would mean
+  a full-table aggregate on every dashboard refresh.
   """
-  def known_pods(limit \\ 100) do
+  def known_pods(limit \\ 100, days \\ @known_pods_days) do
+    cutoff = NaiveDateTime.utc_now() |> NaiveDateTime.add(-days * 86_400, :second)
+
     from(s in __MODULE__,
+      where: s.inserted_at > ^cutoff,
       group_by: [s.pod_name, s.container_type],
       select: %{
         pod_name: s.pod_name,
@@ -287,22 +322,14 @@ defmodule Sanbase.Monitoring.MemoryStat do
   def latest_details(pod_name) do
     from(s in __MODULE__,
       where: s.pod_name == ^pod_name,
-      order_by: [desc: s.inserted_at],
+      order_by: [desc: s.inserted_at, desc: s.id],
       limit: 10
     )
     |> Repo.all()
-    |> Enum.find(fn s -> match?(%{"process_groups" => [_ | _]}, s.details) end)
+    |> Enum.find(&match?(%{"process_groups" => [_ | _]}, &1.details))
     |> case do
-      nil ->
-        from(s in __MODULE__,
-          where: s.pod_name == ^pod_name,
-          order_by: [desc: s.inserted_at],
-          limit: 1
-        )
-        |> Repo.one()
-
-      stat ->
-        stat
+      nil -> latest_for_pod(pod_name)
+      stat -> stat
     end
   end
 end

@@ -545,9 +545,12 @@ defmodule Sanbase.Monitoring.MemDbg do
 
     :ets.all()
     |> Enum.flat_map(fn table ->
-      case safe_ets_info(table, :memory) do
-        mem when is_integer(mem) -> [{inspect(safe_ets_info(table, :name)), mem * word_size}]
-        _ -> []
+      case MemorySnapshot.safe_ets_info(table, :memory) do
+        mem when is_integer(mem) ->
+          [{inspect(MemorySnapshot.safe_ets_info(table, :name)), mem * word_size}]
+
+        _ ->
+          []
       end
     end)
     |> Enum.group_by(fn {name, _} -> name end, fn {_, bytes} -> bytes end)
@@ -708,12 +711,6 @@ defmodule Sanbase.Monitoring.MemDbg do
       _ ->
         line
     end
-  end
-
-  defp safe_ets_info(table, key) do
-    :ets.info(table, key)
-  rescue
-    ArgumentError -> :undefined
   end
 
   defp bin_bytes(bins) when is_list(bins),

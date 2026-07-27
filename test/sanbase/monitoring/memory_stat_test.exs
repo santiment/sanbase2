@@ -1,33 +1,33 @@
 defmodule Sanbase.Monitoring.MemoryStatTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.Monitoring.MemoryCollector
+  import Sanbase.Factory
+
   alias Sanbase.Monitoring.MemoryStat
 
   @beam_started_at ~U[2026-07-22 10:00:00Z]
 
-  defp valid_attrs(overrides \\ %{}) do
-    Map.merge(
-      %{
-        pod_name: "sanbase-web-0",
-        container_type: "web",
-        beam_started_at: @beam_started_at,
-        rss_bytes: 1_500_000_000,
-        rss_hwm_bytes: 2_500_000_000,
-        vm_total_bytes: 1_200_000_000,
-        vm_processes_bytes: 500_000_000,
-        vm_binary_bytes: 200_000_000,
-        vm_ets_bytes: 300_000_000,
-        vm_code_bytes: 100_000_000,
-        alloc_used_bytes: 1_100_000_000,
-        alloc_allocated_bytes: 1_400_000_000,
-        process_count: 5000,
-        atom_count: 100_000,
-        sample_duration_ms: 12,
-        details: %{top_ets: [%{name: ":my_table", memory_bytes: 1000, rows: 5, owner: "X"}]}
-      },
-      overrides
+  # Charts bucket by time, so tests that care about more than one point must
+  # place their samples apart rather than inserting them all in one instant.
+  defp store_at(overrides, seconds_ago) do
+    {:ok, stat} = MemoryStat.store(valid_attrs(overrides))
+    at = NaiveDateTime.utc_now() |> NaiveDateTime.add(-seconds_ago, :second)
+
+    Sanbase.Repo.update_all(
+      from(s in MemoryStat, where: s.id == ^stat.id),
+      set: [inserted_at: at]
     )
+
+    %{stat | inserted_at: at}
+  end
+
+  # store/1 takes attrs, so drop what Ecto owns off the factory struct and
+  # merge the overrides — explicit nils included, they are the "gap" cases.
+  defp valid_attrs(overrides \\ %{}) do
+    build(:memory_stat)
+    |> Map.from_struct()
+    |> Map.drop([:__meta__, :id, :inserted_at, :updated_at])
+    |> Map.merge(overrides)
   end
 
   test "store/1 inserts a sample" do
@@ -97,95 +97,170 @@ defmodule Sanbase.Monitoring.MemoryStatTest do
     assert Sanbase.Repo.get(MemoryStat, fresh.id)
   end
 
-  test "multi_pod_metric_series/3 returns per-pod points for one metric" do
-    {:ok, _} = MemoryStat.store(valid_attrs(%{rss_bytes: 100}))
-    {:ok, _} = MemoryStat.store(valid_attrs(%{rss_bytes: 200}))
-    {:ok, _} = MemoryStat.store(valid_attrs(%{pod_name: "sanbase-web-1", rss_bytes: 300}))
-    # nil values are dropped from the series
-    {:ok, _} = MemoryStat.store(valid_attrs(%{pod_name: "sanbase-web-1", rss_bytes: nil}))
+  test "multi_pod_metric_series/3 returns per-pod points, keeping nil samples as gaps" do
+    store_at(%{rss_bytes: 100}, 240)
+    store_at(%{rss_bytes: 200}, 180)
+    store_at(%{pod_name: "sanbase-web-1", rss_bytes: 300}, 240)
+    # a sample that recorded no value is a hole in the data, not a missing row:
+    # the chart has to break the line there instead of drawing across it
+    store_at(%{pod_name: "sanbase-web-1", rss_bytes: nil}, 180)
 
     series =
       MemoryStat.multi_pod_metric_series(["sanbase-web-0", "sanbase-web-1"], :rss_bytes, 24)
 
     assert [
              %{name: "sanbase-web-0", points: [[t1, 100], [_t2, 200]]},
-             %{name: "sanbase-web-1", points: [[_t3, 300]]}
+             %{name: "sanbase-web-1", points: [[_t3, 300], [_t4, nil]]}
            ] = series
 
     assert is_integer(t1)
   end
 
-  test "multi_pod_metric_series/4 downsamples long series" do
-    for i <- 1..10, do: {:ok, _} = MemoryStat.store(valid_attrs(%{rss_bytes: i}))
+  test "multi_pod_metric_series/4 buckets long windows and keeps each bucket's peak" do
+    # a one-sample spike in the middle of an otherwise flat series
+    for minutes <- 1..10 do
+      value = if minutes == 4, do: 900, else: 100
+      store_at(%{rss_bytes: value}, minutes * 60)
+    end
 
-    [%{points: points}] =
-      MemoryStat.multi_pod_metric_series(["sanbase-web-0"], :rss_bytes, 24, 5)
+    [%{points: points}] = MemoryStat.multi_pod_metric_series(["sanbase-web-0"], :rss_bytes, 1, 5)
+
+    # 10 minutes of samples collapsed into 720s buckets
+    assert length(points) <= 2
+    # the spike survives bucketing — a stride would have been free to skip it
+    assert Enum.max(for [_t, value] <- points, do: value) == 900
+  end
+
+  test "multi_pod_metric_series/4 keeps full resolution on short windows" do
+    for minutes <- 1..5, do: store_at(%{rss_bytes: minutes * 10}, minutes * 60)
+
+    [%{points: points}] = MemoryStat.multi_pod_metric_series(["sanbase-web-0"], :rss_bytes, 1)
 
     assert length(points) == 5
-    assert [[_, 1], [_, 3], [_, 5], [_, 7], [_, 9]] = points
+    assert Enum.map(points, fn [_t, value] -> value end) == [50, 40, 30, 20, 10]
   end
 
-  test "pod_layers_series/2 returns the accounting layers incl. RSS high-water" do
-    {:ok, _} = MemoryStat.store(valid_attrs())
+  test "labeled_series/3 returns one series per label, keeping nil samples as gaps" do
+    store_at(%{}, 120)
+    store_at(%{rss_bytes: nil}, 60)
 
-    series = MemoryStat.pod_layers_series("sanbase-web-0", 24)
+    rows = MemoryStat.pod_series("sanbase-web-0", 24)
 
-    assert Enum.map(series, & &1.name) == [
-             "RSS high-water",
-             "OS RSS",
-             "Alloc allocated (carriers)",
-             "Alloc used (blocks)",
-             "VM total"
-           ]
+    assert [
+             %{name: "OS RSS", points: [[t1, 1_500_000_000], [_t2, nil]]},
+             %{name: "VM total", points: [[_, 1_200_000_000], [_, 1_200_000_000]]}
+           ] =
+             MemoryStat.labeled_series(rows, [
+               {"OS RSS", :rss_bytes},
+               {"VM total", :vm_total_bytes}
+             ])
 
-    assert %{name: "RSS high-water", points: [[_, 2_500_000_000]]} = hd(series)
+    assert is_integer(t1)
   end
 
-  test "pod_alloc_util_series/2 returns used/allocated percent, skipping nil rows" do
-    # 1.1e9 / 1.4e9 = 78.6%
+  test "labeled_series/3 takes a function for values derived from several fields" do
     {:ok, _} = MemoryStat.store(valid_attrs())
-    {:ok, _} = MemoryStat.store(valid_attrs(%{alloc_used_bytes: nil, alloc_allocated_bytes: nil}))
+
+    rows = MemoryStat.pod_series("sanbase-web-0", 24)
 
     assert [%{name: "Allocator utilization", points: [[_, 78.6]]}] =
-             MemoryStat.pod_alloc_util_series("sanbase-web-0", 24)
+             MemoryStat.labeled_series(rows, [
+               {"Allocator utilization", &MemoryStat.utilization/1}
+             ])
   end
 
-  test "pod_buckets_series/2 returns one series per byte metric" do
-    {:ok, _} = MemoryStat.store(valid_attrs())
+  test "labeled_series/3 downsamples to max_points, keeping each bucket's peak" do
+    # a one-sample spike in the middle of an otherwise flat series
+    for minutes <- 1..10 do
+      value = if minutes == 4, do: 900_000_000, else: 100_000_000
+      store_at(%{rss_bytes: value}, minutes * 60)
+    end
 
-    series = MemoryStat.pod_buckets_series("sanbase-web-0", 24)
+    rows = MemoryStat.pod_series("sanbase-web-0", 24)
 
-    assert Enum.map(series, & &1.name) == [
-             "OS RSS",
-             "VM total",
-             "VM processes",
-             "VM binary",
-             "VM ETS"
-           ]
+    assert [%{points: points}] = MemoryStat.labeled_series(rows, [{"OS RSS", :rss_bytes}], 5)
 
-    assert %{name: "VM total", points: [[_, 1_200_000_000]]} = Enum.at(series, 1)
+    assert length(points) == 5
+    # the spike survives downsampling — a stride would have been free to skip it
+    assert Enum.max(for [_t, value] <- points, do: value) == 900_000_000
   end
 
-  test "collector sample/2 collects and stores a row for this node" do
-    state = %{
-      pod_name: "test-pod",
-      container_type: "test",
-      beam_started_at: @beam_started_at,
-      retention_days: 7
-    }
+  test "utilization/1 is used blocks over allocated carriers" do
+    # 1.1e9 / 1.4e9 = 78.6%
+    assert MemoryStat.utilization(%{
+             alloc_used_bytes: 1_100_000_000,
+             alloc_allocated_bytes: 1_400_000_000
+           }) == 78.6
 
-    assert {:ok, stat} = MemoryCollector.sample(state, true)
+    assert MemoryStat.utilization(%{alloc_used_bytes: nil, alloc_allocated_bytes: nil}) == nil
+    assert MemoryStat.utilization(%{alloc_used_bytes: 1, alloc_allocated_bytes: 0}) == nil
+  end
 
-    assert stat.pod_name == "test-pod"
-    assert stat.container_type == "test"
-    assert stat.vm_total_bytes > 0
-    assert stat.process_count > 0
-    assert stat.sample_duration_ms >= 0
-    assert %{top_ets: [_ | _], process_groups: [_ | _]} = stat.details
+  test "known_pods/2 aggregates per pod within the window, newest reporter first" do
+    store_at(%{pod_name: "sanbase-web-0"}, 600)
+    store_at(%{pod_name: "sanbase-web-0"}, 60)
+    store_at(%{pod_name: "sanbase-admin-x", container_type: "admin"}, 300)
+    # outside the default 7d window
+    store_at(%{pod_name: "sanbase-ancient"}, 8 * 86_400)
 
-    # without the flag the expensive process-groups part is skipped
-    assert {:ok, stat} = MemoryCollector.sample(state, false)
-    assert %{top_ets: [_ | _]} = stat.details
-    refute Map.has_key?(stat.details, :process_groups)
+    assert [
+             %{pod_name: "sanbase-web-0", container_type: "web", samples: 2} = web,
+             %{pod_name: "sanbase-admin-x", container_type: "admin", samples: 1}
+           ] = MemoryStat.known_pods()
+
+    # ~9 minutes apart; the exact diff depends on where the second-precision
+    # column truncates each timestamp
+    assert NaiveDateTime.diff(web.last_seen, web.first_seen) in 539..541
+  end
+
+  test "known_pods/2 honours the limit and the window override" do
+    store_at(%{pod_name: "sanbase-web-0"}, 60)
+    store_at(%{pod_name: "sanbase-web-1"}, 120)
+    store_at(%{pod_name: "sanbase-ancient"}, 8 * 86_400)
+
+    assert [%{pod_name: "sanbase-web-0"}] = MemoryStat.known_pods(1)
+
+    pods = MemoryStat.known_pods(100, 30) |> Enum.map(& &1.pod_name)
+    assert "sanbase-ancient" in pods
+  end
+
+  test "latest_per_pod/1 counts a pod live right up to the window edge" do
+    store_at(%{pod_name: "sanbase-just-inside"}, 4 * 60)
+    store_at(%{pod_name: "sanbase-just-outside"}, 6 * 60)
+
+    assert [%{pod_name: "sanbase-just-inside"}] = MemoryStat.latest_per_pod(5)
+  end
+
+  test "pod_series/2 excludes samples older than the window" do
+    inside = store_at(%{vm_total_bytes: 1}, 30 * 60)
+    _outside = store_at(%{vm_total_bytes: 2}, 90 * 60)
+
+    assert [%{id: id}] = MemoryStat.pod_series("sanbase-web-0", 1)
+    assert id == inside.id
+  end
+
+  test "latest_details/1 prefers the newest sample that carries process groups" do
+    with_groups =
+      store_at(
+        %{details: %{top_ets: [], process_groups: [%{name: "X", count: 1, memory_bytes: 1}]}},
+        300
+      )
+
+    # newer samples, but process groups are only collected on every Nth one
+    for seconds_ago <- [240, 180, 120, 60],
+        do: store_at(%{details: %{top_ets: []}}, seconds_ago)
+
+    assert MemoryStat.latest_details("sanbase-web-0").id == with_groups.id
+  end
+
+  test "latest_details/1 falls back to the newest sample when none has groups" do
+    _older = store_at(%{details: %{top_ets: []}}, 120)
+    newest = store_at(%{details: %{top_ets: []}}, 60)
+
+    assert MemoryStat.latest_details("sanbase-web-0").id == newest.id
+  end
+
+  test "latest_details/1 returns nil for a pod that never reported" do
+    assert MemoryStat.latest_details("sanbase-never-seen") == nil
   end
 end

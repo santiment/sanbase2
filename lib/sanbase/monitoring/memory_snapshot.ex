@@ -56,7 +56,7 @@ defmodule Sanbase.Monitoring.MemorySnapshot do
       vm_code_bytes: memory[:code],
       alloc_used_bytes: alloc_used,
       alloc_allocated_bytes: alloc_allocated,
-      process_count: length(Process.list()),
+      process_count: :erlang.system_info(:process_count),
       atom_count: :erlang.system_info(:atom_count),
       top_ets: top_ets(top_n),
       process_groups: process_groups,
@@ -243,10 +243,9 @@ defmodule Sanbase.Monitoring.MemorySnapshot do
         {nil, nil}
 
       rows ->
-        {
-          rows |> Enum.map(fn {_, used, _} -> used end) |> Enum.sum(),
-          rows |> Enum.map(fn {_, _, allocated} -> allocated end) |> Enum.sum()
-        }
+        Enum.reduce(rows, {0, 0}, fn {_, used, allocated}, {sum_used, sum_allocated} ->
+          {sum_used + used, sum_allocated + allocated}
+        end)
     end
   end
 
@@ -278,7 +277,11 @@ defmodule Sanbase.Monitoring.MemorySnapshot do
     end
   end
 
-  defp safe_ets_info(table, key) do
+  @doc """
+  `:ets.info/2` that tolerates a table dying mid-scan — walking every table
+  is never atomic, so a lookup can hit an id that no longer exists.
+  """
+  def safe_ets_info(table, key) do
     :ets.info(table, key)
   rescue
     ArgumentError -> :undefined

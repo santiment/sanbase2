@@ -18,36 +18,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLiveTest do
     {:ok, conn: conn}
   end
 
-  defp insert_stat(overrides) do
-    attrs =
-      Map.merge(
-        %{
-          pod_name: "sanbase-web-0",
-          container_type: "web",
-          beam_started_at: ~U[2026-07-22 10:00:00Z],
-          rss_bytes: 1_500_000_000,
-          rss_hwm_bytes: 2_500_000_000,
-          vm_total_bytes: 1_200_000_000,
-          vm_processes_bytes: 500_000_000,
-          vm_binary_bytes: 200_000_000,
-          vm_ets_bytes: 300_000_000,
-          vm_code_bytes: 100_000_000,
-          alloc_used_bytes: 1_100_000_000,
-          alloc_allocated_bytes: 1_400_000_000,
-          process_count: 5000,
-          atom_count: 100_000,
-          sample_duration_ms: 12,
-          details: %{
-            top_ets: [%{name: ":graphql_cache", memory_bytes: 50_000_000, rows: 1000, owner: "X"}],
-            process_groups: [%{name: "Sanbase.BigProcess", count: 3, memory_bytes: 99_000_000}]
-          }
-        },
-        overrides
-      )
-
-    {:ok, stat} = MemoryStat.store(attrs)
-    stat
-  end
+  defp insert_stat(overrides), do: insert(:memory_stat, overrides)
 
   test "renders empty state when no pods reported", %{conn: conn} do
     {:ok, _view, html} = live(conn, "/admin/memory_stats")
@@ -100,6 +71,21 @@ defmodule SanbaseWeb.Admin.MemoryStatsLiveTest do
     assert html =~ "953.7 MB"
     assert html =~ "1.86 GB"
     assert html =~ "+953.7 MB"
+  end
+
+  test "clicking a pod in the live table patches to that pod's view", %{conn: conn} do
+    insert_stat(%{})
+
+    {:ok, view, _html} = live(conn, "/admin/memory_stats")
+
+    html =
+      view
+      |> element(~s|a[href="/admin/memory_stats?pod=sanbase-web-0"]|)
+      |> render_click()
+
+    assert_patched(view, "/admin/memory_stats?pod=sanbase-web-0")
+    assert html =~ "sanbase-web-0 · latest sample"
+    assert_push_event(view, "chart-data-pod-chart", %{series: [%{name: "OS RSS"} | _]})
   end
 
   test "selecting a pod with no recorded samples shows only a warning", %{conn: conn} do

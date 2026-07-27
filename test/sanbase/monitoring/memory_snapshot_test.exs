@@ -11,7 +11,9 @@ defmodule Sanbase.Monitoring.MemorySnapshotTest do
     assert is_integer(snapshot.vm_binary_bytes)
     assert is_integer(snapshot.vm_ets_bytes) and snapshot.vm_ets_bytes > 0
     assert is_integer(snapshot.vm_code_bytes) and snapshot.vm_code_bytes > 0
-    assert is_integer(snapshot.process_count) and snapshot.process_count > 0
+    # no is_integer/1 here: :erlang.system_info(:process_count) is typed, so
+    # the compiler proves the guard always true and warns about it
+    assert snapshot.process_count > 0
     assert is_integer(snapshot.atom_count) and snapshot.atom_count > 0
     assert is_integer(snapshot.duration_ms) and snapshot.duration_ms >= 0
 
@@ -26,7 +28,9 @@ defmodule Sanbase.Monitoring.MemorySnapshotTest do
   test "collect/0 returns top ETS tables sorted by memory" do
     %{top_ets: top_ets} = MemorySnapshot.collect(top_n: 5)
 
-    assert length(top_ets) == 5
+    # at most top_n, but never assert exactly: how many ETS tables and process
+    # names exist depends on what else the node is running
+    assert length(top_ets) in 1..5
 
     for row <- top_ets do
       assert is_binary(row.name)
@@ -43,7 +47,7 @@ defmodule Sanbase.Monitoring.MemorySnapshotTest do
     %{process_groups: groups} = MemorySnapshot.collect(include_process_groups: true, top_n: 10)
 
     assert is_list(groups)
-    assert length(groups) == 10
+    assert length(groups) in 1..10
 
     for row <- groups do
       assert is_binary(row.name)

@@ -10,8 +10,11 @@ defmodule Sanbase.Monitoring.MemoryCollector do
 
   Each sample runs in a short-lived `Task` so whatever garbage the sampling
   itself produces dies with the task process instead of accumulating in this
-  GenServer's heap. Old rows are pruned hourly (`:retention_days`, default 7);
+  GenServer's heap. Old rows are pruned hourly (`:retention_days`, default 90);
   the delete is idempotent so all pods can run it concurrently.
+
+  Toggled with the `MEMORY_COLLECTOR_ENABLED` env var (default enabled);
+  retention is overridable with `MEMORY_COLLECTOR_RETENTION_DAYS`.
   """
 
   use GenServer
@@ -20,9 +23,10 @@ defmodule Sanbase.Monitoring.MemoryCollector do
 
   alias Sanbase.Monitoring.MemorySnapshot
   alias Sanbase.Monitoring.MemoryStat
+  alias Sanbase.Utils.Config
 
   @default_interval :timer.minutes(1)
-  @default_retention_days 7
+  @default_retention_days 90
   # collect process groups on every Nth sample; prune once per 60 samples
   @process_groups_every_nth 5
   @prune_every_nth 60
@@ -32,19 +36,16 @@ defmodule Sanbase.Monitoring.MemoryCollector do
   end
 
   def enabled?() do
-    Application.get_env(:sanbase, __MODULE__, [])
-    |> Keyword.get(:enabled, false)
+    Config.module_get(__MODULE__, :enabled, false)
+    |> Config.parse_boolean_value()
+    |> Kernel.||(false)
   end
 
   @impl GenServer
   def init(opts) do
-    config = Application.get_env(:sanbase, __MODULE__, [])
-
     state = %{
       interval: Keyword.get(opts, :interval, @default_interval),
-      retention_days:
-        Keyword.get(opts, :retention_days) ||
-          Keyword.get(config, :retention_days, @default_retention_days),
+      retention_days: Keyword.get(opts, :retention_days) || retention_days_from_config(),
       pod_name: pod_name(),
       container_type: Sanbase.ApplicationUtils.container_type(),
       beam_started_at: MemorySnapshot.beam_started_at(),
@@ -135,6 +136,11 @@ defmodule Sanbase.Monitoring.MemoryCollector do
     end
 
     :ok
+  end
+
+  defp retention_days_from_config() do
+    Config.module_get(__MODULE__, :retention_days, @default_retention_days)
+    |> Sanbase.Math.to_integer(@default_retention_days)
   end
 
   @doc false

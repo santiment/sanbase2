@@ -164,7 +164,13 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
     pods = MemoryStat.latest_per_pod(@live_window_minutes)
     selected_pod = socket.assigns.selected_pod
 
-    socket = assign(socket, :pods, pods)
+    live_names = MapSet.new(pods, & &1.pod_name)
+
+    known_pods =
+      MemoryStat.known_pods()
+      |> Enum.reject(&MapSet.member?(live_names, &1.pod_name))
+
+    socket = assign(socket, pods: pods, known_pods: known_pods)
 
     socket =
       assign(
@@ -402,8 +408,42 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
         </div>
       </section>
 
+      <section :if={@known_pods != []}>
+        <.section_heading>
+          Known pods, not reporting now (history kept until pruned)
+        </.section_heading>
+        <div class="overflow-x-auto bg-base-100 border border-base-300 rounded">
+          <table class="table table-sm">
+            <thead>
+              <tr class="text-base-content/60">
+                <th>Pod</th>
+                <th>Type</th>
+                <th class="text-right">Oldest snapshot (UTC)</th>
+                <th class="text-right">Last snapshot (UTC)</th>
+                <th class="text-right">Last seen</th>
+                <th class="text-right">Samples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr :for={pod <- @known_pods} class="hover:bg-base-200">
+                <td>
+                  <.link patch={~p"/admin/memory_stats?pod=#{pod.pod_name}"} class="link">
+                    {pod.pod_name}
+                  </.link>
+                </td>
+                <td>{pod.container_type}</td>
+                <td class="text-right tabular-nums">{fmt_time(pod.first_seen)}</td>
+                <td class="text-right tabular-nums">{fmt_time(pod.last_seen)}</td>
+                <td class="text-right tabular-nums">{age(pod.last_seen)} ago</td>
+                <td class="text-right tabular-nums">{pod.samples}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section :if={@pods != []}>
-        <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+        <div class="flex flex-col items-start mb-2 gap-2">
           <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60">
             {chart_metrics_label(@chart_metrics_effective)} · all live pods · last {chart_window_label(
               @chart_hours
@@ -468,7 +508,7 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
         </section>
 
         <section>
-          <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+          <div class="flex flex-col items-start mb-2 gap-2">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60">
               {@selected.pod_name} · {pod_chart_mode_label(@pod_chart_mode)} · last {chart_window_label(
                 @chart_hours

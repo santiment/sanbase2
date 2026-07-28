@@ -83,6 +83,19 @@ defmodule Sanbase.Queries.Authorization do
   """
   @spec user_plan_to_dynamic_repo(String.t(), String.t()) :: module()
   def user_plan_to_dynamic_repo(product_code, plan_name) do
+    case Sanbase.Billing.Plan.type(plan_name) do
+      :bundle ->
+        Sanbase.Billing.Plan.Bundle.not_implemented!(
+          {:user_plan_to_dynamic_repo, product_code},
+          plan_name
+        )
+
+      _ ->
+        do_user_plan_to_dynamic_repo(product_code, plan_name)
+    end
+  end
+
+  defp do_user_plan_to_dynamic_repo(product_code, plan_name) do
     case {product_code, plan_name} do
       {_, "FREE"} ->
         Sanbase.ClickhouseRepo.FreeUser
@@ -112,7 +125,7 @@ defmodule Sanbase.Queries.Authorization do
         Sanbase.ClickhouseRepo.ReadOnly
 
       {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
-        user_plan_to_dynamic_repo("SANAPI", fetch_base_plan_for_custom(custom_plan))
+        do_user_plan_to_dynamic_repo("SANAPI", fetch_base_plan_for_custom(custom_plan))
 
       _ ->
         Sanbase.ClickhouseRepo.FreeUser
@@ -120,6 +133,19 @@ defmodule Sanbase.Queries.Authorization do
   end
 
   def query_executions_limit(product_code, plan_name) do
+    case Sanbase.Billing.Plan.type(plan_name) do
+      :bundle ->
+        Sanbase.Billing.Plan.Bundle.not_implemented!(
+          {:query_executions_limit, product_code},
+          plan_name
+        )
+
+      _ ->
+        do_query_executions_limit(product_code, plan_name)
+    end
+  end
+
+  defp do_query_executions_limit(product_code, plan_name) do
     case {product_code, plan_name} do
       {_, "FREE"} ->
         %{minute: 20, hour: 200, day: 500}
@@ -149,11 +175,21 @@ defmodule Sanbase.Queries.Authorization do
         %{minute: 200, hour: 3000, day: 20_000}
 
       {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
-        query_executions_limit("SANAPI", fetch_base_plan_for_custom(custom_plan))
+        do_query_executions_limit("SANAPI", fetch_base_plan_for_custom(custom_plan))
     end
   end
 
   def credits_limit(product_code, plan_name) do
+    case Sanbase.Billing.Plan.type(plan_name) do
+      :bundle ->
+        Sanbase.Billing.Plan.Bundle.not_implemented!({:credits_limit, product_code}, plan_name)
+
+      _ ->
+        do_credits_limit(product_code, plan_name)
+    end
+  end
+
+  defp do_credits_limit(product_code, plan_name) do
     case {product_code, plan_name} do
       {_, "FREE"} ->
         500
@@ -183,7 +219,7 @@ defmodule Sanbase.Queries.Authorization do
         500_000
 
       {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
-        credits_limit("SANAPI", fetch_base_plan_for_custom(custom_plan))
+        do_credits_limit("SANAPI", fetch_base_plan_for_custom(custom_plan))
     end
   end
 

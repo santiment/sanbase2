@@ -59,7 +59,18 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     |> Map.get(:access_paywalled_insights, false)
   end
 
+  # `alerts_limit/1` and `can_access_paywalled_insights?/1` are called directly
+  # from resolvers with the plan name from the request context, bypassing
+  # `AccessChecker`. This function therefore has to handle every plan type
+  # itself rather than relying on the dispatcher.
   defp plan_stats(plan) do
+    case Plan.type(plan) do
+      :bundle -> Sanbase.Billing.Plan.Bundle.not_implemented!(:sanbase_plan_stats, plan)
+      _ -> standard_or_custom_plan_stats(plan)
+    end
+  end
+
+  defp standard_or_custom_plan_stats(plan) do
     case plan do
       "FREE" -> @free_plan_stats
       "BASIC" -> @basic_plan_stats

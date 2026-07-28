@@ -16,7 +16,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
   ])
 
   plug(Tesla.Middleware.BaseUrl, Config.module_get(Coinmarketcap, :api_url))
-  plug(Tesla.Middleware.Compression)
+  plug(Tesla.Middleware.Compression, max_body_size: 32 * 1024 * 1024)
   plug(Tesla.Middleware.Logger)
 
   def fetch_data(projects) when is_list(projects) and length(projects) <= 100 do

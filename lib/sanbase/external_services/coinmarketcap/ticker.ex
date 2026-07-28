@@ -56,7 +56,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     Config.module_get(Coinmarketcap, :api_url)
   )
 
-  plug(Tesla.Middleware.Compression)
+  plug(Tesla.Middleware.Compression, max_body_size: 32 * 1024 * 1024)
   plug(Tesla.Middleware.Logger)
 
   @doc ~s"""

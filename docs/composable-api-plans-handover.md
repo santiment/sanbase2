@@ -282,18 +282,25 @@ Dispatch matches the prefix form `"BUNDLE" <> _`, so both work and a future `BUN
 
 **Monthly and yearly cannot be mixed in one subscription** (confirmed — Stripe requires all recurring prices in a subscription to share an interval, and it is also the product decision). Three consequences that are easy to miss:
 
-1. **Every sku needs both variants.** Each package price, each full-history add-on and each extra-calls add-on must exist in monthly *and* yearly form, or a monthly subscriber cannot buy an add-on that only exists yearly. So `interval` is a first-class column on the price catalog, and the purchase UI must filter available skus by the subscription's existing interval. This roughly doubles the catalog — 5 packages + 5 history add-ons + N call tiers, ×2.
+1. **Every sku needs both variants.** Each package price and each extra-calls add-on must exist in monthly *and* yearly form, or a monthly subscriber cannot buy an add-on that only exists yearly. So `interval` is a first-class column on the price catalog, and the purchase UI must filter available skus by the subscription's existing interval. Catalog size is `(5 packages + N call tiers) × 2`.
 2. **Switching monthly ↔ yearly is not an add/remove-item operation.** It swaps *every* item to its counterpart price and repoints `subscriptions.plan_id` at the other `BUNDLE` row. Stripe can do it in one update with proration, but the local sync has to move `plan_id` too — otherwise the subscription claims an interval its items no longer have. Task **SL** owns it as a distinct mutation.
 3. **Validate at subscribe and at add-item.** Reject a mixed-interval cart before calling Stripe rather than surfacing a Stripe error, and reject adding a yearly package to a monthly subscription. The webhook sync should also flag a mixed-interval subscription if one ever appears, rather than silently resolving an entitlement from it.
 
-**Why SanAPI, even though Institutional includes Sanbase.** ⚠️ The Institutional tier is "Full Sanbase + Full SanAPI + MCP", so that entitlement spans both products. It still belongs on SanAPI, because the fallback already exists: ✅ `get_user_subscription_for_sanbase/1` (`auth_plug.ex:374-380`) tries the Sanbase subscription and then falls back to the SanAPI one, commented *"so paying SanAPI users keep their Sanbase benefits."* So a SanAPI-hosted bundle whose entitlement names the Sanbase tier it behaves as (Institutional → `PRO_PLUS`, single pillars → `FREE`) reuses a working path instead of inventing cross-product subscriptions — and two subscriptions would break the one-invoice promise anyway.
+✅ **Decided: a package includes full history. There is no history add-on in v1.**
 
-**Vocabulary.** The pricing page says "package", the code says "bundle". That is not a mismatch, and it is worth stating once so the two words do not drift:
+That makes the window **global and uniform** for every bundle:
 
-- **package** = one pillar = one Stripe line item = `type: :package`
-- **bundle** = the composed subscription = the `plans` row
+| Field | Value | Why |
+|---|---|---|
+| `historical_data_in_days` | `nil` | `nil` means no restriction (`custom_access_checker.ex:36-39`) |
+| `realtime_data_cut_off_in_days` | `0` | Paid plans get realtime; only FREE is cut off at 30 days |
 
-A bundle is made of packages.
+Two consequences worth knowing:
+
+- **The window dimension effectively drops out of v1.** ✅ SanAPI `PRO` already has `historical_data_in_days: nil` and `realtime_data_cut_off_in_days: 0` (`api_access_checker.ex:39-45`), so a bundle differs from PRO only in *which metrics* and *how many calls* — not in depth. `EN` keeps the two flat fields from §5.3 and never needs a per-grant list.
+- **Keep the fields, don't design them out.** They cost nothing (the `Restrictions`-shaped output needs them anyway) and a future per-pillar add-on becomes a resolver change rather than a schema change. If the window ever does become per-grant, the stored blob's shape changes — that is exactly what `schema_version` in §5.3 is for, so it is a bump plus a backfill, not a migration scramble.
+
+⚠️ **This makes Institutional's "3-year history" indefensible.** If a $350 Market package includes full history, then buying five individual packages gives *more* depth than the $799 Institutional tier that contains all five. Either Institutional is also full history — recommended, and then depth is uniform everywhere and truly stops being a dimension — or single packages are not. Raise it on the call; it is a pricing fix, not a code one.
 
 ---
 
@@ -319,12 +326,12 @@ The original write-up specified only metrics and monthly calls. `Restrictions` r
 | **Metrics** | union of packages | agreed |
 | **Queries** (`query_access`) | union — **required field**, cannot be omitted | ⚠️ **unspecified** — see below |
 | **Signals** (`signal_access`) | union — **required field** | ⚠️ **unspecified** |
-| **Data windows** (`historical_data_in_days`, `realtime_data_cut_off_in_days`) | ⚠️ **undecided** — recommend max (most generous) across purchased packages, or a single value on the base plan | ⚠️ **unspecified — biggest hole** |
+| **Data windows** (`historical_data_in_days`, `realtime_data_cut_off_in_days`) | **Global, uniform**: `nil` history + `0` realtime cut-off. A package includes full history; no add-on in v1 | ✅ **decided** (§5.7) |
 | **API calls** | month: **sum** of package bases + add-ons. hour/minute: **do not sum** — see below | partially specified |
 
 **Queries and signals are not optional.** There are ~13 `access: :restricted` GraphQL queries, and they map directly onto the packages being sold — `historical_balance_queries.ex:114` (`min_plan: [sanapi: "PRO"]`), `blockchain_metric_queries.ex`, `social_data_queries.ex`. Top-holders and historical-balance functionality is core Onchain Labels surface and it lives in **queries**, not the metric registry. A package defined only as a metric set will under-deliver Onchain Labels and Social. ✅ verified.
 
-**Data windows are the biggest hole.** `nil` means *no restriction* (`custom_access_checker.ex:36-39` docstring), so leaving these unset ships **full history and full realtime** with a 100k-call package. Every existing tier differentiates on this axis. Must be decided in task **A**.
+**Data windows — resolved, and deliberately so.** `nil` means *no restriction* (`custom_access_checker.ex:36-39` docstring), which is normally a trap: leaving the field unset silently ships full history and full realtime. Here it is the intended answer — a package includes full history (§5.7). Worth stating explicitly rather than leaving implied, because "we forgot to set it" and "we chose not to restrict it" produce identical code and very different conversations later.
 
 **Do not sum hour/minute limits.** `validate_api_calls` requires `month > hour > minute > 0` (`custom_plan_restrictions.ex:56-70`). Summing per-package rate limits makes burst capacity scale with *entitlement breadth*, but rate limits exist to protect infrastructure, not to price data. Recommend: **sum month; take max (or a fixed base-plan value) for hour and minute.** ✅ verified.
 
@@ -338,7 +345,7 @@ The original write-up specified only metrics and monthly calls. `Restrictions` r
 2. Monthly API call limit = **sum** of per-package bases + add-ons
 3. One **shared** call bucket (never split Social vs Onchain rate limits)
 4. Hour/minute limits from a **single base value**, not summed
-5. Data windows = **max** across purchased packages ⚠️
+5. Data windows = **uniform**: full history (`nil`) and no realtime cut-off (`0`) for every bundle (§5.7)
 6. One Stripe subscription, many items, one invoice (Stripe native)
 7. Prefer composition of prices over combinatorial fixed combo SKUs
 8. Plan naming: `plans` rows named `BUNDLE` on SanAPI (one per interval) as markers; the entitlement comes from the items (§5.0, §5.7)
@@ -517,7 +524,7 @@ Ship as vertical slices. Changes from the original split: BC is promoted to a fi
 **Depends on:** EN, DP. **Highest-risk task in the epic.** Acceptance: the §7.6 smoke matrix is green for `BUNDLE` and the **BC** fixture is unchanged.
 
 ### SC. Stripe catalog
-**What:** Stripe Product(s) + Prices: base bundle subscription, one price per package, full-history add-on prices, API-call add-on prices — **each in both monthly and yearly form** (§5.7). Sync into the local price catalog with `interval` as a first-class column. Invoice total = sum of items. Set nicknames so customers see "Social Sentiment", not raw price ids.
+**What:** Stripe Product(s) + Prices: base bundle subscription, one price per package, API-call add-on prices — **each in both monthly and yearly form** (§5.7). No history add-on in v1 (§5.7). Sync into the local price catalog with `interval` as a first-class column. Invoice total = sum of items. Set nicknames so customers see "Social Sentiment", not raw price ids.
 **Deliverable:** Stripe objects + catalog rows.
 **Depends on:** A. Deliberately sequenced **after** EN/DN: the catalog is cheap and reversible, entitlement semantics are not.
 
@@ -594,12 +601,12 @@ Now **decided**:
 | Coexistence: block PRO + bundle, or define precedence? | **Block.** Today the newest sub silently wins and the other is paid-for-and-ignored — that is a bug, not a precedence rule. | §7.3 #6 |
 | `has_custom_restrictions` on the `BUNDLE` rows? | **No.** It would route Sanbase requests into `fetch_base_plan_for_custom/1` → `Loader.get_plan/2` → 🔴 `FunctionClauseError`. | §7.5 C2 |
 | Mixed monthly/yearly in one subscription? | **Not possible.** Stripe requires one interval per subscription, and it is also the product decision. Every sku needs both variants; switching interval is its own mutation. | §5.7 |
+| Data windows per package | **Full history included, no add-on in v1.** Window is global: `historical_data_in_days: nil`, `realtime_data_cut_off_in_days: 0`. Keeps `EN` free of per-grant windows. | §5.7 |
 
 Still genuinely open (all ⚠️, all belong in task **A** or **PD**):
 
 | Decision | Options / recommendation |
 |----------|---------------------------|
-| **Data windows per package** | **Highest priority.** `nil` = unlimited history + realtime. Recommend: explicit value, max across purchased packages |
 | **Queries & signals per package** | Required by `Restrictions`; must be enumerated per package (Onchain Labels and Social depend on it) |
 | Base quota per package | e.g. 100k each — but check against `sanapi_pro` = 600k (§6.2) |
 | Extra call SKUs | e.g. +100k, +500k; prices |

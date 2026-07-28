@@ -69,8 +69,7 @@ defmodule SanbaseWeb.UploadImageLive do
             <div class="text-left mb-2 text-xs font-semibold inline-block text-primary">
               {entry.progress}
             </div>
-            <progress class="progress progress-primary w-full mb-4" value={entry.progress} max="100">
-            </progress>
+            <progress class="progress progress-primary w-full mb-4" value={entry.progress} max="100"></progress>
 
             <.error :for={error <- upload_errors(@uploads.images, entry)}>
               {error_to_string(error)}

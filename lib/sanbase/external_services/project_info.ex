@@ -247,8 +247,6 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       Regex.match?(Sanbase.BlockchainAddress.ethereum_regex(), contract)
   end
 
-  defp ethereum_contract?(_), do: false
-
   # Projects without an infrastructure record cannot be ruled out as
   # non-Ethereum, so only the address format check applies to them.
   defp ethereum_infrastructure?(nil), do: true

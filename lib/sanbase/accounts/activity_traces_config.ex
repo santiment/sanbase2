@@ -4,21 +4,25 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   pipeline.
 
   Each flag guards exactly one place where an NDA-protected user's
-  activity is hidden. Flip a flag to `false` to disable masking on that
-  surface — e.g. to debug a specific protected user's request — without
-  touching the call site.
+  activity is hidden. Defaults live in `@config`; a flag can be
+  overridden at runtime (node-local):
 
-  Masking at a surface applies only when BOTH conditions hold:
+      Application.put_env(:sanbase, Sanbase.Accounts.ActivityTracesConfig,
+        hide_logger: false
+      )
+      Sanbase.Accounts.ActivityTracesConfig.reload()
 
-    1. the user is protected
-       (`Sanbase.RequestContext.activity_traces_hidden?/1`), and
-    2. the surface's flag here is enabled.
+  The resolved map is cached via `Sanbase.Cache.PersistentTermTtl` for
+  60 minutes; `reload/0` applies env changes immediately. Invalid
+  overrides (unknown flag or non-boolean value) raise on (re)load.
 
-  Call sites that have a `RequestContext` should use `hidden?/2`, which
-  combines both checks. The logger filter and the Intercom batch export
-  establish "is protected" by other means and only need `enabled?/1`.
+  Masking applies only when the user is protected
+  (`Sanbase.RequestContext.activity_traces_hidden?/1`) AND the surface's
+  flag is enabled. Use `hidden?/2` where a `RequestContext` is
+  available, `enabled?/1` where "is protected" is established otherwise.
   """
 
+  alias Sanbase.Cache.PersistentTermTtl
   alias Sanbase.RequestContext
 
   @config %{
@@ -32,15 +36,16 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
     hide_chat_logs: true,
     # Kafka api_call_data: mask query/selector/token/ip/sizes in the export.
     hide_kafka_api_call_data: true,
-    # Skip all Intercom-bound exports: the CRM contact/stats batch
-    # (sanbase_user_intercom_attributes) and per-request trackEvents
-    # writes (user_events Kafka topic + Postgres).
+    # Skip Intercom-bound exports: attributes batch + trackEvents writes.
     hide_intercom: true,
     # MCP: mask tool_name/params/client/session in tool_invocations.
     hide_mcp_tool_invocations: true,
     # Dev-only: skip the PRINT_INTERPOLATED_CLICKHOUSE_SQL console dump.
     hide_interpolated_sql: true
   }
+
+  @pt_key {__MODULE__, :resolved_config}
+  @ttl_ms :timer.minutes(60)
 
   @type flag ::
           :hide_logger
@@ -53,7 +58,8 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
           | :hide_interpolated_sql
 
   @doc """
-  The full flag map.
+  The compile-time default flag map, without runtime overrides — use
+  `enabled?/1` for the effective value.
 
   ## Examples
 
@@ -64,9 +70,13 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
   def config(), do: @config
 
   @doc """
-  Whether masking is enabled for `flag`. Each flag compiles to its own
-  clause returning a literal, so this is a constant-time lookup with no
-  map access on the hot path.
+  Whether masking is enabled for `flag`, honoring runtime overrides.
+  Raises on unknown flags, and `ArgumentError` when a cache rebuild
+  finds an invalid override.
+
+  Reading through the cache (not the `@config` literals) also keeps the
+  type checker from proving call-site conditionals always-true and
+  warning about them.
 
   ## Examples
 
@@ -74,14 +84,16 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
       true
   """
   @spec enabled?(flag()) :: boolean()
-  for {flag, value} <- @config do
-    def enabled?(unquote(flag)), do: unquote(value)
+  def enabled?(flag) when is_map_key(@config, flag) do
+    Map.fetch!(resolved_config(), flag)
   end
 
   @doc """
   True when `ctx` identifies a protected user AND masking for `flag` is
   enabled. The single check every `RequestContext`-aware masking site
-  should use. Non-struct / `nil` `ctx` is treated as not protected.
+  should use. Non-struct / `nil` `ctx` is treated as not protected. The
+  context is checked first so non-protected traffic skips the config
+  cache.
 
   ## Examples
 
@@ -89,7 +101,46 @@ defmodule Sanbase.Accounts.ActivityTracesConfig do
       false
   """
   @spec hidden?(flag(), RequestContext.t() | term()) :: boolean()
-  def hidden?(flag, ctx) do
-    enabled?(flag) and RequestContext.activity_traces_hidden?(ctx)
+  def hidden?(flag, ctx) when is_map_key(@config, flag) do
+    RequestContext.activity_traces_hidden?(ctx) and enabled?(flag)
+  end
+
+  @doc """
+  Rebuild the cached flag map from the defaults plus the application
+  env override, resetting the TTL. Call after `Application.put_env/3` /
+  `delete_env/2` to apply the change immediately. Node-local. Raises
+  `ArgumentError` on an invalid override.
+  """
+  @spec reload() :: :ok
+  def reload() do
+    PersistentTermTtl.store(@pt_key, @ttl_ms, fn -> {:store, build_resolved_config()} end)
+    :ok
+  end
+
+  @doc """
+  Expire the cached entry so the next read rebuilds it. For tests and
+  ops.
+  """
+  @spec expire_cache!() :: :ok
+  def expire_cache!(), do: PersistentTermTtl.expire(@pt_key)
+
+  defp resolved_config() do
+    PersistentTermTtl.get_or_store(@pt_key, @ttl_ms, fn -> {:store, build_resolved_config()} end)
+  end
+
+  defp build_resolved_config() do
+    :sanbase
+    |> Application.get_env(__MODULE__, [])
+    |> Enum.reduce(@config, fn
+      {flag, value}, acc when is_map_key(@config, flag) and is_boolean(value) ->
+        Map.put(acc, flag, value)
+
+      {flag, value}, _acc ->
+        raise ArgumentError,
+              "invalid runtime override #{inspect(flag)} => #{inspect(value)} " <>
+                "in the #{inspect(__MODULE__)} application env. Overrides must " <>
+                "use known flags (#{Enum.map_join(Map.keys(@config), ", ", &inspect/1)}) " <>
+                "and boolean values."
+    end)
   end
 end

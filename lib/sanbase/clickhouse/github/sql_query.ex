@@ -301,6 +301,68 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  # A github event is identified by the (owner, repo, dt, event) tuple. The same
+  # event can be present more than once in the table, so the activity is the
+  # number of unique tuples and not the number of rows.
+  @event_id "(owner, repo, dt, event)"
+  @dev_event "event NOT IN ({{non_dev_events}})"
+  @bot_actor "endsWith(actor, '[bot]')"
+
+  # The single source of truth for the stats - the names and the order of the
+  # columns selected by github_activity_stats_query/3.
+  @stats_columns [
+    dev_activity: "uniqExactIf(#{@event_id}, #{@dev_event})",
+    github_activity: "uniqExact(#{@event_id})",
+    dev_activity_contributors_count: "uniqExactIf(actor, #{@dev_event})",
+    github_activity_contributors_count: "uniqExact(actor)",
+    bot_dev_activity: "uniqExactIf(#{@event_id}, #{@bot_actor} AND #{@dev_event})",
+    bot_github_activity: "uniqExactIf(#{@event_id}, #{@bot_actor})",
+    bot_contributors_count: "uniqExactIf(actor, #{@bot_actor})"
+  ]
+
+  @doc ~s"""
+  The names of the stats columns, in the order they are selected by
+  github_activity_stats_query/3.
+  """
+  def stats_columns(), do: Keyword.keys(@stats_columns)
+
+  @doc ~s"""
+  Compute the stats for every slug in the `{github_organization, slug}` pairs.
+
+  The organizations are mapped back to their slug, so that the rows of all
+  organizations of a slug are aggregated together into a single result row.
+  """
+  def github_activity_stats_query(owner_slug_pairs, from, to) do
+    {owners, slugs} = Enum.unzip(owner_slug_pairs)
+
+    stats_select =
+      Enum.map_join(@stats_columns, ",\n  ", fn {name, expr} ->
+        "toUInt64(#{expr}) AS #{name}"
+      end)
+
+    sql = """
+    SELECT
+      transform(owner, {{owners}}, {{slugs}}, '') AS slug,
+      #{stats_select}
+    FROM #{@table}
+    WHERE
+      owner IN ({{owners}}) AND
+      dt >= toDateTime({{from}}) AND
+      dt <= toDateTime({{to}})
+    GROUP BY slug
+    """
+
+    params = %{
+      owners: owners |> Enum.map(&String.downcase/1),
+      slugs: slugs,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      non_dev_events: @non_dev_events
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   defp wrap_aggregated_in_zero_filling_query(query) do
     """
     SELECT owner, SUM(value)

@@ -219,6 +219,47 @@ defmodule Sanbase.Clickhouse.Github do
     |> maybe_apply_function(&Math.simple_moving_average(&1, ma_base, value_key: :activity))
   end
 
+  @doc ~s"""
+  Return aggregated github activity stats per slug for a given time period.
+
+  The stats include the total dev/github activity and contributors count, as
+  well as the same numbers computed only for bot accounts (actors whose name
+  ends with `[bot]`).
+
+  The input is a list of `{github_organization, slug}` pairs, so a slug with
+  multiple organizations appears in multiple pairs. All organizations are
+  queried at once and the rows are grouped by slug directly in ClickHouse.
+  This way the contributors count of a project with multiple organizations is
+  exact, which is not possible when per-organization results are combined
+  outside the database.
+
+  Slugs without any activity in the time period are not present in the result.
+  """
+  @spec github_activity_stats(list({String.t(), String.t()}), DateTime.t(), DateTime.t()) ::
+          {:ok, list(map())} | {:error, String.t()}
+  def github_activity_stats([], _from, _to), do: {:ok, []}
+
+  def github_activity_stats(owner_slug_pairs, from, to) do
+    query_struct = github_activity_stats_query(owner_slug_pairs, from, to)
+
+    ClickhouseRepo.query_transform(query_struct, fn [slug | values] ->
+      stats_columns()
+      |> Enum.zip(Enum.map(values, &Math.to_integer(&1, 0)))
+      |> Map.new()
+      |> Map.put(:slug, slug)
+    end)
+  end
+
+  @doc ~s"""
+  Return a github_activity_stats/3 result row with all stats set to zero.
+  """
+  @spec empty_activity_stats(String.t()) :: map()
+  def empty_activity_stats(slug) do
+    stats_columns()
+    |> Map.new(&{&1, 0})
+    |> Map.put(:slug, slug)
+  end
+
   def first_datetime(organization_or_organizations) do
     query_struct = first_datetime_query(organization_or_organizations)
 

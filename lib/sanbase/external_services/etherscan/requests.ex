@@ -17,7 +17,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   plug(Tesla.Middleware.BaseUrl, "https://api.etherscan.io/api")
   plug(Tesla.Middleware.Headers, [{"user-agent", @user_agent}])
   plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
-  plug(Tesla.Middleware.Compression)
+  plug(Tesla.Middleware.Compression, max_body_size: 32 * 1024 * 1024)
   plug(Tesla.Middleware.JSON)
   plug(Tesla.Middleware.Query, apikey: Config.module_get(__MODULE__, :api_key))
   plug(Tesla.Middleware.Logger)

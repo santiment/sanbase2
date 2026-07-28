@@ -6,7 +6,7 @@ defmodule Sanbase.Cryptocompare.Price.PauseResumeWorker do
   # pending resumes while always allowing a fresh resume after one finishes.
   use Oban.Worker,
     queue: :cryptocompare_historical_jobs_pause_resume_queue,
-    unique: [period: 60, states: [:available, :scheduled, :executing, :retryable]]
+    unique: [period: 60, states: :incomplete]
 
   require Logger
 

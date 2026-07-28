@@ -53,14 +53,89 @@ defmodule Sanbase.Billing.AccessMatrixCharacterizationTest do
     expected = read_fixture()
 
     for {product, plans} <- expected, {plan_name, snapshot} <- plans do
-      assert get_in(actual, [product, plan_name]) == snapshot,
-             "access matrix changed for product=#{product} plan=#{plan_name}"
+      actual_snapshot = get_in(actual, [product, plan_name])
+
+      assert actual_snapshot == snapshot,
+             failure_message(
+               "Plan-dependent behavior changed for product=#{product} plan=#{plan_name}.",
+               snapshot,
+               actual_snapshot
+             )
     end
 
-    # Asserted after the per-plan comparison so that a changed answer produces a
-    # targeted failure message rather than one giant map diff.
-    assert actual == expected
+    # Catches anything the per-plan loop cannot: a plan added to or removed from
+    # AccessMatrix.standard_plan_names/0 shows up here as an (absent) entry.
+    assert actual == expected,
+           failure_message("The access matrix no longer matches the fixture.", expected, actual)
   end
+
+  # The failure explains the whole workflow inline. Nobody should have to
+  # remember the regeneration flag or go read the moduledoc to act on a red
+  # build.
+  defp failure_message(headline, expected, actual) do
+    """
+    #{headline}
+
+    #{changed_values(expected, actual)}
+
+    WHAT NOW?
+
+    1. If this change was NOT intended, you have found a regression - fix the
+       code. That is what this test is for: every existing plan must keep
+       behaving exactly as it did.
+
+    2. If it WAS intended, regenerate the fixture and commit the diff as part of
+       your PR:
+
+         UPDATE_ACCESS_MATRIX=1 mix test #{Path.relative_to_cwd(__ENV__.file)}
+         git diff #{@fixture_path}
+
+       That diff is the review artifact - it shows the full behavioral
+       consequence of your change in one place. Never regenerate just to turn the
+       build green without reading it.
+    """
+  end
+
+  @max_reported_changes 20
+
+  # Reports changed leaves as `path: old -> new` so the failure diagnoses itself
+  # without a regenerate-and-diff round trip.
+  defp changed_values(expected, actual) do
+    flat_expected = flatten(expected)
+    flat_actual = flatten(actual)
+
+    changes =
+      MapSet.union(MapSet.new(Map.keys(flat_expected)), MapSet.new(Map.keys(flat_actual)))
+      |> Enum.sort()
+      |> Enum.reject(&(fetch(flat_expected, &1) == fetch(flat_actual, &1)))
+
+    reported =
+      changes
+      |> Enum.take(@max_reported_changes)
+      |> Enum.map_join("\n", fn path ->
+        "  #{path}: #{render(fetch(flat_expected, path))} -> #{render(fetch(flat_actual, path))}"
+      end)
+
+    case length(changes) - @max_reported_changes do
+      extra when extra > 0 -> reported <> "\n  ...and #{extra} more"
+      _ -> reported
+    end
+  end
+
+  defp fetch(map, path), do: Map.get(map, path, :__absent__)
+
+  defp render(:__absent__), do: "(absent)"
+  defp render(value), do: inspect(value)
+
+  defp flatten(value, prefix \\ [], acc \\ %{})
+
+  defp flatten(%{} = map, prefix, acc) do
+    Enum.reduce(map, acc, fn {key, value}, acc ->
+      flatten(value, prefix ++ [to_string(key)], acc)
+    end)
+  end
+
+  defp flatten(value, prefix, acc), do: Map.put(acc, Enum.join(prefix, "."), value)
 
   defp read_fixture do
     case File.read(@fixture_path) do

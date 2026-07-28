@@ -45,8 +45,8 @@ defmodule SanbaseWeb.AcademyQAComponents do
               phx-blur="hide_autocomplete"
               autocomplete="off"
             />
-            
-    <!-- Autocomplete Dropdown with search results -->
+
+            <!-- Autocomplete Dropdown with search results -->
             <div
               :if={@show_autocomplete && length(@autocomplete_suggestions) > 0}
               class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-box shadow-xl max-h-96 overflow-y-auto"

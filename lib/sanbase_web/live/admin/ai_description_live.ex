@@ -1049,8 +1049,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
             ]}
             value={bulk_progress_pct(@bulk_job)}
             max="100"
-          >
-          </progress>
+          ></progress>
           <div :if={@bulk_job.errors != []} class="mt-2 space-y-1">
             <p class="text-xs font-medium text-error">Failures:</p>
             <p :for={{id, reason} <- Enum.take(@bulk_job.errors, 5)} class="text-xs text-error">

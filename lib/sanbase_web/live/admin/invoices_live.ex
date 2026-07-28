@@ -262,8 +262,7 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
           </button>
         </div>
 
-        <progress class="progress progress-primary w-full" value={progress_percent(@job)} max="100">
-        </progress>
+        <progress class="progress progress-primary w-full" value={progress_percent(@job)} max="100"></progress>
 
         <div :if={@job.failed > 0} class="mt-2 text-sm text-error">
           {length(@job.errors)} error(s) during download

@@ -199,8 +199,7 @@ defmodule SanbaseWeb.AskLive do
               class="btn btn-success btn-lg flex-1"
               disabled={@loading != nil}
             >
-              <span :if={@loading == "smart_search"} class="loading loading-spinner loading-sm">
-              </span>
+              <span :if={@loading == "smart_search"} class="loading loading-spinner loading-sm"></span>
               {if @loading == "smart_search", do: "Searching...", else: "Smart Search"}
             </button>
             <button

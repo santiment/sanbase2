@@ -107,6 +107,10 @@ defmodule Sanbase.Mixfile do
       {:libcluster, "~> 3.0"},
       {:libcluster_postgres, "~> 0.1"},
       {:mint, "~> 1.0"},
+      # mock ~> 0.3 requires meck ~> 0.9.2, but meck 0.9.x does not compile on
+      # OTP 29 ('catch ...' is deprecated + warnings_as_errors). meck 1.x is
+      # API-compatible with what mock uses, so override it.
+      {:meck, "~> 1.2", only: [:dev, :test], override: true},
       {:mock, "~> 0.3", only: [:dev, :test]},
       {:mockery, "~> 2.2"},
       {:mogrify, "~> 0.8"},

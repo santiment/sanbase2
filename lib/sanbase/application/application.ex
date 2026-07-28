@@ -384,6 +384,13 @@ defmodule Sanbase.Application do
         fn -> container_type() in ["web", "all"] end
       ),
 
+      # Record per-pod BEAM/OS memory stats to Postgres every minute,
+      # shown on the admin panel at /admin/memory_stats
+      start_if(
+        fn -> Sanbase.Monitoring.MemoryCollector end,
+        fn -> Sanbase.Monitoring.MemoryCollector.enabled?() end
+      ),
+
       # Service for fast checking if a slug is valid
       # `:available_slugs_module` option changes the module
       # used in test env to another one, this one is unused

@@ -34,6 +34,36 @@ defmodule SanbaseWeb.GenericAdminController do
   alias Sanbase.Repo
   alias SanbaseWeb.GenericAdmin
 
+  # The permission a mutating action needs. create/update reuse the new/edit
+  # permission — the form and the write it submits are one privilege.
+  @action_permission %{new: :new, create: :new, edit: :edit, update: :edit, delete: :delete}
+
+  plug(:require_action_allowed when action in [:new, :create, :edit, :update, :delete])
+
+  # The resource's `:actions` list, already narrowed to what the caller's admin
+  # role may do, decides which buttons render. The routes stay reachable
+  # without them, so every mutating action re-checks it here — otherwise a
+  # resource declaring `actions: []` is only read-only in the UI.
+  defp require_action_allowed(%Plug.Conn{} = conn, _opts) do
+    resource = conn.params["resource"] || ""
+    action = Map.fetch!(@action_permission, action_name(conn))
+
+    case resource_module_map(conn)[resource] do
+      %{actions: actions} ->
+        if action in actions, do: conn, else: forbid_action(conn, resource, action)
+
+      _ ->
+        forbid_action(conn, resource, action)
+    end
+  end
+
+  defp forbid_action(%Plug.Conn{} = conn, resource, action) do
+    conn
+    |> put_flash(:error, "Not allowed to #{action} #{resource}.")
+    |> redirect(to: ~p"/admin/generic?resource=#{resource}")
+    |> halt()
+  end
+
   defp resource_module_map(%Plug.Conn{} = conn) do
     SanbaseWeb.GenericAdmin.resource_module_map(conn)
   end
@@ -64,6 +94,7 @@ defmodule SanbaseWeb.GenericAdminController do
       {"Admin Forms", ~p"/admin/admin_forms"},
       {"Major Topics", ~p"/admin/major_topics"},
       {"Metric Registry", ~p"/admin/metric_registry"},
+      {"Memory Stats", ~p"/admin/memory_stats"},
       {"SES Events", ~p"/admin/ses_events"},
       {"User Roles", ~p"/admin/user_roles"},
       {"User Overview", ~p"/admin/user_overview"},
@@ -306,23 +337,20 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def delete(%Plug.Conn{} = conn, %{"id" => id, "resource" => resource}) do
-    resource_config = resource_module_map(conn)[resource]
     module = module_from_resource(conn, resource)
 
-    if :delete in resource_config[:actions] do
-      Repo.get(module, id)
-      |> Repo.delete()
-      |> case do
-        {:ok, _} ->
-          conn
-          |> put_flash(:info, "#{resource} item deleted successfully.")
-          |> redirect(to: ~p"/admin/generic?resource=#{resource}")
+    Repo.get(module, id)
+    |> Repo.delete()
+    |> case do
+      {:ok, _} ->
+        conn
+        |> put_flash(:info, "#{resource} item deleted successfully.")
+        |> redirect(to: ~p"/admin/generic?resource=#{resource}")
 
-        {:error, changeset} ->
-          conn
-          |> put_flash(:error, "Error deleting #{resource}: #{inspect(changeset.errors)}")
-          |> redirect(to: ~p"/admin/generic/#{id}?resource=#{resource}")
-      end
+      {:error, changeset} ->
+        conn
+        |> put_flash(:error, "Error deleting #{resource}: #{inspect(changeset.errors)}")
+        |> redirect(to: ~p"/admin/generic/#{id}?resource=#{resource}")
     end
   end
 

@@ -10,6 +10,7 @@ import { Sortable as SortableHook } from "./metric_hooks"
 import { InfiniteScroll } from "./infinite_scroll"
 import { TickerAutocomplete } from "./ticker_autocomplete"
 import { EasyMDEEditor } from "./hooks/easymde_editor"
+import { TimeseriesChart } from "./hooks/timeseries_chart"
 
 // Make Sortable available globally
 window.Sortable = Sortable
@@ -17,12 +18,13 @@ window.Sortable = Sortable
 window.Alpine = Alpine
 Alpine.start()
 
-const Hooks = { 
+const Hooks = {
   FocusInput: FocusInput,
   Sortable: SortableHook,
   InfiniteScroll: InfiniteScroll,
   TickerAutocomplete: TickerAutocomplete,
-  EasyMDEEditor: EasyMDEEditor
+  EasyMDEEditor: EasyMDEEditor,
+  TimeseriesChart: TimeseriesChart
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

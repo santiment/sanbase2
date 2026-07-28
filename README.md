@@ -10,6 +10,9 @@ Guide for adding metrics can be found [here](docs/adding-metrics-guide.md)
 
 Some tips to find issues while developing can be found [here](docs/development-tips.md)
 
+Memory monitoring — the `/admin/memory_stats` dashboard and the `MemDbg`
+console toolkit — is described [here](docs/memory-monitoring.md)
+
 ## Dependencies
 
 - Elixir 1.10

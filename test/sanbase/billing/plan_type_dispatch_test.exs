@@ -41,7 +41,7 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
   alias Sanbase.Queries.Authorization
 
-  @bundle_plan "BUNDLE_API"
+  @bundle_plan "BUNDLE"
   @products ["SANAPI", "SANBASE"]
   @item {:metric, "price_usd"}
 
@@ -112,7 +112,7 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       assert Plan.type_of_api_call_limit_plan("sanapi_pro") == :standard
       assert Plan.type_of_api_call_limit_plan("sanapi_free") == :standard
       assert Plan.type_of_api_call_limit_plan("sanapi_custom_acme") == :custom
-      assert Plan.type_of_api_call_limit_plan("sanapi_bundle_api") == :bundle
+      assert Plan.type_of_api_call_limit_plan("sanapi_bundle") == :bundle
     end
 
     test "preserves today's behavior for sanbase custom plans" do
@@ -123,7 +123,7 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
     end
 
     test "recognises bundles under the sanbase prefix" do
-      assert Plan.type_of_api_call_limit_plan("sanbase_bundle_api") == :bundle
+      assert Plan.type_of_api_call_limit_plan("sanbase_bundle") == :bundle
     end
 
     test "exactly sanapi_custom stays :standard" do

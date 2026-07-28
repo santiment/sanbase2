@@ -192,7 +192,7 @@ defmodule Sanbase.Billing.Plan do
       iex> Sanbase.Billing.Plan.type("CUSTOM_ACME")
       :custom
 
-      iex> Sanbase.Billing.Plan.type("BUNDLE_API")
+      iex> Sanbase.Billing.Plan.type("BUNDLE")
       :bundle
 
   ## Non-binary input

@@ -3,7 +3,7 @@ defmodule Sanbase.Billing.Plan.Bundle do
   Composable API data packages ("bundles").
 
   A bundle subscription's entitlement is **not** encoded in its plan name. The
-  `plans` row is a marker (`BUNDLE_API`); the entitlement is decoded from the
+  `plans` row is a marker named `BUNDLE`; the entitlement is decoded from the
   subscription's items. See `docs/composable-api-plans-handover.md` §5.
 
   ## Current state

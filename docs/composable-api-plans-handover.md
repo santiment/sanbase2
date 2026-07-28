@@ -28,7 +28,7 @@
 
 ## 0. TL;DR for whoever picks this up
 
-1. **Design: a `BUNDLE` plan marker + an entirely new entitlement path.** The `plans` row carries a plain marker name (`BUNDLE_API`) that encodes **nothing**. When the plan name is a bundle, a **new** code path decodes the subscription's items into an entitlement and answers all access and quota questions from it. Existing plans keep their existing code paths, untouched. See §5.
+1. **Design: a `BUNDLE` plan marker + an entirely new entitlement path.** The `plans` row carries a plain marker name (`BUNDLE`) that encodes **nothing**. When the plan name is a bundle, a **new** code path decodes the subscription's items into an entitlement and answers all access and quota questions from it. Existing plans keep their existing code paths, untouched. See §5.
 2. **Backward compatibility is a deliverable, not a caveat.** It has its own subtask (§8, task **BC**), its own contract (§7.1), its own test strategy (§7.4), and its own DoD line (§12). The single most valuable thing to build first is the characterization test suite that pins today's behavior.
 3. **The entire risk of this design is one thing: finding every `case plan_name` site.** ✅ There are **8 functions with no catch-all clause** that raise `CaseClauseError` on a `BUNDLE` name — including `Plan.plan_name/1`, which runs on **every authenticated request**. Another **9** have catch-alls, so they don't crash; they silently grant the *wrong* access or quota. §7.5 is the complete verified inventory. §7.6 is the mechanism that turns a missed site into a compile error instead of a production 500 — **build it before the feature.**
 4. **The product model in the original write-up is missing two dimensions** the code will force you to answer: data windows (historical depth / realtime cutoff) and query/signal access. Metrics alone will under-deliver Onchain Labels and Social. See §6.2.
@@ -148,10 +148,10 @@ Auth → AuthPlug picks ONE subscription + derives ONE plan name into Absinthe c
 
 ### 5.0 The decision
 
-**The plan name is a *marker*, not data.** A `plans` row named `BUNDLE_API` says only "this subscription's entitlement comes from its items." Everything else is decoded from `subscription_items` at sync time.
+**The plan name is a *marker*, not data.** A `plans` row named `BUNDLE` says only "this subscription's entitlement comes from its items." Everything else is decoded from `subscription_items` at sync time.
 
 ```
-plans row: BUNDLE_API   ──▶  Plan.type/1 == :bundle
+plans row: BUNDLE (SanAPI)  ──▶  Plan.type/1 == :bundle
                                     │
 subscription_items ──▶ decode ──▶ %Entitlement{}  ──▶ access? · quota · windows
   (packages + add-ons)                 │
@@ -200,7 +200,7 @@ An earlier draft of this doc argued the prefix *had* to be `CUSTOM_`. That was c
 - **No accidental inheritance.** `CUSTOM_*` carries `restricted_access_as_plan` ("behave as PRO elsewhere"), `@custom_plan_stats`, and a `ReadOnly` ClickHouse repo mapping. Bundles should opt into each of those explicitly, not inherit them.
 - **Support and reporting.** Admin, MRR stats, and support tooling can tell a bundle from a bespoke enterprise contract at a glance.
 
-**Use the prefix form `"BUNDLE" <> _` in every match** — it matches both a flat `BUNDLE` and a future `BUNDLE_SANBASE`. Name the first row **`BUNDLE_API`**.
+**Use the prefix form `"BUNDLE" <> _` in every match** — it matches both the flat `BUNDLE` and a future `BUNDLE_SANBASE`, so the dispatch survives a rename. The row itself is named **`BUNDLE`** — see §5.7 for why, and for the exact rows to create.
 
 🔴 **The cost of this choice is real and must be paid deliberately:** the `CUSTOM_` prefix was already handled at ~17 dispatch sites; `BUNDLE` is handled at none. **8 of those sites have no catch-all and will raise `CaseClauseError`.** The complete inventory is §7.5 and the safety mechanism is §7.6. Do not start the feature before §7.6 exists.
 
@@ -254,6 +254,47 @@ Two supporting pieces:
 
 **High** that this design is BC-correct *provided* §7.5 is complete and §7.6 is built — the branch-around approach cannot change existing-plan behavior because it never enters existing-plan code. **High** that the inventory in §7.5 is accurate for the sites listed; **medium** that it is exhaustive, which is precisely why §7.6 (compile-time exhaustiveness + a runtime smoke matrix) matters more than careful reading. **High** that storing the entitlement on the subscription row beats caching it.
 
+### 5.7 The plan rows: `BUNDLE` on SanAPI
+
+**Name: `BUNDLE`. Not `BUNDLE_API`.** The `_API` suffix would duplicate information that is already in `product_id`. ✅ Every existing plan name is a pure tier — `FREE`, `PRO`, `BUSINESS_MAX` — and the same name appears on both products; the attribute encoding that is literally called `@same_name_plans` (`plan.ex:131-141`).
+
+There is also a concrete consequence. ✅ `subscription_to_plan_name/1` (`api_call_limit.ex:359-366`) builds `"sanapi_#{plan_name}"` downcased, so:
+
+| Plan name | `api_calls_limit_plan` value |
+|---|---|
+| `BUNDLE_API` | `sanapi_bundle_api` — "api" twice |
+| `BUNDLE` | `sanapi_bundle` — matches `sanapi_pro`, `sanbase_pro` |
+
+Dispatch matches the prefix form `"BUNDLE" <> _`, so both work and a future `BUNDLE_SANBASE` is already covered. The bare name is simply the one that fits the convention.
+
+**Rows to create** (follow the existing two-rows-per-tier pattern — ✅ `plan_pro` / `plan_pro_yearly` are both named `PRO` and differ only in `interval` and `amount`):
+
+| name | product | interval | amount | is_private | has_custom_restrictions |
+|---|---|---|---|---|---|
+| `BUNDLE` | SanAPI (1) | `month` | 0 | `false` | **unset** |
+| `BUNDLE` | SanAPI (1) | `year` | 0 | `false` | **unset** |
+
+- **`amount: 0`** — the real amounts live per-item in Stripe and the price catalog (§7.3 #2). ✅ Revenue reporting reads Stripe prices (`timeseries.ex:239`), not `plans.amount`, so this is cosmetic. Comment the seed so nobody mistakes it for a figure.
+- **`is_private: false`** — unlike `CUSTOM_*` (which is private because it is hand-built per enterprise customer), bundles are self-serve.
+- **`has_custom_restrictions` must stay unset** — see §7.5 C2.
+- **Choose the ids deliberately**, in the same low range as the other production plans. ✅ Seeded plans use hardcoded ids and `plans_id_seq` is reserved for custom plans (`custom_plan_test.exs` restarts it at 1001).
+- The two interval rows are also where **one interval per subscription** is tracked: the subscription points at whichever row matches its items' interval.
+
+**Monthly and yearly cannot be mixed in one subscription** (confirmed — Stripe requires all recurring prices in a subscription to share an interval, and it is also the product decision). Three consequences that are easy to miss:
+
+1. **Every sku needs both variants.** Each package price, each full-history add-on and each extra-calls add-on must exist in monthly *and* yearly form, or a monthly subscriber cannot buy an add-on that only exists yearly. So `interval` is a first-class column on the price catalog, and the purchase UI must filter available skus by the subscription's existing interval. This roughly doubles the catalog — 5 packages + 5 history add-ons + N call tiers, ×2.
+2. **Switching monthly ↔ yearly is not an add/remove-item operation.** It swaps *every* item to its counterpart price and repoints `subscriptions.plan_id` at the other `BUNDLE` row. Stripe can do it in one update with proration, but the local sync has to move `plan_id` too — otherwise the subscription claims an interval its items no longer have. Task **SL** owns it as a distinct mutation.
+3. **Validate at subscribe and at add-item.** Reject a mixed-interval cart before calling Stripe rather than surfacing a Stripe error, and reject adding a yearly package to a monthly subscription. The webhook sync should also flag a mixed-interval subscription if one ever appears, rather than silently resolving an entitlement from it.
+
+**Why SanAPI, even though Institutional includes Sanbase.** ⚠️ The Institutional tier is "Full Sanbase + Full SanAPI + MCP", so that entitlement spans both products. It still belongs on SanAPI, because the fallback already exists: ✅ `get_user_subscription_for_sanbase/1` (`auth_plug.ex:374-380`) tries the Sanbase subscription and then falls back to the SanAPI one, commented *"so paying SanAPI users keep their Sanbase benefits."* So a SanAPI-hosted bundle whose entitlement names the Sanbase tier it behaves as (Institutional → `PRO_PLUS`, single pillars → `FREE`) reuses a working path instead of inventing cross-product subscriptions — and two subscriptions would break the one-invoice promise anyway.
+
+**Vocabulary.** The pricing page says "package", the code says "bundle". That is not a mismatch, and it is worth stating once so the two words do not drift:
+
+- **package** = one pillar = one Stripe line item = `type: :package`
+- **bundle** = the composed subscription = the `plans` row
+
+A bundle is made of packages.
+
 ---
 
 ## 6. Target product model
@@ -300,7 +341,7 @@ The original write-up specified only metrics and monthly calls. `Restrictions` r
 5. Data windows = **max** across purchased packages ⚠️
 6. One Stripe subscription, many items, one invoice (Stripe native)
 7. Prefer composition of prices over combinatorial fixed combo SKUs
-8. Plan naming: a single `plans` row named `BUNDLE_API` as a marker; the entitlement comes from the items (§5.0)
+8. Plan naming: `plans` rows named `BUNDLE` on SanAPI (one per interval) as markers; the entitlement comes from the items (§5.0, §5.7)
 
 ---
 
@@ -310,7 +351,7 @@ The original write-up specified only metrics and monthly calls. `Restrictions` r
 
 > For any user who does **not** hold a bundle subscription, every observable behavior is byte-identical to `c7754293a`: metric access, query access, signal access, `restrictedFrom` / `restrictedTo` windows, API call limits, response-size limits, alert limits, credits and query-execution limits, Sanbase fallback tier, report/webinar/sheet gating, admin subscription views, and revenue stats.
 
-"Observable" includes GraphQL error messages and the `plan_name` string exposed via `billing_types.ex:52` / `billing_resolver.ex:395`. ✅ That resolver reads `Plan.plan_name(sub.plan)` from the **DB** plan, so bundles will surface as `BUNDLE_API` — decide whether the frontend needs a friendlier display name, and note that `Plan.plan_name/1` must gain a `BUNDLE` clause first or it raises (§7.5 A1).
+"Observable" includes GraphQL error messages and the `plan_name` string exposed via `billing_types.ex:52` / `billing_resolver.ex:395`. ✅ That resolver reads `Plan.plan_name(sub.plan)` from the **DB** plan, so bundles will surface as `BUNDLE` — decide whether the frontend needs a friendlier display name, and note that `Plan.plan_name/1` must gain a `BUNDLE` clause first or it raises (§7.5 A1).
 
 ### 7.2 Why "branch around" is the BC-safest structure
 
@@ -358,7 +399,7 @@ This suite is the acceptance criterion for the BC contract in §7.1.
 
 | # | Site | Reached via | Blast radius |
 |---|------|-------------|--------------|
-| **A1** | 🔴🔴 `plan.ex:143-149` `Plan.plan_name/1` | `Subscription.plan_name/1` ← **AuthPlug, every authenticated request** | **Total outage for the bundle user.** A `plans` row named `BUNDLE_API` crashes before any other code runs. Fix: add a `"BUNDLE" <> _ = name -> name` clause (prefer this over adding to `@same_name_plans` at `plan.ex:131-141`, so the prefix form works) |
+| **A1** | 🔴🔴 `plan.ex:143-149` `Plan.plan_name/1` | `Subscription.plan_name/1` ← **AuthPlug, every authenticated request** | **Total outage for the bundle user.** A `plans` row named `BUNDLE` crashes before any other code runs. Fix: add a `"BUNDLE" <> _ = name -> name` clause (prefer this over adding to `@same_name_plans` at `plan.ex:131-141`, so the prefix form works) |
 | **A2** | `sanbase_access_checker.ex:62-73` `plan_stats/1` | `alerts_limit/1` ← `user_trigger_resolver.ex:63`; `can_access_paywalled_insights?/1` | Alert creation + insight access 500 |
 | **A3** | `api_access_checker.ex:68-79` `historical_data_in_days_api/1` | `AccessChecker.historical_data_in_days/4` | Every restricted metric/query 500s |
 | **A4** | `api_access_checker.ex:81-88` `historical_data_in_days_sanbase/1` | same, SANBASE product | Sanbase requests 500. Note: today handles only BASIC/PRO/PRO_PLUS/MAX — not even FREE or CUSTOM |
@@ -386,7 +427,7 @@ This suite is the acceptance criterion for the BC contract in §7.1.
 | # | Site | Behavior today | Decision needed |
 |---|------|----------------|-----------------|
 | **C1** | `metric_types.ex:17-25` `enum :plans_enum` | no `bundle` value | Add `bundle`, or add a caller-context variant of `getAvailableMetrics` (task **AM**) |
-| **C2** | `auth_plug.ex:350-362` `effective_plan_name/2` | SANBASE branch keys on `has_custom_restrictions: true` | What does a bundle map to for Sanbase? Do **not** set `has_custom_restrictions: true` on the `BUNDLE_API` row — it would route into `fetch_base_plan_for_custom/1` → `Loader.get_plan/2` → 🔴 `FunctionClauseError` |
+| **C2** | `auth_plug.ex:350-362` `effective_plan_name/2` | SANBASE branch keys on `has_custom_restrictions: true` | What does a bundle map to for Sanbase? Do **not** set `has_custom_restrictions: true` on the `BUNDLE` rows — it would route into `fetch_base_plan_for_custom/1` → `Loader.get_plan/2` → 🔴 `FunctionClauseError` |
 | **C3** | `webinar_resolver.ex:9`, `sheets_template_resolver.ex:8`, `report_resolver.ex:17` | plan-name match finds nothing | Do bundle buyers get reports / webinars / sheet templates? |
 | **C4** | `plan.ex:16` `@plans_order` | `Keyword.get` → `nil`; term ordering sorts bundles last | Cosmetic; add an explicit order value |
 | **C5** | `generic_admin/subscription.ex`, `subscription/stats.ex`, `timeseries.ex:239` | first-item / plan-name assumptions | Admin display + MRR attribution (see §7.3 #5) |
@@ -417,7 +458,7 @@ Then every site in §7.5 becomes `case Plan.type(plan_name) do :bundle -> …; :
 **(2) A plan × entry-point smoke matrix.** One test, high value:
 
 ```
-for plan_name <- existing_plan_names() ++ ["BUNDLE_API"],
+for plan_name <- existing_plan_names() ++ ["BUNDLE"],
     product   <- ["SANAPI", "SANBASE"] do
   # assert each returns a value and never raises
 end
@@ -442,7 +483,7 @@ Ship as vertical slices. Changes from the original split: BC is promoted to a fi
 
 ### DP. Dispatch seam + exhaustiveness enforcement
 **What:** §7.6 — introduce `Plan.type/1`, refactor the ~20 sites in §7.5 to dispatch on it (mechanical, behavior-preserving, provable against the **BC** fixture), and add the plan × entry-point smoke matrix. No bundle behavior yet; `:bundle` clauses raise `"not implemented"`.
-**Deliverable:** `Plan.type/1` + refactor + smoke-matrix test that fails for `BUNDLE_API` on all Group A rows.
+**Deliverable:** `Plan.type/1` + refactor + smoke-matrix test that fails for `BUNDLE` on all Group A rows.
 **Depends on:** BC. **Do this second, before any feature work.** It is the difference between "we think we found every site" and "CI proves we did". It also lands as a pure refactor with the fixture green, which makes it a trivial review.
 
 ### A. Product decisions
@@ -460,7 +501,7 @@ Ship as vertical slices. Changes from the original split: BC is promoted to a fi
 **Depends on:** A. ⚠️ Snapshot-vs-live is a real trade-off; live is defensible if you accept that admin category edits *are* billing changes and gate the LiveView accordingly.
 
 ### LC. Local multi-item subscription model
-**What:** Create the `BUNDLE_API` plan row (marker only — **not** `has_custom_restrictions: true`, see §7.5 C2). Keep `subscriptions.plan_id` pointing at it. Add `subscription_items` (`stripe_item_id`, `sku`/`price_id`, `quantity`, `type: :package | :api_calls`), a **price catalog table** (not `plans` rows — see §7.3 #2), and `subscriptions.bundle_entitlement` JSONB (§5.4).
+**What:** Create the `BUNDLE` plan rows (markers only, one per interval — **not** `has_custom_restrictions: true`; see §5.7 and §7.5 C2). Keep `subscriptions.plan_id` pointing at it. Add `subscription_items` (`stripe_item_id`, `sku`/`price_id`, `quantity`, `type: :package | :api_calls`), a **price catalog table** (not `plans` rows — see §7.3 #2), and `subscriptions.bundle_entitlement` JSONB (§5.4).
 **Deliverable:** migration + schemas + sync helpers.
 **Depends on:** A. **Not** on the Stripe catalog — seed from fixtures/admin so everything downstream can be built and tested before a Stripe object exists.
 **BC:** legacy subs have no `subscription_items` rows and `bundle_entitlement IS NULL`.
@@ -473,15 +514,15 @@ Ship as vertical slices. Changes from the original split: BC is promoted to a fi
 ### BA. Bundle access path
 **What:** The new path itself. `Bundle.Access` — six functions mirroring `CustomPlan.Access` (`plan_has_access?/3`, `get_available_metrics_for_plan/3`, `api_call_limits/2`, `historical_data_in_days/4`, `realtime_data_cut_off_in_days/4`, plus whatever C2 decides for Sanbase) reading the stored entitlement. Then fill in the `:bundle` clause at **every** site from §7.5 groups A and B, replacing the `"not implemented"` raises from **DP**.
 **Deliverable:** `Bundle.Access` + ~20 one-line dispatch clauses + tests per site.
-**Depends on:** EN, DP. **Highest-risk task in the epic.** Acceptance: the §7.6 smoke matrix is green for `BUNDLE_API` and the **BC** fixture is unchanged.
+**Depends on:** EN, DP. **Highest-risk task in the epic.** Acceptance: the §7.6 smoke matrix is green for `BUNDLE` and the **BC** fixture is unchanged.
 
 ### SC. Stripe catalog
-**What:** Stripe Product(s) + Prices: base bundle subscription, one price per package, API-call add-on prices. Sync into the local price catalog. Invoice total = sum of items. Set nicknames so customers see "Social Sentiment", not raw price ids.
+**What:** Stripe Product(s) + Prices: base bundle subscription, one price per package, full-history add-on prices, API-call add-on prices — **each in both monthly and yearly form** (§5.7). Sync into the local price catalog with `interval` as a first-class column. Invoice total = sum of items. Set nicknames so customers see "Social Sentiment", not raw price ids.
 **Deliverable:** Stripe objects + catalog rows.
 **Depends on:** A. Deliberately sequenced **after** EN/DN: the catalog is cheap and reversible, entitlement semantics are not.
 
 ### SL. Subscribe / add / remove / cancel
-**What:** New mutations for bundles only (`subscribeBundle`, add/remove item, cancel) using Stripe Subscription Items + proration. Leave `subscribe` / `update_subscription` / `cancel_subscription` (`billing_queries.ex:127/149/162`) untouched, and add the guard from §7.3 #1 so a bundle sub can never reach `upgrade_downgrade/2`. Enforce §7.3 #6 one-active-sub-per-product.
+**What:** New mutations for bundles only (`subscribeBundle`, add/remove item, **switch interval**, cancel) using Stripe Subscription Items + proration. Leave `subscribe` / `update_subscription` / `cancel_subscription` (`billing_queries.ex:127/149/162`) untouched, and add the guard from §7.3 #1 so a bundle sub can never reach `upgrade_downgrade/2`. Enforce §7.3 #6 one-active-sub-per-product, and reject mixed-interval carts and mixed-interval add-item before calling Stripe (§5.7).
 **Deliverable:** GraphQL + Stripe API + mocked tests.
 **Depends on:** SC, LC, BA.
 
@@ -521,7 +562,7 @@ BC (characterization fixture — cheap, never revisited)
   → DP (Plan.type/1 seam + smoke matrix)      ← pure refactor, fixture green, trivial review
       → A (decisions: SKUs, windows, queries/signals, rate-limit rule)
           → PD (package definition + snapshot)
-          → LC (BUNDLE_API row + subscription_items + price catalog + entitlement column)
+          → LC (BUNDLE rows + subscription_items + price catalog + entitlement column)
               → EN (entitlement resolver + persistence)   ← unit-testable, zero Stripe
                   → BA (bundle access path + ~20 dispatch clauses)  ← access & quotas work end-to-end
                       → OB (admin visibility)     ← cheap, unblocks support and reviewers
@@ -547,11 +588,12 @@ Now **decided**:
 
 | Decision | Answer | Evidence |
 |----------|--------|----------|
-| Plan name / prefix? | **`BUNDLE_API`**, matched as `"BUNDLE" <> _`. The name is a marker and encodes nothing. Requires `:bundle` clauses at ~20 sites (§7.5) — cost accepted deliberately for a greppable path decoupled from bespoke `CUSTOM_*`. | §5.2 |
+| Plan name / prefix? | **`BUNDLE`** on SanAPI, matched as `"BUNDLE" <> _`. The name is a marker and encodes nothing; no `_API` suffix, because the product is already a column. Requires `:bundle` clauses at 12 sites (§7.5). | §5.2, §5.7 |
 | Entitlement source | **Decoded from `subscription_items`**, resolved at sync time, stored as JSONB on the subscription row. No global cache, no name encoding. | §5.4 |
 | Package prices as `plans` rows or a catalog table? | **Catalog table.** `fetch_plan_id/2` would hijack `subscriptions.plan_id` from item[0]. | §7.3 #2 |
 | Coexistence: block PRO + bundle, or define precedence? | **Block.** Today the newest sub silently wins and the other is paid-for-and-ignored — that is a bug, not a precedence rule. | §7.3 #6 |
-| `has_custom_restrictions` on the `BUNDLE_API` row? | **No.** It would route Sanbase requests into `fetch_base_plan_for_custom/1` → `Loader.get_plan/2` → 🔴 `FunctionClauseError`. | §7.5 C2 |
+| `has_custom_restrictions` on the `BUNDLE` rows? | **No.** It would route Sanbase requests into `fetch_base_plan_for_custom/1` → `Loader.get_plan/2` → 🔴 `FunctionClauseError`. | §7.5 C2 |
+| Mixed monthly/yearly in one subscription? | **Not possible.** Stripe requires one interval per subscription, and it is also the product decision. Every sku needs both variants; switching interval is its own mutation. | §5.7 |
 
 Still genuinely open (all ⚠️, all belong in task **A** or **PD**):
 
@@ -610,7 +652,7 @@ Still genuinely open (all ⚠️, all belong in task **A** or **PD**):
 3. Add / remove / cancel works
 4. Metric **and query and signal** access = union of packages; monthly calls = sum; one shared bucket; data windows per the rule from task **A**
 5. **The BC golden fixture from §7.4 is green, and every hazard in §7.3 has a guard plus a test.** Existing FREE / BASIC / PRO / `CUSTOM_*` users observe zero change.
-6. **The §7.6 smoke matrix passes for `BUNDLE_API` across every entry point and both products**, and every site in §7.5 groups A and B has an explicit `:bundle` clause — none relying on a catch-all
+6. **The §7.6 smoke matrix passes for `BUNDLE` across every entry point and both products**, and every site in §7.5 groups A and B has an explicit `:bundle` clause — none relying on a catch-all
 7. Support can answer "what does this customer have access to?" from the admin UI without engineering help
 8. Tests cover entitlements, access, quota math, the multi-item guards, and the happy-path lifecycle
 
@@ -621,7 +663,7 @@ Still genuinely open (all ⚠️, all belong in task **A** or **PD**):
 Three things, in this order. The first two are pure infrastructure and can start immediately — they need no product decisions at all.
 
 1. **Task BC** — the characterization fixture (~a day). Pure upside: required by the DoD, never needs rewriting, and it makes every later review a diff instead of an argument.
-2. **Task DP** — `Plan.type/1` + the §7.6 smoke matrix (~1–2 days). Land it as a behavior-preserving refactor with the fixture green. Its first commit should be the smoke matrix *failing* for `BUNDLE_API` on all eight Group A rows — that failure list is the epic's real definition of scope.
+2. **Task DP** — `Plan.type/1` + the §7.6 smoke matrix (~1–2 days). Land it as a behavior-preserving refactor with the fixture green. Its first commit should be the smoke matrix *failing* for `BUNDLE` on all eight Group A rows — that failure list is the epic's real definition of scope.
 3. **Vertical spike** (~a day, after DP) — one hardcoded two-package entitlement written directly into `subscriptions.bundle_entitlement`, `Bundle.Access` implemented for `plan_has_access?/3` and `api_call_limits/2` only, and `:bundle` clauses filled in at just those sites. Prove that a seeded bundle subscription gets exactly the right access and quota with the fixture unchanged. That validates the §5 design end-to-end before any Stripe, package-definition, or UI work.
 
 In parallel, **task A** can proceed independently, and it should lead with the four items that cause rework: data windows, queries/signals per package, the hour/minute rule, and the base quota vs `sanapi_pro`'s existing 600k.

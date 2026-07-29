@@ -339,6 +339,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: min_interval,
+       stabilization_period: nil,
+       can_mutate: nil,
        default_aggregation: default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: selectors,

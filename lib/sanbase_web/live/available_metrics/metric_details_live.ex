@@ -142,19 +142,20 @@ defmodule SanbaseWeb.MetricDetailsLive do
         },
         %{
           key: "Stabilization Period",
-          value: metadata.stabilization_period,
+          # Not every metric adapter provides this field, so default to nil instead of raising
+          value: Map.get(metadata, :stabilization_period),
           popover_target: "popover-stabilization-period",
           popover_target_text: get_popover_text(%{key: "Stabilization Period"})
         },
         %{
           key: "Can Mutate",
-          value: metadata.can_mutate,
+          value: Map.get(metadata, :can_mutate),
           popover_target: "popover-can-mutate",
           popover_target_text: get_popover_text(%{key: "Can Mutate"})
         },
         %{
           key: "Docs",
-          value: metadata.docs || [],
+          value: Map.get(metadata, :docs) || [],
           popover_target: "popover-docs",
           popover_target_text: get_popover_text(%{key: "Docs"})
         },

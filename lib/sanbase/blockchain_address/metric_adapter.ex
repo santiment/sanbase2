@@ -135,6 +135,8 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "5m",
+       stabilization_period: nil,
+       can_mutate: nil,
        default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: [:blockchain_address, :slug],

@@ -190,6 +190,27 @@ defmodule Sanbase.ApiCallLimit do
     create(:user, user)
   end
 
+  @spec usage_and_limits(:user, %User{}) :: {:ok, map()}
+  def usage_and_limits(:user, %User{} = user) do
+    acl = get_by(:user, user)
+    has_limits? = has_limits?(acl)
+
+    {api_calls_made, api_calls_remaining, api_calls_limits} =
+      case has_limits? do
+        true -> get_api_calls_maps(acl)
+        false -> {get_api_calls_made_map(acl), nil, nil}
+      end
+
+    {:ok,
+     %{
+       plan: acl.api_calls_limit_plan,
+       has_limits: has_limits?,
+       api_calls_made: api_calls_made,
+       api_calls_limits: api_calls_limits,
+       api_calls_remaining: api_calls_remaining
+     }}
+  end
+
   # Private functions
 
   defp create(type, entity)
@@ -422,7 +443,7 @@ defmodule Sanbase.ApiCallLimit do
   defp check_result_size_limits(_acl), do: :ok
 
   defp check_api_calls_limits(%__MODULE__{} = acl) do
-    {api_calls_remaining, api_calls_limits} = get_api_calls_maps(acl)
+    {_api_calls_made, api_calls_remaining, api_calls_limits} = get_api_calls_maps(acl)
 
     # The min remaining calls among the minute, hour and values
     min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
@@ -475,16 +496,9 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp get_api_calls_maps(%__MODULE__{api_calls_limit_plan: plan, api_calls: api_calls_made}) do
-    keys = get_time_str_keys()
-
+  defp get_api_calls_maps(%__MODULE__{api_calls_limit_plan: plan} = acl) do
     api_calls_limits = plan_to_api_call_limits(plan)
-
-    api_calls_made = %{
-      month: Map.get(api_calls_made, keys.month_str, 0),
-      hour: Map.get(api_calls_made, keys.hour_str, 0),
-      minute: Map.get(api_calls_made, keys.minute_str, 0)
-    }
+    api_calls_made = get_api_calls_made_map(acl)
 
     api_calls_remaining = %{
       month: max(api_calls_limits.month - api_calls_made.month, 0),
@@ -492,8 +506,21 @@ defmodule Sanbase.ApiCallLimit do
       minute: max(api_calls_limits.minute - api_calls_made.minute, 0)
     }
 
-    {api_calls_remaining, api_calls_limits}
+    {api_calls_made, api_calls_remaining, api_calls_limits}
   end
+
+  defp get_api_calls_made_map(%__MODULE__{api_calls: api_calls_made}) do
+    keys = get_time_str_keys()
+
+    %{
+      month: Map.get(api_calls_made, keys.month_str, 0),
+      hour: Map.get(api_calls_made, keys.hour_str, 0),
+      minute: Map.get(api_calls_made, keys.minute_str, 0)
+    }
+  end
+
+  defp has_limits?(%__MODULE__{has_limits_no_matter_plan: false}), do: false
+  defp has_limits?(%__MODULE__{has_limits: has_limits}), do: has_limits
 
   defp get_response_sizes_in_mb_map(%__MODULE__{
          api_calls_responses_size_mb: api_calls_responses_size_mb

@@ -363,6 +363,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&UserResolver.api_calls_count/3)
     end
 
+    field :api_call_limits, :api_call_limits do
+      resolve(&UserResolver.api_call_limits/3)
+    end
+
     field :are_user_affiliate_datails_submitted, :boolean do
       resolve(&UserAffiliateDetailsResolver.are_user_affiliate_datails_submitted/3)
     end
@@ -466,6 +470,18 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   object :api_call_data do
     field(:datetime, non_null(:datetime))
     field(:api_calls_count, non_null(:integer))
+  end
+
+  object :api_call_limits_values do
+    field(:month, non_null(:integer))
+  end
+
+  object :api_call_limits do
+    field(:plan, non_null(:string))
+    field(:has_limits, non_null(:boolean))
+    field(:api_calls_made, non_null(:api_call_limits_values))
+    field(:api_calls_limits, :api_call_limits_values)
+    field(:api_calls_remaining, :api_call_limits_values)
   end
 
   object :sanbase_nft do

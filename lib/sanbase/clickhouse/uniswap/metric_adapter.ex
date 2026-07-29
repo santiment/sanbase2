@@ -105,6 +105,12 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1h",
+       # Computed on the fly from the raw ERC20 transfers of the UNI claim contract.
+       # The other metrics derived from the same transfers ingestion use 12h, here we
+       # double it to be on the safe side, as this one is queried live. The set of
+       # claimers is fixed by the contract, so nothing is recalculated after that.
+       stabilization_period: "24h",
+       can_mutate: false,
        default_aggregation: :sum,
        available_aggregations: @aggregations,
        available_selectors: [:slug],

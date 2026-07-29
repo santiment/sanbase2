@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict XP6pVduheaDRBBkaZ6HpOhne2In9KIqJ5gQ6dyVZYDCrKWKCvRSTZX6snaQD76v
+\restrict 8TFxEqYyUTDHGEFUCK9gVhPC8CI7eb6xub7FJQx4pVB3JUchhApahllPMPExwYO
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -127,6 +127,7 @@ CREATE TYPE public.notification_step AS ENUM (
 
 CREATE TYPE public.oban_job_state AS ENUM (
     'available',
+    'suspended',
     'scheduled',
     'executing',
     'retryable',
@@ -228,29 +229,6 @@ BEGIN
   END LOOP;
 
   RETURN result;
-END;
-$$;
-
-
---
--- Name: oban_jobs_notify(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.oban_jobs_notify() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  channel text;
-  notice json;
-BEGIN
-  IF NEW.state = 'available' THEN
-    channel = 'public.oban_insert';
-    notice = json_build_object('queue', NEW.queue);
-
-    PERFORM pg_notify(channel, notice::text);
-  END IF;
-
-  RETURN NULL;
 END;
 $$;
 
@@ -2982,7 +2960,7 @@ CREATE TABLE public.non_crypto_assets (
     metadata jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY (ARRAY[('stock'::character varying)::text, ('commodity'::character varying)::text, ('index'::character varying)::text, ('forex'::character varying)::text, ('fund'::character varying)::text, ('bond'::character varying)::text, ('other'::character varying)::text])))
+    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
 );
 
 
@@ -3195,7 +3173,6 @@ CREATE TABLE public.oban_jobs (
     cancelled_at timestamp without time zone,
     CONSTRAINT attempt_range CHECK (((attempt >= 0) AND (attempt <= max_attempts))),
     CONSTRAINT positive_max_attempts CHECK ((max_attempts > 0)),
-    CONSTRAINT priority_range CHECK (((priority >= 0) AND (priority <= 3))),
     CONSTRAINT queue_length CHECK (((char_length(queue) > 0) AND (char_length(queue) < 128))),
     CONSTRAINT worker_length CHECK (((char_length(worker) > 0) AND (char_length(worker) < 128)))
 );
@@ -3205,7 +3182,7 @@ CREATE TABLE public.oban_jobs (
 -- Name: TABLE oban_jobs; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.oban_jobs IS '11';
+COMMENT ON TABLE public.oban_jobs IS '14';
 
 
 --
@@ -7882,6 +7859,14 @@ ALTER TABLE ONLY public.non_crypto_assets
 
 
 --
+-- Name: oban_jobs non_negative_priority; Type: CHECK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.oban_jobs
+    ADD CONSTRAINT non_negative_priority CHECK ((priority >= 0)) NOT VALID;
+
+
+--
 -- Name: notification_muted_users notification_muted_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9614,6 +9599,20 @@ CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta);
 
 
 --
+-- Name: oban_jobs_state_cancelled_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX oban_jobs_state_cancelled_at_index ON public.oban_jobs USING btree (state, cancelled_at);
+
+
+--
+-- Name: oban_jobs_state_discarded_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX oban_jobs_state_discarded_at_index ON public.oban_jobs USING btree (state, discarded_at);
+
+
+--
 -- Name: oban_jobs_state_queue_priority_scheduled_at_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10472,13 +10471,6 @@ CREATE UNIQUE INDEX webinar_registrations_user_id_webinar_id_index ON public.web
 --
 
 CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrations USING btree (webinar_id);
-
-
---
--- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE FUNCTION public.oban_jobs_notify();
 
 
 --
@@ -12029,7 +12021,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XP6pVduheaDRBBkaZ6HpOhne2In9KIqJ5gQ6dyVZYDCrKWKCvRSTZX6snaQD76v
+\unrestrict 8TFxEqYyUTDHGEFUCK9gVhPC8CI7eb6xub7FJQx4pVB3JUchhApahllPMPExwYO
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12616,3 +12608,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260709120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260720115000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260728132322);

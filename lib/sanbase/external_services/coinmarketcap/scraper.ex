@@ -12,7 +12,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://coinmarketcap.com/currencies")
   plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
-  plug(Tesla.Middleware.Compression)
+  plug(Tesla.Middleware.Compression, max_body_size: 32 * 1024 * 1024)
   plug(Tesla.Middleware.Logger)
 
   def fetch_project_page(coinmarketcap_id) do

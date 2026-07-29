@@ -16,7 +16,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: @rate_limiting_server)
   plug(Sanbase.ExternalServices.ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://web-api.coinmarketcap.com")
-  plug(Tesla.Middleware.Compression)
+  plug(Tesla.Middleware.Compression, max_body_size: 32 * 1024 * 1024)
 
   @source "coinmarketcap"
   @prices_exporter :prices_exporter

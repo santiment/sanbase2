@@ -1,17 +1,29 @@
-FROM hexpm/elixir:1.19.4-erlang-28.4-debian-bookworm-20260223-slim
+FROM hexpm/elixir:1.20.2-erlang-29.0.4-debian-bookworm-20260713-slim
 
-RUN apk add --no-cache make \
+RUN apt-get update -y && apt-get install -y \
+    build-essential \
+    cmake \
+    make \
     g++ \
     git \
     postgresql-client \
     nodejs \
-    nodejs-npm \
+    npm \
     inotify-tools \
     imagemagick \
     openssl \
     wget \
-    rust \
-    cargo
+    ca-certificates \
+    curl \
+    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# Debian bookworm ships rustc 1.63, too old for the `edition = "2024"` NIFs
+# some deps build from source when no precompiled artifact matches.
+RUN curl https://sh.rustup.rs -sSf | \
+    sh -s -- --default-toolchain stable -y
+
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+ENV PATH=/root/.cargo/bin:$PATH
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

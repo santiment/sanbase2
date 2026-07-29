@@ -116,6 +116,8 @@ defmodule Sanbase.Contract.MetricAdapter do
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1m",
+       stabilization_period: nil,
+       can_mutate: nil,
        default_aggregation: :count,
        available_aggregations: @aggregations,
        available_selectors: [:contract_address],

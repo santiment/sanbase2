@@ -1,10 +1,6 @@
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 :erlang.system_flag(:backtrace_depth, 20)
 
-# anubis_mcp 1.8.0 removed its own `application/0` callback, so the Finch pool
-# its HTTP transports default to is no longer started automatically. Only
-# Sanbase.MCP.Client (a test-only MCP client) uses such a transport - the
-# production side is a server plug and needs no pool - so it is started here.
 {:ok, _} = Finch.start_link(name: Anubis.Finch, pools: %{default: [size: 15]})
 
 ExUnit.configure(

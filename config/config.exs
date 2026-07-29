@@ -34,9 +34,14 @@ config :tzdata, :autoupdate, :disabled
 
 config :tesla, disable_deprecated_builder_warning: true
 
+# Since ethereumex 0.14 the HTTP client is Finch, not HTTPoison. The
+# :http_options are passed as-is to Finch.request/3, which accepts only
+# [:pool_timeout, :receive_timeout, :request_timeout, :pool_strategy].
+# The connect timeout is a pool (Mint) option, not a per-request one.
 config :ethereumex,
   url: "https://ethereum.santiment.net",
-  http_options: [timeout: 25_000, recv_timeout: 25_000],
+  http_options: [receive_timeout: 25_000],
+  http_pool_options: %{default: [conn_opts: [transport_opts: [timeout: 25_000]]]},
   http_headers: [{"Content-Type", "application/json"}]
 
 config :event_bus,

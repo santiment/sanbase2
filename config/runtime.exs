@@ -163,9 +163,12 @@ if config_env() == :prod do
       ]
     ]
 
+  # See the comment in config/config.exs: the ethereumex HTTP client is Finch,
+  # so the timeouts use the Finch/Mint option names.
   config :ethereumex,
     url: parity_url,
-    http_options: [timeout: 25_000, recv_timeout: 25_000],
+    http_options: [receive_timeout: 25_000],
+    http_pool_options: %{default: [conn_opts: [transport_opts: [timeout: 25_000]]]},
     http_headers: [{"Content-Type", "application/json"}]
 
   git_commit = System.get_env("GIT_COMMIT")

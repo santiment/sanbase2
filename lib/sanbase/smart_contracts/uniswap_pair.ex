@@ -90,7 +90,7 @@ defmodule Sanbase.SmartContracts.UniswapPair do
       {:ok, [1.0, 2.5]}
 
       iex> UniswapPair.balances_of([addr1, addr2], contract)
-      {:error, %Mint.TransportError{reason: :nxdomain}}
+      {:error, %Finch.TransportError{reason: :nxdomain}}
   """
   @spec balances_of([address], address) :: {:ok, [float()]} | {:error, any()}
   def balances_of(addresses, contract) do

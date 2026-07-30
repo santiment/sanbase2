@@ -252,8 +252,13 @@ defmodule Sanbase.TemplateEngine do
         {:ok, {sql, args}}
 
       _ ->
-        missing_keys = Enum.map(errors, & &1.key) |> Enum.join(", ")
-        params_keys = Map.keys(params)
+        # Sort and dedup the keys so the error message is deterministic. The same
+        # broken query must always produce the same error string, otherwise the
+        # error grouping in Sentry/logs is fragmented.
+        missing_keys =
+          errors |> Enum.map(& &1.key) |> Enum.uniq() |> Enum.sort() |> Enum.join(", ")
+
+        params_keys = params |> Map.keys() |> Enum.sort()
         params_keys = if params_keys == [], do: "none", else: Enum.join(params_keys, ", ")
 
         error_str =

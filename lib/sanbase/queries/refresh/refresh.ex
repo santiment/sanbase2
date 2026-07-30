@@ -50,9 +50,13 @@ defmodule Sanbase.Queries.Refresh do
   end
 
   def refresh_query(query_id, user_id, opts) do
-    {:ok, query} = Sanbase.Queries.get_query(query_id, user_id)
-    user = Sanbase.Accounts.get_user!(user_id)
-    refresh_query(query, user, opts)
+    # Return an error tuple instead of raising a MatchError/Ecto.NoResultsError, so
+    # the caller (RefreshWorker) can annotate it with the query_id/user_id and
+    # decide whether the job is worth retrying.
+    with {:ok, query} <- Sanbase.Queries.get_query(query_id, user_id),
+         {:ok, user} <- Sanbase.Accounts.get_user(user_id) do
+      refresh_query(query, user, opts)
+    end
   end
 
   def refresh_all_dashboard_queries(dashboard_id) do

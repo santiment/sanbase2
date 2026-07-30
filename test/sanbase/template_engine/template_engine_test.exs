@@ -175,7 +175,8 @@ defmodule Sanbase.TemplateEngineTest do
       assert error_msg =~
                "One or more of the {{<key>}} templates in the query text do not correspond to any of the parameters."
 
-      assert error_msg =~ "Template keys missing from the parameters: {{d}}, {{c}}"
+      # The missing keys are sorted and deduplicated so the message is deterministic
+      assert error_msg =~ "Template keys missing from the parameters: {{c}}, {{d}}"
       assert error_msg =~ "Parameters' keys defined: a, b"
     end
 

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   import Phoenix.ConnTest
   import Sanbase.Factory
 
-  alias Sanbase.{Metric, Signal}
+  alias Sanbase.Metric
   alias Sanbase.Billing.Plan.AccessChecker
 
   # The default endpoint for testing
@@ -28,16 +28,8 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Enum.map(&elem(&1, 0))
   end
 
-  def restricted_signal_for_plan(position, product, plan_name) do
-    Signal.restricted_signals()
-    |> Enum.filter(&AccessChecker.plan_has_access?(plan_name, product, {:signal, &1}))
-    |> Stream.cycle()
-    |> Enum.at(position)
-  end
-
-  def get_free_timeseries_element(position, product, argument)
-      when argument in [:metric, :signal] do
-    free_timeseries_elements(product, argument)
+  def get_free_timeseries_element(position, product, :metric) do
+    free_timeseries_elements(product, :metric)
     |> Enum.to_list()
     |> Stream.cycle()
     |> Enum.at(position)
@@ -54,19 +46,6 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> MapSet.new()
     |> MapSet.intersection(MapSet.new(Metric.free_metrics()))
     |> MapSet.intersection(MapSet.new(Metric.available_timeseries_metrics()))
-  end
-
-  defp free_timeseries_elements(product, :signal) do
-    Signal.min_plan_map()
-    |> Enum.filter(fn
-      {_, "FREE"} -> true
-      {_, %{^product => "FREE"}} -> true
-      _ -> false
-    end)
-    |> Enum.map(fn {signal, _} -> signal end)
-    |> MapSet.new()
-    |> MapSet.intersection(MapSet.new(Signal.free_signals()))
-    |> MapSet.intersection(MapSet.new(Signal.available_timeseries_signals()))
   end
 
   def from_to(from_days_shift, to_days_shift) do

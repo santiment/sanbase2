@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   @moduledoc """
   Update the :__get_query_name_arg__ in the context in case the query is
-  get_metric, get_signal or get_anomly.
+  get_metric.
   """
 
   @behaviour Absinthe.Middleware
@@ -24,17 +24,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     # of the same queries in a document, at least one of them will have an alias,
     # otherwise we get name collision.
     elem = {:get_metric, alias || "getMetric", metric, selectors, version}
-
-    %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
-  end
-
-  defp do_call(:get_signal, alias, %Resolution{context: context} = resolution) do
-    %{arguments: %{signal: signal}} = resolution
-    selectors = get_selectors(resolution)
-    # In case of no alias, use the query name as alias. It is guaranteed that if there are two
-    # of the same queries in a document, at least one of them will have an alias,
-    # otherwise we get name collision.
-    elem = {:get_signal, alias || "getSignal", signal, selectors}
 
     %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end

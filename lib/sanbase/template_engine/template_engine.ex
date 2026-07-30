@@ -252,9 +252,6 @@ defmodule Sanbase.TemplateEngine do
         {:ok, {sql, args}}
 
       _ ->
-        # Sort and dedup the keys so the error message is deterministic. The same
-        # broken query must always produce the same error string, otherwise the
-        # error grouping in Sentry/logs is fragmented.
         missing_keys =
           errors |> Enum.map(& &1.key) |> Enum.uniq() |> Enum.sort() |> Enum.join(", ")
 

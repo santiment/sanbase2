@@ -167,7 +167,7 @@ defmodule Sanbase.TemplateEngineTest do
       opts = [params: params]
 
       template = """
-      a is {{a}}, b is {{b}}, c is {{c}}, d is {{d}}, a is again {{a}}
+      d is {{d}}, c is {{c}}, a is {{a}}, b is {{b}}, c is again {{c}}, a is again {{a}}
       """
 
       {:error, error_msg} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
@@ -175,7 +175,6 @@ defmodule Sanbase.TemplateEngineTest do
       assert error_msg =~
                "One or more of the {{<key>}} templates in the query text do not correspond to any of the parameters."
 
-      # The missing keys are sorted and deduplicated so the message is deterministic
       assert error_msg =~ "Template keys missing from the parameters: {{c}}, {{d}}"
       assert error_msg =~ "Parameters' keys defined: a, b"
     end

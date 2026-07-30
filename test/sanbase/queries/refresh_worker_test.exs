@@ -50,4 +50,53 @@ defmodule Sanbase.Queries.RefreshWorkerTest do
     assert error =~ "Failed to refresh query_id=0 user_id=#{user.id}"
     assert error =~ "Query does not exist or you don't have access to it."
   end
+
+  test "missing query cancels the next scheduled refresh" do
+    user = insert(:user)
+
+    job = %Oban.Job{
+      id: 1,
+      attempt: 1,
+      max_attempts: 3,
+      args: %{"query_id" => 0, "user_id" => user.id}
+    }
+
+    assert {:error, error} = RefreshWorker.perform(job)
+
+    assert error =~ "Failed to refresh query_id=0 user_id=#{user.id}"
+    assert error =~ "Query does not exist or you don't have access to it."
+
+    assert [%Oban.Job{state: "cancelled"}] = scheduled_refresh_jobs()
+  end
+
+  test "an error the query owner can fix keeps the next scheduled refresh" do
+    user = insert(:user)
+
+    {:ok, query} =
+      Queries.create_query(
+        %{
+          sql_query_text: "SELECT * FROM metrics WHERE slug = {{asset1}}",
+          sql_query_parameters: %{}
+        },
+        user.id
+      )
+
+    job = %Oban.Job{
+      id: 1,
+      attempt: 1,
+      max_attempts: 3,
+      args: %{"query_id" => query.id, "user_id" => user.id}
+    }
+
+    assert {:error, error} = RefreshWorker.perform(job)
+
+    assert error =~ "Template keys missing from the parameters: {{asset1}}"
+
+    assert [%Oban.Job{state: "scheduled"}] = scheduled_refresh_jobs()
+  end
+
+  defp scheduled_refresh_jobs() do
+    from(job in Oban.Job, where: job.worker == "Sanbase.Queries.RefreshWorker")
+    |> Sanbase.Repo.all()
+  end
 end

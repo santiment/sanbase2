@@ -12,7 +12,6 @@ defmodule Sanbase.Queries.RefreshWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"user_id" => user_id, "query_id" => query_id}} = job) do
-    # Make the query_id/user_id searchable Sentry tags in case the job fails
     Sanbase.Sentry.ObanTags.put_job_context(job)
 
     # Schedule a new job to refresh the query on the first attempt
@@ -25,11 +24,6 @@ defmodule Sanbase.Queries.RefreshWorker do
 
   # private
 
-  # Attach the identifiers of the offending query to the error before it is
-  # returned to Oban. The error tuple returned from here is what ends up in the
-  # Oban.PerformError message that is reported to Sentry, so the query can be
-  # located in postgres (`SELECT * FROM queries WHERE id = <query_id>`) directly
-  # from the error title, without inspecting the job args.
   defp handle_result({:error, error}, %Oban.Job{} = job, query_id, user_id) do
     error_str = error_to_string(error)
 
@@ -77,10 +71,6 @@ defmodule Sanbase.Queries.RefreshWorker do
       "(UNKNOWN_TABLE)",
       "(MEMORY_LIMIT_EXCEEDED)",
       "(AMBIGUOUS_COLUMN_NAME)",
-      # The query or its owner is gone - there is nothing left to refresh, so the
-      # daily chain must not be prolonged. Errors that the owner can still fix
-      # (a {{key}} template without a matching parameter, for example) are kept
-      # retryable on purpose, so the auto-refresh resumes on its own once fixed.
       "Query does not exist or you don't have access to it.",
       "Cannot fetch the user with id"
     ]

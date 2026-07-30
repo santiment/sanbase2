@@ -5,10 +5,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Async do
   `:test` env just executes the function as if no `async` has been used
   """
 
-  # Task.await budget for async resolvers. Must exceed the ClickHouse query
-  # timeout (100s, config.exs) so a slow query surfaces its {:error, timeout}
-  # message instead of the Task exit crashing the request into a 500.
-  # See docs/timeouts.md for the full chain.
+  # Must exceed the 85s ClickHouse budget so a slow query surfaces
+  # {:error, timeout} instead of a Task exit → 500. See docs/timeouts.md.
   @async_timeout_ms 105_000
 
   defmacro async(func, opts \\ []) do

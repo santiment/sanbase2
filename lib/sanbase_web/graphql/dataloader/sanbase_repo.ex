@@ -8,11 +8,9 @@ defmodule SanbaseWeb.Graphql.SanbaseRepo do
 
   @spec data() :: Dataloader.Ecto.t()
   def data() do
-    # Timeout must live on the source — Dataloader ignores the loader-level
-    # `Dataloader.new(timeout:)` option and derives its run timeout from
-    # `Source.timeout/1`. Postgres query budget is 30s (config.exs), +5s
-    # margin so the batch outlives its own query. See docs/timeouts.md.
-    Dataloader.Ecto.new(Repo, query: &query/2, timeout: :timer.seconds(35))
+    # Must live on the source — Dataloader ignores `Dataloader.new(timeout:)`.
+    # Outlasts the 30s Postgres budget. See docs/timeouts.md.
+    Dataloader.Ecto.new(Repo, query: &query/2, timeout: :timer.seconds(55))
   end
 
   def query(Project, _args) do

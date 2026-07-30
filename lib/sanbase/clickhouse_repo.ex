@@ -220,19 +220,29 @@ defmodule Sanbase.ClickhouseRepo do
   @masked_error_message "Cannot execute database query. If issue persists please contact Santiment Support."
 
   @timeout_error_message """
-  The query took too long and was cancelled. An API call that requests many \
+  The query took too long to complete. An API call that requests many \
   fields or subqueries executes many database queries whose runtimes add up — \
   try requesting fewer fields per call, narrowing the from/to range, using a \
   bigger interval, or splitting the call into several smaller ones. If the \
   issue persists please contact Santiment Support.\
   """
 
+  # Mint's bare "timeout", DBConnection's "timed out"/"dropped from queue",
+  # ClickHouse's TIMEOUT_EXCEEDED. See docs/timeouts.md. The word boundaries
+  # keep identifiers like `timeout_ms` from being read as a timeout, which is
+  # why TIMEOUT_EXCEEDED needs an alternative of its own.
+  @timeout_error_regex ~r/\btimed?\s*out\b|\btimeout_exceeded\b|\bdropped\s+from\s+queue\b/i
+
+  # ClickHouse echoes the offending SQL back; drop it so a query containing
+  # "timeout" isn't misclassified.
+  @query_echo_regex ~r/while processing query:/i
+
   @doc false
-  # Timeout-class errors get a meaningful user-facing message instead of the
-  # generic masked one: DBConnection queue/checkout timeouts, query timeouts
-  # and ClickHouse-side TIMEOUT_EXCEEDED all match.
   def timeout_error?(message) when is_binary(message) do
-    message =~ ~r/timed? ?out|TIMEOUT_EXCEEDED|Code: 159|dropped from queue/i
+    message
+    |> String.split(@query_echo_regex, parts: 2)
+    |> hd()
+    |> String.match?(@timeout_error_regex)
   end
 
   def timeout_error?(_), do: false

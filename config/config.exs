@@ -120,25 +120,23 @@ config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer
 
-config :sanbase, Sanbase.ClickhouseRepo,
+# `:timeout` is one absolute budget for pool wait + query, and it can't
+# interrupt an in-flight recv — hence 85s, not the 102s of headroom above.
+# queue_target/queue_interval are CoDel load shedding, not timeouts.
+# See docs/timeouts.md.
+clickhouse_opts = [
   adapter: Ecto.Adapters.Postgres,
-  queue_target: 10_000,
-  queue_interval: 30_000,
-  timeout: 100_000,
-  max_overflow: 3,
-  scheme: :http
-
-# Same queue budgets as the read-write repo: under pool saturation requests
-# are dropped from the queue fast (with a user-facing timeout message) instead
-# of queueing for minutes past the connection's lifetime. See docs/timeouts.md.
-clickhouse_read_only_opts = [
-  adapter: Ecto.Adapters.Postgres,
-  queue_target: 10_000,
-  queue_interval: 30_000,
-  timeout: 100_000,
+  queue_target: 5_000,
+  queue_interval: 20_000,
+  timeout: 85_000,
   max_overflow: 3,
   scheme: :http
 ]
+
+config :sanbase, Sanbase.ClickhouseRepo, clickhouse_opts
+
+# Per-plan read-only repos share the read-write budgets.
+clickhouse_read_only_opts = clickhouse_opts
 
 config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts

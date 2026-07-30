@@ -363,9 +363,7 @@ defmodule Sanbase.Application do
          name: Sanbase.Cache.name(),
          ttl_check_interval: :timer.seconds(30),
          global_ttl: :timer.minutes(5),
-         # Must exceed the ClickHouse query budget (100s) — a waiter that
-         # outlasts the lock holder gets the value instead of exiting with a
-         # timeout while the holder is still legitimately computing.
+         # Must exceed the ClickHouse budget bounding the lock holder (85s).
          # See docs/timeouts.md.
          acquire_lock_timeout: 102_000
        ]},

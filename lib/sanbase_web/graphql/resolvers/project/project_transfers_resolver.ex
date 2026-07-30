@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Async
-  import Absinthe.Resolution.Helpers, except: [async: 1]
+  import Absinthe.Resolution.Helpers, except: [async: 1, async: 2]
 
   alias Sanbase.Transfers
   alias Sanbase.Project

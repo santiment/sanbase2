@@ -16,12 +16,9 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   """
   @spec data(Sanbase.RequestContext.t() | nil) :: Dataloader.KV.t()
   def data(request_context \\ nil) do
-    # Timeout must live on the source — Dataloader ignores the loader-level
-    # `Dataloader.new(timeout:)` option and derives its run timeout from
-    # `Source.timeout/1` (`Dataloader.KV` hard-defaults to 30s). Batches here
-    # run ClickHouse queries with a 100s budget (config.exs), +5s margin so
-    # a slow batch returns its data/error instead of being killed while the
-    # query keeps running. See docs/timeouts.md.
+    # Must live on the source — Dataloader ignores `Dataloader.new(timeout:)`.
+    # Outlasts the 85s CH budget these batches run. Note it is *per batch*:
+    # `Task.async_stream` runs them in waves. See docs/timeouts.md.
     Dataloader.KV.new(make_kv_fun(request_context), timeout: :timer.seconds(105))
   end
 

@@ -13,8 +13,16 @@ defmodule SanbaseWeb.DeepResearch.ChartRenderer.Svg do
 
   @behaviour SanbaseWeb.DeepResearch.ChartRenderer
 
-  # Shared categorical palette (slices / series).
+  # Shared categorical palette (slices / series). These read acceptably on both a
+  # light and a dark card, so they are fixed hex.
   @colors ~w(#6366f1 #10b981 #f59e0b #ef4444 #3b82f6 #ec4899 #14b8a6 #a855f7)
+
+  # Theme-dependent chrome (donut track, axis labels) must NOT be fixed hex — a
+  # light-grey track is a glaring near-white ring on a dark card. Paint it with
+  # `currentColor` and let a Tailwind text utility set the colour, so the SVG
+  # follows `data-theme` exactly like the rest of the page.
+  defp chrome_class(), do: "text-base-content/20"
+  defp label_class(), do: "text-base-content/50"
 
   @impl true
   def chart(assigns) do
@@ -43,8 +51,8 @@ defmodule SanbaseWeb.DeepResearch.ChartRenderer.Svg do
         {@spec[:title]}
       </figcaption>
       <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <svg viewBox="0 0 42 42" class="size-36 shrink-0" role="img">
-          <circle cx="21" cy="21" r="15.915" fill="none" stroke="#e5e7eb" stroke-width="5" />
+        <svg viewBox="0 0 42 42" class={["size-36 shrink-0", chrome_class()]} role="img">
+          <circle cx="21" cy="21" r="15.915" fill="none" stroke="currentColor" stroke-width="5" />
           <circle
             :for={s <- @slices}
             cx="21"
@@ -59,8 +67,7 @@ defmodule SanbaseWeb.DeepResearch.ChartRenderer.Svg do
         </svg>
         <ul class="space-y-1.5 text-sm">
           <li :for={s <- @slices} class="flex items-center gap-2">
-            <span class="inline-block size-3 shrink-0 rounded-sm" style={"background:#{s.color}"}>
-            </span>
+            <span class="inline-block size-3 shrink-0 rounded-sm" style={"background:#{s.color}"}></span>
             <span class="text-base-content/80">{s.label}</span>
             <span class="text-base-content/50">{s.pct}%</span>
           </li>
@@ -128,7 +135,7 @@ defmodule SanbaseWeb.DeepResearch.ChartRenderer.Svg do
       >
         {@spec[:title]}
       </figcaption>
-      <svg viewBox={"0 0 #{@geo.w} #{@geo.h}"} class="h-auto w-full" role="img">
+      <svg viewBox={"0 0 #{@geo.w} #{@geo.h}"} class={["h-auto w-full", label_class()]} role="img">
         <rect
           :if={@geo.spike}
           x={@geo.spike.x}
@@ -148,7 +155,7 @@ defmodule SanbaseWeb.DeepResearch.ChartRenderer.Svg do
           stroke-linejoin="round"
           vector-effect="non-scaling-stroke"
         />
-        <text x={@geo.w - 4} y="13" text-anchor="end" fill="#9ca3af" font-size="11">
+        <text x={@geo.w - 4} y="13" text-anchor="end" fill="currentColor" font-size="11">
           {@geo.vmax_label}
         </text>
       </svg>

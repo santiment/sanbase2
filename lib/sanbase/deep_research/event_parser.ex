@@ -28,7 +28,10 @@ defmodule Sanbase.DeepResearch.EventParser do
   # event renders it as a folded table, so drop the raw JSON here (also a backstop for an
   # orchestrator JSON leak). Matches: a leading fence/brace, OR the findings array key
   # anywhere (so a fenced or partially-streamed blob is still caught).
-  @json_object_re ~r/^\s*`{0,3}\s*(?:json)?\s*[\[{]|"findings"\s*:\s*\[/
+  #
+  # A leading `[` must be followed by `{` or `"` to count as JSON — otherwise prose that
+  # opens with a citation marker (`[1] Source — …`) would be dropped as scaffolding.
+  @json_object_re ~r/^\s*`{0,3}\s*(?:json)?\s*(?:\{|\[\s*[{"])|"findings"\s*:\s*\[/
 
   @spec parse(term()) :: map()
   def parse(value) when is_map(value) do

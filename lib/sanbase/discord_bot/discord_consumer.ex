@@ -64,8 +64,6 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     if msg_contains_bot_mention?(msg) do
-      warm_up(msg)
-
       case CommandHandler.handle_command("mention", msg) do
         {:ok, _} -> log(msg, "MENTION COMMAND SUCCESS")
         :ok -> log(msg, "MENTION COMMAND SUCCESS")
@@ -90,8 +88,6 @@ defmodule Sanbase.DiscordConsumer do
       when command in [
              "summary"
            ] do
-    warm_up(interaction)
-
     case command do
       cmd when cmd in ["summary"] ->
         case CommandHandler.discord_metadata(interaction) do
@@ -114,7 +110,8 @@ defmodule Sanbase.DiscordConsumer do
           interaction,
         _ws_state
       }) do
-    warm_up(interaction)
+    # Discord invalidates the interaction token if we do not respond within 3
+    # seconds, so nothing slow may run before `handle_interaction/3` answers.
     [command, thread_id] = String.split(custom_id, "_")
 
     if command in ["up", "down"] do
@@ -218,64 +215,5 @@ defmodule Sanbase.DiscordConsumer do
       {:error, error} ->
         Logger.error("COMMAND ERROR #{command_insp} #{inspect(params)} #{inspect(error)}")
     end
-  end
-
-  defp warm_up(msg_or_interaction, retries \\ 3) do
-    t1 = System.monotonic_time(:millisecond)
-    log(msg_or_interaction, "WARM UP STARTING...")
-
-    task = Task.async(fn -> Nostrum.Api.Self.get() end)
-
-    case Task.yield(task, 2000) || Task.shutdown(task) do
-      nil ->
-        log(msg_or_interaction, "WARM UP ERROR: Timeout reached.", type: :error)
-
-        if retries > 0 do
-          log(msg_or_interaction, "WARM UP TIMEOUT: Retrying...", type: :error)
-
-          warm_up(msg_or_interaction, retries - 1)
-        else
-          log(msg_or_interaction, "WARM UP TIMEOUT: No more retries.", type: :error)
-        end
-
-      {:ok, result} ->
-        # handle the result
-        handle_result(result, msg_or_interaction, retries)
-    end
-
-    t2 = System.monotonic_time(:millisecond)
-    log(msg_or_interaction, "Time spent warming up #{t2 - t1}ms.")
-  end
-
-  defp handle_result({:ok, _}, msg_or_interaction, _retries) do
-    log(msg_or_interaction, "WARM UP SUCCESS")
-  end
-
-  defp handle_result({:error, :timeout}, msg_or_interaction, _retries) do
-    log(msg_or_interaction, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
-  end
-
-  defp handle_result(error, msg_or_interaction, retries) when retries > 0 do
-    log(msg_or_interaction, "Unexpected error in WARM UP: #{inspect(error)}. Retrying...",
-      type: :error
-    )
-
-    warm_up(msg_or_interaction, retries - 1)
-  end
-
-  defp handle_result(error, msg_or_interaction, _retries) do
-    log(msg_or_interaction, "WARM UP ERROR: #{inspect(error)}. No more retries.", type: :error)
-  end
-
-  def restart_ratelimiter() do
-    supervisor_pid =
-      Process.whereis(Ratelimiter)
-      |> Process.info()
-      |> Keyword.get(:dictionary)
-      |> Keyword.get(:"$ancestors")
-      |> List.first()
-
-    :ok = Supervisor.terminate_child(supervisor_pid, Nostrum.Api.Ratelimiter)
-    Supervisor.restart_child(supervisor_pid, Nostrum.Api.Ratelimiter)
   end
 end

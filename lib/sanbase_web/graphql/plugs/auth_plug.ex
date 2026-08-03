@@ -480,16 +480,29 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
+  @sanbase_origin_domains [
+    "santiment.net",
+    "santiment.network",
+    "scorearena.ai",
+    "sanitize.page"
+  ]
+
   defp get_no_auth_product_id(nil), do: @product_id_api
 
-  defp get_no_auth_product_id(origin) do
-    case String.ends_with?(origin, "santiment.net") or
-           String.ends_with?(origin, "santiment.network") or
-           String.ends_with?(origin, "scorearena.ai") or
-           String.ends_with?(origin, "sanitize.page") do
+  defp get_no_auth_product_id(origin_host) do
+    case sanbase_origin_host?(String.downcase(origin_host)) do
       true -> @product_id_sanbase
       false -> @product_id_api
     end
+  end
+
+  # The argument is a host, not a URL. A bare suffix test on it also accepts
+  # `evilsantiment.net`, so the domain must either match exactly or be reached
+  # over a dot boundary.
+  defp sanbase_origin_host?(host) do
+    Enum.any?(@sanbase_origin_domains, fn domain ->
+      host == domain or String.ends_with?(host, "." <> domain)
+    end)
   end
 
   defp get_apikey_product_id([user_agent]) do

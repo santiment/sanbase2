@@ -51,9 +51,6 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
     [
       {:get_available_metrics_for_plan,
        &AccessChecker.get_available_metrics_for_plan(&1, &2, :all)},
-      {:historical_data_in_days, &AccessChecker.historical_data_in_days(@item, &2, &2, &1)},
-      {:realtime_data_cut_off_in_days,
-       &AccessChecker.realtime_data_cut_off_in_days(@item, &2, &2, &1)},
       {:alerts_limit, fn plan, _product -> SanbaseAccessChecker.alerts_limit(plan) end},
       {:credits_limit, &Authorization.credits_limit(&2, &1)},
       {:query_executions_limit, &Authorization.query_executions_limit(&2, &1)},
@@ -71,13 +68,7 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   # bundle_entry_points/0 is empty, task BA is complete.
   describe "implemented bundle entry points" do
     test "plan_has_access? answers from the entitlement it is handed" do
-      entitlement = %Bundle.Entitlement{
-        metric_access: %{"accessible" => ["price_usd"]},
-        query_access: %{"accessible" => "all"},
-        signal_access: %{"accessible" => "all"},
-        api_call_limits: %{"month" => 100_000, "hour" => 30_000, "minute" => 600},
-        schema_version: Bundle.Entitlement.current_schema_version()
-      }
+      entitlement = bundle_entitlement()
 
       for product <- @products do
         assert AccessChecker.plan_has_access?(
@@ -109,6 +100,69 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
     test "plan_has_limits? says a bundle always has limits" do
       for product <- @products do
         assert ApiCallLimit.plan_has_limits?(acl_plan(product, @bundle_plan))
+      end
+    end
+
+    test "the data windows come from the entitlement" do
+      # One window for the whole entitlement, not one per metric (§5.7). The
+      # requested item is passed but deliberately not consulted.
+      entitlement = %{
+        bundle_entitlement()
+        | historical_data_in_days: 1095,
+          realtime_data_cut_off_in_days: 2
+      }
+
+      for product <- @products, item <- [@item, {:query, :get_trending_words}] do
+        assert AccessChecker.historical_data_in_days(
+                 item,
+                 product,
+                 product,
+                 @bundle_plan,
+                 entitlement
+               ) == 1095
+
+        assert AccessChecker.realtime_data_cut_off_in_days(
+                 item,
+                 product,
+                 product,
+                 @bundle_plan,
+                 entitlement
+               ) == 2
+      end
+    end
+
+    test "an unrestricted entitlement reports no window at all" do
+      # nil history and a 0 cut-off are what every bundle gets today, and both
+      # mean "no restriction" downstream.
+      entitlement = bundle_entitlement()
+
+      assert AccessChecker.historical_data_in_days(
+               @item,
+               "SANAPI",
+               "SANAPI",
+               @bundle_plan,
+               entitlement
+             ) ==
+               nil
+
+      assert AccessChecker.realtime_data_cut_off_in_days(
+               @item,
+               "SANAPI",
+               "SANAPI",
+               @bundle_plan,
+               entitlement
+             ) == 0
+    end
+
+    test "the data windows refuse to answer without an entitlement" do
+      for product <- @products do
+        assert_raise Bundle.MissingEntitlementError, fn ->
+          AccessChecker.historical_data_in_days(@item, product, product, @bundle_plan)
+        end
+
+        assert_raise Bundle.MissingEntitlementError, fn ->
+          AccessChecker.realtime_data_cut_off_in_days(@item, product, product, @bundle_plan)
+        end
       end
     end
   end
@@ -220,6 +274,33 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       assert error.message =~ "get_available_metrics_for_plan"
       assert error.message =~ @bundle_plan
     end
+
+    test "Plan.Restrictions.get passes the entitlement down to the bundle path" do
+      # Restrictions.get is what the metric and signal resolvers call. It fans
+      # out to plan_has_access? and both window functions, so if it drops the
+      # entitlement a bundle customer gets a 500 on metric metadata.
+      restriction =
+        Sanbase.Billing.Plan.Restrictions.get(
+          @item,
+          "SANAPI",
+          "SANAPI",
+          @bundle_plan,
+          bundle_entitlement()
+        )
+
+      assert restriction.is_accessible
+
+      refused =
+        Sanbase.Billing.Plan.Restrictions.get(
+          {:metric, "mvrv_usd"},
+          "SANAPI",
+          "SANAPI",
+          @bundle_plan,
+          bundle_entitlement()
+        )
+
+      refute refused.is_accessible
+    end
   end
 
   describe "existing plans never reach the bundle path" do
@@ -248,4 +329,18 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   end
 
   defp acl_plan(product, plan_name), do: String.downcase("#{product}_#{plan_name}")
+
+  # A minimal valid entitlement: one metric bought, everything else at the
+  # defaults every bundle gets today.
+  defp bundle_entitlement do
+    %Bundle.Entitlement{
+      metric_access: %{"accessible" => ["price_usd"]},
+      query_access: %{"accessible" => "all"},
+      signal_access: %{"accessible" => "all"},
+      api_call_limits: %{"month" => 100_000, "hour" => 30_000, "minute" => 600},
+      historical_data_in_days: nil,
+      realtime_data_cut_off_in_days: 0,
+      schema_version: Bundle.Entitlement.current_schema_version()
+    }
+  end
 end

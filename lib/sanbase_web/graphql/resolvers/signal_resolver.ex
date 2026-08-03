@@ -156,10 +156,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   end
 
   defp resolution_to_signal_restrictions(resolution) do
-    %{context: %{requested_product: requested_product, auth: %{plan: plan_name}}} = resolution
+    %{context: %{requested_product: requested_product, auth: %{plan: plan_name} = auth}} =
+      resolution
+
     %{source: %{signal: signal}} = resolution
 
-    Restrictions.get({:signal, signal}, requested_product, requested_product, plan_name)
+    Restrictions.get(
+      {:signal, signal},
+      requested_product,
+      requested_product,
+      plan_name,
+      Sanbase.Billing.Subscription.bundle_entitlement(auth[:subscription])
+    )
   end
 
   defp resolution_to_all_signals_restrictions(resolution) do

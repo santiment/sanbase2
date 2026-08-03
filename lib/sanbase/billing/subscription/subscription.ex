@@ -76,6 +76,10 @@ defmodule Sanbase.Billing.Subscription do
     # them. See bundle_entitlement_changeset/2.
     embeds_one(:bundle_entitlement, Sanbase.Billing.Plan.Bundle.Entitlement, on_replace: :delete)
 
+    # Only bundle subscriptions have items. Every other subscription has none,
+    # which is how the two are told apart without asking Stripe.
+    has_many(:items, Sanbase.Billing.Subscription.Item, on_delete: :delete_all)
+
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
 
@@ -139,6 +143,22 @@ defmodule Sanbase.Billing.Subscription do
         |> Map.put(:valid?, false)
     end
   end
+
+  @doc ~s"""
+  The stored bundle entitlement, or `nil` for anything that is not a bundle.
+
+  Total on purpose. Callers hold whatever the request context gave them - a
+  subscription, `nil` for an anonymous or free user, or an unloaded association -
+  and every one of those means the same thing here: no entitlement. Keeping the
+  `nil` handling in one place stops each call site inventing its own.
+  """
+  @spec bundle_entitlement(%__MODULE__{} | nil | term()) :: Plan.Bundle.Entitlement.t() | nil
+  def bundle_entitlement(%__MODULE__{
+        bundle_entitlement: %Plan.Bundle.Entitlement{} = entitlement
+      }),
+      do: entitlement
+
+  def bundle_entitlement(_), do: nil
 
   def create(params, opts \\ []) do
     %__MODULE__{}

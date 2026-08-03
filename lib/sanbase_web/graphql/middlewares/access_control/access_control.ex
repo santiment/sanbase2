@@ -295,10 +295,16 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %{
       plan_name: plan_name,
       requested_product: requested_product,
-      subscription_product: subscription_product
+      subscription_product: subscription_product,
+      entitlement: entitlement
     } = context_to_plan_name_product_code(context)
 
-    case AccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name) do
+    case AccessChecker.plan_has_access?(
+           query_or_argument,
+           requested_product,
+           plan_name,
+           entitlement
+         ) do
       true ->
         resolution
 
@@ -449,7 +455,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %{
       plan_name: plan_name,
       requested_product: requested_product,
-      subscription_product: subscription_product
+      subscription_product: subscription_product,
+      entitlement: entitlement
     } = context_to_plan_name_product_code(context)
 
     historical_data_in_days =
@@ -457,7 +464,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         query_or_argument,
         requested_product,
         subscription_product,
-        plan_name
+        plan_name,
+        entitlement
       )
 
     realtime_data_cut_off_in_days =
@@ -465,7 +473,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         query_or_argument,
         requested_product,
         subscription_product,
-        plan_name
+        plan_name,
+        entitlement
       )
 
     case query_or_argument do
@@ -576,7 +585,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         %{
           plan_name: plan_name,
           requested_product: requested_product,
-          subscription_product: subscription_product
+          subscription_product: subscription_product,
+          entitlement: entitlement
         } = context_to_plan_name_product_code(context)
 
         query_or_argument = context[:__query_argument_atom_name__]
@@ -586,7 +596,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
             query_or_argument,
             requested_product,
             subscription_product,
-            plan_name
+            plan_name,
+            entitlement
           )
 
         resolution
@@ -655,7 +666,16 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %{
       plan_name: plan_name,
       requested_product: requested_product,
-      subscription_product: subscription_product
+      subscription_product: subscription_product,
+      entitlement: bundle_entitlement(context)
     }
   end
+
+  # Only bundle plans read this. Every bundle subscription is named `BUNDLE`, so
+  # the plan name identifies nothing and what the customer bought has to travel
+  # with the request. The subscription is already in the context (`auth_plug.ex`
+  # puts it there); this just stops it being dropped on the way to the access
+  # checker. See §5.8 of docs/composable-api-plans-handover.md.
+  defp bundle_entitlement(context),
+    do: Sanbase.Billing.Subscription.bundle_entitlement(context[:auth][:subscription])
 end

@@ -104,14 +104,16 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           query_or_argument,
           requested_product,
           subscription_product,
-          plan_name
+          plan_name,
+          entitlement
         ) ::
           non_neg_integer() | nil
   def historical_data_in_days(
         query_or_argument,
         requested_product,
         subscription_product,
-        plan_name
+        plan_name,
+        entitlement \\ nil
       ) do
     case Plan.type(plan_name) do
       :bundle ->
@@ -119,7 +121,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           query_or_argument,
           requested_product,
           subscription_product,
-          plan_name
+          plan_name,
+          entitlement
         )
 
       :custom ->
@@ -148,14 +151,16 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           query_or_argument,
           requested_product,
           subscription_product,
-          plan_name()
+          plan_name(),
+          entitlement
         ) ::
           non_neg_integer() | nil
   def realtime_data_cut_off_in_days(
         query_or_argument,
         requested_product,
         subscription_product,
-        plan_name
+        plan_name,
+        entitlement \\ nil
       ) do
     case Plan.type(plan_name) do
       :bundle ->
@@ -163,7 +168,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           query_or_argument,
           requested_product,
           subscription_product,
-          plan_name
+          plan_name,
+          entitlement
         )
 
       :custom ->

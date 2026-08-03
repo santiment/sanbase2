@@ -261,13 +261,21 @@ defmodule Sanbase.Billing.Plan do
 
   @doc """
   List all products with corresponding subscription plans
+
+  `BUNDLE` rows are left out. They are markers that a subscription is a bundle,
+  not tiers anyone can subscribe to - their amount is 0 and the real prices live
+  per item in the bundle price catalog. Listing them here would show a $0 plan on
+  the pricing page and offer `subscribe(plan_id:)` a plan that flow cannot
+  correctly create.
   """
   def product_with_plans do
+    bundle_pattern = @bundle_prefix <> "%"
+
     query =
       from(p in Product,
         join: pl in __MODULE__,
         on: pl.product_id == p.id,
-        where: not pl.is_ppp,
+        where: not pl.is_ppp and not like(pl.name, ^bundle_pattern),
         order_by: [desc: pl.order, asc: pl.id],
         preload: [plans: pl]
       )

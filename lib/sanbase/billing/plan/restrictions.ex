@@ -25,13 +25,33 @@ defmodule Sanbase.Billing.Plan.Restrictions do
         }
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
-  @spec get(query_or_argument, String.t(), String.t(), String.t()) :: restriction()
-  def get({type, name} = query_or_argument, requested_product, subscription_product, plan_name)
+  @type entitlement :: Sanbase.Billing.Plan.Bundle.Entitlement.t() | nil
+
+  @doc ~s"""
+  Describe the time restrictions on one metric, query or signal for a plan.
+
+  The last argument is only read by bundle plans, whose name identifies nothing -
+  see `Sanbase.Billing.Plan.AccessChecker.plan_has_access?/4`. Every other plan
+  ignores it, so existing four-argument callers are unaffected.
+  """
+  @spec get(query_or_argument, String.t(), String.t(), String.t(), entitlement) :: restriction()
+  def get(
+        {type, name} = query_or_argument,
+        requested_product,
+        subscription_product,
+        plan_name,
+        entitlement \\ nil
+      )
       when type in [:metric, :signal, :query] do
     type_str = to_string(type)
     name_str = construct_name(type, name)
 
-    case AccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name) do
+    case AccessChecker.plan_has_access?(
+           query_or_argument,
+           requested_product,
+           plan_name,
+           entitlement
+         ) do
       false ->
         no_access_map(type_str, name_str)
 
@@ -47,7 +67,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
               plan_name,
               requested_product,
               subscription_product,
-              query_or_argument
+              query_or_argument,
+              entitlement
             )
         end
     end
@@ -127,7 +148,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
          plan_name,
          requested_product,
          subscription_product,
-         query_or_metric
+         query_or_metric,
+         entitlement
        ) do
     now = Timex.now()
 
@@ -136,7 +158,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
              query_or_metric,
              requested_product,
              subscription_product,
-             plan_name
+             plan_name,
+             entitlement
            ) do
         nil -> nil
         days -> Timex.shift(now, days: -days)
@@ -147,7 +170,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
              query_or_metric,
              requested_product,
              subscription_product,
-             plan_name
+             plan_name,
+             entitlement
            ) do
         nil -> nil
         0 -> nil

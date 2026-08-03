@@ -102,6 +102,47 @@ defmodule Sanbase.Clickhouse.QueryTest do
     end
   end
 
+  describe "log_comment SQL literal escaping" do
+    # `graphql_request_log_id` carries the client's `x-request-id` header.
+    test "a quote in the log_comment cannot close the literal and add SETTINGS" do
+      injected = "aaaaaaaaaaaaaaaaaaaa',readonly=0,max_execution_time=999999 --"
+
+      query = Query.new("SELECT 1", %{}, log_comment: %{graphql_request_log_id: injected})
+
+      {:ok, %{sql: sql}} = Query.get_sql_args(query)
+
+      # Carried verbatim, but with the quote escaped — inert data, not SQL.
+      assert sql =~ "\\',readonly=0"
+
+      # The literal is closed exactly once, at the very end.
+      [_before, after_open] = String.split(sql, " log_comment='", parts: 2)
+      assert unescaped_quote_positions(after_open) == [String.length(after_open) - 1]
+    end
+
+    test "a backslash in the log_comment is escaped before the quotes are" do
+      query = Query.new("SELECT 1", %{}, log_comment: %{stacktrace: "a\\'b"})
+
+      {:ok, %{sql: sql}} = Query.get_sql_args(query)
+
+      [_before, after_open] = String.split(sql, " log_comment='", parts: 2)
+      assert unescaped_quote_positions(after_open) == [String.length(after_open) - 1]
+    end
+  end
+
+  # Indices of the `'` characters that ClickHouse would read as terminating a
+  # string literal — those preceded by an even number of backslashes.
+  defp unescaped_quote_positions(str) do
+    str
+    |> String.graphemes()
+    |> Enum.with_index()
+    |> Enum.reduce({[], 0}, fn
+      {"\\", _i}, {acc, backslashes} -> {acc, backslashes + 1}
+      {"'", i}, {acc, backslashes} when rem(backslashes, 2) == 0 -> {[i | acc], 0}
+      {_char, _i}, {acc, _backslashes} -> {acc, 0}
+    end)
+    |> then(fn {positions, _} -> Enum.reverse(positions) end)
+  end
+
   describe "get_sql_args with explicit RequestContext (preferred)" do
     test "protected explicit ctx wins even when Logger.metadata says non-protected", %{
       protected: protected,

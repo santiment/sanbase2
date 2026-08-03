@@ -13,6 +13,13 @@ defmodule SanbaseWeb.Router do
     {SanbaseWeb.AdminUserAuth, :ensure_user_has_admin_panel_role}
   ]
 
+  # For the LiveViews that grant or revoke privilege.
+  @admin_panel_owner_on_mount [
+    {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
+    {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles},
+    {SanbaseWeb.AdminUserAuth, :ensure_user_has_admin_panel_owner_role}
+  ]
+
   pipeline :admin_pod_only do
     plug(SanbaseWeb.Plug.AdminPodOnly)
   end
@@ -312,9 +319,12 @@ defmodule SanbaseWeb.Router do
       live("/memory_stats", Admin.MemoryStatsLive)
       live("/user_stats", UserStatsLive)
       live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
-      live("/user_roles", Admin.UserRolesLive, :index)
       live("/user_overview", Admin.UserOverviewLive)
       live("/user_rankings", Admin.UserRankingsLive)
+    end
+
+    live_session :admin_panel_roles, on_mount: @admin_panel_owner_on_mount do
+      live("/user_roles", Admin.UserRolesLive, :index)
     end
 
     get("/user_rankings/export", Admin.UserRankingsController, :export)

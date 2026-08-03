@@ -45,6 +45,17 @@ defmodule Sanbase.Billing.Plan.Bundle do
     defexception [:message]
   end
 
+  @doc ~s"""
+  Raise because a bundle subscription arrived without its stored entitlement.
+
+  `site` identifies the function that was reached, so the failure names the
+  caller that failed to pass it through rather than surfacing as a
+  `FunctionClauseError` further along.
+
+  Distinct from `not_implemented!/2` on purpose: that one means the bundle path
+  for a feature does not exist yet, this one means the path exists but its input
+  is missing. The two have different fixes, so they are different errors.
+  """
   @spec missing_entitlement!(atom()) :: no_return()
   def missing_entitlement!(site) do
     raise MissingEntitlementError,

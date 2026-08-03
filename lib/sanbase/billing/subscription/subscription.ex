@@ -70,7 +70,11 @@ defmodule Sanbase.Billing.Subscription do
     # when they change, so access checks never have to decode items or call
     # Stripe. NULL for every other subscription. See §5.4 of
     # docs/composable-api-plans-handover.md
-    embeds_one(:bundle_entitlement, Sanbase.Billing.Plan.Bundle.Entitlement, on_replace: :update)
+    # on_replace: :delete, not :update - a new entitlement replaces the old one
+    # outright. Merging would let a field the new calculation omits keep its old
+    # value, so a customer who dropped a package could keep part of what it gave
+    # them. See bundle_entitlement_changeset/2.
+    embeds_one(:bundle_entitlement, Sanbase.Billing.Plan.Bundle.Entitlement, on_replace: :delete)
 
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
@@ -93,8 +97,47 @@ defmodule Sanbase.Billing.Subscription do
       :inserted_at,
       :type
     ])
-    |> cast_embed(:bundle_entitlement)
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
+  end
+
+  @doc ~s"""
+  Sets the resolved bundle entitlement, replacing any previous one outright.
+
+  Deliberately separate from `changeset/2`: an entitlement is what a customer is
+  allowed to use and how much of it, so it is only ever written by the code that
+  works it out from the subscription's items - never carried in with ordinary
+  subscription attributes.
+
+  The replacement is wholesale rather than a merge. Building on top of the stored
+  value would let a field the new calculation leaves out keep its old value, so a
+  customer who dropped a package could silently keep part of what it granted.
+  """
+  @spec bundle_entitlement_changeset(%__MODULE__{}, map() | nil) :: Ecto.Changeset.t()
+  def bundle_entitlement_changeset(%__MODULE__{} = subscription, nil) do
+    subscription
+    |> change()
+    |> put_embed(:bundle_entitlement, nil)
+  end
+
+  def bundle_entitlement_changeset(%__MODULE__{} = subscription, attrs) when is_map(attrs) do
+    changeset = subscription |> change()
+
+    # Built from a blank struct so nothing carries over from the stored value.
+    %Plan.Bundle.Entitlement{}
+    |> Plan.Bundle.Entitlement.changeset(attrs)
+    |> case do
+      %{valid?: true} = entitlement_changeset ->
+        put_embed(
+          changeset,
+          :bundle_entitlement,
+          Ecto.Changeset.apply_changes(entitlement_changeset)
+        )
+
+      invalid ->
+        changeset
+        |> put_embed(:bundle_entitlement, invalid)
+        |> Map.put(:valid?, false)
+    end
   end
 
   def create(params, opts \\ []) do

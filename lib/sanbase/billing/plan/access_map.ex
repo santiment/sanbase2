@@ -34,6 +34,55 @@ defmodule Sanbase.Billing.Plan.AccessMap do
   @type item :: String.t()
 
   @doc ~s"""
+  Problems with an access map, as a list of messages. Empty means it is usable.
+
+  Worth validating on the way in rather than on the way out: an invalid regex
+  reaches `Regex.compile!/1` during an access check and raises there, which turns
+  one bad stored value into a failure on every request that customer makes.
+  """
+  @spec errors(access_map()) :: [String.t()]
+  def errors(access_map) when is_map(access_map) do
+    Enum.flat_map(
+      [
+        {"accessible", :list_or_all},
+        {"not_accessible", :list_or_all},
+        {"accessible_patterns", :patterns},
+        {"not_accessible_patterns", :patterns}
+      ],
+      fn {key, kind} -> key_errors(key, kind, Map.get(access_map, key, :absent)) end
+    )
+  end
+
+  def errors(nil), do: []
+  def errors(_other), do: ["must be a map"]
+
+  defp key_errors(_key, _kind, :absent), do: []
+  defp key_errors(_key, :list_or_all, "all"), do: []
+
+  defp key_errors(key, :list_or_all, value) do
+    if is_list(value) and Enum.all?(value, &is_binary/1) do
+      []
+    else
+      [~s|"#{key}" must be "all" or a list of strings|]
+    end
+  end
+
+  defp key_errors(key, :patterns, value) do
+    cond do
+      not is_list(value) ->
+        [~s|"#{key}" must be a list of strings|]
+
+      not Enum.all?(value, &is_binary/1) ->
+        [~s|"#{key}" must be a list of strings|]
+
+      true ->
+        value
+        |> Enum.reject(&match?({:ok, _}, Regex.compile(&1)))
+        |> Enum.map(&~s|"#{key}" contains an invalid regular expression: #{inspect(&1)}|)
+    end
+  end
+
+  @doc ~s"""
   All items the access map allows, given a function returning every known item.
   """
   @spec resolve(access_map(), (-> [item()])) :: [item()]

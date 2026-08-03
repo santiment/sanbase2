@@ -106,6 +106,77 @@ defmodule Sanbase.Billing.Plan.Bundle.EntitlementTest do
              ).bundle_entitlement.api_call_limits
     end
 
+    test "is rejected when a pattern is not a valid regular expression", %{plan: plan} do
+      # Stored unchecked, this raises Regex.CompileError inside every access check
+      # instead of failing the one write that caused it.
+      broken = %{
+        @market_and_social
+        | "metric_access" => %{"accessible" => [], "accessible_patterns" => ["^social_(", "*bad"]}
+      }
+
+      assert {:error, changeset} = insert_bundle_subscription(plan, broken)
+
+      errors = errors_on(changeset).bundle_entitlement.metric_access
+
+      assert Enum.any?(errors, &String.contains?(&1, "invalid regular expression"))
+      assert length(errors) == 2
+    end
+
+    test "is rejected when an access list is not a list of strings", %{plan: plan} do
+      broken = %{@market_and_social | "query_access" => %{"accessible" => [1, 2]}}
+
+      assert {:error, changeset} = insert_bundle_subscription(plan, broken)
+
+      assert ~s|"accessible" must be "all" or a list of strings| in errors_on(changeset).bundle_entitlement.query_access
+    end
+
+    test "is replaced wholesale, so a dropped package leaves nothing behind", %{plan: plan} do
+      # A merge would let fields the new calculation omits keep their old values.
+      subscription = create_bundle_subscription(plan, @market_and_social)
+
+      {:ok, updated} =
+        subscription
+        |> Subscription.bundle_entitlement_changeset(@developer_only)
+        |> Repo.update()
+
+      stored = Repo.get!(Subscription, updated.id).bundle_entitlement
+
+      assert stored.packages == ["developer"]
+      assert stored.metric_access == %{"accessible" => ["dev_activity"]}
+      refute Map.has_key?(stored.metric_access, "accessible_patterns")
+    end
+
+    test "can be cleared", %{plan: plan} do
+      subscription = create_bundle_subscription(plan, @market_and_social)
+
+      {:ok, updated} =
+        subscription
+        |> Subscription.bundle_entitlement_changeset(nil)
+        |> Repo.update()
+
+      assert Repo.get!(Subscription, updated.id).bundle_entitlement == nil
+    end
+
+    test "is not writable through the ordinary subscription changeset", %{plan: plan} do
+      # An entitlement decides what a customer may use and how much. It is only
+      # ever written by the code that works it out, never carried in alongside
+      # ordinary attributes.
+      subscription = create_bundle_subscription(plan, @market_and_social)
+
+      {:ok, updated} =
+        subscription
+        |> Subscription.changeset(%{
+          status: :past_due,
+          bundle_entitlement: @developer_only
+        })
+        |> Repo.update()
+
+      stored = Repo.get!(Subscription, updated.id)
+
+      assert stored.status == :past_due
+      assert stored.bundle_entitlement.packages == ["market", "social"]
+    end
+
     test "detects data written by an older version" do
       current = %Entitlement{schema_version: Entitlement.current_schema_version()}
       older = %Entitlement{schema_version: 0}
@@ -287,14 +358,15 @@ defmodule Sanbase.Billing.Plan.Bundle.EntitlementTest do
   defp insert_bundle_subscription(plan, entitlement_attrs) do
     user = insert(:user)
 
-    %Subscription{}
-    |> Subscription.changeset(%{
-      user_id: user.id,
-      plan_id: plan.id,
-      stripe_id: "sub_" <> Ecto.UUID.generate(),
-      status: :active,
-      bundle_entitlement: entitlement_attrs
-    })
-    |> Repo.insert()
+    subscription =
+      insert(:subscription_pro,
+        user_id: user.id,
+        plan_id: plan.id,
+        stripe_id: "sub_" <> Ecto.UUID.generate()
+      )
+
+    subscription
+    |> Subscription.bundle_entitlement_changeset(entitlement_attrs)
+    |> Repo.update()
   end
 end

@@ -82,6 +82,9 @@ defmodule Sanbase.Billing.Plan.Bundle.Entitlement do
     |> cast(attrs, @fields)
     |> validate_required(@required_fields)
     |> validate_change(:api_call_limits, &validate_api_call_limits/2)
+    |> validate_change(:metric_access, &validate_access_map/2)
+    |> validate_change(:query_access, &validate_access_map/2)
+    |> validate_change(:signal_access, &validate_access_map/2)
   end
 
   @doc ~s"""
@@ -121,6 +124,16 @@ defmodule Sanbase.Billing.Plan.Bundle.Entitlement do
       hour: Map.fetch!(limits, "hour"),
       minute: Map.fetch!(limits, "minute")
     }
+  end
+
+  # An invalid regex or a wrongly-shaped list would otherwise be stored happily
+  # and then raise during an access check, failing every request that customer
+  # makes rather than the one write that caused it.
+  defp validate_access_map(field_name, value) do
+    case AccessMap.errors(value) do
+      [] -> []
+      errors -> Enum.map(errors, &{field_name, &1})
+    end
   end
 
   # Same rule the custom plans use: month > hour > minute > 0. A quota that is

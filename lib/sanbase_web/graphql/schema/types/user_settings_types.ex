@@ -28,6 +28,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:is_subscribed_comments_emails, :boolean)
     field(:is_subscribed_likes_emails, :boolean)
     field(:is_subscribed_metric_updates, :boolean)
+    field(:is_subscribed_dev_activity_updates, :boolean)
     field(:sanbase_version, :string)
 
     field(:self_api_rate_limits_reset_at, :datetime)
@@ -84,6 +85,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:is_subscribed_comments_emails, :boolean)
     field(:is_subscribed_likes_emails, :boolean)
     field(:is_subscribed_metric_updates, :boolean)
+    field(:is_subscribed_dev_activity_updates, :boolean)
     field(:sanbase_version, :string)
 
     # Deprecated fields

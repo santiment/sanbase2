@@ -66,6 +66,27 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert UserSettings.settings_for(user, force: true) |> Map.get(:is_beta_mode) == false
   end
 
+  test "toggle dev activity updates subscription", %{user: user, conn: conn} do
+    assert UserSettings.settings_for(user, force: true)
+           |> Map.get(:is_subscribed_dev_activity_updates) == false
+
+    query = toggle_dev_activity_updates_query(true)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"isSubscribedDevActivityUpdates" => true}
+
+    assert UserSettings.settings_for(user, force: true)
+           |> Map.get(:is_subscribed_dev_activity_updates) == true
+
+    query = toggle_dev_activity_updates_query(false)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"isSubscribedDevActivityUpdates" => false}
+
+    assert UserSettings.settings_for(user, force: true)
+           |> Map.get(:is_subscribed_dev_activity_updates) == false
+  end
+
   test "change theme", %{user: user, conn: conn} do
     query = change_theme_query("nightmode")
     result = conn |> execute(query, "updateUserSettings")
@@ -335,6 +356,16 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     mutation {
       updateUserSettings(settings: {isBetaMode: #{is_active?}}) {
         isBetaMode
+      }
+    }
+    """
+  end
+
+  defp toggle_dev_activity_updates_query(is_subscribed?) do
+    """
+    mutation {
+      updateUserSettings(settings: {isSubscribedDevActivityUpdates: #{is_subscribed?}}) {
+        isSubscribedDevActivityUpdates
       }
     }
     """

@@ -347,10 +347,24 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   # When a Sanbase request falls back to such a subscription, resolve the
   # custom plan's `restricted_access_as_plan` (defaulting to FREE) so the
   # Sanbase access checker treats the user as that standard tier.
+  # A bundle is a SanAPI product whose packages say which *metrics* were bought.
+  # That has no meaning for Sanbase, and letting the name through would send
+  # Sanbase access checks down the bundle path, where a package's metric list
+  # would decide Sanbase access and the Sanbase-specific limits have no
+  # per-package answer. Product's answer (§15 Q5) is that these customers get
+  # what a SanAPI PRO customer with no Sanbase subscription gets, so the name is
+  # resolved here - the same treatment, and for the same reason, as a custom plan
+  # just above.
   defp effective_plan_name(subscription, "SANBASE") do
     case subscription do
       %Subscription{plan: %{has_custom_restrictions: true, name: name}} ->
         Sanbase.Queries.Authorization.fetch_base_plan_for_custom(name)
+
+      %Subscription{plan: %{name: name}} = subscription ->
+        case Sanbase.Billing.Plan.type(name) do
+          :bundle -> Sanbase.Billing.Plan.Bundle.equivalent_standard_plan()
+          _ -> Subscription.plan_name(subscription)
+        end
 
       _ ->
         Subscription.plan_name(subscription)

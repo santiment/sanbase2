@@ -23,6 +23,29 @@ defmodule Sanbase.Billing.Plan.Bundle do
   entry moves out of the "not implemented" list.
   """
 
+  @equivalent_standard_plan "PRO"
+
+  @doc ~s"""
+  The standard plan a bundle behaves like for everything that is **not** metric,
+  query or signal access and **not** the API call quota.
+
+  Those two things come from the entitlement, because they are what the customer
+  actually chose. Everything else - how many alerts they can create, how much
+  query credit they get, which ClickHouse repo their queries run against, and
+  their whole Sanbase experience - has no per-package answer and needs one
+  anyway.
+
+  Product's answer (§15 Q5): the same as a SanAPI PRO customer who has no
+  Sanbase subscription. Bundles are priced against PRO, so PRO is what they get.
+
+  This mirrors what already happens for `CUSTOM_*` plans, which resolve to their
+  `restricted_access_as_plan` for exactly the same reason - see
+  `Sanbase.Queries.Authorization.fetch_base_plan_for_custom/1` and
+  `SanbaseWeb.Graphql.AuthPlug.effective_plan_name/2`.
+  """
+  @spec equivalent_standard_plan() :: String.t()
+  def equivalent_standard_plan, do: @equivalent_standard_plan
+
   defmodule NotImplementedError do
     @moduledoc """
     Raised when a bundle plan reaches an access or quota function that has not

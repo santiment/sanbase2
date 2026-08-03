@@ -346,6 +346,46 @@ def plan_has_access?(query_or_argument, requested_product, plan_name, entitlemen
 
 ---
 
+### 5.9 Everything that is *not* access or quota: a bundle behaves like PRO
+
+Two things come from the entitlement, because they are what the customer chose:
+which metrics they may read, and how many API calls they get. **Everything else
+has no per-package answer and needs one anyway** — how many alerts they can
+create, how much query credit they get, which ClickHouse repo their queries run
+against, how a query's complexity is scored, and their whole Sanbase experience.
+
+✅ **Decided by product (§15 Q5):** the same as a SanAPI PRO customer who has no
+Sanbase subscription. Bundles are priced against PRO, so PRO is what they get.
+
+One definition, `Sanbase.Billing.Plan.Bundle.equivalent_standard_plan/0`, used in
+five places:
+
+| Site | Why it needs it |
+|------|-----------------|
+| `AuthPlug.effective_plan_name/2` | A Sanbase request falls back to a SanAPI subscription, so `"BUNDLE"` would otherwise reach Sanbase access checks and let a package's metric list decide Sanbase access |
+| `SanbaseAccessChecker` plan stats | alerts limit and the rest of the Sanbase allowances |
+| `Queries.Authorization.credits_limit/2` | query credit |
+| `Queries.Authorization.query_executions_limit/2` | how many queries |
+| `Queries.Authorization.user_plan_to_dynamic_repo/2` | which ClickHouse repo |
+| `Graphql.Complexity` | how expensive a query is scored |
+
+This is the same treatment `CUSTOM_*` plans already get through
+`restricted_access_as_plan` / `fetch_base_plan_for_custom/1`, and for the same
+reason: an API-specific metric allow-list must not leak into decisions that are
+not about metrics.
+
+⚠️ **`Graphql.Complexity` was missed by the §7.5 inventory.** It runs in Absinthe's
+*document phase*, not through `AccessChecker`, so neither the inventory nor the
+`Plan.type/1` dispatch test found it — and its `case plan.name` has no catch-all.
+The first real GraphQL request from a bundle subscriber raised `CaseClauseError`
+there, before any access or quota code ran. It is fixed and pinned by a test now,
+but the lesson generalises: **the dispatch inventory only covers sites reachable
+through `AccessChecker`.** Anything that pattern-matches a plan name elsewhere —
+document phases, plugs, LiveViews, background jobs — is outside it. A real
+end-to-end request is the only thing that finds those.
+
+---
+
 ## 6. Target product model
 
 ### 6.1 Sellable line items (recurring)
@@ -754,8 +794,39 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 | **PD** — package definition + snapshot | ✅ done | `Bundle.Package` (five packages as category rules), `bundle_package_snapshots` table, `Bundle.PackageSnapshot` with `publish/1` and `pending_changes/0`, dual-membership leak check. Admin diff *screen* not built — `pending_changes/0` is the logic it needs. |
 | **LC** — local multi-item model | ✅ done | `subscription_items`, `bundle_prices` catalog, `BUNDLE` marker plan rows (301 month / 302 year, SanAPI). |
 | **EN** — entitlement resolver | ✅ done | `Bundle.Resolver.resolve/2` (pure) + `sync/1` (persists). All §6.3 rules applied. |
-| **BA** — bundle access path | 🟡 partial | `plan_has_access?`, `historical_data_in_days`, `realtime_data_cut_off_in_days` implemented and threaded from the request context. 7 entry points still raise — see `bundle_entry_points/0`. |
-| **SC / SL / WH / UI / AM / OB** | ⬜ not started | |
+| **BA** — bundle access path | 🟡 partial | Access + data windows implemented and threaded from the request context. The four Sanbase-side limits now answer as PRO (§5.9). **3** entry points still raise — see `bundle_entry_points/0`. |
+| **OB** — admin visibility | ✅ done | Two admin pages, `/admin/bundle_packages` and `/admin/bundle_subscriptions`. |
+| **SC / SL / WH / UI / AM** | ⬜ not started | |
+
+**Admin pages.** `/admin/bundle_packages` shows what each package contains live vs
+published, the pending-changes diff, and publishes snapshots.
+`/admin/bundle_subscriptions` creates, edits and cancels bundle subscriptions
+(**no Stripe object** — local test rows only), shows the resolved entitlement, and
+has three testers: *Decide* (calls the access checker directly, both products,
+side by side with a standard plan), *Scenarios* (generated from the packages the
+subscription actually owns, each row carrying its own expectation), and *Request*
+(POSTs to the real `/graphql` with an API key, so it exercises the full plug
+pipeline).
+
+**Automatic end-to-end test.** `test/sanbase_web/graphql/billing/bundle_api_access_test.exs`
+makes real authenticated requests as a bundle subscriber. It is the only test that
+proves a live request carries the entitlement from context to access checker, and
+it found the `Graphql.Complexity` site the inventory missed (§5.9).
+
+⚠️ **A live bundle request cannot be served to a real customer yet.**
+`plan_to_api_call_limits` raises for `sanapi_bundle`, and the quota check runs on
+every API request. Writing the resolved numbers onto the `api_call_limits` row is
+the deferred **WH** work, and it is now the single thing standing between "the
+entitlement is correct" and "a customer can use it". Pinned by a test that will go
+red when the sync lands.
+
+⚠️ **Careful when testing this by hand: `@santiment.net` users are exempt from
+quota** (`user_has_limits?/1` in `api_call_limit.ex`). So an API key on a Santiment
+account sails past the raise and everything looks fine, while a real customer's key
+fails. The `Request` tester on the admin page inherits this exactly — testing with
+your own Santiment key proves access but *not* quota. The integration test states
+this explicitly in a test of its own rather than leaving the suite looking like it
+covered both.
 
 **⚠️ One assumption needs checking against real data.** `Bundle.Package` names its categories `"Market"`, `"Development"`, `"Social"`, `"On-chain"`, `"On-chain Labels"`. Three of those are confirmed from the categorization scripts; **`"Market"` and `"Development"` are guesses** — no environment reachable from here has `metric_categories` populated. `PackageSnapshot.materialize/0` refuses to build and lists the categories that *do* exist when a name is wrong, so the first run in a populated environment says so immediately. Fix the names in `Bundle.Package`, not the data.
 
@@ -820,13 +891,7 @@ The 500,000 tier is built and working. Adding another tier later is one line of 
 
 ---
 
-**Q5. What does a package customer see in Sanbase, the web app?**
-
-Packages are for the API. If someone who bought the Market package logs into Sanbase, we have to show them *something* — nothing at all, the free experience, or something in between. The code has to pick one, so we would rather it were your choice than ours.
-
-There are four specific things we cannot finish without an answer: how many **alerts** they can create, how many **queries** they can run, how much **query credit** they get, and which **database** their queries run against. Today every one of those is worked out from the plan name, and "bought two API packages" is not a name any of them understands. We can pick defaults if you would rather not decide — say so and we will treat a package customer as a free Sanbase user, which is the safe direction but probably not the one you want for someone paying.
-
-*Answer:* pending
+~~**Q5. What does a package customer see in Sanbase, the web app?**~~ ✅ **Answered:** the same as a SanAPI PRO customer with no Sanbase subscription. Implemented as `Bundle.equivalent_standard_plan/0` — see §5.9.
 
 ---
 

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Complexity do
+  alias Sanbase.Billing.Plan
   alias Sanbase.Billing.Subscription
 
   require Logger
@@ -62,8 +63,25 @@ defmodule SanbaseWeb.Graphql.Complexity do
 
   # Private functions
 
+  # This case has no catch-all on purpose - an unknown plan should fail loudly
+  # rather than silently getting FREE-tier complexity. A bundle is resolved to its
+  # equivalent standard plan first: how expensive a query is to run has nothing to
+  # do with which packages were bought, and every bundle shares the one name
+  # `BUNDLE`, so the name could not carry a per-customer answer anyway.
+  #
+  # This function runs in Absinthe's document phase rather than through
+  # `AccessChecker`, which is why it was missed by the §7.5 dispatch inventory and
+  # only surfaced when a real request was made. It is covered by
+  # `Sanbase.Billing.PlanTypeDispatchTest` now.
   defp complexity_divider_number(%Subscription{plan: plan}) do
-    case plan.name do
+    case Plan.type(plan.name) do
+      :bundle -> divider_for_plan_name(Sanbase.Billing.Plan.Bundle.equivalent_standard_plan())
+      _ -> divider_for_plan_name(plan.name)
+    end
+  end
+
+  defp divider_for_plan_name(plan_name) do
+    case plan_name do
       "FREE" -> 1
       "BASIC" -> 4
       "ESSENTIAL" -> 4

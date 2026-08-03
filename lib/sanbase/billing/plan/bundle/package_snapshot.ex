@@ -85,6 +85,15 @@ defmodule Sanbase.Billing.Plan.Bundle.PackageSnapshot do
     do: Repo.get_by(__MODULE__, version: version)
 
   @doc ~s"""
+  The most recent snapshots, newest first.
+  """
+  @spec list_recent(pos_integer()) :: [t()]
+  def list_recent(limit \\ 10) when is_integer(limit) and limit > 0 do
+    from(s in __MODULE__, order_by: [desc: s.version], limit: ^limit)
+    |> Repo.all()
+  end
+
+  @doc ~s"""
   Work out what each package contains from the current categorization, without
   storing anything.
 

@@ -51,10 +51,6 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
     [
       {:get_available_metrics_for_plan,
        &AccessChecker.get_available_metrics_for_plan(&1, &2, :all)},
-      {:alerts_limit, fn plan, _product -> SanbaseAccessChecker.alerts_limit(plan) end},
-      {:credits_limit, &Authorization.credits_limit(&2, &1)},
-      {:query_executions_limit, &Authorization.query_executions_limit(&2, &1)},
-      {:user_plan_to_dynamic_repo, &Authorization.user_plan_to_dynamic_repo(&2, &1)},
       # The quota functions take the product-prefixed, downcased form that is
       # stored in api_call_limits.api_calls_limit_plan.
       {:plan_to_api_call_limits, &ApiCallLimit.plan_to_api_call_limits(acl_plan(&2, &1))},
@@ -152,6 +148,50 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
                @bundle_plan,
                entitlement
              ) == 0
+    end
+
+    test "the Sanbase-side limits answer as the equivalent standard plan" do
+      # Product's answer to §15 Q5: a bundle customer gets what a SanAPI PRO
+      # customer with no Sanbase subscription gets. None of these four has a
+      # per-package answer, and before Q5 every one of them raised - so a bundle
+      # customer opening Sanbase got a 500.
+      equivalent = Bundle.equivalent_standard_plan()
+
+      assert SanbaseAccessChecker.alerts_limit(@bundle_plan) ==
+               SanbaseAccessChecker.alerts_limit(equivalent)
+
+      for product <- @products do
+        assert Authorization.credits_limit(product, @bundle_plan) ==
+                 Authorization.credits_limit(product, equivalent)
+
+        assert Authorization.query_executions_limit(product, @bundle_plan) ==
+                 Authorization.query_executions_limit(product, equivalent)
+
+        assert Authorization.user_plan_to_dynamic_repo(product, @bundle_plan) ==
+                 Authorization.user_plan_to_dynamic_repo(product, equivalent)
+      end
+    end
+
+    test "query complexity is divided as the equivalent standard plan" do
+      # This site runs in Absinthe's document phase rather than through
+      # AccessChecker, so the §7.5 inventory missed it and it raised
+      # CaseClauseError on the first real bundle request. Pinned here so it cannot
+      # be missed again.
+      bundle = %Sanbase.Billing.Subscription{plan: %Plan{name: @bundle_plan}}
+      pro = %Sanbase.Billing.Subscription{plan: %Plan{name: Bundle.equivalent_standard_plan()}}
+
+      args = %{from: ~U[2026-01-01 00:00:00Z], to: ~U[2026-02-01 00:00:00Z], interval: "1d"}
+
+      assert SanbaseWeb.Graphql.Complexity.from_to_interval(
+               args,
+               5,
+               %{context: %{auth: %{subscription: bundle}}}
+             ) ==
+               SanbaseWeb.Graphql.Complexity.from_to_interval(
+                 args,
+                 5,
+                 %{context: %{auth: %{subscription: pro}}}
+               )
     end
 
     test "the data windows refuse to answer without an entitlement" do

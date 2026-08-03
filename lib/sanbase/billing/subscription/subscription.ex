@@ -160,6 +160,26 @@ defmodule Sanbase.Billing.Subscription do
 
   def bundle_entitlement(_), do: nil
 
+  @doc ~s"""
+  Every bundle subscription, newest first, with its user, plan and items loaded.
+
+  Keyed on the plan *name* rather than a plan id, so it keeps working when more
+  `BUNDLE` marker rows are added (a second interval, or a Sanbase one later).
+  """
+  @spec list_bundle_subscriptions() :: [%__MODULE__{}]
+  def list_bundle_subscriptions do
+    bundle_pattern = "BUNDLE%"
+
+    from(s in __MODULE__,
+      join: p in Plan,
+      on: s.plan_id == p.id,
+      where: like(p.name, ^bundle_pattern),
+      order_by: [desc: s.id],
+      preload: [:user, :items, plan: :product]
+    )
+    |> Repo.all()
+  end
+
   def create(params, opts \\ []) do
     %__MODULE__{}
     |> changeset(params)

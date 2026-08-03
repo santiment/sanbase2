@@ -84,10 +84,12 @@ defmodule Sanbase.Queries.Authorization do
   @spec user_plan_to_dynamic_repo(String.t(), String.t()) :: module()
   def user_plan_to_dynamic_repo(product_code, plan_name) do
     case Sanbase.Billing.Plan.type(plan_name) do
+      # A bundle's packages say which metrics it may read, not which repo it
+      # reads them from. See Bundle.equivalent_standard_plan/0.
       :bundle ->
-        Sanbase.Billing.Plan.Bundle.not_implemented!(
-          {:user_plan_to_dynamic_repo, product_code},
-          plan_name
+        do_user_plan_to_dynamic_repo(
+          product_code,
+          Sanbase.Billing.Plan.Bundle.equivalent_standard_plan()
         )
 
       _ ->
@@ -135,9 +137,9 @@ defmodule Sanbase.Queries.Authorization do
   def query_executions_limit(product_code, plan_name) do
     case Sanbase.Billing.Plan.type(plan_name) do
       :bundle ->
-        Sanbase.Billing.Plan.Bundle.not_implemented!(
-          {:query_executions_limit, product_code},
-          plan_name
+        do_query_executions_limit(
+          product_code,
+          Sanbase.Billing.Plan.Bundle.equivalent_standard_plan()
         )
 
       _ ->
@@ -182,7 +184,7 @@ defmodule Sanbase.Queries.Authorization do
   def credits_limit(product_code, plan_name) do
     case Sanbase.Billing.Plan.type(plan_name) do
       :bundle ->
-        Sanbase.Billing.Plan.Bundle.not_implemented!({:credits_limit, product_code}, plan_name)
+        do_credits_limit(product_code, Sanbase.Billing.Plan.Bundle.equivalent_standard_plan())
 
       _ ->
         do_credits_limit(product_code, plan_name)

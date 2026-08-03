@@ -4,12 +4,18 @@ defmodule SanbaseWeb.Graphql.SansheetsHelperTest do
   alias SanbaseWeb.Graphql.SansheetsHelper
 
   describe "sansheets_user_agent?/1" do
-    test "the Sansheets token is recognized only as a prefix" do
+    test "the Sansheets token is recognized as a whole product token" do
       assert SansheetsHelper.sansheets_user_agent?("Sansheets/1.0")
       assert SansheetsHelper.sansheets_user_agent?("Sansheets/1.0 (some suffix)")
 
-      refute SansheetsHelper.sansheets_user_agent?("Mozilla/5.0 (compatible; Sansheets/1.0)")
+      # The client may prepend other product tokens.
+      assert SansheetsHelper.sansheets_user_agent?("Mozilla/5.0 (compatible) Sansheets/1.0")
+      assert SansheetsHelper.sansheets_user_agent?("Mozilla/5.0 (compatible; Sansheets/1.0)")
+    end
+
+    test "a token the Sansheets one is only a suffix of does not match" do
       refute SansheetsHelper.sansheets_user_agent?("NotSansheets/1.0")
+      refute SansheetsHelper.sansheets_user_agent?("Mozilla/5.0 (compatible; XSansheets/1.0)")
       refute SansheetsHelper.sansheets_user_agent?("sansheets/1.0")
     end
 

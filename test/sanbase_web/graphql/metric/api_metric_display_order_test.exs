@@ -159,6 +159,72 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
     assert Enum.sort(onchain_display_orders) == onchain_display_orders
   end
 
+  test "status is returned and does not filter out metrics", %{
+    conn: conn,
+    metric1: metric1,
+    metric2: metric2
+  } do
+    {:ok, _} = Sanbase.Metric.UIMetadata.DisplayOrder.update_status(metric2.id, :hidden)
+
+    {:ok, _} =
+      Sanbase.Metric.UIMetadata.DisplayOrder.update_status(metric1.id, :under_maintenance)
+
+    query = """
+    {
+      getOrderedMetrics {
+        metrics {
+          metric
+          status
+        }
+      }
+    }
+    """
+
+    metrics =
+      conn
+      |> post("/graphql", query_skeleton(query, "getOrderedMetrics"))
+      |> json_response(200)
+      |> get_in(["data", "getOrderedMetrics", "metrics"])
+
+    # All metrics are still returned, the status is just a field
+    assert length(metrics) == 4
+
+    statuses = Map.new(metrics, fn m -> {m["metric"], m["status"]} end)
+
+    assert statuses == %{
+             "price_usd" => "UNDER_MAINTENANCE",
+             "price_btc" => "HIDDEN",
+             "active_addresses_24h" => "LIVE",
+             "transaction_volume" => "LIVE"
+           }
+
+    by_category_query = """
+    {
+      getMetricsByCategory(category: "Financial") {
+        metric
+        status
+      }
+    }
+    """
+
+    by_category =
+      conn
+      |> post("/graphql", query_skeleton(by_category_query, "getMetricsByCategory"))
+      |> json_response(200)
+      |> get_in(["data", "getMetricsByCategory"])
+
+    assert Enum.map(by_category, & &1["metric"]) == ["price_usd", "price_btc"]
+    assert Enum.map(by_category, & &1["status"]) == ["UNDER_MAINTENANCE", "HIDDEN"]
+  end
+
+  test "update_status rejects invalid statuses", %{metric1: metric1} do
+    assert {:error, %Ecto.Changeset{}} =
+             Sanbase.Metric.UIMetadata.DisplayOrder.update_status(metric1.id, "not_a_status")
+
+    assert {:error, "Record not found"} =
+             Sanbase.Metric.UIMetadata.DisplayOrder.update_status(-1, :hidden)
+  end
+
   test "get metrics by category works properly", %{conn: conn} do
     query = """
     {

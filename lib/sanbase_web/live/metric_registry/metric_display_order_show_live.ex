@@ -99,7 +99,11 @@ defmodule SanbaseWeb.MetricDisplayOrderShowLive do
       %{key: "Chart Style", value: assigns.display_order.chart_style || "line"},
       %{key: "Unit", value: assigns.display_order.unit || ""},
       %{key: "Description", value: assigns.display_order.description || ""},
-      %{key: "Args", value: inspect(assigns.display_order.args || %{})}
+      %{key: "Args", value: inspect(assigns.display_order.args || %{})},
+      %{
+        key: "Status",
+        value: AdminSharedComponents.status_text(assigns.display_order.status)
+      }
     ]
 
     assigns = assign(assigns, :rows, rows)

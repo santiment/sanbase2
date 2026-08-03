@@ -346,6 +346,46 @@ def plan_has_access?(query_or_argument, requested_product, plan_name, entitlemen
 
 ---
 
+### 5.9 Everything that is *not* access or quota: a bundle behaves like PRO
+
+Two things come from the entitlement, because they are what the customer chose:
+which metrics they may read, and how many API calls they get. **Everything else
+has no per-package answer and needs one anyway** — how many alerts they can
+create, how much query credit they get, which ClickHouse repo their queries run
+against, how a query's complexity is scored, and their whole Sanbase experience.
+
+✅ **Decided by product (§15 Q5):** the same as a SanAPI PRO customer who has no
+Sanbase subscription. Bundles are priced against PRO, so PRO is what they get.
+
+One definition, `Sanbase.Billing.Plan.Bundle.equivalent_standard_plan/0`, used in
+six places:
+
+| Site | Why it needs it |
+|------|-----------------|
+| `AuthPlug.effective_plan_name/2` | A Sanbase request falls back to a SanAPI subscription, so `"BUNDLE"` would otherwise reach Sanbase access checks and let a package's metric list decide Sanbase access |
+| `SanbaseAccessChecker` plan stats | alerts limit and the rest of the Sanbase allowances |
+| `Queries.Authorization.credits_limit/2` | query credit |
+| `Queries.Authorization.query_executions_limit/2` | how many queries |
+| `Queries.Authorization.user_plan_to_dynamic_repo/2` | which ClickHouse repo |
+| `Graphql.Complexity` | how expensive a query is scored |
+
+This is the same treatment `CUSTOM_*` plans already get through
+`restricted_access_as_plan` / `fetch_base_plan_for_custom/1`, and for the same
+reason: an API-specific metric allow-list must not leak into decisions that are
+not about metrics.
+
+⚠️ **`Graphql.Complexity` was missed by the §7.5 inventory.** It runs in Absinthe's
+*document phase*, not through `AccessChecker`, so neither the inventory nor the
+`Plan.type/1` dispatch test found it — and its `case plan.name` has no catch-all.
+The first real GraphQL request from a bundle subscriber raised `CaseClauseError`
+there, before any access or quota code ran. It is fixed and pinned by a test now,
+but the lesson generalises: **the dispatch inventory only covers sites reachable
+through `AccessChecker`.** Anything that pattern-matches a plan name elsewhere —
+document phases, plugs, LiveViews, background jobs — is outside it. A real
+end-to-end request is the only thing that finds those.
+
+---
+
 ## 6. Target product model
 
 ### 6.1 Sellable line items (recurring)
@@ -563,7 +603,9 @@ Ship as vertical slices. Changes from the original split: BC is promoted to a fi
 **Deliverable:** decision doc, then an Elixir config module.
 **Depends on:** nothing. The four bolded items are the ones that cause rework if guessed — see §6.2.
 
-### PD. Package definition & snapshot
+### PD. Package definition & snapshot — ✅ done
+**Implemented as:** `Bundle.Package` (rules) + `Bundle.PackageSnapshot` (materialize / publish / `pending_changes` / `metrics_for`) + `bundle_package_snapshots`. Snapshot chosen over live, as recommended. The admin diff *screen* is not built; `pending_changes/0` is the logic behind it. Templates are expanded to concrete metric names, deprecated and hidden metrics are excluded, and a missing category refuses the build rather than selling an empty package. See §13.0 for the one unverified assumption.
+
 **What:** The source of truth for what each package contains (metrics + queries + signals). Split out of A because it is a correctness and contractual concern, not a config detail:
 - `metric_category_mappings` is edited continuously by admins in the categorization LiveView. If access reads **live** category membership, an admin re-categorizing one metric silently **grants or revokes** access a customer paid for.
 - ✅ The schema has singular `category_id` / `group_id` per row (`metric_category_mapping.ex:42-43`) but a metric may have **multiple** rows, and the Notion task explicitly wants dual membership. A metric in both Onchain Core and Onchain Labels is therefore sellable via either. Fine for a union — but needs a **leak check** that a Market-only buyer cannot pick up Onchain metrics through a second mapping row.
@@ -572,18 +614,32 @@ Ship as vertical slices. Changes from the original split: BC is promoted to a fi
 **Deliverable:** package definition module + snapshot table + admin diff view + leak-check test.
 **Depends on:** A. ⚠️ Snapshot-vs-live is a real trade-off; live is defensible if you accept that admin category edits *are* billing changes and gate the LiveView accordingly.
 
-### LC. Local multi-item subscription model
+### LC. Local multi-item subscription model — ✅ done
+**Implemented as:** `subscription_items` (+ `Subscription.Item`), `bundle_prices` (+ `Bundle.Price`), and the two `BUNDLE` marker rows (ids 301/302, SanAPI, amount 0, `is_private`, **not** `has_custom_restrictions`). Item SKUs are validated against the package and add-on definitions on the way in, so a typo cannot be stored and then silently grant nothing. `bundle_prices.amount` is nullable on purpose — prices are not final, and `Price.sellable/1` excludes rows that cannot yet be charged. `Price.replace/1` deactivates and re-inserts, because Stripe Prices are immutable.
+
+⚠️ **One behavior change outside the bundle path:** `Plan.product_with_plans/0` now excludes `BUNDLE%` rows. Without it, adding the marker rows would put a $0 plan named `BUNDLE` on the public `productsWithPlans` response and offer `subscribe(plan_id:)` a plan it cannot correctly create. With it, that response is unchanged from before this epic.
+
 **What:** Create the `BUNDLE` plan rows (markers only, one per interval — **not** `has_custom_restrictions: true`; see §5.7 and §7.5 C2). Keep `subscriptions.plan_id` pointing at it. Add `subscription_items` (`stripe_item_id`, `sku`/`price_id`, `quantity`, `type: :package | :api_calls`), a **price catalog table** (not `plans` rows — see §7.3 #2), and `subscriptions.bundle_entitlement` JSONB (§5.4).
 **Deliverable:** migration + schemas + sync helpers.
 **Depends on:** A. **Not** on the Stripe catalog — seed from fixtures/admin so everything downstream can be built and tested before a Stripe object exists.
 **BC:** legacy subs have no `subscription_items` rows and `bundle_entitlement IS NULL`.
 
-### EN. Entitlement resolver (core)
+### EN. Entitlement resolver (core) — ✅ done
+**Implemented as:** `Bundle.Resolver.resolve/2` (pure: items + snapshot → entitlement attributes) and `Bundle.Resolver.sync/1` (loads items and the latest snapshot, resolves, writes the row). `sync/1` recomputes from scratch every time, so the several `subscription.updated` events one item change produces are harmless — which is what **WH** needs.
+
+Two deliberate refusals: a subscription with no package item, and an add-on with no package behind it. Both would otherwise produce an entitlement that grants nothing, which is indistinguishable from a working one everywhere downstream and presents as a paying customer whose every request is refused.
+
+One correction to the original description: monthly calls are **not** summed per package. Product decided a flat 100,000 plus add-ons (§9), so the resolver never reads the package list to compute quota.
+
 **What:** `items + package_defs -> %Bundle.Entitlement{}` (§5.3). Union metrics/queries/signals, sum monthly calls, apply the window and rate-limit rules from A. Pure function — no DB, no cache, fully unit-testable. Plus the writer that persists it to `subscriptions.bundle_entitlement` and the `schema_version` / `package_snapshot_version` handling.
 **Deliverable:** struct + resolver + persistence + unit tests with fixtures.
 **Depends on:** A, PD, LC.
 
-### BA. Bundle access path
+### BA. Bundle access path — 🟡 partial
+**Implemented:** `plan_has_access?`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, and `api_call_limits` on `Bundle.Access`. All three access functions take the optional entitlement argument of §5.8, and the entitlement is threaded from the request context through `AccessControl` and `Plan.Restrictions.get/5` (which the metric and signal resolvers use — without it a bundle customer would get a 500 on metric metadata). The shared-access-token path needs nothing: `token.plan` is hardcoded to `"PRO"` (`shared_access_token.ex:108`), so it can never carry a bundle.
+
+**Remaining (3 rows in `bundle_entry_points/0`):** `get_available_metrics_for_plan` (task **AM**), and `plan_to_api_call_limits` / `plan_to_response_size_limits`, which need the resolved numbers written onto the `api_call_limits` row (task **WH**). The four Sanbase-side limits are no longer among them - they resolve to PRO now that Q5 is answered (§5.9).
+
 **What:** The new path itself. `Bundle.Access` — six functions mirroring `CustomPlan.Access` (`plan_has_access?`, `get_available_metrics_for_plan`, `api_call_limits`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, plus whatever C2 decides for Sanbase) reading the stored entitlement. Then fill in the `:bundle` clause at **every** site from §7.5 groups A and B, replacing the `"not implemented"` raises from **DP**.
 
 ⚠️ **Not a straight mirror of `CustomPlan.Access`** — see §5.8. Those signatures take only a plan name, which cannot identify a bundle customer. The access functions gain an optional entitlement argument, and the quota functions read numbers stored on the `api_call_limits` row instead.
@@ -727,7 +783,60 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 
 ---
 
-## 13. Suggested next concrete step
+## 13. Progress and next concrete step
+
+### 13.0 Done so far
+
+| Task | State | What landed |
+|------|-------|-------------|
+| **BC** — characterization fixture | ✅ done | `test/fixtures/billing/access_matrix.json` + CI-asserted test. Byte-identical through every change since. |
+| **DP** — `Plan.type/1` dispatch seam | ✅ done | ~20 sites dispatch on plan type; `plan_type_dispatch_test.exs` is the checklist. |
+| **PD** — package definition + snapshot | ✅ done | `Bundle.Package` (five packages as category rules), `bundle_package_snapshots` table, `Bundle.PackageSnapshot` with `publish/1` and `pending_changes/0`, dual-membership leak check. Admin diff *screen* not built — `pending_changes/0` is the logic it needs. |
+| **LC** — local multi-item model | ✅ done | `subscription_items`, `bundle_prices` catalog, `BUNDLE` marker plan rows (301 month / 302 year, SanAPI). |
+| **EN** — entitlement resolver | ✅ done | `Bundle.Resolver.resolve/2` (pure) + `sync/1` (persists). All §6.3 rules applied. |
+| **BA** — bundle access path | 🟡 partial | Access + data windows implemented and threaded from the request context. The four Sanbase-side limits now answer as PRO (§5.9). **3** entry points still raise — see `bundle_entry_points/0`. |
+| **OB** — admin visibility | ✅ done | Two admin pages, `/admin/bundle_packages` and `/admin/bundle_subscriptions`. |
+| **SC / SL / WH / UI / AM** | ⬜ not started | |
+
+**Admin pages.** `/admin/bundle_packages` shows what each package contains live vs
+published, the pending-changes diff, and publishes snapshots.
+`/admin/bundle_subscriptions` creates, edits and cancels bundle subscriptions
+(**no Stripe object** — local test rows only), shows the resolved entitlement, and
+has three testers: *Decide* (calls the access checker directly, both products,
+side by side with a standard plan), *Scenarios* (generated from the packages the
+subscription actually owns, each row carrying its own expectation), and *Request*
+(POSTs to the real `/graphql` with an API key, so it exercises the full plug
+pipeline).
+
+**Automatic end-to-end test.** `test/sanbase_web/graphql/billing/bundle_api_access_test.exs`
+makes real authenticated requests as a bundle subscriber. It is the only test that
+proves a live request carries the entitlement from context to access checker, and
+it found the `Graphql.Complexity` site the inventory missed (§5.9).
+
+⚠️ **A live bundle request cannot be served to a real customer yet.**
+`plan_to_api_call_limits` raises for `sanapi_bundle`, and the quota check runs on
+every API request. Writing the resolved numbers onto the `api_call_limits` row is
+the deferred **WH** work, and it is now the single thing standing between "the
+entitlement is correct" and "a customer can use it". Pinned by a test that will go
+red when the sync lands.
+
+⚠️ **Careful when testing this by hand: `@santiment.net` users are exempt from
+quota** (`user_has_limits?/1` in `api_call_limit.ex`). So an API key on a Santiment
+account sails past the raise and everything looks fine, while a real customer's key
+fails. The `Request` tester on the admin page inherits this exactly — testing with
+your own Santiment key proves access but *not* quota. The integration test states
+this explicitly in a test of its own rather than leaving the suite looking like it
+covered both.
+
+**⚠️ One assumption needs checking against real data.** `Bundle.Package` names its categories `"Market"`, `"Development"`, `"Social"`, `"On-chain"`, `"On-chain Labels"`. Three of those are confirmed from the categorization scripts; **`"Market"` and `"Development"` are guesses** — no environment reachable from here has `metric_categories` populated. `PackageSnapshot.materialize/0` refuses to build and lists the categories that *do* exist when a name is wrong, so the first run in a populated environment says so immediately. Fix the names in `Bundle.Package`, not the data.
+
+**What a bundle still cannot do:** be bought. There is no Stripe catalog and no mutation to subscribe, so items are created locally. Everything from an item to a granted metric works end to end.
+
+### 13.1 Next
+
+The remaining work splits cleanly. `OB` (admin visibility) is done. `WH` is now the highest-priority item, not because of webhooks but because it carries the `api_call_limits` write without which no bundle customer can be served at all. `SC → SL → WH` is the purchase lifecycle; `AM` surfaces the entitlement through `getAvailableMetrics` and is the largest of the 3 remaining `bundle_entry_points/0` rows.
+
+### 13.2 Original plan, for reference
 
 Three things, in this order. The first two are pure infrastructure and can start immediately — they need no product decisions at all.
 
@@ -778,17 +887,15 @@ Q1 established that the "sixth package" is the 500,000-call add-on. If Notion ha
 
 *Answer:* partially — 500,000 confirmed; is that the only tier?
 
+The 500,000 tier is built and working. Adding another tier later is one line of code — this only matters for knowing what to put in the price list.
+
+---
+
+~~**Q5. What does a package customer see in Sanbase, the web app?**~~ ✅ **Answered:** the same as a SanAPI PRO customer with no Sanbase subscription. Implemented as `Bundle.equivalent_standard_plan/0` — see §5.9.
+
 ---
 
 ### Needed before launch
-
-**Q5. What does a package customer see in Sanbase, the web app?**
-
-Packages are for the API. If someone who bought the Market package logs into Sanbase, we have to show them *something* — nothing at all, the free experience, or something in between. The code has to pick one, so we would rather it were your choice than ours.
-
-*Answer:* pending
-
----
 
 **Q6. Does Institutional's "3 seats" ship in the first version?**
 

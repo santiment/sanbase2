@@ -65,8 +65,12 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   # itself rather than relying on the dispatcher.
   defp plan_stats(plan) do
     case Plan.type(plan) do
-      :bundle -> Sanbase.Billing.Plan.Bundle.not_implemented!(:sanbase_plan_stats, plan)
-      _ -> standard_or_custom_plan_stats(plan)
+      # Bundles are a SanAPI product; their Sanbase experience is PRO's.
+      :bundle ->
+        standard_or_custom_plan_stats(Sanbase.Billing.Plan.Bundle.equivalent_standard_plan())
+
+      _ ->
+        standard_or_custom_plan_stats(plan)
     end
   end
 

@@ -41,7 +41,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   end
 
   defp valid_plan_name?("CUSTOM_" <> _), do: true
-  defp valid_plan_name?(plan_name), do: plan_name in Sanbase.Billing.Plan.existing_plan_names()
+
+  # A bundle's restrictions cannot be listed from its name. Every bundle
+  # subscription is named `BUNDLE` and each one allows something different, so
+  # there is no single answer to "what does BUNDLE allow?".
+  #
+  # This has to be rejected here rather than left to fail further along: `plan` is
+  # a free-form string argument on a query marked `access: :free`, so without this
+  # any caller could reach the bundle access path with no entitlement and turn a
+  # deliberate `MissingEntitlementError` into an unauthenticated 500.
+  defp valid_plan_name?(plan_name) do
+    Sanbase.Billing.Plan.type(plan_name) != :bundle and
+      plan_name in Sanbase.Billing.Plan.existing_plan_names()
+  end
 
   def available_versions(
         %{type: "metric"} = restriction,

@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict rfyXtDlrPfqgJZAAQGTpPZ1dlvrHY5xvDdsiJhJxFdfveh3D8duHyRoWbVeSkp0
+\restrict b7s1nl3bqMBXT3SjBAKWkv9fS1cIw1LVLbA6t2BvfHax2Y07czaELm2Sd4FPfD0
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 17.10 (Homebrew)
+-- Dumped by pg_dump version 17.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -758,6 +758,77 @@ CREATE SEQUENCE public.blockchain_addresses_id_seq
 --
 
 ALTER SEQUENCE public.blockchain_addresses_id_seq OWNED BY public.blockchain_addresses.id;
+
+
+--
+-- Name: bundle_package_snapshots; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bundle_package_snapshots (
+    id bigint NOT NULL,
+    version integer NOT NULL,
+    contents jsonb NOT NULL,
+    notes text,
+    published_at timestamp(0) without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: bundle_package_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bundle_package_snapshots_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bundle_package_snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bundle_package_snapshots_id_seq OWNED BY public.bundle_package_snapshots.id;
+
+
+--
+-- Name: bundle_prices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bundle_prices (
+    id bigint NOT NULL,
+    sku character varying(255) NOT NULL,
+    type character varying(255) NOT NULL,
+    "interval" character varying(255) NOT NULL,
+    stripe_price_id character varying(255),
+    amount integer,
+    currency character varying(255) DEFAULT 'USD'::character varying NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: bundle_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bundle_prices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bundle_prices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bundle_prices_id_seq OWNED BY public.bundle_prices.id;
 
 
 --
@@ -4811,6 +4882,41 @@ CREATE TABLE public.stripe_events (
 
 
 --
+-- Name: subscription_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.subscription_items (
+    id bigint NOT NULL,
+    subscription_id bigint NOT NULL,
+    stripe_item_id character varying(255),
+    sku character varying(255) NOT NULL,
+    type character varying(255) NOT NULL,
+    quantity integer DEFAULT 1 NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: subscription_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.subscription_items_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: subscription_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.subscription_items_id_seq OWNED BY public.subscription_items.id;
+
+
+--
 -- Name: subscription_timeseries; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6270,6 +6376,20 @@ ALTER TABLE ONLY public.blockchain_addresses ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: bundle_package_snapshots id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bundle_package_snapshots ALTER COLUMN id SET DEFAULT nextval('public.bundle_package_snapshots_id_seq'::regclass);
+
+
+--
+-- Name: bundle_prices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bundle_prices ALTER COLUMN id SET DEFAULT nextval('public.bundle_prices_id_seq'::regclass);
+
+
+--
 -- Name: chart_configuration_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6984,6 +7104,13 @@ ALTER TABLE ONLY public.source_slug_mappings ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: subscription_items id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_items ALTER COLUMN id SET DEFAULT nextval('public.subscription_items_id_seq'::regclass);
+
+
+--
 -- Name: subscription_timeseries id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7346,6 +7473,22 @@ ALTER TABLE ONLY public.blockchain_address_user_pairs
 
 ALTER TABLE ONLY public.blockchain_addresses
     ADD CONSTRAINT blockchain_addresses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bundle_package_snapshots bundle_package_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bundle_package_snapshots
+    ADD CONSTRAINT bundle_package_snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bundle_prices bundle_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bundle_prices
+    ADD CONSTRAINT bundle_prices_pkey PRIMARY KEY (id);
 
 
 --
@@ -8301,6 +8444,14 @@ ALTER TABLE ONLY public.stripe_events
 
 
 --
+-- Name: subscription_items subscription_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_items
+    ADD CONSTRAINT subscription_items_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: subscription_timeseries subscription_timeseries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8758,6 +8909,27 @@ CREATE UNIQUE INDEX blockchain_address_user_pairs_user_id_blockchain_address_id_
 --
 
 CREATE UNIQUE INDEX blockchain_addresses_address_infrastructure_id_index ON public.blockchain_addresses USING btree (address, infrastructure_id);
+
+
+--
+-- Name: bundle_package_snapshots_version_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX bundle_package_snapshots_version_index ON public.bundle_package_snapshots USING btree (version);
+
+
+--
+-- Name: bundle_prices_sku_interval_is_active_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX bundle_prices_sku_interval_is_active_index ON public.bundle_prices USING btree (sku, "interval", is_active) WHERE is_active;
+
+
+--
+-- Name: bundle_prices_stripe_price_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX bundle_prices_stripe_price_id_index ON public.bundle_prices USING btree (stripe_price_id);
 
 
 --
@@ -9997,6 +10169,20 @@ CREATE INDEX signals_historical_activity_user_id_triggered_at_index ON public.si
 --
 
 CREATE INDEX signals_historical_activity_user_trigger_id_index ON public.signals_historical_activity USING btree (user_trigger_id);
+
+
+--
+-- Name: subscription_items_stripe_item_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX subscription_items_stripe_item_id_index ON public.subscription_items USING btree (stripe_item_id);
+
+
+--
+-- Name: subscription_items_subscription_id_sku_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX subscription_items_subscription_id_sku_index ON public.subscription_items USING btree (subscription_id, sku);
 
 
 --
@@ -11596,6 +11782,14 @@ ALTER TABLE ONLY public.source_slug_mappings
 
 
 --
+-- Name: subscription_items subscription_items_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_items
+    ADD CONSTRAINT subscription_items_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id) ON DELETE CASCADE;
+
+
+--
 -- Name: subscriptions subscriptions_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12023,7 +12217,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict rfyXtDlrPfqgJZAAQGTpPZ1dlvrHY5xvDdsiJhJxFdfveh3D8duHyRoWbVeSkp0
+\unrestrict b7s1nl3bqMBXT3SjBAKWkv9fS1cIw1LVLbA6t2BvfHax2Y07czaELm2Sd4FPfD0
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12612,4 +12806,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260722120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260728132322);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260803141812);
+INSERT INTO public."schema_migrations" (version) VALUES (20260803142534);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803150000);

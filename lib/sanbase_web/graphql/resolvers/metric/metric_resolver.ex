@@ -212,14 +212,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       context: %{
         requested_product: requested_product,
         subscription_product: subcription_product,
-        auth: %{plan: plan_name}
+        auth: %{plan: plan_name} = auth
       }
     } = resolution
 
     case Metric.metadata(metric) do
       {:ok, metadata} ->
         access_restrictions =
-          Restrictions.get({:metric, metric}, requested_product, subcription_product, plan_name)
+          Restrictions.get(
+            {:metric, metric},
+            requested_product,
+            subcription_product,
+            plan_name,
+            Sanbase.Billing.Subscription.bundle_entitlement(auth[:subscription])
+          )
 
         {:ok,
          metadata

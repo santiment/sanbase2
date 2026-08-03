@@ -100,6 +100,8 @@ defmodule SanbaseWeb.GenericAdminController do
       {"User Overview", ~p"/admin/user_overview"},
       {"User Rankings", ~p"/admin/user_rankings"},
       {"Invoice Archives", ~p"/admin/invoices"},
+      {"Bundle Packages", ~p"/admin/bundle_packages"},
+      {"Bundle Subscriptions", ~p"/admin/bundle_subscriptions"},
       {"Broadcast Notifications Overview", ~p"/admin/notifications/broadcast/overview"}
     ]
   end

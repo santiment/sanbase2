@@ -66,6 +66,12 @@ defmodule Sanbase.Billing.Subscription do
 
     field(:payment_intent, :map, virtual: true)
 
+    # Only set for bundle subscriptions. Worked out from the subscription's items
+    # when they change, so access checks never have to decode items or call
+    # Stripe. NULL for every other subscription. See §5.4 of
+    # docs/composable-api-plans-handover.md
+    embeds_one(:bundle_entitlement, Sanbase.Billing.Plan.Bundle.Entitlement, on_replace: :update)
+
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
 
@@ -87,6 +93,7 @@ defmodule Sanbase.Billing.Subscription do
       :inserted_at,
       :type
     ])
+    |> cast_embed(:bundle_entitlement)
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
   end
 

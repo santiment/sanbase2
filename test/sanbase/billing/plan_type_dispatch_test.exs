@@ -49,7 +49,6 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   # one dispatch site.
   defp bundle_entry_points do
     [
-      {:plan_has_access?, &AccessChecker.plan_has_access?(@item, &2, &1)},
       {:get_available_metrics_for_plan,
        &AccessChecker.get_available_metrics_for_plan(&1, &2, :all)},
       {:historical_data_in_days, &AccessChecker.historical_data_in_days(@item, &2, &2, &1)},
@@ -63,9 +62,55 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       # stored in api_call_limits.api_calls_limit_plan.
       {:plan_to_api_call_limits, &ApiCallLimit.plan_to_api_call_limits(acl_plan(&2, &1))},
       {:plan_to_response_size_limits,
-       &ApiCallLimit.plan_to_response_size_limits(acl_plan(&2, &1))},
-      {:plan_has_limits?, &ApiCallLimit.plan_has_limits?(acl_plan(&2, &1))}
+       &ApiCallLimit.plan_to_response_size_limits(acl_plan(&2, &1))}
     ]
+  end
+
+  # Entry points that have a real bundle implementation, and so are asserted
+  # directly rather than through the "must raise" list above. When
+  # bundle_entry_points/0 is empty, task BA is complete.
+  describe "implemented bundle entry points" do
+    test "plan_has_access? answers from the entitlement it is handed" do
+      entitlement = %Bundle.Entitlement{
+        metric_access: %{"accessible" => ["price_usd"]},
+        query_access: %{"accessible" => "all"},
+        signal_access: %{"accessible" => "all"},
+        api_call_limits: %{"month" => 100_000, "hour" => 30_000, "minute" => 600},
+        schema_version: Bundle.Entitlement.current_schema_version()
+      }
+
+      for product <- @products do
+        assert AccessChecker.plan_has_access?(
+                 {:metric, "price_usd"},
+                 product,
+                 @bundle_plan,
+                 entitlement
+               )
+
+        refute AccessChecker.plan_has_access?(
+                 {:metric, "mvrv_usd"},
+                 product,
+                 @bundle_plan,
+                 entitlement
+               )
+      end
+    end
+
+    test "plan_has_access? refuses to answer without an entitlement" do
+      # Not NotImplementedError - the path exists, the input is missing. Falling
+      # back to the standard ladder here would silently under-deliver.
+      for product <- @products do
+        assert_raise Bundle.MissingEntitlementError, fn ->
+          AccessChecker.plan_has_access?(@item, product, @bundle_plan)
+        end
+      end
+    end
+
+    test "plan_has_limits? says a bundle always has limits" do
+      for product <- @products do
+        assert ApiCallLimit.plan_has_limits?(acl_plan(product, @bundle_plan))
+      end
+    end
   end
 
   describe "Plan.type/1" do
@@ -169,10 +214,10 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       # several frames from the cause is what this replaces.
       error =
         assert_raise Bundle.NotImplementedError, fn ->
-          AccessChecker.plan_has_access?(@item, "SANAPI", @bundle_plan)
+          AccessChecker.get_available_metrics_for_plan(@bundle_plan, "SANAPI", :all)
         end
 
-      assert error.message =~ "plan_has_access?"
+      assert error.message =~ "get_available_metrics_for_plan"
       assert error.message =~ @bundle_plan
     end
   end

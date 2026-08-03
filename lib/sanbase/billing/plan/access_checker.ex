@@ -6,6 +6,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @type subscription_product :: String.t()
   @type product_code :: String.t()
   @type plan_name :: String.t()
+  @type entitlement :: Sanbase.Billing.Plan.Bundle.Entitlement.t() | nil
 
   alias Sanbase.Billing.Plan
   alias Sanbase.Billing.Plan.{BundleAccessChecker, CustomAccessChecker, StandardAccessChecker}
@@ -22,12 +23,25 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   end
 
   @doc ~s"""
+  Whether the given plan may use this metric, query or signal.
+
+  The last argument is only read by bundle plans, which cannot be identified by
+  name - every bundle is named `BUNDLE`, so the entitlement has to be handed in.
+  Standard and custom plans ignore it, which is why existing callers can keep
+  using the three-argument form unchanged. See §5.8 of
+  docs/composable-api-plans-handover.md.
   """
-  @spec plan_has_access?(query_or_argument, requested_product, plan_name) :: boolean()
-  def plan_has_access?(query_or_argument, requested_product, plan_name) do
+  @spec plan_has_access?(query_or_argument, requested_product, plan_name, entitlement) ::
+          boolean()
+  def plan_has_access?(query_or_argument, requested_product, plan_name, entitlement \\ nil) do
     case Plan.type(plan_name) do
       :bundle ->
-        BundleAccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name)
+        BundleAccessChecker.plan_has_access?(
+          query_or_argument,
+          requested_product,
+          plan_name,
+          entitlement
+        )
 
       :custom ->
         CustomAccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name)

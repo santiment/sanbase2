@@ -43,6 +43,10 @@ defmodule Sanbase.Accounts.Settings do
     field(:is_subscribed_likes_emails, :boolean, default: true)
     field(:is_subscribed_metric_updates, :boolean, default: false)
 
+    # Toggled by the "Notify me when available" button shown when a metric group
+    # is under maintenance. Not exposed in the user profile settings UI.
+    field(:is_subscribed_dev_activity_updates, :boolean, default: false)
+
     # 2. Email campaigns/lists through Mailjet
     field(:is_subscribed_weekly_newsletter, :boolean, default: true)
     field(:is_subscribed_biweekly_report, :boolean, default: false)
@@ -79,6 +83,7 @@ defmodule Sanbase.Accounts.Settings do
       :is_subscribed_monthly_newsletter,
       :is_subscribed_biweekly_report,
       :is_subscribed_metric_updates,
+      :is_subscribed_dev_activity_updates,
       :is_subscribed_marketing_emails,
       :is_subscribed_comments_emails,
       :is_subscribed_likes_emails,

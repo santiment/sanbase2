@@ -119,6 +119,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
       description: display_order.description,
       args: display_order.args,
       is_new: DisplayOrder.is_new?(display_order.inserted_at),
+      status: display_order.status,
       display_order: display_order.display_order,
       inserted_at: display_order.inserted_at,
       updated_at: display_order.updated_at

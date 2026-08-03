@@ -233,6 +233,40 @@ defmodule Sanbase.Billing.BundleApiAccessTest do
     end
   end
 
+  describe "asking for a bundle's restrictions by name" do
+    test "is refused rather than raising", context do
+      # getAccessRestrictions takes `plan` as a free-form string on a query marked
+      # access: :free, and "BUNDLE" became an existing plan name the moment the
+      # marker rows were added. Without the guard, any unauthenticated caller could
+      # reach the bundle access path with no entitlement and turn a deliberate
+      # MissingEntitlementError into a 500.
+      %{conn: conn} = context
+
+      result =
+        execute(conn, """
+        {
+          getAccessRestrictions(planName: "BUNDLE", product: SANAPI) { name }
+        }
+        """)
+
+      assert Map.has_key?(result, "errors")
+      assert result["errors"] |> hd() |> Map.get("message") =~ "BUNDLE"
+    end
+
+    test "still works for a standard plan", context do
+      %{conn: conn} = context
+
+      result =
+        execute(conn, """
+        {
+          getAccessRestrictions(planName: "PRO", product: SANAPI) { name }
+        }
+        """)
+
+      refute Map.has_key?(result, "errors")
+    end
+  end
+
   describe "the API call quota" do
     test "is not reached by a santiment.net user, which is why the tests above pass", context do
       # Worth stating outright: the factory's default email is @santiment.net, and

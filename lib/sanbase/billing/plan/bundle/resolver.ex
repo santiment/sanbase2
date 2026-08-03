@@ -38,6 +38,8 @@ defmodule Sanbase.Billing.Plan.Bundle.Resolver do
   a different shape.
   """
 
+  import Ecto.Query
+
   alias Sanbase.Billing.Plan.Bundle.ApiCallAddon
   alias Sanbase.Billing.Plan.Bundle.Entitlement
   alias Sanbase.Billing.Plan.Bundle.Package
@@ -109,24 +111,52 @@ defmodule Sanbase.Billing.Plan.Bundle.Resolver do
 
   Idempotent: the answer is computed from scratch every time, so the repeated
   `subscription.updated` events a single item change produces are harmless.
+
+  ## Why the row is locked
+
+  Reading the items and writing the entitlement have to be one serialized unit.
+  One item change in Stripe fires several `subscription.updated` events, and
+  processed concurrently they interleave: a run that read the older item set can
+  finish last and overwrite a newer, correct entitlement with a stale one. Since
+  the value is a wholesale replacement rather than an increment, nothing would
+  detect or repair that afterwards.
+
+  `FOR UPDATE` on the subscription row makes concurrent syncs of the *same*
+  subscription queue behind each other, so the last write is always the one that
+  read the latest items. Syncs of different subscriptions are unaffected.
   """
   @spec sync(Subscription.t() | integer()) ::
           {:ok, Subscription.t()} | {:error, String.t() | Ecto.Changeset.t()}
-  def sync(%Subscription{} = subscription) do
-    with {:ok, snapshot} <- latest_snapshot(),
-         items = Item.by_subscription(subscription.id),
-         {:ok, attrs} <- resolve(items, snapshot) do
-      subscription
-      |> Subscription.bundle_entitlement_changeset(attrs)
-      |> Repo.update()
-    end
-  end
+  def sync(%Subscription{id: subscription_id}), do: sync(subscription_id)
 
   def sync(subscription_id) when is_integer(subscription_id) do
-    case Repo.get(Subscription, subscription_id) do
-      nil -> {:error, "No subscription with id #{subscription_id}."}
-      subscription -> sync(subscription)
-    end
+    Repo.transaction(fn ->
+      case lock_subscription(subscription_id) do
+        nil ->
+          Repo.rollback("No subscription with id #{subscription_id}.")
+
+        subscription ->
+          with {:ok, snapshot} <- latest_snapshot(),
+               items = Item.by_subscription(subscription_id),
+               {:ok, attrs} <- resolve(items, snapshot),
+               {:ok, updated} <-
+                 subscription
+                 |> Subscription.bundle_entitlement_changeset(attrs)
+                 |> Repo.update() do
+            updated
+          else
+            {:error, reason} -> Repo.rollback(reason)
+          end
+      end
+    end)
+  end
+
+  # Re-read inside the transaction rather than trusting the struct a caller
+  # handed in - it may already be stale, and the lock is only meaningful on a row
+  # read within the transaction.
+  defp lock_subscription(subscription_id) do
+    from(s in Subscription, where: s.id == ^subscription_id, lock: "FOR UPDATE")
+    |> Repo.one()
   end
 
   # Private

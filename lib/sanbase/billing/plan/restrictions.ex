@@ -79,8 +79,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   Return a list in which every element describes either a metric or a query.
   The elements are maps describing the time restrictions of the given metric/query.
   """
-  @spec get_all(String.t(), String.t(), :query | :metric | :signal | nil) :: list(restriction)
-  def get_all(plan_name, product_code, filter \\ nil) do
+  @spec get_all(String.t(), String.t(), :query | :metric | :signal | nil, entitlement) ::
+          list(restriction)
+  def get_all(plan_name, product_code, filter \\ nil, entitlement \\ nil) do
     metrics = Sanbase.Metric.available_metrics() |> Enum.map(&{:metric, &1})
     signals = Sanbase.Signal.available_signals() |> Enum.map(&{:signal, &1})
     queries = Sanbase.Project.AvailableQueries.all_atom_names() |> Enum.map(&{:query, &1})
@@ -89,7 +90,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     result =
       (queries ++ metrics ++ signals)
       |> Enum.map(fn query_or_argument ->
-        get(query_or_argument, product_code, product_code, plan_name)
+        get(query_or_argument, product_code, product_code, plan_name, entitlement)
       end)
 
     (get_extra_queries(plan_name, product_code) ++ result)

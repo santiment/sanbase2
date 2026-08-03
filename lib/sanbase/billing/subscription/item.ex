@@ -89,6 +89,11 @@ defmodule Sanbase.Billing.Subscription.Item do
   # not - so it is rejected rather than silently ignored.
   defp validate_sku(changeset) do
     case {get_field(changeset, :type), get_field(changeset, :sku)} do
+      # A missing SKU is validate_required's business. Reporting it here too would
+      # add a second, less useful message about the wrong type.
+      {_type, nil} ->
+        changeset
+
       {:package, sku} ->
         changeset
         |> validate_known(:package, sku)

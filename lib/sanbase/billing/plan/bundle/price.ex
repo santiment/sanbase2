@@ -129,8 +129,13 @@ defmodule Sanbase.Billing.Plan.Bundle.Price do
   @spec replace(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def replace(%{sku: sku, interval: interval} = attrs) do
     Repo.transaction(fn ->
+      # NaiveDateTime, not DateTime - `timestamps()` maps to `timestamp without
+      # time zone`, and update_all writes the term through without casting it to
+      # the field's type the way a changeset would.
+      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
       from(p in __MODULE__, where: p.sku == ^sku and p.interval == ^interval and p.is_active)
-      |> Repo.update_all(set: [is_active: false, updated_at: DateTime.utc_now()])
+      |> Repo.update_all(set: [is_active: false, updated_at: now])
 
       case create(attrs) do
         {:ok, price} -> price
@@ -141,6 +146,9 @@ defmodule Sanbase.Billing.Plan.Bundle.Price do
 
   defp validate_sku(changeset) do
     case {get_field(changeset, :type), get_field(changeset, :sku)} do
+      # A missing SKU is validate_required's business. Reporting it here too would
+      # add a second, less useful message about the wrong type.
+      {_type, nil} -> changeset
       {:package, sku} -> known(changeset, Package.by_slug(sku))
       {:api_calls, sku} -> known(changeset, ApiCallAddon.calls_per_month(sku))
       _ -> changeset

@@ -7,61 +7,6 @@ defmodule Sanbase.DiscordConsumer do
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
 
-  @commands [
-    %{
-      name: "summary",
-      description: "Summarize a channel or thread",
-      options: [
-        %{
-          type: 7,
-          name: "channel_or_thread",
-          description: "channel or thread",
-          required: true
-        },
-        %{
-          type: 3,
-          name: "from_dt",
-          description: "From date",
-          required: true,
-          autocomplete: true
-        },
-        %{
-          type: 3,
-          name: "to_dt",
-          description: "To date",
-          required: true,
-          autocomplete: true
-        }
-      ]
-    },
-    %{
-      name: "query",
-      description: "Run new query"
-    },
-    %{
-      name: "chart",
-      description: "Create a Sanbase metric chart",
-      options: [
-        %{
-          type: 3,
-          name: "project",
-          description: "project",
-          required: true,
-          autocomplete: true
-        },
-        %{
-          type: 3,
-          name: "metric",
-          description: "metric",
-          required: true,
-          autocomplete: true
-        }
-      ]
-    }
-  ]
-
-  def commands, do: @commands
-
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     if msg_contains_bot_mention?(msg) do
       case CommandHandler.handle_command("mention", msg) do
@@ -77,31 +22,10 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   def handle_event({:READY, _data, _ws_state}) do
-    Nostrum.Api.ApplicationCommand.bulk_overwrite_global_commands(@commands)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{name: command}} = interaction,
-        _ws_state
-      })
-      when command in [
-             "summary"
-           ] do
-    case command do
-      cmd when cmd in ["summary"] ->
-        case CommandHandler.discord_metadata(interaction) do
-          %{user_is_team_member: true} = metadata ->
-            CommandHandler.handle_interaction(command, interaction, metadata)
-            |> handle_response(cmd, interaction, metadata, retry: false)
-
-          _ ->
-            CommandHandler.access_denied(interaction)
-        end
-
-      _ ->
-        :noop
-    end
+    # The bot registers no slash commands - it is driven by @mentions and by the
+    # feedback buttons. Overwriting with an empty list also unregisters any
+    # commands that were registered by previous versions.
+    Nostrum.Api.ApplicationCommand.bulk_overwrite_global_commands([])
   end
 
   def handle_event({
@@ -152,68 +76,6 @@ defmodule Sanbase.DiscordConsumer do
       Logger.info(log_msg)
     else
       Logger.error(log_msg)
-    end
-  end
-
-  defp log(%Nostrum.Struct.Interaction{} = interaction, log_text, opts) do
-    params = %{
-      channel: to_string(interaction.channel_id),
-      guild: to_string(interaction.guild_id),
-      discord_user_id: to_string(interaction.user.id),
-      discord_user_handle: interaction.user.username <> interaction.user.discriminator
-    }
-
-    log_msg =
-      "[id=#{interaction.id}] [#{inspect(interaction.data)}] #{log_text} metadata=#{inspect(params)}"
-
-    stacktrace = Keyword.get(opts, :stacktrace)
-
-    log_msg =
-      if stacktrace,
-        do: log_msg <> " stacktrace=#{Exception.format_stacktrace(stacktrace)}",
-        else: log_msg
-
-    if Keyword.get(opts, :type, :info) do
-      Logger.info(log_msg)
-    else
-      Logger.error(log_msg)
-    end
-  end
-
-  defp retry(command, interaction, metadata) do
-    CommandHandler.handle_interaction(command, interaction, metadata)
-    |> handle_response(command, interaction, metadata, retry: false)
-  end
-
-  defp handle_response(response, command, interaction, metadata, opts) do
-    params = %{
-      channel: to_string(interaction.channel_id),
-      guild: to_string(interaction.guild_id),
-      discord_user_id: to_string(interaction.user.id),
-      discord_user_handle: interaction.user.username <> interaction.user.discriminator
-    }
-
-    command_insp = inspect(command)
-
-    case response do
-      :ok ->
-        Logger.info("COMMAND SUCCESS #{command_insp} #{inspect(params)}")
-
-      {:ok} ->
-        Logger.info("COMMAND SUCCESS #{command_insp} #{inspect(params)}")
-
-      {:ok, _} ->
-        Logger.info("COMMAND SUCCESS #{command_insp} #{inspect(params)}")
-
-      {:error, {:stream_error, :closed} = error} ->
-        Logger.error("COMMAND ERROR #{command_insp} #{inspect(params)} #{inspect(error)}")
-
-        if Keyword.get(opts, :retry, true) do
-          retry(command, interaction, metadata)
-        end
-
-      {:error, error} ->
-        Logger.error("COMMAND ERROR #{command_insp} #{inspect(params)} #{inspect(error)}")
     end
   end
 end

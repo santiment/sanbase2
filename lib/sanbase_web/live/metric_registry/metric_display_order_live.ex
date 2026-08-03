@@ -19,6 +19,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
      |> assign(
        page_title: "Metric Display Order",
        metrics: metrics,
+       statuses: DisplayOrder.get_available_statuses(),
        categories: categories,
        selected_category: first_category_name,
        selected_group: nil,
@@ -73,6 +74,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
 
       <.metrics_table
         filtered_metrics={@filtered_metrics}
+        statuses={@statuses}
         highlighted_metric_id={@highlighted_metric_id}
       />
 
@@ -230,6 +232,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   attr :filtered_metrics, :list, required: true
+  attr :statuses, :list, required: true
   attr :highlighted_metric_id, :integer, default: nil
 
   def metrics_table(assigns) do
@@ -246,6 +249,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
             <th>Group</th>
             <th>Style</th>
             <th>Format</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -253,6 +257,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
           <.metric_row
             :for={{metric, index} <- Enum.with_index(@filtered_metrics)}
             metric={metric}
+            statuses={@statuses}
             index={index}
             total_count={length(@filtered_metrics)}
             highlighted={@highlighted_metric_id && @highlighted_metric_id == metric.id}
@@ -264,11 +269,21 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   attr :metric, :map, required: true
+  attr :statuses, :list, required: true
   attr :index, :integer, required: true
   attr :total_count, :integer, required: true
   attr :highlighted, :boolean, default: false
 
   def metric_row(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :status_form,
+        to_form(%{"metric_id" => assigns.metric.id, "status" => assigns.metric.status},
+          as: :status_update
+        )
+      )
+
     ~H"""
     <tr id={"metric-#{@metric.id}"} data-id={@metric.id} class={[@highlighted && "bg-warning/20"]}>
       <td>
@@ -295,6 +310,10 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       <td>
         {@metric.metric}
         <span :if={@metric.is_new} class="badge badge-xs badge-success ml-2">NEW</span>
+        <AdminSharedComponents.status_badge
+          :if={@metric.status != :live}
+          status={to_string(@metric.status)}
+        />
       </td>
       <td>{@metric.ui_human_readable_name}</td>
       <td>{@metric.ui_key}</td>
@@ -302,6 +321,23 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       <td>{@metric.group_name}</td>
       <td>{@metric.chart_style}</td>
       <td>{@metric.unit}</td>
+      <td>
+        <.form for={@status_form} phx-change="change_status">
+          <input
+            type="hidden"
+            name={@status_form[:metric_id].name}
+            value={@status_form[:metric_id].value}
+          />
+          <.input
+            type="select"
+            field={@status_form[:status]}
+            id={"status-select-#{@metric.id}"}
+            options={Enum.map(@statuses, &{AdminSharedComponents.status_text(&1), &1})}
+            aria-label={"Status of #{@metric.metric}"}
+            outer_div_class="!mb-0"
+          />
+        </.form>
+      </td>
       <td>
         <.metric_actions metric={@metric} />
       </td>
@@ -409,6 +445,30 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   @impl true
+  def handle_event(
+        "change_status",
+        %{"status_update" => %{"metric_id" => id, "status" => status}},
+        socket
+      ) do
+    with {id, ""} <- Integer.parse(id),
+         {:ok, updated} <- DisplayOrder.update_status(id, status) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Metric status updated to #{updated.status}")
+       |> assign(
+         metrics: put_metric_status(socket.assigns.metrics, id, updated.status),
+         filtered_metrics: put_metric_status(socket.assigns.filtered_metrics, id, updated.status)
+       )}
+    else
+      {:error, error} ->
+        {:noreply, socket |> put_flash(:error, "Error updating status: #{inspect(error)}")}
+
+      _ ->
+        {:noreply, socket |> put_flash(:error, "Invalid metric ID")}
+    end
+  end
+
+  @impl true
   def handle_event("delete_metric", %{"id" => id}, socket) do
     {id, _} = Integer.parse(id)
 
@@ -496,6 +556,12 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
      |> push_patch(to: ~p"/admin/metric_registry/display_order")}
   end
 
+  defp put_metric_status(metrics, id, status) do
+    Enum.map(metrics, fn metric ->
+      if metric.id == id, do: %{metric | status: status}, else: metric
+    end)
+  end
+
   defp filter_metrics(socket) do
     %{metrics: metrics, selected_category: category, selected_group: group} = socket.assigns
 
@@ -539,14 +605,15 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       >
         Edit
       </.link>
-      <.link
+      <button
+        type="button"
         phx-click="delete_metric"
         phx-value-id={@metric.id}
         data-confirm="Are you sure you want to delete this metric display order? This action cannot be undone."
         class="link link-error text-sm cursor-pointer"
       >
         Delete
-      </.link>
+      </button>
     </div>
     """
   end

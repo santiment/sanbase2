@@ -26,7 +26,8 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
            groups_by_category: form_data.groups_by_category,
            groups_for_category: form_data.groups_for_category,
            styles: form_data.styles,
-           formats: form_data.formats
+           formats: form_data.formats,
+           statuses: form_data.statuses
          )}
     end
   end
@@ -49,9 +50,10 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
     # Get groups for the current category
     groups_for_category = Map.get(groups_by_category, display_order.category_id, [])
 
-    # Get available styles and formats
+    # Get available styles, formats and statuses
     styles = DisplayOrder.get_available_chart_styles()
     formats = DisplayOrder.get_available_formats()
+    statuses = DisplayOrder.get_available_statuses()
 
     # Get category and group names for display
     category_name = if display_order.category, do: display_order.category.name, else: nil
@@ -66,7 +68,8 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
       groups_by_category: groups_by_category,
       groups_for_category: groups_for_category,
       styles: styles,
-      formats: formats
+      formats: formats,
+      statuses: statuses
     }
   end
 
@@ -84,7 +87,8 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
       "chart_style" => display_order.chart_style,
       "unit" => display_order.unit,
       "description" => display_order.description,
-      "args" => args_json
+      "args" => args_json,
+      "status" => display_order.status
     })
   end
 
@@ -110,6 +114,7 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
         groups_for_category={@groups_for_category}
         styles={@styles}
         formats={@formats}
+        statuses={@statuses}
       />
     </div>
     """
@@ -140,6 +145,7 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
   attr :groups_for_category, :list, required: true
   attr :styles, :list, required: true
   attr :formats, :list, required: true
+  attr :statuses, :list, required: true
 
   def metric_form(assigns) do
     ~H"""
@@ -179,6 +185,13 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
         field={@form[:args]}
         label="Args (JSON)"
         placeholder={~s|{"selector": {"slug": "ethereum"}}|}
+      />
+
+      <.input
+        type="select"
+        field={@form[:status]}
+        label="Status"
+        options={Enum.map(@statuses, fn s -> {AdminSharedComponents.status_text(s), s} end)}
       />
 
       <.button phx-disable-with="Saving...">Save Changes</.button>
@@ -231,7 +244,8 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
           chart_style: params["chart_style"],
           unit: params["unit"],
           description: params["description"],
-          args: args
+          args: args,
+          status: params["status"]
         }
 
         case DisplayOrder.do_update(display_order, attrs) do

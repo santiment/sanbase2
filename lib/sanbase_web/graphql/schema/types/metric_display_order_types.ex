@@ -5,6 +5,12 @@ defmodule SanbaseWeb.Graphql.MetricDisplayOrderTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver
 
+  enum :metric_display_order_status do
+    value(:live)
+    value(:hidden)
+    value(:under_maintenance)
+  end
+
   object :metric_display_order do
     field(:metric, non_null(:string))
     field(:type, :string)
@@ -18,6 +24,7 @@ defmodule SanbaseWeb.Graphql.MetricDisplayOrderTypes do
     field(:description, :string)
     field(:args, :json)
     field(:is_new, :boolean)
+    field(:status, :metric_display_order_status)
 
     field :source, :string do
       resolve(&MetricDisplayOrderResolver.deduce_source/3)

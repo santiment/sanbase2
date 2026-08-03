@@ -131,9 +131,17 @@ defmodule SanbaseWeb.AdminSharedComponents do
   def status_badge(assigns) do
     ~H"""
     <span class={["badge whitespace-nowrap", status_variant(@status)]}>
-      {@status |> String.replace("_", " ") |> String.upcase()}
+      {status_text(@status)}
     </span>
     """
+  end
+
+  @doc """
+  Human-readable label for a status atom or string, e.g. `:under_maintenance -> "UNDER MAINTENANCE"`.
+  """
+  @spec status_text(atom() | String.t()) :: String.t()
+  def status_text(status) do
+    status |> to_string() |> String.replace("_", " ") |> String.upcase()
   end
 
   defp status_variant("approved"), do: "badge-success"
@@ -141,6 +149,8 @@ defmodule SanbaseWeb.AdminSharedComponents do
   defp status_variant("pending_approval"), do: "badge-warning"
   defp status_variant("pending_sync"), do: "badge-warning"
   defp status_variant("manual_drift"), do: "badge-error"
+  defp status_variant("hidden"), do: "badge-neutral"
+  defp status_variant("under_maintenance"), do: "badge-warning"
   defp status_variant(_), do: "badge-ghost"
 
   attr :current_user, :map, required: true

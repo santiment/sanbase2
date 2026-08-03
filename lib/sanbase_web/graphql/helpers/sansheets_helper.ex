@@ -20,7 +20,9 @@ defmodule SanbaseWeb.Graphql.SansheetsHelper do
 
   @spec sansheets_user_agent?(binary()) :: boolean()
   def sansheets_user_agent?(user_agent) when is_binary(user_agent) do
-    String.contains?(user_agent, @sansheets_prefix) or
+    # The legacy token stays a substring match — Google sends it mid-string, as
+    # in "Mozilla/5.0 (compatible; Google-Apps-Script)".
+    String.starts_with?(user_agent, @sansheets_prefix) or
       String.contains?(user_agent, @legacy_google_apps_script)
   end
 

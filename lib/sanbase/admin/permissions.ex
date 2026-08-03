@@ -15,6 +15,14 @@ defmodule Sanbase.Admin.Permissions do
     end
   end
 
+  @doc """
+  Whether the roles hold Admin Panel Owner — required to hand out privilege,
+  which the :view/:new/:edit/:delete permissions do not cover.
+  """
+  def owner?(opts) do
+    any_role?([@owner], opts)
+  end
+
   def raise_if_cannot(action, opts) do
     if not can?(action, opts) do
       raise __MODULE__.Error, message: "You don't have permission to #{action}"

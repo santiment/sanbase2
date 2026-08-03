@@ -18,6 +18,11 @@ defmodule Sanbase.Accounts.UserRole do
     |> unique_constraint(:user, name: :user_roles_user_id_role_id_index)
   end
 
+  @doc """
+  Grants a role. Deliberately unauthorized — also the IEx bootstrap path, and the
+  first Admin Panel Owner must be creatable when no Owner exists. Web-reachable
+  callers check the acting user themselves, as `UserRolesLive` does.
+  """
   def create(user_id, role_id) do
     %__MODULE__{}
     |> changeset(%{user_id: user_id, role_id: role_id})

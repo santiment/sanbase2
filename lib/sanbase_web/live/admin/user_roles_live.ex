@@ -5,6 +5,14 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
   alias Sanbase.Repo
   import Ecto.Query
 
+  @owner_only_error "Only an Admin Panel Owner can assign or remove roles"
+
+  # The route's on_mount hook covers mount and reconnect only, and a client can
+  # push an event over the socket without ever rendering the form.
+  defp owner?(socket) do
+    Sanbase.Admin.Permissions.owner?(roles: socket.assigns[:current_user_role_names] || [])
+  end
+
   @impl true
   def mount(_params, _session, socket) do
     users = load_users_with_roles()
@@ -65,7 +73,7 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
                 </tr>
               </thead>
               <tbody id="users" phx-update="stream">
-                <tr class="hidden only:block">
+                <tr id="no-users-with-roles" class="hidden only:block">
                   <td colspan="3" class="text-center text-base-content/60 py-6">
                     No users with roles found
                   </td>
@@ -198,6 +206,9 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
         socket
       ) do
     cond do
+      not owner?(socket) ->
+        {:noreply, put_flash(socket, :error, @owner_only_error)}
+
       user_id == nil or user_id == "" ->
         {:noreply,
          put_flash(socket, :error, "Please select a user from the autocomplete suggestions")}
@@ -297,6 +308,24 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
 
   @impl true
   def handle_event("remove_role", %{"user_id" => user_id, "role_id" => role_id}, socket) do
+    if owner?(socket),
+      do: remove_role(user_id, role_id, socket),
+      else: {:noreply, put_flash(socket, :error, @owner_only_error)}
+  end
+
+  @impl true
+  def handle_event("search_users", %{"search_query" => query}, socket) do
+    users = load_users_with_roles(query)
+
+    socket =
+      socket
+      |> assign(:search_query, query)
+      |> stream(:users, users, reset: true)
+
+    {:noreply, socket}
+  end
+
+  defp remove_role(user_id, role_id, socket) do
     user_id = String.to_integer(user_id)
     role_id = String.to_integer(role_id)
 
@@ -314,18 +343,6 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
       {0, _} ->
         {:noreply, put_flash(socket, :error, "Role not found")}
     end
-  end
-
-  @impl true
-  def handle_event("search_users", %{"search_query" => query}, socket) do
-    users = load_users_with_roles(query)
-
-    socket =
-      socket
-      |> assign(:search_query, query)
-      |> stream(:users, users, reset: true)
-
-    {:noreply, socket}
   end
 
   defp load_users_with_roles(search_query \\ "") do

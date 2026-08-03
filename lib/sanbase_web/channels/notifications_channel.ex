@@ -1,13 +1,14 @@
 defmodule SanbaseWeb.NotificationsChannel do
   use SanbaseWeb, :channel
 
-  def join("notifications:" <> user_id, _params, socket) do
-    case Integer.parse(user_id) do
-      {user_id, ""} when is_integer(user_id) ->
+  # Anonymous sockets have `user_id: nil`, so this rejects them too.
+  def join("notifications:" <> subtopic, _params, socket) do
+    case Integer.parse(subtopic) do
+      {user_id, ""} when user_id == socket.assigns.user_id ->
         {:ok, socket}
 
-      res ->
-        {:error, "The channel subtopic must be the authenticated user id. res: #{inspect(res)}"}
+      _ ->
+        {:error, "The channel subtopic must be the authenticated user id"}
     end
   end
 end

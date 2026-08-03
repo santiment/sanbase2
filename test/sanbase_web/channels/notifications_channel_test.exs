@@ -37,6 +37,36 @@ defmodule SanbaseWeb.NotificationsChannelTest do
              )
   end
 
+  test "cannot join another user's notifications channel", context do
+    other_user = insert(:user)
+
+    {:ok, socket} =
+      connect(
+        SanbaseWeb.UserSocket,
+        %{"access_token" => context.conn.private.plug_session["access_token"]}
+      )
+
+    assert {:error, _} =
+             subscribe_and_join(
+               socket,
+               SanbaseWeb.NotificationsChannel,
+               "notifications:#{other_user.id}",
+               %{}
+             )
+  end
+
+  test "an anonymous socket cannot join any notifications channel", context do
+    {:ok, socket} = connect(SanbaseWeb.UserSocket, %{})
+
+    assert {:error, _} =
+             subscribe_and_join(
+               socket,
+               SanbaseWeb.NotificationsChannel,
+               "notifications:#{context.user.id}",
+               %{}
+             )
+  end
+
   test "use receives notifications via websocket", %{user: user} = context do
     # joins the notifications:#{user_id} channel
     _socket = get_socket(context)

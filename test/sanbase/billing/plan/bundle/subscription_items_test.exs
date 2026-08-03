@@ -140,6 +140,16 @@ defmodule Sanbase.Billing.Plan.Bundle.SubscriptionItemsTest do
       assert "must be 1 for a package item" in errors_on(changeset).quantity
     end
 
+    test "leave a missing SKU to the required-field check", %{subscription: subscription} do
+      # One clear message, not two. Without the nil short-circuit in validate_sku/1
+      # this also reported "must be a string, got nil", which describes a type
+      # problem rather than the actual one.
+      assert {:error, changeset} =
+               Item.create(%{subscription_id: subscription.id, type: :package})
+
+      assert errors_on(changeset).sku == ["can't be blank"]
+    end
+
     test "reject a quantity of zero", %{subscription: subscription} do
       assert {:error, changeset} =
                Item.create(%{

@@ -358,7 +358,7 @@ against, how a query's complexity is scored, and their whole Sanbase experience.
 Sanbase subscription. Bundles are priced against PRO, so PRO is what they get.
 
 One definition, `Sanbase.Billing.Plan.Bundle.equivalent_standard_plan/0`, used in
-five places:
+six places:
 
 | Site | Why it needs it |
 |------|-----------------|
@@ -638,7 +638,7 @@ One correction to the original description: monthly calls are **not** summed per
 ### BA. Bundle access path — 🟡 partial
 **Implemented:** `plan_has_access?`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, and `api_call_limits` on `Bundle.Access`. All three access functions take the optional entitlement argument of §5.8, and the entitlement is threaded from the request context through `AccessControl` and `Plan.Restrictions.get/5` (which the metric and signal resolvers use — without it a bundle customer would get a 500 on metric metadata). The shared-access-token path needs nothing: `token.plan` is hardcoded to `"PRO"` (`shared_access_token.ex:108`), so it can never carry a bundle.
 
-**Remaining (7 rows in `bundle_entry_points/0`):** `get_available_metrics_for_plan` (task **AM**); `plan_to_api_call_limits` and `plan_to_response_size_limits` (need the resolved numbers written onto the `api_call_limits` row, which belongs with **WH**); and `alerts_limit`, `credits_limit`, `query_executions_limit`, `user_plan_to_dynamic_repo`, all four blocked on **Q5**.
+**Remaining (3 rows in `bundle_entry_points/0`):** `get_available_metrics_for_plan` (task **AM**), and `plan_to_api_call_limits` / `plan_to_response_size_limits`, which need the resolved numbers written onto the `api_call_limits` row (task **WH**). The four Sanbase-side limits are no longer among them - they resolve to PRO now that Q5 is answered (§5.9).
 
 **What:** The new path itself. `Bundle.Access` — six functions mirroring `CustomPlan.Access` (`plan_has_access?`, `get_available_metrics_for_plan`, `api_call_limits`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, plus whatever C2 decides for Sanbase) reading the stored entitlement. Then fill in the `:bundle` clause at **every** site from §7.5 groups A and B, replacing the `"not implemented"` raises from **DP**.
 
@@ -834,7 +834,7 @@ covered both.
 
 ### 13.1 Next
 
-The remaining work splits cleanly. `OB` (admin visibility of a resolved entitlement) is now cheap and unblocks support and reviewers; `SC → SL → WH` is the purchase lifecycle; `AM` surfaces the entitlement through `getAvailableMetrics` and is the largest of the 7 remaining `bundle_entry_points/0` rows. The four rows about Sanbase-side limits (`alerts_limit`, `credits_limit`, `query_executions_limit`, `user_plan_to_dynamic_repo`) are blocked on **Q5** — what a package customer sees in Sanbase.
+The remaining work splits cleanly. `OB` (admin visibility) is done. `WH` is now the highest-priority item, not because of webhooks but because it carries the `api_call_limits` write without which no bundle customer can be served at all. `SC → SL → WH` is the purchase lifecycle; `AM` surfaces the entitlement through `getAvailableMetrics` and is the largest of the 3 remaining `bundle_entry_points/0` rows.
 
 ### 13.2 Original plan, for reference
 

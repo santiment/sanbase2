@@ -28,8 +28,12 @@ defmodule SanbaseWeb.Admin.BundlePackagesLive do
   end
 
   @impl true
-  def handle_event("publish", _params, socket) do
-    case PackageSnapshot.publish(notes: blank_to_nil(socket.assigns.notes)) do
+  def handle_event("publish", params, socket) do
+    # From the submitted params first: the input only pushes to the socket on blur,
+    # so typing a note and pressing Enter would otherwise publish without it.
+    notes = Map.get(params, "notes") || socket.assigns.notes
+
+    case PackageSnapshot.publish(notes: blank_to_nil(notes)) do
       {:ok, snapshot} ->
         {:noreply,
          socket

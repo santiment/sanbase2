@@ -152,26 +152,22 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
   end
 
   def handle_event("toggle_item", %{"id" => id, "sku" => sku, "type" => type}, socket) do
-    subscription_id = parse_non_negative(id, nil)
-    subscription = find(socket, subscription_id)
+    with_subscription(socket, id, fn socket, subscription ->
+      result =
+        case Enum.find(subscription.items, &(&1.sku == sku)) do
+          nil ->
+            Item.create(%{
+              subscription_id: subscription.id,
+              sku: sku,
+              type: String.to_existing_atom(type)
+            })
 
-    result =
-      case Enum.find(subscription.items, &(&1.sku == sku)) do
-        nil ->
-          Item.create(%{
-            subscription_id: subscription_id,
-            sku: sku,
-            type: String.to_existing_atom(type)
-          })
+          item ->
+            Repo.delete(item)
+        end
 
-        item ->
-          Repo.delete(item)
-      end
-
-    case result do
-      {:ok, _} -> {:noreply, socket |> resync(subscription_id) |> load()}
-      {:error, changeset} -> {:noreply, put_flash(socket, :error, changeset_message(changeset))}
-    end
+      after_item_change(socket, subscription.id, result)
+    end)
   end
 
   def handle_event(
@@ -179,69 +175,62 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
         %{"_id" => id, "sku" => sku, "quantity" => quantity},
         socket
       ) do
-    subscription_id = parse_non_negative(id, nil)
-    subscription = find(socket, subscription_id)
-    quantity = parse_non_negative(quantity, 0)
+    with_subscription(socket, id, fn socket, subscription ->
+      quantity = parse_non_negative(quantity, 0)
+      existing = Enum.find(subscription.items, &(&1.sku == sku))
 
-    existing = Enum.find(subscription.items, &(&1.sku == sku))
+      result =
+        cond do
+          quantity == 0 and existing ->
+            Repo.delete(existing)
 
-    result =
-      cond do
-        quantity == 0 and existing ->
-          Repo.delete(existing)
+          quantity == 0 ->
+            {:ok, :noop}
 
-        quantity == 0 ->
-          {:ok, :noop}
+          existing ->
+            existing |> Item.changeset(%{quantity: quantity}) |> Repo.update()
 
-        existing ->
-          existing |> Item.changeset(%{quantity: quantity}) |> Repo.update()
+          true ->
+            Item.create(%{
+              subscription_id: subscription.id,
+              sku: sku,
+              type: :api_calls,
+              quantity: quantity
+            })
+        end
 
-        true ->
-          Item.create(%{
-            subscription_id: subscription_id,
-            sku: sku,
-            type: :api_calls,
-            quantity: quantity
-          })
-      end
-
-    case result do
-      {:ok, _} -> {:noreply, socket |> resync(subscription_id) |> load()}
-      {:error, changeset} -> {:noreply, put_flash(socket, :error, changeset_message(changeset))}
-    end
+      after_item_change(socket, subscription.id, result)
+    end)
   end
 
   def handle_event("resync", %{"id" => id}, socket) do
-    {:noreply, socket |> resync(parse_non_negative(id, nil)) |> load()}
+    with_subscription(socket, id, fn socket, subscription ->
+      {:noreply, socket |> resync(subscription.id) |> load()}
+    end)
   end
 
   def handle_event("cancel_subscription", %{"id" => id}, socket) do
-    subscription = find(socket, parse_non_negative(id, nil))
-
-    {:ok, _} =
-      subscription |> Subscription.changeset(%{status: :canceled}) |> Repo.update()
-
-    {:noreply, socket |> put_flash(:info, "Subscription canceled.") |> load()}
+    set_status(socket, id, :canceled, "Subscription canceled.")
   end
 
   def handle_event("reactivate_subscription", %{"id" => id}, socket) do
-    subscription = find(socket, parse_non_negative(id, nil))
-
-    {:ok, _} = subscription |> Subscription.changeset(%{status: :active}) |> Repo.update()
-
-    {:noreply, socket |> put_flash(:info, "Subscription reactivated.") |> load()}
+    set_status(socket, id, :active, "Subscription reactivated.")
   end
 
   def handle_event("delete_subscription", %{"id" => id}, socket) do
-    subscription = find(socket, parse_non_negative(id, nil))
+    with_subscription(socket, id, fn socket, subscription ->
+      case Repo.delete(subscription) do
+        {:ok, _} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Deleted the test subscription and its items.")
+           |> assign(:selected_id, nil)
+           |> load()}
 
-    Repo.delete!(subscription)
-
-    {:noreply,
-     socket
-     |> put_flash(:info, "Deleted the test subscription and its items.")
-     |> assign(:selected_id, nil)
-     |> load()}
+        {:error, changeset} ->
+          {:noreply, put_flash(socket, :error, changeset_message(changeset))}
+      end
+    end)
   end
 
   # ── Decide: the offline access check ────────────────────────────────────
@@ -332,6 +321,39 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
      |> assign(:request_result, %{status: nil, body: "Request crashed: #{inspect(reason)}"})}
   end
 
+  # The page can be open in two tabs, or left open while a row is deleted
+  # elsewhere. Every handler that acts on a row goes through here so a stale id
+  # produces a message and a reload rather than a nil reaching `.items`, a
+  # changeset, or a delete.
+  defp with_subscription(socket, id, fun) do
+    case find(socket, parse_non_negative(id, nil)) do
+      nil ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "That subscription no longer exists - reloaded the list.")
+         |> assign(:selected_id, nil)
+         |> load()}
+
+      subscription ->
+        fun.(socket, subscription)
+    end
+  end
+
+  defp set_status(socket, id, status, message) do
+    with_subscription(socket, id, fn socket, subscription ->
+      case subscription |> Subscription.changeset(%{status: status}) |> Repo.update() do
+        {:ok, _} -> {:noreply, socket |> put_flash(:info, message) |> load()}
+        {:error, changeset} -> {:noreply, put_flash(socket, :error, changeset_message(changeset))}
+      end
+    end)
+  end
+
+  defp after_item_change(socket, subscription_id, {:ok, _}),
+    do: {:noreply, socket |> resync(subscription_id) |> load()}
+
+  defp after_item_change(socket, _subscription_id, {:error, changeset}),
+    do: {:noreply, put_flash(socket, :error, changeset_message(changeset))}
+
   # ── Data ────────────────────────────────────────────────────────────────
 
   defp load(socket) do
@@ -361,30 +383,24 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     else
       addon_quantity = socket.assigns.new_addon_quantity
 
+      # Rolled back rather than matched with `{:ok, _} =`: a MatchError here would
+      # abort the transaction with a crash, so the {:error, reason} branch below
+      # could never be reached and the admin would get a dead page instead of a
+      # message.
       Repo.transaction(fn ->
-        {:ok, subscription} =
-          Subscription.create(%{
-            user_id: user.id,
-            plan_id: plan.id,
-            status: :active,
-            type: :fiat
-          })
-
-        for slug <- MapSet.to_list(packages) do
-          {:ok, _} = Item.create(%{subscription_id: subscription.id, sku: slug, type: :package})
+        with {:ok, subscription} <-
+               Subscription.create(%{
+                 user_id: user.id,
+                 plan_id: plan.id,
+                 status: :active,
+                 type: :fiat
+               }),
+             :ok <- create_package_items(subscription, packages),
+             :ok <- create_addon_item(subscription, addon_quantity) do
+          subscription
+        else
+          {:error, reason} -> Repo.rollback(reason)
         end
-
-        if addon_quantity > 0 do
-          {:ok, _} =
-            Item.create(%{
-              subscription_id: subscription.id,
-              sku: hd(ApiCallAddon.skus()),
-              type: :api_calls,
-              quantity: addon_quantity
-            })
-        end
-
-        subscription
       end)
       |> case do
         {:ok, subscription} ->
@@ -398,9 +414,36 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
            |> assign(:new_addon_quantity, 0)
            |> load()}
 
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply,
+           put_flash(socket, :error, "Could not create: #{changeset_message(changeset)}")}
+
         {:error, reason} ->
           {:noreply, put_flash(socket, :error, "Could not create: #{inspect(reason)}")}
       end
+    end
+  end
+
+  defp create_package_items(subscription, packages) do
+    Enum.reduce_while(MapSet.to_list(packages), :ok, fn slug, :ok ->
+      case Item.create(%{subscription_id: subscription.id, sku: slug, type: :package}) do
+        {:ok, _} -> {:cont, :ok}
+        {:error, changeset} -> {:halt, {:error, changeset}}
+      end
+    end)
+  end
+
+  defp create_addon_item(_subscription, quantity) when quantity <= 0, do: :ok
+
+  defp create_addon_item(subscription, quantity) do
+    case Item.create(%{
+           subscription_id: subscription.id,
+           sku: hd(ApiCallAddon.skus()),
+           type: :api_calls,
+           quantity: quantity
+         }) do
+      {:ok, _} -> :ok
+      {:error, changeset} -> {:error, changeset}
     end
   end
 

@@ -161,20 +161,30 @@ defmodule Sanbase.Billing.Subscription do
   def bundle_entitlement(_), do: nil
 
   @doc ~s"""
-  Every bundle subscription, newest first, with its user, plan and items loaded.
+  Bundle subscriptions, newest first, with their user, plan and items loaded.
 
   Keyed on the plan *name* rather than a plan id, so it keeps working when more
   `BUNDLE` marker rows are added (a second interval, or a Sanbase one later).
+
+  Ordered by `inserted_at` before `id` because a subscription synced from Stripe
+  takes its `inserted_at` from the Stripe creation time
+  (`create_subscription_db/3`), so insertion order and chronological order can
+  differ. `id` is the tie-breaker, which keeps the order stable.
+
+  Bounded by `limit` so an admin listing cannot degrade as the table grows. This
+  is not pagination - it is a ceiling. Add paging here when the count approaches
+  it.
   """
-  @spec list_bundle_subscriptions() :: [%__MODULE__{}]
-  def list_bundle_subscriptions do
+  @spec list_bundle_subscriptions(pos_integer()) :: [%__MODULE__{}]
+  def list_bundle_subscriptions(limit \\ 200) do
     bundle_pattern = "BUNDLE%"
 
     from(s in __MODULE__,
       join: p in Plan,
       on: s.plan_id == p.id,
       where: like(p.name, ^bundle_pattern),
-      order_by: [desc: s.id],
+      order_by: [desc: s.inserted_at, desc: s.id],
+      limit: ^limit,
       preload: [:user, :items, plan: :product]
     )
     |> Repo.all()

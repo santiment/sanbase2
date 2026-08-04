@@ -75,4 +75,57 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
     assert redirected_to(conn) == ~p"/admin/generic?resource=no_such_resource"
     assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed to delete"
   end
+
+  describe "show_action" do
+    defp show_action_path(action, id),
+      do: ~p"/admin/generic/show_action?#{[action: action, resource: "users", id: id]}"
+
+    test "a viewer cannot run a mutating custom action" do
+      target = insert(:user, is_mcp_banned: false)
+
+      conn = get(sign_in(:role_admin_panel_viewer), show_action_path("mcp_ban_user", target.id))
+
+      assert redirected_to(conn) == ~p"/admin/generic?resource=users"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed"
+      refute Sanbase.Repo.get(Sanbase.Accounts.User, target.id).is_mcp_banned
+    end
+
+    test "an editor can run a mutating custom action" do
+      target = insert(:user, is_mcp_banned: false)
+
+      conn = get(sign_in(:role_admin_panel_editor), show_action_path("mcp_ban_user", target.id))
+
+      assert html_response(conn, 200)
+      assert Sanbase.Repo.get(Sanbase.Accounts.User, target.id).is_mcp_banned
+    end
+
+    test "a viewer can still run a read-only custom action" do
+      target = insert(:user)
+
+      conn =
+        get(sign_in(:role_admin_panel_viewer), show_action_path("view_user_overview", target.id))
+
+      assert redirected_to(conn) == "/admin/user_overview?user_id=#{target.id}"
+    end
+
+    test "an action the resource does not declare is refused, not dispatched" do
+      target = insert(:user)
+
+      # A real public function on the admin module, but not a declared show action.
+      conn = get(sign_in(:role_admin_panel_owner), show_action_path("has_many", target.id))
+
+      assert redirected_to(conn) == ~p"/admin/generic?resource=users"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed"
+    end
+
+    test "an action name that is not an existing atom is refused, not raised" do
+      target = insert(:user)
+
+      conn =
+        get(sign_in(:role_admin_panel_owner), show_action_path("no_such_action_xyz", target.id))
+
+      assert redirected_to(conn) == ~p"/admin/generic?resource=users"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed"
+    end
+  end
 end

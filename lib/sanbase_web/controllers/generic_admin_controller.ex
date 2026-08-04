@@ -39,6 +39,7 @@ defmodule SanbaseWeb.GenericAdminController do
   @action_permission %{new: :new, create: :new, edit: :edit, update: :edit, delete: :delete}
 
   plug(:require_action_allowed when action in [:new, :create, :edit, :update, :delete])
+  plug(:require_show_action_allowed when action == :show_action)
 
   # The resource's `:actions` list, already narrowed to what the caller's admin
   # role may do, decides which buttons render. The routes stay reachable
@@ -55,6 +56,46 @@ defmodule SanbaseWeb.GenericAdminController do
       _ ->
         forbid_action(conn, resource, action)
     end
+  end
+
+  # Custom show-page actions can't live in `:actions`, which only ever holds
+  # [:show, :new, :edit, :delete], so they come from `show_actions/0` instead.
+  defp require_show_action_allowed(%Plug.Conn{} = conn, _opts) do
+    resource = conn.params["resource"] || ""
+    action = conn.params["action"] || ""
+
+    case Map.fetch(declared_show_actions(conn, resource), action) do
+      {:ok, {function, permission}} ->
+        if show_action_permitted?(conn, permission),
+          do: assign(conn, :show_action_function, function),
+          else: forbid_action(conn, resource, function)
+
+      :error ->
+        forbid_action(conn, resource, "run that action on")
+    end
+  end
+
+  # String-keyed, so an unknown param never reaches `String.to_existing_atom/1`.
+  defp declared_show_actions(%Plug.Conn{} = conn, resource) do
+    case resource_module_map(conn)[resource] do
+      %{admin_module: admin_module} ->
+        GenericAdmin.call_module_function_or_default(admin_module, :show_actions, [], %{})
+        |> Map.new(fn {function, permission} ->
+          {Atom.to_string(function), {function, permission}}
+        end)
+
+      _ ->
+        %{}
+    end
+  end
+
+  # `:show` means "anyone the /admin pipeline already let through".
+  defp show_action_permitted?(%Plug.Conn{}, :show), do: true
+
+  defp show_action_permitted?(%Plug.Conn{} = conn, permission) do
+    Sanbase.Admin.Permissions.can?(permission,
+      roles: conn.assigns[:current_user_role_names] || []
+    )
   end
 
   defp forbid_action(%Plug.Conn{} = conn, resource, action) do
@@ -291,7 +332,8 @@ defmodule SanbaseWeb.GenericAdminController do
         data: data,
         assocs: assocs,
         belongs_to:
-          GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
+          GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], [])
+          |> filter_belongs_to_actions(conn, resource),
         has_many: has_many
       }
       |> Map.merge(resource_params(conn, resource, :show))
@@ -356,12 +398,29 @@ defmodule SanbaseWeb.GenericAdminController do
     end
   end
 
-  def show_action(%Plug.Conn{} = conn, %{"action" => action, "resource" => resource, "id" => id}) do
+  # `require_show_action_allowed/2` resolved and authorized the function name.
+  def show_action(%Plug.Conn{} = conn, %{"resource" => resource, "id" => id}) do
     admin_module = resource_module_map(conn)[resource][:admin_module]
-    apply(admin_module, String.to_existing_atom(action), [conn, %{resource: resource, id: id}])
+    apply(admin_module, conn.assigns.show_action_function, [conn, %{resource: resource, id: id}])
   end
 
   # private
+
+  # Cosmetic only — `require_show_action_allowed/2` is what enforces this.
+  defp filter_belongs_to_actions(belongs_to, %Plug.Conn{} = conn, resource) do
+    declared = declared_show_actions(conn, resource)
+
+    Enum.map(belongs_to, fn section ->
+      Map.update(section, :actions, [], fn actions ->
+        Enum.filter(actions, fn action ->
+          case Map.fetch(declared, Atom.to_string(action)) do
+            {:ok, {_function, permission}} -> show_action_permitted?(conn, permission)
+            :error -> false
+          end
+        end)
+      end)
+    end)
+  end
 
   defp save_and_redirect(
          conn,

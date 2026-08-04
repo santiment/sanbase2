@@ -59,6 +59,24 @@ defmodule SanbaseWeb.GenericAdmin.User do
   end
 
   @doc """
+  Custom show-page actions, mapped to the permission each needs.
+  `GenericAdminController.show_action/2` dispatches only what is listed here.
+  `view_user_overview` gets `:show` because it only redirects to a page with its
+  own role gate; everything else mutates the user.
+  """
+  def show_actions() do
+    %{
+      view_user_overview: :show,
+      reset_api_call_limits: :edit,
+      reset_queries_credits_spent: :edit,
+      mcp_ban_user: :edit,
+      mcp_unban_user: :edit,
+      hide_activity_traces_user: :edit,
+      unhide_activity_traces_user: :edit
+    }
+  end
+
+  @doc """
   GenericAdmin hook called after a successful create/update. When the
   admin edit form flipped `:are_activity_traces_hidden`, fan the cache
   refresh out to the rest of the cluster so the change applies

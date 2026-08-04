@@ -260,7 +260,7 @@ defmodule Sanbase.Clickhouse.Query do
 
     log_comment_str =
       if map_size(log_comment) > 0 do
-        " log_comment='#{Jason.encode!(log_comment)}'"
+        " log_comment='#{escape_string_literal(Jason.encode!(log_comment))}'"
       end
 
     log_queries_str = if activity_traces_hidden?, do: " log_queries=0"
@@ -276,5 +276,13 @@ defmodule Sanbase.Clickhouse.Query do
       end
 
     %{query | sql: sql <> settings_str}
+  end
+
+  # `graphql_request_log_id` is the client's `x-request-id` and Jason does not
+  # escape `'`. Backslash first, so the ones added here are not re-escaped.
+  defp escape_string_literal(str) do
+    str
+    |> String.replace("\\", "\\\\")
+    |> String.replace("'", "\\'")
   end
 end

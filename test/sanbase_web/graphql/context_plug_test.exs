@@ -334,4 +334,53 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       assert conn_context.subscription_product == "SANBASE"
     end
   end
+
+  describe "Origin host matching for anonymous requests" do
+    defp requested_product_for_origin(origin) do
+      build_conn()
+      |> get("/get_routed_conn")
+      |> put_req_header("origin", origin)
+      |> AuthPlug.call(%{})
+      |> ContextPlug.call(%{})
+      |> then(& &1.private.absinthe.context.requested_product_id)
+    end
+
+    test "the apex domain is Sanbase" do
+      assert requested_product_for_origin("https://santiment.net") == Product.product_sanbase()
+    end
+
+    test "a subdomain is Sanbase" do
+      assert requested_product_for_origin("https://app.santiment.net") ==
+               Product.product_sanbase()
+    end
+
+    test "an upper case host is Sanbase" do
+      assert requested_product_for_origin("https://APP.SANTIMENT.NET") ==
+               Product.product_sanbase()
+    end
+
+    test "every configured domain is Sanbase" do
+      for host <- ["santiment.network", "scorearena.ai", "sanitize.page"] do
+        assert requested_product_for_origin("https://#{host}") == Product.product_sanbase()
+        assert requested_product_for_origin("https://app.#{host}") == Product.product_sanbase()
+      end
+    end
+
+    test "a domain that only ends with a configured one is Sanapi" do
+      for host <- [
+            "evilsantiment.net",
+            "notsantiment.network",
+            "app.evilsantiment.net",
+            "xscorearena.ai",
+            "notsanitize.page"
+          ] do
+        assert requested_product_for_origin("https://#{host}") == Product.product_api()
+      end
+    end
+
+    test "a configured domain that is not the registrable suffix is Sanapi" do
+      assert requested_product_for_origin("https://santiment.net.example.com") ==
+               Product.product_api()
+    end
+  end
 end

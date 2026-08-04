@@ -42,6 +42,36 @@ defmodule SanbaseWeb.Plug.RequestContextPlugTest do
     assert Keyword.get(Logger.metadata(), :request_id) == "req-abc"
   end
 
+  describe ":request_id sanitization" do
+    test "strips quotes and other characters that could escape a SQL literal" do
+      Logger.metadata(request_id: "aaaaaaaaaaaaaaaaaaaa',readonly=0 --")
+
+      _conn = RequestContextPlug.call(Plug.Test.conn(:post, "/graphql"), [])
+
+      request_id = Keyword.get(Logger.metadata(), :request_id)
+      refute request_id =~ "'"
+      refute request_id =~ " "
+      refute request_id =~ ","
+    end
+
+    test "an id made entirely of disallowed characters becomes nil rather than empty" do
+      Logger.metadata(request_id: String.duplicate("'", 25))
+
+      _conn = RequestContextPlug.call(Plug.Test.conn(:post, "/graphql"), [])
+
+      assert Keyword.get(Logger.metadata(), :request_id) == nil
+    end
+
+    test "leaves a normal generated request id untouched" do
+      # The shape Plug.RequestId generates itself.
+      Logger.metadata(request_id: "GMdnNww9RaXJ5xUAACVh")
+
+      _conn = RequestContextPlug.call(Plug.Test.conn(:post, "/graphql"), [])
+
+      assert Keyword.get(Logger.metadata(), :request_id) == "GMdnNww9RaXJ5xUAACVh"
+    end
+  end
+
   test "assigns anonymous :graphql placeholder on conn.assigns" do
     conn = Plug.Test.conn(:post, "/graphql")
     conn = RequestContextPlug.call(conn, [])

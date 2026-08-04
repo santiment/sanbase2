@@ -20,15 +20,15 @@ defmodule Sanbase.Logger.MaybeHideActivityTraces do
        names the user and the reason. This covers both the GraphQL doc
        and the underlying ClickHouse/Postgres SQL text.
 
-  ## Why no try/rescue
+  ## Failure handling
 
-  Primary filters that raise are unregistered by OTP. To stay safe
-  without a rescue, every code path here is total: we only introspect
-  msg shapes we can match without calling `IO.iodata_to_binary/1` or
-  `:io_lib.format/2` (both can raise on malformed input), and treat
-  every other shape as `:other` — meta gets scrubbed, msg passes
-  through unchanged. Absinthe + Ecto both produce `{:string, iodata}`
-  events, so the narrower match is sufficient in practice.
+  `:logger` unregisters a primary filter permanently the first time it
+  raises, silently disabling redaction until the node restarts. Guards:
+  every code path here is total (no `IO.iodata_to_binary/1` or
+  `:io_lib.format/2`, both of which can raise — unmatched shapes pass
+  through with scrubbed meta); `install!/0` pre-loads `@runtime_modules`;
+  and the `ActivityTracesFilterWatchdog` re-installs the filter if OTP
+  drops it anyway — the only cover for this module itself being unloaded.
 
   Return values follow `:logger.filter_return/0`: a rewritten
   `log_event()` map replaces the original, `:ignore` leaves it
@@ -40,22 +40,61 @@ defmodule Sanbase.Logger.MaybeHideActivityTraces do
   alias Sanbase.RequestContext
   alias Sanbase.Accounts.ActivityTracesConfig
 
+  @filter_id :sanbase_maybe_hide_activity_traces
+
+  # Modules `filter/2` calls at runtime — an unloaded one raises `:undef`
+  # out of the filter. `Sanbase.RequestContext` appears only in patterns.
+  @runtime_modules [
+    __MODULE__,
+    Sanbase.Accounts.ActivityTracesConfig,
+    Sanbase.Cache.PersistentTermTtl
+  ]
+
   # Subset of the allowlist in `config :logger, :console, metadata: ...`
   # that can identify the customer or reveal the document. Kept in sync
   # with that allowlist; adding a new sensitive meta key to the logger
   # config means adding it here too.
   @sensitive_meta_keys [:remote_ip, :query, :san_balance]
 
+  @doc "The `:logger` filter id this module registers itself under."
+  @spec filter_id() :: atom()
+  def filter_id(), do: @filter_id
+
+  @doc """
+  Register the filter as a `:logger` primary filter, first loading every
+  module `filter/2` calls at runtime. Idempotent; raises on failure —
+  a silently missing filter means protected users' queries reach the logs.
+  """
+  @spec install!() :: :ok
+  def install!() do
+    Code.ensure_all_loaded!(@runtime_modules)
+
+    case :logger.add_primary_filter(@filter_id, {&__MODULE__.filter/2, []}) do
+      :ok ->
+        :ok
+
+      {:error, {:already_exist, _}} ->
+        :ok
+
+      {:error, reason} ->
+        raise "Failed to register the #{inspect(@filter_id)} logger filter: #{inspect(reason)}"
+    end
+  end
+
+  @doc "Whether the primary filter is currently registered."
+  @spec installed?() :: boolean()
+  def installed?() do
+    %{filters: filters} = :logger.get_primary_config()
+    List.keymember?(filters, @filter_id, 0)
+  end
+
   @spec filter(:logger.log_event(), term()) :: :logger.filter_return()
   def filter(event, extra) do
     do_filter(event, extra)
   catch
-    # NOT a defensive rescue for input shapes — those are already
-    # exhaustively pattern-matched below. This catches the transient
-    # `:undef` that OTP raises if a log event arrives during a hot code
-    # reload (after `code:purge/1`, before `code:load_binary/3`). Without
-    # it OTP would unregister the filter permanently and protected users
-    # would silently lose log redaction until the BEAM restarts.
+    # An `:undef` from a callee purged mid-recompile would make OTP drop
+    # the filter permanently. This cannot cover THIS module being unloaded
+    # (the `:undef` fires at the call site); the watchdog covers that.
     :error, :undef -> :ignore
   end
 

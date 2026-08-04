@@ -52,7 +52,12 @@ defmodule Sanbase.KafkaExporter do
     buffering_max_messages = Keyword.get(opts, :buffering_max_messages, 1000)
 
     can_send_after_interval = Keyword.get(opts, :can_send_after_interval, 1000)
-    Process.send_after(self(), :flush, kafka_flush_timeout)
+
+    # An interval, not a re-arming `Process.send_after/3`: a `:flush`
+    # arriving while this module is unloaded (code purge) skips
+    # `handle_info/2`, so a re-arm there would kill the flush for good.
+    # `max/2` guards the test config's `kafka_flush_timeout: 0`.
+    {:ok, _tref} = :timer.send_interval(max(kafka_flush_timeout, 1), :flush)
 
     @producer.start_producer(topic)
 
@@ -151,10 +156,27 @@ defmodule Sanbase.KafkaExporter do
   end
 
   def handle_info(:flush, state) do
+    # Coalesce `:flush` messages queued while a previous send was blocked
+    # in `produce_sync/2`/`sleep_until/1` so the mailbox cannot grow.
+    drain_flush()
     send_data(state.data, state)
-
-    Process.send_after(self(), :flush, state.kafka_flush_timeout)
     {:noreply, %{state | data: [], size: 0}}
+  end
+
+  def handle_info(msg, state) do
+    Logger.warning(
+      "Unexpected message in the KafkaExporter for topic #{state.topic}: #{inspect(msg)}"
+    )
+
+    {:noreply, state}
+  end
+
+  defp drain_flush() do
+    receive do
+      :flush -> drain_flush()
+    after
+      0 -> :ok
+    end
   end
 
   defp send_data([], _), do: :ok

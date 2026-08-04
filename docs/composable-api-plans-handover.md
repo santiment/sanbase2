@@ -384,6 +384,47 @@ through `AccessChecker`.** Anything that pattern-matches a plan name elsewhere �
 document phases, plugs, LiveViews, background jobs — is outside it. A real
 end-to-end request is the only thing that finds those.
 
+### 5.10 The call quota: resolved numbers on the `api_call_limits` row
+
+The quota path had the same problem as the access path, in a worse position. It
+runs on **every** API request, and it asks for limits by plan name —
+`plan_to_api_call_limits("sanapi_bundle")`. Every bundle carries that one name
+while the numbers differ per customer, so the name cannot answer.
+
+Unlike the access path, this one could not be fixed by threading an argument: the
+quota check reads an `api_call_limits` row and has no subscription in hand. So the
+numbers are resolved when the subscription syncs and **stored on the row**, in
+`resolved_api_call_limits` (jsonb, nullable).
+
+| | |
+|---|---|
+| **Written by** | `ApiCallLimit.update_user_plan/1` and the row-creation path, both from `user_to_plan_state/1` |
+| **Read by** | `ApiCallLimit.acl_to_api_call_limits/1`, which the quota path calls with the row it already holds |
+| **Refreshed by** | `Bundle.Resolver.sync/1`, after its transaction commits |
+| **`nil` means** | derive from the plan name — what every non-bundle row holds, and the reason this is invisible to existing customers |
+
+Three properties worth keeping:
+
+* **`nil` is written explicitly for non-bundle plans**, so a customer who moves off
+  a bundle does not keep its allowance. A stale value here would be a billing bug.
+* **A stored value is ignored unless the plan is a bundle.** The plan name decides
+  which branch runs; the column is only consulted inside it.
+* **A bundle row with nothing stored raises** rather than falling back. It means the
+  subscription never synced, and any invented number either refuses a paying
+  customer or gives away calls — both of which look like a working configuration
+  from the outside.
+
+`plan_to_response_size_limits/1` needed none of this: response size is not sold per
+package (§6.2), so a bundle answers as `equivalent_standard_plan/0` like everything
+else in §5.9.
+
+⚠️ **`ApiCallLimit.Sync` cannot detect drift in these numbers.** It reconciles rows
+by comparing plan *name* and status (`expected_plans_bulk/0`), and a bundle whose
+items changed still reports `sanapi_bundle`. The live path is covered —
+`Resolver.sync/1` rewrites the row — but if an entitlement is ever changed without
+going through it, the reconciler will not notice. Worth extending when **WH** lands
+and Stripe becomes a second writer.
+
 ---
 
 ## 6. Target product model
@@ -638,7 +679,7 @@ One correction to the original description: monthly calls are **not** summed per
 ### BA. Bundle access path — 🟡 partial
 **Implemented:** `plan_has_access?`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, and `api_call_limits` on `Bundle.Access`. All three access functions take the optional entitlement argument of §5.8, and the entitlement is threaded from the request context through `AccessControl` and `Plan.Restrictions.get/5` (which the metric and signal resolvers use — without it a bundle customer would get a 500 on metric metadata). The shared-access-token path needs nothing: `token.plan` is hardcoded to `"PRO"` (`shared_access_token.ex:108`), so it can never carry a bundle.
 
-**Remaining (3 rows in `bundle_entry_points/0`):** `get_available_metrics_for_plan` (task **AM**), and `plan_to_api_call_limits` / `plan_to_response_size_limits`, which need the resolved numbers written onto the `api_call_limits` row (task **WH**). The four Sanbase-side limits are no longer among them - they resolve to PRO now that Q5 is answered (§5.9).
+**Remaining (1 row in `bundle_entry_points/0`):** `get_available_metrics_for_plan` (task **AM**). The four Sanbase-side limits resolve to PRO now that Q5 is answered (§5.9), and the two quota functions are done — see §5.10.
 
 **What:** The new path itself. `Bundle.Access` — six functions mirroring `CustomPlan.Access` (`plan_has_access?`, `get_available_metrics_for_plan`, `api_call_limits`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, plus whatever C2 decides for Sanbase) reading the stored entitlement. Then fill in the `:bundle` clause at **every** site from §7.5 groups A and B, replacing the `"not implemented"` raises from **DP**.
 
@@ -794,9 +835,10 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 | **PD** — package definition + snapshot | ✅ done | `Bundle.Package` (five packages as category rules), `bundle_package_snapshots` table, `Bundle.PackageSnapshot` with `publish/1` and `pending_changes/0`, dual-membership leak check. Admin diff *screen* not built — `pending_changes/0` is the logic it needs. |
 | **LC** — local multi-item model | ✅ done | `subscription_items`, `bundle_prices` catalog, `BUNDLE` marker plan rows (301 month / 302 year, SanAPI). |
 | **EN** — entitlement resolver | ✅ done | `Bundle.Resolver.resolve/2` (pure) + `sync/1` (persists). All §6.3 rules applied. |
-| **BA** — bundle access path | 🟡 partial | Access + data windows implemented and threaded from the request context. The four Sanbase-side limits now answer as PRO (§5.9). **3** entry points still raise — see `bundle_entry_points/0`. |
+| **BA** — bundle access path | 🟡 partial | Access, data windows and the call quota all implemented and reaching the entitlement. The four Sanbase-side limits answer as PRO (§5.9). **1** entry point still raises: `get_available_metrics_for_plan` (task **AM**). |
 | **OB** — admin visibility | ✅ done | Two admin pages, `/admin/bundle_packages` and `/admin/bundle_subscriptions`. |
-| **SC / SL / WH / UI / AM** | ⬜ not started | |
+| **WH** — quota write | ✅ partial | The `api_call_limits` write is done (§5.10) — resolved numbers stored on the row, refreshed by `Resolver.sync/1`. The Stripe webhook branching it was bundled with is not. |
+| **SC / SL / UI / AM** | ⬜ not started | |
 
 **Admin pages.** `/admin/bundle_packages` shows what each package contains live vs
 published, the pending-changes diff, and publishes snapshots.
@@ -813,28 +855,38 @@ makes real authenticated requests as a bundle subscriber. It is the only test th
 proves a live request carries the entitlement from context to access checker, and
 it found the `Graphql.Complexity` site the inventory missed (§5.9).
 
-⚠️ **A live bundle request cannot be served to a real customer yet.**
-`plan_to_api_call_limits` raises for `sanapi_bundle`, and the quota check runs on
-every API request. Writing the resolved numbers onto the `api_call_limits` row is
-the deferred **WH** work, and it is now the single thing standing between "the
-entitlement is correct" and "a customer can use it". Pinned by a test that will go
-red when the sync lands.
+✅ **A live bundle request is served to a real customer.** Access, data windows and
+the call quota all resolve from the entitlement, and `bundle_api_access_test.exs`
+proves it with a non-exempt email — the test that used to assert a raise now asserts
+the response, plus one that the reported allowance is the flat base rather than
+PRO's, and one that a purchased add-on raises it.
 
-⚠️ **Careful when testing this by hand: `@santiment.net` users are exempt from
-quota** (`user_has_limits?/1` in `api_call_limit.ex`). So an API key on a Santiment
-account sails past the raise and everything looks fine, while a real customer's key
-fails. The `Request` tester on the admin page inherits this exactly — testing with
-your own Santiment key proves access but *not* quota. The integration test states
-this explicitly in a test of its own rather than leaving the suite looking like it
-covered both.
+⚠️ **`@santiment.net` users are exempt from quota** (`user_has_limits?/1` in
+`api_call_limit.ex`). That no longer hides a raise, but it still means testing with
+your own Santiment key proves access without exercising the quota numbers at all.
+The `Request` tester on the admin page inherits this exactly. The integration test
+states it in a test of its own rather than leaving the suite looking like it covered
+both.
 
-**⚠️ One assumption needs checking against real data.** `Bundle.Package` names its categories `"Market"`, `"Development"`, `"Social"`, `"On-chain"`, `"On-chain Labels"`. Three of those are confirmed from the categorization scripts; **`"Market"` and `"Development"` are guesses** — no environment reachable from here has `metric_categories` populated. `PackageSnapshot.materialize/0` refuses to build and lists the categories that *do* exist when a name is wrong, so the first run in a populated environment says so immediately. Fix the names in `Bundle.Package`, not the data.
+**Category names confirmed.** `Bundle.Package` names its categories `"Market"`,
+`"Development"`, `"Social"`, `"On-chain"`, `"On-chain Labels"`, and all five resolve
+against real data on stage. One thing to look at before publishing a snapshot in a
+new environment: `development` came back with only three metrics (`dev_activity`,
+`dev_activity_1d`, `dev_activity_contributors_count`), which is thin for a sellable
+package. `PackageSnapshot.materialize/0` still refuses to build and lists the
+categories that *do* exist if a name is ever wrong.
 
-**What a bundle still cannot do:** be bought. There is no Stripe catalog and no mutation to subscribe, so items are created locally. Everything from an item to a granted metric works end to end.
+**What a bundle still cannot do:** be bought. There is no Stripe catalog and no
+mutation to subscribe, so items are created locally. Everything from an item to a
+granted metric — and to a counted API call — works end to end.
 
 ### 13.1 Next
 
-The remaining work splits cleanly. `OB` (admin visibility) is done. `WH` is now the highest-priority item, not because of webhooks but because it carries the `api_call_limits` write without which no bundle customer can be served at all. `SC → SL → WH` is the purchase lifecycle; `AM` surfaces the entitlement through `getAvailableMetrics` and is the largest of the 3 remaining `bundle_entry_points/0` rows.
+`AM` is the last raising entry point and is independent of everything else: it
+surfaces the entitlement through `getAvailableMetrics`, whose `plan` argument is an
+enum with no bundle value (§7.5 C1). Then `SC → SL → WH` for the purchase
+lifecycle, where `WH` is now only the webhook branching — its quota write landed
+with §5.10.
 
 ### 13.2 Original plan, for reference
 

@@ -50,12 +50,7 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   defp bundle_entry_points do
     [
       {:get_available_metrics_for_plan,
-       &AccessChecker.get_available_metrics_for_plan(&1, &2, :all)},
-      # The quota functions take the product-prefixed, downcased form that is
-      # stored in api_call_limits.api_calls_limit_plan.
-      {:plan_to_api_call_limits, &ApiCallLimit.plan_to_api_call_limits(acl_plan(&2, &1))},
-      {:plan_to_response_size_limits,
-       &ApiCallLimit.plan_to_response_size_limits(acl_plan(&2, &1))}
+       &AccessChecker.get_available_metrics_for_plan(&1, &2, :all)}
     ]
   end
 
@@ -97,6 +92,80 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       for product <- @products do
         assert ApiCallLimit.plan_has_limits?(acl_plan(product, @bundle_plan))
       end
+    end
+
+    test "the call limits are read off the row, not derived from the plan name" do
+      # The whole reason this column exists: every bundle is named BUNDLE while the
+      # numbers differ per customer, so the name cannot answer.
+      for product <- @products do
+        acl = %ApiCallLimit{
+          api_calls_limit_plan: acl_plan(product, @bundle_plan),
+          resolved_api_call_limits: %{"month" => 250_000, "hour" => 30_000, "minute" => 600}
+        }
+
+        assert ApiCallLimit.acl_to_api_call_limits(acl) ==
+                 %{month: 250_000, hour: 30_000, minute: 600}
+      end
+    end
+
+    test "a bundle row with nothing stored refuses rather than inventing numbers" do
+      # Means the subscription never synced. Any invented answer either refuses a
+      # paying customer's requests or gives away calls, and both look like a working
+      # configuration from the outside.
+      for product <- @products do
+        acl = %ApiCallLimit{
+          api_calls_limit_plan: acl_plan(product, @bundle_plan),
+          resolved_api_call_limits: nil
+        }
+
+        assert_raise Bundle.NotImplementedError, fn ->
+          ApiCallLimit.acl_to_api_call_limits(acl)
+        end
+      end
+    end
+
+    test "plan_to_api_call_limits still refuses a bundle plan name, by design" do
+      # Kept as a raise on purpose: asking by name is the wrong question for a
+      # bundle, and answering it would be the bug this design exists to prevent.
+      for product <- @products do
+        assert_raise Bundle.NotImplementedError, fn ->
+          ApiCallLimit.plan_to_api_call_limits(acl_plan(product, @bundle_plan))
+        end
+      end
+    end
+
+    test "response size limits answer as the equivalent standard plan" do
+      # Response size is not sold per package (§6.2), so there is nothing
+      # per-customer to resolve and nothing to store.
+      equivalent = acl_plan("SANAPI", Bundle.equivalent_standard_plan())
+
+      for product <- @products do
+        assert ApiCallLimit.plan_to_response_size_limits(acl_plan(product, @bundle_plan)) ==
+                 ApiCallLimit.plan_to_response_size_limits(equivalent)
+      end
+    end
+
+    test "every other plan's limits are still derived from its name" do
+      # The BC half. A null column means "derive from the name", which is what
+      # every existing row holds.
+      for plan <- ~w(sanapi_free sanapi_basic sanapi_pro sanbase_pro sanbase_max) do
+        acl = %ApiCallLimit{api_calls_limit_plan: plan, resolved_api_call_limits: nil}
+
+        assert ApiCallLimit.acl_to_api_call_limits(acl) ==
+                 ApiCallLimit.plan_to_api_call_limits(plan)
+      end
+    end
+
+    test "a stored value is ignored for a plan that is not a bundle" do
+      # Belt and braces: if a row somehow carried a leftover value - a customer who
+      # moved off a bundle, a bad backfill - the standard ladder still wins.
+      acl = %ApiCallLimit{
+        api_calls_limit_plan: "sanapi_pro",
+        resolved_api_call_limits: %{"month" => 1, "hour" => 1, "minute" => 1}
+      }
+
+      assert ApiCallLimit.acl_to_api_call_limits(acl) ==
+               ApiCallLimit.plan_to_api_call_limits("sanapi_pro")
     end
 
     test "the data windows come from the entitlement" do

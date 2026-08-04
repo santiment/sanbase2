@@ -34,9 +34,14 @@ config :tzdata, :autoupdate, :disabled
 
 config :tesla, disable_deprecated_builder_warning: true
 
+# Since ethereumex 0.14 the HTTP client is Finch, not HTTPoison. The
+# :http_options are passed as-is to Finch.request/3, which accepts only
+# [:pool_timeout, :receive_timeout, :request_timeout, :pool_strategy].
+# The connect timeout is a pool (Mint) option, not a per-request one.
 config :ethereumex,
   url: "https://ethereum.santiment.net",
-  http_options: [timeout: 25_000, recv_timeout: 25_000],
+  http_options: [receive_timeout: 25_000],
+  http_pool_options: %{default: [conn_opts: [transport_opts: [timeout: 25_000]]]},
   http_headers: [{"Content-Type", "application/json"}]
 
 config :event_bus,
@@ -115,22 +120,23 @@ config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer
 
-config :sanbase, Sanbase.ClickhouseRepo,
+# `:timeout` is one absolute budget for pool wait + query, and it can't
+# interrupt an in-flight recv — hence 85s, not the 102s of headroom above.
+# queue_target/queue_interval are CoDel load shedding, not timeouts.
+# See docs/timeouts.md.
+clickhouse_opts = [
   adapter: Ecto.Adapters.Postgres,
-  queue_target: 10_000,
-  queue_interval: 30_000,
-  timeout: 100_000,
-  max_overflow: 3,
-  scheme: :http
-
-clickhouse_read_only_opts = [
-  adapter: Ecto.Adapters.Postgres,
-  queue_target: 60_000,
-  queue_interval: 60_000,
-  timeout: 100_000,
+  queue_target: 5_000,
+  queue_interval: 20_000,
+  timeout: 85_000,
   max_overflow: 3,
   scheme: :http
 ]
+
+config :sanbase, Sanbase.ClickhouseRepo, clickhouse_opts
+
+# Per-plan read-only repos share the read-write budgets.
+clickhouse_read_only_opts = clickhouse_opts
 
 config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts

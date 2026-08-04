@@ -222,6 +222,39 @@ defmodule Sanbase.Logger.MaybeHideActivityTracesTest do
     end
   end
 
+  describe "install!/0" do
+    setup do
+      on_exit(fn -> Filter.install!() end)
+      :ok
+    end
+
+    test "registers the filter and is idempotent" do
+      _ = :logger.remove_primary_filter(Filter.filter_id())
+      refute Filter.installed?()
+
+      assert :ok = Filter.install!()
+      assert Filter.installed?()
+
+      assert :ok = Filter.install!()
+      assert Filter.installed?()
+    end
+
+    test "loads the modules filter/2 calls at runtime" do
+      # `:code.delete/1` (no `:code.purge/1`) is enough to make
+      # `module_loaded/1` false without killing processes running old code.
+      callees = [Sanbase.Accounts.ActivityTracesConfig, Sanbase.Cache.PersistentTermTtl]
+
+      for module <- callees, do: true = :code.delete(module)
+      refute Enum.any?(callees, &:erlang.module_loaded(&1))
+
+      assert :ok = Filter.install!()
+
+      for module <- callees do
+        assert :erlang.module_loaded(module), "#{inspect(module)} was not loaded by install!/0"
+      end
+    end
+  end
+
   describe "primary filter installed at application startup" do
     setup do
       # Ensure no leakage from other tests.

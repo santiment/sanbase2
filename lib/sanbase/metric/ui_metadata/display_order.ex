@@ -13,6 +13,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   @allowed_chart_styles ["filledLine", "greenRedBar", "bar", "line", "area", "reference"]
   @allowed_unit_formats ["", "usd", "percent"]
   @allowed_metric_types ["metric", "query"]
+  @allowed_statuses [:live, :hidden, :under_maintenance]
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -32,6 +33,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           description: String.t(),
           args: map(),
           type: String.t(),
+          status: atom(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -47,6 +49,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     field(:description, :string)
     field(:args, :map, default: %{})
     field(:type, :string, default: "metric")
+    field(:status, Ecto.Enum, values: @allowed_statuses, default: :live)
 
     field(:display_order, :integer)
 
@@ -78,7 +81,8 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       :unit,
       :description,
       :args,
-      :type
+      :type,
+      :status
     ])
     |> validate_required([:display_order, :category_id])
     |> validate_inclusion(:source_type, ["registry", "code"])
@@ -145,7 +149,8 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
             unit: Keyword.get(opts, :unit, base_metric.unit),
             description: Keyword.get(opts, :description, base_metric.description),
             args: new_args,
-            type: base_metric.type
+            type: base_metric.type,
+            status: Keyword.get(opts, :status, base_metric.status)
           }
 
           create(variant_attrs)
@@ -231,28 +236,44 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   @doc """
   Increment the display_order of a record by its ID.
   """
+  @spec increment_display_order(integer()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t() | String.t()}
   def increment_display_order(id) when is_integer(id) do
-    case by_id(id) do
-      nil ->
-        {:error, "Record not found"}
-
-      record ->
-        updated_attrs = %{display_order: record.display_order + 1}
-        do_update(record, updated_attrs)
-    end
+    update_by_id(id, fn record -> %{display_order: record.display_order + 1} end)
   end
 
   @doc """
   Decrement the display_order of a record by its ID.
   """
+  @spec decrement_display_order(integer()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t() | String.t()}
   def decrement_display_order(id) when is_integer(id) do
-    case by_id(id) do
-      nil ->
-        {:error, "Record not found"}
+    update_by_id(id, fn record -> %{display_order: record.display_order - 1} end)
+  end
 
-      record ->
-        updated_attrs = %{display_order: record.display_order - 1}
-        do_update(record, updated_attrs)
+  @doc """
+  Update the status of a record by its ID.
+  The status does not affect which records are returned by the API — it is
+  returned as a field so the consumer can decide how to display the metric.
+
+  Allowed statuses: #{inspect(@allowed_statuses)}
+
+  ## Examples
+
+      iex> {:ok, %DisplayOrder{status: :hidden}} = DisplayOrder.update_status(record.id, :hidden)
+      iex> DisplayOrder.update_status(-1, :live)
+      {:error, "Record not found"}
+  """
+  @spec update_status(integer(), atom() | String.t()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t() | String.t()}
+  def update_status(id, status) when is_integer(id) do
+    update_by_id(id, fn _record -> %{status: status} end)
+  end
+
+  defp update_by_id(id, attrs_fun) when is_integer(id) do
+    case Repo.get(__MODULE__, id) do
+      nil -> {:error, "Record not found"}
+      record -> do_update(record, attrs_fun.(record))
     end
   end
 
@@ -290,7 +311,8 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   @doc """
   Get all metric display order entries ordered by category, group, and display_order.
   """
-  def all_ordered do
+  @spec all_ordered() :: [t()]
+  def all_ordered() do
     categories = Category.all_ordered()
 
     category_order_map =
@@ -393,7 +415,8 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   Get the ordered list of all metrics with their metadata.
   This combines data from both the metric registry and the display order table.
   """
-  def get_ordered_metrics do
+  @spec get_ordered_metrics() :: %{metrics: [map()], categories: [map()]}
+  def get_ordered_metrics() do
     ordered_metrics = all_ordered()
 
     categories = Category.all_ordered()
@@ -434,6 +457,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           metric_registry_id: display_order.metric_registry_id,
           args: display_order.args || %{},
           is_new: is_new?(display_order.inserted_at),
+          status: display_order.status,
           display_order: display_order.display_order,
           inserted_at: display_order.inserted_at,
           updated_at: display_order.updated_at,
@@ -565,6 +589,19 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   """
   def get_available_metric_types do
     @allowed_metric_types
+  end
+
+  @doc """
+  Get all available statuses.
+
+  ## Examples
+
+      iex> Sanbase.Metric.UIMetadata.DisplayOrder.get_available_statuses()
+      [:live, :hidden, :under_maintenance]
+  """
+  @spec get_available_statuses() :: [atom()]
+  def get_available_statuses() do
+    @allowed_statuses
   end
 
   @doc """

@@ -546,7 +546,10 @@ defmodule Sanbase.ApiCallLimit do
       _ ->
         case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
           :bundle ->
-            Sanbase.Billing.Plan.Bundle.not_implemented!(:plan_has_limits?, plan)
+            # Every bundle has a monthly call limit - a flat 100k plus whatever
+            # add-ons were bought (§9). There is no unlimited bundle, so this
+            # needs no entitlement to answer.
+            true
 
           :custom ->
             [product_code, plan_name] = plan |> String.upcase() |> String.split("_", parts: 2)
@@ -578,7 +581,14 @@ defmodule Sanbase.ApiCallLimit do
   def plan_to_api_call_limits(plan) do
     case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
       :bundle ->
-        Sanbase.Billing.Plan.Bundle.not_implemented!(:plan_to_api_call_limits, plan)
+        # A bundle's limits cannot be derived from its name - every bundle is
+        # named BUNDLE, while the numbers differ per customer. They are worked out
+        # when the subscription syncs and stored on the api_call_limits row, so
+        # this function is the wrong way to ask. See §5.8.
+        Sanbase.Billing.Plan.Bundle.not_implemented!(
+          {:plan_to_api_call_limits, :read_from_api_call_limits_row_instead},
+          plan
+        )
 
       :custom ->
         "sanapi_" <> plan_name = plan

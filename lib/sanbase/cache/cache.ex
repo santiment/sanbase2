@@ -15,7 +15,9 @@ defmodule Sanbase.Cache do
          name: Keyword.fetch!(opts, :name),
          ttl_check_interval: Keyword.get(opts, :ttl_check_interval, :timer.seconds(5)),
          global_ttl: Keyword.get(opts, :global_ttl, :timer.minutes(5)),
-         acquire_lock_timeout: Keyword.get(opts, :acquire_lock_timeout, 60_000)
+         # Above the ClickHouse budget, as in `CachexProvider`: a lock wait
+         # must outlast the work it waits on. See docs/timeouts.md.
+         acquire_lock_timeout: Keyword.get(opts, :acquire_lock_timeout, 102_000)
        ]},
       id: Keyword.fetch!(opts, :id)
     )

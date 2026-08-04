@@ -90,6 +90,7 @@ This is a web application written using the Phoenix web framework.
 - `Ecto.Changeset.validate_number/2` **DOES NOT SUPPORT the `:allow_nil` option**. By default, Ecto validations only run if a change for the given field exists and the change value is not nil, so such as option is never needed
 - You **must** use `Ecto.Changeset.get_field(changeset, :field)` to access changeset fields
 - Fields which are set programatically, such as `user_id`, must not be listed in `cast` calls or similar for security purposes. Instead they must be explicitly set when creating the struct
+- Migration filenames **must** carry a full `YYYYMMDDHHMMSS` timestamp down to the second — prefer `mix ecto.gen.migration <name>`, which generates it for you. Never round the time (no `...140000`): several people work in this repo at once and a rounded prefix collides, and two migrations sharing a version silently apply only one of them. If you have to rename a migration that has already run locally, `mix ecto.rollback` it first, then rename and re-migrate — otherwise the old version stays in `schema_migrations` and the renamed file re-runs against objects that already exist
 
 ## Phoenix HTML guidelines
 

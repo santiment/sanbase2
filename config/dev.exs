@@ -18,8 +18,8 @@ config :sanbase, SanbaseWeb.Endpoint,
     compress: true,
     port: port,
     protocol_options: [
-      # Bump up cowboy2's timeout to 100 seconds
-      idle_timeout: 100_000
+      # Match the prod web idle_timeout (see docs/timeouts.md)
+      idle_timeout: 120_000
     ]
   ],
   url: [host: "localhost"],

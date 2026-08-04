@@ -218,6 +218,35 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   @masked_error_message "Cannot execute database query. If issue persists please contact Santiment Support."
+
+  @timeout_error_message """
+  The query took too long to complete. An API call that requests many \
+  fields or subqueries executes many database queries whose runtimes add up — \
+  try requesting fewer fields per call, narrowing the from/to range, using a \
+  bigger interval, or splitting the call into several smaller ones. If the \
+  issue persists please contact Santiment Support.\
+  """
+
+  # Mint's bare "timeout", DBConnection's "timed out"/"dropped from queue",
+  # ClickHouse's TIMEOUT_EXCEEDED. See docs/timeouts.md. The word boundaries
+  # keep identifiers like `timeout_ms` from being read as a timeout, which is
+  # why TIMEOUT_EXCEEDED needs an alternative of its own.
+  @timeout_error_regex ~r/\btimed?\s*out\b|\btimeout_exceeded\b|\bdropped\s+from\s+queue\b/i
+
+  # ClickHouse echoes the offending SQL back; drop it so a query containing
+  # "timeout" isn't misclassified.
+  @query_echo_regex ~r/while processing query:/i
+
+  @doc false
+  def timeout_error?(message) when is_binary(message) do
+    message
+    |> String.split(@query_echo_regex, parts: 2)
+    |> hd()
+    |> String.match?(@timeout_error_regex)
+  end
+
+  def timeout_error?(_), do: false
+
   defp log_and_return_error_from_exception(
          %{} = exception,
          function_executed,
@@ -247,7 +276,7 @@ defmodule Sanbase.ClickhouseRepo do
       """)
     end
 
-    {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
+    {:error, "[#{log_id}] #{user_facing_error_message(error_message, propagate_error)}"}
   end
 
   defp log_and_return_error(error, function_executed, opts) do
@@ -266,7 +295,15 @@ defmodule Sanbase.ClickhouseRepo do
       )
     end
 
-    {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
+    {:error, "[#{log_id}] #{user_facing_error_message(error_message, propagate_error)}"}
+  end
+
+  defp user_facing_error_message(error_message, propagate_error) do
+    cond do
+      propagate_error -> error_message
+      timeout_error?(error_message) -> @timeout_error_message
+      true -> @masked_error_message
+    end
   end
 
   # Prefer the ctx explicitly threaded through `opts` (set by the

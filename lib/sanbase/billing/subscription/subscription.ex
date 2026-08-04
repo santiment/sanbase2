@@ -66,6 +66,20 @@ defmodule Sanbase.Billing.Subscription do
 
     field(:payment_intent, :map, virtual: true)
 
+    # Only set for bundle subscriptions. Worked out from the subscription's items
+    # when they change, so access checks never have to decode items or call
+    # Stripe. NULL for every other subscription. See §5.4 of
+    # docs/composable-api-plans-handover.md
+    # on_replace: :delete, not :update - a new entitlement replaces the old one
+    # outright. Merging would let a field the new calculation omits keep its old
+    # value, so a customer who dropped a package could keep part of what it gave
+    # them. See bundle_entitlement_changeset/2.
+    embeds_one(:bundle_entitlement, Sanbase.Billing.Plan.Bundle.Entitlement, on_replace: :delete)
+
+    # Only bundle subscriptions have items. Every other subscription has none,
+    # which is how the two are told apart without asking Stripe.
+    has_many(:items, Sanbase.Billing.Subscription.Item, on_delete: :delete_all)
+
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
 
@@ -88,6 +102,92 @@ defmodule Sanbase.Billing.Subscription do
       :type
     ])
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
+  end
+
+  @doc ~s"""
+  Sets the resolved bundle entitlement, replacing any previous one outright.
+
+  Deliberately separate from `changeset/2`: an entitlement is what a customer is
+  allowed to use and how much of it, so it is only ever written by the code that
+  works it out from the subscription's items - never carried in with ordinary
+  subscription attributes.
+
+  The replacement is wholesale rather than a merge. Building on top of the stored
+  value would let a field the new calculation leaves out keep its old value, so a
+  customer who dropped a package could silently keep part of what it granted.
+  """
+  @spec bundle_entitlement_changeset(%__MODULE__{}, map() | nil) :: Ecto.Changeset.t()
+  def bundle_entitlement_changeset(%__MODULE__{} = subscription, nil) do
+    subscription
+    |> change()
+    |> put_embed(:bundle_entitlement, nil)
+  end
+
+  def bundle_entitlement_changeset(%__MODULE__{} = subscription, attrs) when is_map(attrs) do
+    changeset = subscription |> change()
+
+    # Built from a blank struct so nothing carries over from the stored value.
+    %Plan.Bundle.Entitlement{}
+    |> Plan.Bundle.Entitlement.changeset(attrs)
+    |> case do
+      %{valid?: true} = entitlement_changeset ->
+        put_embed(
+          changeset,
+          :bundle_entitlement,
+          Ecto.Changeset.apply_changes(entitlement_changeset)
+        )
+
+      invalid ->
+        changeset
+        |> put_embed(:bundle_entitlement, invalid)
+        |> Map.put(:valid?, false)
+    end
+  end
+
+  @doc ~s"""
+  The stored bundle entitlement, or `nil` for anything that is not a bundle.
+
+  Total on purpose. Callers hold whatever the request context gave them - a
+  subscription, `nil` for an anonymous or free user, or an unloaded association -
+  and every one of those means the same thing here: no entitlement. Keeping the
+  `nil` handling in one place stops each call site inventing its own.
+  """
+  @spec bundle_entitlement(%__MODULE__{} | nil | term()) :: Plan.Bundle.Entitlement.t() | nil
+  def bundle_entitlement(%__MODULE__{
+        bundle_entitlement: %Plan.Bundle.Entitlement{} = entitlement
+      }),
+      do: entitlement
+
+  def bundle_entitlement(_), do: nil
+
+  @doc ~s"""
+  Bundle subscriptions, newest first, with their user, plan and items loaded.
+
+  Keyed on the plan *name* rather than a plan id, so it keeps working when more
+  `BUNDLE` marker rows are added (a second interval, or a Sanbase one later).
+
+  Ordered by `inserted_at` before `id` because a subscription synced from Stripe
+  takes its `inserted_at` from the Stripe creation time
+  (`create_subscription_db/3`), so insertion order and chronological order can
+  differ. `id` is the tie-breaker, which keeps the order stable.
+
+  Bounded by `limit` so an admin listing cannot degrade as the table grows. This
+  is not pagination - it is a ceiling. Add paging here when the count approaches
+  it.
+  """
+  @spec list_bundle_subscriptions(pos_integer()) :: [%__MODULE__{}]
+  def list_bundle_subscriptions(limit \\ 200) do
+    bundle_pattern = "BUNDLE%"
+
+    from(s in __MODULE__,
+      join: p in Plan,
+      on: s.plan_id == p.id,
+      where: like(p.name, ^bundle_pattern),
+      order_by: [desc: s.inserted_at, desc: s.id],
+      limit: ^limit,
+      preload: [:user, :items, plan: :product]
+    )
+    |> Repo.all()
   end
 
   def create(params, opts \\ []) do

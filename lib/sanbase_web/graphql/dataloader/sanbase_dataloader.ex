@@ -16,7 +16,10 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   """
   @spec data(Sanbase.RequestContext.t() | nil) :: Dataloader.KV.t()
   def data(request_context \\ nil) do
-    Dataloader.KV.new(make_kv_fun(request_context))
+    # Must live on the source — Dataloader ignores `Dataloader.new(timeout:)`.
+    # Outlasts the 85s CH budget these batches run. Note it is *per batch*:
+    # `Task.async_stream` runs them in waves. See docs/timeouts.md.
+    Dataloader.KV.new(make_kv_fun(request_context), timeout: :timer.seconds(105))
   end
 
   # `Dataloader.KV` runs each batch in a fresh `Task`. Its callback is

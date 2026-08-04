@@ -72,6 +72,18 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLiveTest do
       assert updated.args == %{"selector" => %{"slug" => "ethereum"}}
     end
 
+    test "saves status", %{conn: conn, metric: metric} do
+      {:ok, view, _html} = live(conn, "/admin/metric_registry/display_order/edit/#{metric.id}")
+
+      assert metric.status == :live
+
+      view
+      |> form("form", %{"status" => "under_maintenance"})
+      |> render_submit()
+
+      assert DisplayOrder.by_id(metric.id).status == :under_maintenance
+    end
+
     test "shows error for invalid JSON", %{conn: conn, metric: metric} do
       {:ok, view, _html} = live(conn, "/admin/metric_registry/display_order/edit/#{metric.id}")
 

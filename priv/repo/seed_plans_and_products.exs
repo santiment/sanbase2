@@ -37,6 +37,17 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval, "order") VA
   ON CONFLICT DO NOTHING
 """)
 
+# The BUNDLE marker rows. A bundle subscription's plan_id points here, but the
+# row carries no price - the amounts live per item in bundle_prices, so the
+# invoice total is the sum of the items. Private, and excluded from
+# product_with_plans, because nobody subscribes to this directly.
+Sanbase.Repo.query!("""
+INSERT INTO plans (id, name, product_id, amount, currency, interval, "order", is_private) VALUES
+  (301,'BUNDLE',1,0,'USD','month',30,'t'),
+  (302,'BUNDLE',1,0,'USD','year',31,'t')
+  ON CONFLICT DO NOTHING
+""")
+
 # Otherwise when we try to create a custom plan it will fail
 # as plans_id_seq will produce `1` as the next value
 Sanbase.Repo.query!("""

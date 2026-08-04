@@ -105,11 +105,10 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
   parity_url = System.get_env("PARITY_URL")
 
-  # MCP tool calls (e.g. combined_trends_tool) can run long due to document
-  # collection + AI summarization. The timeout chain must be ordered:
-  # Cowboy idle_timeout (180s) > Anubis request_timeout (150s) > task work (120s)
+  # Outermost layer of the timeout chain (see docs/timeouts.md).
+  # web: cowboy 120s > async 105s > CH 85s. mcp: cowboy 180s > Anubis 150s.
   idle_timeout =
-    if System.get_env("CONTAINER_TYPE") == "mcp", do: 180_000, else: 100_000
+    if System.get_env("CONTAINER_TYPE") == "mcp", do: 180_000, else: 120_000
 
   config :sanbase, SanbaseWeb.Endpoint,
     url: [host: host, port: port],
@@ -163,9 +162,12 @@ if config_env() == :prod do
       ]
     ]
 
+  # See the comment in config/config.exs: the ethereumex HTTP client is Finch,
+  # so the timeouts use the Finch/Mint option names.
   config :ethereumex,
     url: parity_url,
-    http_options: [timeout: 25_000, recv_timeout: 25_000],
+    http_options: [receive_timeout: 25_000],
+    http_pool_options: %{default: [conn_opts: [transport_opts: [timeout: 25_000]]]},
     http_headers: [{"Content-Type", "application/json"}]
 
   git_commit = System.get_env("GIT_COMMIT")

@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
-  import Absinthe.Resolution.Helpers, except: [async: 1]
+  import Absinthe.Resolution.Helpers, except: [async: 1, async: 2]
   import SanbaseWeb.Graphql.Helpers.Async
 
   alias Sanbase.Project

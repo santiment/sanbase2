@@ -49,14 +49,12 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   @spec max_payload_mb() :: pos_integer()
   def max_payload_mb(), do: @max_payload_mb
 
-  # Lock losers poll the cache waiting for the lock holder's value to land.
-  # The interval starts small so short computations are picked up quickly and
-  # doubles up to a cap so long computations don't cause wake-up churn. After
-  # the timeout the waiter gives up on the lock and computes the value itself
-  # (see lock_or_poll/5) — a duplicate computation, never a user-facing error.
+  # Lock losers poll for the holder's value with backoff; on timeout they
+  # recompute instead of erroring (see lock_or_poll/5). The wait must outlast
+  # the ClickHouse budget bounding the holder. See docs/timeouts.md.
   @lock_poll_initial_ms 10
   @lock_poll_max_ms 100
-  @lock_wait_timeout_ms 60_000
+  @lock_wait_timeout_ms 102_000
 
   @impl SanbaseWeb.Graphql.CacheProvider
   def start_link(opts) do
@@ -202,10 +200,11 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         result
 
       :locked when waited_ms >= @lock_wait_timeout_ms ->
-        # The lock holder is computing for over a minute. Rather than failing
-        # the request (the old provider raised here — the top Sentry error for
-        # years), compute the value ourselves without the lock. A duplicate
-        # computation is strictly better than an error.
+        # The holder outlasted a whole CH query budget, so it's anomalous.
+        # Recompute rather than raise (the old provider raised here — top
+        # Sentry error for years). Web callers are usually cut off before this
+        # lands; it's a best-effort net, correct for MCP/background callers.
+        # See docs/timeouts.md.
         Logger.warning(
           "Cache lock for key #{inspect(true_key)} held longer than " <>
             "#{@lock_wait_timeout_ms}ms — computing without the lock"

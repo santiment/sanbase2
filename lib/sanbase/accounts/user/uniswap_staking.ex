@@ -46,7 +46,7 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
       {:ok, {2, nil}}
 
       iex> UniswapStaking.update_all_uniswap_san_staked_users()
-      {:error, %Mint.TransportError{reason: :nxdomain}}
+      {:error, %Finch.TransportError{reason: :nxdomain}}
   """
   @spec update_all_uniswap_san_staked_users() ::
           {:ok, {integer(), nil | [term()]}} | {:error, any()}

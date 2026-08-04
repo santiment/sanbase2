@@ -110,48 +110,10 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
     resolve_accessible_list(access_map, get_all_function)
   end
 
+  # The rules live in Sanbase.Billing.Plan.AccessMap so that the bundle path can
+  # apply exactly the same ones. Extracted verbatim; behavior is unchanged and
+  # the access-matrix fixture proves it.
   defp resolve_accessible_list(access_map, get_all_function) do
-    accessible = Map.get(access_map, "accessible", [])
-    accessible_patterns = Map.get(access_map, "accessible_patterns", [])
-    not_accessible = Map.get(access_map, "not_accessible", [])
-    not_accessible_patterns = Map.get(access_map, "not_accessible_patterns", [])
-
-    all_items = get_all_function.()
-
-    # Step 1: Build the accessible list from explicit items + pattern matches
-    accessible_list =
-      case accessible do
-        "all" ->
-          all_items
-
-        list when is_list(list) ->
-          accessible_by_pattern = get_matching_by_patterns(all_items, accessible_patterns)
-          Enum.uniq(list ++ accessible_by_pattern)
-      end
-
-    # Step 2: Remove not_accessible items (not_accessible has HIGHER priority)
-    not_accessible_list =
-      case not_accessible do
-        "all" -> all_items
-        list when is_list(list) -> list
-      end
-
-    not_accessible_by_pattern = get_matching_by_patterns(accessible_list, not_accessible_patterns)
-
-    accessible_list -- (not_accessible_list ++ not_accessible_by_pattern)
-  end
-
-  # From the given list, return those items that match at least one of the
-  # provided regex patterns.
-  # Example: pattern "mvrv_" matches all MVRV metrics; pattern "^social_"
-  # matches all metrics starting with "social_".
-  defp get_matching_by_patterns(_list, []), do: []
-
-  defp get_matching_by_patterns(list, patterns) do
-    regex_list = Enum.map(patterns, &Regex.compile!/1)
-
-    Enum.filter(list, fn elem ->
-      Enum.any?(regex_list, fn regex -> String.match?(elem, regex) end)
-    end)
+    Sanbase.Billing.Plan.AccessMap.resolve(access_map, get_all_function)
   end
 end

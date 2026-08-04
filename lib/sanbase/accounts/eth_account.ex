@@ -131,7 +131,7 @@ defmodule Sanbase.Accounts.EthAccount do
       {:ok, %{addr1 => 150.0, addr2 => 0.0}}
 
       iex> EthAccount.san_staked_addresses([addr1, addr2], contract)
-      {:error, %Mint.TransportError{reason: :nxdomain}}
+      {:error, %Finch.TransportError{reason: :nxdomain}}
   """
   @spec san_staked_addresses([String.t()], String.t()) ::
           {:ok, %{String.t() => float()}} | {:error, any()}

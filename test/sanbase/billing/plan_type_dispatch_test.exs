@@ -49,23 +49,162 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   # one dispatch site.
   defp bundle_entry_points do
     [
-      {:plan_has_access?, &AccessChecker.plan_has_access?(@item, &2, &1)},
       {:get_available_metrics_for_plan,
        &AccessChecker.get_available_metrics_for_plan(&1, &2, :all)},
-      {:historical_data_in_days, &AccessChecker.historical_data_in_days(@item, &2, &2, &1)},
-      {:realtime_data_cut_off_in_days,
-       &AccessChecker.realtime_data_cut_off_in_days(@item, &2, &2, &1)},
-      {:alerts_limit, fn plan, _product -> SanbaseAccessChecker.alerts_limit(plan) end},
-      {:credits_limit, &Authorization.credits_limit(&2, &1)},
-      {:query_executions_limit, &Authorization.query_executions_limit(&2, &1)},
-      {:user_plan_to_dynamic_repo, &Authorization.user_plan_to_dynamic_repo(&2, &1)},
       # The quota functions take the product-prefixed, downcased form that is
       # stored in api_call_limits.api_calls_limit_plan.
       {:plan_to_api_call_limits, &ApiCallLimit.plan_to_api_call_limits(acl_plan(&2, &1))},
       {:plan_to_response_size_limits,
-       &ApiCallLimit.plan_to_response_size_limits(acl_plan(&2, &1))},
-      {:plan_has_limits?, &ApiCallLimit.plan_has_limits?(acl_plan(&2, &1))}
+       &ApiCallLimit.plan_to_response_size_limits(acl_plan(&2, &1))}
     ]
+  end
+
+  # Entry points that have a real bundle implementation, and so are asserted
+  # directly rather than through the "must raise" list above. When
+  # bundle_entry_points/0 is empty, task BA is complete.
+  describe "implemented bundle entry points" do
+    test "plan_has_access? answers from the entitlement it is handed" do
+      entitlement = bundle_entitlement()
+
+      for product <- @products do
+        assert AccessChecker.plan_has_access?(
+                 {:metric, "price_usd"},
+                 product,
+                 @bundle_plan,
+                 entitlement
+               )
+
+        refute AccessChecker.plan_has_access?(
+                 {:metric, "mvrv_usd"},
+                 product,
+                 @bundle_plan,
+                 entitlement
+               )
+      end
+    end
+
+    test "plan_has_access? refuses to answer without an entitlement" do
+      # Not NotImplementedError - the path exists, the input is missing. Falling
+      # back to the standard ladder here would silently under-deliver.
+      for product <- @products do
+        assert_raise Bundle.MissingEntitlementError, fn ->
+          AccessChecker.plan_has_access?(@item, product, @bundle_plan)
+        end
+      end
+    end
+
+    test "plan_has_limits? says a bundle always has limits" do
+      for product <- @products do
+        assert ApiCallLimit.plan_has_limits?(acl_plan(product, @bundle_plan))
+      end
+    end
+
+    test "the data windows come from the entitlement" do
+      # One window for the whole entitlement, not one per metric (§5.7). The
+      # requested item is passed but deliberately not consulted.
+      entitlement = %{
+        bundle_entitlement()
+        | historical_data_in_days: 1095,
+          realtime_data_cut_off_in_days: 2
+      }
+
+      for product <- @products, item <- [@item, {:query, :get_trending_words}] do
+        assert AccessChecker.historical_data_in_days(
+                 item,
+                 product,
+                 product,
+                 @bundle_plan,
+                 entitlement
+               ) == 1095
+
+        assert AccessChecker.realtime_data_cut_off_in_days(
+                 item,
+                 product,
+                 product,
+                 @bundle_plan,
+                 entitlement
+               ) == 2
+      end
+    end
+
+    test "an unrestricted entitlement reports no window at all" do
+      # nil history and a 0 cut-off are what every bundle gets today, and both
+      # mean "no restriction" downstream.
+      entitlement = bundle_entitlement()
+
+      assert AccessChecker.historical_data_in_days(
+               @item,
+               "SANAPI",
+               "SANAPI",
+               @bundle_plan,
+               entitlement
+             ) ==
+               nil
+
+      assert AccessChecker.realtime_data_cut_off_in_days(
+               @item,
+               "SANAPI",
+               "SANAPI",
+               @bundle_plan,
+               entitlement
+             ) == 0
+    end
+
+    test "the Sanbase-side limits answer as the equivalent standard plan" do
+      # Product's answer to §15 Q5: a bundle customer gets what a SanAPI PRO
+      # customer with no Sanbase subscription gets. None of these four has a
+      # per-package answer, and before Q5 every one of them raised - so a bundle
+      # customer opening Sanbase got a 500.
+      equivalent = Bundle.equivalent_standard_plan()
+
+      assert SanbaseAccessChecker.alerts_limit(@bundle_plan) ==
+               SanbaseAccessChecker.alerts_limit(equivalent)
+
+      for product <- @products do
+        assert Authorization.credits_limit(product, @bundle_plan) ==
+                 Authorization.credits_limit(product, equivalent)
+
+        assert Authorization.query_executions_limit(product, @bundle_plan) ==
+                 Authorization.query_executions_limit(product, equivalent)
+
+        assert Authorization.user_plan_to_dynamic_repo(product, @bundle_plan) ==
+                 Authorization.user_plan_to_dynamic_repo(product, equivalent)
+      end
+    end
+
+    test "query complexity is divided as the equivalent standard plan" do
+      # This site runs in Absinthe's document phase rather than through
+      # AccessChecker, so the §7.5 inventory missed it and it raised
+      # CaseClauseError on the first real bundle request. Pinned here so it cannot
+      # be missed again.
+      bundle = %Sanbase.Billing.Subscription{plan: %Plan{name: @bundle_plan}}
+      pro = %Sanbase.Billing.Subscription{plan: %Plan{name: Bundle.equivalent_standard_plan()}}
+
+      args = %{from: ~U[2026-01-01 00:00:00Z], to: ~U[2026-02-01 00:00:00Z], interval: "1d"}
+
+      assert SanbaseWeb.Graphql.Complexity.from_to_interval(
+               args,
+               5,
+               %{context: %{auth: %{subscription: bundle}}}
+             ) ==
+               SanbaseWeb.Graphql.Complexity.from_to_interval(
+                 args,
+                 5,
+                 %{context: %{auth: %{subscription: pro}}}
+               )
+    end
+
+    test "the data windows refuse to answer without an entitlement" do
+      for product <- @products do
+        assert_raise Bundle.MissingEntitlementError, fn ->
+          AccessChecker.historical_data_in_days(@item, product, product, @bundle_plan)
+        end
+
+        assert_raise Bundle.MissingEntitlementError, fn ->
+          AccessChecker.realtime_data_cut_off_in_days(@item, product, product, @bundle_plan)
+        end
+      end
+    end
   end
 
   describe "Plan.type/1" do
@@ -169,11 +308,38 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       # several frames from the cause is what this replaces.
       error =
         assert_raise Bundle.NotImplementedError, fn ->
-          AccessChecker.plan_has_access?(@item, "SANAPI", @bundle_plan)
+          AccessChecker.get_available_metrics_for_plan(@bundle_plan, "SANAPI", :all)
         end
 
-      assert error.message =~ "plan_has_access?"
+      assert error.message =~ "get_available_metrics_for_plan"
       assert error.message =~ @bundle_plan
+    end
+
+    test "Plan.Restrictions.get passes the entitlement down to the bundle path" do
+      # Restrictions.get is what the metric and signal resolvers call. It fans
+      # out to plan_has_access? and both window functions, so if it drops the
+      # entitlement a bundle customer gets a 500 on metric metadata.
+      restriction =
+        Sanbase.Billing.Plan.Restrictions.get(
+          @item,
+          "SANAPI",
+          "SANAPI",
+          @bundle_plan,
+          bundle_entitlement()
+        )
+
+      assert restriction.is_accessible
+
+      refused =
+        Sanbase.Billing.Plan.Restrictions.get(
+          {:metric, "mvrv_usd"},
+          "SANAPI",
+          "SANAPI",
+          @bundle_plan,
+          bundle_entitlement()
+        )
+
+      refute refused.is_accessible
     end
   end
 
@@ -203,4 +369,18 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   end
 
   defp acl_plan(product, plan_name), do: String.downcase("#{product}_#{plan_name}")
+
+  # A minimal valid entitlement: one metric bought, everything else at the
+  # defaults every bundle gets today.
+  defp bundle_entitlement do
+    %Bundle.Entitlement{
+      metric_access: %{"accessible" => ["price_usd"]},
+      query_access: %{"accessible" => "all"},
+      signal_access: %{"accessible" => "all"},
+      api_call_limits: %{"month" => 100_000, "hour" => 30_000, "minute" => 600},
+      historical_data_in_days: nil,
+      realtime_data_cut_off_in_days: 0,
+      schema_version: Bundle.Entitlement.current_schema_version()
+    }
+  end
 end

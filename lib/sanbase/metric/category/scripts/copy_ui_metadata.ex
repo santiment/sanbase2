@@ -39,7 +39,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
         end)
 
       params =
-        Map.take(map, [:args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
+        Map.take(map, [:args, :ui_key, :ui_human_readable_name, :unit, :chart_style, :status])
         |> Map.merge(%{
           metric: metric,
           display_order_in_mapping: 1,
@@ -66,7 +66,15 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
     with {:ok, mapping} when not is_nil(mapping) <-
            Category.get_mappings_by_module_and_metric(module, metric) do
       params =
-        Map.take(map, [:metric, :args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
+        Map.take(map, [
+          :metric,
+          :args,
+          :ui_key,
+          :ui_human_readable_name,
+          :unit,
+          :chart_style,
+          :status
+        ])
         |> Map.merge(%{
           metric: metric,
           display_order_in_mapping: 1,

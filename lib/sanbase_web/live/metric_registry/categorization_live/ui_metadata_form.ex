@@ -105,6 +105,18 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
           <.input type="text" field={@form[:unit]} label="Unit" placeholder="e.g., USD, %" />
 
           <.input
+            type="select"
+            field={@form[:status]}
+            label="Status"
+            options={
+              Enum.map(
+                UIMetadata.get_available_statuses(),
+                &{AdminSharedComponents.status_text(&1), &1}
+              )
+            }
+          />
+
+          <.input
             type="textarea"
             field={@form[:args]}
             value={format_maybe_json_value(@form[:args])}

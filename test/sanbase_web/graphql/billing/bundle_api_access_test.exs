@@ -26,7 +26,6 @@ defmodule Sanbase.Billing.BundleApiAccessTest do
 
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers

@@ -1,6 +1,8 @@
 defmodule KafkaExporterTest do
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureLog
+
   setup do
     topic = :crypto.strong_rand_bytes(12) |> Base.encode64()
     %{topic: topic}
@@ -109,6 +111,52 @@ defmodule KafkaExporterTest do
     state = Sanbase.InMemoryKafka.Producer.get_state()
     topic_data = Map.get(state, topic)
     assert length(topic_data) == 10_000
+  end
+
+  test "the periodic flush keeps firing across intervals", %{topic: topic} do
+    {:ok, exporter_pid} =
+      Sanbase.KafkaExporter.start_link(
+        name: rand_atom(),
+        buffering_max_messages: 5000,
+        kafka_flush_timeout: 100,
+        can_send_after_interval: 0,
+        topic: topic
+      )
+
+    for round <- 1..3 do
+      :ok = Sanbase.KafkaExporter.persist_async(api_call_data(), exporter_pid)
+      Process.sleep(300)
+
+      topic_data = Sanbase.InMemoryKafka.Producer.get_state() |> Map.get(topic)
+
+      assert length(topic_data) == round,
+             "expected #{round} flushed message(s) after round #{round}"
+    end
+  end
+
+  test "an unexpected message does not kill the exporter", %{topic: topic} do
+    {:ok, exporter_pid} =
+      Sanbase.KafkaExporter.start_link(
+        name: rand_atom(),
+        buffering_max_messages: 5000,
+        kafka_flush_timeout: 100_000,
+        can_send_after_interval: 0,
+        topic: topic
+      )
+
+    log =
+      capture_log(fn ->
+        send(exporter_pid, {:DOWN, make_ref(), :process, self(), :normal})
+        send(exporter_pid, :not_a_flush)
+
+        # The call round-trips through the same mailbox, so both messages
+        # above have been handled by the time it returns.
+        assert :ok = Sanbase.KafkaExporter.flush(exporter_pid)
+      end)
+
+    assert Process.alive?(exporter_pid)
+    assert log =~ "Unexpected message in the KafkaExporter"
+    assert log =~ ":not_a_flush"
   end
 
   defp api_call_data() do

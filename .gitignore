@@ -82,6 +82,10 @@ npm-debug.log
 /.claude/
 CLAUDE.md
 
+# agent tooling
+/.agents/
+skills-lock.json
+
 # load test data
 load_test/data/apikeys.json
 load_test/data/slugs.json

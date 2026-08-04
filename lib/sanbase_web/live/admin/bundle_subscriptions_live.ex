@@ -62,11 +62,13 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
      |> assign(:probe_kind, "metric")
      |> assign(:probe_result, nil)
      |> assign(:scenario_results, [])
+     |> assign(:inspected_name, nil)
      |> assign(:compare_plan, "PRO")
      |> assign(:apikey, "")
      |> assign(:request_result, nil)
      |> assign(:requesting?, false)
-     |> load()}
+     |> load()
+     |> assign_name_suggestions()}
   end
 
   # ── Creating ────────────────────────────────────────────────────────────
@@ -148,6 +150,7 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
      |> assign(:selected_id, parse_non_negative(id, nil))
      |> assign(:probe_result, nil)
      |> assign(:scenario_results, [])
+     |> assign(:inspected_name, nil)
      |> assign(:request_result, nil)}
   end
 
@@ -240,7 +243,14 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
      socket
      |> assign(:probe, probe)
      |> assign(:probe_kind, kind)
+     |> assign(:inspected_name, nil)
      |> assign(:probe_result, decide(socket, probe, kind))}
+  end
+
+  # Only the kind, so the autocomplete list swaps to queries or signals as soon
+  # as the select changes rather than after Check is pressed.
+  def handle_event("set_probe_kind", %{"kind" => kind}, socket) do
+    {:noreply, assign(socket, :probe_kind, kind)}
   end
 
   def handle_event("set_compare_plan", %{"plan" => plan}, socket) do
@@ -255,13 +265,27 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
   end
 
   def handle_event("run_scenarios", _params, socket) do
-    {:noreply, assign(socket, :scenario_results, run_scenarios(socket))}
+    {:noreply,
+     socket
+     |> assign(:scenario_results, run_scenarios(socket))
+     |> assign(:inspected_name, nil)}
   end
 
+  # Expands the row in place. The Decide card is above the table, so pushing the
+  # result only up there looked like the button did nothing - which is what it
+  # looked like. It still fills the Decide form, so the same check can be varied
+  # by hand afterwards.
   def handle_event("probe_scenario", %{"kind" => kind, "name" => name}, socket) do
-    socket = socket |> assign(:probe, name) |> assign(:probe_kind, kind)
+    if socket.assigns.inspected_name == name do
+      {:noreply, assign(socket, :inspected_name, nil)}
+    else
+      socket = socket |> assign(:probe, name) |> assign(:probe_kind, kind)
 
-    {:noreply, assign(socket, :probe_result, decide(socket, name, kind))}
+      {:noreply,
+       socket
+       |> assign(:inspected_name, name)
+       |> assign(:probe_result, decide(socket, name, kind))}
+    end
   end
 
   # ── Request: the real GraphQL call ──────────────────────────────────────
@@ -325,8 +349,12 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
   # elsewhere. Every handler that acts on a row goes through here so a stale id
   # produces a message and a reload rather than a nil reaching `.items`, a
   # changeset, or a delete.
+  #
+  # Read from the database, not from the loaded list: a row deleted elsewhere is
+  # still present in the list an earlier render loaded, and updating that struct
+  # raises Ecto.StaleEntryError rather than reporting that it is gone.
   defp with_subscription(socket, id, fun) do
-    case find(socket, parse_non_negative(id, nil)) do
+    case fetch_subscription(id) do
       nil ->
         {:noreply,
          socket
@@ -336,6 +364,13 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
 
       subscription ->
         fun.(socket, subscription)
+    end
+  end
+
+  defp fetch_subscription(id) do
+    case parse_non_negative(id, nil) do
+      nil -> nil
+      id -> Subscription.get_bundle_subscription(id)
     end
   end
 
@@ -364,7 +399,39 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     |> assign(:latest_snapshot, PackageSnapshot.latest())
   end
 
-  defp find(socket, id), do: Enum.find(socket.assigns.subscriptions, &(&1.id == id))
+  # Assigned once in mount rather than called from the template. These are ~1200
+  # names; as assigns that never change, LiveView leaves them out of every diff,
+  # whereas a function call in the template would be re-sent on every keystroke.
+  #
+  # Metrics are the union of what the API serves and what the snapshot sells -
+  # the two lists are not identical, and a name that appears in a scenario has to
+  # be suggestable.
+  defp assign_name_suggestions(socket) do
+    snapshot_metrics =
+      case socket.assigns.latest_snapshot do
+        nil -> []
+        %PackageSnapshot{contents: contents} -> contents |> Map.values() |> List.flatten()
+      end
+
+    socket
+    |> assign(:metric_names, sorted_names(Sanbase.Metric.available_metrics() ++ snapshot_metrics))
+    |> assign(:signal_names, sorted_names(Sanbase.Signal.available_signals()))
+    |> assign(:query_names, sorted_names(all_query_names()))
+  end
+
+  defp all_query_names do
+    Sanbase.Billing.ApiInfo.get_queries_with_access_level(:free) ++
+      Sanbase.Billing.ApiInfo.get_queries_with_access_level(:restricted) ++
+      Sanbase.Billing.ApiInfo.get_queries_without_access_level()
+  end
+
+  defp sorted_names(names) do
+    names |> Enum.map(&to_string/1) |> Enum.uniq() |> Enum.sort()
+  end
+
+  defp datalist_id("query"), do: "query-names"
+  defp datalist_id("signal"), do: "signal-names"
+  defp datalist_id(_metric), do: "metric-names"
 
   defp selected(assigns) do
     Enum.find(assigns.subscriptions, &(&1.id == assigns.selected_id))
@@ -388,13 +455,7 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
       # could never be reached and the admin would get a dead page instead of a
       # message.
       Repo.transaction(fn ->
-        with {:ok, subscription} <-
-               Subscription.create(%{
-                 user_id: user.id,
-                 plan_id: plan.id,
-                 status: :active,
-                 type: :fiat
-               }),
+        with {:ok, subscription} <- insert_subscription(user, plan),
              :ok <- create_package_items(subscription, packages),
              :ok <- create_addon_item(subscription, addon_quantity) do
           subscription
@@ -422,6 +483,21 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
           {:noreply, put_flash(socket, :error, "Could not create: #{inspect(reason)}")}
       end
     end
+  end
+
+  # Inserted through the changeset rather than Subscription.create/1 on purpose.
+  # create/1 emits a :create_subscription billing event, and these rows have no
+  # Stripe object - the event fails validation, and the handlers behind it (emails,
+  # Discord, Stripe reconciliation) have no business acting on a local test row.
+  defp insert_subscription(user, plan) do
+    %Subscription{}
+    |> Subscription.changeset(%{
+      user_id: user.id,
+      plan_id: plan.id,
+      status: :active,
+      type: :fiat
+    })
+    |> Repo.insert()
   end
 
   defp create_package_items(subscription, packages) do
@@ -785,12 +861,80 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     """
   end
 
+  attr :products, :list, required: true
+  attr :result, :map, required: true
+
+  defp verdict_table(assigns) do
+    ~H"""
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th :for={product <- @products}>{product} access</th>
+          <th :for={product <- @products}>{product} history</th>
+          <th :for={product <- @products}>{product} realtime</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="font-medium">BUNDLE</td>
+          <td :for={product <- @products}>
+            <.verdict_badge verdict={@result.bundle[product].access} />
+          </td>
+          <td :for={product <- @products}>
+            <.verdict_badge verdict={@result.bundle[product].historical_days} />
+          </td>
+          <td :for={product <- @products}>
+            <.verdict_badge verdict={@result.bundle[product].realtime_cut_off} />
+          </td>
+        </tr>
+        <tr class="text-base-content/60">
+          <td class="font-medium">{@result.compare_plan}</td>
+          <td :for={product <- @products}>
+            <.verdict_badge verdict={@result.compare[product].access} />
+          </td>
+          <td :for={product <- @products}>
+            <.verdict_badge verdict={@result.compare[product].historical_days} />
+          </td>
+          <td :for={product <- @products}>
+            <.verdict_badge verdict={@result.compare[product].realtime_cut_off} />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    """
+  end
+
+  attr :metric_names, :list, required: true
+  attr :query_names, :list, required: true
+  attr :signal_names, :list, required: true
+
+  defp name_datalists(assigns) do
+    ~H"""
+    <datalist id="metric-names">
+      <option :for={name <- @metric_names} value={name}></option>
+    </datalist>
+    <datalist id="query-names">
+      <option :for={name <- @query_names} value={name}></option>
+    </datalist>
+    <datalist id="signal-names">
+      <option :for={name <- @signal_names} value={name}></option>
+    </datalist>
+    """
+  end
+
   @impl true
   def render(assigns) do
     assigns = assign(assigns, :selected, selected(assigns))
 
     ~H"""
     <div class="bg-base-200/40 min-h-full">
+      <.name_datalists
+        metric_names={@metric_names}
+        query_names={@query_names}
+        signal_names={@signal_names}
+      />
+
       <div class="max-w-6xl mx-auto px-6 py-8 space-y-6">
         <div class="flex items-start justify-between gap-4">
           <div>
@@ -1130,7 +1274,11 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
           <form phx-submit="set_probe" class="flex flex-wrap items-end gap-2">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Kind</legend>
-              <select name="kind" class="select select-sm w-28">
+              <select
+                name="kind"
+                phx-change="set_probe_kind"
+                class="select select-sm w-28"
+              >
                 <option
                   :for={kind <- ~w(metric query signal)}
                   value={kind}
@@ -1141,12 +1289,23 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
               </select>
             </fieldset>
 
+            <%!-- The button sits inside the fieldset because `.fieldset` adds
+                  padding-block, so `items-end` on the row would align it to the
+                  fieldset's bottom edge rather than the input's. --%>
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Name</legend>
-              <input type="text" name="probe" value={@probe} class="input input-sm w-64" />
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  name="probe"
+                  value={@probe}
+                  list={datalist_id(@probe_kind)}
+                  autocomplete="off"
+                  class="input input-sm w-64"
+                />
+                <button type="submit" class="btn btn-sm btn-primary">Check</button>
+              </div>
             </fieldset>
-
-            <button type="submit" class="btn btn-sm btn-primary">Check</button>
 
             <fieldset class="fieldset ml-auto">
               <legend class="fieldset-legend">Compare against</legend>
@@ -1170,42 +1329,11 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
             <span class="text-sm">{@probe_result.error}</span>
           </div>
 
-          <table :if={@probe_result && @probe_result[:bundle]} class="table table-sm">
-            <thead>
-              <tr>
-                <th>Plan</th>
-                <th :for={product <- @products}>{product} access</th>
-                <th :for={product <- @products}>{product} history</th>
-                <th :for={product <- @products}>{product} realtime</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="font-medium">BUNDLE</td>
-                <td :for={product <- @products}>
-                  <.verdict_badge verdict={@probe_result.bundle[product].access} />
-                </td>
-                <td :for={product <- @products}>
-                  <.verdict_badge verdict={@probe_result.bundle[product].historical_days} />
-                </td>
-                <td :for={product <- @products}>
-                  <.verdict_badge verdict={@probe_result.bundle[product].realtime_cut_off} />
-                </td>
-              </tr>
-              <tr class="text-base-content/60">
-                <td class="font-medium">{@probe_result.compare_plan}</td>
-                <td :for={product <- @products}>
-                  <.verdict_badge verdict={@probe_result.compare[product].access} />
-                </td>
-                <td :for={product <- @products}>
-                  <.verdict_badge verdict={@probe_result.compare[product].historical_days} />
-                </td>
-                <td :for={product <- @products}>
-                  <.verdict_badge verdict={@probe_result.compare[product].realtime_cut_off} />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <.verdict_table
+            :if={@probe_result && @probe_result[:bundle]}
+            products={@products}
+            result={@probe_result}
+          />
 
           <p :if={@probe_result && @probe_result[:bundle]} class="text-xs text-base-content/50">
             A warning badge is a raised error, not a refusal. That is the designed behavior for the
@@ -1242,36 +1370,56 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
               </tr>
             </thead>
             <tbody>
-              <tr :for={scenario <- @scenario_results}>
-                <td class="text-xs">
-                  {scenario.label}
-                  <div class="text-base-content/50">{scenario.why}</div>
-                </td>
-                <td><code class="text-xs">{scenario.name}</code></td>
-                <td class="text-xs">{if scenario.expected, do: "allowed", else: "refused"}</td>
-                <td><.verdict_badge verdict={scenario.actual} /></td>
-                <td>
-                  <span class={[
-                    "badge badge-sm",
-                    if(scenario.actual == {:ok, scenario.expected},
-                      do: "badge-success",
-                      else: "badge-error"
-                    )
-                  ]}>
-                    {if scenario.actual == {:ok, scenario.expected}, do: "pass", else: "FAIL"}
-                  </span>
-                </td>
-                <td class="text-right">
-                  <button
-                    phx-click="probe_scenario"
-                    phx-value-kind={scenario.kind}
-                    phx-value-name={scenario.name}
-                    class="btn btn-xs btn-soft"
-                  >
-                    Inspect
-                  </button>
-                </td>
-              </tr>
+              <%= for scenario <- @scenario_results do %>
+                <tr>
+                  <td class="text-xs">
+                    {scenario.label}
+                    <div class="text-base-content/50">{scenario.why}</div>
+                  </td>
+                  <td><code class="text-xs">{scenario.name}</code></td>
+                  <td class="text-xs">{if scenario.expected, do: "allowed", else: "refused"}</td>
+                  <td><.verdict_badge verdict={scenario.actual} /></td>
+                  <td>
+                    <span class={[
+                      "badge badge-sm",
+                      if(scenario.actual == {:ok, scenario.expected},
+                        do: "badge-success",
+                        else: "badge-error"
+                      )
+                    ]}>
+                      {if scenario.actual == {:ok, scenario.expected}, do: "pass", else: "FAIL"}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <button
+                      phx-click="probe_scenario"
+                      phx-value-kind={scenario.kind}
+                      phx-value-name={scenario.name}
+                      class="btn btn-xs btn-soft"
+                    >
+                      {if @inspected_name == scenario.name, do: "Hide", else: "Inspect"}
+                    </button>
+                  </td>
+                </tr>
+
+                <tr :if={@inspected_name == scenario.name}>
+                  <td colspan="6" class="bg-base-200/50">
+                    <div :if={@probe_result && @probe_result[:error]} class="text-xs text-error">
+                      {@probe_result.error}
+                    </div>
+
+                    <.verdict_table
+                      :if={@probe_result && @probe_result[:bundle]}
+                      products={@products}
+                      result={@probe_result}
+                    />
+
+                    <div class="text-xs text-base-content/50">
+                      Also loaded into the Decide form above, so it can be varied by hand.
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
             </tbody>
           </table>
 
@@ -1301,32 +1449,39 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
             </span>
           </div>
 
-          <div class="flex flex-wrap items-end gap-2">
-            <fieldset class="fieldset grow">
-              <legend class="fieldset-legend">API key</legend>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">API key</legend>
+            <div class="flex gap-2">
               <input
                 type="text"
                 value={@apikey}
                 phx-blur="set_apikey"
                 placeholder="paste an API key belonging to the subscribed user"
-                class="input input-sm w-full font-mono"
+                class="input input-sm grow font-mono"
               />
-            </fieldset>
+              <button phx-click="generate_own_apikey" class="btn btn-sm btn-soft shrink-0">
+                Generate for my own account
+              </button>
+            </div>
+          </fieldset>
 
-            <button phx-click="generate_own_apikey" class="btn btn-sm btn-soft">
-              Generate for my own account
-            </button>
-          </div>
-
-          <form phx-submit="send_request" class="flex items-end gap-2">
+          <form phx-submit="send_request">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Metric</legend>
-              <input type="text" name="metric" value={@probe} class="input input-sm w-64" />
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  name="metric"
+                  value={@probe}
+                  list="metric-names"
+                  autocomplete="off"
+                  class="input input-sm w-64"
+                />
+                <button type="submit" disabled={@requesting?} class="btn btn-sm btn-primary">
+                  {if @requesting?, do: "Sending...", else: "Send"}
+                </button>
+              </div>
             </fieldset>
-
-            <button type="submit" disabled={@requesting?} class="btn btn-sm btn-primary">
-              {if @requesting?, do: "Sending...", else: "Send"}
-            </button>
           </form>
 
           <div :if={@request_result}>

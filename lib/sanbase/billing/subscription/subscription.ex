@@ -190,6 +190,29 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  @doc ~s"""
+  One bundle subscription by id, preloaded the same way the listing is, or `nil`.
+
+  Read fresh rather than picked out of a list an admin page loaded earlier: the
+  page can sit open while the row is changed or deleted elsewhere, and acting on
+  the stale struct raises `Ecto.StaleEntryError` instead of reporting that the row
+  is gone.
+  """
+  @spec get_bundle_subscription(pos_integer()) :: %__MODULE__{} | nil
+  def get_bundle_subscription(id) when is_integer(id) do
+    bundle_pattern = "BUNDLE%"
+
+    from(s in __MODULE__,
+      join: p in Plan,
+      on: s.plan_id == p.id,
+      where: s.id == ^id and like(p.name, ^bundle_pattern),
+      preload: [:user, :items, plan: :product]
+    )
+    |> Repo.one()
+  end
+
+  def get_bundle_subscription(_), do: nil
+
   def create(params, opts \\ []) do
     %__MODULE__{}
     |> changeset(params)

@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict h4FqeBEkGhz4OJXroPQ40o2Vj83myY168J4zubQiJin9aCVVHbsEfobP9x1NIbR
+\restrict 9QUBr9SJIJkDRYMP78qmZjUSLPxyRWRCmwgsULP5pHtoWm3xxBbV5N35GkspzpA
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 17.10 (Homebrew)
+-- Dumped by pg_dump version 17.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -12218,7 +12218,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict h4FqeBEkGhz4OJXroPQ40o2Vj83myY168J4zubQiJin9aCVVHbsEfobP9x1NIbR
+\unrestrict 9QUBr9SJIJkDRYMP78qmZjUSLPxyRWRCmwgsULP5pHtoWm3xxBbV5N35GkspzpA
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12811,3 +12811,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260803141812);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803142534);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803150000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260804140000);

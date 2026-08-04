@@ -93,6 +93,7 @@ defmodule Sanbase.Metric.Category.DisplayOrder do
       code_module: code_module,
       metric_registry_id: mapping.metric_registry_id,
       args: ui_metadata_or_default(ui_metadata, :args, %{}),
+      status: ui_metadata_or_default(ui_metadata, :status, :live),
       is_new: new?(inserted_at),
       display_order: mapping.display_order,
       inserted_at: inserted_at,

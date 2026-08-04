@@ -137,6 +137,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
             <th>UI Key</th>
             <th>Has Args</th>
             <th>Chart Style</th>
+            <th>Status</th>
             <th class="text-center">On Sanbase?</th>
             <th>Actions</th>
           </tr>
@@ -205,6 +206,9 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
         </span>
       </td>
       <td>{@ui_metadata.chart_style}</td>
+      <td>
+        <AdminSharedComponents.status_badge status={to_string(@ui_metadata.status)} />
+      </td>
       <td class="text-center">
         <span :if={@ui_metadata.show_on_sanbase} class="badge badge-sm badge-success badge-soft">
           YES
@@ -423,11 +427,11 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   end
 
   defp has_registry_metric?(mapping) do
-    mapping.metric_registry_id && mapping.metric_registry
+    not is_nil(mapping.metric_registry_id) and not is_nil(mapping.metric_registry)
   end
 
   defp has_code_metric?(mapping) do
-    mapping.module && mapping.metric
+    not is_nil(mapping.module) and not is_nil(mapping.metric)
   end
 
   defp build_registry_metric_info(mapping) do
@@ -474,7 +478,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   end
 
   defp has_parameters?(mapping) do
-    mapping.metric_registry &&
+    not is_nil(mapping.metric_registry) and
       mapping.metric_registry.parameters != []
   end
 

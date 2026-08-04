@@ -9,6 +9,8 @@ defmodule Sanbase.Metric.UIMetadata do
   alias Sanbase.Metric.Category.MetricCategoryMapping
   alias Sanbase.Repo
 
+  @allowed_statuses [:live, :hidden, :under_maintenance]
+
   @type t :: %__MODULE__{
           id: integer(),
           ui_human_readable_name: String.t() | nil,
@@ -17,6 +19,7 @@ defmodule Sanbase.Metric.UIMetadata do
           unit: String.t() | nil,
           args: map() | nil,
           show_on_sanbase: boolean(),
+          status: atom(),
           display_order_in_mapping: integer() | nil,
           metric_category_mapping_id: integer(),
           metric_category_mapping: MetricCategoryMapping.t() | nil,
@@ -32,6 +35,7 @@ defmodule Sanbase.Metric.UIMetadata do
     field(:unit, :string)
     field(:args, :map)
     field(:show_on_sanbase, :boolean, default: true)
+    field(:status, Ecto.Enum, values: @allowed_statuses, default: :live)
     field(:display_order_in_mapping, :integer)
 
     # We need metric in combination with metric_category_mapping as the mapping
@@ -55,6 +59,7 @@ defmodule Sanbase.Metric.UIMetadata do
       :unit,
       :args,
       :show_on_sanbase,
+      :status,
       :display_order_in_mapping,
       :metric,
       :metric_category_mapping_id
@@ -69,6 +74,19 @@ defmodule Sanbase.Metric.UIMetadata do
     # they are not considered the same and don't trigger the constraint
     |> unique_constraint(:ui_human_readable_name)
     |> unique_constraint(:ui_key)
+  end
+
+  @doc """
+  Get all available statuses.
+
+  ## Examples
+
+      iex> Sanbase.Metric.UIMetadata.get_available_statuses()
+      [:live, :hidden, :under_maintenance]
+  """
+  @spec get_available_statuses() :: [atom()]
+  def get_available_statuses() do
+    @allowed_statuses
   end
 
   @doc """

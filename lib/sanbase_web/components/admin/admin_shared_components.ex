@@ -149,6 +149,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
   defp status_variant("pending_approval"), do: "badge-warning"
   defp status_variant("pending_sync"), do: "badge-warning"
   defp status_variant("manual_drift"), do: "badge-error"
+  defp status_variant("live"), do: "badge-success"
   defp status_variant("hidden"), do: "badge-neutral"
   defp status_variant("under_maintenance"), do: "badge-warning"
   defp status_variant(_), do: "badge-ghost"

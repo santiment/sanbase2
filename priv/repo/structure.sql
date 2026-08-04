@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict b7s1nl3bqMBXT3SjBAKWkv9fS1cIw1LVLbA6t2BvfHax2Y07czaELm2Sd4FPfD0
+\restrict h4FqeBEkGhz4OJXroPQ40o2Vj83myY168J4zubQiJin9aCVVHbsEfobP9x1NIbR
 
--- Dumped from database version 17.10 (Homebrew)
--- Dumped by pg_dump version 17.10 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2843,7 +2843,8 @@ CREATE TABLE public.metric_ui_metadata (
     metric_category_mapping_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    metric character varying(255)
+    metric character varying(255),
+    status character varying(255) DEFAULT 'live'::character varying NOT NULL
 );
 
 
@@ -12217,7 +12218,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict b7s1nl3bqMBXT3SjBAKWkv9fS1cIw1LVLbA6t2BvfHax2Y07czaELm2Sd4FPfD0
+\unrestrict h4FqeBEkGhz4OJXroPQ40o2Vj83myY168J4zubQiJin9aCVVHbsEfobP9x1NIbR
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12809,3 +12810,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260803120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803141812);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803142534);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803150000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260804120000);

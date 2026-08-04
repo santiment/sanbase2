@@ -149,6 +149,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     Sanbase.Clickhouse.ApiCallData.api_call_history(user.id, from, to, interval, auth_method)
   end
 
+  def api_call_limits(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+    Sanbase.ApiCallLimit.usage_and_limits(:user, user)
+  end
+
   def api_calls_count(
         %User{} = user,
         %{from: from, to: to} = args,

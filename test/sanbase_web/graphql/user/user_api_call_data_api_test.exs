@@ -110,6 +110,58 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
     end
   end
 
+  describe "apiCallLimits" do
+    test "returns the usage and the limits of the plan" do
+      user = insert(:user, email: "api_call_limits@gmail.com")
+      conn = setup_jwt_auth(build_conn(), user)
+
+      {:ok, _} = Sanbase.ApiCallLimit.get_quota_db(:user, user)
+      {:ok, :updated} = Sanbase.ApiCallLimit.update_usage_db(:user, user, 20, 0)
+
+      assert fetch_api_call_limits(conn) == %{
+               "plan" => "sanapi_free",
+               "hasLimits" => true,
+               "apiCallsMade" => %{"month" => 20},
+               "apiCallsLimits" => %{"month" => 1000},
+               "apiCallsRemaining" => %{"month" => 980}
+             }
+    end
+
+    test "returns null limits for a user without api call limits" do
+      user = insert(:user, email: "dev@santiment.net")
+      conn = setup_jwt_auth(build_conn(), user)
+
+      assert fetch_api_call_limits(conn) == %{
+               "plan" => "sanapi_free",
+               "hasLimits" => false,
+               "apiCallsMade" => %{"month" => 0},
+               "apiCallsLimits" => nil,
+               "apiCallsRemaining" => nil
+             }
+    end
+  end
+
+  defp fetch_api_call_limits(conn) do
+    query = """
+    {
+      currentUser{
+        apiCallLimits{
+          plan
+          hasLimits
+          apiCallsMade{ month }
+          apiCallsLimits{ month }
+          apiCallsRemaining{ month }
+        }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query, "currentUser"))
+    |> json_response(200)
+    |> get_in(["data", "currentUser", "apiCallLimits"])
+  end
+
   defp fetch_user_api_calls_count(conn, from, to, interval) do
     query = """
     {

@@ -48,6 +48,11 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval, "order", is
   ON CONFLICT DO NOTHING
 """)
 
+# Local bundle catalog only (12 rows). Stripe Prices are created by
+# Sanbase.Billing.sync_bundle_catalog_with_stripe/0 (also on @reboot via
+# sync_products_with_stripe/0).
+{:ok, _} = Sanbase.Billing.Plan.Bundle.Catalog.ensure_local_catalog()
+
 # Otherwise when we try to create a custom plan it will fail
 # as plans_id_seq will produce `1` as the next value
 Sanbase.Repo.query!("""

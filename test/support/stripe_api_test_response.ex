@@ -67,6 +67,87 @@ defmodule Sanbase.StripeApiTestResponse do
      }}
   end
 
+  def create_price_resp(attrs \\ %{}) do
+    id =
+      Map.get(attrs, :id, "price_" <> Base.encode16(:crypto.strong_rand_bytes(8), case: :lower))
+
+    unit_amount = Map.get(attrs, :unit_amount, 35_000)
+    interval = Map.get(attrs, :interval, "month")
+    product = Map.get(attrs, :product, "prod_bundle_market")
+    nickname = Map.get(attrs, :nickname, "Market Data (month)")
+
+    {:ok,
+     %Stripe.Price{
+       active: true,
+       billing_scheme: "per_unit",
+       created: 1_558_178_870,
+       currency: "usd",
+       currency_options: nil,
+       custom_unit_amount: nil,
+       id: id,
+       livemode: false,
+       lookup_key: nil,
+       metadata: Map.get(attrs, :metadata, %{}),
+       nickname: nickname,
+       object: "price",
+       product: product,
+       recurring: %{interval: interval, interval_count: 1, usage_type: "licensed"},
+       tax_behavior: nil,
+       tiers: nil,
+       tiers_mode: nil,
+       transform_quantity: nil,
+       type: "recurring",
+       unit_amount: unit_amount,
+       unit_amount_decimal: nil
+     }}
+  end
+
+  def find_bundle_product_resp(nil), do: {:ok, nil}
+
+  def find_bundle_product_resp(%{id: id, name: name, sku: sku}) do
+    {:ok,
+     %Stripe.Product{
+       active: true,
+       created: 1_558_173_662,
+       description: nil,
+       id: id,
+       images: [],
+       livemode: false,
+       metadata: %{"sanbase_sku" => sku},
+       name: name,
+       object: "product",
+       package_dimensions: nil,
+       shippable: nil,
+       statement_descriptor: nil,
+       type: "service",
+       unit_label: nil,
+       updated: 1_558_173_662,
+       url: nil
+     }}
+  end
+
+  def create_bundle_product_resp(sku, name) do
+    {:ok,
+     %Stripe.Product{
+       active: true,
+       created: 1_558_173_662,
+       description: nil,
+       id: "prod_bundle_" <> sku,
+       images: [],
+       livemode: false,
+       metadata: %{"sanbase_sku" => sku},
+       name: name,
+       object: "product",
+       package_dimensions: nil,
+       shippable: nil,
+       statement_descriptor: nil,
+       type: "service",
+       unit_label: nil,
+       updated: 1_558_173_662,
+       url: nil
+     }}
+  end
+
   def create_or_update_customer_resp do
     {:ok,
      %Stripe.Customer{

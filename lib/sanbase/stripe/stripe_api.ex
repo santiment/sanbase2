@@ -34,6 +34,64 @@ defmodule Sanbase.StripeApi do
     })
   end
 
+  @doc ~s"""
+  Create a Stripe Product for a bundle catalog SKU (package or API-call add-on).
+
+  Metadata `sanbase_sku` lets `find_bundle_product/1` reuse the product on re-sync.
+  """
+  @spec create_bundle_product(String.t(), map()) ::
+          {:ok, Stripe.Product.t()} | {:error, Stripe.Error.t()} | {:error, term()}
+  def create_bundle_product(name, metadata \\ %{}) when is_binary(name) and is_map(metadata) do
+    Stripe.Product.create(%{name: name, type: "service", metadata: metadata})
+  end
+
+  @doc ~s"""
+  Find an existing Stripe Product for a bundle SKU via metadata search.
+  Returns `{:ok, nil}` when none exists yet.
+  """
+  @spec find_bundle_product(String.t()) ::
+          {:ok, Stripe.Product.t() | nil} | {:error, Stripe.Error.t()} | {:error, term()}
+  def find_bundle_product(sku) when is_binary(sku) do
+    query = "metadata['sanbase_sku']:'#{sku}'"
+
+    case Stripe.Product.search(%{query: query, limit: 1}) do
+      {:ok, %{data: [product | _]}} -> {:ok, product}
+      {:ok, %{data: []}} -> {:ok, nil}
+      {:error, _} = error -> error
+    end
+  end
+
+  @doc ~s"""
+  Create a recurring Stripe Price under a bundle Product.
+
+  Expects `%{nickname, currency, unit_amount, interval, product}` and optional
+  `:metadata`. Currency should be lowercase (`"usd"`).
+  """
+  @spec create_bundle_price(map()) ::
+          {:ok, Stripe.Price.t()} | {:error, Stripe.Error.t()} | {:error, term()}
+  def create_bundle_price(
+        %{
+          nickname: nickname,
+          currency: currency,
+          unit_amount: unit_amount,
+          interval: interval,
+          product: product
+        } = attrs
+      )
+      when is_binary(nickname) and is_binary(currency) and is_integer(unit_amount) and
+             interval in ["month", "year"] and is_binary(product) do
+    params = %{
+      nickname: nickname,
+      currency: currency,
+      unit_amount: unit_amount,
+      recurring: %{interval: interval},
+      product: product,
+      metadata: Map.get(attrs, :metadata, %{})
+    }
+
+    Stripe.Price.create(params)
+  end
+
   @spec create_customer_with_card(%User{}, nil | String.t()) ::
           {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
   def create_customer_with_card(%User{} = user, nil) do

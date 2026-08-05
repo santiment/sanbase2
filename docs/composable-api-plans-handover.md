@@ -700,7 +700,7 @@ One correction to the original description: monthly calls are **not** summed per
 **Depends on:** EN, DP. **Highest-risk task in the epic.** Acceptance: the §7.6 smoke matrix is green for `BUNDLE` and the **BC** fixture is unchanged.
 
 ### SC. Stripe catalog — ✅ done
-**Implemented as:** `Bundle.Catalog` (`ensure_local_catalog/0`, `sync_with_stripe/0`) exposed as `Sanbase.Billing.sync_bundle_catalog_with_stripe/0` and included in `Sanbase.Billing.sync_products_with_stripe/0` (`@reboot` on stage/prod). Local Mix wrapper `mix sanbase.bundle.sync_stripe_catalog` exists for dev only — Mix is not available remotely. Twelve local `bundle_prices` rows (5 packages + `api_calls_500k` × month/year). Packages get provisional amounts from the pricing mock; `api_calls_500k` stays `amount: nil` until product prices it. Sync creates one Stripe Product per SKU (metadata `sanbase_sku`) and recurring Stripe Prices (modern Price API, not legacy Plan), then writes `stripe_price_id`. Idempotent; skips nil-amount and already-linked rows. Seed script calls `ensure_local_catalog/0` (local only).
+**Implemented as:** `Bundle.Catalog` (`ensure_local_catalog/0`, `sync_with_stripe/0`) exposed as `Sanbase.Billing.sync_bundle_catalog_with_stripe/0` and included in `Sanbase.Billing.sync_products_with_stripe/0` (`@reboot` on stage/prod). Twelve local `bundle_prices` rows (5 packages + `api_calls_500k` × month/year). Packages get provisional amounts from the pricing mock; `api_calls_500k` stays `amount: nil` until product prices it. Sync creates one Stripe Product per SKU (metadata `sanbase_sku`) and recurring Stripe Prices (modern Price API, not legacy Plan), then writes `stripe_price_id`. Idempotent; skips nil-amount and already-linked rows. Seed script calls `ensure_local_catalog/0` (local only).
 
 **Provisional amounts (from pricing page mock; changeable — never hardcode charging logic):**
 
@@ -911,7 +911,7 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 | **OB** — admin visibility | ✅ done | Two admin pages, `/admin/bundle_packages` and `/admin/bundle_subscriptions`. |
 | **WH** — quota write | ✅ partial | The `api_call_limits` write is done (§5.10) — resolved numbers stored on the row, refreshed by `Resolver.sync/1`. The Stripe webhook branching it was bundled with is not. |
 | **AM** — available metrics | ✅ done | `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` catalogs from the latest published snapshot. AccessChecker entitlement path clears the last BA raise. Non-bundle plans unchanged. |
-| **SC** — Stripe catalog | ✅ done | `Bundle.Catalog` via `Billing.sync_bundle_catalog_with_stripe/0` (also in `@reboot` `sync_products_with_stripe`). 12 local rows; package Stripe Prices via Price API; `api_calls_500k` amount still TBD. Mix task is local-only. |
+| **SC** — Stripe catalog | ✅ done | `Bundle.Catalog` via `Billing.sync_bundle_catalog_with_stripe/0` (also in `@reboot` `sync_products_with_stripe`). 12 local rows; package Stripe Prices via Price API; `api_calls_500k` amount still TBD. |
 | **SL / UI** | ⬜ not started | Subscribe mutations → purchase UI. |
 | **IN** — Institutional | ⬜ not started | Fixed flagship plan (§1.1 middle column). Specced in §8 **IN**; not a BUNDLE. |
 | **EP** — Enterprise | ⬜ not started | Sales-led custom tier (§1.1 right column). Specced in §8 **EP**; prefer CUSTOM path. |
@@ -960,7 +960,7 @@ of package combinations works via
 
 ### 13.1 Next
 
-1. **`SL → WH`** — subscribe / add / remove / cancel + webhook branching (quota write already done in §5.10). SC catalog unblocks package checkout once Mix sync has been run against Stripe.
+1. **`SL → WH`** — subscribe / add / remove / cancel + webhook branching (quota write already done in §5.10). SC catalog unblocks package checkout once `Billing.sync_products_with_stripe/0` (or `sync_bundle_catalog_with_stripe/0`) has run against Stripe.
 2. **`IN`** (parallel) — Institutional as a fixed standard plan. Does not share the multi-item path.
 3. **`EP`** — confirm Enterprise = CUSTOM sales path; thin plan/admin work only.
 4. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist.

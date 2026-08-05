@@ -70,7 +70,7 @@ defmodule Sanbase.Billing do
   `priv/repo/seed_plans_and_products.exs` must be executed. Bundle catalog rows
   are ensured by the catalog sync itself.
 
-  Runs on `@reboot` via Quantum — the stage/prod entry point (no Mix there).
+  Runs on `@reboot` via Quantum — the stage/prod entry point.
   Idempotent; rows with no amount (e.g. unpriced add-ons) are skipped.
   """
   @spec sync_products_with_stripe() :: :ok | {:error, term()}
@@ -87,12 +87,11 @@ defmodule Sanbase.Billing do
   @doc ~s"""
   Ensure local bundle catalog rows and create missing Stripe Products/Prices.
 
-  Prefer this (or `sync_products_with_stripe/0`) on stage/prod remotely:
+  Prefer this (or `sync_products_with_stripe/0`) remotely:
 
       Sanbase.Billing.sync_bundle_catalog_with_stripe()
 
-  Mix is not available there. Also invoked from `sync_products_with_stripe/0`
-  on `@reboot`.
+  Also invoked from `sync_products_with_stripe/0` on `@reboot`.
   """
   @spec sync_bundle_catalog_with_stripe() :: {:ok, list()} | {:error, term()}
   def sync_bundle_catalog_with_stripe do

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict yK1vdxL3X0JtU4lmw5P8cNJtjINq8i2YYat2g05ZJ1aQkSGCwE3D5hTg0kl6yHK
+\restrict mvrGIBlnHSFC9neYljbMSnKDwNdshb0g2BP3GKe6MhwDzN3PjhadTtoTGyeVZtu
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -4895,7 +4895,8 @@ CREATE TABLE public.subscription_items (
     type character varying(255) NOT NULL,
     quantity integer DEFAULT 1 NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    cancel_at_period_end boolean DEFAULT false NOT NULL
 );
 
 
@@ -12219,7 +12220,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict yK1vdxL3X0JtU4lmw5P8cNJtjINq8i2YYat2g05ZJ1aQkSGCwE3D5hTg0kl6yHK
+\unrestrict mvrGIBlnHSFC9neYljbMSnKDwNdshb0g2BP3GKe6MhwDzN3PjhadTtoTGyeVZtu
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12814,3 +12815,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260803150000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804140000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804145231);
+INSERT INTO public."schema_migrations" (version) VALUES (20260805111145);

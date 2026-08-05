@@ -35,7 +35,8 @@ defmodule Sanbase.Billing.Subscription.Item do
           stripe_item_id: String.t() | nil,
           sku: String.t(),
           type: item_type(),
-          quantity: pos_integer()
+          quantity: pos_integer(),
+          cancel_at_period_end: boolean()
         }
 
   schema "subscription_items" do
@@ -43,13 +44,14 @@ defmodule Sanbase.Billing.Subscription.Item do
     field(:sku, :string)
     field(:type, Ecto.Enum, values: [:package, :api_calls])
     field(:quantity, :integer, default: 1)
+    field(:cancel_at_period_end, :boolean, default: false)
 
     belongs_to(:subscription, Subscription)
 
     timestamps()
   end
 
-  @fields [:subscription_id, :stripe_item_id, :sku, :type, :quantity]
+  @fields [:subscription_id, :stripe_item_id, :sku, :type, :quantity, :cancel_at_period_end]
 
   @doc false
   def changeset(%__MODULE__{} = item, attrs) do

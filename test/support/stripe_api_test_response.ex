@@ -205,6 +205,55 @@ defmodule Sanbase.StripeApiTestResponse do
     stripe_id = stripe_id || "sub_" <> Base.encode16(:crypto.strong_rand_bytes(7))
     status = Keyword.get(opts, :status, "active")
     trial_end = Keyword.get(opts, :trial_end, nil)
+    price_ids = Keyword.get(opts, :price_ids, nil)
+
+    items =
+      if is_list(price_ids) and price_ids != [] do
+        Enum.map(price_ids, fn price_id ->
+          %Stripe.SubscriptionItem{
+            created: 1_558_185_787,
+            id: "si_" <> Base.encode16(:crypto.strong_rand_bytes(6), case: :lower),
+            metadata: %{},
+            object: "subscription_item",
+            price: %{id: price_id, object: "price"},
+            plan: nil,
+            quantity: 1,
+            subscription: stripe_id
+          }
+        end)
+      else
+        [
+          %Stripe.SubscriptionItem{
+            created: 1_558_185_787,
+            id: "si_anothernonexistingid",
+            metadata: %{},
+            object: "subscription_item",
+            plan: %Stripe.Plan{
+              active: true,
+              aggregate_usage: nil,
+              amount: 35_900,
+              billing_scheme: "per_unit",
+              created: 1_558_178_870,
+              currency: "usd",
+              id: "plan_F5bv8ZRkhnAnmR",
+              interval: "month",
+              interval_count: 1,
+              livemode: false,
+              metadata: %{},
+              nickname: nil,
+              object: "plan",
+              product: "prod_nonexistingproduct",
+              tiers: nil,
+              tiers_mode: nil,
+              transform_usage: nil,
+              trial_period_days: nil,
+              usage_type: "licensed"
+            },
+            quantity: 1,
+            subscription: "sub_nonexistingsub"
+          }
+        ]
+      end
 
     {:ok,
      %Stripe.Subscription{
@@ -229,41 +278,11 @@ defmodule Sanbase.StripeApiTestResponse do
          }
        },
        items: %Stripe.List{
-         data: [
-           %Stripe.SubscriptionItem{
-             created: 1_558_185_787,
-             id: "si_anothernonexistingid",
-             metadata: %{},
-             object: "subscription_item",
-             plan: %Stripe.Plan{
-               active: true,
-               aggregate_usage: nil,
-               amount: 35_900,
-               billing_scheme: "per_unit",
-               created: 1_558_178_870,
-               currency: "usd",
-               id: "plan_F5bv8ZRkhnAnmR",
-               interval: "month",
-               interval_count: 1,
-               livemode: false,
-               metadata: %{},
-               nickname: nil,
-               object: "plan",
-               product: "prod_nonexistingproduct",
-               tiers: nil,
-               tiers_mode: nil,
-               transform_usage: nil,
-               trial_period_days: nil,
-               usage_type: "licensed"
-             },
-             quantity: 1,
-             subscription: "sub_nonexistingsub"
-           }
-         ],
+         data: items,
          has_more: false,
          object: "list",
-         total_count: 1,
-         url: "/v1/subscription_items?subscription=sub_nonexistingsub"
+         total_count: length(items),
+         url: "/v1/subscription_items?subscription=#{stripe_id}"
        },
        livemode: false,
        metadata: %{},
@@ -272,6 +291,28 @@ defmodule Sanbase.StripeApiTestResponse do
        status: status,
        trial_end: trial_end,
        trial_start: nil
+     }}
+  end
+
+  def create_bundle_subscription_resp(opts \\ []) do
+    create_subscription_resp(opts)
+  end
+
+  def create_subscription_item_resp(opts \\ []) do
+    id =
+      Keyword.get(opts, :id, "si_" <> Base.encode16(:crypto.strong_rand_bytes(6), case: :lower))
+
+    price_id = Keyword.get(opts, :price_id, "price_test")
+
+    {:ok,
+     %Stripe.SubscriptionItem{
+       created: 1_558_185_787,
+       id: id,
+       metadata: %{},
+       object: "subscription_item",
+       price: %{id: price_id, object: "price"},
+       quantity: 1,
+       subscription: Keyword.get(opts, :subscription, "sub_test")
      }}
   end
 
@@ -284,6 +325,11 @@ defmodule Sanbase.StripeApiTestResponse do
   end
 
   def cancel_subscription_immediately_resp(opts \\ []) do
-    create_subscription_resp(opts)
+    {:ok, sub} = create_subscription_resp(opts)
+    {:ok, %{sub | status: "canceled", canceled_at: 1_558_185_800}}
+  end
+
+  def cancel_subscription_with_proration_resp(opts \\ []) do
+    cancel_subscription_immediately_resp(opts)
   end
 end

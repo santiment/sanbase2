@@ -718,10 +718,17 @@ Changing a priced amount after Stripe exists = `Price.replace/1` + new Stripe Pr
 **Depends on:** A, LC.
 **Does not include:** Institutional / Enterprise Stripe prices — those are **IN** / **EP**.
 
-### SL. Subscribe / add / remove / cancel
-**What:** New mutations for bundles only (`subscribeBundle`, add/remove item, **switch interval**, cancel) using Stripe Subscription Items + proration. Leave `subscribe` / `update_subscription` / `cancel_subscription` (`billing_queries.ex:127/149/162`) untouched, and add the guard from §7.3 #1 so a bundle sub can never reach `upgrade_downgrade/2`. Enforce §7.3 #6 one-active-sub-per-product, and reject mixed-interval carts and mixed-interval add-item before calling Stripe (§5.7).
-**Deliverable:** GraphQL + Stripe API + mocked tests.
+### SL. Subscribe / add / remove / cancel — ✅ done
+**Implemented as:** `Bundle.Lifecycle` + GraphQL `subscribeBundle` / `addBundleItem` / `removeBundleItem` / `switchBundleInterval` / `cancelBundleSubscription`. Stripe multi-item create via Price ids; local `subscription_items` + `Resolver.sync/1` after each mutation. `upgrade_downgrade/2` rejects bundles. Legacy `subscribe` rejects `BUNDLE` markers and enforces `is_private` (team bypass).
+
+**Sale controls:** `Sanbase.Billing.Plan.SaleControls` + admin page `/admin/bundle_offering`. Activate/deactivate **bundle/new plans** (`BUNDLE*`, `INSTITUTIONAL*` via `is_private`) and **Business Pro/Max** (`is_deprecated`). GraphQL `bundleCatalog(interval)` is public when bundle plans are active, or always for Santiment team. Staff can preview/subscribe while bundle plans are deactivated.
+
+**Legacy → Bundle:** create new sub first, then cancel replaceable ladder (`BUSINESS_*`, grandfathered `PRO`/`BASIC`) with Stripe proration. Rejects active `CUSTOM_*` and already-on-bundle.
+
+**Remove item:** marks `subscription_items.cancel_at_period_end` (access kept until period end; WH/finalize later).
+**Deliverable:** ✅ GraphQL + Stripe helpers + offering gate + admin Go Live/Rollback + mocked tests.
 **Depends on:** SC, LC, BA.
+**Does not include:** WH webhook branching; Institutional plan rows (**IN**); purchase UI.
 
 ### WH. Webhook / sync for multi-item
 **What:** Branch `customer.subscription.created|updated|deleted`: bundle → sync all items, **re-resolve and rewrite `bundle_entitlement`**, reset the `ApiCallLimit` record; else → current first-item behavior unchanged. Handle §7.3 #2–#5. Idempotency: item changes fire many `subscription.updated`, and re-resolving must be a pure recompute so repeats are harmless.
@@ -912,7 +919,8 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 | **WH** — quota write | ✅ partial | The `api_call_limits` write is done (§5.10) — resolved numbers stored on the row, refreshed by `Resolver.sync/1`. The Stripe webhook branching it was bundled with is not. |
 | **AM** — available metrics | ✅ done | `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` catalogs from the latest published snapshot. AccessChecker entitlement path clears the last BA raise. Non-bundle plans unchanged. |
 | **SC** — Stripe catalog | ✅ done | `Bundle.Catalog` via `Billing.sync_bundle_catalog_with_stripe/0` (also in `@reboot` `sync_products_with_stripe`). 12 local rows; package Stripe Prices via Price API; `api_calls_500k` amount still TBD. |
-| **SL / UI** | ⬜ not started | Subscribe mutations → purchase UI. |
+| **SL** — subscribe lifecycle | ✅ done | `Bundle.Lifecycle` + GraphQL mutations; SaleControls activate/deactivate; legacy auto-replace; `upgrade_downgrade` guard. |
+| **UI** | ⬜ not started | Three-column pricing / checkout (webapp). |
 | **IN** — Institutional | ⬜ not started | Fixed flagship plan (§1.1 middle column). Specced in §8 **IN**; not a BUNDLE. |
 | **EP** — Enterprise | ⬜ not started | Sales-led custom tier (§1.1 right column). Specced in §8 **EP**; prefer CUSTOM path. |
 
@@ -952,21 +960,20 @@ new environment: `development` came back with only three metrics (`dev_activity`
 package. `PackageSnapshot.materialize/0` still refuses to build and lists the
 categories that *do* exist if a name is ever wrong.
 
-**What a bundle still cannot do:** be bought. There is no Stripe catalog and no
-mutation to subscribe, so items are created locally. Everything from an item to a
-granted metric — and to a counted API call — works end to end. Catalog browsing
-of package combinations works via
-`getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` without a subscription.
+**What a bundle can do now:** be bought (staff preview in `:legacy` mode, or public after Go Live) via `subscribeBundle`, with add/remove/switch/cancel. Catalog browsing still works via `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` without a subscription.
+
+**Still needed for production durability:** **WH** — Stripe webhook branching to re-sync items + entitlement on Stripe-initiated events (mutations already write locally).
 
 ### 13.1 Next
 
-1. **`SL → WH`** — subscribe / add / remove / cancel + webhook branching (quota write already done in §5.10). SC catalog unblocks package checkout once `Billing.sync_products_with_stripe/0` (or `sync_bundle_catalog_with_stripe/0`) has run against Stripe.
-2. **`IN`** (parallel) — Institutional as a fixed standard plan. Does not share the multi-item path.
+1. **`WH`** — webhook branching for multi-item sync + entitlement refresh (quota write already done in §5.10).
+2. **`IN`** (parallel) — Institutional as a fixed standard plan. Does not share the multi-item path; uses offering gate + standard `subscribe`.
 3. **`EP`** — confirm Enterprise = CUSTOM sales path; thin plan/admin work only.
-4. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist.
+4. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist; use `bundleCatalog` + plan flags (`is_private` / `is_deprecated`).
 5. When product prices `api_calls_500k`: set amounts + `Sanbase.Billing.sync_bundle_catalog_with_stripe()` (or wait for `@reboot`) — no code change.
+6. Use `/admin/bundle_offering` to activate bundle plans and/or deactivate Business Pro/Max when ready.
 
-Prices on the mock are **not final** and must not gate SL.
+Prices on the mock are **not final** and must not gate further work.
 
 ### 13.2 Original plan, for reference
 

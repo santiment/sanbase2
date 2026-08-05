@@ -267,15 +267,21 @@ defmodule Sanbase.Billing.Plan do
   per item in the bundle price catalog. Listing them here would show a $0 plan on
   the pricing page and offer `subscribe(plan_id:)` a plan that flow cannot
   correctly create.
+
+  Deprecated plans are never listed. Private plans are listed only when
+  `include_private: true` (Santiment team preview).
   """
-  def product_with_plans do
+  def product_with_plans(opts \\ []) do
+    include_private? = Keyword.get(opts, :include_private, false)
     bundle_pattern = @bundle_prefix <> "%"
 
     query =
       from(p in Product,
         join: pl in __MODULE__,
         on: pl.product_id == p.id,
-        where: not pl.is_ppp and not like(pl.name, ^bundle_pattern),
+        where:
+          not pl.is_deprecated and not pl.is_ppp and not like(pl.name, ^bundle_pattern) and
+            (^include_private? or pl.is_private == false or is_nil(pl.is_private)),
         order_by: [desc: pl.order, asc: pl.id],
         preload: [plans: pl]
       )
@@ -283,6 +289,19 @@ defmodule Sanbase.Billing.Plan do
     product_with_plans = Repo.all(query)
 
     {:ok, product_with_plans}
+  end
+
+  @doc ~s"""
+  Marker `BUNDLE` plan for the given billing interval (`"month"` / `"year"`).
+  """
+  @spec bundle_plan(String.t()) :: %__MODULE__{} | nil
+  def bundle_plan(interval) when interval in ["month", "year"] do
+    Repo.get_by(__MODULE__,
+      name: @bundle_prefix,
+      interval: interval,
+      product_id: Product.product_api()
+    )
+    |> Repo.preload(:product)
   end
 
   @doc """

@@ -32,6 +32,16 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     value(:jp)
   end
 
+  enum :billing_interval do
+    value(:month)
+    value(:year)
+  end
+
+  enum :bundle_price_type do
+    value(:package)
+    value(:api_calls)
+  end
+
   object :product do
     field(:id, :id)
     field(:name, :string)
@@ -46,6 +56,16 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:amount, :integer)
     field(:is_deprecated, :boolean)
     field(:is_private, :boolean)
+  end
+
+  object :bundle_catalog_price do
+    field(:id, :id)
+    field(:sku, non_null(:string))
+    field(:type, non_null(:bundle_price_type))
+    field(:interval, non_null(:billing_interval))
+    field(:amount, :integer)
+    field(:currency, :string)
+    field(:stripe_price_id, :string)
   end
 
   object :public_subscription_plan do

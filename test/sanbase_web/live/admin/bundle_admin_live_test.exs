@@ -227,6 +227,18 @@ defmodule SanbaseWeb.Admin.BundleAdminLiveTest do
     view |> element("button", "Create subscription") |> render_click()
   end
 
+  describe "/admin/bundle_offering" do
+    test "shows activate/deactivate controls for bundle and business plans", %{conn: conn} do
+      {:ok, _view, html} = live(conn, "/admin/bundle_offering")
+
+      assert html =~ "Plan sale controls"
+      assert html =~ "Activate bundle plans"
+      assert html =~ "Deactivate bundle plans"
+      assert html =~ "Activate business plans"
+      assert html =~ "Deactivate business plans"
+    end
+  end
+
   defp categorize_metrics do
     for {package, index} <- Enum.with_index(Package.all()) do
       {:ok, category} = MetricCategory.create(%{name: package.category, display_order: index})

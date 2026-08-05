@@ -144,7 +144,7 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
           join: u in assoc(s, :user),
           where:
             p.product_id == ^@sanapi_product_id and
-              s.status in ["active", "past_due"],
+              s.status in [:active, :past_due],
           select: %{
             id: u.id,
             name: u.name,
@@ -155,7 +155,11 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
       end
 
     Repo.all(query)
-    |> Enum.reject(fn u -> String.ends_with?(u.email, "@santiment.net") end)
+    |> Enum.reject(fn u ->
+      # `email` is nullable. Users without one are dropped later, in
+      # `add_users_to_list/2`.
+      is_binary(u.email) and String.ends_with?(u.email, "@santiment.net")
+    end)
   end
 
   @doc """

@@ -44,6 +44,12 @@ defmodule Sanbase.ApiCallLimit do
     field(:api_calls_responses_size_mb, :map, default: %{})
     field(:remote_ip, :string, default: nil)
 
+    # Only ever set for a bundle. Every other plan's limits are derived from its
+    # name; a bundle's cannot be, because every bundle is named BUNDLE while the
+    # numbers differ per customer. `nil` means "derive from the name", which is
+    # what happens for everyone else.
+    field(:resolved_api_call_limits, :map, default: nil)
+
     belongs_to(:user, User)
   end
 
@@ -57,7 +63,8 @@ defmodule Sanbase.ApiCallLimit do
       :api_calls_limit_plan,
       :api_calls_limit_subscription_status,
       :api_calls,
-      :api_calls_responses_size_mb
+      :api_calls_responses_size_mb,
+      :resolved_api_call_limits
     ])
     |> validate_required([:has_limits, :api_calls_limit_plan])
     |> unique_constraint(:remote_ip, name: :api_call_limits_remote_ip_index)
@@ -68,7 +75,7 @@ defmodule Sanbase.ApiCallLimit do
   def update_user_plan(%User{} = user) do
     %__MODULE__{} = acl = get_by_and_lock(:user, user)
 
-    {plan, subscription_status} = user_to_plan(user)
+    {plan, subscription_status, resolved_api_call_limits} = user_to_plan_state(user)
 
     # Some users have don't have limits regardless of their plan
     # In case the user has limits - check the plan
@@ -83,6 +90,10 @@ defmodule Sanbase.ApiCallLimit do
       |> changeset(%{
         api_calls_limit_plan: plan,
         api_calls_limit_subscription_status: subscription_status,
+        # Always written, including the `nil` that every non-bundle plan resolves
+        # to. Leaving a stale value behind would keep a customer who moved off a
+        # bundle on the bundle's numbers.
+        resolved_api_call_limits: resolved_api_call_limits,
         has_limits: has_limits
       })
 
@@ -220,7 +231,9 @@ defmodule Sanbase.ApiCallLimit do
 
     api_calls = %{month_str => 0, hour_str => 0, minute_str => 0}
     response_sizes = %{month_str => 0, hour_str => 0, minute_str => 0}
-    {subscription_plan, subscription_status} = user_to_plan(user)
+
+    {subscription_plan, subscription_status, resolved_api_call_limits} =
+      user_to_plan_state(user)
 
     has_limits = user_has_limits?(user) and plan_has_limits?(subscription_plan)
 
@@ -229,6 +242,9 @@ defmodule Sanbase.ApiCallLimit do
         user_id: user.id,
         api_calls_limit_plan: subscription_plan,
         api_calls_limit_subscription_status: subscription_status,
+        # A bundle customer's row is created by their first request, so the limits
+        # have to be here from the start - not only on later plan changes.
+        resolved_api_call_limits: resolved_api_call_limits,
         has_limits: has_limits,
         api_calls: api_calls,
         api_calls_responses_size_mb: response_sizes
@@ -387,17 +403,42 @@ defmodule Sanbase.ApiCallLimit do
 
   def subscription_to_plan_name(_sub), do: "sanapi_free"
 
-  defp user_to_plan(%User{} = user) do
+  # Returns the plan name, the subscription status, and - for bundles only - the
+  # resolved call limits to store on the row. One subscription lookup answers all
+  # three.
+  defp user_to_plan_state(%User{} = user) do
     subscription =
       Subscription.current_subscription(user, @product_api_id) ||
         Subscription.current_subscription(user, @product_sanbase_id)
 
     case subscription do
       %Subscription{status: status} = sub ->
-        {subscription_to_plan_name(sub), to_string(status)}
+        {subscription_to_plan_name(sub), to_string(status),
+         subscription_to_resolved_api_call_limits(sub)}
 
       _ ->
-        {"sanapi_free", "active"}
+        {"sanapi_free", "active", nil}
+    end
+  end
+
+  # `nil` for every plan whose limits are derivable from its name, which is every
+  # plan but a bundle.
+  #
+  # A bundle with no entitlement yet also stores `nil` rather than raising here:
+  # this runs on every plan change, and failing it would leave the row with a
+  # stale plan name too. The read path is where a missing entitlement has to be
+  # loud, because that is the request that would otherwise be served wrongly.
+  defp subscription_to_resolved_api_call_limits(%Subscription{} = sub) do
+    plan_name = subscription_to_plan_name(sub)
+
+    with :bundle <- Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan_name),
+         %{} = entitlement <- Subscription.bundle_entitlement(sub) do
+      limits = Sanbase.Billing.Plan.Bundle.Access.api_call_limits(entitlement)
+
+      # String keys, so what is written matches what jsonb reads back.
+      %{"month" => limits.month, "hour" => limits.hour, "minute" => limits.minute}
+    else
+      _ -> nil
     end
   end
 
@@ -496,8 +537,8 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp get_api_calls_maps(%__MODULE__{api_calls_limit_plan: plan} = acl) do
-    api_calls_limits = plan_to_api_call_limits(plan)
+  defp get_api_calls_maps(%__MODULE__{} = acl) do
+    api_calls_limits = acl_to_api_call_limits(acl)
     api_calls_made = get_api_calls_made_map(acl)
 
     api_calls_remaining = %{
@@ -577,14 +618,53 @@ defmodule Sanbase.ApiCallLimit do
            Sanbase.Utils.IP.localhost?(remote_ip))
   end
 
+  @doc ~s"""
+  The call limits that apply to this record.
+
+  For a bundle these were resolved when the subscription synced and stored on the
+  row, because every bundle is named `BUNDLE` while the numbers differ per
+  customer (§5.8). For every other plan the name identifies the numbers, and this
+  falls through to `plan_to_api_call_limits/1` unchanged.
+  """
+  @spec acl_to_api_call_limits(%__MODULE__{}) :: %{
+          month: non_neg_integer(),
+          hour: non_neg_integer(),
+          minute: non_neg_integer()
+        }
+  def acl_to_api_call_limits(%__MODULE__{api_calls_limit_plan: plan} = acl) do
+    case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
+      :bundle -> bundle_api_call_limits(acl)
+      _other -> plan_to_api_call_limits(plan)
+    end
+  end
+
+  # A bundle row with nothing stored means the subscription never synced. Raising
+  # is deliberate: the alternatives are to invent numbers, which either refuses a
+  # paying customer's requests or gives away calls, and both look like working
+  # configurations from the outside.
+  defp bundle_api_call_limits(%__MODULE__{resolved_api_call_limits: limits})
+       when is_map(limits) do
+    %{
+      month: Map.fetch!(limits, "month"),
+      hour: Map.fetch!(limits, "hour"),
+      minute: Map.fetch!(limits, "minute")
+    }
+  end
+
+  defp bundle_api_call_limits(%__MODULE__{api_calls_limit_plan: plan} = acl) do
+    Sanbase.Billing.Plan.Bundle.not_implemented!(
+      {:api_call_limits, :no_resolved_limits_stored, user_id: acl.user_id},
+      plan
+    )
+  end
+
   @doc false
   def plan_to_api_call_limits(plan) do
     case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
       :bundle ->
-        # A bundle's limits cannot be derived from its name - every bundle is
-        # named BUNDLE, while the numbers differ per customer. They are worked out
-        # when the subscription syncs and stored on the api_call_limits row, so
-        # this function is the wrong way to ask. See §5.8.
+        # Reachable only by calling this directly with a bundle plan name. The
+        # numbers are per-customer and live on the api_call_limits row, so the
+        # name alone cannot answer - use acl_to_api_call_limits/1.
         Sanbase.Billing.Plan.Bundle.not_implemented!(
           {:plan_to_api_call_limits, :read_from_api_call_limits_row_instead},
           plan
@@ -612,7 +692,14 @@ defmodule Sanbase.ApiCallLimit do
   def plan_to_response_size_limits(plan) do
     case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
       :bundle ->
-        Sanbase.Billing.Plan.Bundle.not_implemented!(:plan_to_response_size_limits, plan)
+        # Response size is not a thing packages sell (§6.2), so there is nothing
+        # per-customer to resolve and nothing to store. A bundle answers as the
+        # standard tier it is priced against, like everything else that is neither
+        # metric access nor call quota (§5.9).
+        equivalent =
+          "sanapi_" <> String.downcase(Sanbase.Billing.Plan.Bundle.equivalent_standard_plan())
+
+        %{month: Map.fetch!(@response_size_limits_mb_per_month, equivalent)}
 
       :custom ->
         "sanapi_" <> plan_name = plan

@@ -48,6 +48,8 @@ defmodule Sanbase.Billing.Plan.Bundle.Resolver do
   alias Sanbase.Billing.Subscription.Item
   alias Sanbase.Repo
 
+  require Logger
+
   # Flat, not per package. Decided by product: choosing several packages still
   # gives one 100,000-call allowance.
   @base_calls_per_month 100_000
@@ -149,6 +151,37 @@ defmodule Sanbase.Billing.Plan.Bundle.Resolver do
           end
       end
     end)
+    |> case do
+      {:ok, subscription} = result ->
+        refresh_api_call_limits(subscription)
+        result
+
+      error ->
+        error
+    end
+  end
+
+  # The quota path reads the resolved call limits off the api_call_limits row, so
+  # the row has to be rewritten whenever the entitlement changes - otherwise
+  # buying a call add-on would grant the metrics immediately and the calls never.
+  #
+  # After the transaction commits, not inside it: the row's own lock would then be
+  # taken while holding the subscription's, and a rolled-back sync would have
+  # cleared the request cache for a change that never happened.
+  defp refresh_api_call_limits(%Subscription{user_id: user_id}) do
+    case Sanbase.Accounts.User.by_id(user_id) do
+      {:ok, user} ->
+        Sanbase.ApiCallLimit.update_user_plan(user)
+
+      {:error, _reason} ->
+        Logger.error("""
+        Resolved a bundle entitlement for user id #{user_id}, who could not be \
+        loaded to refresh their api_call_limits row. Their call quota is stale \
+        until the next plan change or reconciliation run.
+        """)
+
+        :ok
+    end
   end
 
   # Re-read inside the transaction rather than trusting the struct a caller

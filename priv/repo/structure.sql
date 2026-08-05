@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 9QUBr9SJIJkDRYMP78qmZjUSLPxyRWRCmwgsULP5pHtoWm3xxBbV5N35GkspzpA
+\restrict yK1vdxL3X0JtU4lmw5P8cNJtjINq8i2YYat2g05ZJ1aQkSGCwE3D5hTg0kl6yHK
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -516,7 +516,8 @@ CREATE TABLE public.api_call_limits (
     api_calls jsonb DEFAULT '{}'::jsonb,
     has_limits_no_matter_plan boolean DEFAULT true,
     api_calls_responses_size_mb jsonb DEFAULT '{}'::jsonb,
-    api_calls_limit_subscription_status character varying(255) DEFAULT 'active'::character varying
+    api_calls_limit_subscription_status character varying(255) DEFAULT 'active'::character varying,
+    resolved_api_call_limits jsonb
 );
 
 
@@ -3033,7 +3034,7 @@ CREATE TABLE public.non_crypto_assets (
     metadata jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
+    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY (ARRAY[('stock'::character varying)::text, ('commodity'::character varying)::text, ('index'::character varying)::text, ('forex'::character varying)::text, ('fund'::character varying)::text, ('bond'::character varying)::text, ('other'::character varying)::text])))
 );
 
 
@@ -5247,7 +5248,7 @@ CREATE TABLE public.topic_batches (
     updated_at timestamp without time zone NOT NULL,
     publication_scope character varying(255),
     CONSTRAINT published_topic_batches_require_publication_scope CHECK ((((state)::text <> 'published'::text) OR (publication_scope IS NOT NULL))),
-    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY ((ARRAY['daily_only'::character varying, 'weekly_only'::character varying, 'daily_weekly'::character varying])::text[]))))
+    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY (ARRAY[('daily_only'::character varying)::text, ('weekly_only'::character varying)::text, ('daily_weekly'::character varying)::text]))))
 );
 
 
@@ -12218,7 +12219,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9QUBr9SJIJkDRYMP78qmZjUSLPxyRWRCmwgsULP5pHtoWm3xxBbV5N35GkspzpA
+\unrestrict yK1vdxL3X0JtU4lmw5P8cNJtjINq8i2YYat2g05ZJ1aQkSGCwE3D5hTg0kl6yHK
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12812,3 +12813,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260803142534);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803150000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804140000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260804145231);

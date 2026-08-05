@@ -279,21 +279,54 @@ defmodule Sanbase.Billing.BundleApiAccessTest do
       refute Map.has_key?(get_metric(conn, @packaged_metrics["social"], project.slug), "errors")
     end
 
-    test "raises for a customer who is subject to it", context do
-      # The quota check runs on every API request, and the bundle branch of
-      # plan_to_api_call_limits deliberately refuses: the numbers live on the
-      # api_call_limits row and nothing writes them there yet. So a real paying
-      # bundle customer cannot be served at all until that sync exists (task WH).
-      #
-      # Pinned as a raise rather than left untested, so that implementing the sync
-      # turns this test red and it gets updated to assert the served response.
+    test "serves a customer who is subject to it", context do
+      # The one test that proves a real paying bundle customer can be served. The
+      # quota check runs on every API request and cannot derive a bundle's numbers
+      # from its plan name, so this passes only because the resolved numbers are on
+      # the api_call_limits row.
       %{bundle_plan: plan, project: project} = context
 
       %{conn: conn} = subscribe(plan, ["social"], email: "bundle-customer@example.com")
 
-      assert_raise Bundle.NotImplementedError, fn ->
-        get_metric(conn, @packaged_metrics["social"], project.slug)
-      end
+      result = get_metric(conn, @packaged_metrics["social"], project.slug)
+
+      assert result["data"]["getMetric"]["timeseriesData"] != nil
+      refute Map.has_key?(result, "errors")
+    end
+
+    test "reports the resolved monthly allowance, not a standard tier's", context do
+      %{bundle_plan: plan} = context
+
+      %{user: user} = subscribe(plan, ["social"], email: "bundle-quota@example.com")
+
+      {:ok, %{api_calls_limits: limits}} = Sanbase.ApiCallLimit.usage_and_limits(:user, user)
+
+      # The flat base of §6.3, not sanapi_pro's 600_000.
+      assert limits.month == Sanbase.Billing.Plan.Bundle.Resolver.base_calls_per_month()
+    end
+
+    test "grows the allowance by the add-on a customer bought", context do
+      %{bundle_plan: plan} = context
+
+      %{subscription: subscription, user: user} =
+        subscribe(plan, ["social"], email: "bundle-addon@example.com")
+
+      {:ok, _} =
+        Item.create(%{
+          subscription_id: subscription.id,
+          sku: hd(Bundle.ApiCallAddon.skus()),
+          type: :api_calls,
+          quantity: 2
+        })
+
+      {:ok, _} = Resolver.sync(subscription.id)
+
+      {:ok, %{api_calls_limits: limits}} = Sanbase.ApiCallLimit.usage_and_limits(:user, user)
+
+      {:ok, per_addon} = Bundle.ApiCallAddon.calls_per_month(hd(Bundle.ApiCallAddon.skus()))
+
+      assert limits.month ==
+               Sanbase.Billing.Plan.Bundle.Resolver.base_calls_per_month() + 2 * per_addon
     end
   end
 

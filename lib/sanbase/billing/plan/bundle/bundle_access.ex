@@ -18,6 +18,7 @@ defmodule Sanbase.Billing.Plan.Bundle.Access do
   Failing loudly is the only safe choice.
   """
 
+  alias Sanbase.Billing.Plan.AccessMap
   alias Sanbase.Billing.Plan.Bundle
   alias Sanbase.Billing.Plan.Bundle.Entitlement
 
@@ -29,6 +30,21 @@ defmodule Sanbase.Billing.Plan.Bundle.Access do
     entitlement
     |> require_entitlement!(:plan_has_access?)
     |> Entitlement.allows?(query_or_argument)
+  end
+
+  @doc ~s"""
+  The metrics this entitlement allows, resolved against the same universe custom
+  plans use (`free_metrics` ∪ `restricted_metrics`).
+  """
+  @spec get_available_metrics_for_plan(Entitlement.t() | nil) :: [String.t()]
+  def get_available_metrics_for_plan(entitlement) do
+    entitlement
+    |> require_entitlement!(:get_available_metrics_for_plan)
+    |> then(fn %Entitlement{metric_access: access_map} ->
+      AccessMap.resolve(access_map, fn ->
+        Sanbase.Metric.free_metrics() ++ Sanbase.Metric.restricted_metrics()
+      end)
+    end)
   end
 
   @doc ~s"""

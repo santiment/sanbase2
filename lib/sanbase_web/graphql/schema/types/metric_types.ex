@@ -22,6 +22,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:business_pro)
     value(:business_max)
     value(:custom)
+    value(:bundle)
   end
 
   enum :only_project_channels_spec_enum do

@@ -5,10 +5,9 @@ defmodule Sanbase.Billing.Plan.BundleAccessChecker do
   Mirrors the public surface of `Sanbase.Billing.Plan.CustomAccessChecker` so
   that `Sanbase.Billing.Plan.AccessChecker` can dispatch to either uniformly.
 
-  `plan_has_access?` and the two data-window functions are implemented.
-  `get_available_metrics_for_plan` still raises - see
-  `Sanbase.Billing.Plan.Bundle` for why, and
-  `docs/composable-api-plans-handover.md` task BA for what replaces it.
+  `plan_has_access?`, the two data-window functions, and
+  `get_available_metrics_for_plan` are implemented. Each needs the stored
+  entitlement - the plan name alone cannot answer (§5.8).
 
   ## Why the products are ignored
 
@@ -44,8 +43,30 @@ defmodule Sanbase.Billing.Plan.BundleAccessChecker do
   def plan_has_access?(_query_or_argument, _product_code, _plan_name, nil),
     do: Bundle.missing_entitlement!(:plan_has_access?)
 
-  def get_available_metrics_for_plan(plan_name, _product_code, _restriction_type),
-    do: Bundle.not_implemented!(:get_available_metrics_for_plan, plan_name)
+  @doc ~s"""
+  The metrics a bundle may use.
+
+  Without an entitlement this cannot be answered - every bundle is named
+  `BUNDLE` while the metric set differs per customer. Passing one is the
+  caller's job.
+  """
+  def get_available_metrics_for_plan(
+        plan_name,
+        product_code,
+        restriction_type,
+        entitlement \\ nil
+      )
+
+  def get_available_metrics_for_plan(
+        _plan_name,
+        _product_code,
+        _restriction_type,
+        %Entitlement{} = entitlement
+      ),
+      do: Bundle.Access.get_available_metrics_for_plan(entitlement)
+
+  def get_available_metrics_for_plan(_plan_name, _product_code, _restriction_type, nil),
+    do: Bundle.missing_entitlement!(:get_available_metrics_for_plan)
 
   @doc ~s"""
   How many days of history the bundle can read, or `nil` for no limit.

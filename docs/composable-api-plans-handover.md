@@ -246,7 +246,7 @@ Two supporting pieces:
 ### 5.5 What this design does **not** give you
 
 - **`available_metrics` / `AvailableMetricsLive`** — ✅ `available_metrics.ex` contains **no** plan or subscription reference at all. Genuinely new work (task **AM**).
-- **`getAvailableMetrics(plan:, product:)`** — ✅ the `plan` arg is `enum :plans_enum` (`metric_types.ex:17-25`) with values `free`/`basic`/`pro`/`max`/`business_pro`/`business_max`/`custom` only. A bundle **cannot be expressed** through this API. Needs either a `bundle` enum value or a caller-context variant.
+- **`getAvailableMetrics(plan:, product:)`** — ✅ `plans_enum` includes `bundle`. Catalog browse uses `metricPackages` (required for `BUNDLE`); AccessChecker entitlement path exists for callers that already hold one. Non-bundle plans unchanged.
 - **Purchase UI** — nothing in the backend design covers the pricing page / checkout (task **UI**).
 - **Stripe multi-item lifecycle** — items, proration, webhooks (tasks **SC**, **LC**, **WH**).
 - **Package → metric-set definition** — the actual content of each package (task **PD**).
@@ -579,7 +579,7 @@ This suite is the acceptance criterion for the BC contract in §7.1.
 
 | # | Site | Behavior today | Decision needed |
 |---|------|----------------|-----------------|
-| **C1** | `metric_types.ex:17-25` `enum :plans_enum` | no `bundle` value | Add `bundle`, or add a caller-context variant of `getAvailableMetrics` (task **AM**) |
+| **C1** | `metric_types.ex` `enum :plans_enum` | ✅ `bundle` added; catalog browse requires `metricPackages` | Done in task **AM** |
 | **C2** | `auth_plug.ex:350-362` `effective_plan_name/2` | SANBASE branch keys on `has_custom_restrictions: true` | What does a bundle map to for Sanbase? Do **not** set `has_custom_restrictions: true` on the `BUNDLE` rows — it would route into `fetch_base_plan_for_custom/1` → `Loader.get_plan/2` → 🔴 `FunctionClauseError` |
 | **C3** | `webinar_resolver.ex:9`, `sheets_template_resolver.ex:8`, `report_resolver.ex:17` | plan-name match finds nothing | Do bundle buyers get reports / webinars / sheet templates? |
 | **C4** | `plan.ex:16` `@plans_order` | `Keyword.get` → `nil`; term ordering sorts bundles last | Cosmetic; add an explicit order value |
@@ -676,10 +676,8 @@ One correction to the original description: monthly calls are **not** summed per
 **Deliverable:** struct + resolver + persistence + unit tests with fixtures.
 **Depends on:** A, PD, LC.
 
-### BA. Bundle access path — 🟡 partial
-**Implemented:** `plan_has_access?`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, and `api_call_limits` on `Bundle.Access`. All three access functions take the optional entitlement argument of §5.8, and the entitlement is threaded from the request context through `AccessControl` and `Plan.Restrictions.get/5` (which the metric and signal resolvers use — without it a bundle customer would get a 500 on metric metadata). The shared-access-token path needs nothing: `token.plan` is hardcoded to `"PRO"` (`shared_access_token.ex:108`), so it can never carry a bundle.
-
-**Remaining (1 row in `bundle_entry_points/0`):** `get_available_metrics_for_plan` (task **AM**). The four Sanbase-side limits resolve to PRO now that Q5 is answered (§5.9), and the two quota functions are done — see §5.10.
+### BA. Bundle access path — ✅ done
+**Implemented:** `plan_has_access?`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, `api_call_limits`, and `get_available_metrics_for_plan` on `Bundle.Access`. All access functions take the optional entitlement argument of §5.8, and the entitlement is threaded from the request context through `AccessControl` and `Plan.Restrictions.get/5` (which the metric and signal resolvers use — without it a bundle customer would get a 500 on metric metadata). The shared-access-token path needs nothing: `token.plan` is hardcoded to `"PRO"` (`shared_access_token.ex:108`), so it can never carry a bundle. `bundle_entry_points/0` is empty.
 
 **What:** The new path itself. `Bundle.Access` — six functions mirroring `CustomPlan.Access` (`plan_has_access?`, `get_available_metrics_for_plan`, `api_call_limits`, `historical_data_in_days`, `realtime_data_cut_off_in_days`, plus whatever C2 decides for Sanbase) reading the stored entitlement. Then fill in the `:bundle` clause at **every** site from §7.5 groups A and B, replacing the `"not implemented"` raises from **DP**.
 
@@ -702,8 +700,8 @@ One correction to the original description: monthly calls are **not** summed per
 **Deliverable:** updates in the Stripe event → subscription sync path + tests both ways.
 **Depends on:** LC, EN. **Critical for BC.**
 
-### AM. `available_metrics` by entitlement
-**What:** ✅ `available_metrics.ex` has **no** plan/subscription awareness today, so this is new work. ✅ `getAvailableMetrics`'s `plan` arg is `enum :plans_enum` (`metric_types.ex:17-25`) with no `bundle` value, so a bundle cannot be expressed through it — add the enum value or a caller-context variant (§7.5 C1). Align the LiveView/docs with the category/group filters already shipped.
+### AM. `available_metrics` by entitlement — ✅ done
+**What:** Catalog browse via `getAvailableMetrics(plan: BUNDLE, metricPackages: ["social", ...])` — packages required; resolves from the latest published `PackageSnapshot`. AccessChecker `get_available_metrics_for_plan/4` answers from an entitlement (clears BA). Non-bundle plans unchanged. `plans_enum` includes `bundle` (§7.5 C1).
 **Depends on:** EN, BA.
 
 ### OB. Admin / support visibility
@@ -835,10 +833,11 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 | **PD** — package definition + snapshot | ✅ done | `Bundle.Package` (five packages as category rules), `bundle_package_snapshots` table, `Bundle.PackageSnapshot` with `publish/1` and `pending_changes/0`, dual-membership leak check. Admin diff *screen* not built — `pending_changes/0` is the logic it needs. |
 | **LC** — local multi-item model | ✅ done | `subscription_items`, `bundle_prices` catalog, `BUNDLE` marker plan rows (301 month / 302 year, SanAPI). |
 | **EN** — entitlement resolver | ✅ done | `Bundle.Resolver.resolve/2` (pure) + `sync/1` (persists). All §6.3 rules applied. |
-| **BA** — bundle access path | 🟡 partial | Access, data windows and the call quota all implemented and reaching the entitlement. The four Sanbase-side limits answer as PRO (§5.9). **1** entry point still raises: `get_available_metrics_for_plan` (task **AM**). |
+| **BA** — bundle access path | ✅ done | Access, data windows, call quota, and `get_available_metrics_for_plan` all implemented. `bundle_entry_points/0` is empty. The four Sanbase-side limits answer as PRO (§5.9). |
 | **OB** — admin visibility | ✅ done | Two admin pages, `/admin/bundle_packages` and `/admin/bundle_subscriptions`. |
 | **WH** — quota write | ✅ partial | The `api_call_limits` write is done (§5.10) — resolved numbers stored on the row, refreshed by `Resolver.sync/1`. The Stripe webhook branching it was bundled with is not. |
-| **SC / SL / UI / AM** | ⬜ not started | |
+| **AM** — available metrics | ✅ done | `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` catalogs from the latest published snapshot. AccessChecker entitlement path clears the last BA raise. Non-bundle plans unchanged. |
+| **SC / SL / UI** | ⬜ not started | |
 
 **Admin pages.** `/admin/bundle_packages` shows what each package contains live vs
 published, the pending-changes diff, and publishes snapshots.
@@ -878,15 +877,14 @@ categories that *do* exist if a name is ever wrong.
 
 **What a bundle still cannot do:** be bought. There is no Stripe catalog and no
 mutation to subscribe, so items are created locally. Everything from an item to a
-granted metric — and to a counted API call — works end to end.
+granted metric — and to a counted API call — works end to end. Catalog browsing
+of package combinations works via
+`getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` without a subscription.
 
 ### 13.1 Next
 
-`AM` is the last raising entry point and is independent of everything else: it
-surfaces the entitlement through `getAvailableMetrics`, whose `plan` argument is an
-enum with no bundle value (§7.5 C1). Then `SC → SL → WH` for the purchase
-lifecycle, where `WH` is now only the webhook branching — its quota write landed
-with §5.10.
+`SC → SL → WH` for the purchase lifecycle, where `WH` is now only the webhook
+branching — its quota write landed with §5.10. Then `UI` for self-serve checkout.
 
 ### 13.2 Original plan, for reference
 

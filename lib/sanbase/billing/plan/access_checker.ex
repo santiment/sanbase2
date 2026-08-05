@@ -60,16 +60,30 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     StandardAccessChecker.min_plan(product_code, query_or_argument)
   end
 
-  @spec get_available_metrics_for_plan(plan_name, product_code, Atom.t()) :: list(binary())
-  def get_available_metrics_for_plan(plan_name, product_code, restriction_type \\ :all)
+  @doc ~s"""
+  Metrics available under this plan.
 
-  def get_available_metrics_for_plan(plan_name, product_code, restriction_type) do
+  The last argument is only read by bundle plans - every bundle is named
+  `BUNDLE`, so the entitlement has to be handed in. Standard and custom plans
+  ignore it.
+  """
+  @spec get_available_metrics_for_plan(plan_name, product_code, Atom.t(), entitlement) ::
+          list(binary())
+  def get_available_metrics_for_plan(
+        plan_name,
+        product_code,
+        restriction_type \\ :all,
+        entitlement \\ nil
+      )
+
+  def get_available_metrics_for_plan(plan_name, product_code, restriction_type, entitlement) do
     case Plan.type(plan_name) do
       :bundle ->
         BundleAccessChecker.get_available_metrics_for_plan(
           plan_name,
           product_code,
-          restriction_type
+          restriction_type,
+          entitlement
         )
 
       :custom ->

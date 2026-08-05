@@ -52,6 +52,20 @@ Access and quotas must follow the items on that subscription.
 
 **Existing plans (FREE, BASIC, PRO, …, `CUSTOM_*`) must keep working exactly as today.** This is a hard requirement with its own acceptance criteria — see §7.
 
+### 1.1 Pricing page: three commercial columns
+
+The public "Pricing & Packages" surface (mock; amounts provisional) is **not** packages-only. It has three columns that map to different billing models:
+
+| Column | Product name | Commercial model | Billing model in this epic |
+|--------|--------------|------------------|----------------------------|
+| Left | **API · by data type** | Pick 1..N of 5 data packages (+ optional API-call add-on). Full history, 100k req/mo base, MCP. | **`BUNDLE`** — multi-item entitlement path (tasks PD…SL) |
+| Middle | **Institutional · flagship** | Fixed SKU: Full Sanbase + Full SanAPI + MCP. 3 seats, 50k req/mo, 3-year history. ~$799/mo · ~$9,500/yr. | **`INSTITUTIONAL`** — fixed standard plan (task **IN**) |
+| Right | **Enterprise · custom** | Sales-led: Institutional baseline + full history all pillars + S3 + 300k calls + dedicated AM / DPA. From ~$19,999/yr. | **`CUSTOM_*` / sales** — not self-serve cart (task **EP**) |
+
+**Prices are not final** and must stay changeable (catalog data + Stripe Price replace — §9). Provisional figures from the mock do not block implementation; only the *list of SKUs / plan shapes* does.
+
+⚠️ Do not model Institutional as "a BUNDLE with all five packages." Quota (50k vs 100k) and history (3y vs full) already diverge; seats and Sanbase inclusion are further differences. See task **IN**.
+
 ---
 
 ## 2. Original Notion task (taxonomy + plans)
@@ -685,10 +699,24 @@ One correction to the original description: monthly calls are **not** summed per
 **Deliverable:** `Bundle.Access` + ~20 one-line dispatch clauses + tests per site.
 **Depends on:** EN, DP. **Highest-risk task in the epic.** Acceptance: the §7.6 smoke matrix is green for `BUNDLE` and the **BC** fixture is unchanged.
 
-### SC. Stripe catalog
-**What:** Stripe Product(s) + Prices: base bundle subscription, one price per package, API-call add-on prices — **each in both monthly and yearly form** (§5.7). No history add-on in v1 (§5.7). Sync into the local price catalog with `interval` as a first-class column. Invoice total = sum of items. Set nicknames so customers see "Social Sentiment", not raw price ids.
-**Deliverable:** Stripe objects + catalog rows.
-**Depends on:** A. Deliberately sequenced **after** EN/DN: the catalog is cheap and reversible, entitlement semantics are not.
+### SC. Stripe catalog — ✅ done
+**Implemented as:** `Bundle.Catalog` (`ensure_local_catalog/0`, `sync_with_stripe/0`) exposed as `Sanbase.Billing.sync_bundle_catalog_with_stripe/0` and included in `Sanbase.Billing.sync_products_with_stripe/0` (`@reboot` on stage/prod). Twelve local `bundle_prices` rows (5 packages + `api_calls_500k` × month/year). Packages get provisional amounts from the pricing mock; `api_calls_500k` stays `amount: nil` until product prices it. Sync creates one Stripe Product per SKU (metadata `sanbase_sku`) and recurring Stripe Prices (modern Price API, not legacy Plan), then writes `stripe_price_id`. Idempotent; skips nil-amount and already-linked rows. Seed script calls `ensure_local_catalog/0` (local only).
+
+**Provisional amounts (from pricing page mock; changeable — never hardcode charging logic):**
+
+| SKU | Type | Month | Year |
+|-----|------|------:|-----:|
+| `market` | package | $350 | $3,500 |
+| `social` | package | $700 | $7,000 |
+| `development` | package | $350 | $3,500 |
+| `onchain_core` | package | $400 | $4,000 |
+| `onchain_labels` | package | $400 | $4,000 |
+| `api_calls_500k` | api_calls | ⚠️ TBD | ⚠️ TBD |
+
+Changing a priced amount after Stripe exists = `Price.replace/1` + new Stripe Price + archive old. Setting the add-on amount + re-running sync makes it sellable.
+**Deliverable:** ✅ local catalog + Billing module sync path + mocked tests. Live Stripe objects appear on `@reboot` or remote iex `Billing.sync_bundle_catalog_with_stripe/0`.
+**Depends on:** A, LC.
+**Does not include:** Institutional / Enterprise Stripe prices — those are **IN** / **EP**.
 
 ### SL. Subscribe / add / remove / cancel
 **What:** New mutations for bundles only (`subscribeBundle`, add/remove item, **switch interval**, cancel) using Stripe Subscription Items + proration. Leave `subscribe` / `update_subscription` / `cancel_subscription` (`billing_queries.ex:127/149/162`) untouched, and add the guard from §7.3 #1 so a bundle sub can never reach `upgrade_downgrade/2`. Enforce §7.3 #6 one-active-sub-per-product, and reject mixed-interval carts and mixed-interval add-item before calling Stripe (§5.7).
@@ -708,9 +736,50 @@ One correction to the original description: monthly calls are **not** summed per
 **What:** An admin view showing a customer's **resolved** entitlements — packages, effective metric/query/signal lists, quota, windows, derived plan name, snapshot version. Without it, every support ticket becomes an engineering ticket, and the "derived plan name that isn't in `plans`" concept is invisible to everyone but its author.
 **Depends on:** EN. Small, high value — do not defer it to "later".
 
+### IN. Institutional flagship plan — ⬜ not started
+**What:** The middle pricing-page column — a **fixed** SanAPI (+ Sanbase) plan, **not** assembled from packages (Q10). Distinct from `BUNDLE` and from bespoke `CUSTOM_*`.
+
+**Product shape (provisional prices; changeable):**
+- **Price:** $799 / mo · $9,500 / yr (⚠️ yearly discount looks wrong vs ~2 months free — Q11)
+- **Access:** Full Sanbase + Full SanAPI + MCP
+- **Quota:** 50,000 API requests / month (intentional; lower than a single package — §9)
+- **History:** 3-year window on API data (confirmed intentional while packages get full history — §9)
+- **Seats:** "3 seats" on Sanbase — ⚠️ **Q6** still open; no seats concept exists today
+- **Add-ons:** "Add-ons for full history per pillar" — ⚠️ product detail TBD; packages already include full history in v1, so this may mean something else for Institutional
+
+**Implementation shape (recommended):**
+- New `plans` rows named `INSTITUTIONAL` (month + year), product SanAPI — same two-row pattern as `PRO`. Likely also Sanbase rows if "Full Sanbase" is sold as part of the same SKU vs a coupled Sanbase sub.
+- `Plan.type/1` → `:standard` (or a dedicated `:institutional` atom if we want exhaustiveness separate from PRO) — **not** `:bundle`. No `subscription_items`, no entitlement blob.
+- Access via the **standard** path: metric access = all (or equivalent to union of five packages), `historical_data_in_days: ~1095` (3 years), `realtime_data_cut_off_in_days: 0`, `api_call_limits` month = 50_000.
+- Stripe: one Product + month/year Prices; wire into existing `subscribe` / plan sync — **not** multi-item SC.
+- Exclude from sale coexistence with `BUNDLE` / legacy PRO the same way §7.3 #6 blocks dual SanAPI subs.
+
+**Why not a five-package BUNDLE at $799?** Cheaper to maintain as a fixed plan; Institutional's 3-year history and 50k calls already diverge from "five packages × full history × 100k". Encoding it as packages would fight the product.
+
+**Deliverable:** plan rows + access/quota clauses + Stripe prices + BC fixture still green for FREE/PRO/CUSTOM.
+**Depends on:** DP (dispatch seam already landed). Parallel to SC — does **not** block package checkout.
+**Open before coding seats / history add-ons:** Q6, and the "full history per pillar add-on" wording.
+
+### EP. Enterprise custom tier — ⬜ not started
+**What:** The right pricing-page column — sales-led contracting, **not** self-serve checkout.
+
+**Product shape (provisional):**
+- **Price:** from $19,999 / yr (negotiated; not a fixed catalog SKU for v1 self-serve)
+- **Includes (marketing):** Institutional baseline + full history on every pillar + S3 parquet drops + 300k API calls / month + dedicated account manager + DPA / redistribution / custom contracting
+
+**Implementation shape (recommended):**
+- **Do not** invent a third entitlement system. Reuse / extend the existing **`CUSTOM_*`** plan path (already used for bespoke enterprise API contracts) for access + quota.
+- Commercial extras (S3 drops, DPA, dedicated AM, redistribution rights) are **ops / sales / legal** deliverables — track them, but they are outside the billing access checker.
+- Optional: a public `ENTERPRISE` marker plan (or keep using private `CUSTOM_*` only) for marketing/"Contact us"; if public, it should not be purchasable via self-serve `subscribe` without a sales handoff.
+- Coexistence: same one-active-SanAPI-sub rule; Enterprise replaces Institutional / packages / legacy PRO when sold.
+
+**Deliverable:** decision recorded in §9; if a public plan row is needed, seed + admin docs; CUSTOM path verified for 300k quota + full history; non-goals list for S3/DPA.
+**Depends on:** product confirmation that Enterprise = CUSTOM (or not). Does **not** block SC / SL for packages.
+**Out of scope for EP code:** building an S3 delivery pipeline, contract management, or seat admin — unless product explicitly pulls them into v1.
+
 ### UI. Self-serve purchase surface
-**What:** Pricing page / checkout for arbitrary package combinations + add-ons. Nothing in the original A–J covered this, yet §1 requires it and §12 cannot be met without it.
-**Depends on:** SC, SL. ⚠️ **Confirm ownership** — if this is a frontend-team deliverable, say so explicitly in the epic rather than leaving it unassigned.
+**What:** Pricing page / checkout reflecting the three-column offering (§1.1): composable package builder (left), Institutional CTA (middle), Enterprise contact CTA (right). Package checkout needs SC + SL. Institutional can use existing single-plan subscribe once **IN** lands. Enterprise is contact/sales, not cart.
+**Depends on:** SC, SL for packages; IN for Institutional button; EP only for copy/CTA. ⚠️ **Confirm ownership** — if this is a frontend-team deliverable, say so explicitly in the epic rather than leaving it unassigned.
 
 ### TR. Trial & dunning semantics
 **What:** There is a 14-day trial (`subscription.ex:33`) and `past_due` / `unpaid` statuses. Decide: do bundle subs get trials? Trial × 5 packages? Behavior on dunning — full revoke or degrade to a base package? Also the response-size note in §6.2.
@@ -735,17 +804,19 @@ BC (characterization fixture — cheap, never revisited)
               → EN (entitlement resolver + persistence)   ← unit-testable, zero Stripe
                   → BA (bundle access path + ~20 dispatch clauses)  ← access & quotas work end-to-end
                       → OB (admin visibility)     ← cheap, unblocks support and reviewers
-                      → SC (Stripe catalog)
+                      → SC (Stripe catalog — packages only)
                           → SL (subscribe/add/remove/cancel)
                               → WH (webhooks/sync)
                                   → UI (purchase surface)
                       → AM (available_metrics)    ← parallel after BA
+                      → IN (Institutional fixed plan)  ← parallel to SC; standard path, not BUNDLE
+                      → EP (Enterprise / CUSTOM sales path)  ← mostly product + ops; thin code
   TR, TE continuous
 ```
 
 **First vertical slice that delivers value:** `BC → DP → A → PD → LC → EN → BA`. At the end of it, a bundle subscription seeded by hand grants exactly the right access and quota, the §7.6 smoke matrix is green, the BC fixture is unchanged — and not one Stripe object exists yet.
 
-**Then:** `SC → SL → WH` for the real purchase lifecycle, `UI` for self-serve, `AM`/`OB` for surfacing.
+**Then:** `SC → SL → WH` for the package purchase lifecycle; **IN** in parallel for the Institutional SKU; **EP** for Enterprise sales path; `UI` for the three-column purchase surface.
 
 **Why DP comes before A:** it is the only task whose cost *rises* the longer you wait. Done first, it is a behavior-preserving refactor reviewed against a green fixture. Done later, it is entangled with new bundle logic and no longer independently verifiable.
 
@@ -767,6 +838,9 @@ Now **decided**:
 | **API calls per bundle** | **100,000/month flat, regardless of how many packages.** Explicitly *not* summed per package — "choose several bundles, you get 100k API as default". Extra call packages sold as add-ons (tiers in Notion). So `EN` computes `100_000 + sum(add_ons)` and never reads the package list for quota. | product (Dmitry) |
 | Institutional API calls | **50,000/month.** Lower than a single $350 package — confirmed intentional. | product (Dmitry) |
 | Institutional history | **All data, 3-year history**, while every bundle gets full history. Confirmed intentional; Institutional is therefore *not* simply the top rung on the history dimension. | product (Dmitry) |
+| Institutional plan shape | **Fixed `INSTITUTIONAL` plan**, not a five-package BUNDLE (Q10). Task **IN**. | product assumption + §1.1 |
+| Enterprise plan shape | **Sales-led**; reuse `CUSTOM_*` for access/quota; S3/DPA/AM are ops. Task **EP**. | §1.1 + §8 EP |
+| Pricing page columns | Three offerings: packages / Institutional / Enterprise — see §1.1. | pricing mock |
 | Hour / minute limits for bundles | **Constants, not derived from packages.** With a flat monthly cap there is nothing to sum. Reuse `sanapi_pro` (30k/hour, 600/minute) as burst protection — the 100k/month cap binds first, and that load is already accepted from PRO. ⚠️ Product notified, no objection needed. | §6.2 + this doc |
 | Prices | **Not final, and must stay changeable.** Prices are data (catalog table + Stripe), never hardcoded in Elixir. Note: a Stripe Price is **immutable** — changing an amount means creating a new Price and archiving the old, with both alive while anyone is subscribed. Catalog needs `stripe_price_id` + an active/deprecated flag; `plans.is_deprecated` already models exactly this pattern. | product (Dmitry), §7.3 #2 |
 | The "sixth package" | **It is the 500,000-call add-on, not a data pillar.** The pricing page's "six packages" = 5 data pillars + extra calls. So **PD** defines five packages, and the add-on is already modelled as `subscription_items.type: :api_calls` (§8 **LC**) — no new concept needed. | product (Dmitry) |
@@ -837,7 +911,10 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 | **OB** — admin visibility | ✅ done | Two admin pages, `/admin/bundle_packages` and `/admin/bundle_subscriptions`. |
 | **WH** — quota write | ✅ partial | The `api_call_limits` write is done (§5.10) — resolved numbers stored on the row, refreshed by `Resolver.sync/1`. The Stripe webhook branching it was bundled with is not. |
 | **AM** — available metrics | ✅ done | `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` catalogs from the latest published snapshot. AccessChecker entitlement path clears the last BA raise. Non-bundle plans unchanged. |
-| **SC / SL / UI** | ⬜ not started | |
+| **SC** — Stripe catalog | ✅ done | `Bundle.Catalog` via `Billing.sync_bundle_catalog_with_stripe/0` (also in `@reboot` `sync_products_with_stripe`). 12 local rows; package Stripe Prices via Price API; `api_calls_500k` amount still TBD. |
+| **SL / UI** | ⬜ not started | Subscribe mutations → purchase UI. |
+| **IN** — Institutional | ⬜ not started | Fixed flagship plan (§1.1 middle column). Specced in §8 **IN**; not a BUNDLE. |
+| **EP** — Enterprise | ⬜ not started | Sales-led custom tier (§1.1 right column). Specced in §8 **EP**; prefer CUSTOM path. |
 
 **Admin pages.** `/admin/bundle_packages` shows what each package contains live vs
 published, the pending-changes diff, and publishes snapshots.
@@ -883,8 +960,13 @@ of package combinations works via
 
 ### 13.1 Next
 
-`SC → SL → WH` for the purchase lifecycle, where `WH` is now only the webhook
-branching — its quota write landed with §5.10. Then `UI` for self-serve checkout.
+1. **`SL → WH`** — subscribe / add / remove / cancel + webhook branching (quota write already done in §5.10). SC catalog unblocks package checkout once `Billing.sync_products_with_stripe/0` (or `sync_bundle_catalog_with_stripe/0`) has run against Stripe.
+2. **`IN`** (parallel) — Institutional as a fixed standard plan. Does not share the multi-item path.
+3. **`EP`** — confirm Enterprise = CUSTOM sales path; thin plan/admin work only.
+4. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist.
+5. When product prices `api_calls_500k`: set amounts + `Sanbase.Billing.sync_bundle_catalog_with_stripe()` (or wait for `@reboot`) — no code change.
+
+Prices on the mock are **not final** and must not gate SL.
 
 ### 13.2 Original plan, for reference
 
@@ -999,15 +1081,15 @@ Not blocking any code. It needs an answer before launch, not before development.
 
 **Q10. Institutional is a single fixed plan, not something assembled from packages.**
 
-We read $799/month as one fixed product: everything included, 3-year history, 50,000 calls. We are building it that way, which is simpler and cheaper than treating it as a combination of packages. Say so if it is meant to be composable.
+We read $799/month as one fixed product: everything included, 3-year history, 50,000 calls. We are building it that way (task **IN**), which is simpler and cheaper than treating it as a combination of packages. Say so if it is meant to be composable.
 
-*Assumed answer:* fixed plan.
+*Assumed answer:* fixed plan. Captured in §1.1 and §8 **IN**.
 
 ---
 
 **Q11. Yearly Institutional looks like it is missing its discount.**
 
-Yearly packages give roughly two months free — $350/month becomes $3,500/year. Yearly Institutional is $9,500 against $9,588 for twelve monthly payments, which is about 1%. We think this is a typo on the pricing page rather than a decision.
+Yearly packages give roughly two months free — $350/month becomes $3,500/year. Yearly Institutional is $9,500 against $9,588 for twelve monthly payments, which is about 1%. We think this is a typo on the pricing page rather than a decision. Provisional either way — amounts stay in catalog data.
 
 *Assumed answer:* typo.
 

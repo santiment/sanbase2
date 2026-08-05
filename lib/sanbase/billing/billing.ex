@@ -8,6 +8,7 @@ defmodule Sanbase.Billing do
 
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Plan, Subscription}
+  alias Sanbase.Billing.Plan.Bundle.Catalog
   alias Sanbase.Billing.Subscription.LiquiditySubscription
   alias Sanbase.Billing.Subscription.ProPlus
   alias Sanbase.Accounts.User
@@ -59,22 +60,42 @@ defmodule Sanbase.Billing do
   end
 
   @doc ~s"""
-  Sync the locally defined Products and Plans with stripe.
+  Sync the locally defined Products, Plans, and bundle catalog prices with Stripe.
 
-  This acction assigns a `stripe_id` to every product and plan without which
-  no subscription can succeed.
+  Assigns a `stripe_id` to every product and plan without which no subscription
+  can succeed, and creates missing Stripe Prices for sellable bundle catalog
+  rows (`Bundle.Catalog.sync_with_stripe/0`).
 
   In order to create the Products and Plans locally, the seed
-  `priv/repo/seed_plans_and_products.exs` must be executed.
+  `priv/repo/seed_plans_and_products.exs` must be executed. Bundle catalog rows
+  are ensured by the catalog sync itself.
+
+  Runs on `@reboot` via Quantum — the stage/prod entry point.
+  Idempotent; rows with no amount (e.g. unpriced add-ons) are skipped.
   """
-  @spec sync_products_with_stripe() :: :ok | {:error, %Stripe.Error{}}
+  @spec sync_products_with_stripe() :: :ok | {:error, term()}
   def sync_products_with_stripe() do
     with :ok <- run_sync(list_products(), &Product.maybe_create_product_in_stripe/1),
-         :ok <- run_sync(list_plans(), &Plan.maybe_create_plan_in_stripe/1) do
+         :ok <- run_sync(list_plans(), &Plan.maybe_create_plan_in_stripe/1),
+         :ok <- sync_bundle_catalog_ok() do
       :ok
     else
       {:error, error} -> {:error, error}
     end
+  end
+
+  @doc ~s"""
+  Ensure local bundle catalog rows and create missing Stripe Products/Prices.
+
+  Prefer this (or `sync_products_with_stripe/0`) remotely:
+
+      Sanbase.Billing.sync_bundle_catalog_with_stripe()
+
+  Also invoked from `sync_products_with_stripe/0` on `@reboot`.
+  """
+  @spec sync_bundle_catalog_with_stripe() :: {:ok, list()} | {:error, term()}
+  def sync_bundle_catalog_with_stripe do
+    Catalog.sync_with_stripe()
   end
 
   @doc """
@@ -87,6 +108,13 @@ defmodule Sanbase.Billing do
   end
 
   # Private functions
+
+  defp sync_bundle_catalog_ok do
+    case Catalog.sync_with_stripe() do
+      {:ok, _} -> :ok
+      {:error, _} = error -> error
+    end
+  end
 
   # Return :ok if all function calls over the list return {:ok, _}
   # Return the error otherwise

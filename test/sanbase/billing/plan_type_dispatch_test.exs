@@ -46,12 +46,9 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   @item {:metric, "price_usd"}
 
   # {label, fun} pairs where fun takes (plan_name, product) and reaches exactly
-  # one dispatch site.
+  # one dispatch site. Empty means every site has a real implementation (BA done).
   defp bundle_entry_points do
-    [
-      {:get_available_metrics_for_plan,
-       &AccessChecker.get_available_metrics_for_plan(&1, &2, :all)}
-    ]
+    []
   end
 
   # Entry points that have a real bundle implementation, and so are asserted
@@ -84,6 +81,26 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       for product <- @products do
         assert_raise Bundle.MissingEntitlementError, fn ->
           AccessChecker.plan_has_access?(@item, product, @bundle_plan)
+        end
+      end
+    end
+
+    test "get_available_metrics_for_plan answers from the entitlement it is handed" do
+      entitlement = bundle_entitlement()
+
+      for product <- @products do
+        metrics =
+          AccessChecker.get_available_metrics_for_plan(@bundle_plan, product, :all, entitlement)
+
+        assert "price_usd" in metrics
+        refute "mvrv_usd" in metrics
+      end
+    end
+
+    test "get_available_metrics_for_plan refuses to answer without an entitlement" do
+      for product <- @products do
+        assert_raise Bundle.MissingEntitlementError, fn ->
+          AccessChecker.get_available_metrics_for_plan(@bundle_plan, product, :all)
         end
       end
     end
@@ -370,18 +387,6 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
                branch keyed on Plan.type/1.
                """
       end
-    end
-
-    test "the failure names the site and the plan" do
-      # The point of a dedicated error is diagnosability - a CaseClauseError
-      # several frames from the cause is what this replaces.
-      error =
-        assert_raise Bundle.NotImplementedError, fn ->
-          AccessChecker.get_available_metrics_for_plan(@bundle_plan, "SANAPI", :all)
-        end
-
-      assert error.message =~ "get_available_metrics_for_plan"
-      assert error.message =~ @bundle_plan
     end
 
     test "Plan.Restrictions.get passes the entitlement down to the bundle path" do

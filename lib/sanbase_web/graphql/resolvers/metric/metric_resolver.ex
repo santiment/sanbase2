@@ -11,6 +11,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Metric
+  alias Sanbase.Billing.Plan.Bundle.Package
+  alias Sanbase.Billing.Plan.Bundle.PackageSnapshot
   alias Sanbase.Billing.Plan.Restrictions
   alias Sanbase.Billing.Plan.AccessChecker
   alias SanbaseWeb.Graphql.Resolvers.MetricTransform
@@ -59,37 +61,42 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, Process.get(:__executed_clickhouse_sql_list__, []) |> Enum.reverse()}
   end
 
-  def get_available_metrics(_root, %{plan: plan, product: product} = args, resolution) do
+  def get_available_metrics(_root, %{plan: plan, product: product} = args, resolution)
+      when not is_nil(plan) do
     product_code = product |> Atom.to_string() |> String.upcase()
     plan_name = plan |> to_string() |> String.upcase()
+    packages = Map.get(args, :metric_packages)
 
-    user_metric_access_level = resolution_to_metric_access_level(resolution)
+    cond do
+      plan_name == "BUNDLE" ->
+        available_metrics_for_bundle_packages(packages, args, resolution)
 
-    metrics =
-      AccessChecker.get_available_metrics_for_plan(plan_name, product_code)
-      |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
-      |> maybe_apply_regex_filter(args[:name_regex_filter])
-      |> remove_hidden_metrics()
-      |> maybe_remove_alpha_and_beta_metrics(user_metric_access_level)
-      |> Enum.uniq()
-      |> Enum.sort(:asc)
+      not is_nil(packages) ->
+        {:error, "metricPackages is only valid with plan: BUNDLE"}
 
-    {:ok, metrics}
+      true ->
+        user_metric_access_level = resolution_to_metric_access_level(resolution)
+
+        metrics =
+          AccessChecker.get_available_metrics_for_plan(plan_name, product_code)
+          |> finalize_available_metrics(args, user_metric_access_level)
+
+        {:ok, metrics}
+    end
   end
 
   def get_available_metrics(_root, args, resolution) do
-    user_metric_access_level = resolution_to_metric_access_level(resolution)
+    if Map.get(args, :metric_packages) do
+      {:error, "metricPackages is only valid with plan: BUNDLE"}
+    else
+      user_metric_access_level = resolution_to_metric_access_level(resolution)
 
-    metrics =
-      Metric.available_metrics()
-      |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
-      |> maybe_apply_regex_filter(args[:name_regex_filter])
-      |> remove_hidden_metrics()
-      |> maybe_remove_alpha_and_beta_metrics(user_metric_access_level)
-      |> Enum.uniq()
-      |> Enum.sort(:asc)
+      metrics =
+        Metric.available_metrics()
+        |> finalize_available_metrics(args, user_metric_access_level)
 
-    {:ok, metrics}
+      {:ok, metrics}
+    end
   end
 
   def get_available_metrics_for_selector(_root, args, resolution) do
@@ -804,6 +811,46 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp maybe_apply_regex_filter(metrics, regex) do
     {:ok, regex} = Regex.compile(regex)
     Enum.filter(metrics, fn metric -> Regex.match?(regex, metric) end)
+  end
+
+  defp available_metrics_for_bundle_packages(packages, args, resolution)
+       when is_list(packages) and packages != [] do
+    case Enum.reject(packages, &Package.valid_slug?/1) do
+      [] ->
+        case PackageSnapshot.latest() do
+          nil ->
+            {:error,
+             "No published package snapshot exists yet. Publish one before browsing bundle metrics."}
+
+          snapshot ->
+            user_metric_access_level = resolution_to_metric_access_level(resolution)
+
+            metrics =
+              PackageSnapshot.metrics_for(snapshot, packages)
+              |> finalize_available_metrics(args, user_metric_access_level)
+
+            {:ok, metrics}
+        end
+
+      invalid ->
+        {:error,
+         "Unknown metric package(s): #{Enum.join(invalid, ", ")}. " <>
+           "Known packages: #{Enum.join(Package.slugs(), ", ")}."}
+    end
+  end
+
+  defp available_metrics_for_bundle_packages(_packages, _args, _resolution) do
+    {:error, "metricPackages is required when plan is BUNDLE"}
+  end
+
+  defp finalize_available_metrics(metrics, args, user_metric_access_level) do
+    metrics
+    |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
+    |> maybe_apply_regex_filter(args[:name_regex_filter])
+    |> remove_hidden_metrics()
+    |> maybe_remove_alpha_and_beta_metrics(user_metric_access_level)
+    |> Enum.uniq()
+    |> Enum.sort(:asc)
   end
 
   defp remove_hidden_metrics(metrics) do

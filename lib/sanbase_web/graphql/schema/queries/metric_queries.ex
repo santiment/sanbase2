@@ -28,6 +28,13 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       arg(:has_incomplete_data, :boolean, default_value: nil)
 
       @desc ~s"""
+      Package slugs to preview when `plan` is `BUNDLE` (e.g. `social`, `market`).
+      Required for `BUNDLE`; rejected for every other plan. A bundle's metric set
+      cannot be derived from the plan name alone.
+      """
+      arg(:metric_packages, list_of(non_null(:string)))
+
+      @desc ~s"""
       Accepts PCRE (Perl Compatible Regular Expressions) format
 
       Example: { getAvailableMetrics(nameRegexFilter: "^mean_age_[\\d]+") }

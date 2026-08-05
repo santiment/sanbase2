@@ -99,6 +99,18 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.check_sanr_nft_subscription_eligibility/3)
     end
+
+    @desc ~s"""
+    Sellable bundle catalog prices for an interval. Visible when bundle/new plans
+    are activated (not private), or always for Santiment team members.
+    """
+    field :bundle_catalog, list_of(:bundle_catalog_price) do
+      meta(access: :free)
+
+      arg(:interval, non_null(:billing_interval))
+
+      resolve(&BillingResolver.bundle_catalog/3)
+    end
   end
 
   object :billing_mutations do
@@ -210,6 +222,56 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       middleware(JWTAuth)
 
       resolve(&BillingResolver.create_stripe_setup_intent/3)
+    end
+
+    @desc ~s"""
+    Subscribe to a composable API bundle (one or more packages, optional API-call add-on).
+    """
+    field :subscribe_bundle, :subscription_plan do
+      arg(:packages, non_null(list_of(non_null(:string))))
+      arg(:api_calls_addon, :string)
+      arg(:interval, non_null(:billing_interval))
+      arg(:card_token, :string, default_value: nil)
+      arg(:payment_method_id, :string, default_value: nil)
+      arg(:coupon, :string, default_value: nil)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.subscribe_bundle/3)
+    end
+
+    field :add_bundle_item, :subscription_plan do
+      arg(:subscription_id, non_null(:integer))
+      arg(:sku, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.add_bundle_item/3)
+    end
+
+    field :remove_bundle_item, :subscription_plan do
+      arg(:subscription_id, non_null(:integer))
+      arg(:sku, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.remove_bundle_item/3)
+    end
+
+    field :switch_bundle_interval, :subscription_plan do
+      arg(:subscription_id, non_null(:integer))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.switch_bundle_interval/3)
+    end
+
+    field :cancel_bundle_subscription, :subscription_cancellation do
+      arg(:subscription_id, non_null(:integer))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.cancel_bundle_subscription/3)
     end
   end
 end

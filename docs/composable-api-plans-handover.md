@@ -436,8 +436,58 @@ else in §5.9.
 by comparing plan *name* and status (`expected_plans_bulk/0`), and a bundle whose
 items changed still reports `sanapi_bundle`. The live path is covered —
 `Resolver.sync/1` rewrites the row — but if an entitlement is ever changed without
-going through it, the reconciler will not notice. Worth extending when **WH** lands
-and Stripe becomes a second writer.
+going through it, the reconciler will not notice. Worth extending when **WH**
+(webhook handling for multi-item subscriptions) lands and Stripe becomes a second
+writer.
+
+### 5.11 The lifecycle: buying, changing and leaving a bundle
+
+`Bundle.Lifecycle` is the one door for all of it — subscribe, add an item, remove
+an item, switch billing interval, cancel. Everything it does ends in
+`Resolver.sync/1`, so the entitlement and the quota row are recomputed from the
+items rather than adjusted in place.
+
+| Operation | Stripe | Local | Entitlement |
+|---|---|---|---|
+| `subscribe/2` | creates the subscription with one item per price | inserts the subscription and its items | resolved for the first time |
+| `add_item/3` | adds an item, prorated | claims the row first, then writes the Stripe id onto it | package available at once |
+| `remove_item/3` | **nothing yet** | records `remove_at` on the item | unchanged — the customer paid for this period |
+| `switch_interval/2` | re-prices every item by id, deletes those leaving | moves `plan_id`, refreshes item ids, deletes those leaving | unchanged |
+| `cancel/2` | `cancel_at_period_end` | synced from the response | unchanged until the period ends |
+| `ItemExpiry.run/1` (hourly) | deletes items past `remove_at`, no proration | deletes the rows | package finally goes away |
+
+Four rules hold this together, and each is the answer to a way it went wrong:
+
+* **Removal is a date, not a flag.** `subscription_items.remove_at` holds the
+  moment the item is due to go. A boolean cannot say *which* period end was meant,
+  and a subscription's `current_period_end` jumps forward the instant Stripe
+  renews — so "items whose subscription's period has ended" finds nothing once the
+  renewal is synced, and the item is billed forever.
+* **Stripe item ids are never invented.** An item with no id from Stripe stores
+  `nil`, not a synthetic string. `switch_interval` sends `id` plus `price` for
+  every item it keeps and `deleted: true` for every item it drops, because an
+  entry without an `id` tells Stripe to **add** another item, and items missing
+  from the array are not removed. Losing the real ids once means the next switch
+  bills the customer on both intervals.
+* **Whatever charges, compensates.** Money moves before the local state is
+  written. Any failure after the Stripe subscription is created cancels it with
+  proration and reports; if even that fails, it is a Sentry alert naming the
+  `stripe_id`, because a human then has to refund it. Everything checkable without
+  charging — a published snapshot, sellable prices, a usable coupon, the plan row —
+  is checked first.
+* **Nothing is decided by a read that two requests can both pass.** `add_item`
+  inserts the local row before calling Stripe, so the unique index on
+  `(subscription_id, sku)` settles a race and only the winner creates a Stripe
+  item. Two simultaneous `subscribe` calls both land, and the one with the higher
+  id withdraws itself — lowest id wins, so exactly one survives whichever order
+  they finish in.
+
+⚠️ **`remove_item/3` depends on a scheduled job.** If
+`expire_bundle_subscription_items` stops running, removals never happen: the
+customer keeps the package and keeps paying for it, with nothing in the API
+looking wrong. `cancel_stale_replaced_subscriptions` is the same shape — it is what
+catches a legacy `BUSINESS_PRO` that failed to cancel during a bundle purchase, and
+without it that customer pays for both.
 
 ---
 
@@ -718,10 +768,17 @@ Changing a priced amount after Stripe exists = `Price.replace/1` + new Stripe Pr
 **Depends on:** A, LC.
 **Does not include:** Institutional / Enterprise Stripe prices — those are **IN** / **EP**.
 
-### SL. Subscribe / add / remove / cancel
-**What:** New mutations for bundles only (`subscribeBundle`, add/remove item, **switch interval**, cancel) using Stripe Subscription Items + proration. Leave `subscribe` / `update_subscription` / `cancel_subscription` (`billing_queries.ex:127/149/162`) untouched, and add the guard from §7.3 #1 so a bundle sub can never reach `upgrade_downgrade/2`. Enforce §7.3 #6 one-active-sub-per-product, and reject mixed-interval carts and mixed-interval add-item before calling Stripe (§5.7).
-**Deliverable:** GraphQL + Stripe API + mocked tests.
+### SL. Subscribe / add / remove / cancel — ✅ done
+**Implemented as:** `Bundle.Lifecycle` + GraphQL `subscribeBundle` / `addBundleItem` / `removeBundleItem` / `switchBundleInterval` / `cancelBundleSubscription`. Stripe multi-item create via Price ids; local `subscription_items` + `Resolver.sync/1` after each mutation. `upgrade_downgrade/2` rejects bundles. Legacy `subscribe` rejects `BUNDLE` marker plans only — `is_private` is deliberately not a gate, since `PRO`, `PRO_PLUS`, `MAX` and `FREE` are all `is_private = true` on production and bought through it every day (§15 Q14).
+
+**Sale controls:** `Sanbase.Billing.Plan.SaleControls` + admin page `/admin/bundle_offering`. Activate/deactivate **bundle/new plans** (`BUNDLE*`, `INSTITUTIONAL*` via `is_private`) and **Business Pro/Max** (`is_deprecated`). GraphQL `bundleCatalog(interval)` is public when bundle plans are active, or always for Santiment team. Staff can preview/subscribe while bundle plans are deactivated.
+
+**Legacy → Bundle:** create new sub first, then cancel replaceable ladder (`BUSINESS_*`, grandfathered `PRO`/`BASIC`) with Stripe proration. Rejects active `CUSTOM_*` and already-on-bundle. That cancel never fails the paid purchase, so `cancel_stale_replaced_subscriptions/0` retries it hourly as `cancel_stale_replaced_subscriptions` (§5.11).
+
+**Remove item:** `remove_item/3` only records the deadline in `subscription_items.remove_at`; the package keeps working and keeps being billed until it passes, because the customer paid for that period. `Sanbase.Billing.Plan.Bundle.ItemExpiry` — scheduled hourly as `expire_bundle_subscription_items` in `config/scheduler_config.exs` — then deletes the Stripe item with no proration, deletes the local row and re-resolves the entitlement.
+**Deliverable:** ✅ GraphQL + Stripe helpers + offering gate + admin Go Live/Rollback + mocked tests.
 **Depends on:** SC, LC, BA.
+**Does not include:** WH webhook branching; Institutional plan rows (**IN**); purchase UI.
 
 ### WH. Webhook / sync for multi-item
 **What:** Branch `customer.subscription.created|updated|deleted`: bundle → sync all items, **re-resolve and rewrite `bundle_entitlement`**, reset the `ApiCallLimit` record; else → current first-item behavior unchanged. Handle §7.3 #2–#5. Idempotency: item changes fire many `subscription.updated`, and re-resolving must be a pure recompute so repeats are harmless.
@@ -912,7 +969,8 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 | **WH** — quota write | ✅ partial | The `api_call_limits` write is done (§5.10) — resolved numbers stored on the row, refreshed by `Resolver.sync/1`. The Stripe webhook branching it was bundled with is not. |
 | **AM** — available metrics | ✅ done | `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` catalogs from the latest published snapshot. AccessChecker entitlement path clears the last BA raise. Non-bundle plans unchanged. |
 | **SC** — Stripe catalog | ✅ done | `Bundle.Catalog` via `Billing.sync_bundle_catalog_with_stripe/0` (also in `@reboot` `sync_products_with_stripe`). 12 local rows; package Stripe Prices via Price API; `api_calls_500k` amount still TBD. |
-| **SL / UI** | ⬜ not started | Subscribe mutations → purchase UI. |
+| **SL** — subscribe lifecycle | ✅ done | `Bundle.Lifecycle` + GraphQL mutations; SaleControls activate/deactivate; legacy auto-replace; `upgrade_downgrade` guard. |
+| **UI** | ⬜ not started | Three-column pricing / checkout (webapp). |
 | **IN** — Institutional | ⬜ not started | Fixed flagship plan (§1.1 middle column). Specced in §8 **IN**; not a BUNDLE. |
 | **EP** — Enterprise | ⬜ not started | Sales-led custom tier (§1.1 right column). Specced in §8 **EP**; prefer CUSTOM path. |
 
@@ -952,21 +1010,20 @@ new environment: `development` came back with only three metrics (`dev_activity`
 package. `PackageSnapshot.materialize/0` still refuses to build and lists the
 categories that *do* exist if a name is ever wrong.
 
-**What a bundle still cannot do:** be bought. There is no Stripe catalog and no
-mutation to subscribe, so items are created locally. Everything from an item to a
-granted metric — and to a counted API call — works end to end. Catalog browsing
-of package combinations works via
-`getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` without a subscription.
+**What a bundle can do now:** be bought (staff preview in `:legacy` mode, or public after Go Live) via `subscribeBundle`, with add/remove/switch/cancel. Catalog browsing still works via `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` without a subscription.
+
+**Still needed for production durability:** **WH** — Stripe webhook branching to re-sync items + entitlement on Stripe-initiated events (mutations already write locally).
 
 ### 13.1 Next
 
-1. **`SL → WH`** — subscribe / add / remove / cancel + webhook branching (quota write already done in §5.10). SC catalog unblocks package checkout once `Billing.sync_products_with_stripe/0` (or `sync_bundle_catalog_with_stripe/0`) has run against Stripe.
-2. **`IN`** (parallel) — Institutional as a fixed standard plan. Does not share the multi-item path.
+1. **`WH`** — webhook branching for multi-item sync + entitlement refresh (quota write already done in §5.10).
+2. **`IN`** (parallel) — Institutional as a fixed standard plan. Does not share the multi-item path; uses offering gate + standard `subscribe`.
 3. **`EP`** — confirm Enterprise = CUSTOM sales path; thin plan/admin work only.
-4. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist.
+4. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist; use `bundleCatalog` + plan flags (`is_private` / `is_deprecated`).
 5. When product prices `api_calls_500k`: set amounts + `Sanbase.Billing.sync_bundle_catalog_with_stripe()` (or wait for `@reboot`) — no code change.
+6. Use `/admin/bundle_offering` to activate bundle plans and/or deactivate Business Pro/Max when ready.
 
-Prices on the mock are **not final** and must not gate SL.
+Prices on the mock are **not final** and must not gate further work.
 
 ### 13.2 Original plan, for reference
 
@@ -1029,6 +1086,20 @@ The 500,000 tier is built and working. Adding another tier later is one line of 
 
 ### Needed before launch
 
+~~**Q14. Does the web app hide plans marked `isPrivate`?**~~ ✅ **Answered by reading the frontend, no product call needed.** It does not — it never asks for the field.
+
+The pricing page uses `queryProductsWithPlans` from `san-webkit-next` (pinned at `lib-e24c3dd8-180526`), whose query selects `id name interval amount isDeprecated`. `isPrivate` appears nowhere in `san-webkit` or in `sanbase-app`. Filtering is `!plan.isDeprecated` plus a name allow-list: `{FREE, PRO, MAX}` for Sanbase, `{BUSINESS_PRO, BUSINESS_MAX, CUSTOM}` for SanAPI.
+
+Three consequences, all now built in:
+
+* **`is_deprecated` is the only sale switch.** `SaleControls` moves that and nothing else; writing `is_private` would change production data with no observable effect.
+* **`is_private` must never become a purchase gate.** On production `FREE` on both products and Sanbase `PRO`, `PRO_PLUS` and `MAX` are all `is_private = true` *and sold on the pricing page every day*. The column's comment — "plans that customers can't subscribe on their own" — has never been enforced anywhere, and enforcing it would stop those sales.
+* **`BUNDLE` rows can never appear on the pricing page by flipping any flag.** They are excluded server-side by name and would be dropped client-side by the allow-list anyway. Making the offering visible is frontend work against `bundleCatalog` — a launch dependency, not a configuration change.
+
+Left over, and cosmetic: a bundle subscriber's account page renders the literal `"BUNDLE"`, because `getPlanName` falls back to the raw name for anything outside its display map. Worth a webkit entry before launch.
+
+---
+
 **Q6. Does Institutional's "3 seats" ship in the first version?**
 
 We have no concept of seats today — one subscription belongs to one account. Adding seats is a separate piece of work from packages. If it has to be there at launch, it needs planning now rather than later.
@@ -1037,13 +1108,7 @@ We have no concept of seats today — one subscription belongs to one account. A
 
 ---
 
-**Q7. What happens if a customer removes a package in the middle of a month?**
-
-They have already used some of their calls that month. We need to know whether their access stops straight away or at the end of the period they paid for, and whether anything is refunded.
-
-Our suggestion, unless you prefer otherwise: **adding** a package takes effect immediately, **removing** one takes effect at the end of the paid period. That is the least surprising for the customer and the simplest to get right.
-
-*Answer:* pending
+~~**Q7. What happens if a customer removes a package in the middle of a month?**~~ ✅ **Answered:** adding takes effect immediately, removing takes effect at the end of the paid period, and nothing is refunded — the customer keeps the package for the time they bought. Built: the deadline is recorded on the item and an hourly job carries it out. See §5.11.
 
 ---
 

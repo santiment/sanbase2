@@ -14,6 +14,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     Plan.product_with_plans()
   end
 
+  def bundle_catalog(_root, %{interval: interval}, resolution) do
+    user = current_user(resolution)
+
+    if Sanbase.Billing.Plan.SaleControls.bundle_plans_visible?(user) do
+      prices =
+        interval
+        |> to_string()
+        |> Sanbase.Billing.Plan.Bundle.Price.sellable()
+        # `interval` is a string column, and the field is a GraphQL enum. Absinthe
+        # serializes an enum from its internal value, so handing it the string
+        # raises rather than returning a catalog.
+        |> Enum.map(&%{&1 | interval: interval})
+
+      {:ok, prices}
+    else
+      {:error, "Bundle catalog is not available"}
+    end
+  end
+
   def ppp_settings(_root, _args, _resolution) do
     {:ok, %{is_eligible_for_ppp: false}}
   end
@@ -25,6 +44,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     coupon = Map.get(args, :coupon)
 
     with {_, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
+         :ok <- ensure_standard_subscribe_allowed(plan),
          true <- UserPromoCode.is_coupon_usable(coupon, plan),
          {:ok, subscription} <- route_subscription(current_user, plan, payment_instrument, coupon) do
       # If the coupon exists in the user_promo_codes table, times_redeemed
@@ -40,6 +60,86 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
           "Subscription attempt failed",
           %{plan_id: plan_id}
         )
+    end
+  end
+
+  def subscribe_bundle(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
+    opts = [
+      packages: Map.fetch!(args, :packages),
+      api_calls_addon: Map.get(args, :api_calls_addon),
+      interval: to_string(Map.fetch!(args, :interval)),
+      card_token: Map.get(args, :card_token),
+      payment_method_id: Map.get(args, :payment_method_id),
+      coupon: Map.get(args, :coupon)
+    ]
+
+    case Sanbase.Billing.Plan.Bundle.Lifecycle.subscribe(current_user, opts) do
+      {:ok, subscription} ->
+        if opts[:coupon], do: UserPromoCode.use_coupon(opts[:coupon])
+        {:ok, subscription}
+
+      result ->
+        handle_subscription_error_result(result, "Bundle subscription attempt failed", %{})
+    end
+  end
+
+  def add_bundle_item(_root, %{subscription_id: subscription_id, sku: sku}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case Sanbase.Billing.Plan.Bundle.Lifecycle.add_item(current_user, subscription_id, sku) do
+      {:ok, subscription} ->
+        {:ok, subscription}
+
+      result ->
+        handle_subscription_error_result(result, "Add bundle item failed", %{
+          user_id: current_user.id,
+          subscription_id: subscription_id
+        })
+    end
+  end
+
+  def remove_bundle_item(_root, %{subscription_id: subscription_id, sku: sku}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case Sanbase.Billing.Plan.Bundle.Lifecycle.remove_item(current_user, subscription_id, sku) do
+      {:ok, subscription} ->
+        {:ok, subscription}
+
+      result ->
+        handle_subscription_error_result(result, "Remove bundle item failed", %{
+          user_id: current_user.id,
+          subscription_id: subscription_id
+        })
+    end
+  end
+
+  def switch_bundle_interval(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case Sanbase.Billing.Plan.Bundle.Lifecycle.switch_interval(current_user, subscription_id) do
+      {:ok, subscription} ->
+        {:ok, subscription}
+
+      result ->
+        handle_subscription_error_result(result, "Switch bundle interval failed", %{
+          user_id: current_user.id,
+          subscription_id: subscription_id
+        })
+    end
+  end
+
+  def cancel_bundle_subscription(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case Sanbase.Billing.Plan.Bundle.Lifecycle.cancel(current_user, subscription_id) do
+      {:ok, result} ->
+        {:ok, result}
+
+      result ->
+        handle_subscription_error_result(result, "Cancel bundle subscription failed", %{
+          user_id: current_user.id,
+          subscription_id: subscription_id
+        })
     end
   end
 
@@ -72,6 +172,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
          {_, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
          {_, %Plan{is_deprecated: false} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
+         :ok <- ensure_standard_subscribe_allowed(new_plan),
+         :ok <- ensure_not_bundle_subscription(subscription),
          {:ok, subscription} <- Billing.update_subscription(subscription, new_plan) do
       {:ok, subscription}
     else
@@ -484,9 +586,46 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         log_error(log_message, reason)
         {:error, reason}
 
+      {:error, reason} when is_binary(reason) ->
+        log_error(log_message, reason)
+        {:error, reason}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        # Logged in full, reported generically. Changeset errors name database
+        # fields and validation internals, which is of no use to the caller and
+        # not ours to publish.
+        log_error(log_message, inspect(changeset.errors))
+        {:error, Subscription.generic_error_message()}
+
       {:error, reason} ->
         log_error(log_message, reason)
         {:error, Subscription.generic_error_message()}
+    end
+  end
+
+  defp current_user(%{context: %{auth: %{current_user: user}}}), do: user
+  defp current_user(_), do: nil
+
+  # Only the bundle marker plans are rejected here. `is_private` deliberately is
+  # not enforced: on production the current Sanbase tiers (`PRO`, `PRO_PLUS`,
+  # `MAX`) and `FREE` are all `is_private = true` and are bought through this
+  # mutation every day, whatever the field's name suggests. Turning it into a
+  # gate would stop those purchases.
+  defp ensure_standard_subscribe_allowed(%Plan{} = plan) do
+    if Plan.type(plan.name) == :bundle do
+      {:error, "Bundle plans must be purchased via subscribeBundle"}
+    else
+      :ok
+    end
+  end
+
+  defp ensure_not_bundle_subscription(%Subscription{} = subscription) do
+    subscription = Sanbase.Repo.preload(subscription, :plan)
+
+    if subscription.plan && Plan.type(subscription.plan.name) == :bundle do
+      {:error, "Bundle subscriptions cannot use upgrade/downgrade; use bundle item mutations"}
+    else
+      :ok
     end
   end
 

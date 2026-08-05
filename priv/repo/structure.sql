@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict yK1vdxL3X0JtU4lmw5P8cNJtjINq8i2YYat2g05ZJ1aQkSGCwE3D5hTg0kl6yHK
+\restrict vRvBMnR6yeJFcSDUdBWjzLeQF7FFNGEPxze7qTAgNFZoPss3b43lQy2k6FPwHmJ
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -4895,7 +4895,8 @@ CREATE TABLE public.subscription_items (
     type character varying(255) NOT NULL,
     quantity integer DEFAULT 1 NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    remove_at timestamp(0) without time zone
 );
 
 
@@ -10174,6 +10175,13 @@ CREATE INDEX signals_historical_activity_user_trigger_id_index ON public.signals
 
 
 --
+-- Name: subscription_items_remove_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX subscription_items_remove_at_index ON public.subscription_items USING btree (remove_at);
+
+
+--
 -- Name: subscription_items_stripe_item_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12219,7 +12227,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict yK1vdxL3X0JtU4lmw5P8cNJtjINq8i2YYat2g05ZJ1aQkSGCwE3D5hTg0kl6yHK
+\unrestrict vRvBMnR6yeJFcSDUdBWjzLeQF7FFNGEPxze7qTAgNFZoPss3b43lQy2k6FPwHmJ
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12814,3 +12822,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260803150000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804140000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804145231);
+INSERT INTO public."schema_migrations" (version) VALUES (20260805111145);
+INSERT INTO public."schema_migrations" (version) VALUES (20260805125543);

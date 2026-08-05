@@ -244,6 +244,12 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/bundle_offering" do
+      live_session :bundle_offering_admin, on_mount: @admin_panel_on_mount do
+        live("/", Admin.BundleOfferingLive)
+      end
+    end
+
     scope "/invoices" do
       live_session :invoices_authenticated_user,
         on_mount: @admin_panel_on_mount do

@@ -9,6 +9,8 @@ defmodule Sanbase.Billing do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Plan, Subscription}
   alias Sanbase.Billing.Plan.Bundle.Catalog
+  alias Sanbase.Billing.Plan.Bundle.ItemExpiry
+  alias Sanbase.Billing.Plan.Bundle.Lifecycle
   alias Sanbase.Billing.Subscription.LiquiditySubscription
   alias Sanbase.Billing.Subscription.ProPlus
   alias Sanbase.Accounts.User
@@ -23,6 +25,11 @@ defmodule Sanbase.Billing do
 
   defdelegate sync_stripe_subscriptions, to: Subscription
   defdelegate remove_duplicate_subscriptions, to: Subscription
+
+  # Bundle subscriptions
+  defdelegate expire_bundle_subscription_items, to: ItemExpiry, as: :run
+
+  defdelegate cancel_stale_replaced_subscriptions, to: Lifecycle
 
   # LiquiditySubscription
   defdelegate create_liquidity_subscription(user_id), to: LiquiditySubscription

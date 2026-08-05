@@ -87,6 +87,14 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "*/20 * * * *",
       task: {Sanbase.Billing, :remove_duplicate_subscriptions, []}
     ],
+    expire_bundle_subscription_items: [
+      schedule: "7 * * * *",
+      task: {Sanbase.Billing, :expire_bundle_subscription_items, []}
+    ],
+    cancel_stale_replaced_subscriptions: [
+      schedule: "17 * * * *",
+      task: {Sanbase.Billing, :cancel_stale_replaced_subscriptions, []}
+    ],
     create_free_basic_api: [
       schedule: "*/5 * * * *",
       task: {Sanbase.Billing, :create_free_basic_api, []}

@@ -164,18 +164,13 @@ defmodule Sanbase.StripeApi do
   end
 
   def attach_payment_method_to_customer(user, payment_method_id) do
-    # Step 1: Attach payment method to the customer
-    {:ok, user} = Billing.create_or_update_stripe_customer(user)
-
-    {:ok, pm} =
-      Stripe.PaymentMethod.attach(payment_method_id, %{customer: user.stripe_customer_id})
-
-    # Step 2: Set this payment method as default for the customer
-    update_params = %{
-      invoice_settings: %{default_payment_method: pm.id}
-    }
-
-    with {:ok, _} <- update_customer(user.stripe_customer_id, update_params) do
+    with {:ok, user} <- Billing.create_or_update_stripe_customer(user),
+         {:ok, pm} <-
+           Stripe.PaymentMethod.attach(payment_method_id, %{customer: user.stripe_customer_id}),
+         {:ok, _} <-
+           update_customer(user.stripe_customer_id, %{
+             invoice_settings: %{default_payment_method: pm.id}
+           }) do
       remove_duplicate_payment_methods(pm.id, user.stripe_customer_id)
 
       {:ok, user}
@@ -244,8 +239,17 @@ defmodule Sanbase.StripeApi do
     |> update_subscription(%{cancel_at_period_end: true})
   end
 
-  def cancel_subscription_immediately(stripe_id) do
-    Stripe.Subscription.cancel(stripe_id)
+  def cancel_subscription_immediately(stripe_id, params \\ %{})
+
+  def cancel_subscription_immediately(stripe_id, params) when is_map(params) do
+    Stripe.Subscription.cancel(stripe_id, params)
+  end
+
+  @doc ~s"""
+  Cancel a Stripe subscription immediately and prorate unused time.
+  """
+  def cancel_subscription_with_proration(stripe_id) when is_binary(stripe_id) do
+    cancel_subscription_immediately(stripe_id, %{prorate: true})
   end
 
   def retrieve_subscription(stripe_id) do
@@ -256,9 +260,41 @@ defmodule Sanbase.StripeApi do
     Stripe.Subscription.list(params, kw_list)
   end
 
+  @doc ~s"""
+  Create a multi-item Stripe subscription using Price API ids (`price_…`).
+  """
+  @spec create_bundle_subscription(map()) ::
+          {:ok, Stripe.Subscription.t()} | {:error, Stripe.Error.t()} | {:error, term()}
+  def create_bundle_subscription(%{customer: customer, items: items} = params)
+      when is_binary(customer) and is_list(items) and items != [] do
+    Stripe.Subscription.create(params, expand: ["latest_invoice.payment_intent"])
+  end
+
+  @doc ~s"""
+  Add a Price-based item to an existing Stripe subscription with proration.
+  """
+  def create_subscription_item(subscription_stripe_id, price_id, opts \\ [])
+      when is_binary(subscription_stripe_id) and is_binary(price_id) do
+    params = %{
+      subscription: subscription_stripe_id,
+      price: price_id,
+      quantity: Keyword.get(opts, :quantity, 1),
+      proration_behavior: Keyword.get(opts, :proration_behavior, "create_prorations")
+    }
+
+    Stripe.SubscriptionItem.create(params)
+  end
+
+  def delete_subscription_item(stripe_item_id, opts \\ []) when is_binary(stripe_item_id) do
+    params = %{
+      proration_behavior: Keyword.get(opts, :proration_behavior, "create_prorations")
+    }
+
+    Stripe.SubscriptionItem.delete(stripe_item_id, params)
+  end
+
   def upgrade_downgrade(db_subscription, plan) do
     with {:ok, params} <- get_upgrade_downgrade_subscription_params(db_subscription, plan),
-         # Remove coupon for free basic API subscription
          {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan),
          {:ok, stripe_subscription} <- update_subscription(db_subscription.stripe_id, params) do
       {:ok, stripe_subscription}
@@ -266,9 +302,16 @@ defmodule Sanbase.StripeApi do
   end
 
   def get_upgrade_downgrade_subscription_params(db_subscription, plan) do
-    with {:ok, item_id} <- get_subscription_first_item_id(db_subscription.stripe_id) do
-      params = %{items: [%{id: item_id, plan: plan.stripe_id}]}
-      {:ok, params}
+    db_subscription = Sanbase.Repo.preload(db_subscription, :plan)
+
+    if match?(%Plan{name: name} when is_binary(name), db_subscription.plan) and
+         Plan.type(db_subscription.plan.name) == :bundle do
+      {:error, "Bundle subscriptions cannot use upgrade/downgrade; use bundle item mutations"}
+    else
+      with {:ok, item_id} <- get_subscription_first_item_id(db_subscription.stripe_id) do
+        params = %{items: [%{id: item_id, plan: plan.stripe_id}]}
+        {:ok, params}
+      end
     end
   end
 

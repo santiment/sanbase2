@@ -41,6 +41,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :blockchain_address_transaction_volume_over_time,
           :blockchain_address_user_pair,
           :blockchain_address,
+          :bundle_catalog,
           :chart_configuration,
           :chart_configurations,
           :chat,

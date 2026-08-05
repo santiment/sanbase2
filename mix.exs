@@ -13,6 +13,10 @@ defmodule Sanbase.Mixfile do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      # Withhold hex packages published less than 14 days ago (supply-chain
+      # attack mitigation). Requires Hex >= 2.5.0; older Hex ignores this key.
+      # Versions already in mix.lock are not affected.
+      hex: [cooldown: "14d"],
       # source_url: "https://github.com/santiment/sanbase2/",
       homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown

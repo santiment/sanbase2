@@ -47,11 +47,21 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemExpiry do
       Logger.info("[BundleItemExpiry] #{length(due)} bundle item(s) due for removal.")
     end
 
-    due
-    |> Enum.group_by(& &1.subscription_id)
-    |> Enum.reduce(%{removed: 0, failed: 0}, fn {subscription_id, items}, acc ->
-      merge_counts(acc, expire_subscription_items(subscription_id, items))
-    end)
+    summary =
+      due
+      |> Enum.group_by(& &1.subscription_id)
+      |> Enum.reduce(%{removed: 0, failed: 0}, fn {subscription_id, items}, acc ->
+        merge_counts(acc, expire_subscription_items(subscription_id, items))
+      end)
+
+    if due != [] do
+      Logger.info(
+        "[BundleItemExpiry] Removed #{summary.removed} bundle item(s), " <>
+          "#{summary.failed} failed."
+      )
+    end
+
+    summary
   end
 
   defp expire_subscription_items(subscription_id, items) do

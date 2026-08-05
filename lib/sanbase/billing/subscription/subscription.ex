@@ -874,11 +874,23 @@ defmodule Sanbase.Billing.Subscription do
   def add_payment_intent(result, _), do: result
 
   defp fetch_plan_id(db_subscription, stripe_subscription) do
-    # Legacy single-item subs carry a Stripe Plan id. Bundle items use the Price
-    # API (`price` set, `plan` nil) — keep the local BUNDLE marker plan_id.
+    # Three cases, in order:
+    #   1. Legacy single-item subs report a Stripe Plan id — resolve it locally.
+    #   2. Subs created via the Price API report `price` and no `plan` — the
+    #      legacy plan's id is reachable there, so resolve it the same way.
+    #   3. Nothing resolvable — keep the local plan_id.
+    # Bundle items only ever hit 2/3: their price ids live in `bundle_prices`,
+    # never in `plans.stripe_id`, so the lookup misses and the local BUNDLE
+    # marker plan_id is kept.
     case stripe_subscription.items.data do
       [%{plan: %{id: stripe_plan_id}} | _] when is_binary(stripe_plan_id) ->
         case Plan.by_stripe_id(stripe_plan_id) do
+          %Plan{id: plan_id} -> plan_id
+          nil -> db_subscription.plan_id
+        end
+
+      [%{price: %{id: stripe_price_id}} | _] when is_binary(stripe_price_id) ->
+        case Plan.by_stripe_id(stripe_price_id) do
           %Plan{id: plan_id} -> plan_id
           nil -> db_subscription.plan_id
         end

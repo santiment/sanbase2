@@ -18,8 +18,10 @@ defmodule SanbaseWeb.Admin.BundleAdminLiveTest do
   import Sanbase.Factory
 
   alias Sanbase.Accounts.UserRole
+  alias Sanbase.Billing.Plan
   alias Sanbase.Billing.Plan.Bundle.Package
   alias Sanbase.Billing.Plan.Bundle.PackageSnapshot
+  alias Sanbase.Billing.Plan.SaleControls
   alias Sanbase.Billing.Subscription
   alias Sanbase.Metric.Category.MetricCategory
   alias Sanbase.Metric.Category.MetricCategoryMapping
@@ -229,15 +231,85 @@ defmodule SanbaseWeb.Admin.BundleAdminLiveTest do
 
   describe "/admin/bundle_offering" do
     test "shows activate/deactivate controls for bundle and business plans", %{conn: conn} do
-      {:ok, _view, html} = live(conn, "/admin/bundle_offering")
+      {:ok, view, _html} = live(conn, "/admin/bundle_offering")
 
-      assert html =~ "Plan sale controls"
-      assert html =~ "Activate bundle plans"
-      assert html =~ "Deactivate bundle plans"
-      assert html =~ "Activate business plans"
-      assert html =~ "Deactivate business plans"
+      assert has_element?(view, "#plan-sale-refresh")
+
+      assert has_element?(view, "#bundle-plan-controls")
+      assert has_element?(view, "#activate-bundle-plans")
+      assert has_element?(view, "#deactivate-bundle-plans")
+
+      assert has_element?(view, "#business-plan-controls")
+      assert has_element?(view, "#activate-business-plans")
+      assert has_element?(view, "#deactivate-business-plans")
+    end
+
+    test "the bundle buttons put the plans on and off sale", %{
+      conn: conn,
+      bundle_plan: bundle_plan
+    } do
+      # The starting position of the switch is written directly, because reaching
+      # it through SaleControls would be using the thing under test to set up its
+      # own test.
+      bundle_plan |> Plan.changeset(%{is_private: true}) |> Repo.update!()
+
+      {:ok, view, _html} = live(conn, "/admin/bundle_offering")
+
+      assert bundle_section(view) =~ "DEACTIVATED"
+      refute has_element?(view, "#activate-bundle-plans[disabled]")
+
+      view |> element("#activate-bundle-plans") |> render_click()
+
+      assert bundle_section(view) =~ "ACTIVE"
+      assert SaleControls.bundle_plans_active?()
+
+      # Only the move that changes something is offered, so an admin cannot
+      # activate what is already active.
+      assert has_element?(view, "#activate-bundle-plans[disabled]")
+      refute has_element?(view, "#deactivate-bundle-plans[disabled]")
+
+      view |> element("#deactivate-bundle-plans") |> render_click()
+
+      assert bundle_section(view) =~ "DEACTIVATED"
+      refute SaleControls.bundle_plans_active?()
+      assert has_element?(view, "#deactivate-bundle-plans[disabled]")
+    end
+
+    test "the business buttons withdraw the plans from sale and bring them back",
+         %{conn: conn} do
+      bundle_active_before? = SaleControls.bundle_plans_active?()
+
+      {:ok, view, _html} = live(conn, "/admin/bundle_offering")
+
+      # The seeded BUSINESS_PRO/BUSINESS_MAX rows are not deprecated, so these
+      # plans start on sale.
+      assert business_section(view) =~ "ACTIVE"
+      refute has_element?(view, "#deactivate-business-plans[disabled]")
+
+      view |> element("#deactivate-business-plans") |> render_click()
+
+      assert business_section(view) =~ "DEACTIVATED"
+      refute SaleControls.business_plans_active?()
+      assert has_element?(view, "#deactivate-business-plans[disabled]")
+      refute has_element?(view, "#activate-business-plans[disabled]")
+
+      view |> element("#activate-business-plans") |> render_click()
+
+      assert business_section(view) =~ "ACTIVE"
+      assert SaleControls.business_plans_active?()
+      assert has_element?(view, "#activate-business-plans[disabled]")
+
+      # Two independent switches: the business buttons write `is_deprecated` and
+      # must leave the bundle plans' `is_private` where it was.
+      assert SaleControls.bundle_plans_active?() == bundle_active_before?
     end
   end
+
+  # The status line is the page's own answer about what is on sale, so it is read
+  # back from the rendered section rather than from the database.
+  defp bundle_section(view), do: view |> element("#bundle-plan-controls") |> render()
+
+  defp business_section(view), do: view |> element("#business-plan-controls") |> render()
 
   defp categorize_metrics do
     for {package, index} <- Enum.with_index(Package.all()) do

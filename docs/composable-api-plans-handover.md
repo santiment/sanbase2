@@ -769,13 +769,13 @@ Changing a priced amount after Stripe exists = `Price.replace/1` + new Stripe Pr
 **Does not include:** Institutional / Enterprise Stripe prices — those are **IN** / **EP**.
 
 ### SL. Subscribe / add / remove / cancel — ✅ done
-**Implemented as:** `Bundle.Lifecycle` + GraphQL `subscribeBundle` / `addBundleItem` / `removeBundleItem` / `switchBundleInterval` / `cancelBundleSubscription`. Stripe multi-item create via Price ids; local `subscription_items` + `Resolver.sync/1` after each mutation. `upgrade_downgrade/2` rejects bundles. Legacy `subscribe` rejects `BUNDLE` markers and enforces `is_private` (team bypass).
+**Implemented as:** `Bundle.Lifecycle` + GraphQL `subscribeBundle` / `addBundleItem` / `removeBundleItem` / `switchBundleInterval` / `cancelBundleSubscription`. Stripe multi-item create via Price ids; local `subscription_items` + `Resolver.sync/1` after each mutation. `upgrade_downgrade/2` rejects bundles. Legacy `subscribe` rejects `BUNDLE` marker plans only — `is_private` is deliberately not a gate, since `PRO`, `PRO_PLUS`, `MAX` and `FREE` are all `is_private = true` on production and bought through it every day (§15 Q14).
 
 **Sale controls:** `Sanbase.Billing.Plan.SaleControls` + admin page `/admin/bundle_offering`. Activate/deactivate **bundle/new plans** (`BUNDLE*`, `INSTITUTIONAL*` via `is_private`) and **Business Pro/Max** (`is_deprecated`). GraphQL `bundleCatalog(interval)` is public when bundle plans are active, or always for Santiment team. Staff can preview/subscribe while bundle plans are deactivated.
 
-**Legacy → Bundle:** create new sub first, then cancel replaceable ladder (`BUSINESS_*`, grandfathered `PRO`/`BASIC`) with Stripe proration. Rejects active `CUSTOM_*` and already-on-bundle.
+**Legacy → Bundle:** create new sub first, then cancel replaceable ladder (`BUSINESS_*`, grandfathered `PRO`/`BASIC`) with Stripe proration. Rejects active `CUSTOM_*` and already-on-bundle. That cancel never fails the paid purchase, so `cancel_stale_replaced_subscriptions/0` retries it hourly as `cancel_stale_replaced_subscriptions` (§5.11).
 
-**Remove item:** marks `subscription_items.cancel_at_period_end` (access kept until period end; WH/finalize later).
+**Remove item:** `remove_item/3` only records the deadline in `subscription_items.remove_at`; the package keeps working and keeps being billed until it passes, because the customer paid for that period. `Sanbase.Billing.Plan.Bundle.ItemExpiry` — scheduled hourly as `expire_bundle_subscription_items` in `config/scheduler_config.exs` — then deletes the Stripe item with no proration, deletes the local row and re-resolves the entitlement.
 **Deliverable:** ✅ GraphQL + Stripe helpers + offering gate + admin Go Live/Rollback + mocked tests.
 **Depends on:** SC, LC, BA.
 **Does not include:** WH webhook branching; Institutional plan rows (**IN**); purchase UI.

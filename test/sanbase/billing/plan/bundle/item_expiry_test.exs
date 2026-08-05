@@ -42,7 +42,7 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemExpiryTest do
       |> Repo.update_all(set: [stripe_price_id: "price_#{sku}_#{interval}", amount: 35_000])
     end
 
-    Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9700")
+    Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9702")
 
     plan =
       case Plan.bundle_plan("month") do

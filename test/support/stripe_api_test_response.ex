@@ -250,7 +250,7 @@ defmodule Sanbase.StripeApiTestResponse do
               usage_type: "licensed"
             },
             quantity: 1,
-            subscription: "sub_nonexistingsub"
+            subscription: stripe_id
           }
         ]
       end

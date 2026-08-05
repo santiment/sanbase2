@@ -164,18 +164,13 @@ defmodule Sanbase.StripeApi do
   end
 
   def attach_payment_method_to_customer(user, payment_method_id) do
-    # Step 1: Attach payment method to the customer
-    {:ok, user} = Billing.create_or_update_stripe_customer(user)
-
-    {:ok, pm} =
-      Stripe.PaymentMethod.attach(payment_method_id, %{customer: user.stripe_customer_id})
-
-    # Step 2: Set this payment method as default for the customer
-    update_params = %{
-      invoice_settings: %{default_payment_method: pm.id}
-    }
-
-    with {:ok, _} <- update_customer(user.stripe_customer_id, update_params) do
+    with {:ok, user} <- Billing.create_or_update_stripe_customer(user),
+         {:ok, pm} <-
+           Stripe.PaymentMethod.attach(payment_method_id, %{customer: user.stripe_customer_id}),
+         {:ok, _} <-
+           update_customer(user.stripe_customer_id, %{
+             invoice_settings: %{default_payment_method: pm.id}
+           }) do
       remove_duplicate_payment_methods(pm.id, user.stripe_customer_id)
 
       {:ok, user}
@@ -299,19 +294,10 @@ defmodule Sanbase.StripeApi do
   end
 
   def upgrade_downgrade(db_subscription, plan) do
-    db_subscription = Sanbase.Repo.preload(db_subscription, :plan)
-
-    cond do
-      match?(%Plan{name: name} when is_binary(name), db_subscription.plan) and
-          Plan.type(db_subscription.plan.name) == :bundle ->
-        {:error, "Bundle subscriptions cannot use upgrade/downgrade; use bundle item mutations"}
-
-      true ->
-        with {:ok, params} <- get_upgrade_downgrade_subscription_params(db_subscription, plan),
-             {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan),
-             {:ok, stripe_subscription} <- update_subscription(db_subscription.stripe_id, params) do
-          {:ok, stripe_subscription}
-        end
+    with {:ok, params} <- get_upgrade_downgrade_subscription_params(db_subscription, plan),
+         {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan),
+         {:ok, stripe_subscription} <- update_subscription(db_subscription.stripe_id, params) do
+      {:ok, stripe_subscription}
     end
   end
 

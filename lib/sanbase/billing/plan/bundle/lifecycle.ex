@@ -60,6 +60,16 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
           coupon: String.t() | nil
         ]
 
+  @doc ~s"""
+  Buy a bundle subscription for the given packages on the given interval.
+
+  Everything that can be checked without charging is checked first, and only then
+  is the Stripe subscription created and its first invoice paid. Any failure after
+  that point cancels the Stripe subscription again, because a customer who has
+  paid and is refused every request is worse off than one who was not charged. A
+  legacy SanAPI subscription that the bundle replaces is canceled with proration
+  once the purchase is through.
+  """
   @spec subscribe(User.t(), subscribe_opts()) ::
           {:ok, Subscription.t()} | {:error, term()}
   def subscribe(%User{} = user, opts) do
@@ -88,6 +98,15 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
+  @doc ~s"""
+  Add one package or add-on to a bundle subscription the user owns.
+
+  The item takes effect at once and Stripe charges a proration for the rest of the
+  current period. The local row is written before Stripe is called, so two
+  requests for the same SKU cannot both succeed; if Stripe then refuses, the row
+  is removed again so the customer can retry. Returns the subscription with its
+  entitlement re-resolved.
+  """
   @spec add_item(User.t(), integer(), String.t()) ::
           {:ok, Subscription.t()} | {:error, term()}
   def add_item(%User{} = user, subscription_id, sku) when is_binary(sku) do
@@ -102,6 +121,15 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
+  @doc ~s"""
+  Schedule a package or add-on to be dropped at the end of the paid period.
+
+  Nothing is removed now. The customer paid for the period they are in, so the
+  item keeps working and keeps being billed until it ends; all this records is the
+  deadline, and `Sanbase.Billing.Plan.Bundle.ItemExpiry` is what then deletes the
+  Stripe item and the local row. The last remaining package cannot be removed -
+  cancel the subscription instead.
+  """
   @spec remove_item(User.t(), integer(), String.t()) ::
           {:ok, Subscription.t()} | {:error, term()}
   def remove_item(%User{} = user, subscription_id, sku) when is_binary(sku) do
@@ -117,6 +145,16 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
+  @doc ~s"""
+  Move a bundle subscription to the other billing interval, monthly to yearly or
+  back.
+
+  The items that are staying are re-priced in Stripe on the counterpart interval
+  with prorations, and any item already scheduled for removal is dropped rather
+  than carried over, since there is no period left to honour on a new cycle. The
+  local plan and item ids are updated in one transaction, so the subscription is
+  never left claiming one interval while its items are priced on the other.
+  """
   @spec switch_interval(User.t(), integer()) ::
           {:ok, Subscription.t()} | {:error, term()}
   def switch_interval(%User{} = user, subscription_id) do
@@ -169,12 +207,22 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
       )
     end
 
-    Enum.reduce(stale, %{canceled: 0, failed: 0}, fn sub, acc ->
-      case cancel_replaced_subscription(sub) do
-        :ok -> Map.update!(acc, :canceled, &(&1 + 1))
-        :error -> Map.update!(acc, :failed, &(&1 + 1))
-      end
-    end)
+    summary =
+      Enum.reduce(stale, %{canceled: 0, failed: 0}, fn sub, acc ->
+        case cancel_replaced_subscription(sub) do
+          :ok -> Map.update!(acc, :canceled, &(&1 + 1))
+          :error -> Map.update!(acc, :failed, &(&1 + 1))
+        end
+      end)
+
+    if stale != [] do
+      Logger.info(
+        "[BundleLifecycle] Canceled #{summary.canceled} legacy SanAPI subscription(s), " <>
+          "#{summary.failed} failed."
+      )
+    end
+
+    summary
   end
 
   @doc ~s"""
@@ -611,9 +659,31 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
       {:error, reason} ->
         # Undo the claim, otherwise the customer holds a package Stripe never
         # billed them for and cannot retry adding it.
-        Repo.delete(item)
+        case Repo.delete(item) do
+          {:ok, _} -> :ok
+          {:error, delete_error} -> report_undo_failed(item, reason, delete_error)
+        end
+
         {:error, reason}
     end
+  end
+
+  defp report_undo_failed(%Item{} = item, reason, delete_error) do
+    Logger.error("""
+    [BundleLifecycle] Stripe refused to add #{item.sku} to subscription \
+    #{item.subscription_id} (#{inspect(reason)}) and item #{item.id} could not be \
+    deleted afterwards: #{inspect(delete_error)}. The customer holds a package Stripe \
+    is not billing them for and cannot add it again - delete the row by hand.
+    """)
+
+    Sentry.capture_message("bundle_add_item_rollback_failed",
+      extra: %{
+        item_id: item.id,
+        sku: item.sku,
+        subscription_id: item.subscription_id,
+        reason: inspect(delete_error)
+      }
+    )
   end
 
   defp fetch_item(sub, sku) do
@@ -706,29 +776,66 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     item_id_by_price = stripe_items_by_price(stripe_sub)
     price_id_by_sku = Map.new(new_prices, &{&1.sku, &1.stripe_price_id})
 
-    Repo.transaction(fn ->
-      case Subscription.update_subscription_db(sub, %{plan_id: new_plan.id}) do
-        {:ok, _} -> :ok
-        {:error, reason} -> Repo.rollback(reason)
+    result =
+      try do
+        Repo.transaction(fn ->
+          case Subscription.update_subscription_db(sub, %{plan_id: new_plan.id}) do
+            {:ok, _} -> :ok
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+          Enum.each(leaving, &Repo.delete!/1)
+
+          Enum.each(staying, fn item ->
+            new_item_id = Map.get(item_id_by_price, Map.get(price_id_by_sku, item.sku))
+
+            if is_binary(new_item_id) and new_item_id != item.stripe_item_id do
+              item
+              |> Item.changeset(%{stripe_item_id: new_item_id})
+              |> Repo.update!()
+            end
+          end)
+
+          :ok
+        end)
+      rescue
+        e -> {:error, Exception.message(e)}
       end
 
-      Enum.each(leaving, &Repo.delete!/1)
+    case result do
+      {:ok, :ok} ->
+        :ok
 
-      Enum.each(staying, fn item ->
-        new_item_id = Map.get(item_id_by_price, Map.get(price_id_by_sku, item.sku))
+      {:error, reason} ->
+        # Reported, never undone. Cancelling a paying customer's subscription
+        # because a local write failed does far more damage than the interval
+        # mismatch it would be fixing.
+        report_interval_switch_failed(sub, new_plan, reason)
 
-        if is_binary(new_item_id) and new_item_id != item.stripe_item_id do
-          item
-          |> Item.changeset(%{stripe_item_id: new_item_id})
-          |> Repo.update!()
-        end
-      end)
-
-      :ok
-    end)
-    |> case do
-      {:ok, :ok} -> :ok
-      {:error, reason} -> {:error, reason}
+        # The real cause goes to the log and to Sentry, not to the caller: a
+        # rescued database exception carries its own message, and the resolver
+        # hands any string error straight to the API client.
+        {:error,
+         "The billing interval could not be switched. The change has been reported and " <>
+           "will be corrected - please do not retry."}
     end
+  end
+
+  defp report_interval_switch_failed(sub, new_plan, reason) do
+    Logger.error("""
+    [BundleLifecycle] Bundle subscription #{sub.id} was re-priced in Stripe to the \
+    #{new_plan.interval} interval but the local switch failed: #{inspect(reason)}. \
+    Stripe is now billing the new interval while the local plan and item ids still \
+    say the old one - reconcile it by hand.
+    """)
+
+    Sentry.capture_message("bundle_interval_switch_failed",
+      extra: %{
+        subscription_id: sub.id,
+        stripe_subscription_id: sub.stripe_id,
+        target_interval: new_plan.interval,
+        reason: inspect(reason)
+      }
+    )
   end
 end

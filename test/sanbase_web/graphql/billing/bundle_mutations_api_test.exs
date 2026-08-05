@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.BundleMutationsApiTest do
       |> Repo.update_all(set: [stripe_price_id: "price_#{sku}_#{interval}", amount: 35_000])
     end
 
-    Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9900")
+    Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9903")
 
     for {interval, id} <- [{"month", 9901}, {"year", 9902}] do
       case Plan.bundle_plan(interval) do

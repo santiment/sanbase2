@@ -42,7 +42,7 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
       )
     end
 
-    Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9600")
+    Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9603")
 
     for {interval, id} <- [{"month", 9601}, {"year", 9602}] do
       case Plan.bundle_plan(interval) do
@@ -186,6 +186,29 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
                    coupon: "OLDCODE"
                  )
 
+        assert calls(:create_bundle_subscription) == []
+      end
+    end
+
+    test "reports a refused payment method instead of charging", %{user: user} do
+      # A card Stripe refuses used to blow up as a MatchError inside
+      # attach_payment_method_to_customer, so the caller got a crash instead of
+      # something it could show the customer.
+      declined = %Stripe.Error{
+        source: :stripe,
+        code: :card_declined,
+        message: "Your card was declined."
+      }
+
+      with_mocks stripe_mocks(attach_payment_method_to_customer: {:error, declined}) do
+        assert {:error, ^declined} =
+                 Lifecycle.subscribe(user,
+                   packages: ["market"],
+                   interval: "month",
+                   payment_method_id: "pm_declined"
+                 )
+
+        assert calls(:attach_payment_method_to_customer) == ["pm_declined"]
         assert calls(:create_bundle_subscription) == []
       end
     end
@@ -505,10 +528,16 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
   # request is sent, which is the whole class of bug worth testing here.
   defp stripe_mocks(opts \\ []) do
     item_result = Keyword.get(opts, :create_subscription_item)
+    attach_result = Keyword.get(opts, :attach_payment_method_to_customer)
 
     [
       {StripeApi, [:passthrough],
        [
+         attach_payment_method_to_customer: fn user, payment_method_id ->
+           record(:attach_payment_method_to_customer, payment_method_id)
+
+           attach_result || :meck.passthrough([user, payment_method_id])
+         end,
          create_bundle_subscription: fn params ->
            record(:create_bundle_subscription, params)
            price_ids = Enum.map(params.items, & &1.price)

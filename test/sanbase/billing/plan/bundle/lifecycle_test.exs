@@ -468,6 +468,36 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
     end
   end
 
+  test "cancel_stale_replaced_subscriptions ignores a bundle created by hand in the admin panel",
+       %{user: user} = context do
+    bundle_plan = Plan.bundle_plan("month")
+
+    # No stripe_id: exactly what /admin/bundle_subscriptions inserts. Nothing was
+    # bought, so nothing is being replaced.
+    insert(:subscription_pro,
+      user_id: user.id,
+      plan_id: bundle_plan.id,
+      status: :active,
+      stripe_id: nil
+    )
+
+    legacy =
+      insert(:subscription_pro,
+        user_id: user.id,
+        plan_id: context.plans.plan_business_pro_monthly.id,
+        status: :active,
+        stripe_id: "sub_real_" <> Ecto.UUID.generate()
+      )
+
+    with_mocks stripe_mocks() do
+      assert %{canceled: 0, failed: 0} = Lifecycle.cancel_stale_replaced_subscriptions()
+
+      # The customer's real, paid subscription is untouched.
+      assert Repo.reload!(legacy).status == :active
+      assert calls(:cancel_with_proration) == []
+    end
+  end
+
   # --- helpers ---
 
   # Every mocked call is recorded so a test can assert what Stripe was actually

@@ -4,19 +4,22 @@ defmodule Sanbase.Billing.Plan.SaleControls do
 
   * **Bundle / new plans** (`BUNDLE*`, `INSTITUTIONAL*`) — `is_private` false = active
     (self-serve), true = deactivated (staff can still preview via team role).
-  * **Business plans** (`BUSINESS_PRO`, `BUSINESS_MAX`) — active for sale means
-    `is_deprecated` false *and* `is_private` false; withdrawn sets both true.
-    Existing subscribers keep access either way.
+  * **Business plans** (`BUSINESS_PRO`, `BUSINESS_MAX`) — `is_deprecated` false =
+    active for sale, true = withdrawn from sale. Existing subscribers keep access
+    either way.
 
-  ## Why the Business plans move both flags
+  ## Why the Business plans do not touch `is_private`
 
-  `Sanbase.Billing.Plan.product_with_plans/0` filters those two names on
-  `is_deprecated`, so that is what makes them appear on the pricing page. But
-  both flags are exposed on the GraphQL plan type and a client may well hide
-  anything `isPrivate`, and the Business rows are `is_private = true` on
-  production today. Moving one flag without the other leaves a plan that is for
-  sale by one reading and not by the other, which is exactly the state this
-  module exists to remove.
+  `is_deprecated` is the only one of the two that decides anything. It is what
+  `Sanbase.Billing.Plan.product_with_plans/0` filters those names on, and it is
+  the only field the web app asks for - its plans query selects
+  `id name interval amount isDeprecated`, and `isPrivate` appears nowhere in
+  `san-webkit` or `sanbase-app`. The Business rows are `is_private = true` on
+  production while being sold on the pricing page every day, which is the same
+  point from the other direction: nothing reads it.
+
+  So writing it here would change production data on a button press with no
+  effect anyone can observe.
   """
 
   import Ecto.Query
@@ -142,7 +145,7 @@ defmodule Sanbase.Billing.Plan.SaleControls do
 
     if ids != [] do
       from(p in Plan, where: p.id in ^ids)
-      |> Repo.update_all(set: [is_deprecated: not for_sale?, is_private: not for_sale?])
+      |> Repo.update_all(set: [is_deprecated: not for_sale?])
     end
 
     {:ok, ids}

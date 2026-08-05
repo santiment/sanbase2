@@ -92,6 +92,12 @@ defmodule Sanbase.Billing.UserPromoCode do
         product = Map.get(promo.metadata || %{}, "product")
 
         cond do
+          # The query that lists a user's own codes already filters on `valid`
+          # (`user_promo_codes_base_query/1`), so without this a code hidden from
+          # that list stays redeemable by anyone who kept the string.
+          promo.valid == false ->
+            {:error, "The coupon is no longer valid."}
+
           not is_nil(product) and product != plan.product.code ->
             {:error, "The coupon is not valid for this product."}
 

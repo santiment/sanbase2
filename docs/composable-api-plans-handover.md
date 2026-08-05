@@ -1086,18 +1086,17 @@ The 500,000 tier is built and working. Adding another tier later is one line of 
 
 ### Needed before launch
 
-**Q13. Does the web app hide plans marked `isPrivate`, and are the current Sanbase tiers really meant to be private?**
+~~**Q14. Does the web app hide plans marked `isPrivate`?**~~ ✅ **Answered by reading the frontend, no product call needed.** It does not — it never asks for the field.
 
-On production, `FREE` on both products and Sanbase `PRO`, `PRO_PLUS` and `MAX` all carry `is_private = true`, alongside `BUSINESS_PRO` and `BUSINESS_MAX`. The database column is commented "plans that customers can't subscribe on their own", but people evidently do subscribe to those tiers, so the flag does not mean what it says.
+The pricing page uses `queryProductsWithPlans` from `san-webkit-next` (pinned at `lib-e24c3dd8-180526`), whose query selects `id name interval amount isDeprecated`. `isPrivate` appears nowhere in `san-webkit` or in `sanbase-app`. Filtering is `!plan.isDeprecated` plus a name allow-list: `{FREE, PRO, MAX}` for Sanbase, `{BUSINESS_PRO, BUSINESS_MAX, CUSTOM}` for SanAPI.
 
-Two things hang on the answer:
+Three consequences, all now built in:
 
-* The admin switch that puts Business Pro/Max on sale currently clears both `is_deprecated` and `is_private`, because we cannot tell which one the web app reads. If only one is read, the other write is noise; if the app reads `isPrivate`, then the flag has to move or the button does nothing.
-* Enforcing `is_private` as "cannot be bought self-serve" would immediately stop Sanbase PRO and MAX from being sold. We deliberately did not add that check for exactly this reason.
+* **`is_deprecated` is the only sale switch.** `SaleControls` moves that and nothing else; writing `is_private` would change production data with no observable effect.
+* **`is_private` must never become a purchase gate.** On production `FREE` on both products and Sanbase `PRO`, `PRO_PLUS` and `MAX` are all `is_private = true` *and sold on the pricing page every day*. The column's comment — "plans that customers can't subscribe on their own" — has never been enforced anywhere, and enforcing it would stop those sales.
+* **`BUNDLE` rows can never appear on the pricing page by flipping any flag.** They are excluded server-side by name and would be dropped client-side by the allow-list anyway. Making the offering visible is frontend work against `bundleCatalog` — a launch dependency, not a configuration change.
 
-What we need: does the pricing page filter on `isPrivate`, and should those rows be `is_private = false` instead?
-
-*Answer:* pending
+Left over, and cosmetic: a bundle subscriber's account page renders the literal `"BUNDLE"`, because `getPlanName` falls back to the raw name for anything outside its display map. Worth a webkit entry before launch.
 
 ---
 

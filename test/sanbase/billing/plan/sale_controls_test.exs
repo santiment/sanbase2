@@ -63,20 +63,33 @@ defmodule Sanbase.Billing.Plan.SaleControlsTest do
     assert Repo.reload!(context.bundle).is_private
   end
 
-  test "activate/deactivate business plans moves both flags together", context do
+  test "activate/deactivate business plans toggles is_deprecated and nothing else", context do
+    # Private on production while being sold every day, so the toggle must not
+    # touch it - nothing reads it, and moving it would be an invisible data change.
+    business = context.plans.plan_business_pro_monthly
+    business |> Plan.changeset(%{is_private: true}) |> Repo.update!()
+
     assert {:ok, _} = SaleControls.deactivate_business_plans()
     refute SaleControls.business_plans_active?()
 
-    withdrawn = Repo.reload!(context.plans.plan_business_pro_monthly)
+    withdrawn = Repo.reload!(business)
     assert withdrawn.is_deprecated
     assert withdrawn.is_private
 
     assert {:ok, _} = SaleControls.activate_business_plans()
     assert SaleControls.business_plans_active?()
 
-    for_sale = Repo.reload!(context.plans.plan_business_pro_monthly)
+    for_sale = Repo.reload!(business)
     refute for_sale.is_deprecated
-    refute for_sale.is_private
+    assert for_sale.is_private
+  end
+
+  test "a private business plan is still listed when it is for sale", context do
+    context.plans.plan_business_pro_monthly
+    |> Plan.changeset(%{is_private: true, is_deprecated: false})
+    |> Repo.update!()
+
+    assert "BUSINESS_PRO" in listed_plan_names()
   end
 
   test "bundle_plans_visible? is false for regular users when deactivated" do

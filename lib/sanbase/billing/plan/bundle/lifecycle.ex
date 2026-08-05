@@ -452,6 +452,12 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
+  # `not is_nil(s.stripe_id)` is the whole safety of this job. It exists to finish
+  # a replacement that `subscribe/2` started, and only a real Stripe purchase can
+  # have started one. Bundle rows created by hand in the admin panel have no
+  # Stripe object, and without this condition a test bundle handed to a real
+  # account would cancel that customer's genuine, paid SanAPI subscription an hour
+  # later - with proration, in Stripe, unprompted.
   defp stale_replaced_subscriptions do
     product_api = Product.product_api()
 
@@ -461,6 +467,7 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
         on: s.plan_id == p.id,
         where:
           s.status in ^@active_statuses and p.product_id == ^product_api and
+            not is_nil(s.stripe_id) and
             (like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%")),
         select: s.user_id
       )

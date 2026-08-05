@@ -4,26 +4,46 @@ defmodule Sanbase.Billing.Plan.SaleControls do
 
   * **Bundle / new plans** (`BUNDLE*`, `INSTITUTIONAL*`) — `is_private` false = active
     (self-serve), true = deactivated (staff can still preview via team role).
-  * **Business plans** (`BUSINESS_PRO`, `BUSINESS_MAX`) — `is_deprecated` false = active
-    for sale, true = withdrawn from sale (existing subscribers keep access).
+  * **Business plans** (`BUSINESS_PRO`, `BUSINESS_MAX`) — active for sale means
+    `is_deprecated` false *and* `is_private` false; withdrawn sets both true.
+    Existing subscribers keep access either way.
+
+  ## Why the Business plans move both flags
+
+  `Sanbase.Billing.Plan.product_with_plans/0` filters those two names on
+  `is_deprecated`, so that is what makes them appear on the pricing page. But
+  both flags are exposed on the GraphQL plan type and a client may well hide
+  anything `isPrivate`, and the Business rows are `is_private = true` on
+  production today. Moving one flag without the other leaves a plan that is for
+  sale by one reading and not by the other, which is exactly the state this
+  module exists to remove.
   """
 
   import Ecto.Query
 
   alias Sanbase.Accounts.Role
   alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserRole
   alias Sanbase.Billing.Plan
   alias Sanbase.Billing.Product
   alias Sanbase.Repo
 
-  @business_names ["BUSINESS_PRO", "BUSINESS_MAX"]
-
   @spec business_plan_names() :: [String.t()]
-  def business_plan_names, do: @business_names
+  def business_plan_names, do: Plan.business_plan_names()
 
+  @doc ~s"""
+  Whether the user is a Santiment team member.
+
+  Asked once per request on the bundle catalog and on every subscribe, so it is a
+  single scoped `exists?` rather than reading every row of `user_roles` and
+  searching the result in memory.
+  """
   @spec team_member?(User.t() | nil) :: boolean()
   def team_member?(%User{id: user_id}) when is_integer(user_id) do
-    user_id in Role.san_team_ids()
+    from(ur in UserRole,
+      where: ur.user_id == ^user_id and ur.role_id == ^Role.san_team_role_id()
+    )
+    |> Repo.exists?()
   end
 
   def team_member?(_), do: false
@@ -56,8 +76,8 @@ defmodule Sanbase.Billing.Plan.SaleControls do
     product_api = Product.product_api()
 
     from(p in Plan,
-      where: p.product_id == ^product_api and p.name in ^@business_names,
-      where: p.is_deprecated == false,
+      where: p.product_id == ^product_api and p.name in ^business_plan_names(),
+      where: coalesce(p.is_deprecated, false) == false,
       select: count(p.id)
     )
     |> Repo.one()
@@ -86,10 +106,10 @@ defmodule Sanbase.Billing.Plan.SaleControls do
   def deactivate_bundle_plans, do: set_new_offering_private(true)
 
   @spec activate_business_plans() :: {:ok, [integer()]} | {:error, term()}
-  def activate_business_plans, do: set_business_deprecated(false)
+  def activate_business_plans, do: set_business_for_sale(true)
 
   @spec deactivate_business_plans() :: {:ok, [integer()]} | {:error, term()}
-  def deactivate_business_plans, do: set_business_deprecated(true)
+  def deactivate_business_plans, do: set_business_for_sale(false)
 
   defp set_new_offering_private(private?) do
     product_api = Product.product_api()
@@ -110,19 +130,19 @@ defmodule Sanbase.Billing.Plan.SaleControls do
     {:ok, ids}
   end
 
-  defp set_business_deprecated(deprecated?) do
+  defp set_business_for_sale(for_sale?) do
     product_api = Product.product_api()
 
     ids =
       from(p in Plan,
-        where: p.product_id == ^product_api and p.name in ^@business_names,
+        where: p.product_id == ^product_api and p.name in ^business_plan_names(),
         select: p.id
       )
       |> Repo.all()
 
     if ids != [] do
       from(p in Plan, where: p.id in ^ids)
-      |> Repo.update_all(set: [is_deprecated: deprecated?])
+      |> Repo.update_all(set: [is_deprecated: not for_sale?, is_private: not for_sale?])
     end
 
     {:ok, ids}
@@ -143,7 +163,7 @@ defmodule Sanbase.Billing.Plan.SaleControls do
     product_api = Product.product_api()
 
     from(p in Plan,
-      where: p.product_id == ^product_api and p.name in ^@business_names,
+      where: p.product_id == ^product_api and p.name in ^business_plan_names(),
       order_by: [asc: p.name, asc: p.interval]
     )
     |> Repo.all()

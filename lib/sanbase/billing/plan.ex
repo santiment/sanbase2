@@ -142,6 +142,14 @@ defmodule Sanbase.Billing.Plan do
 
   @bundle_prefix "BUNDLE"
   @custom_prefix "CUSTOM_"
+  @institutional_prefix "INSTITUTIONAL"
+
+  # The two plans whose availability for sale is toggled by
+  # `Sanbase.Billing.Plan.SaleControls`.
+  @business_plan_names ["BUSINESS_PRO", "BUSINESS_MAX"]
+
+  @spec business_plan_names() :: [String.t()]
+  def business_plan_names, do: @business_plan_names
 
   def plan_name(%__MODULE__{} = plan) do
     case plan.name do
@@ -262,26 +270,39 @@ defmodule Sanbase.Billing.Plan do
   @doc """
   List all products with corresponding subscription plans
 
-  `BUNDLE` rows are left out. They are markers that a subscription is a bundle,
-  not tiers anyone can subscribe to - their amount is 0 and the real prices live
-  per item in the bundle price catalog. Listing them here would show a $0 plan on
-  the pricing page and offer `subscribe(plan_id:)` a plan that flow cannot
-  correctly create.
+  `BUNDLE` and `INSTITUTIONAL` rows are left out. They are markers that a
+  subscription belongs to the new offering, not tiers anyone can subscribe to -
+  their amount is 0 and the real prices live per item in the bundle price
+  catalog. Listing them here would show a $0 plan on the pricing page and offer
+  `subscribe(plan_id:)` a plan that flow cannot correctly create. The bundle
+  catalog is served by `bundleCatalog` instead.
 
-  Deprecated plans are never listed. Private plans are listed only when
-  `include_private: true` (Santiment team preview).
+  ## Why `is_deprecated` is only applied to the Business plans
+
+  Withdrawing Business Pro/Max from sale has to remove them from this list, or
+  the admin toggle in `Sanbase.Billing.Plan.SaleControls` would have no visible
+  effect. Every other row is returned exactly as it was before that toggle
+  existed, and that is deliberate: `is_private` and `is_deprecated` are set on
+  plenty of rows that are still expected here. On production `FREE` on both
+  products, and `PRO`, `PRO_PLUS` and `MAX` on Sanbase, are all
+  `is_private = true`, and Sanbase `BASIC` is deprecated - filtering on either
+  field across the board empties most of the pricing page. Both fields are
+  exposed on the GraphQL plan type, so a caller that wants to hide such rows
+  still can.
   """
-  def product_with_plans(opts \\ []) do
-    include_private? = Keyword.get(opts, :include_private, false)
+  def product_with_plans do
     bundle_pattern = @bundle_prefix <> "%"
+    institutional_pattern = @institutional_prefix <> "%"
 
     query =
       from(p in Product,
         join: pl in __MODULE__,
         on: pl.product_id == p.id,
         where:
-          not pl.is_deprecated and not pl.is_ppp and not like(pl.name, ^bundle_pattern) and
-            (^include_private? or pl.is_private == false or is_nil(pl.is_private)),
+          not pl.is_ppp and not like(pl.name, ^bundle_pattern) and
+            not like(pl.name, ^institutional_pattern) and
+            (pl.name not in ^@business_plan_names or
+               coalesce(pl.is_deprecated, false) == false),
         order_by: [desc: pl.order, asc: pl.id],
         preload: [plans: pl]
       )

@@ -10,18 +10,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
   require Logger
 
-  def products_with_plans(_root, _args, resolution) do
-    user = current_user(resolution)
-
-    Plan.product_with_plans(include_private: Sanbase.Billing.Plan.SaleControls.team_member?(user))
+  def products_with_plans(_root, _args, _resolution) do
+    Plan.product_with_plans()
   end
 
   def bundle_catalog(_root, %{interval: interval}, resolution) do
     user = current_user(resolution)
-    interval = to_string(interval)
 
     if Sanbase.Billing.Plan.SaleControls.bundle_plans_visible?(user) do
-      {:ok, Sanbase.Billing.Plan.Bundle.Price.sellable(interval)}
+      prices =
+        interval
+        |> to_string()
+        |> Sanbase.Billing.Plan.Bundle.Price.sellable()
+        # `interval` is a string column, and the field is a GraphQL enum. Absinthe
+        # serializes an enum from its internal value, so handing it the string
+        # raises rather than returning a catalog.
+        |> Enum.map(&%{&1 | interval: interval})
+
+      {:ok, prices}
     else
       {:error, "Bundle catalog is not available"}
     end
@@ -38,7 +44,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     coupon = Map.get(args, :coupon)
 
     with {_, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
-         :ok <- ensure_standard_subscribe_allowed(current_user, plan),
+         :ok <- ensure_standard_subscribe_allowed(plan),
          true <- UserPromoCode.is_coupon_usable(coupon, plan),
          {:ok, subscription} <- route_subscription(current_user, plan, payment_instrument, coupon) do
       # If the coupon exists in the user_promo_codes table, times_redeemed
@@ -166,7 +172,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
          {_, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
          {_, %Plan{is_deprecated: false} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
-         :ok <- ensure_standard_subscribe_allowed(current_user, new_plan),
+         :ok <- ensure_standard_subscribe_allowed(new_plan),
          :ok <- ensure_not_bundle_subscription(subscription),
          {:ok, subscription} <- Billing.update_subscription(subscription, new_plan) do
       {:ok, subscription}
@@ -585,9 +591,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         {:error, reason}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        reason = inspect(changeset.errors)
-        log_error(log_message, reason)
-        {:error, reason}
+        # Logged in full, reported generically. Changeset errors name database
+        # fields and validation internals, which is of no use to the caller and
+        # not ours to publish.
+        log_error(log_message, inspect(changeset.errors))
+        {:error, Subscription.generic_error_message()}
 
       {:error, reason} ->
         log_error(log_message, reason)
@@ -598,16 +606,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   defp current_user(%{context: %{auth: %{current_user: user}}}), do: user
   defp current_user(_), do: nil
 
-  defp ensure_standard_subscribe_allowed(user, %Plan{} = plan) do
-    cond do
-      Plan.type(plan.name) == :bundle ->
-        {:error, "Bundle plans must be purchased via subscribeBundle"}
-
-      plan.is_private == true and not Sanbase.Billing.Plan.SaleControls.team_member?(user) ->
-        {:error, "This plan is not available for self-serve purchase"}
-
-      true ->
-        :ok
+  # Only the bundle marker plans are rejected here. `is_private` deliberately is
+  # not enforced: on production the current Sanbase tiers (`PRO`, `PRO_PLUS`,
+  # `MAX`) and `FREE` are all `is_private = true` and are bought through this
+  # mutation every day, whatever the field's name suggests. Turning it into a
+  # gate would stop those purchases.
+  defp ensure_standard_subscribe_allowed(%Plan{} = plan) do
+    if Plan.type(plan.name) == :bundle do
+      {:error, "Bundle plans must be purchased via subscribeBundle"}
+    else
+      :ok
     end
   end
 

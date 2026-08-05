@@ -9,6 +9,19 @@ defmodule Sanbase.Billing.Subscription.Item do
   Only bundle subscriptions have items. Every legacy subscription has none, which
   is how the two are told apart without asking Stripe.
 
+  ## `remove_at` rather than a cancelled flag
+
+  An item the customer has asked to drop keeps working until the period they have
+  already paid for runs out, so removal is a date, not a state. That date is
+  written when the removal is requested and read by
+  `Sanbase.Billing.Plan.Bundle.ItemExpiry`, which is what finally deletes the
+  Stripe item and the row.
+
+  It has to be stored here rather than derived from the subscription: a
+  subscription's `current_period_end` jumps forward the moment Stripe renews, so
+  "the period end at the time of the request" is not recoverable from the
+  subscription afterwards.
+
   ## SKUs are validated against the definitions, not just the database
 
   `sku` is a plain string column, but a `:package` item must name a real package
@@ -36,7 +49,7 @@ defmodule Sanbase.Billing.Subscription.Item do
           sku: String.t(),
           type: item_type(),
           quantity: pos_integer(),
-          cancel_at_period_end: boolean()
+          remove_at: DateTime.t() | nil
         }
 
   schema "subscription_items" do
@@ -44,14 +57,14 @@ defmodule Sanbase.Billing.Subscription.Item do
     field(:sku, :string)
     field(:type, Ecto.Enum, values: [:package, :api_calls])
     field(:quantity, :integer, default: 1)
-    field(:cancel_at_period_end, :boolean, default: false)
+    field(:remove_at, :utc_datetime)
 
     belongs_to(:subscription, Subscription)
 
     timestamps()
   end
 
-  @fields [:subscription_id, :stripe_item_id, :sku, :type, :quantity, :cancel_at_period_end]
+  @fields [:subscription_id, :stripe_item_id, :sku, :type, :quantity, :remove_at]
 
   @doc false
   def changeset(%__MODULE__{} = item, attrs) do
@@ -69,13 +82,48 @@ defmodule Sanbase.Billing.Subscription.Item do
   end
 
   @doc ~s"""
-  All items on a subscription.
+  All items on a subscription, including any awaiting removal.
   """
   @spec by_subscription(integer()) :: [t()]
   def by_subscription(subscription_id) when is_integer(subscription_id) do
     from(i in __MODULE__, where: i.subscription_id == ^subscription_id, order_by: [asc: i.id])
     |> Repo.all()
   end
+
+  @doc ~s"""
+  The items on a subscription that are not scheduled for removal.
+
+  What the customer is going to have next period, as opposed to what they have
+  now. Use it for decisions about the future - whether a package can still be
+  dropped, or what to carry over to a different billing interval.
+  """
+  @spec staying_on_subscription(integer()) :: [t()]
+  def staying_on_subscription(subscription_id) when is_integer(subscription_id) do
+    from(i in __MODULE__,
+      where: i.subscription_id == ^subscription_id and is_nil(i.remove_at),
+      order_by: [asc: i.id]
+    )
+    |> Repo.all()
+  end
+
+  @doc ~s"""
+  Items whose removal date has passed, oldest deadline first.
+  """
+  @spec due_for_removal(DateTime.t()) :: [t()]
+  def due_for_removal(%DateTime{} = now) do
+    from(i in __MODULE__,
+      where: not is_nil(i.remove_at) and i.remove_at <= ^now,
+      order_by: [asc: i.remove_at, asc: i.id],
+      preload: [:subscription]
+    )
+    |> Repo.all()
+  end
+
+  @doc ~s"""
+  Whether the item is scheduled to be removed.
+  """
+  @spec scheduled_for_removal?(t()) :: boolean()
+  def scheduled_for_removal?(%__MODULE__{remove_at: remove_at}), do: not is_nil(remove_at)
 
   @doc ~s"""
   Create an item.

@@ -436,8 +436,58 @@ else in §5.9.
 by comparing plan *name* and status (`expected_plans_bulk/0`), and a bundle whose
 items changed still reports `sanapi_bundle`. The live path is covered —
 `Resolver.sync/1` rewrites the row — but if an entitlement is ever changed without
-going through it, the reconciler will not notice. Worth extending when **WH** lands
-and Stripe becomes a second writer.
+going through it, the reconciler will not notice. Worth extending when **WH**
+(webhook handling for multi-item subscriptions) lands and Stripe becomes a second
+writer.
+
+### 5.11 The lifecycle: buying, changing and leaving a bundle
+
+`Bundle.Lifecycle` is the one door for all of it — subscribe, add an item, remove
+an item, switch billing interval, cancel. Everything it does ends in
+`Resolver.sync/1`, so the entitlement and the quota row are recomputed from the
+items rather than adjusted in place.
+
+| Operation | Stripe | Local | Entitlement |
+|---|---|---|---|
+| `subscribe/2` | creates the subscription with one item per price | inserts the subscription and its items | resolved for the first time |
+| `add_item/3` | adds an item, prorated | claims the row first, then writes the Stripe id onto it | package available at once |
+| `remove_item/3` | **nothing yet** | records `remove_at` on the item | unchanged — the customer paid for this period |
+| `switch_interval/2` | re-prices every item by id, deletes those leaving | moves `plan_id`, refreshes item ids, deletes those leaving | unchanged |
+| `cancel/2` | `cancel_at_period_end` | synced from the response | unchanged until the period ends |
+| `ItemExpiry.run/1` (hourly) | deletes items past `remove_at`, no proration | deletes the rows | package finally goes away |
+
+Four rules hold this together, and each is the answer to a way it went wrong:
+
+* **Removal is a date, not a flag.** `subscription_items.remove_at` holds the
+  moment the item is due to go. A boolean cannot say *which* period end was meant,
+  and a subscription's `current_period_end` jumps forward the instant Stripe
+  renews — so "items whose subscription's period has ended" finds nothing once the
+  renewal is synced, and the item is billed forever.
+* **Stripe item ids are never invented.** An item with no id from Stripe stores
+  `nil`, not a synthetic string. `switch_interval` sends `id` plus `price` for
+  every item it keeps and `deleted: true` for every item it drops, because an
+  entry without an `id` tells Stripe to **add** another item, and items missing
+  from the array are not removed. Losing the real ids once means the next switch
+  bills the customer on both intervals.
+* **Whatever charges, compensates.** Money moves before the local state is
+  written. Any failure after the Stripe subscription is created cancels it with
+  proration and reports; if even that fails, it is a Sentry alert naming the
+  `stripe_id`, because a human then has to refund it. Everything checkable without
+  charging — a published snapshot, sellable prices, a usable coupon, the plan row —
+  is checked first.
+* **Nothing is decided by a read that two requests can both pass.** `add_item`
+  inserts the local row before calling Stripe, so the unique index on
+  `(subscription_id, sku)` settles a race and only the winner creates a Stripe
+  item. Two simultaneous `subscribe` calls both land, and the one with the higher
+  id withdraws itself — lowest id wins, so exactly one survives whichever order
+  they finish in.
+
+⚠️ **`remove_item/3` depends on a scheduled job.** If
+`expire_bundle_subscription_items` stops running, removals never happen: the
+customer keeps the package and keeps paying for it, with nothing in the API
+looking wrong. `cancel_stale_replaced_subscriptions` is the same shape — it is what
+catches a legacy `BUSINESS_PRO` that failed to cancel during a bundle purchase, and
+without it that customer pays for both.
 
 ---
 
@@ -1036,6 +1086,21 @@ The 500,000 tier is built and working. Adding another tier later is one line of 
 
 ### Needed before launch
 
+**Q13. Does the web app hide plans marked `isPrivate`, and are the current Sanbase tiers really meant to be private?**
+
+On production, `FREE` on both products and Sanbase `PRO`, `PRO_PLUS` and `MAX` all carry `is_private = true`, alongside `BUSINESS_PRO` and `BUSINESS_MAX`. The database column is commented "plans that customers can't subscribe on their own", but people evidently do subscribe to those tiers, so the flag does not mean what it says.
+
+Two things hang on the answer:
+
+* The admin switch that puts Business Pro/Max on sale currently clears both `is_deprecated` and `is_private`, because we cannot tell which one the web app reads. If only one is read, the other write is noise; if the app reads `isPrivate`, then the flag has to move or the button does nothing.
+* Enforcing `is_private` as "cannot be bought self-serve" would immediately stop Sanbase PRO and MAX from being sold. We deliberately did not add that check for exactly this reason.
+
+What we need: does the pricing page filter on `isPrivate`, and should those rows be `is_private = false` instead?
+
+*Answer:* pending
+
+---
+
 **Q6. Does Institutional's "3 seats" ship in the first version?**
 
 We have no concept of seats today — one subscription belongs to one account. Adding seats is a separate piece of work from packages. If it has to be there at launch, it needs planning now rather than later.
@@ -1044,13 +1109,7 @@ We have no concept of seats today — one subscription belongs to one account. A
 
 ---
 
-**Q7. What happens if a customer removes a package in the middle of a month?**
-
-They have already used some of their calls that month. We need to know whether their access stops straight away or at the end of the period they paid for, and whether anything is refunded.
-
-Our suggestion, unless you prefer otherwise: **adding** a package takes effect immediately, **removing** one takes effect at the end of the paid period. That is the least surprising for the customer and the simplest to get right.
-
-*Answer:* pending
+~~**Q7. What happens if a customer removes a package in the middle of a month?**~~ ✅ **Answered:** adding takes effect immediately, removing takes effect at the end of the paid period, and nothing is refunded — the customer keeps the package for the time they bought. Built: the deadline is recorded on the item and an hourly job carries it out. See §5.11.
 
 ---
 

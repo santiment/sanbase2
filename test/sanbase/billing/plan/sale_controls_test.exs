@@ -63,14 +63,20 @@ defmodule Sanbase.Billing.Plan.SaleControlsTest do
     assert Repo.reload!(context.bundle).is_private
   end
 
-  test "activate/deactivate business plans toggles is_deprecated", context do
+  test "activate/deactivate business plans moves both flags together", context do
     assert {:ok, _} = SaleControls.deactivate_business_plans()
     refute SaleControls.business_plans_active?()
-    assert Repo.reload!(context.plans.plan_business_pro_monthly).is_deprecated
+
+    withdrawn = Repo.reload!(context.plans.plan_business_pro_monthly)
+    assert withdrawn.is_deprecated
+    assert withdrawn.is_private
 
     assert {:ok, _} = SaleControls.activate_business_plans()
     assert SaleControls.business_plans_active?()
-    refute Repo.reload!(context.plans.plan_business_pro_monthly).is_deprecated
+
+    for_sale = Repo.reload!(context.plans.plan_business_pro_monthly)
+    refute for_sale.is_deprecated
+    refute for_sale.is_private
   end
 
   test "bundle_plans_visible? is false for regular users when deactivated" do
@@ -92,14 +98,67 @@ defmodule Sanbase.Billing.Plan.SaleControlsTest do
 
   test "product_with_plans hides deprecated business plans after deactivate" do
     assert {:ok, _} = SaleControls.deactivate_business_plans()
-    assert {:ok, products} = Plan.product_with_plans()
 
-    plan_names =
-      products
-      |> Enum.flat_map(& &1.plans)
-      |> Enum.map(& &1.name)
+    plan_names = listed_plan_names()
 
     refute "BUSINESS_PRO" in plan_names
     refute "BUSINESS_MAX" in plan_names
+  end
+
+  test "product_with_plans lists business plans again after activate" do
+    assert {:ok, _} = SaleControls.deactivate_business_plans()
+    assert {:ok, _} = SaleControls.activate_business_plans()
+
+    plan_names = listed_plan_names()
+
+    assert "BUSINESS_PRO" in plan_names
+    assert "BUSINESS_MAX" in plan_names
+  end
+
+  # The sale controls must not reach any further than the two names they manage.
+  # On production `FREE` on both products and the current Sanbase tiers are all
+  # `is_private = true`, and several plans people still hold are deprecated -
+  # filtering on either field in general empties most of the pricing page.
+  test "product_with_plans keeps private plans and deprecated non-business plans", context do
+    Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9850")
+
+    insert(:plan_pro,
+      id: 9851,
+      name: "PRIVATELY_SOLD",
+      product_id: context.product_api.id,
+      interval: "month",
+      is_private: true,
+      is_deprecated: false,
+      stripe_id: "plan_private_" <> Ecto.UUID.generate()
+    )
+
+    insert(:plan_pro,
+      id: 9852,
+      name: "GRANDFATHERED",
+      product_id: context.product_api.id,
+      interval: "month",
+      is_private: false,
+      is_deprecated: true,
+      stripe_id: "plan_grandfathered_" <> Ecto.UUID.generate()
+    )
+
+    plan_names = listed_plan_names()
+
+    assert "PRIVATELY_SOLD" in plan_names
+    assert "GRANDFATHERED" in plan_names
+  end
+
+  test "product_with_plans never lists the BUNDLE marker plans" do
+    assert {:ok, _} = SaleControls.activate_bundle_plans()
+
+    refute "BUNDLE" in listed_plan_names()
+  end
+
+  defp listed_plan_names do
+    assert {:ok, products} = Plan.product_with_plans()
+
+    products
+    |> Enum.flat_map(& &1.plans)
+    |> Enum.map(& &1.name)
   end
 end

@@ -87,7 +87,9 @@ defmodule Sanbase.Billing.UserPromoCode do
         true
 
       %__MODULE__{} = promo ->
-        product = get_in(promo, [:metadata, "product"])
+        # `promo.metadata` is read directly rather than through `get_in/2`: structs
+        # do not implement Access, so `get_in(promo, [...])` raises.
+        product = Map.get(promo.metadata || %{}, "product")
 
         cond do
           not is_nil(product) and product != plan.product.code ->
@@ -96,16 +98,31 @@ defmodule Sanbase.Billing.UserPromoCode do
           # The rest of the checks are not really needed as Stripe API will
           # check them anyway, but we do them here to avoid unnecessary API
           # calls and to have more unified coupon validation failed messages
-          DateTime.compare(DateTime.utc_now(), coupon.redeem_by) == :gt ->
+          expired?(promo) ->
             {:error, "The coupon has expired."}
 
-          promo.times_redeemed >= promo.max_redemptions ->
+          exhausted?(promo) ->
             {:error, "The coupon has been used too many times."}
 
           true ->
             true
         end
     end
+  end
+
+  # `coupon` is the code, a string - the dates live on the row it was looked up
+  # from. A coupon with no expiry never expires, and one with no cap on
+  # redemptions is never exhausted.
+  defp expired?(%__MODULE__{redeem_by: nil}), do: false
+
+  defp expired?(%__MODULE__{redeem_by: redeem_by}) do
+    DateTime.compare(DateTime.utc_now(), redeem_by) == :gt
+  end
+
+  defp exhausted?(%__MODULE__{max_redemptions: nil}), do: false
+
+  defp exhausted?(%__MODULE__{times_redeemed: times_redeemed, max_redemptions: max_redemptions}) do
+    (times_redeemed || 0) >= max_redemptions
   end
 
   # Private functions

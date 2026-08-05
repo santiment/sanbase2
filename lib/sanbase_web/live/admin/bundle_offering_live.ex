@@ -3,7 +3,9 @@ defmodule SanbaseWeb.Admin.BundleOfferingLive do
   Activate / deactivate SanAPI self-serve plan groups.
 
   * Bundle / new plans — toggles `is_private` on `BUNDLE*` and `INSTITUTIONAL*`.
-  * Business plans — toggles `is_deprecated` on `BUSINESS_PRO` / `BUSINESS_MAX`.
+  * Business plans — toggles `is_deprecated` and `is_private` together on
+    `BUSINESS_PRO` / `BUSINESS_MAX`, so the plan is for sale by every reading of
+    it rather than one.
   """
 
   use SanbaseWeb, :live_view
@@ -132,8 +134,10 @@ defmodule SanbaseWeb.Admin.BundleOfferingLive do
         <section id="business-plan-controls" class="space-y-3 border rounded p-4">
           <h2 class="text-lg font-semibold">Business plans</h2>
           <p class="text-sm text-gray-600">
-            `BUSINESS_PRO` / `BUSINESS_MAX` — toggles <code>is_deprecated</code>.
-            Deactivated = not for new sale; existing subscribers keep access.
+            `BUSINESS_PRO` / `BUSINESS_MAX` — toggles <code>is_deprecated</code>
+            and <code>is_private</code>
+            together.
+            Deactivated = not for new sale and not listed; existing subscribers keep access.
           </p>
           <p class="text-sm">
             Status:
@@ -147,7 +151,7 @@ defmodule SanbaseWeb.Admin.BundleOfferingLive do
               id="activate-business-plans"
               type="button"
               phx-click="activate_business"
-              data-confirm="Activate Business Pro/Max for sale (clear is_deprecated)?"
+              data-confirm="Activate Business Pro/Max for sale (clear is_deprecated and is_private)?"
               class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
               disabled={@business_active?}
             >
@@ -157,7 +161,7 @@ defmodule SanbaseWeb.Admin.BundleOfferingLive do
               id="deactivate-business-plans"
               type="button"
               phx-click="deactivate_business"
-              data-confirm="Withdraw Business Pro/Max from sale (set is_deprecated)?"
+              data-confirm="Withdraw Business Pro/Max from sale (set is_deprecated and is_private)?"
               class="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-800 disabled:opacity-40"
               disabled={not @business_active?}
             >

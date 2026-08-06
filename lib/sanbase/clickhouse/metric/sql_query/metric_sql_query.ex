@@ -20,7 +20,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       metric_id_filter: 2,
       versioned_metric_id_filter: 2,
       additional_filters: 3,
-      dt_to_unix: 2
+      dt_to_unix: 2,
+      not_publicly_disabled_label_filter: 1
     ]
 
   alias Sanbase.Clickhouse.MetricAdapter.Registry
@@ -416,7 +417,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     FROM labeled_balances_filtered
     WHERE
       #{metric_id_filter(metric, argument_name: "metric")} AND
-      #{where_clause}
+      #{where_clause} AND
+      #{not_publicly_disabled_label_filter(argument_name: "metric", filter_by: :fqn)}
     """
 
     params =
@@ -439,7 +441,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     WHERE
       #{metric_id_filter(metric, argument_name: "metric")} AND
       #{where_clause} AND
-      asset_name = {{slug}}
+      asset_name = {{slug}} AND
+      #{not_publicly_disabled_label_filter(argument_name: "metric", filter_by: :fqn)}
     """
 
     params =
@@ -458,7 +461,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     FROM labeled_intraday_metrics_v2
     WHERE
       dt >= now() - INTERVAL 365 DAY AND
-      #{metric_id_filter(metric, argument_name: "metric")}
+      #{metric_id_filter(metric, argument_name: "metric")} AND
+      #{not_publicly_disabled_label_filter(argument_name: "metric", filter_by: :label_id)}
     """
 
     params =
@@ -476,7 +480,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     WHERE
       dt >= now() - INTERVAL 365 DAY AND
       #{metric_id_filter(metric, argument_name: "metric")} AND
-      #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
+      #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
+      #{not_publicly_disabled_label_filter(argument_name: "metric", filter_by: :label_id)}
     """
 
     params =

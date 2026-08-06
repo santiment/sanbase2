@@ -207,7 +207,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
         status: subscription.status,
         plan_nickname: plan(subscription).nickname,
         product_name: plan(subscription).product |> product_name(),
-        amount: plan(subscription).unit_amount,
+        amount: amount(subscription),
         latest_invoice_amount_due: latest_invoice_amount(subscription, :amount_due),
         latest_invoice_amount_paid: latest_invoice_amount(subscription, :amount_paid),
         metadata: subscription.metadata,
@@ -235,9 +235,44 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     }
   end
 
+  # Names the row - the nickname and the product it is filed under. Stripe gives
+  # no order guarantee for the items, so a multi-item subscription picks its
+  # representative deterministically instead of taking whatever came back first.
+  # Which item that is remains arbitrary in meaning; only `amount/1` below
+  # describes the whole subscription.
   defp plan(subscription) do
-    (subscription.items.data |> hd()).price
+    case subscription.items.data do
+      [] -> nil
+      [item] -> item_price(item)
+      items -> items |> Enum.min_by(& &1.id) |> item_price()
+    end
   end
+
+  # Sum over the items, so that a bundle reports the subscription's whole MRR
+  # rather than one package's. The single-item case stays exactly what it was.
+  defp amount(subscription) do
+    case subscription.items.data do
+      [item] ->
+        unit_amount(item)
+
+      items ->
+        Enum.reduce(items, 0, fn item, acc ->
+          acc + (unit_amount(item) || 0) * quantity(item)
+        end)
+    end
+  end
+
+  defp item_price(item), do: Map.get(item, :price)
+
+  # `Stripe.Price` calls the field `unit_amount`, the legacy `Stripe.Plan` calls
+  # it `amount`, and either object can be absent on an item.
+  defp unit_amount(item) do
+    price = item_price(item) || Map.get(item, :plan)
+
+    price && (Map.get(price, :unit_amount) || Map.get(price, :amount))
+  end
+
+  defp quantity(item), do: Map.get(item, :quantity) || 1
 
   def product_name(stripe_product_id) do
     %{

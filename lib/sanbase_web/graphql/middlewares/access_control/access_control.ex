@@ -37,6 +37,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   alias Sanbase.Billing.{
     Plan,
     Plan.AccessChecker,
+    Plan.Bundle.Package,
+    Plan.Bundle.PackageSnapshot,
     Product
   }
 
@@ -339,6 +341,35 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     """
   end
 
+  # A bundle's access comes from the packages it bought, not from the ordinal plan
+  # ladder, so `min_plan` has no meaningful answer here - it told a customer
+  # paying $1050/month to "upgrade to SANAPI FREE". What they need instead is the
+  # name of the package the metric is sold in.
+  defp build_access_error_message(
+         argument,
+         argument_name,
+         "BUNDLE" <> _,
+         requested_product,
+         subscription_product
+       ) do
+    product = subscription_product || requested_product
+
+    case bundle_packages_for(argument, argument_name) do
+      [] ->
+        """
+        The #{argument} #{argument_name} is not included in your #{product} bundle. \
+        It is not part of any package that is currently sold - please contact Santiment.
+        """
+
+      slugs ->
+        """
+        The #{argument} #{argument_name} is not included in your #{product} bundle. \
+        It is part of #{packages_phrase(slugs)} - add it with the addBundleItem \
+        mutation, or contact Santiment.
+        """
+    end
+  end
+
   defp build_access_error_message(
          argument,
          argument_name,
@@ -357,6 +388,36 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     another product, this error will still be shown. The data on SANBASE cannot \
     be fetched with a SANAPI subscription and vice versa.
     """
+  end
+
+  # Only metrics are sold in packages. Queries and signals reach here too - every
+  # bundle is granted all of them, so a refusal for one is unexpected rather than
+  # impossible - and they are matched out rather than looked up, because a name
+  # that happened to coincide with a metric would name a package that would not
+  # actually grant it.
+  defp bundle_packages_for(:metric, metric_name),
+    do: PackageSnapshot.packages_containing(metric_name)
+
+  defp bundle_packages_for(_argument, _argument_name), do: []
+
+  # "the Development Data package" / "the Market Data and On-chain Labels packages"
+  defp packages_phrase([slug]), do: "the #{package_name(slug)} package"
+
+  defp packages_phrase(slugs) do
+    {rest, [last]} = slugs |> Enum.map(&package_name/1) |> Enum.split(-1)
+
+    "the #{Enum.join(rest, ", ")} and #{last} packages"
+  end
+
+  # `by_slug/1` cannot fail on a slug that came from `packages_containing/1`,
+  # which only returns packages that are still sold. The error branch is here
+  # because a CaseClauseError on an error path would hide the refusal it is
+  # trying to explain.
+  defp package_name(slug) do
+    case Package.by_slug(slug) do
+      {:ok, %{name: name}} -> name
+      {:error, _reason} -> slug
+    end
   end
 
   # If the query is marked as having free realtime and historical data

@@ -3,6 +3,13 @@ defmodule Sanbase.Billing.StripeSync do
 
   @topic "sanbase_stripe_transactions"
 
+  # A charge against a subscription with more than one item pays for all of them
+  # at once, so no single price id describes it and no `plans` row can name it -
+  # package prices deliberately live in their own catalog. Emitting one item's id
+  # would silently attribute the whole amount to that package, so emit something
+  # that is obviously not a stripe id and can be grepped for instead.
+  @multi_item_marker "MULTI_ITEM_SUBSCRIPTION"
+
   def run do
     if not localhost_or_stage?() do
       start_dt = Timex.now() |> Timex.beginning_of_day()
@@ -34,8 +41,8 @@ defmodule Sanbase.Billing.StripeSync do
           id: transaction.id,
           status: transaction.status,
           amount: transaction.amount,
-          plan: plan_map[transaction.plan],
-          product: product_map[transaction.product]
+          plan: resolve_name(plan_map, transaction.plan),
+          product: resolve_name(product_map, transaction.product)
         }
 
         %{
@@ -61,14 +68,7 @@ defmodule Sanbase.Billing.StripeSync do
       |> Enum.map(fn charge ->
         subscription = if charge.invoice, do: charge.invoice.subscription, else: nil
 
-        {plan, product} =
-          if subscription do
-            subscription_item = subscription.items.data |> List.first()
-            plan = subscription_item.plan
-            {plan.id, plan.product}
-          else
-            {nil, nil}
-          end
+        {plan, product} = plan_and_product(subscription)
 
         %{
           id: charge.id,
@@ -88,6 +88,30 @@ defmodule Sanbase.Billing.StripeSync do
       transactions
     end
   end
+
+  # An unexpanded or missing subscription leaves the charge unattributed rather
+  # than raising and taking the whole sync run down.
+  defp plan_and_product(%{items: %{data: items}}), do: items_plan_and_product(items)
+  defp plan_and_product(_), do: {nil, nil}
+
+  defp items_plan_and_product([item]), do: {item_field(item, :id), item_field(item, :product)}
+  defp items_plan_and_product([_ | _]), do: {@multi_item_marker, @multi_item_marker}
+  defp items_plan_and_product(_), do: {nil, nil}
+
+  # A Price-based item carries no legacy `plan` object. For the items that do
+  # carry one its id is the same as the price id, so preferring `plan` keeps the
+  # output for legacy subscriptions byte for byte what it was.
+  defp item_field(item, field) do
+    case Map.get(item, :plan) || Map.get(item, :price) do
+      nil -> nil
+      plan_or_price -> Map.get(plan_or_price, field)
+    end
+  end
+
+  # The marker is not a stripe id, so it must skip the id -> name lookup that
+  # would otherwise turn it into nil and lose the signal.
+  defp resolve_name(_map, @multi_item_marker), do: @multi_item_marker
+  defp resolve_name(map, stripe_id), do: map[stripe_id]
 
   def stripe_customer_user_id_map do
     from(u in Sanbase.Accounts.User,

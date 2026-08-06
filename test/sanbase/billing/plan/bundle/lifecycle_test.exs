@@ -116,6 +116,30 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
       end
     end
 
+    test "keeps BUSINESS_PRO when the bundle's first charge is declined",
+         %{user: user} = context do
+      legacy =
+        insert(:subscription_pro,
+          user_id: user.id,
+          plan_id: context.plans.plan_business_pro_monthly.id,
+          status: :active,
+          stripe_id: "sub_legacy_" <> Ecto.UUID.generate()
+        )
+
+      # A declined first invoice is not an error tuple. Stripe answers
+      # `{:ok, subscription}` with status `incomplete`, which reaches the end of
+      # `subscribe/2` looking exactly like a completed purchase - and cancelling
+      # on that basis leaves the customer paying for neither plan while holding
+      # a credit against a bundle that will never charge.
+      with_mocks stripe_mocks(subscription_status: "incomplete") do
+        assert {:ok, sub} = Lifecycle.subscribe(user, packages: ["market"], interval: "month")
+
+        assert sub.status == :incomplete
+        assert Repo.reload!(legacy).status == :active
+        assert calls(:cancel_with_proration) == []
+      end
+    end
+
     test "rejects a second bundle subscribe and leaves the first alone", %{user: user} do
       with_mocks stripe_mocks() do
         assert {:ok, first} = Lifecycle.subscribe(user, packages: ["market"], interval: "month")
@@ -210,6 +234,26 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
 
         assert calls(:attach_payment_method_to_customer) == ["pm_declined"]
         assert calls(:create_bundle_subscription) == []
+      end
+    end
+
+    test "attaches the given payment method before the subscription is charged", %{user: user} do
+      # The subscription is created `off_session`, so the payment method has to be
+      # attached and made the customer's default first or the first invoice has
+      # nothing to charge.
+      with_mocks stripe_mocks(attach_payment_method_to_customer: {:ok, user}) do
+        assert {:ok, _sub} =
+                 Lifecycle.subscribe(user,
+                   packages: ["market"],
+                   interval: "month",
+                   payment_method_id: "pm_card_visa"
+                 )
+
+        assert calls(:attach_payment_method_to_customer) == ["pm_card_visa"]
+
+        assert calls(:order) == [:attach_payment_method_to_customer, :create_bundle_subscription]
+
+        assert [%{customer: "cus_" <> _}] = calls(:create_bundle_subscription)
       end
     end
 
@@ -339,7 +383,9 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
         assert {:ok, switched} = Lifecycle.switch_interval(user, sub.id)
         assert switched.plan.interval == "year"
 
-        assert [%{items: [item]}] = calls(:update_subscription)
+        assert [%{items: [item], proration_behavior: "create_prorations"}] =
+                 calls(:update_subscription)
+
         assert item == %{id: "si_price_market_month", price: "price_market_year"}
 
         assert Enum.map(Item.by_subscription(sub.id), & &1.stripe_item_id) ==
@@ -371,13 +417,89 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
                  Lifecycle.subscribe(user, packages: ["market", "social"], interval: "month")
 
         assert {:ok, _} = Lifecycle.remove_item(user, sub.id, "social")
+        assert {:ok, switched} = Lifecycle.switch_interval(user, sub.id)
+
+        # Gone locally and gone from the entitlement, rather than carried onto the
+        # new interval. The item that stayed keeps the id from the response that
+        # re-priced it - the second of the two, the only one that names it on its
+        # new price.
+        items = Item.by_subscription(sub.id)
+        assert Enum.map(items, & &1.sku) == ["market"]
+        assert Enum.map(items, & &1.stripe_item_id) == ["si_price_market_year"]
+        assert switched.bundle_entitlement.packages == ["market"]
+      end
+    end
+
+    test "never credits an item that was scheduled for removal", %{user: user} do
+      # Stripe applies one `proration_behavior` per request, so a deletion sent
+      # together with the re-price was prorated with it and credited the unused time
+      # of a package the customer had paid for and kept - a near-full refund for a
+      # period they had used, and one that survived switching back.
+      with_mocks stripe_mocks() do
+        assert {:ok, sub} =
+                 Lifecycle.subscribe(user, packages: ["market", "social"], interval: "month")
+
+        assert {:ok, _} = Lifecycle.remove_item(user, sub.id, "social")
         assert {:ok, _} = Lifecycle.switch_interval(user, sub.id)
 
-        assert [%{items: items}] = calls(:update_subscription)
-        assert %{id: "si_price_social_month", deleted: true} in items
+        # In this order: the deletion first, so that a re-price failing after it
+        # leaves fewer items rather than a credit for items that are still billed.
+        assert [drop, reprice] = calls(:update_subscription)
 
-        # Gone locally too, rather than carried onto the new interval.
-        assert Enum.map(Item.by_subscription(sub.id), & &1.sku) == ["market"]
+        assert drop == %{
+                 items: [%{id: "si_price_social_month", deleted: true}],
+                 proration_behavior: "none"
+               }
+
+        assert reprice == %{
+                 items: [%{id: "si_price_market_month", price: "price_market_year"}],
+                 proration_behavior: "create_prorations"
+               }
+      end
+    end
+
+    test "switches anyway when the item to drop is already gone from Stripe", %{user: user} do
+      # Deletions go out before the re-price, so a re-price that fails leaves local
+      # rows naming items Stripe no longer has. If this call refused to tolerate
+      # that, every later attempt would die on the deletion and the subscription
+      # would be stuck on the wrong interval until `remove_at` came around - a month
+      # away, a year on the annual interval.
+      missing = %Stripe.Error{source: :stripe, code: :resource_missing, message: "No such item"}
+
+      with_mocks stripe_mocks(drop_items: {:error, missing}) do
+        assert {:ok, sub} =
+                 Lifecycle.subscribe(user, packages: ["market", "social"], interval: "month")
+
+        assert {:ok, _} = Lifecycle.remove_item(user, sub.id, "social")
+        assert {:ok, switched} = Lifecycle.switch_interval(user, sub.id)
+
+        assert switched.plan.interval == "year"
+        assert switched.bundle_entitlement.packages == ["market"]
+
+        # It still asked, and it still asked first.
+        assert [%{proration_behavior: "none"}, %{proration_behavior: "create_prorations"}] =
+                 calls(:update_subscription)
+      end
+    end
+
+    test "asks Stripe once when nothing is scheduled for removal", %{user: user} do
+      with_mocks stripe_mocks() do
+        assert {:ok, sub} =
+                 Lifecycle.subscribe(user, packages: ["market", "social"], interval: "month")
+
+        assert {:ok, _} = Lifecycle.switch_interval(user, sub.id)
+
+        # Nothing to delete, so no request with an empty `items` array in front of
+        # the re-price.
+        assert [reprice] = calls(:update_subscription)
+
+        assert reprice == %{
+                 items: [
+                   %{id: "si_price_market_month", price: "price_market_year"},
+                   %{id: "si_price_social_month", price: "price_social_year"}
+                 ],
+                 proration_behavior: "create_prorations"
+               }
       end
     end
   end
@@ -491,6 +613,36 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
     end
   end
 
+  test "cancel_stale_replaced_subscriptions ignores a bundle whose first charge was declined",
+       %{user: user} = context do
+    bundle_plan = Plan.bundle_plan("month")
+
+    # Bought, so it has a Stripe id - but the charge was refused, so it grants
+    # nothing and replaces nothing. The retry must reach the same conclusion the
+    # inline cancel in `subscribe/2` did, or the two undo each other.
+    insert(:subscription_pro,
+      user_id: user.id,
+      plan_id: bundle_plan.id,
+      status: :incomplete,
+      stripe_id: "sub_declined_" <> Ecto.UUID.generate()
+    )
+
+    legacy =
+      insert(:subscription_pro,
+        user_id: user.id,
+        plan_id: context.plans.plan_business_pro_monthly.id,
+        status: :active,
+        stripe_id: "sub_real_" <> Ecto.UUID.generate()
+      )
+
+    with_mocks stripe_mocks() do
+      assert %{canceled: 0, failed: 0} = Lifecycle.cancel_stale_replaced_subscriptions()
+
+      assert Repo.reload!(legacy).status == :active
+      assert calls(:cancel_with_proration) == []
+    end
+  end
+
   test "cancel_stale_replaced_subscriptions ignores a bundle created by hand in the admin panel",
        %{user: user} = context do
     bundle_plan = Plan.bundle_plan("month")
@@ -529,24 +681,29 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
   defp stripe_mocks(opts \\ []) do
     item_result = Keyword.get(opts, :create_subscription_item)
     attach_result = Keyword.get(opts, :attach_payment_method_to_customer)
+    drop_items_result = Keyword.get(opts, :drop_items)
+    subscription_status = Keyword.get(opts, :subscription_status, "active")
 
     [
       {StripeApi, [:passthrough],
        [
          attach_payment_method_to_customer: fn user, payment_method_id ->
            record(:attach_payment_method_to_customer, payment_method_id)
+           record(:order, :attach_payment_method_to_customer)
 
            attach_result || :meck.passthrough([user, payment_method_id])
          end,
          create_bundle_subscription: fn params ->
            record(:create_bundle_subscription, params)
+           record(:order, :create_bundle_subscription)
            price_ids = Enum.map(params.items, & &1.price)
            stripe_id = "sub_test_" <> Integer.to_string(System.unique_integer([:positive]))
            remember_prices(stripe_id, price_ids)
 
            StripeApiTestResponse.create_bundle_subscription_resp(
              stripe_id: stripe_id,
-             price_ids: price_ids
+             price_ids: price_ids,
+             status: subscription_status
            )
            |> with_stable_item_ids()
          end,
@@ -563,24 +720,11 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
          update_subscription: fn stripe_id, params ->
            record(:update_subscription, params)
 
-           price_ids =
-             case Map.get(params, :items) do
-               nil ->
-                 remembered_prices(stripe_id)
-
-               items ->
-                 items
-                 |> Enum.reject(&Map.get(&1, :deleted, false))
-                 |> Enum.map(& &1.price)
-             end
-
-           remember_prices(stripe_id, price_ids)
-
-           StripeApiTestResponse.update_subscription_resp(
-             stripe_id: stripe_id,
-             price_ids: price_ids
-           )
-           |> with_stable_item_ids()
+           if drop_items_result && deletion_request?(params) do
+             drop_items_result
+           else
+             mocked_update_subscription(stripe_id, params)
+           end
          end,
          delete_subscription_item: fn stripe_item_id, opts ->
            record(:delete_subscription_item, {stripe_item_id, opts})
@@ -619,6 +763,43 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
 
     {:ok, %{sub | items: %{list | data: data}}}
   end
+
+  # Stripe answers an update with the subscription as it now stands, not with the
+  # items the request named: one that only deletes items still comes back carrying
+  # the ones that stayed, on the prices they already had. An interval switch reads
+  # item ids out of one of its two responses, and a mock that answered a deletion
+  # with nothing at all would not care which one.
+  defp mocked_update_subscription(stripe_id, params) do
+    price_ids = prices_after_update(stripe_id, Map.get(params, :items))
+    remember_prices(stripe_id, price_ids)
+
+    StripeApiTestResponse.update_subscription_resp(
+      stripe_id: stripe_id,
+      price_ids: price_ids
+    )
+    |> with_stable_item_ids()
+  end
+
+  defp deletion_request?(%{items: items}) when is_list(items) do
+    Enum.any?(items, &Map.get(&1, :deleted, false))
+  end
+
+  defp deletion_request?(_params), do: false
+
+  defp prices_after_update(stripe_id, nil), do: remembered_prices(stripe_id)
+
+  defp prices_after_update(stripe_id, items) do
+    {deleted, repriced} = Enum.split_with(items, &Map.get(&1, :deleted, false))
+
+    case Enum.map(repriced, & &1.price) do
+      [] -> remembered_prices(stripe_id) -- Enum.map(deleted, &deleted_item_price/1)
+      price_ids -> price_ids
+    end
+  end
+
+  # The inverse of `with_stable_item_ids/1`: an item id names the price it holds, so
+  # a deletion by id says which price left.
+  defp deleted_item_price(%{id: "si_" <> price_id}), do: price_id
 
   defp record(key, value) do
     Process.put({:stripe_calls, key}, [value | Process.get({:stripe_calls, key}, [])])

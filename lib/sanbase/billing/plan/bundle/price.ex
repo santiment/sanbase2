@@ -122,6 +122,44 @@ defmodule Sanbase.Billing.Plan.Bundle.Price do
   end
 
   @doc ~s"""
+  The catalog rows behind the given Stripe Price ids, keyed by Stripe Price id.
+
+  What a Stripe Price id means - which SKU, which type, which interval - is the
+  question every webhook about a bundle subscription has to answer, because
+  Stripe reports prices and the local model records SKUs.
+
+  ## Inactive rows are included, deliberately
+
+  A price change deactivates the old row and inserts a new one (`replace/1`), but
+  Stripe never re-prices an existing subscription item on its own: every
+  subscription bought before the change keeps referencing the *old* Stripe Price
+  forever. Filtering on `is_active` here would make all of those items look like
+  unknown prices the moment a price is changed, and the reconciliation in
+  `Sanbase.Billing.Plan.Bundle.ItemSync` would then refuse to maintain the
+  subscriptions it exists to maintain - or, worse, read the missing SKU as a
+  removed package. What a price id means is a historical fact and does not
+  expire; `is_active` says only whether it may still be *sold*, which is
+  `sellable/1`'s business.
+
+  `stripe_price_id` is unique across the table, so each id maps to at most one
+  row whether it is active or not.
+  """
+  @spec by_stripe_price_ids([String.t() | nil]) :: %{String.t() => t()}
+  def by_stripe_price_ids(stripe_price_ids) when is_list(stripe_price_ids) do
+    ids = stripe_price_ids |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    case ids do
+      [] ->
+        %{}
+
+      ids ->
+        from(p in __MODULE__, where: p.stripe_price_id in ^ids)
+        |> Repo.all()
+        |> Map.new(&{&1.stripe_price_id, &1})
+    end
+  end
+
+  @doc ~s"""
   Replace a price: deactivate the current active row for this SKU and interval,
   then insert the new one. Stripe Prices are immutable, so this is the only
   correct shape for a price change.

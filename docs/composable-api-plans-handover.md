@@ -590,7 +590,7 @@ These do not break today. They break the moment a subscription has more than one
 |---|------|--------------|----------------|
 | 1 | `stripe_api.ex:210-215` `get_upgrade_downgrade_subscription_params/2` | Fetches the **first** item id and calls `update_subscription` with `items: [%{id: item_id, plan: …}]`. On a bundle sub this **rewrites item[0]'s price and silently corrupts the purchased set and the invoice.** This is a *write*, making it the most dangerous site. | Reject bundle subs in `upgrade_downgrade/2`; route them through the new item mutations only |
 | 2 | `subscription.ex:752-757` `fetch_plan_id/2` | Takes item[0]'s plan, looks up `Plan.by_stripe_id/1`, and **overwrites `subscriptions.plan_id`** on every sync. Falls back to the existing `plan_id` only when the price is unknown. | **Do not create `plans` rows for package prices.** Package/add-on prices belong in a separate catalog table. This resolves the "local plan rows *or* catalog table" ambiguity in the original task B — it must be a catalog table. |
-| 3 | `stripe_event.ex:150-155` `handle_subscription_created/3` | Resolves the plan from item[0] via `Plan.by_stripe_id/1` and errors `{:plan?, _}` if not found. Stripe does not guarantee item order, so a bundle sub either fails to sync or binds to the wrong plan. | Find the **base** item explicitly by matching known price ids; branch bundle vs legacy |
+| 3 | `stripe_event.ex:150-155` `handle_subscription_created/3` | Resolves the plan from item[0] via `Plan.by_stripe_id/1` and errors `{:plan?, _}` if not found. Stripe does not guarantee item order, so a bundle sub either fails to sync or binds to the wrong plan. Observed on stage: event stuck at `is_processed: false`, logging "Plan for subscription_id … does not exist". | ✅ **done (WH)** — `ItemSync.bundle_stripe_subscription?/1` matches the item price ids against `bundle_prices` (any match wins) and branches before the plan lookup. The marker plan comes from `Plan.bundle_plan(interval)`, never from an item. |
 | 4 | `stripe_sync.ex:66` | `subscription.items.data \|> List.first()` | Branch by subscription type |
 | 5 | `timeseries.ex:239` | `(subscription.items.data \|> hd()).price` — revenue/stats attribution | Sum across items for bundle subs, else misreported MRR |
 | 6 | `subscription.ex:594-599` `has_active_subscriptions/2` | Guards duplicates **per `plan.id` only**, so PRO + composable on SANAPI is structurally allowed. Combined with `order_by: [desc: id], limit: 1` (`query.ex:83-89`), the **newest subscription silently wins while the other is paid for and ignored.** | Enforce one-active-subscription-per-product at subscribe time, with a test. Not merely a "policy question" — it is a live billing bug waiting for a second sub. |
@@ -780,17 +780,49 @@ Changing a priced amount after Stripe exists = `Price.replace/1` + new Stripe Pr
 **Depends on:** SC, LC, BA.
 **Does not include:** WH webhook branching; Institutional plan rows (**IN**); purchase UI.
 
-### WH. Webhook / sync for multi-item
-**What:** Branch `customer.subscription.created|updated|deleted`: bundle → sync all items, **re-resolve and rewrite `bundle_entitlement`**, reset the `ApiCallLimit` record; else → current first-item behavior unchanged. Handle §7.3 #2–#5. Idempotency: item changes fire many `subscription.updated`, and re-resolving must be a pure recompute so repeats are harmless.
-**Deliverable:** updates in the Stripe event → subscription sync path + tests both ways.
+### WH. Webhook / sync for multi-item — ✅ done
+**Implemented as:** `Sanbase.Billing.Plan.Bundle.ItemSync` plus three branches in `stripe_event.ex`. A bundle Stripe subscription is recognised by looking its item price ids up in `bundle_prices.stripe_price_id` (`Price.by_stripe_price_ids/1`) — **any** item matching is enough, so a bundle with one unrecognised item can never fall into the legacy path and bind `subscriptions.plan_id` to whatever plan happens to be item[0]. Everything ends in `Resolver.sync/1`, which recomputes the entitlement and the `api_call_limits` row from the item rows, so the several `subscription.updated` events one item change produces are harmless.
+
+| Event | Bundle behavior | Legacy behavior |
+|---|---|---|
+| `created`, local row exists | reconcile items, re-resolve, mark processed. Nothing is duplicated. | unchanged |
+| `created`, no local row | **adopt**: `Plan.bundle_plan(interval)` for the items' interval → `create_subscription_db/3` → one `subscription_items` row per Stripe item → `Resolver.sync/1` | unchanged |
+| `created`, any unknown price id | refuses: nothing created, error logged, event left unprocessed | unchanged |
+| `updated` | status sync unchanged, then item reconciliation, then `Resolver.sync/1` | unchanged |
+| `deleted` | status sync unchanged, then `ApiCallLimit.update_user_plan/1`. Items and entitlement are **kept** — access is already blocked by status and support answers from them. | unchanged |
+
+**Fixes the §7.3 #3 bug seen on stage:** the event used to stay `is_processed: false` with *"Plan for subscription_id … does not exist"*, because `handle_subscription_created/3` read item[0]'s `plan` and looked it up in `plans`. Package prices are only ever in `bundle_prices` (§7.3 #2) and no `plans` row is ever created for one.
+
+**Guards, each preventing a specific failure:**
+- **Deactivated catalog rows still resolve.** `Price.by_stripe_price_ids/1` deliberately ignores `is_active`. A price change deactivates the old row but Stripe never re-prices an existing item, so filtering would make every subscription bought before the change look like it held unknown prices — and reconciliation would read the missing SKU as a *removed package*.
+- **`stripe_item_id: nil` rows are never deleted.** They are mid-flight claims from `Lifecycle.add_item/3`, which writes the row before calling Stripe so the `(subscription_id, sku)` index settles a race. Deleting one lets a second request create a second Stripe item the customer is billed for.
+- **An empty local item set is never populated by reconciliation.** `Lifecycle.subscribe/2` writes the subscription row and *then* its items; a `created`/`updated` event can land in that window. Inserting the items from the webhook would make `persist_items/3` fail on the same unique index — and every post-charge failure in `store_subscription/4` cancels the subscription the customer has just paid for.
+- **`remove_at` is preserved.** A scheduled removal stays in Stripe until `ItemExpiry` deletes it, so finding the item in Stripe is not evidence the customer changed their mind. Only `stripe_item_id` and an add-on's quantity are written to a surviving row.
+- **Deletion keys on the SKU, not on the item id.** "This row's `stripe_item_id` is absent from Stripe's set" reads the same but deletes a row the repair pass was about to fix when Stripe reissues an item id.
+- **A real `stripe_item_id` is never overwritten with `nil`.** Blanking it would make the row indistinguishable from a mid-flight claim, and therefore undeletable.
+- **Reconciliation is serialized per subscription** with `FOR UPDATE` on the subscription row, the item set read *inside* that transaction — the same lock and reason as `Resolver.sync/1`. Inserts use `mode: :savepoint` so the one tolerated conflict (a concurrent `add_item/3` claiming the same SKU) does not abort the whole transaction.
+- **Unknown price ids: skipped on reconcile, refused on adoption.** Reconciliation maintains a set whose other items are known, so an item it cannot name is left alone rather than deleted or guessed at. Adoption has to write the whole purchased set, and a set with a hole in it is not the purchased set.
+- **Adoption checks everything before the first insert** — every price known, one interval, a marker plan for it, at least one package, a published snapshot. A subscription row with no resolvable entitlement is worse than none: the quota path raises on it.
+
+**Deliverable:** ✅ `Bundle.ItemSync` + `Price.by_stripe_price_ids/1` + branches in `stripe_event.ex` + `test/sanbase/billing/stripe_event_bundle_sync_test.exs` (26 tests: 7 legacy BC, 8 `created`, 10 `updated` incl. idempotency, 1 `deleted`).
 **Depends on:** LC, EN. **Critical for BC.**
+**Not covered:** §7.3 #4 (`stripe_sync.ex`) and #5 (`timeseries.ex`) are separate work — they are first-item *read* assumptions, not the webhook write path.
+
+**One correction to the original description:** it says the `deleted` branch must "reset the `ApiCallLimit` record" because nothing else would. Not quite — `Subscription.update_subscription_db/2` emits `:update_subscription`, and `EventBus.BillingEventSubscriber` already calls `ApiCallLimit.update_user_plan/1` for it, so the quota does drop today. But that path is asynchronous and wrapped in `try/rescue` (`billing_event_subscriber.ex:50-57`), and it is disabled outright in the test config. The webhook now calls `update_user_plan/1` synchronously as well — idempotent, so the two together are harmless, and it is what makes the drop deterministic and testable.
 
 ### AM. `available_metrics` by entitlement — ✅ done
 **What:** Catalog browse via `getAvailableMetrics(plan: BUNDLE, metricPackages: ["social", ...])` — packages required; resolves from the latest published `PackageSnapshot`. AccessChecker `get_available_metrics_for_plan/4` answers from an entitlement (clears BA). Non-bundle plans unchanged. `plans_enum` includes `bundle` (§7.5 C1).
 **Depends on:** EN, BA.
 
-### OB. Admin / support visibility
-**What:** An admin view showing a customer's **resolved** entitlements — packages, effective metric/query/signal lists, quota, windows, derived plan name, snapshot version. Without it, every support ticket becomes an engineering ticket, and the "derived plan name that isn't in `plans`" concept is invisible to everyone but its author.
+### OB. Admin / support visibility — ✅ done
+**Implemented as:** `/admin/bundle_subscriptions` (`SanbaseWeb.Admin.BundleSubscriptionsLive`), with `/admin/bundle_packages` alongside it for the snapshot side. The listing is `Subscription.list_bundle_subscriptions/1` (keyed on the plan *name*, so more marker rows keep working); one row expands into the **resolved** entitlement — packages, effective metric list, query/signal access, the three call limits, the data windows, the derived plan name and the snapshot version — plus the items with their Stripe ids and any `remove_at`. Subscriptions can be created, have items added and removed, and be canceled from there; those rows are **local only, with no Stripe object**, which is deliberate so a support test cannot charge anyone.
+
+Three testers answer the question a ticket actually asks:
+- **Decide** — calls the access checker directly for a metric, query or signal, on both products, side by side with a standard plan. Answers "should this customer have this?" with no request and no API key.
+- **Scenarios** — generated from the packages the subscription owns, each row carrying its own expectation, so a wrong answer is visible without reading the entitlement.
+- **Request** — POSTs to the real `/graphql` with an API key, which is the only one that also proves the plumbing from context to access checker. ⚠️ `@santiment.net` users are exempt from quota (`user_has_limits?/1`), so testing with your own key proves access without exercising the numbers.
+
+**Deliverable:** ✅ two LiveViews + `Subscription.list_bundle_subscriptions/1` / `get_bundle_subscription/1`.
 **Depends on:** EN. Small, high value — do not defer it to "later".
 
 ### IN. Institutional flagship plan — ⬜ not started
@@ -922,10 +954,94 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 - **Idempotent webhooks** — item changes fire many `subscription.updated`; re-resolving must be a pure recompute so repeats are harmless.
 - **Payment method** — subscribe still needs the SetupIntent / existing payment flow; unchanged by this design but still required for **SL**.
 - **Invoice line nicknames** — customers must see "Social Sentiment", not `price_1A2b3C`.
-- **Revenue reporting** — `timeseries.ex:239` attributes revenue to item[0]'s price; MRR will be understated for bundle subs until fixed.
+- **Revenue reporting** — ✅ MRR fixed: `timeseries.ex` now sums `unit_amount × quantity` across items instead of reading item[0], and `stripe_sync.ex` no longer raises `BadMapError` on a Price-based item. **Classification is still wrong** — see §10.1 item 6.
 - **Taxonomy cleanup** — remaining ~21 uncategorized metrics + Onchain → Labels moves. Now a *billing* blocker if packages read categories: an uncategorized metric is unsellable.
 - **Research items** from the Market Notion page (volume vs `volume_usd`, CME, CryptoCompare liquidations, "total volume") — separate from the billing MVP.
 - **No per-metric à la carte** and **no per-package call pools** in v1.
+
+### 10.1 Abuse surfaces found on the stage run (2026-08-06)
+
+Found by driving the real mutations against Stripe sandbox on stage, subscription 1635 /
+`sub_1U1NVRCA0hGU8IEV9SFApbPq`. Items 1 to 3 are fixed; the rest need attention.
+
+**1. ✅ Fixed — interval switch credited items that were scheduled for removal.**
+`swap_stripe_items/4` sent the repriced items and the `deleted: true` entries in **one**
+`update_subscription` call, and Stripe applies one `proration_behavior` per call — so the
+deletions were prorated and credited. That turned keep-until-period-end (§9, Q7) into
+refund-on-removal in two mutations: buy market + social monthly, `removeBundleItem("social")`,
+then `switchBundleInterval`. Reproduced on stage: invoice `DD0DA60A-0185` came to $2,450.30 =
+$3,500 yearly market − ~$349.85 unused monthly market − **~$699.75 unused monthly social**,
+where the social credit was not owed. Scaled across five packages it is a near-full refund
+after a day of using everything. Now two calls: deletions with `proration_behavior: "none"`
+(the same reasoning `ItemExpiry` already applied), then the re-price with `create_prorations`.
+Deletions go first so a failing re-price leaves fewer items rather than an unearned credit,
+and `resource_missing` is tolerated on the deletion — without that, a re-price that failed
+once made every later switch attempt die on the deletion until `remove_at` came around, a
+year away on the annual interval.
+
+**2. ✅ Fixed — access denial told a bundle customer to downgrade.** A customer paying
+$1,050/month asking for `dev_activity` got *"Please upgrade to SANAPI FREE subscription"*:
+`build_access_error_message/5` had a `CUSTOM_` clause but no bundle one, so bundles fell
+through to the ordinal-ladder branch and `AccessChecker.min_plan/2` answered `free`. Now a
+`"BUNDLE" <> _` clause names the package to buy, resolved from the latest snapshot via
+`PackageSnapshot.packages_containing/1`.
+
+**3. ✅ Fixed — a declined bundle purchase cancelled the customer's paid legacy subscription.**
+The worst of the three. `create_stripe_bundle_sub/3` passes no `payment_behavior`, so Stripe's
+default `allow_incomplete` answers **`{:ok, subscription}` with status `incomplete`** when the
+first invoice is refused — not an error tuple. `subscribe/2` treated that as a completed
+purchase and called `cancel_replaceable/1` regardless. Reproduced on stage: BUSINESS_PRO bought
+at 13:11 for $420 (succeeded), bundle attempted at 13:14 with `pm_card_chargeCustomerFail`
+($1,050 failed), and BUSINESS_PRO was cancelled at 13:14 anyway. The customer was left paying
+for neither plan, and the $419.98 unused-time credit was applied to a bundle that will never
+charge — visible as the incomplete subscription's `$630.02` next invoice. The legacy path had
+always guarded this (`subscription.ex:319` runs `maybe_cancel_async` only when the new row is
+`:active`); the bundle path lost the guard. `cancel_replaceable_if_live/2` now applies the same
+predicate `stale_replaced_subscriptions/0` uses, so the inline cancel and its hourly retry
+agree on what counts as replaced — and if the customer later completes the payment, that job
+finishes the replacement within the hour.
+
+**4. A scheduled removal cannot be undone.** No mutation clears `remove_at`, and
+`addBundleItem` on the same SKU hits the `(subscription_id, sku)` unique index. A misclick
+costs the customer a month. Needs an un-remove path — clearing `remove_at`, no Stripe call.
+
+**5. No cooldown on `switchBundleInterval`.** Nothing rate-limits it. A loop generates
+unbounded Stripe invoices and proration line items, burns our Stripe API quota, and makes the
+invoice history unreadable. Worth a guard (reject if the interval changed within the last N
+hours) before public launch.
+
+**6. Refund-after-credit double-dip — ops, not code.** Flipping intervals leaves a large
+Stripe **credit balance**; $9,449.96 was observed on stage. Refunding the cash invoice without
+netting the credit hands the customer both. Finance/support rule needed: never refund an
+invoice on a subscription holding a non-zero credit balance without netting it off first.
+
+**7. Bundle subscriptions fall out of the SanAPI reporting count (§7.5 C5).**
+`Timeseries.product_name/1` maps only two hardcoded Stripe product ids to
+`"SanAPI by Santiment"` / `"Sanbase by Santiment"`, but `Catalog.ensure_stripe_product/2`
+creates **one Stripe Product per bundle SKU**, so a bundle item's `price.product` is an
+unknown `prod_…` and the raw id is returned. `stats/1` counts `san_api_active_and_paid` via
+`product_name_starts_with("SanAPI")`, so bundles are not counted, and
+`plan_nickname`/`product_name` name only one of a bundle's packages. MRR itself is now correct.
+Fixing the classification needs a decision on how a bundle maps to a reporting product; the
+expanded price carries `metadata["sanbase_sku"]` as a detection hook. Current behaviour is
+pinned by a test in `test/sanbase/billing/subscription/timeseries_test.exs` so the gap stays
+visible.
+
+**8. `past_due` grants full access — dunning is ~3 weeks of free bundle access.**
+`subscription/query.ex:8` grants access on `:active` **and** `:past_due`. Pre-existing for
+every plan, but the exposure scales with price: ~3 weeks of $1,050/month access instead of
+$70. Belongs to task **TR**, still not started.
+
+**9. Interval flipping leaves credit balances that silently cover future invoices.** The stage
+subscription's 2027 renewal already shows `Applied balance -$3,500.00`, amount due $0.00.
+Product decision needed: is interval switching free, once per period, or renewal-only?
+
+**Not an abuse surface, but found in the same run:** the `/admin/bundle_subscriptions` "make a
+real GraphQL call" card posts to `SanbaseWeb.Endpoint.url()`, i.e. the admin pod's own
+endpoint. `:graphql_cache` is only started when `container_type() in ["web", "all"]`
+(`application.ex:355-363`), so `cachex_key_lock.ex:58` hard-matches `{:ok, cache_record}`
+against `{:error, :no_cache}` and every cached query 500s there. Use the card's curl command
+against the API host, or make the target host an input on the card.
 
 ---
 
@@ -966,7 +1082,7 @@ Engineering-side, needing no product input: package ↔ metrics source of truth 
 | **EN** — entitlement resolver | ✅ done | `Bundle.Resolver.resolve/2` (pure) + `sync/1` (persists). All §6.3 rules applied. |
 | **BA** — bundle access path | ✅ done | Access, data windows, call quota, and `get_available_metrics_for_plan` all implemented. `bundle_entry_points/0` is empty. The four Sanbase-side limits answer as PRO (§5.9). |
 | **OB** — admin visibility | ✅ done | Two admin pages, `/admin/bundle_packages` and `/admin/bundle_subscriptions`. |
-| **WH** — quota write | ✅ partial | The `api_call_limits` write is done (§5.10) — resolved numbers stored on the row, refreshed by `Resolver.sync/1`. The Stripe webhook branching it was bundled with is not. |
+| **WH** — webhook / multi-item sync | ✅ done | `Bundle.ItemSync` + branches in `stripe_event.ex` for `created` / `updated` / `deleted`. Bundle detected by price id in `bundle_prices`; adopts a dashboard-created bundle; reconciles items and re-resolves; drops the quota on cancel. Legacy single-item path byte-identical. The `api_call_limits` write (§5.10) was already in place. |
 | **AM** — available metrics | ✅ done | `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` catalogs from the latest published snapshot. AccessChecker entitlement path clears the last BA raise. Non-bundle plans unchanged. |
 | **SC** — Stripe catalog | ✅ done | `Bundle.Catalog` via `Billing.sync_bundle_catalog_with_stripe/0` (also in `@reboot` `sync_products_with_stripe`). 12 local rows; package Stripe Prices via Price API; `api_calls_500k` amount still TBD. |
 | **SL** — subscribe lifecycle | ✅ done | `Bundle.Lifecycle` + GraphQL mutations; SaleControls activate/deactivate; legacy auto-replace; `upgrade_downgrade` guard. |
@@ -1012,16 +1128,24 @@ categories that *do* exist if a name is ever wrong.
 
 **What a bundle can do now:** be bought (staff preview in `:legacy` mode, or public after Go Live) via `subscribeBundle`, with add/remove/switch/cancel. Catalog browsing still works via `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` without a subscription.
 
-**Still needed for production durability:** **WH** — Stripe webhook branching to re-sync items + entitlement on Stripe-initiated events (mutations already write locally).
+✅ **Stripe-initiated changes now land locally.** **WH** closed the last gap that
+needed a human: a bundle changed in the Stripe dashboard, or an item change whose
+`subscription.updated` events arrive after the mutation returned, is reconciled
+against `subscription_items` and re-resolved. A bundle assembled entirely in the
+dashboard is adopted onto the `BUNDLE` marker plan for its interval.
+
+**Outside WH's scope:** §7.3 #4 (`stripe_sync.ex`) and #5 (`timeseries.ex`) are
+first-item *read* assumptions — a bundle's plan in the reconciliation job and its
+MRR attribution. They do not crash and they are not on the access path. **WH**
+covers only the webhook write path; those two are tracked on their own.
 
 ### 13.1 Next
 
-1. **`WH`** — webhook branching for multi-item sync + entitlement refresh (quota write already done in §5.10).
-2. **`IN`** (parallel) — Institutional as a fixed standard plan. Does not share the multi-item path; uses offering gate + standard `subscribe`.
-3. **`EP`** — confirm Enterprise = CUSTOM sales path; thin plan/admin work only.
-4. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist; use `bundleCatalog` + plan flags (`is_private` / `is_deprecated`).
-5. When product prices `api_calls_500k`: set amounts + `Sanbase.Billing.sync_bundle_catalog_with_stripe()` (or wait for `@reboot`) — no code change.
-6. Use `/admin/bundle_offering` to activate bundle plans and/or deactivate Business Pro/Max when ready.
+1. **`IN`** — Institutional as a fixed standard plan. Does not share the multi-item path; uses offering gate + standard `subscribe`.
+2. **`EP`** — confirm Enterprise = CUSTOM sales path; thin plan/admin work only.
+3. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist; use `bundleCatalog` + plan flags (`is_private` / `is_deprecated`).
+4. When product prices `api_calls_500k`: set amounts + `Sanbase.Billing.sync_bundle_catalog_with_stripe()` (or wait for `@reboot`) — no code change.
+5. Use `/admin/bundle_offering` to activate bundle plans and/or deactivate Business Pro/Max when ready.
 
 Prices on the mock are **not final** and must not gate further work.
 

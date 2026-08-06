@@ -150,6 +150,92 @@ defmodule Sanbase.Billing.BundleApiAccessTest do
     end
   end
 
+  describe "what the refusal message tells a bundle customer to do" do
+    setup context do
+      subscribe(context.bundle_plan, ["social", "development"])
+    end
+
+    test "names the package the metric is sold in, never the plan ladder", context do
+      %{conn: conn, project: project} = context
+
+      # The bug this replaces: `min_plan` answered from the ordinal plan ladder,
+      # which a bundle is not on, so a customer paying $1050/month was told to
+      # "upgrade to SANAPI FREE subscription".
+      assert refusal(conn, "price_usd", project.slug) ==
+               """
+               The metric price_usd is not included in your SANAPI bundle. \
+               It is part of the Market Data package - add it with the addBundleItem \
+               mutation, or contact Santiment.
+               """
+    end
+
+    test "never suggests an upgrade or a lower tier", context do
+      %{conn: conn, project: project} = context
+
+      message = refusal(conn, "price_usd", project.slug)
+
+      refute message =~ "upgrade"
+      refute message =~ "FREE"
+      refute message =~ "min_plan"
+    end
+
+    test "lists every package when the metric is sold in more than one", context do
+      %{conn: conn, project: project} = context
+
+      # Published after the subscription was resolved, so the entitlement still
+      # denies price_usd while the message reads the newer snapshot.
+      also_categorize("price_usd", "On-chain Labels")
+      {:ok, _} = PackageSnapshot.publish(notes: "price_usd in two categories")
+
+      assert refusal(conn, "price_usd", project.slug) ==
+               """
+               The metric price_usd is not included in your SANAPI bundle. \
+               It is part of the Market Data and On-chain Labels packages - add it \
+               with the addBundleItem mutation, or contact Santiment.
+               """
+    end
+
+    test "says so plainly when the metric is in no package at all", context do
+      %{conn: conn, project: project} = context
+
+      # Naming a package here would send the customer to buy something that would
+      # not give them the metric either.
+      assert refusal(conn, "withdrawal_balance", project.slug) ==
+               """
+               The metric withdrawal_balance is not included in your SANAPI bundle. \
+               It is not part of any package that is currently sold - please contact Santiment.
+               """
+    end
+
+    test "falls back to the same sentence when no snapshot is published", context do
+      %{conn: conn, project: project} = context
+
+      Repo.delete_all(PackageSnapshot)
+
+      assert refusal(conn, "price_usd", project.slug) ==
+               """
+               The metric price_usd is not included in your SANAPI bundle. \
+               It is not part of any package that is currently sold - please contact Santiment.
+               """
+    end
+
+    test "does not raise for a refused query, which has no package", context do
+      # Queries are granted to every bundle today, so reaching this needs an
+      # entitlement that denies one. It is here because the message builder runs
+      # for queries and signals too, and a crash on the error path would replace
+      # the refusal with a 500.
+      %{conn: conn, subscription: subscription} = context
+
+      deny_queries(subscription)
+
+      assert history_price_refusal(conn) ==
+               """
+               The query history_price is not included in your SANAPI bundle. \
+               It is not part of any package that is currently sold - please contact Santiment.
+               """
+    end
+  end
+
   describe "the same plan name, two different customers" do
     test "get different answers on a real request", context do
       %{bundle_plan: plan, project: project} = context
@@ -379,6 +465,48 @@ defmodule Sanbase.Billing.BundleApiAccessTest do
 
     {:ok, snapshot} = PackageSnapshot.publish(notes: "test")
     snapshot
+  end
+
+  defp also_categorize(metric, category_name) do
+    category = Repo.get_by!(MetricCategory, name: category_name)
+
+    {:ok, _} =
+      MetricCategoryMapping.create(%{
+        module: "Sanbase.Metric.BundleTestAdapter",
+        metric: metric,
+        category_id: category.id
+      })
+  end
+
+  defp deny_queries(subscription) do
+    {:ok, _} =
+      subscription
+      |> Subscription.bundle_entitlement_changeset(%{
+        packages: ["social"],
+        metric_access: %{"accessible" => []},
+        query_access: %{"accessible" => []},
+        signal_access: %{"accessible" => "all"},
+        api_call_limits: %{"month" => 100_000, "hour" => 30_000, "minute" => 600},
+        package_snapshot_version: PackageSnapshot.latest().version
+      })
+      |> Repo.update()
+  end
+
+  defp refusal(conn, metric, slug) do
+    get_metric(conn, metric, slug)["errors"] |> hd() |> Map.get("message")
+  end
+
+  defp history_price_refusal(conn) do
+    result =
+      execute(conn, """
+      {
+        historyPrice(slug: "bitcoin", from: "utc_now-7d", to: "utc_now", interval: "1d") {
+          priceUsd
+        }
+      }
+      """)
+
+    result["errors"] |> hd() |> Map.get("message")
   end
 
   defp get_metric(conn, metric, slug) do

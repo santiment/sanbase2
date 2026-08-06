@@ -240,6 +240,47 @@ defmodule Sanbase.Billing.Plan.Bundle.PackageSnapshotTest do
     end
   end
 
+  describe "packages_containing/1" do
+    setup %{categories: categories} do
+      shared = MetricRegistryHelpers.create_registry_metric("bundle_test_nft_volume")
+      map_registry(shared, categories["market"])
+      map_registry(shared, categories["onchain_labels"])
+
+      categorize("bundle_test_price", categories["market"])
+
+      {:ok, snapshot} = PackageSnapshot.publish()
+
+      %{snapshot: snapshot}
+    end
+
+    test "names the package a metric is sold in" do
+      assert PackageSnapshot.packages_containing("bundle_test_price") == ["market"]
+    end
+
+    test "names every package a dual-membership metric is sold in" do
+      assert PackageSnapshot.packages_containing("bundle_test_nft_volume") ==
+               ["market", "onchain_labels"]
+    end
+
+    test "is empty for a metric that is in no package" do
+      assert PackageSnapshot.packages_containing("bundle_test_not_categorized") == []
+    end
+
+    test "is empty for anything that is not a metric name" do
+      # Queries arrive here as atoms. They are never in a package, and this is an
+      # error path, so it answers rather than raising.
+      assert PackageSnapshot.packages_containing(:history_price) == []
+      assert PackageSnapshot.packages_containing(nil) == []
+    end
+
+    test "is empty when nothing has been published", %{snapshot: snapshot} do
+      Sanbase.Repo.delete!(snapshot)
+
+      assert PackageSnapshot.latest() == nil
+      assert PackageSnapshot.packages_containing("bundle_test_price") == []
+    end
+  end
+
   describe "Package definitions" do
     test "slugs are unique and stable" do
       slugs = Package.slugs()

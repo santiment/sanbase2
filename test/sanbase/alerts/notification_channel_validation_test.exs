@@ -55,6 +55,38 @@ defmodule Sanbase.Alert.Validation.NotificationChannelTest do
       assert {:error, _} = NotificationChannel.valid_notification_channel?(%{webhook: 123})
     end
 
+    test "webhook with http URL is rejected" do
+      assert {:error, error} =
+               NotificationChannel.valid_notification_channel?(%{webhook: "http://example.com/x"})
+
+      assert error =~ "must use the https scheme"
+
+      assert {:error, _} =
+               NotificationChannel.valid_notification_channel?(%{
+                 "webhook" => "http://example.com/x"
+               })
+    end
+
+    test "webhook with IP address host is rejected" do
+      assert {:error, error} =
+               NotificationChannel.valid_notification_channel?(%{webhook: "https://8.8.8.8/x"})
+
+      assert error =~ "is an IP address"
+
+      assert {:error, _} =
+               NotificationChannel.valid_notification_channel?(%{
+                 "webhook" => "https://[2606:4700::1111]/x"
+               })
+    end
+
+    test "webhook with private IP or localhost is rejected" do
+      assert {:error, _} =
+               NotificationChannel.valid_notification_channel?(%{webhook: "https://127.0.0.1/x"})
+
+      assert {:error, _} =
+               NotificationChannel.valid_notification_channel?(%{webhook: "https://localhost/x"})
+    end
+
     test "telegram_channel map with non-binary id is rejected" do
       assert {:error, _} =
                NotificationChannel.valid_notification_channel?(%{telegram_channel: nil})

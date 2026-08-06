@@ -4,12 +4,20 @@ defmodule Sanbase.Alert.Validation.NotificationChannel do
 
   def valid_notification_channels(), do: @notification_channels
 
+  @doc ~s"""
+  Extract the webhook URL from a channel entry, in both its stored
+  (string-key) and loaded (atom-key) shape.
+  """
+  def webhook_url(%{"webhook" => url}) when is_binary(url), do: {:ok, url}
+  def webhook_url(%{webhook: url}) when is_binary(url), do: {:ok, url}
+  def webhook_url(_channel), do: :error
+
   # TODO: Check if the key => value checks are needed
   def valid_notification_channel?(%{"webhook" => webhook_url}) when is_binary(webhook_url),
-    do: Sanbase.Utils.Validation.valid_public_url?(webhook_url)
+    do: Sanbase.Utils.Validation.valid_webhook_url?(webhook_url)
 
   def valid_notification_channel?(%{webhook: webhook_url}) when is_binary(webhook_url),
-    do: Sanbase.Utils.Validation.valid_public_url?(webhook_url)
+    do: Sanbase.Utils.Validation.valid_webhook_url?(webhook_url)
 
   def valid_notification_channel?(%{"telegram_channel" => telegram_channel})
       when is_binary(telegram_channel),

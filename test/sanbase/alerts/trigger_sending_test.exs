@@ -190,6 +190,233 @@ defmodule Sanbase.Alert.TriggerSendingTest do
     end
   end
 
+  describe "IP webhook destinations at runtime" do
+    @tag capture_log: true
+    test "scheduler deactivates alert whose webhook host is an IP address", context do
+      %{user: user, project: project} = context
+
+      # Create-time validation rejects IP hosts, so plant a legacy trigger by
+      # updating the embed directly, bypassing the validation.
+      {:ok, trigger} =
+        create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
+
+      plant_ip_webhook!(trigger.id, "https://8.8.8.8/hook")
+
+      Sanbase.Mock.prepare_mock2(
+        &HTTPoison.post/3,
+        {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        Scheduler.run_alert(MetricTriggerSettings)
+
+        {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+        assert user_trigger.trigger.is_active == false
+      end)
+    end
+
+    @tag capture_log: true
+    test "send/1 rejects webhook URL with a public IP host", context do
+      user_trigger = build_webhook_user_trigger(context.user, "https://8.8.8.8/hook")
+
+      assert [{"santiment", {:error, error}}] = Sanbase.Alert.Any.send(user_trigger)
+      assert %{reason: :webhook_url_not_valid, error: reason} = error
+      assert reason =~ "is an IP address"
+    end
+
+    @tag capture_log: true
+    test "send/1 rejects legacy http webhook URL", context do
+      user_trigger = build_webhook_user_trigger(context.user, "http://example.com/hook")
+
+      assert [{"santiment", {:error, error}}] = Sanbase.Alert.Any.send(user_trigger)
+      assert %{reason: :webhook_url_not_valid, error: reason} = error
+      assert reason =~ "must use the https scheme"
+    end
+  end
+
+  describe "failing alerts auto-disable" do
+    @tag capture_log: true
+    test "failed webhook send starts the failing streak", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} =
+        create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
+
+      run_scheduler_with_webhook_response(project, 500)
+
+      {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+
+      assert %DateTime{} = user_trigger.trigger.failing_since
+
+      assert Sanbase.TestUtils.datetime_close_to(
+               Timex.now(),
+               user_trigger.trigger.failing_since,
+               60,
+               :seconds
+             )
+
+      assert user_trigger.trigger.failed_attempts == 1
+      assert user_trigger.trigger.consecutive_failed_days == 1
+      assert user_trigger.trigger.last_failed_on == Date.utc_today()
+      assert user_trigger.trigger.is_active == true
+    end
+
+    @tag capture_log: true
+    test "successful send clears the failing streak", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} =
+        create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
+
+      plant_trigger_state!(trigger.id, %{
+        failing_since: days_ago(3),
+        failed_attempts: 42,
+        consecutive_failed_days: 3,
+        last_failed_on: Date.add(Date.utc_today(), -1)
+      })
+
+      run_scheduler_with_webhook_response(project, 200)
+
+      {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+
+      assert user_trigger.trigger.failing_since == nil
+      assert user_trigger.trigger.failed_attempts == 0
+      assert user_trigger.trigger.consecutive_failed_days == 0
+      assert user_trigger.trigger.last_failed_on == nil
+      assert user_trigger.trigger.is_active == true
+    end
+
+    @tag capture_log: true
+    test "alert failing on 7 days in a row is deactivated", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} =
+        create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
+
+      plant_trigger_state!(trigger.id, %{
+        failing_since: days_ago(7),
+        failed_attempts: 60,
+        consecutive_failed_days: 6,
+        last_failed_on: Date.add(Date.utc_today(), -1)
+      })
+
+      run_scheduler_with_webhook_response(project, 500)
+
+      {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+
+      assert user_trigger.trigger.consecutive_failed_days == 7
+      assert user_trigger.trigger.is_active == false
+    end
+
+    @tag capture_log: true
+    test "a day without failures breaks the chain", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} =
+        create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
+
+      # Last failure 3 days ago - the failure-free days in between restart
+      # the chain from 1 instead of reaching 7.
+      plant_trigger_state!(trigger.id, %{
+        failing_since: days_ago(10),
+        failed_attempts: 60,
+        consecutive_failed_days: 6,
+        last_failed_on: Date.add(Date.utc_today(), -3)
+      })
+
+      run_scheduler_with_webhook_response(project, 500)
+
+      {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+
+      assert user_trigger.trigger.consecutive_failed_days == 1
+      assert user_trigger.trigger.failed_attempts == 61
+      assert user_trigger.trigger.is_active == true
+
+      # The failing_since marker is preserved - there was still no success
+      assert Sanbase.TestUtils.datetime_close_to(
+               days_ago(10),
+               user_trigger.trigger.failing_since,
+               60,
+               :seconds
+             )
+    end
+
+    @tag capture_log: true
+    test "multiple failures within the same day count as one day", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} =
+        create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
+
+      plant_trigger_state!(trigger.id, %{
+        failing_since: days_ago(6),
+        failed_attempts: 40,
+        consecutive_failed_days: 6,
+        last_failed_on: Date.utc_today()
+      })
+
+      run_scheduler_with_webhook_response(project, 500)
+
+      {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+
+      assert user_trigger.trigger.consecutive_failed_days == 6
+      assert user_trigger.trigger.failed_attempts == 41
+      assert user_trigger.trigger.is_active == true
+    end
+  end
+
+  defp run_scheduler_with_webhook_response(project, status_code) do
+    mock_fun =
+      [
+        fn -> {:ok, %{project.slug => 10}} end,
+        fn -> {:ok, %{project.slug => 15}} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    |> Sanbase.Mock.prepare_mock2(
+      &HTTPoison.post/3,
+      {:ok, %HTTPoison.Response{status_code: status_code, body: ""}}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Scheduler.run_alert(MetricTriggerSettings)
+    end)
+  end
+
+  defp build_webhook_user_trigger(user, webhook_url) do
+    %{
+      id: 555,
+      user_id: user.id,
+      user: user,
+      trigger: %{
+        id: 555,
+        settings: %{
+          channel: %{webhook: webhook_url},
+          payload: %{"santiment" => "some payload"}
+        }
+      }
+    }
+  end
+
+  defp plant_ip_webhook!(user_trigger_id, url) do
+    ut = Sanbase.Repo.get(UserTrigger, user_trigger_id)
+    settings = Map.put(ut.trigger.settings, "channel", [%{"webhook" => url}])
+
+    plant_trigger_state!(user_trigger_id, %{settings: settings})
+  end
+
+  # Update the embedded trigger directly, bypassing the create/update
+  # validations, to simulate legacy DB state.
+  defp plant_trigger_state!(user_trigger_id, %{} = trigger_attrs) do
+    Sanbase.Repo.get(UserTrigger, user_trigger_id)
+    |> Sanbase.Repo.preload([:tags])
+    |> UserTrigger.update_changeset(%{trigger: trigger_attrs})
+    |> Sanbase.Repo.update!()
+  end
+
+  defp days_ago(days) do
+    Sanbase.Utils.DateTime.days_ago(days) |> DateTime.truncate(:second)
+  end
+
   defp create_trigger(user, slug, opts) do
     metric = Keyword.get(opts, :metric, "active_addresses_24h")
     time_window = Keyword.get(opts, :time_window, "1d")

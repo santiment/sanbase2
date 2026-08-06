@@ -87,6 +87,27 @@ defmodule Sanbase.Alert.UserTrigger do
     })
   end
 
+  @doc ~s"""
+  Persist the result of an alert send round in a single write. Internal API
+  for the scheduler: unlike `update_user_trigger/2` it keeps nil values (so
+  the failing state can be cleared) and does not re-validate the settings.
+  """
+  def record_send_result(%__MODULE__{} = user_trigger, %{
+        last_triggered: last_triggered,
+        failing_state: %{} = failing_state,
+        deactivate?: deactivate?
+      }) do
+    attrs =
+      %{last_triggered: last_triggered, settings: user_trigger.trigger.settings}
+      |> Map.merge(failing_state)
+
+    attrs = if deactivate?, do: Map.put(attrs, :is_active, false), else: attrs
+
+    user_trigger
+    |> update_changeset(%{trigger: attrs})
+    |> Repo.update()
+  end
+
   @impl Sanbase.Entity.Behaviour
   # is_public is virtual (computed from the embedded trigger), so the default
   # helper that selects it directly doesn't work here.

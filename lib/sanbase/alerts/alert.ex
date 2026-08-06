@@ -61,18 +61,18 @@ defimpl Sanbase.Alert, for: Any do
     )
 
     error_list =
-      Enum.map(payload_map, fn {identifier, _payload} ->
-        {identifier,
-         {:error,
-          %{
-            reason: :unsupported_notification_channel,
-            channel: channel,
-            user_id: user_id,
-            trigger_id: trigger_id
-          }}}
-      end)
+      error_for_each_identifier(payload_map, %{
+        reason: :unsupported_notification_channel,
+        channel: channel,
+        user_id: user_id,
+        trigger_id: trigger_id
+      })
 
     {"unknown", error_list}
+  end
+
+  defp error_for_each_identifier(payload_map, error) do
+    Enum.map(payload_map, fn {identifier, _payload} -> {identifier, {:error, error}} end)
   end
 
   defp send_webhook(
@@ -82,18 +82,22 @@ defimpl Sanbase.Alert, for: Any do
        ) do
     %{id: user_trigger_id} = trigger
 
-    fun = fn identifier, payload ->
-      case Sanbase.Utils.Validation.valid_public_url?(webhook_url) do
-        :ok ->
+    # Alerts created before the https/no-IP restrictions keep failing here
+    # and get auto-disabled by the scheduler.
+    case Sanbase.Utils.Validation.valid_webhook_url?(webhook_url) do
+      :ok ->
+        fun = fn identifier, payload ->
           payload = transform_payload(payload, trigger.id, :webhook)
           do_send_webhook(webhook_url, identifier, payload, user_trigger_id)
+        end
 
-        {:error, reason} ->
-          {:error, %{reason: :webhook_url_not_valid, error: reason}}
-      end
+        send_or_limit("webhook", trigger, max_alerts_to_send, fun)
+
+      {:error, reason} ->
+        %{trigger: %{settings: %{payload: payload_map}}} = trigger
+
+        error_for_each_identifier(payload_map, %{reason: :webhook_url_not_valid, error: reason})
     end
-
-    send_or_limit("webhook", trigger, max_alerts_to_send, fun)
   end
 
   defp send_email(
@@ -129,11 +133,11 @@ defimpl Sanbase.Alert, for: Any do
       trigger
 
     # The emails notifications are disabled
-    Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier,
-       {:error,
-        %{reason: :email_alert_notifications_disabled, user_id: user_id, trigger_id: trigger_id}}}
-    end)
+    error_for_each_identifier(payload_map, %{
+      reason: :email_alert_notifications_disabled,
+      user_id: user_id,
+      trigger_id: trigger_id
+    })
   end
 
   defp send_email(trigger, _max_alerts_to_send) do
@@ -143,9 +147,11 @@ defimpl Sanbase.Alert, for: Any do
       trigger: %{settings: %{payload: payload_map}}
     } = trigger
 
-    Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, %{reason: :no_email, user_id: user_id, trigger_id: trigger_id}}}
-    end)
+    error_for_each_identifier(payload_map, %{
+      reason: :no_email,
+      user_id: user_id,
+      trigger_id: trigger_id
+    })
   end
 
   defp send_telegram(
@@ -199,15 +205,11 @@ defimpl Sanbase.Alert, for: Any do
       }
     } = user_trigger
 
-    Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier,
-       {:error,
-        %{
-          reason: :telegram_alert_notifications_disabled,
-          user_id: user_id,
-          trigger_id: trigger_id
-        }}}
-    end)
+    error_for_each_identifier(payload_map, %{
+      reason: :telegram_alert_notifications_disabled,
+      user_id: user_id,
+      trigger_id: trigger_id
+    })
   end
 
   defp send_telegram(user_trigger, _max_alerts_to_send) do
@@ -217,9 +219,11 @@ defimpl Sanbase.Alert, for: Any do
       trigger: %{settings: %{payload: payload_map}}
     } = user_trigger
 
-    Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, %{reason: :no_telegram, user_id: user_id, trigger_id: trigger_id}}}
-    end)
+    error_for_each_identifier(payload_map, %{
+      reason: :no_telegram,
+      user_id: user_id,
+      trigger_id: trigger_id
+    })
   end
 
   defp send_telegram_channel(

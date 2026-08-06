@@ -906,6 +906,13 @@ A replaceable legacy SanAPI subscription is allowed to be present and is **not**
 
 ### UI. Self-serve purchase surface
 **What:** Pricing page / checkout reflecting the three-column offering (§1.1): composable package builder (left), Institutional CTA (middle), Enterprise contact CTA (right). Package checkout needs SC + SL. Institutional can use existing single-plan subscribe once **IN** lands. Enterprise is contact/sales, not cart.
+
+⚠️ **The Institutional plan ids have to be hardcoded, or a query has to be added.** Institutional is bought with `subscribe(plan_id:)` — id **311** monthly, **312** yearly, fixed by the migration so identical in every environment. But `productsWithPlans` excludes `INSTITUTIONAL%` by name unconditionally (the same exclusion `BUNDLE%` has), so there is no query the frontend can use to *discover* those ids. Two ways out, and the choice belongs to whoever builds the page:
+
+- hardcode 311 / 312, which works because the ids are pinned by the migration, or
+- add a small `institutionalPlans` query returning the two rows, gated on `SaleControls.bundle_plans_visible?/1` so it only answers once the offering is on — the counterpart of what `bundleCatalog` does for packages.
+
+Note that the `/admin/bundle_offering` switch controls *purchasability*, not visibility: activating the offering makes Institutional buyable while leaving it entirely absent from the pricing page. Rendering that column is frontend work either way.
 **Depends on:** SC, SL for packages; IN for Institutional button; EP only for copy/CTA. ⚠️ **Confirm ownership** — if this is a frontend-team deliverable, say so explicitly in the epic rather than leaving it unassigned.
 **Blocks the launch on its own:** the SanAPI pricing page crashes when the Business plans are withdrawn (§10.2). That fix is needed even if the package builder ships later, because it gates the moment we stop selling the old plans — and until the builder does ship, withdrawal leaves the "For Business" tab as a single contact-sales card.
 
@@ -1326,7 +1333,7 @@ We have no concept of seats today — one subscription belongs to one account. A
 
 ---
 
-**Q14. Should Institutional cancel a customer's separate Sanbase subscription?**
+**Q15. Should Institutional cancel a customer's separate Sanbase subscription?**
 
 Institutional includes full Sanbase. A customer who already pays for Sanbase separately and then buys Institutional currently keeps both subscriptions and pays for Sanbase twice.
 

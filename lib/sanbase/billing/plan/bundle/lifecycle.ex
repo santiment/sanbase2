@@ -263,11 +263,29 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   """
   @spec ensure_can_subscribe_institutional(User.t()) :: :ok | {:error, String.t()}
   def ensure_can_subscribe_institutional(%User{} = user) do
-    with :ok <- ensure_institutional_visible(user),
+    with :ok <- ensure_institutional_for_sale(user),
          {:ok, _replaceable} <- classify_for_subscribe(user) do
       :ok
     end
   end
+
+  @doc ~s"""
+  Whether the Institutional plan may be sold to this user at all.
+
+  The sale switch on its own, without the one-live-SanAPI-subscription rule. Moving
+  an *existing* subscription onto Institutional (`updateSubscription`) replaces
+  rather than adds, so it cannot produce a second live subscription and must not be
+  refused for having one - but it is still a sale, and a plan that is not for sale
+  must not be reachable through it.
+
+  Nothing else stops that path: `is_private` is not enforced anywhere as a purchase
+  gate, and deliberately so (§15 Q14 - `FREE` and the Sanbase tiers are all private
+  on production while being sold every day). This check is the only thing keeping
+  Institutional off sale before launch, so every route to it has to call one of
+  these two functions.
+  """
+  @spec ensure_institutional_for_sale(User.t()) :: :ok | {:error, String.t()}
+  def ensure_institutional_for_sale(%User{} = user), do: ensure_institutional_visible(user)
 
   @spec list_replaceable_sanapi_subs(User.t()) :: [Subscription.t()]
   def list_replaceable_sanapi_subs(%User{} = user) do

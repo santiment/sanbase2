@@ -252,6 +252,27 @@ defmodule Sanbase.Billing.Plan.InstitutionalTest do
       assert Repo.reload!(legacy).status == :active
     end
 
+    test "the sale switch is checked on its own, without the one-subscription rule" do
+      # What `updateSubscription` needs. That path replaces the subscription it is
+      # called on, so a customer who already has a live SanAPI subscription must not
+      # be refused for having one - but the plan still has to be for sale.
+      user = insert(:user)
+
+      insert(:subscription_pro,
+        user_id: user.id,
+        plan_id: business_pro_plan().id,
+        status: :active,
+        stripe_id: "sub_legacy_" <> Ecto.UUID.generate()
+      )
+
+      assert {:error, "The Institutional plan is not available for purchase yet"} =
+               Lifecycle.ensure_institutional_for_sale(user)
+
+      activate_offering()
+
+      assert :ok = Lifecycle.ensure_institutional_for_sale(user)
+    end
+
     test "subscribe refuses before charging anything", %{user: user} do
       # The gate is only worth having if it runs before Stripe does. If it moved
       # below the charge, the customer would be billed and then told no.

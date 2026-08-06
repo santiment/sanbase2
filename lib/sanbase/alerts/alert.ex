@@ -84,7 +84,7 @@ defimpl Sanbase.Alert, for: Any do
 
     # Alerts created before the https/no-IP restrictions keep failing here
     # and get auto-disabled by the scheduler.
-    case Sanbase.Utils.Validation.valid_webhook_url?(webhook_url) do
+    case webhook_url_send_time_validation(webhook_url) do
       :ok ->
         fun = fn identifier, payload ->
           payload = transform_payload(payload, trigger.id, :webhook)
@@ -93,10 +93,28 @@ defimpl Sanbase.Alert, for: Any do
 
         send_or_limit("webhook", trigger, max_alerts_to_send, fun)
 
-      {:error, reason} ->
+      {:error, reason_atom, message} ->
         %{trigger: %{settings: %{payload: payload_map}}} = trigger
 
-        error_for_each_identifier(payload_map, %{reason: :webhook_url_not_valid, error: reason})
+        error_for_each_identifier(payload_map, %{reason: reason_atom, error: message})
+    end
+  end
+
+  # On top of the URL validation (which checks the host literal), check what
+  # the host currently resolves to, so a domain pointing at a private address
+  # cannot be used for SSRF via DNS.
+  defp webhook_url_send_time_validation(webhook_url) do
+    with :ok <- Sanbase.Utils.Validation.valid_webhook_url?(webhook_url) do
+      host = URI.parse(webhook_url).host
+
+      if Sanbase.Utils.IP.resolves_to_blocked_ip?(host) do
+        {:error, :webhook_url_resolves_to_blocked_ip,
+         "URL host '#{host}' resolves to a private, reserved or otherwise blocked address"}
+      else
+        :ok
+      end
+    else
+      {:error, reason} -> {:error, :webhook_url_not_valid, reason}
     end
   end
 

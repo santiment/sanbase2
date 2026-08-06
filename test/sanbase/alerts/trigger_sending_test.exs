@@ -270,6 +270,18 @@ defmodule Sanbase.Alert.TriggerSendingTest do
     end
 
     @tag capture_log: true
+    test "send/1 rejects webhook URL whose host resolves to a blocked IP", context do
+      user_trigger = build_webhook_user_trigger(context.user, "https://example.com/hook")
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.Utils.IP.resolves_to_blocked_ip?/1, true)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert [{"santiment", {:error, error}}] = Sanbase.Alert.Any.send(user_trigger)
+        assert %{reason: :webhook_url_resolves_to_blocked_ip, error: message} = error
+        assert message =~ "resolves to a private, reserved or otherwise blocked address"
+      end)
+    end
+
+    @tag capture_log: true
     test "send/1 rejects legacy http webhook URL", context do
       user_trigger = build_webhook_user_trigger(context.user, "http://example.com/hook")
 

@@ -12,12 +12,32 @@ defmodule Sanbase.Alert.Validation.NotificationChannel do
   def webhook_url(%{webhook: url}) when is_binary(url), do: {:ok, url}
   def webhook_url(_channel), do: :error
 
+  @doc ~s"""
+  Strict validation of the webhook URLs in a channel definition, applied on
+  alert create/update. It is not part of `valid_notification_channel?/1` on
+  purpose - that one also runs on every evaluation and would auto-disable
+  legacy alerts whose other channels still work.
+  """
+  def validate_webhook_urls(channel) do
+    channel
+    |> List.wrap()
+    |> Enum.reduce_while(:ok, fn entry, :ok ->
+      with {:ok, url} <- webhook_url(entry),
+           {:error, _} = error <- Sanbase.Utils.Validation.valid_webhook_url?(url) do
+        {:halt, error}
+      else
+        _ -> {:cont, :ok}
+      end
+    end)
+  end
+
   # TODO: Check if the key => value checks are needed
+  # The webhook checks are structural only - see validate_webhook_urls/1
   def valid_notification_channel?(%{"webhook" => webhook_url}) when is_binary(webhook_url),
-    do: Sanbase.Utils.Validation.valid_webhook_url?(webhook_url)
+    do: :ok
 
   def valid_notification_channel?(%{webhook: webhook_url}) when is_binary(webhook_url),
-    do: Sanbase.Utils.Validation.valid_webhook_url?(webhook_url)
+    do: :ok
 
   def valid_notification_channel?(%{"telegram_channel" => telegram_channel})
       when is_binary(telegram_channel),

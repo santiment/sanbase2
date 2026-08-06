@@ -52,13 +52,41 @@ defmodule Sanbase.Alert.Trigger.FailingState do
     ])
   end
 
+  # Failures split by how they disable an alert. Email failures and telegram
+  # rate limits count as neither - they can be on our side, not the client's.
+  # :telegram_chat_not_found_404 is also excluded: telegram returns 404 for an
+  # invalid bot token (our misconfiguration), not for a missing chat.
+  @permanent_failure_reasons [
+    :webhook_url_not_valid,
+    :telegram_chat_not_found,
+    :telegram_bot_blocked
+  ]
+
+  @streak_failure_reasons [:webhook_send_fail]
+
   @doc ~s"""
-  Send failures that count towards the failing state. The daily alerts limit
-  does not mean the destination is broken, so it does not count.
+  Failures proving the destination itself is broken - an invalid webhook URL
+  or an unreachable telegram chat. They disable the alert on the spot.
   """
-  def delivery_failure?({:error, %{reason: :alerts_limit_reached}}), do: false
-  def delivery_failure?({:error, _}), do: true
+  def permanent_failure?({:error, %{reason: reason}}), do: reason in @permanent_failure_reasons
+  def permanent_failure?(_result), do: false
+
+  @doc ~s"""
+  Possibly transient failures that count towards the failing state and
+  disable the alert only after failing for 7 days in a row.
+  """
+  def delivery_failure?({:error, %{reason: reason}}), do: reason in @streak_failure_reasons
   def delivery_failure?(_result), do: false
+
+  @doc ~s"""
+  Disable the alert immediately - every send attempt of the round failed with
+  a permanent error, so all its destinations are broken. If any channel
+  delivered or failed transiently (email, rate limit), the alert is kept
+  active.
+  """
+  def deactivate_now?(%{all_permanent_failures?: all_permanent_failures?}) do
+    all_permanent_failures?
+  end
 
   @doc ~s"""
   Deactivate an alert that failed on 7+ days in a row with no successful send

@@ -332,13 +332,30 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     Billing.create_or_update_stripe_customer(user, card_token)
   end
 
+  # `payment_behavior: "error_if_incomplete"` is what makes a refused card a
+  # failed purchase rather than a half-made one.
+  #
+  # Under Stripe's default (`allow_incomplete`) a declined first invoice still
+  # answers `{:ok, subscription}`, with status `incomplete` and its invoice left
+  # open - so the caller cannot tell a sale from a refusal, and Stripe goes on
+  # retrying that invoice for the next day. Since `classify_active_sanapi/1` does
+  # not count `incomplete` as active, the customer who changes card and buys
+  # again gets a second subscription, and is billed twice if the retry on the
+  # first one then collects.
+  #
+  # With this, Stripe creates nothing and returns an error, which is the truth of
+  # what happened. There is nothing to resume either way: `off_session: true`
+  # means no authentication is being offered, so a card that needs 3DS is refused
+  # here regardless. Supporting that properly is `default_incomplete` plus a
+  # client-side confirmation step - a feature, not a fallback.
   defp create_stripe_bundle_sub(user, prices, coupon) do
     items = Enum.map(prices, fn %Price{stripe_price_id: id} -> %{price: id} end)
 
     params = %{
       customer: user.stripe_customer_id,
       items: items,
-      off_session: true
+      off_session: true,
+      payment_behavior: "error_if_incomplete"
     }
 
     params =

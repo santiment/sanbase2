@@ -986,20 +986,36 @@ through to the ordinal-ladder branch and `AccessChecker.min_plan/2` answered `fr
 `"BUNDLE" <> _` clause names the package to buy, resolved from the latest snapshot via
 `PackageSnapshot.packages_containing/1`.
 
-**3. ✅ Fixed — a declined bundle purchase cancelled the customer's paid legacy subscription.**
-The worst of the three. `create_stripe_bundle_sub/3` passes no `payment_behavior`, so Stripe's
-default `allow_incomplete` answers **`{:ok, subscription}` with status `incomplete`** when the
-first invoice is refused — not an error tuple. `subscribe/2` treated that as a completed
-purchase and called `cancel_replaceable/1` regardless. Reproduced on stage: BUSINESS_PRO bought
-at 13:11 for $420 (succeeded), bundle attempted at 13:14 with `pm_card_chargeCustomerFail`
-($1,050 failed), and BUSINESS_PRO was cancelled at 13:14 anyway. The customer was left paying
-for neither plan, and the $419.98 unused-time credit was applied to a bundle that will never
-charge — visible as the incomplete subscription's `$630.02` next invoice. The legacy path had
-always guarded this (`subscription.ex:319` runs `maybe_cancel_async` only when the new row is
-`:active`); the bundle path lost the guard. `cancel_replaceable_if_live/2` now applies the same
-predicate `stale_replaced_subscriptions/0` uses, so the inline cancel and its hourly retry
-agree on what counts as replaced — and if the customer later completes the payment, that job
-finishes the replacement within the hour.
+**3. ✅ Fixed — a declined card cancelled the customer's paid legacy plan, and a retry then
+bought a second bundle.** The worst of the three, and both halves come from one root cause:
+`create_stripe_bundle_sub/3` passed no `payment_behavior`, so under Stripe's default
+`allow_incomplete` a refused first invoice still answers **`{:ok, subscription}` with status
+`incomplete`** — not an error tuple. The caller cannot tell a sale from a refusal.
+
+Reproduced end to end on a second stage account:
+
+| Time | Event |
+| --- | --- |
+| 13:11 | BUSINESS_PRO bought, `$420.00` **succeeded** |
+| 13:14 | bundle attempted with `pm_card_chargeCustomerFail`, `$1,050.00` **failed**, subscription created `incomplete`, invoice `OLFLOTT0-0002` left **open** |
+| 13:14 | **BUSINESS_PRO cancelled** — `subscribe/2` had read the incomplete subscription as bought |
+| 13:16 | good card attached, bundle bought again — **allowed**, because `classify_active_sanapi/1` does not count `incomplete` as active |
+| 13:16 | `$630.02` succeeded = `$1,050 − $419.98`, the cancelled BUSINESS_PRO's unused time funding the retry |
+
+That left the customer with no access at all between 13:14 and 13:16 despite having paid, and
+then with **two Stripe bundle subscriptions** — one active, one incomplete still holding an open
+$1,050 invoice that Stripe retries for ~23 hours. With a working card now on file, a successful
+retry would have made it active too: two active bundles, billed twice.
+
+Two fixes. The root one is `payment_behavior: "error_if_incomplete"`, so Stripe creates nothing
+and returns an error — no incomplete subscription, no open invoice, nothing to duplicate, and
+the failure is visible to `subscribe/2`. Nothing is lost by refusing: `off_session: true` means
+no authentication is on offer, so a card needing 3DS fails either way, and supporting that is
+`default_incomplete` plus a client confirmation step — a feature, not a fallback. The second fix
+is defence in depth: `cancel_replaceable_if_live/2` only cancels the legacy plan when the new
+row is in `@active_statuses`, the same predicate `stale_replaced_subscriptions/0` applies, so
+the inline cancel and its hourly retry now agree on what counts as replaced. The legacy path had
+this guard all along (`subscription.ex:319`); the bundle path had lost it.
 
 **4. A scheduled removal cannot be undone.** No mutation clears `remove_at`, and
 `addBundleItem` on the same SKU hits the `(subscription_id, sku)` unique index. A misclick

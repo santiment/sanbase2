@@ -257,6 +257,38 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
       end
     end
 
+    test "asks Stripe to create nothing at all if the first invoice cannot be paid",
+         %{user: user} = context do
+      legacy =
+        insert(:subscription_pro,
+          user_id: user.id,
+          plan_id: context.plans.plan_business_pro_monthly.id,
+          status: :active,
+          stripe_id: "sub_legacy_" <> Ecto.UUID.generate()
+        )
+
+      declined =
+        {:error, %Stripe.Error{source: :stripe, code: :card_declined, message: "declined"}}
+
+      with_mocks stripe_mocks(create_bundle_subscription: declined) do
+        assert ^declined = Lifecycle.subscribe(user, packages: ["market"], interval: "month")
+
+        # Without `error_if_incomplete` this same decline comes back as
+        # `{:ok, subscription}` with status `incomplete`, indistinguishable from a
+        # sale, and Stripe keeps its open invoice around to retry.
+        assert [%{payment_behavior: "error_if_incomplete"}] = calls(:create_bundle_subscription)
+
+        # Nothing was bought: no bundle row was written, and the plan the customer
+        # is still paying for is untouched.
+        subscription_ids =
+          from(s in Subscription, where: s.user_id == ^user.id, select: s.id) |> Repo.all()
+
+        assert subscription_ids == [legacy.id]
+        assert Repo.reload!(legacy).status == :active
+        assert calls(:cancel_with_proration) == []
+      end
+    end
+
     test "cancels the Stripe subscription when the items cannot be stored", %{user: user} do
       # Sellable, but not a real package - so the price resolves, Stripe charges,
       # and only then does the item fail to validate.
@@ -683,6 +715,7 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
     attach_result = Keyword.get(opts, :attach_payment_method_to_customer)
     drop_items_result = Keyword.get(opts, :drop_items)
     subscription_status = Keyword.get(opts, :subscription_status, "active")
+    create_sub_result = Keyword.get(opts, :create_bundle_subscription)
 
     [
       {StripeApi, [:passthrough],
@@ -700,12 +733,14 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
            stripe_id = "sub_test_" <> Integer.to_string(System.unique_integer([:positive]))
            remember_prices(stripe_id, price_ids)
 
-           StripeApiTestResponse.create_bundle_subscription_resp(
-             stripe_id: stripe_id,
-             price_ids: price_ids,
-             status: subscription_status
-           )
-           |> with_stable_item_ids()
+           create_sub_result ||
+             with_stable_item_ids(
+               StripeApiTestResponse.create_bundle_subscription_resp(
+                 stripe_id: stripe_id,
+                 price_ids: price_ids,
+                 status: subscription_status
+               )
+             )
          end,
          create_subscription_item: fn subscription_id, price_id, _opts ->
            record(:create_subscription_item, {subscription_id, price_id})

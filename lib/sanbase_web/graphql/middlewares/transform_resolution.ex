@@ -46,6 +46,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   @fields_with_selector [
     "timeseriesData",
     "timeseriesDataJson",
+    "timeseriesDataJsonWithDuplicates",
     "timeseriesDataPerSlug",
     "timeseriesDataPerSlugJson",
     "aggregatedTimeseriesData"

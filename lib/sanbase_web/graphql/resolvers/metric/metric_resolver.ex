@@ -27,7 +27,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # serialized), while the typed fields let GraphQL field selection filter keys.
   # `timeseries_data/3` and `timeseries_data_per_slug/3` each back both a typed
   # and a JSON field, so we look at which schema field is being resolved.
-  @json_field_identifiers [:timeseries_data_json, :timeseries_data_per_slug_json]
+  @json_field_identifiers [
+    :timeseries_data_json,
+    :timeseries_data_per_slug_json,
+    :timeseries_data_json_with_duplicates
+  ]
 
   def get_metric(_root, %{metric: metric} = args, resolution) do
     # TODO: Check that the version is also deprecated
@@ -330,6 +334,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     e -> reraise(e, __STACKTRACE__)
   end
 
+  def timeseries_data_with_duplicates(
+        _root,
+        args,
+        %{source: %{metric: metric, version: version}} = resolution
+      ) do
+    requested_fields = requested_fields(resolution)
+
+    fetch_timeseries_data(
+      metric,
+      version,
+      args,
+      requested_fields,
+      :timeseries_data_with_duplicates,
+      _json_variant? = true
+    )
+  rescue
+    e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
+    e -> reraise(e, __STACKTRACE__)
+  end
+
   def timeseries_data_per_slug(
         _root,
         args,
@@ -547,7 +571,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # exactly the same way. The only difference is the function that is called
   # from the Metric module.
   defp fetch_timeseries_data(metric, version, args, requested_fields, function, json_variant?)
-       when function in [:timeseries_data, :timeseries_data_per_slug] do
+       when function in [
+              :timeseries_data,
+              :timeseries_data_per_slug,
+              :timeseries_data_with_duplicates
+            ] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
     with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
@@ -623,6 +651,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     }
     |> maybe_put_computed_at(point, fields, append?)
   end
+
+  # The with-duplicates rows have the same shape as the regular timeseries_data
+  # ones (multiple rows just share a datetime), so they serialize the same way.
+  defp json_row(point, :timeseries_data_with_duplicates, fields, append?),
+    do: json_row(point, :timeseries_data, fields, append?)
 
   defp json_row(%{value: value} = point, :timeseries_data, fields, append?) do
     %{

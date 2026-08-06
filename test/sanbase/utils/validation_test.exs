@@ -197,4 +197,48 @@ defmodule Sanbase.Utils.ValidationTest do
       assert {:error, _} = Validation.valid_public_url?("not-a-url")
     end
   end
+
+  describe "valid_webhook_url?/1" do
+    test "accepts https URLs with a domain name host" do
+      assert Validation.valid_webhook_url?("https://example.com/hook") == :ok
+      assert Validation.valid_webhook_url?("https://hooks.slack.com/services/x") == :ok
+    end
+
+    test "rejects http URLs" do
+      assert {:error, error} = Validation.valid_webhook_url?("http://example.com/hook")
+      assert error =~ "must use the https scheme"
+    end
+
+    test "rejects non-http(s) schemes" do
+      assert {:error, _} = Validation.valid_webhook_url?("ftp://example.com/hook")
+    end
+
+    test "rejects public IPv4 literal hosts" do
+      assert {:error, error} = Validation.valid_webhook_url?("https://8.8.8.8/hook")
+      assert error =~ "is an IP address"
+
+      assert {:error, _} = Validation.valid_webhook_url?("https://1.1.1.1/hook")
+    end
+
+    test "rejects shortened IPv4 literal hosts" do
+      assert {:error, _} = Validation.valid_webhook_url?("https://8.8/hook")
+    end
+
+    test "rejects public IPv6 literal hosts" do
+      assert {:error, error} = Validation.valid_webhook_url?("https://[2606:4700::1111]/hook")
+      assert error =~ "is an IP address"
+    end
+
+    test "rejects private / reserved hosts even over https" do
+      assert {:error, _} = Validation.valid_webhook_url?("https://127.0.0.1/hook")
+      assert {:error, _} = Validation.valid_webhook_url?("https://169.254.169.254/hook")
+      assert {:error, _} = Validation.valid_webhook_url?("https://localhost/hook")
+      assert {:error, _} = Validation.valid_webhook_url?("https://[::1]/hook")
+    end
+
+    test "rejects empty / scheme-less URLs" do
+      assert {:error, _} = Validation.valid_webhook_url?("")
+      assert {:error, _} = Validation.valid_webhook_url?("example.com/hook")
+    end
+  end
 end

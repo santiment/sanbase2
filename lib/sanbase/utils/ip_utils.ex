@@ -25,6 +25,14 @@ defmodule Sanbase.Utils.IP do
   def ip_tuple_to_string(ip), do: ip |> :inet_parse.ntoa() |> to_string()
 
   @doc ~s"""
+  Returns `true` when the string is an IPv4 or IPv6 address literal,
+  including shortened IPv4 forms like "127.1".
+  """
+  def ip_address?(host) when is_binary(host) do
+    match?({:ok, _}, :inet.parse_address(to_charlist(host)))
+  end
+
+  @doc ~s"""
   Returns `true` when the host is private, reserved, loopback, link-local,
   multicast, broadcast, or a known cloud-metadata endpoint. Use this when
   validating user-supplied URLs to prevent SSRF (e.g. webhook destinations

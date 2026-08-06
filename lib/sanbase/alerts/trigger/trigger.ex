@@ -53,6 +53,12 @@ defmodule Sanbase.Alert.Trigger do
     field(:icon_url, :string)
     field(:is_active, :boolean, default: true)
     field(:is_repeating, :boolean, default: true)
+    # Failed-sends streak, used to auto-disable alerts. Set while all send
+    # attempts fail, cleared on the first successful send.
+    field(:failing_since, :utc_datetime)
+    field(:failed_attempts, :integer, default: 0)
+    field(:consecutive_failed_days, :integer, default: 0)
+    field(:last_failed_on, :date)
   end
 
   @type t :: %__MODULE__{
@@ -64,7 +70,11 @@ defmodule Sanbase.Alert.Trigger do
           description: String.t(),
           icon_url: String.t(),
           is_active: boolean(),
-          is_repeating: boolean()
+          is_repeating: boolean(),
+          failing_since: DateTime.t() | nil,
+          failed_attempts: non_neg_integer(),
+          consecutive_failed_days: non_neg_integer(),
+          last_failed_on: Date.t() | nil
         }
 
   @doc false
@@ -78,7 +88,11 @@ defmodule Sanbase.Alert.Trigger do
     :description,
     :icon_url,
     :is_active,
-    :is_repeating
+    :is_repeating,
+    :failing_since,
+    :failed_attempts,
+    :consecutive_failed_days,
+    :last_failed_on
   ]
 
   def create_changeset(%__MODULE__{} = trigger, args \\ %{}) do

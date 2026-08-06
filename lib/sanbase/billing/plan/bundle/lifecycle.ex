@@ -685,21 +685,12 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
         {:ok, item}
 
       {:error, %Ecto.Changeset{} = changeset} = error ->
-        if duplicate_sku?(changeset) do
+        if Item.duplicate_sku_error?(changeset) do
           {:error, "SKU #{price.sku} is already on this subscription"}
         else
           error
         end
     end
-  end
-
-  # The unique index covers (subscription_id, sku), so Ecto reports the violation
-  # against `subscription_id` - the first field named - not against `sku`. Matching
-  # the constraint by name says what is meant regardless.
-  defp duplicate_sku?(%Ecto.Changeset{errors: errors}) do
-    Enum.any?(errors, fn {_field, {_message, opts}} ->
-      Keyword.get(opts, :constraint_name) == "subscription_items_subscription_id_sku_index"
-    end)
   end
 
   defp mirror_item_in_stripe(sub, %Item{} = item, price) do

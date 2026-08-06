@@ -804,7 +804,7 @@ Changing a priced amount after Stripe exists = `Price.replace/1` + new Stripe Pr
 - **Unknown price ids: skipped on reconcile, refused on adoption.** Reconciliation maintains a set whose other items are known, so an item it cannot name is left alone rather than deleted or guessed at. Adoption has to write the whole purchased set, and a set with a hole in it is not the purchased set.
 - **Adoption checks everything before the first insert** — every price known, one interval, a marker plan for it, at least one package, a published snapshot. A subscription row with no resolvable entitlement is worse than none: the quota path raises on it.
 
-**Deliverable:** ✅ `Bundle.ItemSync` + `Price.by_stripe_price_ids/1` + branches in `stripe_event.ex` + `test/sanbase/billing/stripe_event_bundle_sync_test.exs` (26 tests: 7 legacy BC, 8 `created`, 10 `updated` incl. idempotency, 1 `deleted`).
+**Deliverable:** ✅ `Bundle.ItemSync` + `Price.by_stripe_price_ids/1` + branches in `stripe_event.ex` + `test/sanbase/billing/stripe_event_bundle_sync_test.exs` (26 tests: 7 legacy BC, 7 `created`, 11 `updated` incl. idempotency, 1 `deleted`).
 **Depends on:** LC, EN. **Critical for BC.**
 **Not covered:** §7.3 #4 (`stripe_sync.ex`) and #5 (`timeseries.ex`) are separate work — they are first-item *read* assumptions, not the webhook write path.
 
@@ -869,6 +869,7 @@ Three testers answer the question a ticket actually asks:
 ### UI. Self-serve purchase surface
 **What:** Pricing page / checkout reflecting the three-column offering (§1.1): composable package builder (left), Institutional CTA (middle), Enterprise contact CTA (right). Package checkout needs SC + SL. Institutional can use existing single-plan subscribe once **IN** lands. Enterprise is contact/sales, not cart.
 **Depends on:** SC, SL for packages; IN for Institutional button; EP only for copy/CTA. ⚠️ **Confirm ownership** — if this is a frontend-team deliverable, say so explicitly in the epic rather than leaving it unassigned.
+**Blocks the launch on its own:** the SanAPI pricing page crashes when the Business plans are withdrawn (§10.2). That fix is needed even if the package builder ships later, because it gates the moment we stop selling the old plans — and until the builder does ship, withdrawal leaves the "For Business" tab as a single contact-sales card.
 
 ### TR. Trial & dunning semantics
 **What:** There is a 14-day trial (`subscription.ex:33`) and `past_due` / `unpaid` statuses. Decide: do bundle subs get trials? Trial × 5 packages? Behavior on dunning — full revoke or degrade to a base package? Also the response-size note in §6.2.
@@ -1058,6 +1059,44 @@ endpoint. `:graphql_cache` is only started when `container_type() in ["web", "al
 (`application.ex:355-363`), so `cachex_key_lock.ex:58` hard-matches `{:ok, cache_record}`
 against `{:error, :no_cache}` and every cached query 500s there. Use the card's curl command
 against the API host, or make the target host an input on the card.
+
+### 10.2 🔴 Launch blocker: withdrawing the Business plans crashes the SanAPI pricing page
+
+The rollout this epic assumes — stop selling `BUSINESS_PRO` / `BUSINESS_MAX`, sell packages
+instead — cannot be performed today. One of the two pricing surfaces does not survive those
+plans being absent.
+
+`SaleControls.deactivate_business_plans/0` sets `is_deprecated: true`, and
+`Plan.product_with_plans/0` filters on exactly that:
+
+```elixir
+(pl.name not in ^@business_plan_names or coalesce(pl.is_deprecated, false) == false)
+```
+
+so the rows leave the `productsWithPlans` payload entirely. That is the intended backend
+behaviour — existing subscribers keep access, the plans stop being offered. What is not
+intended is what the clients do with it. Verified on stage by deactivating and reloading:
+
+| Surface | Result |
+| --- | --- |
+| `api-stage.santiment.net/#pricing` | 🔴 **Crashes.** `TypeError: Cannot read properties of undefined (reading 'month')` at `PricingTable.js:47:31`, inside an `Array.map` — the table indexes plans by hardcoded name, so an absent plan is a null dereference, not a hidden column. |
+| `app-stage.santiment.net/pricing?plans=business` | ✅ **Degrades correctly.** The Business columns disappear and the Enterprise "Get a quote" card renders on its own. This is the behaviour the other page needs. |
+
+The crashing page was fine before the toggle and fine again after re-activating, so the cause is
+settled. Fixing it is a frontend deliverable, not backend work — see task **UI**. Until it is
+done, the `/admin/bundle_offering` deactivate button is a page-breaking button, and the launch
+order carries a hard dependency: *the SanAPI pricing page must tolerate a missing Business plan
+before the Business plans are withdrawn.*
+
+The toggle mechanics themselves are verified working — the plans leave the payload and come back,
+and `is_private` is never written, as the `sale_controls.ex` moduledoc argues it should not be.
+
+There is also a product consequence independent of the crash. With Business withdrawn and no
+package builder shipped, the whole "For Business" tab is one contact-sales card — see the
+app-stage row above. So the launch is not just "withdraw the old plans and the new ones appear":
+either **UI** lands in the same release, or there is a window in which self-serve API purchase
+does not exist at all. Worth an explicit product decision (§15) rather than discovering it on
+release day.
 
 ---
 

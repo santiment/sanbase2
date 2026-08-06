@@ -120,10 +120,12 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
 
   require Logger
 
+  # `quantity` is whatever Stripe reported, including nothing at all - it is read
+  # straight off the item and only `quantity_for/2` decides what it means.
   @type stripe_item :: %{
           stripe_item_id: String.t() | nil,
           price_id: String.t() | nil,
-          quantity: pos_integer()
+          quantity: pos_integer() | nil
         }
 
   @doc ~s"""
@@ -457,7 +459,7 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
         # hold this subscription's lock, so it can still land here - is the outcome
         # this was converging on anyway, not an error. The row it created carries no
         # Stripe item id yet; the next event repairs that.
-        if duplicate_sku?(changeset) do
+        if Item.duplicate_sku_error?(changeset) do
           :ok
         else
           Repo.rollback(changeset)
@@ -515,15 +517,6 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
        do: quantity
 
   defp quantity_for(%Price{}, _stripe_item), do: 1
-
-  # The unique index covers (subscription_id, sku), so Ecto reports the violation
-  # against `subscription_id` - the first field named. Matching the constraint by
-  # name says what is meant regardless.
-  defp duplicate_sku?(%Ecto.Changeset{errors: errors}) do
-    Enum.any?(errors, fn {_field, {_message, opts}} ->
-      Keyword.get(opts, :constraint_name) == "subscription_items_subscription_id_sku_index"
-    end)
-  end
 
   # --- reading the Stripe object ---
 

@@ -196,6 +196,21 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     end
   end
 
+  @doc ~s"""
+  Flatten Stripe subscriptions into the rows the revenue reports are built from.
+
+  Two fields do not mean what a single-plan subscription would suggest:
+
+  * `amount` is the sum over every item, each unit amount times its quantity, so
+    a multi-item bundle reports the whole subscription rather than one package.
+  * `plan_nickname` and `product_name` come from one arbitrary item - the lowest
+    Stripe item id among those carrying billing data, chosen only so the row is
+    stable across runs. A bundle has no single plan to name.
+
+  A subscription with no item that carries either a `price` or a legacy `plan` is
+  dropped: there is nothing to name it or price it with.
+  """
+  @spec extract_fields([Stripe.Subscription.t()]) :: [map()]
   def extract_fields(subscriptions) do
     subscriptions
     |> Enum.reject(fn subscription -> is_nil(plan(subscription)) end)
@@ -238,22 +253,30 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   # Names the row - the nickname and the product it is filed under. Stripe gives
   # no order guarantee for the items, so a multi-item subscription picks its
   # representative deterministically instead of taking whatever came back first.
-  # Which item that is remains arbitrary in meaning; only `amount/1` below
-  # describes the whole subscription.
+  # Only the items that carry billing data can name anything, and the lowest id
+  # among those wins, so one unusable item cannot drop a subscription that is
+  # otherwise perfectly reportable. Which item it is remains arbitrary in
+  # meaning; only `amount/1` below describes the whole subscription.
   defp plan(subscription) do
-    case subscription.items.data do
+    subscription.items.data
+    |> Enum.filter(&item_price/1)
+    |> case do
       [] -> nil
-      [item] -> item_price(item)
       items -> items |> Enum.min_by(& &1.id) |> item_price()
     end
   end
 
   # Sum over the items, so that a bundle reports the subscription's whole MRR
-  # rather than one package's. The single-item case stays exactly what it was.
+  # rather than one package's, and an item bought several times over reports what
+  # it is actually billed. A single unusable item still answers `nil`, which is
+  # what `extract_fields/1` drops the row on.
   defp amount(subscription) do
     case subscription.items.data do
       [item] ->
-        unit_amount(item)
+        case unit_amount(item) do
+          nil -> nil
+          amount -> amount * quantity(item)
+        end
 
       items ->
         Enum.reduce(items, 0, fn item, acc ->
@@ -262,12 +285,16 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     end
   end
 
-  defp item_price(item), do: Map.get(item, :price)
+  # Prefers the modern `price` and falls back to the legacy `plan`. Either object
+  # names the item and carries its amount, and a subscription Stripe reports
+  # through only one of them is still a subscription - dropping it loses real
+  # revenue from the report.
+  defp item_price(item), do: Map.get(item, :price) || Map.get(item, :plan)
 
   # `Stripe.Price` calls the field `unit_amount`, the legacy `Stripe.Plan` calls
   # it `amount`, and either object can be absent on an item.
   defp unit_amount(item) do
-    price = item_price(item) || Map.get(item, :plan)
+    price = item_price(item)
 
     price && (Map.get(price, :unit_amount) || Map.get(price, :amount))
   end

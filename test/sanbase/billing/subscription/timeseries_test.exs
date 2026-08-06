@@ -64,6 +64,16 @@ defmodule Sanbase.Billing.Subscription.TimeseriesTest do
   end
 
   describe "extract_fields/1 with a single Price-based item" do
+    test "multiplies the unit amount by the quantity" do
+      subscription =
+        subscription(
+          items: [item(quantity: 3, price: price(unit_amount: 35_000, product: @sanapi_product))]
+        )
+
+      assert [row] = Timeseries.extract_fields([subscription])
+      assert row.amount == 105_000
+    end
+
     test "attributes to the price when the legacy plan object is missing" do
       subscription =
         subscription(
@@ -148,6 +158,40 @@ defmodule Sanbase.Billing.Subscription.TimeseriesTest do
   end
 
   describe "extract_fields/1 with an unusable item" do
+    test "names the row from a billable item even when the lowest id has neither" do
+      # The representative is picked by lowest item id, so an unusable item that
+      # happens to sort first must not decide the row - the subscription is real,
+      # is being billed, and belongs in the report.
+      subscription =
+        subscription(
+          items: [
+            item(id: "si_1", plan: nil, price: nil),
+            item(id: "si_2", price: price(unit_amount: 70_000, nickname: "social"))
+          ]
+        )
+
+      assert [row] = Timeseries.extract_fields([subscription])
+      assert row.plan_nickname == "social"
+      assert row.amount == 70_000
+    end
+
+    test "reports a legacy item that Stripe expanded only as a plan" do
+      subscription =
+        subscription(
+          items: [
+            item(
+              plan: plan(amount: 35_900, nickname: "PRO", product: @sanapi_product),
+              price: nil
+            )
+          ]
+        )
+
+      assert [row] = Timeseries.extract_fields([subscription])
+      assert row.plan_nickname == "PRO"
+      assert row.product_name == "SanAPI by Santiment"
+      assert row.amount == 35_900
+    end
+
     test "drops a subscription whose only item has neither plan nor price" do
       subscription = subscription(items: [item(plan: nil, price: nil)])
 

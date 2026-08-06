@@ -66,6 +66,8 @@ defmodule Sanbase.Billing.Subscription.Item do
 
   @fields [:subscription_id, :stripe_item_id, :sku, :type, :quantity, :remove_at]
 
+  @sku_index :subscription_items_subscription_id_sku_index
+
   @doc false
   def changeset(%__MODULE__{} = item, attrs) do
     item
@@ -74,11 +76,30 @@ defmodule Sanbase.Billing.Subscription.Item do
     |> validate_number(:quantity, greater_than: 0)
     |> validate_sku()
     |> unique_constraint([:subscription_id, :sku],
-      name: :subscription_items_subscription_id_sku_index,
+      name: @sku_index,
       message: "is already an item on this subscription"
     )
     |> unique_constraint(:stripe_item_id)
     |> foreign_key_constraint(:subscription_id)
+  end
+
+  @doc ~s"""
+  Whether a failed changeset failed because the SKU is already on the
+  subscription.
+
+  Two callers race for this: `Bundle.Lifecycle.add_item/3`, where losing means
+  telling the customer they already own the package, and `Bundle.ItemSync`, where
+  it means a concurrent claim got there first and the insert can be skipped. Both
+  have to recognise it from the constraint name, because the index covers
+  `(subscription_id, sku)` and Ecto reports the violation against
+  `subscription_id` - the first field named - rather than against `sku`. Keeping
+  the check here keeps the name in the one module that declares it.
+  """
+  @spec duplicate_sku_error?(Ecto.Changeset.t()) :: boolean()
+  def duplicate_sku_error?(%Ecto.Changeset{errors: errors}) do
+    Enum.any?(errors, fn {_field, {_message, opts}} ->
+      Keyword.get(opts, :constraint_name) == Atom.to_string(@sku_index)
+    end)
   end
 
   @doc ~s"""

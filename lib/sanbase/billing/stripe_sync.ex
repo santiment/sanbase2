@@ -56,6 +56,21 @@ defmodule Sanbase.Billing.StripeSync do
     end)
   end
 
+  @doc ~s"""
+  Stripe charges for the given filter, each attributed to a plan and a product.
+
+  Attribution is by the charge's subscription, and it has three outcomes:
+
+  * one item - the item's price id and product, taken from the legacy `plan`
+    object when the item carries one so that existing rows are unchanged;
+  * more than one item - `#{@multi_item_marker}` for both, because the charge
+    paid for all of them and naming one would attribute the whole amount to it;
+  * no subscription, or one Stripe did not expand - `nil` for both, leaving the
+    charge unattributed rather than failing the run.
+
+  Paginates until Stripe reports no more results.
+  """
+  @spec transactions(map()) :: [map()]
   def transactions(params \\ %{}) do
     # %{created: %{gte: from_ux, lt: to_ux}}
     params = %{limit: 10} |> Map.merge(params)
@@ -98,9 +113,11 @@ defmodule Sanbase.Billing.StripeSync do
   defp items_plan_and_product([_ | _]), do: {@multi_item_marker, @multi_item_marker}
   defp items_plan_and_product(_), do: {nil, nil}
 
-  # A Price-based item carries no legacy `plan` object. For the items that do
-  # carry one its id is the same as the price id, so preferring `plan` keeps the
-  # output for legacy subscriptions byte for byte what it was.
+  # Reads the legacy `plan` object first so the output for existing subscriptions
+  # is byte for byte what it was. Which of the two an item carries is Stripe's
+  # business and has changed over time, but for a recurring price both name the
+  # same object with the same id and product, so the preference cannot change an
+  # answer - only guarantee the old one.
   defp item_field(item, field) do
     case Map.get(item, :plan) || Map.get(item, :price) do
       nil -> nil

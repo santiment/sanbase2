@@ -25,6 +25,34 @@ defmodule Sanbase.Utils.IP do
   def ip_tuple_to_string(ip), do: ip |> :inet_parse.ntoa() |> to_string()
 
   @doc ~s"""
+  Returns `true` when the string is an IPv4 or IPv6 address literal,
+  including shortened IPv4 forms like "127.1".
+  """
+  def ip_address?(host) when is_binary(host) do
+    match?({:ok, _}, :inet.parse_address(to_charlist(host)))
+  end
+
+  @doc ~s"""
+  Returns `true` when the host resolves to a private, reserved or otherwise
+  blocked address. An extra SSRF guard for user-supplied URLs - the URL
+  validation checks the host literal, not what it resolves to (DNS
+  rebinding). Unresolvable hosts return `false` - connecting to them fails
+  on its own.
+  """
+  def resolves_to_blocked_ip?(host) when is_binary(host) do
+    charlist = to_charlist(host)
+
+    [:inet, :inet6]
+    |> Enum.flat_map(fn family ->
+      case :inet.gethostbyname(charlist, family) do
+        {:ok, {:hostent, _name, _aliases, _addrtype, _length, addrs}} -> addrs
+        {:error, _} -> []
+      end
+    end)
+    |> Enum.any?(&private_or_reserved?/1)
+  end
+
+  @doc ~s"""
   Returns `true` when the host is private, reserved, loopback, link-local,
   multicast, broadcast, or a known cloud-metadata endpoint. Use this when
   validating user-supplied URLs to prevent SSRF (e.g. webhook destinations

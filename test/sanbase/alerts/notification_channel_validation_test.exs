@@ -55,6 +55,60 @@ defmodule Sanbase.Alert.Validation.NotificationChannelTest do
       assert {:error, _} = NotificationChannel.valid_notification_channel?(%{webhook: 123})
     end
 
+    test "webhook URL policy is not checked here - it runs on create/update only" do
+      assert NotificationChannel.valid_notification_channel?(%{webhook: "http://example.com/x"}) ==
+               :ok
+    end
+  end
+
+  describe "validate_webhook_urls/1" do
+    test "valid https domain URLs are accepted" do
+      assert NotificationChannel.validate_webhook_urls(%{webhook: "https://example.com/x"}) == :ok
+
+      assert NotificationChannel.validate_webhook_urls([
+               "telegram",
+               %{"webhook" => "https://example.com/x"}
+             ]) == :ok
+    end
+
+    test "non-webhook channels are ignored" do
+      assert NotificationChannel.validate_webhook_urls(["telegram", "email"]) == :ok
+      assert NotificationChannel.validate_webhook_urls(nil) == :ok
+    end
+
+    test "http URL is rejected" do
+      assert {:error, error} =
+               NotificationChannel.validate_webhook_urls(%{webhook: "http://example.com/x"})
+
+      assert error =~ "must use the https scheme"
+
+      assert {:error, _} =
+               NotificationChannel.validate_webhook_urls([
+                 "telegram",
+                 %{"webhook" => "http://example.com/x"}
+               ])
+    end
+
+    test "IP address host is rejected" do
+      assert {:error, error} =
+               NotificationChannel.validate_webhook_urls(%{webhook: "https://8.8.8.8/x"})
+
+      assert error =~ "is an IP address"
+
+      assert {:error, _} =
+               NotificationChannel.validate_webhook_urls(%{
+                 "webhook" => "https://[2606:4700::1111]/x"
+               })
+    end
+
+    test "private IP or localhost is rejected" do
+      assert {:error, _} =
+               NotificationChannel.validate_webhook_urls(%{webhook: "https://127.0.0.1/x"})
+
+      assert {:error, _} =
+               NotificationChannel.validate_webhook_urls(%{webhook: "https://localhost/x"})
+    end
+
     test "telegram_channel map with non-binary id is rejected" do
       assert {:error, _} =
                NotificationChannel.valid_notification_channel?(%{telegram_channel: nil})

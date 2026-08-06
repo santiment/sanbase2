@@ -11,8 +11,9 @@ defmodule Sanbase.Alert.Scheduler do
   """
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Alert.{Trigger, UserTrigger, HistoricalActivity}
   alias Sanbase.Alert.Evaluator
+  alias Sanbase.Alert.Validation.NotificationChannel
   alias Sanbase.Alert
 
   import Sanbase.Alert.EventEmitter, only: [emit_event: 3]
@@ -59,6 +60,7 @@ defmodule Sanbase.Alert.Scheduler do
     alerts =
       type
       |> UserTrigger.get_active_triggers_by_type()
+      |> filter_and_deactivate_webhook_bad_url_triggers(info_map)
       |> filter_receivable_triggers(info_map)
       |> filter_not_frozen_triggers(info_map)
 
@@ -176,6 +178,7 @@ defmodule Sanbase.Alert.Scheduler do
 
     fired_alerts =
       updated_user_triggers
+      |> Enum.zip(sent_list_results)
       |> get_fired_alerts_data()
 
     fired_alerts |> persist_historical_activity()
@@ -226,6 +229,46 @@ defmodule Sanbase.Alert.Scheduler do
     end
 
     filtered
+  end
+
+  # Deactivate legacy alerts whose only destinations are webhooks with invalid
+  # URLs (http scheme, IP address host, malformed) - they cannot deliver
+  # anything. Alerts that also have other channels are kept - the invalid
+  # webhook is refused at send time instead.
+  defp filter_and_deactivate_webhook_bad_url_triggers(user_triggers, info_map) do
+    {bad_url_triggers, rest} =
+      Enum.split_with(user_triggers, &only_bad_webhook_url_channels?/1)
+
+    for %UserTrigger{} = ut <- bad_url_triggers do
+      Logger.info("""
+      [#{info_map.run_uuid}] Deactivating alert with id #{ut.id} because its only \
+      destinations are webhooks with invalid URLs.
+      """)
+
+      UserTrigger.update_is_active(ut.id, ut.user_id, false)
+    end
+
+    rest
+  end
+
+  defp only_bad_webhook_url_channels?(%UserTrigger{trigger: %{settings: %{channel: channel}}}) do
+    case List.wrap(channel) do
+      [] -> false
+      entries -> Enum.all?(entries, &bad_webhook_url_entry?/1)
+    end
+  end
+
+  defp only_bad_webhook_url_channels?(_user_trigger), do: false
+
+  # True only for webhook entries whose URL fails validation. Entries of
+  # other channel types are not bad entries.
+  defp bad_webhook_url_entry?(entry) do
+    with {:ok, url} <- NotificationChannel.webhook_url(entry),
+         {:error, _} <- Sanbase.Utils.Validation.valid_webhook_url?(url) do
+      true
+    else
+      _ -> false
+    end
   end
 
   defp filter_receivable_triggers(user_triggers, info_map) do
@@ -308,10 +351,14 @@ defmodule Sanbase.Alert.Scheduler do
     # a matching error is raised
     grouped_by_user
     |> Sanbase.Parallel.map(
-      fn {_user_id, triggers} -> send_triggers_sequentially(triggers) end,
+      fn {_user_id, triggers} -> send_triggers_sequentially(triggers, info_map) end,
       max_concurrency: 15,
       ordered: false,
       map_type: :map,
+      # A killed task loses the not-yet-recorded send results of its in-flight
+      # trigger, which resends on the next run. Keep the timeout a generous
+      # backstop so that does not happen for legitimately slow rounds.
+      timeout: 60_000,
       on_timeout: :kill_task
     )
     |> List.flatten()
@@ -320,7 +367,7 @@ defmodule Sanbase.Alert.Scheduler do
     |> Enum.unzip()
   end
 
-  def send_triggers_sequentially(triggers) do
+  def send_triggers_sequentially(triggers, info_map) do
     triggers
     |> Enum.map(fn %UserTrigger{} = user_trigger ->
       case Alert.send(user_trigger) do
@@ -328,11 +375,13 @@ defmodule Sanbase.Alert.Scheduler do
           {user_trigger, []}
 
         list when is_list(list) ->
-          {:ok, %{last_triggered: last_triggered}} = handle_send_results_list(user_trigger, list)
+          {:ok, send_results_map} = handle_send_results_list(user_trigger, list)
 
-          user_trigger = update_trigger_last_triggered(user_trigger, last_triggered)
+          user_trigger = update_trigger_after_send(user_trigger, send_results_map, info_map)
 
-          emit_event({:ok, user_trigger}, :alert_triggered, %{})
+          if send_results_map.any_success? do
+            emit_event({:ok, user_trigger}, :alert_triggered, %{})
+          end
 
           {user_trigger, list}
       end
@@ -362,18 +411,37 @@ defmodule Sanbase.Alert.Scheduler do
     result
   end
 
-  defp update_trigger_last_triggered(user_trigger, last_triggered) do
+  defp update_trigger_after_send(user_trigger, send_results_map, info_map) do
+    failing_state = Trigger.FailingState.next(user_trigger.trigger, send_results_map)
+
+    deactivation_reason =
+      cond do
+        Trigger.FailingState.deactivate_now?(send_results_map) ->
+          "of permanent send failures: #{inspect(send_results_map.permanent_failure_reasons)}"
+
+        Trigger.FailingState.deactivate?(failing_state) ->
+          "sending it failed on #{failing_state.consecutive_failed_days} consecutive days " <>
+            "(#{failing_state.failed_attempts} failed sends since #{failing_state.failing_since})"
+
+        true ->
+          nil
+      end
+
     {:ok, updated_user_trigger} =
-      UserTrigger.update_user_trigger(user_trigger.user.id, %{
-        id: user_trigger.id,
-        last_triggered: last_triggered,
-        settings: user_trigger.trigger.settings
+      UserTrigger.record_send_result(user_trigger, %{
+        last_triggered: send_results_map.last_triggered,
+        failing_state: failing_state,
+        deactivate?: deactivation_reason != nil
       })
 
-    put_in(
-      user_trigger.trigger.last_triggered,
-      updated_user_trigger.trigger.last_triggered
-    )
+    if deactivation_reason do
+      Logger.info("""
+      [#{info_map.run_uuid}] Deactivating alert with id #{user_trigger.id} because \
+      #{deactivation_reason}.
+      """)
+    end
+
+    updated_user_trigger
   end
 
   defp handle_send_results_list(
@@ -388,64 +456,84 @@ defmodule Sanbase.Alert.Scheduler do
       |> Sanbase.Utils.DateTime.round_datetime(second: 30)
       |> Timex.set(microsecond: {0, 0})
 
-    # Update all triggered_at regardless if the send to the channel succeed
-    # because the alert will be stored in the timeline events.
-    # Keep count of the total alerts triggered and the number of alerts
-    # that were not sent successfully. Reasons can be:
-    # - missing email/telegram linked when such channel is chosen;
-    # - webhook failed to be sent;
-    # - daily alerts limit is reached;
-    {last_triggered, total_triggered, total_failed} =
+    # Failed sends are not marked as triggered - the alert fires for them
+    # again on the next run.
+    {last_triggered, any_success?, delivery_failures_count, permanent_failure_reasons} =
       send_results_list
-      |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn
-        {identifier_or_list, _result = :ok}, {acc, total, failed} ->
+      |> Enum.reduce({last_triggered, false, 0, []}, fn
+        {identifier_or_list, _result = :ok}, {acc, _any_success, delivery_failures, permanent} ->
           # Example: {["elem1", "elem2"], :ok} or {"0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", :ok}
           # This case happens when multiple identifiers (for example emerging words)
           # are handled in one notification.
           list = identifier_or_list |> List.wrap()
           acc = Enum.reduce(list, acc, &Map.put(&2, &1, now))
 
-          {acc, total + 1, failed}
+          {acc, true, delivery_failures, permanent}
 
-        {_identifier_or_list, _error_result}, {acc, total, failed} ->
-          {acc, total + 1, failed + 1}
+        {_identifier_or_list, error_result}, {acc, any_success, delivery_failures, permanent} ->
+          delivery_failures =
+            if Trigger.FailingState.delivery_failure?(error_result),
+              do: delivery_failures + 1,
+              else: delivery_failures
+
+          permanent =
+            case error_result do
+              {:error, %{reason: reason}} ->
+                if Trigger.FailingState.permanent_failure?(error_result),
+                  do: [reason | permanent],
+                  else: permanent
+
+              _ ->
+                permanent
+            end
+
+          {acc, any_success, delivery_failures, permanent}
       end)
 
     {:ok,
      %{
        last_triggered: last_triggered,
-       total_triggered: total_triggered,
-       total_sent_succesfully: total_triggered - total_failed,
-       total_sent_failed: total_failed
+       any_success?: any_success?,
+       any_delivery_failure?: delivery_failures_count > 0,
+       delivery_failures_count: delivery_failures_count,
+       permanent_failure_reasons: Enum.uniq(permanent_failure_reasons),
+       all_permanent_failures?:
+         send_results_list != [] and
+           length(permanent_failure_reasons) == length(send_results_list)
      }}
   end
 
-  defp get_fired_alerts_data(user_triggers) do
-    user_triggers
+  # A trigger can be evaluated while all of its deliveries fail. In that case
+  # `last_triggered` deliberately remains unchanged so it can be retried, but
+  # its old value must not be recorded as a newly fired historical activity.
+  defp get_fired_alerts_data(send_results) do
+    send_results
     |> Enum.map(fn
-      %UserTrigger{
-        trigger: %{
-          settings: %{triggered?: true} = settings,
-          last_triggered: last_triggered
-        }
-      } = ut
-      when is_non_empty_map(last_triggered) ->
-        identifier_kv_map =
-          settings.template_kv
-          |> Enum.into(%{}, fn {identifier, {_, kv}} -> {identifier, kv} end)
-
-        %{
-          user_trigger_id: ut.id,
-          user_id: ut.user_id,
-          payload: settings.payload,
-          triggered_at: max_last_triggered(last_triggered) |> DateTime.to_naive(),
-          data: %{user_trigger_data: identifier_kv_map}
-        }
-
-      _ ->
-        nil
+      {ut, results} when is_list(results) and results != [] -> fired_alert_data(ut, results)
+      _ -> nil
     end)
     |> Enum.reject(&is_nil/1)
+  end
+
+  defp fired_alert_data(%UserTrigger{} = ut, results) do
+    %{trigger: %{settings: settings, last_triggered: last_triggered}} = ut
+
+    delivered? = Enum.any?(results, fn {_identifier, result} -> result == :ok end)
+
+    if match?(%{triggered?: true}, settings) and delivered? and
+         is_non_empty_map(last_triggered) do
+      identifier_kv_map =
+        settings.template_kv
+        |> Enum.into(%{}, fn {identifier, {_, kv}} -> {identifier, kv} end)
+
+      %{
+        user_trigger_id: ut.id,
+        user_id: ut.user_id,
+        payload: settings.payload,
+        triggered_at: max_last_triggered(last_triggered) |> DateTime.to_naive(),
+        data: %{user_trigger_data: identifier_kv_map}
+      }
+    end
   end
 
   # Fixme: remove after frontend migrates to use only Timeline Events

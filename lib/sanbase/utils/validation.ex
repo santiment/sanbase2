@@ -148,6 +148,27 @@ defmodule Sanbase.Utils.Validation do
     end
   end
 
+  @doc ~s"""
+  Like `valid_public_url?/2` but stricter, for webhook destinations: https
+  only and no IP address hosts.
+  """
+  def valid_webhook_url?(url, opts \\ []) do
+    with :ok <- valid_public_url?(url, opts) do
+      uri = URI.parse(url)
+
+      cond do
+        uri.scheme != "https" ->
+          {:error, "URL '#{url}' must use the https scheme"}
+
+        Sanbase.Utils.IP.ip_address?(uri.host) ->
+          {:error, "URL host '#{uri.host}' is an IP address. Webhook URLs must use a domain name"}
+
+        true ->
+          :ok
+      end
+    end
+  end
+
   # Private functions
 
   defp time_window_format_check(time_window) do

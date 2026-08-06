@@ -61,18 +61,18 @@ defimpl Sanbase.Alert, for: Any do
     )
 
     error_list =
-      Enum.map(payload_map, fn {identifier, _payload} ->
-        {identifier,
-         {:error,
-          %{
-            reason: :unsupported_notification_channel,
-            channel: channel,
-            user_id: user_id,
-            trigger_id: trigger_id
-          }}}
-      end)
+      error_for_each_identifier(payload_map, %{
+        reason: :unsupported_notification_channel,
+        channel: channel,
+        user_id: user_id,
+        trigger_id: trigger_id
+      })
 
     {"unknown", error_list}
+  end
+
+  defp error_for_each_identifier(payload_map, error) do
+    Enum.map(payload_map, fn {identifier, _payload} -> {identifier, {:error, error}} end)
   end
 
   defp send_webhook(
@@ -82,18 +82,40 @@ defimpl Sanbase.Alert, for: Any do
        ) do
     %{id: user_trigger_id} = trigger
 
-    fun = fn identifier, payload ->
-      case Sanbase.Utils.Validation.valid_public_url?(webhook_url) do
-        :ok ->
+    # Alerts created before the https/no-IP restrictions keep failing here
+    # and get auto-disabled by the scheduler.
+    case webhook_url_send_time_validation(webhook_url) do
+      :ok ->
+        fun = fn identifier, payload ->
           payload = transform_payload(payload, trigger.id, :webhook)
           do_send_webhook(webhook_url, identifier, payload, user_trigger_id)
+        end
 
-        {:error, reason} ->
-          {:error, %{reason: :webhook_url_not_valid, error: reason}}
-      end
+        send_or_limit("webhook", trigger, max_alerts_to_send, fun)
+
+      {:error, reason_atom, message} ->
+        %{trigger: %{settings: %{payload: payload_map}}} = trigger
+
+        error_for_each_identifier(payload_map, %{reason: reason_atom, error: message})
     end
+  end
 
-    send_or_limit("webhook", trigger, max_alerts_to_send, fun)
+  # On top of the URL validation (which checks the host literal), check what
+  # the host currently resolves to, so a domain pointing at a private address
+  # cannot be used for SSRF via DNS.
+  defp webhook_url_send_time_validation(webhook_url) do
+    with :ok <- Sanbase.Utils.Validation.valid_webhook_url?(webhook_url) do
+      host = URI.parse(webhook_url).host
+
+      if Sanbase.Utils.IP.resolves_to_blocked_ip?(host) do
+        {:error, :webhook_url_resolves_to_blocked_ip,
+         "URL host '#{host}' resolves to a private, reserved or otherwise blocked address"}
+      else
+        :ok
+      end
+    else
+      {:error, reason} -> {:error, :webhook_url_not_valid, reason}
+    end
   end
 
   defp send_email(
@@ -129,11 +151,11 @@ defimpl Sanbase.Alert, for: Any do
       trigger
 
     # The emails notifications are disabled
-    Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier,
-       {:error,
-        %{reason: :email_alert_notifications_disabled, user_id: user_id, trigger_id: trigger_id}}}
-    end)
+    error_for_each_identifier(payload_map, %{
+      reason: :email_alert_notifications_disabled,
+      user_id: user_id,
+      trigger_id: trigger_id
+    })
   end
 
   defp send_email(trigger, _max_alerts_to_send) do
@@ -143,9 +165,11 @@ defimpl Sanbase.Alert, for: Any do
       trigger: %{settings: %{payload: payload_map}}
     } = trigger
 
-    Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, %{reason: :no_email, user_id: user_id, trigger_id: trigger_id}}}
-    end)
+    error_for_each_identifier(payload_map, %{
+      reason: :no_email,
+      user_id: user_id,
+      trigger_id: trigger_id
+    })
   end
 
   defp send_telegram(
@@ -167,11 +191,7 @@ defimpl Sanbase.Alert, for: Any do
 
       response = Sanbase.Telegram.send_message(user_trigger.user, payload)
 
-      # Deactivate the alert if the message is sent to telegram, telegram
-      # is the only channel and the telegram bot is blocked by the user.
-      # The function returns :ok or {:error, reason} which is used in the
-      # caller.
-      maybe_deactivate_trigger(response, user_trigger)
+      normalize_telegram_response(response, user_trigger)
     end
 
     send_or_limit("telegram", user_trigger, max_alerts_to_send, fun)
@@ -199,15 +219,11 @@ defimpl Sanbase.Alert, for: Any do
       }
     } = user_trigger
 
-    Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier,
-       {:error,
-        %{
-          reason: :telegram_alert_notifications_disabled,
-          user_id: user_id,
-          trigger_id: trigger_id
-        }}}
-    end)
+    error_for_each_identifier(payload_map, %{
+      reason: :telegram_alert_notifications_disabled,
+      user_id: user_id,
+      trigger_id: trigger_id
+    })
   end
 
   defp send_telegram(user_trigger, _max_alerts_to_send) do
@@ -217,9 +233,11 @@ defimpl Sanbase.Alert, for: Any do
       trigger: %{settings: %{payload: payload_map}}
     } = user_trigger
 
-    Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, %{reason: :no_telegram, user_id: user_id, trigger_id: trigger_id}}}
-    end)
+    error_for_each_identifier(payload_map, %{
+      reason: :no_telegram,
+      user_id: user_id,
+      trigger_id: trigger_id
+    })
   end
 
   defp send_telegram_channel(
@@ -235,11 +253,8 @@ defimpl Sanbase.Alert, for: Any do
       # Send a reply to the original message, if it was delived successfuly
       # It contains the chat preview image.
       maybe_send_preview_image_as_reply(response, user_trigger, channel, opts)
-      # Deactivate the alert if the message is sent to telegram, telegram
-      # is the only channel and the telegram bot is blocked by the user.
-      # The function returns :ok or {:error, reason} which is used in the
-      # caller.
-      maybe_deactivate_trigger(response, user_trigger)
+
+      normalize_telegram_response(response, user_trigger)
     end
 
     send_or_limit("telegram_channel", user_trigger, max_alerts_to_send, fun)
@@ -263,7 +278,9 @@ defimpl Sanbase.Alert, for: Any do
 
   defp maybe_send_preview_image_as_reply(_, _, _, _), do: :ok
 
-  defp maybe_deactivate_trigger({:error, error}, user_trigger) do
+  # Convert known telegram API errors to reason maps. The scheduler
+  # deactivates alerts whose reason marks a permanently broken destination.
+  defp normalize_telegram_response({:error, error}, user_trigger) do
     cond do
       not is_binary(error) ->
         # If the error is not binary, for example :closed, do not alerts_template
@@ -271,29 +288,14 @@ defimpl Sanbase.Alert, for: Any do
         :ok
 
       String.contains?(error, "chat not found") ->
-        # In case the user_trigger does not have other channels but only telegram
-        # and the user has blocked our telegram bot, the alert is disabled
-        # so it does not spend resources running
-        deactivate_if_telegram_channel_only(user_trigger)
-
         %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
         {:error, %{reason: :telegram_chat_not_found, user_id: user_id, trigger_id: trigger_id}}
 
       String.contains?(error, "blocked the telegram bot") ->
-        # In case the user_trigger does not have other channels but only telegram
-        # and the user has blocked our telegram bot, the alert is disabled
-        # so it does not spend resources running
-        deactivate_if_telegram_channel_only(user_trigger)
-
         %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
         {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
 
       String.contains?(error, "error 404. Reason: Not Found") ->
-        # In case the user_trigger does not have other channels but only telegram
-        # and the user has blocked our telegram bot, the alert is disabled
-        # so it does not spend resources running
-        deactivate_if_telegram_channel_only(user_trigger)
-
         %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
 
         {:error,
@@ -304,7 +306,7 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp maybe_deactivate_trigger(_response, _trigger), do: :ok
+  defp normalize_telegram_response(_response, _trigger), do: :ok
 
   defp send_preview_image(response, channel, short_url_id) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
@@ -336,19 +338,6 @@ defimpl Sanbase.Alert, for: Any do
         Logger.error(
           "Response of #{image_url} was expected to be with content type image/jpg, got #{content_type} instead"
         )
-    end
-  end
-
-  defp deactivate_if_telegram_channel_only(user_trigger) do
-    case user_trigger do
-      %{trigger: %{settings: %{channel: channel}}}
-      when channel in ["telegram", ["telegram"], "telegram_channel", ["telegram_channel"]] ->
-        Logger.info("Deactivating user trigger with id #{user_trigger.id} because the user \
-        with id #{user_trigger.user.id} has blocked the telegram bot.")
-        Sanbase.Alert.UserTrigger.update_is_active(user_trigger.id, user_trigger.user_id, false)
-
-      _ ->
-        :ok
     end
   end
 
@@ -493,11 +482,31 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp send_or_limit(channel, %{user: user, trigger: trigger}, limit, send_alert_fun)
+  defp send_or_limit(
+         channel,
+         %{user: user, trigger: trigger} = user_trigger,
+         limit,
+         send_alert_fun
+       )
        when is_function(send_alert_fun, 2) do
+    # Same rounding as the scheduler's end-of-round write, so both produce
+    # the same last_triggered value.
+    now =
+      Timex.now()
+      |> Sanbase.Utils.DateTime.round_datetime(second: 30)
+      |> Timex.set(microsecond: {0, 0})
+
     send_fun = fn {identifier, payload}, list ->
-      elem = {identifier, send_alert_fun.(identifier, payload)}
-      [elem | list]
+      result = send_alert_fun.(identifier, payload)
+
+      # The user already received the alert - persist the cooldown right
+      # away so it is not sent again if the process is killed before the
+      # end-of-round write.
+      if result == :ok do
+        Sanbase.Alert.UserTrigger.stamp_last_triggered(user_trigger.id, identifier, now)
+      end
+
+      [{identifier, result} | list]
     end
 
     limit_fun = fn {identifier, _payload}, list ->

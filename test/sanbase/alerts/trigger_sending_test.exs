@@ -4,7 +4,7 @@ defmodule Sanbase.Alert.TriggerSendingTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.{UserTrigger, Scheduler}
+  alias Sanbase.Alert.{HistoricalActivity, UserTrigger, Scheduler}
   alias Sanbase.Alert.Trigger.MetricTriggerSettings
 
   setup do
@@ -200,7 +200,7 @@ defmodule Sanbase.Alert.TriggerSendingTest do
       {:ok, trigger} =
         create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
 
-      plant_ip_webhook!(trigger.id, "https://8.8.8.8/hook")
+      plant_webhook_url!(trigger.id, "https://8.8.8.8/hook")
 
       Sanbase.Mock.prepare_mock2(
         &HTTPoison.post/3,
@@ -215,12 +215,58 @@ defmodule Sanbase.Alert.TriggerSendingTest do
     end
 
     @tag capture_log: true
+    test "alert with a bad webhook URL and another channel stays active", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} =
+        create_trigger(user, project.slug,
+          channel: ["telegram", %{"webhook" => "https://example.com/hook"}]
+        )
+
+      plant_webhook_url_keeping_channels!(trigger.id, "https://8.8.8.8/hook")
+
+      mock_fun =
+        [
+          fn -> {:ok, %{project.slug => 10}} end,
+          fn -> {:ok, %{project.slug => 15}} end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+      Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+      |> Sanbase.Mock.prepare_mock2(
+        &Sanbase.Telegram.send_message/2,
+        {:ok, ~s({"result": {}})}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        Scheduler.run_alert(MetricTriggerSettings)
+
+        {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+        assert user_trigger.trigger.is_active == true
+      end)
+    end
+
+    @tag capture_log: true
     test "send/1 rejects webhook URL with a public IP host", context do
       user_trigger = build_webhook_user_trigger(context.user, "https://8.8.8.8/hook")
 
       assert [{"santiment", {:error, error}}] = Sanbase.Alert.Any.send(user_trigger)
       assert %{reason: :webhook_url_not_valid, error: reason} = error
       assert reason =~ "is an IP address"
+    end
+
+    @tag capture_log: true
+    test "alert with invalid legacy webhook URL is deactivated on the first send", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} =
+        create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
+
+      plant_webhook_url!(trigger.id, "http://example.com/hook")
+
+      run_scheduler_with_webhook_response(project, 200)
+
+      {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+      assert user_trigger.trigger.is_active == false
     end
 
     @tag capture_log: true
@@ -258,6 +304,28 @@ defmodule Sanbase.Alert.TriggerSendingTest do
       assert user_trigger.trigger.consecutive_failed_days == 1
       assert user_trigger.trigger.last_failed_on == Date.utc_today()
       assert user_trigger.trigger.is_active == true
+    end
+
+    @tag capture_log: true
+    test "failed retry does not create activity from a stale successful delivery", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} =
+        create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/hook"}])
+
+      # The old delivery must remain outside the cooldown so this run evaluates
+      # and attempts another send, but it is not a new historical activity.
+      previous_delivery =
+        DateTime.utc_now()
+        |> DateTime.add(-24 * 60 * 60, :second)
+        |> DateTime.truncate(:second)
+        |> DateTime.to_iso8601()
+
+      plant_trigger_state!(trigger.id, %{last_triggered: %{project.slug => previous_delivery}})
+
+      run_scheduler_with_webhook_response(project, 500)
+
+      assert Sanbase.Repo.aggregate(HistoricalActivity, :count) == 0
     end
 
     @tag capture_log: true
@@ -382,6 +450,47 @@ defmodule Sanbase.Alert.TriggerSendingTest do
     end)
   end
 
+  describe "stamp_last_triggered/3" do
+    test "stamps identifiers without touching existing ones", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} = create_trigger(user, project.slug, channel: ["telegram"])
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      :ok = UserTrigger.stamp_last_triggered(trigger.id, "santiment", now)
+      :ok = UserTrigger.stamp_last_triggered(trigger.id, ["ethereum", "bitcoin"], now)
+
+      {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+
+      assert user_trigger.trigger.last_triggered |> Map.keys() |> Enum.sort() ==
+               ["bitcoin", "ethereum", "santiment"]
+
+      stamped_dt =
+        user_trigger.trigger.last_triggered
+        |> Map.get("santiment")
+        |> Sanbase.Utils.DateTime.from_iso8601!()
+
+      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), stamped_dt, 60, :seconds)
+    end
+
+    test "stamps legacy rows missing the last_triggered key", context do
+      %{user: user, project: project} = context
+
+      {:ok, trigger} = create_trigger(user, project.slug, channel: ["telegram"])
+
+      Sanbase.Repo.query!(
+        "UPDATE user_triggers SET trigger = trigger - 'last_triggered' WHERE id = $1",
+        [trigger.id]
+      )
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      :ok = UserTrigger.stamp_last_triggered(trigger.id, "santiment", now)
+
+      {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
+      assert Map.has_key?(user_trigger.trigger.last_triggered, "santiment")
+    end
+  end
+
   defp build_webhook_user_trigger(user, webhook_url) do
     %{
       id: 555,
@@ -397,10 +506,25 @@ defmodule Sanbase.Alert.TriggerSendingTest do
     }
   end
 
-  defp plant_ip_webhook!(user_trigger_id, url) do
+  defp plant_webhook_url!(user_trigger_id, url) do
     ut = Sanbase.Repo.get(UserTrigger, user_trigger_id)
     settings = Map.put(ut.trigger.settings, "channel", [%{"webhook" => url}])
 
+    plant_trigger_state!(user_trigger_id, %{settings: settings})
+  end
+
+  defp plant_webhook_url_keeping_channels!(user_trigger_id, url) do
+    ut = Sanbase.Repo.get(UserTrigger, user_trigger_id)
+
+    channel =
+      ut.trigger.settings
+      |> Map.get("channel")
+      |> Enum.map(fn
+        %{"webhook" => _} -> %{"webhook" => url}
+        other -> other
+      end)
+
+    settings = Map.put(ut.trigger.settings, "channel", channel)
     plant_trigger_state!(user_trigger_id, %{settings: settings})
   end
 

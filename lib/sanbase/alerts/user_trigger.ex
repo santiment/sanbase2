@@ -88,6 +88,45 @@ defmodule Sanbase.Alert.UserTrigger do
   end
 
   @doc ~s"""
+  Persist the `last_triggered` datetime of the given identifier(s) right
+  after a successful send, so an already-received alert is not sent again
+  if the process is killed before the end-of-round write.
+  """
+  def stamp_last_triggered(user_trigger_id, identifier_or_list, %DateTime{} = datetime) do
+    iso = DateTime.to_iso8601(datetime)
+
+    for identifier <- List.wrap(identifier_or_list) do
+      # The inner jsonb_set initializes a missing/null 'last_triggered' parent
+      # (possible on legacy rows) - without it the outer jsonb_set would
+      # silently leave the row unchanged.
+      from(ut in __MODULE__,
+        where: ut.id == ^user_trigger_id,
+        update: [
+          set: [
+            trigger:
+              fragment(
+                """
+                jsonb_set(
+                  jsonb_set(?, '{last_triggered}', COALESCE(NULLIF(? -> 'last_triggered', 'null'::jsonb), '{}'::jsonb)),
+                  ARRAY['last_triggered', ?],
+                  to_jsonb(?::text)
+                )
+                """,
+                ut.trigger,
+                ut.trigger,
+                ^identifier,
+                ^iso
+              )
+          ]
+        ]
+      )
+      |> Repo.update_all([])
+    end
+
+    :ok
+  end
+
+  @doc ~s"""
   Persist the result of an alert send round in a single write. Internal API
   for the scheduler: unlike `update_user_trigger/2` it keeps nil values (so
   the failing state can be cleared) and does not re-validate the settings.
@@ -493,6 +532,11 @@ defmodule Sanbase.Alert.UserTrigger do
   defp validate_settings(settings) do
     with {_, {:ok, trigger_struct}} <- {:load_in_struct?, load_in_struct_if_valid(settings)},
          {_, true} <- {:validate_settings, Vex.valid?(trigger_struct)},
+         {_, :ok} <-
+           {:webhook_urls,
+            Sanbase.Alert.Validation.NotificationChannel.validate_webhook_urls(
+              Map.get(trigger_struct, :channel)
+            )},
          {_, {:ok, _trigger_map}} <- {:map_from_struct, map_from_struct(trigger_struct)} do
       :ok
     else
@@ -511,6 +555,10 @@ defmodule Sanbase.Alert.UserTrigger do
         Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(errors_text)}")
 
         {:error, errors_text}
+
+      {:webhook_urls, {:error, error}} ->
+        Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(error)}")
+        {:error, error}
 
       {:map_from_struct, {:error, error}} ->
         Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(error)}")

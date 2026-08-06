@@ -294,6 +294,12 @@ defmodule Sanbase.Billing.Subscription do
   @spec subscribe(%User{}, %Plan{}, string_or_nil, string_or_nil) ::
           {:ok, %__MODULE__{}} | {:error, %Stripe.Error{} | String.t()}
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
+    serialize_new_offering_purchase(user, plan, fn ->
+      do_subscribe(user, plan, card_token, coupon)
+    end)
+  end
+
+  defp do_subscribe(user, plan, card_token, coupon) do
     with {:ok, coupon} <- maybe_validate_san_holder_coupon(user, coupon),
          :ok <- has_active_subscriptions(user, plan),
          :ok <- ensure_plan_is_for_sale(user, plan),
@@ -312,6 +318,12 @@ defmodule Sanbase.Billing.Subscription do
   Subscribe user with payment_method_id to a plan.
   """
   def subscribe2(user, plan, payment_method_id, coupon \\ nil) do
+    serialize_new_offering_purchase(user, plan, fn ->
+      do_subscribe2(user, plan, payment_method_id, coupon)
+    end)
+  end
+
+  defp do_subscribe2(user, plan, payment_method_id, coupon) do
     with {:ok, coupon} <- maybe_validate_san_holder_coupon(user, coupon),
          :ok <- has_active_subscriptions(user, plan),
          :ok <- ensure_plan_is_for_sale(user, plan),
@@ -325,6 +337,21 @@ defmodule Sanbase.Billing.Subscription do
       {:ok, default_preload(db_subscription, force: true)}
     end
   end
+
+  # Only the new offering is serialized. `ensure_plan_is_for_sale/2` reads the
+  # customer's live SanAPI subscriptions and then charges, so without a lock two
+  # overlapping requests both pass that read and both create a billable Stripe
+  # subscription - see `Subscription.PurchaseLock`.
+  #
+  # Every other plan keeps the exact path it had before, lock and all: their only
+  # coexistence rule is `has_active_subscriptions/2`, which is unchanged, and
+  # holding a connection across Stripe for the whole existing catalogue is a cost
+  # with nothing to buy.
+  defp serialize_new_offering_purchase(user, %Plan{name: "INSTITUTIONAL" <> _}, fun) do
+    __MODULE__.PurchaseLock.with_lock(user.id, fun)
+  end
+
+  defp serialize_new_offering_purchase(_user, _plan, fun), do: fun.()
 
   # Cancel asynchronously to avoid blocking the request. If it fails it is ok but capture the error in sentry
   def maybe_cancel_async(user_id, plan) do

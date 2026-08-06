@@ -1098,6 +1098,30 @@ $70. Belongs to task **TR**, still not started.
 subscription's 2027 renewal already shows `Applied balance -$3,500.00`, amount due $0.00.
 Product decision needed: is interval switching free, once per period, or renewal-only?
 
+**10. Two concurrent purchases can both charge — fixed for Institutional, still open for bundles.**
+`classify_active_sanapi/1` (`lifecycle.ex:597`) reads the customer's live SanAPI subscriptions
+with a plain `Repo.all` — no lock, no transaction — and the Stripe subscription is created some
+hundreds of milliseconds later. Before the first purchase there is no row to lock, so two
+overlapping requests for one user both see nothing, both pass, and both charge.
+`Subscription.has_active_subscriptions/2` is no defence: it is the same unlocked read, keyed on
+plan id. A double-clicked Buy button is enough, and afterwards nothing treats the pair as wrong —
+`classify_active_sanapi/1` would refuse a *third*, and the hourly replacement job only cancels
+legacy plans. Result: two live subscriptions billing in parallel at $1,050 or $799 a month.
+
+`Sanbase.Billing.Subscription.PurchaseLock` closes it: a per-user session-level advisory lock
+held on one checked-out connection for the whole check-and-create, `pg_try_advisory_lock` so the
+second request is refused at once rather than queueing behind an HTTP call it will fail anyway.
+Deliberately not a `Repo.transaction` — `Subscription.create/2` emits `:create_subscription`, and
+`BillingEventSubscriber` recomputes the quota on its own connection, so inside an uncommitted
+transaction it would read no subscription and write the wrong `api_call_limits` row.
+
+**Applied to the Institutional flow only.** Wrapping `Bundle.Lifecycle.subscribe/2` changes how a
+path that is already in production uses the connection pool — it would hold a connection across
+the Stripe call and the proration cancel — and that deserves its own deploy rather than riding
+along with the Institutional release. The change is one line at `lifecycle.ex:79`:
+`Subscription.PurchaseLock.with_lock(user.id, fn -> ...end)` around the existing body. Do it once
+Institutional is settled on production.
+
 **Not an abuse surface, but found in the same run:** the `/admin/bundle_subscriptions` "make a
 real GraphQL call" card posts to `SanbaseWeb.Endpoint.url()`, i.e. the admin pod's own
 endpoint. `:graphql_cache` is only started when `container_type() in ["web", "all"]`

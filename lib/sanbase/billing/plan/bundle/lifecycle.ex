@@ -69,6 +69,14 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   paid and is refused every request is worse off than one who was not charged. A
   legacy SanAPI subscription that the bundle replaces is canceled with proration
   once the new one is actually live - see `cancel_replaceable_if_live/2`.
+
+  ⚠️ Two overlapping calls for the same user can both pass `classify_for_subscribe/1`
+  and both charge, leaving two bundles billing in parallel - a double-clicked Buy
+  button is enough. `Sanbase.Billing.Subscription.PurchaseLock` is the fix and is
+  already written and applied to the Institutional flow; it is deliberately *not*
+  applied here yet, because doing so changes how a live production path uses the
+  connection pool and that wants its own deploy. See §10.1 of
+  docs/composable-api-plans-handover.md.
   """
   @spec subscribe(User.t(), subscribe_opts()) ::
           {:ok, Subscription.t()} | {:error, term()}

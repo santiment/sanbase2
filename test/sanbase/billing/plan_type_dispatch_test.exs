@@ -365,6 +365,13 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       assert Plan.plan_name(%Plan{name: @bundle_plan}) == @bundle_plan
     end
 
+    test "accepts an INSTITUTIONAL plan without raising" do
+      # Same reason as the BUNDLE clause above. Institutional is dispatched as a
+      # standard plan, but it still needs its own clause here because plan_name/1
+      # matches on names rather than on Plan.type/1.
+      assert Plan.plan_name(%Plan{name: "INSTITUTIONAL"}) == "INSTITUTIONAL"
+    end
+
     test "still normalises and passes through existing names" do
       assert Plan.plan_name(%Plan{name: "ESSENTIAL"}) == "BASIC"
       assert Plan.plan_name(%Plan{name: "PRO"}) == "PRO"

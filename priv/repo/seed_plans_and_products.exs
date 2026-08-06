@@ -48,6 +48,18 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval, "order", is
   ON CONFLICT DO NOTHING
 """)
 
+# The INSTITUTIONAL rows. A fixed tier rather than a marker, so these carry real
+# amounts and are bought through the ordinary `subscribe` mutation. Private until
+# the new offering is activated, and excluded from product_with_plans for the same
+# reason the BUNDLE rows are - the pricing page renders this column from its own
+# copy.
+Sanbase.Repo.query!("""
+INSERT INTO plans (id, name, product_id, amount, currency, interval, "order", is_private) VALUES
+  (311,'INSTITUTIONAL',1,79900,'USD','month',32,'t'),
+  (312,'INSTITUTIONAL',1,950000,'USD','year',33,'t')
+  ON CONFLICT DO NOTHING
+""")
+
 # Local bundle catalog only (12 rows). Stripe Prices are created by
 # Sanbase.Billing.sync_bundle_catalog_with_stripe/0 (also on @reboot via
 # sync_products_with_stripe/0).

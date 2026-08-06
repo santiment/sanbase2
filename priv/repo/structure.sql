@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict vRvBMnR6yeJFcSDUdBWjzLeQF7FFNGEPxze7qTAgNFZoPss3b43lQy2k6FPwHmJ
+\restrict DU13wkKFgO6KfQBf3LBObP8aAk7FUjW3LwAnnjZP0ZOTKJnrDHgfj6WeazDACvK
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -12227,7 +12227,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict vRvBMnR6yeJFcSDUdBWjzLeQF7FFNGEPxze7qTAgNFZoPss3b43lQy2k6FPwHmJ
+\unrestrict DU13wkKFgO6KfQBf3LBObP8aAk7FUjW3LwAnnjZP0ZOTKJnrDHgfj6WeazDACvK
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12824,3 +12824,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260804140000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260804145231);
 INSERT INTO public."schema_migrations" (version) VALUES (20260805111145);
 INSERT INTO public."schema_migrations" (version) VALUES (20260805125543);
+INSERT INTO public."schema_migrations" (version) VALUES (20260806120000);

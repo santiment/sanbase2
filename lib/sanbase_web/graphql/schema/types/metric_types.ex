@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:max)
     value(:business_pro)
     value(:business_max)
+    value(:institutional)
     value(:custom)
     value(:bundle)
   end

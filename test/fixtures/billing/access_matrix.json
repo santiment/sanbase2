@@ -1670,6 +1670,299 @@
         }
       }
     },
+    "INSTITUTIONAL": {
+      "items": {
+        "metric:active_addresses_24h": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            }
+          }
+        },
+        "metric:daily_active_addresses": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            }
+          }
+        },
+        "metric:dev_activity": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            }
+          }
+        },
+        "metric:mvrv_usd": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "metric:nft_market_volume": {
+          "access?": true,
+          "min_plan": "PRO",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "metric:price_usd": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            }
+          }
+        },
+        "metric:social_volume_total": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "query:all_projects": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "query:current_user": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "query:gas_used": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "query:history_price": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "query:miners_balance": {
+          "access?": true,
+          "min_plan": "PRO",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "query:project_by_slug": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "query:realtime_top_holders": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        },
+        "query:top_holders": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": 1095,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": {
+                "__raise__": "CaseClauseError"
+              },
+              "realtime_data_cut_off_in_days": {
+                "__raise__": "CaseClauseError"
+              }
+            }
+          }
+        }
+      },
+      "plan_level": {
+        "acl_plan": "sanapi_institutional",
+        "alerts_limit": 50,
+        "api_call_limits": {
+          "hour": 30000,
+          "minute": 600,
+          "month": 50000
+        },
+        "clickhouse_repo": "Sanbase.ClickhouseRepo.BusinessMaxUser",
+        "credits_limit": 500000,
+        "plan_has_limits?": true,
+        "query_executions_limit": {
+          "day": 15000,
+          "hour": 3000,
+          "minute": 100
+        },
+        "response_size_limits": {
+          "month": 50000
+        }
+      }
+    },
     "MAX": {
       "items": {
         "metric:active_addresses_24h": {
@@ -4246,6 +4539,255 @@
           "day": 500,
           "hour": 200,
           "minute": 20
+        },
+        "response_size_limits": {
+          "month": null
+        }
+      }
+    },
+    "INSTITUTIONAL": {
+      "items": {
+        "metric:active_addresses_24h": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            }
+          }
+        },
+        "metric:daily_active_addresses": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            }
+          }
+        },
+        "metric:dev_activity": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            }
+          }
+        },
+        "metric:mvrv_usd": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "metric:nft_market_volume": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "metric:price_usd": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": null
+            }
+          }
+        },
+        "metric:social_volume_total": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "query:all_projects": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "query:current_user": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "query:gas_used": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "query:history_price": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "query:miners_balance": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "query:project_by_slug": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": false,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "query:realtime_top_holders": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        },
+        "query:top_holders": {
+          "access?": true,
+          "min_plan": "FREE",
+          "restricted?": true,
+          "windows": {
+            "subscription_product=SANAPI": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            },
+            "subscription_product=SANBASE": {
+              "historical_data_in_days": null,
+              "realtime_data_cut_off_in_days": 0
+            }
+          }
+        }
+      },
+      "plan_level": {
+        "acl_plan": "sanbase_institutional",
+        "alerts_limit": 50,
+        "api_call_limits": {
+          "hour": null,
+          "minute": null,
+          "month": null
+        },
+        "clickhouse_repo": "Sanbase.ClickhouseRepo.FreeUser",
+        "credits_limit": {
+          "__raise__": "CaseClauseError"
+        },
+        "plan_has_limits?": true,
+        "query_executions_limit": {
+          "__raise__": "CaseClauseError"
         },
         "response_size_limits": {
           "month": null

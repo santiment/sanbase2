@@ -57,6 +57,17 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   @custom_plan_stats Plan.upgrade_plan(@business_max_plan_stats, extends: %{})
 
+  # The Institutional flagship. Its history window is a deliberate 3 years rather
+  # than the unlimited one BUSINESS_MAX gets: composable packages are what sell
+  # full history, and Institutional is priced against a fixed, broad plan instead.
+  # See `docs/composable-api-plans-handover.md` §8 task IN.
+  @institutional_plan_stats Plan.upgrade_plan(@free_plan_stats,
+                              extends: %{
+                                historical_data_in_days: 3 * 365,
+                                realtime_data_cut_off_in_days: 0
+                              }
+                            )
+
   def historical_data_in_days(subscription_product, plan) do
     case subscription_product do
       nil -> historical_data_in_days_api(plan)
@@ -74,6 +85,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       "MAX" -> @sanbase_max_plan_stats[:historical_data_in_days]
       "BUSINESS_PRO" -> @business_pro_plan_stats[:historical_data_in_days]
       "BUSINESS_MAX" -> @business_max_plan_stats[:historical_data_in_days]
+      "INSTITUTIONAL" -> @institutional_plan_stats[:historical_data_in_days]
       "CUSTOM" -> @custom_plan_stats[:historical_data_in_days]
     end
   end
@@ -104,6 +116,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       "MAX" -> @sanbase_max_plan_stats[:realtime_data_cut_off_in_days]
       "BUSINESS_PRO" -> @business_pro_plan_stats[:realtime_data_cut_off_in_days]
       "BUSINESS_MAX" -> @business_max_plan_stats[:realtime_data_cut_off_in_days]
+      "INSTITUTIONAL" -> @institutional_plan_stats[:realtime_data_cut_off_in_days]
       "CUSTOM" -> @custom_plan_stats[:realtime_data_cut_off_in_days]
     end
   end

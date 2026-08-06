@@ -296,6 +296,7 @@ defmodule Sanbase.Billing.Subscription do
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
     with {:ok, coupon} <- maybe_validate_san_holder_coupon(user, coupon),
          :ok <- has_active_subscriptions(user, plan),
+         :ok <- ensure_plan_is_for_sale(user, plan),
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
@@ -313,6 +314,7 @@ defmodule Sanbase.Billing.Subscription do
   def subscribe2(user, plan, payment_method_id, coupon \\ nil) do
     with {:ok, coupon} <- maybe_validate_san_holder_coupon(user, coupon),
          :ok <- has_active_subscriptions(user, plan),
+         :ok <- ensure_plan_is_for_sale(user, plan),
          {:ok, user} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
@@ -734,6 +736,21 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  # Institutional belongs to the new SanAPI offering, so it answers to that
+  # offering's two commercial rules rather than only to `has_active_subscriptions/2`
+  # above - which compares plan ids and would happily sell it to a customer who is
+  # already on a bundle, leaving two live SanAPI subscriptions billing at once.
+  #
+  # Every other plan keeps exactly the behavior it had before this clause existed.
+  defp ensure_plan_is_for_sale(user, %Plan{name: "INSTITUTIONAL" <> _}) do
+    case Sanbase.Billing.Plan.Bundle.Lifecycle.ensure_can_subscribe_institutional(user) do
+      :ok -> :ok
+      {:error, message} -> {:error, %__MODULE__.Error{message: message}}
+    end
+  end
+
+  defp ensure_plan_is_for_sale(_user, _plan), do: :ok
+
   # Add 80% off Sanbase Basic subscription for first month
   defp create_stripe_subscription(user, %Plan{id: plan_id} = plan, _)
        when plan_id == @sanbase_basic_plan_id do
@@ -789,8 +806,11 @@ defmodule Sanbase.Billing.Subscription do
       product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id, plan) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 
-      # BUSINESS plans are excluded from API trial
-      product_id == @product_api and plan.name not in ~w(BUSINESS_PRO BUSINESS_MAX) and
+      # BUSINESS plans are excluded from API trial. So is INSTITUTIONAL: it is the
+      # flagship SanAPI plan, and a 14-day trial of it is a decision for product to
+      # make deliberately (task TR) rather than something it inherits by being new.
+      product_id == @product_api and
+        plan.name not in ~w(BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL) and
           Billing.eligible_for_api_trial?(user.id) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 

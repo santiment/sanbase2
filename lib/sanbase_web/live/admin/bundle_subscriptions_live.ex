@@ -1340,7 +1340,10 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
                 class="select select-sm w-32"
               >
                 <option
-                  :for={plan <- ~w(FREE BASIC PRO PRO_PLUS MAX BUSINESS_PRO BUSINESS_MAX)}
+                  :for={
+                    plan <-
+                      ~w(FREE BASIC PRO PRO_PLUS MAX BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL)
+                  }
                   value={plan}
                   selected={@compare_plan == plan}
                 >

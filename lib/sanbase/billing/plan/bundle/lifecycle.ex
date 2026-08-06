@@ -242,6 +242,33 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
+  @doc ~s"""
+  Whether the user may purchase the Institutional plan.
+
+  Institutional is sold through the ordinary `Sanbase.Billing.Subscription.subscribe/4`
+  path rather than through `subscribe/2` here - it is a fixed plan with one Stripe
+  price, so none of the multi-item machinery applies to it. What it does share with
+  a bundle is the two commercial rules, and they live here because they are about
+  the offering rather than about items:
+
+    * it is not for sale until the admin switch is on (staff can still buy it while
+      it is off, which is how it gets tested), and
+    * it never becomes a customer's second live SanAPI subscription.
+
+  A replaceable legacy SanAPI subscription is allowed to be present and is not
+  canceled here. `cancel_stale_replaced_subscriptions/0` does that within the hour,
+  once the new subscription is actually live - the same treatment a bundle gets, and
+  for the same reason: a declined first invoice must not cost the customer the plan
+  they are still paying for.
+  """
+  @spec ensure_can_subscribe_institutional(User.t()) :: :ok | {:error, String.t()}
+  def ensure_can_subscribe_institutional(%User{} = user) do
+    with :ok <- ensure_institutional_visible(user),
+         {:ok, _replaceable} <- classify_for_subscribe(user) do
+      :ok
+    end
+  end
+
   @spec list_replaceable_sanapi_subs(User.t()) :: [Subscription.t()]
   def list_replaceable_sanapi_subs(%User{} = user) do
     case classify_active_sanapi(user) do
@@ -257,6 +284,18 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
       :ok
     else
       {:error, "Bundle plans are not available for purchase yet"}
+    end
+  end
+
+  # Same switch, different wording. `SaleControls` activates the whole new offering
+  # at once, so there is no state in which one of the two is for sale and the other
+  # is not - but a customer told "Bundle plans are not available" after clicking
+  # Institutional would reasonably think they had hit the wrong button.
+  defp ensure_institutional_visible(user) do
+    if SaleControls.bundle_plans_visible?(user) do
+      :ok
+    else
+      {:error, "The Institutional plan is not available for purchase yet"}
     end
   end
 

@@ -59,7 +59,7 @@ The public "Pricing & Packages" surface (mock; amounts provisional) is **not** p
 | Column | Product name | Commercial model | Billing model in this epic |
 |--------|--------------|------------------|----------------------------|
 | Left | **API · by data type** | Pick 1..N of 5 data packages (+ optional API-call add-on). Full history, 100k req/mo base, MCP. | **`BUNDLE`** — multi-item entitlement path (tasks PD…SL) |
-| Middle | **Institutional · flagship** | Fixed SKU: Full Sanbase + Full SanAPI + MCP. 3 seats, 50k req/mo, 3-year history. ~$799/mo · ~$9,500/yr. | **`INSTITUTIONAL`** — fixed standard plan (task **IN**) |
+| Middle | **Institutional · flagship** | Fixed SKU: Full Sanbase + Full SanAPI + MCP. 3 seats, 50k req/mo, 3-year history. ~$799/mo · ~$9,500/yr. | **`INSTITUTIONAL`** — fixed standard plan (task **IN**, ✅ built; **seats not implemented** — Q6) |
 | Right | **Enterprise · custom** | Sales-led: Institutional baseline + full history all pillars + S3 + 300k calls + dedicated AM / DPA. From ~$19,999/yr. | **`CUSTOM_*` / sales** — not self-serve cart (task **EP**) |
 
 **Prices are not final** and must stay changeable (catalog data + Stripe Price replace — §9). Provisional figures from the mock do not block implementation; only the *list of SKUs / plan shapes* does.
@@ -456,6 +456,11 @@ items rather than adjusted in place.
 | `cancel/2` | `cancel_at_period_end` | synced from the response | unchanged until the period ends |
 | `ItemExpiry.run/1` (hourly) | deletes items past `remove_at`, no proration | deletes the rows | package finally goes away |
 
+**What the interval switch charges, verified on stage 2026-08-06.** Switching a month-old Market + Social bundle to yearly produced one invoice of $9,031.14: `+7,000.00` and `+3,500.00` for the two yearly items, `-699.97` and `-349.98` crediting the unused monthly ones, and `-418.91` crediting the legacy BUSINESS_PRO the bundle had replaced. Two things to know from that:
+
+- **Every credited item is re-charged in the same invoice.** The monthly items are deleted, so Stripe credits their unused time; the yearly items are new, so they are charged in full. Net is the yearly price minus what was actually consumed, which was $1.14 across all three subscriptions. Nothing is credited without being replaced, and nothing is charged twice.
+- **The legacy plan's credit lands on the *bundle's* invoice, not on its own.** `cancel_subscription_with_proration/1` writes a negative *pending invoice item* against the customer rather than against a subscription, so Stripe attaches it to whatever invoice that customer generates next. Economically right — the customer gets their unused legacy time back as a discount on the new plan — but it reads oddly in the dashboard, where a line called "Unused time on SANapi" appears on a bundle invoice. Expect support to ask.
+
 Four rules hold this together, and each is the answer to a way it went wrong:
 
 * **Removal is a date, not a flag.** `subscription_items.remove_at` holds the
@@ -808,6 +813,24 @@ Changing a priced amount after Stripe exists = `Price.replace/1` + new Stripe Pr
 **Depends on:** LC, EN. **Critical for BC.**
 **Not covered:** §7.3 #4 (`stripe_sync.ex`) and #5 (`timeseries.ex`) are separate work — they are first-item *read* assumptions, not the webhook write path.
 
+**⚠️ Nothing retries an event left `is_processed = false`.** There is no sweep, no backoff, no dead-letter queue — a row that fails once stays unprocessed forever, and the only signal is the row itself. Two consequences worth knowing before reading `stripe_events` on stage or production:
+
+- **A `false` row is not evidence of a live bug.** Every bundle bought before this task landed left its `customer.subscription.created` unprocessed (that is the §7.3 #3 bug this fixed), and those rows are still there. Distinguish by timestamp, not by assumption:
+
+  ```sql
+  SELECT event_id, type, is_processed, inserted_at,
+         payload->'data'->'object'->>'id' AS stripe_sub
+  FROM stripe_events
+  WHERE type = 'customer.subscription.created'
+  ORDER BY inserted_at DESC LIMIT 10;
+  ```
+
+  The newest row must be `true`. Older `false` rows predate the fix. Verified on stage 2026-08-06: `evt_1U1PFQ` (11:14:04) and `evt_1U1PI6` (11:16:51) are `false` and are the two bundle purchases from the declined-card incident; `evt_1U1RaW` (13:44:01), the first bundle bought after the deploy, is `true`. The deploy landed between 11:16:51 and 11:48:29 UTC, and both stale rows sit on the earlier side of it. Their subscription (1639) has its items and entitlement regardless — the rows are cosmetic, not missing state.
+
+- **`switchBundleInterval` never produces a `created` event.** It swaps items on the existing Stripe subscription (`swap_stripe_items/4`), so it emits `customer.subscription.updated` only. An unprocessed `created` row appearing around the time of a switch therefore belongs to something else.
+
+Building the retry sweep is not in this epic. If it is wanted, the shape is a Quantum job over `is_processed = false` rows younger than Stripe's own 3-day retry window, replaying them through `StripeEvent.handle_event/1` — which is already idempotent for every branch above, which is what makes a replay safe.
+
 **One correction to the original description:** it says the `deleted` branch must "reset the `ApiCallLimit` record" because nothing else would. Not quite — `Subscription.update_subscription_db/2` emits `:update_subscription`, and `EventBus.BillingEventSubscriber` already calls `ApiCallLimit.update_user_plan/1` for it, so the quota does drop today. But that path is asynchronous and wrapped in `try/rescue` (`billing_event_subscriber.ex:50-57`), and it is disabled outright in the test config. The webhook now calls `update_user_plan/1` synchronously as well — idempotent, so the two together are harmless, and it is what makes the drop deterministic and testable.
 
 ### AM. `available_metrics` by entitlement — ✅ done
@@ -825,29 +848,44 @@ Three testers answer the question a ticket actually asks:
 **Deliverable:** ✅ two LiveViews + `Subscription.list_bundle_subscriptions/1` / `get_bundle_subscription/1`.
 **Depends on:** EN. Small, high value — do not defer it to "later".
 
-### IN. Institutional flagship plan — ⬜ not started
+### IN. Institutional flagship plan — ✅ done (seats excluded)
 **What:** The middle pricing-page column — a **fixed** SanAPI (+ Sanbase) plan, **not** assembled from packages (Q10). Distinct from `BUNDLE` and from bespoke `CUSTOM_*`.
 
-**Product shape (provisional prices; changeable):**
-- **Price:** $799 / mo · $9,500 / yr (⚠️ yearly discount looks wrong vs ~2 months free — Q11)
-- **Access:** Full Sanbase + Full SanAPI + MCP
-- **Quota:** 50,000 API requests / month (intentional; lower than a single package — §9)
-- **History:** 3-year window on API data (confirmed intentional while packages get full history — §9)
-- **Seats:** "3 seats" on Sanbase — ⚠️ **Q6** still open; no seats concept exists today
-- **Add-ons:** "Add-ons for full history per pillar" — ⚠️ product detail TBD; packages already include full history in v1, so this may mean something else for Institutional
+**Implemented as:** two `INSTITUTIONAL` `plans` rows on SanAPI (ids 311 month / 312 year, `priv/repo/migrations/20260806120000_add_institutional_plans.exs` plus the dev seed), classified `:standard` by `Plan.type/1`, and one clause added at each plan-dependent dispatch site. No `subscription_items`, no entitlement blob, no multi-item Stripe subscription — the whole point of the shape is that Institutional is an ordinary plan row that happens to belong to the new offering commercially.
 
-**Implementation shape (recommended):**
-- New `plans` rows named `INSTITUTIONAL` (month + year), product SanAPI — same two-row pattern as `PRO`. Likely also Sanbase rows if "Full Sanbase" is sold as part of the same SKU vs a coupled Sanbase sub.
-- `Plan.type/1` → `:standard` (or a dedicated `:institutional` atom if we want exhaustiveness separate from PRO) — **not** `:bundle`. No `subscription_items`, no entitlement blob.
-- Access via the **standard** path: metric access = all (or equivalent to union of five packages), `historical_data_in_days: ~1095` (3 years), `realtime_data_cut_off_in_days: 0`, `api_call_limits` month = 50_000.
-- Stripe: one Product + month/year Prices; wire into existing `subscribe` / plan sync — **not** multi-item SC.
-- Exclude from sale coexistence with `BUNDLE` / legacy PRO the same way §7.3 #6 blocks dual SanAPI subs.
+**What it grants, and why each number is what it is:**
 
-**Why not a five-package BUNDLE at $799?** Cheaper to maintain as a fixed plan; Institutional's 3-year history and 50k calls already diverge from "five packages × full history × 100k". Encoding it as packages would fight the product.
+| Dimension | Value | Why |
+|---|---|---|
+| Metric / query / signal access | everything a paid SanAPI plan gets | "Full SanAPI". No `min_plan` in the schema is above `PRO`, so the standard ladder already answers this correctly with no allow-list |
+| History window | **1095 days** (3 years) | The product's figure. BUSINESS_PRO gets 730 and BUSINESS_MAX unlimited, so this sits deliberately between them — full history is what the packages sell |
+| Realtime cut-off | 0 | Realtime included |
+| Calls / month | **50,000** | The product's figure, and the lowest of any paid SanAPI plan — lower than a single package. Institutional sells breadth, not volume (§9) |
+| Calls / hour · minute | 30,000 · 600 | Burst limits, taken from `sanapi_pro` — the same numbers a bundle gets. Deliberately *not* scaled down with the month: the monthly cap is the constraint being sold, and throttling an institutional customer harder than a package customer inside their own allowance would be a worse plan for more money |
+| Response size / month | 50,000 MB | BUSINESS_PRO's figure. Not a dimension Institutional sells |
+| Sanbase side | **MAX**-equivalent (alerts 50, paywalled insights, SanGraphs) | "Full Sanbase" is part of the SKU. A bundle answers as PRO here; that difference is the point |
+| MCP | `:max` tier | MCP is listed in what Institutional includes. `MCP.Restrictions.classify/2` has a catch-all returning `:free`, so a missing clause would have sold MCP and then served 15 calls a minute |
+| Clickhouse repo · credits · query executions · complexity divider | as **BUSINESS_MAX** | None of these is a dimension Institutional sells. Inventing separate numbers for each would be a set of values nobody decided |
+| 14-day API trial | **excluded**, like the Business plans | A trial of the flagship is a decision for product to make deliberately (task **TR**), not something it inherits by being new |
 
-**Deliverable:** plan rows + access/quota clauses + Stripe prices + BC fixture still green for FREE/PRO/CUSTOM.
+**Who may buy it.** `Bundle.Lifecycle.ensure_can_subscribe_institutional/1`, called from `Subscription.subscribe/4` and `subscribe2/4` *before* the Stripe customer or subscription is created. Two rules, both shared with bundles because they are about the offering rather than about items:
+- not for sale until `/admin/bundle_offering` is switched on — staff can still buy it while it is off, which is how it gets tested;
+- never a customer's second live SanAPI subscription. `has_active_subscriptions/2` cannot enforce this: it compares plan *ids*, so without the gate a bundle customer could buy Institutional and be billed for both at once.
+
+A replaceable legacy SanAPI subscription is allowed to be present and is **not** canceled at purchase. `cancel_stale_replaced_subscriptions/0` already matches `INSTITUTIONAL%` and does that within the hour, once the new subscription is actually live — the same treatment a bundle gets, and for the same reason: a declined first invoice must not cost the customer the plan they are still paying for (§10.1 item 3).
+
+**Stripe.** Nothing new. The rows carry real amounts and a NULL `stripe_id`; `Sanbase.Billing.sync_products_with_stripe/0` creates the Stripe plan on first run and writes the id back, exactly as for every other `plans` row. Prices are the provisional $799 / $9,500 — changing them is an UPDATE plus a new Stripe price, not a schema change.
+
+**Sale controls.** `SaleControls` already toggled `INSTITUTIONAL%` alongside `BUNDLE%`, and `product_with_plans/0` already excluded it, so one switch activates the whole offering and the Institutional column is rendered from its own copy rather than from a plans listing. No new admin surface was needed.
+
+**Deliverable:** ✅ plan rows + migration + seed, clauses at every dispatch site, the sale gate, `test/sanbase/billing/plan/institutional_test.exs` (22 tests), `INSTITUTIONAL` added to `AccessMatrix.standard_plan_names/0` so the BC fixture now pins it too — that fixture diff is **542 insertions, 0 deletions**, i.e. no existing plan's behavior moved.
 **Depends on:** DP (dispatch seam already landed). Parallel to SC — does **not** block package checkout.
-**Open before coding seats / history add-ons:** Q6, and the "full history per pillar add-on" wording.
+
+**Deliberately left out:**
+- **Seats.** "3 seats on Sanbase" (Q6) is not implemented and no seats concept exists anywhere in the codebase. Product's call was to ship without it.
+- **"Add-ons for full history per pillar."** Wording still unresolved; packages already include full history in v1, so this means something else for Institutional and nobody has said what.
+- **Cancelling a customer's separate Sanbase subscription.** Buying `BUSINESS_PRO`/`BUSINESS_MAX` immediately cancels any Sanbase subscription the customer holds (`maybe_cancel_subscriptions/2`); Institutional does **not**, and neither does a bundle. Left alone on purpose — the alternative is destroying a paid Sanbase year on a button press — but it does mean an Institutional customer with a separate Sanbase subscription pays twice for Sanbase. New question in §15.
+- **The yearly price.** $9,500 against $799/mo is ~1 month free where the other plans give ~2 (Q11). Seeded as given.
 
 ### EP. Enterprise custom tier — ⬜ not started
 **What:** The right pricing-page column — sales-led contracting, **not** self-serve checkout.
@@ -1142,7 +1180,7 @@ release day.
 | **SC** — Stripe catalog | ✅ done | `Bundle.Catalog` via `Billing.sync_bundle_catalog_with_stripe/0` (also in `@reboot` `sync_products_with_stripe`). 12 local rows; package Stripe Prices via Price API; `api_calls_500k` amount still TBD. |
 | **SL** — subscribe lifecycle | ✅ done | `Bundle.Lifecycle` + GraphQL mutations; SaleControls activate/deactivate; legacy auto-replace; `upgrade_downgrade` guard. |
 | **UI** | ⬜ not started | Three-column pricing / checkout (webapp). |
-| **IN** — Institutional | ⬜ not started | Fixed flagship plan (§1.1 middle column). Specced in §8 **IN**; not a BUNDLE. |
+| **IN** — Institutional | ✅ done (no seats) | `INSTITUTIONAL` month/year rows on SanAPI, `Plan.type/1` → `:standard`. 1095-day history, realtime, 50k calls/month, full Sanbase (MAX-equivalent), MCP `:max`; everything else answers as BUSINESS_MAX. Sold through the ordinary `subscribe`, behind the new-offering gate. Seats (Q6) deliberately out. |
 | **EP** — Enterprise | ⬜ not started | Sales-led custom tier (§1.1 right column). Specced in §8 **EP**; prefer CUSTOM path. |
 
 **Admin pages.** `/admin/bundle_packages` shows what each package contains live vs
@@ -1196,11 +1234,12 @@ covers only the webhook write path; those two are tracked on their own.
 
 ### 13.1 Next
 
-1. **`IN`** — Institutional as a fixed standard plan. Does not share the multi-item path; uses offering gate + standard `subscribe`.
-2. **`EP`** — confirm Enterprise = CUSTOM sales path; thin plan/admin work only.
-3. **`UI`** — three-column pricing / checkout once SL (packages) and IN (flagship CTA) exist; use `bundleCatalog` + plan flags (`is_private` / `is_deprecated`).
-4. When product prices `api_calls_500k`: set amounts + `Sanbase.Billing.sync_bundle_catalog_with_stripe()` (or wait for `@reboot`) — no code change.
-5. Use `/admin/bundle_offering` to activate bundle plans and/or deactivate Business Pro/Max when ready.
+1. **`EP`** — confirm Enterprise = CUSTOM sales path; thin plan/admin work only.
+2. **`UI`** — three-column pricing / checkout. Both dependencies now exist: SL for the package builder, IN for the flagship CTA. Use `bundleCatalog` + plan flags (`is_private` / `is_deprecated`). ⚠️ Also carries the §10.2 launch blocker, which gates withdrawal of the Business plans on its own.
+3. **`TR`** — trial & dunning. Sharpened by IN and SL both shipping: `past_due` currently grants roughly three weeks of full access, and the exposure now scales to $1,050/month bundles and $799/month Institutional (§10.1 item 8).
+4. Verify on stage: run `Sanbase.Billing.sync_products_with_stripe()` once so the two `INSTITUTIONAL` rows get their Stripe plans, then activate the offering from `/admin/bundle_offering` and buy one.
+5. When product prices `api_calls_500k`: set amounts + `Sanbase.Billing.sync_bundle_catalog_with_stripe()` (or wait for `@reboot`) — no code change.
+6. Use `/admin/bundle_offering` to activate bundle plans and/or deactivate Business Pro/Max when ready.
 
 Prices on the mock are **not final** and must not gate further work.
 
@@ -1282,6 +1321,24 @@ Left over, and cosmetic: a bundle subscriber's account page renders the literal 
 **Q6. Does Institutional's "3 seats" ship in the first version?**
 
 We have no concept of seats today — one subscription belongs to one account. Adding seats is a separate piece of work from packages. If it has to be there at launch, it needs planning now rather than later.
+
+*Answer:* **no, not in v1.** Institutional shipped without seats (task **IN**). Everything else about the plan is built and sellable; a seat is still one account. If the pricing page is going to say "3 seats", either that line comes off the page or seats become their own piece of work with its own plan — nothing in the current build enforces or even records a seat count.
+
+---
+
+**Q14. Should Institutional cancel a customer's separate Sanbase subscription?**
+
+Institutional includes full Sanbase. A customer who already pays for Sanbase separately and then buys Institutional currently keeps both subscriptions and pays for Sanbase twice.
+
+The existing behavior for the Business plans is the opposite and quite blunt: buying `BUSINESS_PRO` or `BUSINESS_MAX` cancels any Sanbase subscription the customer holds, immediately. We deliberately did not copy that for Institutional, because "immediately" can mean destroying most of a paid Sanbase year on a button press, and because bundles do not do it either.
+
+So one of three answers is needed:
+
+1. leave it — the customer double-pays until they cancel Sanbase themselves (today's behavior);
+2. cancel the Sanbase subscription at the end of its paid period, so nothing is thrown away;
+3. copy the Business behavior and cancel it immediately.
+
+Not blocking. It becomes visible with the first Institutional customer who already has Sanbase.
 
 *Answer:* pending
 

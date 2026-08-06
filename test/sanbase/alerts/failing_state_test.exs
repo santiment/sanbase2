@@ -33,6 +33,16 @@ defmodule Sanbase.Alert.Trigger.FailingStateTest do
       assert FailingState.delivery_failure?({:error, %{reason: :webhook_send_fail}})
     end
 
+    test "blocked-IP DNS resolutions count as streak failures, not permanent ones" do
+      assert FailingState.delivery_failure?(
+               {:error, %{reason: :webhook_url_resolves_to_blocked_ip}}
+             )
+
+      refute FailingState.permanent_failure?(
+               {:error, %{reason: :webhook_url_resolves_to_blocked_ip}}
+             )
+    end
+
     test "permanent failures do not count - they disable on the spot instead" do
       refute FailingState.delivery_failure?({:error, %{reason: :webhook_url_not_valid}})
       refute FailingState.delivery_failure?({:error, %{reason: :telegram_bot_blocked}})

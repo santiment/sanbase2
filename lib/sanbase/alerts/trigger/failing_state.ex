@@ -62,7 +62,10 @@ defmodule Sanbase.Alert.Trigger.FailingState do
     :telegram_bot_blocked
   ]
 
-  @streak_failure_reasons [:webhook_send_fail]
+  # A blocked-IP DNS resolution is a streak failure, not a permanent one -
+  # resolvers can transiently return blocked addresses (e.g. DNS-level
+  # ad blocking resolving to 127.0.0.1).
+  @streak_failure_reasons [:webhook_send_fail, :webhook_url_resolves_to_blocked_ip]
 
   @doc ~s"""
   Failures proving the destination itself is broken - an invalid webhook URL

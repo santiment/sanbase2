@@ -241,4 +241,14 @@ defmodule Sanbase.Utils.ValidationTest do
       assert {:error, _} = Validation.valid_webhook_url?("example.com/hook")
     end
   end
+
+  describe "IP.resolves_to_blocked_ip?/1" do
+    test "hosts resolving to loopback are blocked" do
+      assert Sanbase.Utils.IP.resolves_to_blocked_ip?("localhost") == true
+    end
+
+    test "public IP literals are not blocked" do
+      assert Sanbase.Utils.IP.resolves_to_blocked_ip?("8.8.8.8") == false
+    end
+  end
 end

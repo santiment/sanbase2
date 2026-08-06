@@ -220,19 +220,24 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     set_status(socket, id, :active, "Subscription reactivated.")
   end
 
+  # Only the rows this page created can be deleted. Deleting one that has a Stripe
+  # object leaves that subscription live and billing the customer with nothing
+  # local left to track it by - no items, no entitlement, and no row for the
+  # webhook to reconcile against. Cancelling is the operation that ends a real
+  # subscription, and the button for it is right next to this one.
   def handle_event("delete_subscription", %{"id" => id}, socket) do
-    with_subscription(socket, id, fn socket, subscription ->
-      case Repo.delete(subscription) do
-        {:ok, _} ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Deleted the test subscription and its items.")
-           |> assign(:selected_id, nil)
-           |> load()}
+    with_subscription(socket, id, fn
+      socket, %Subscription{stripe_id: stripe_id} when is_binary(stripe_id) ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "This subscription exists in Stripe (#{stripe_id}) and cannot be deleted here - " <>
+             "cancel it instead, or it keeps billing with nothing local to track it."
+         )}
 
-        {:error, changeset} ->
-          {:noreply, put_flash(socket, :error, changeset_message(changeset))}
-      end
+      socket, subscription ->
+        delete_local_subscription(socket, subscription)
     end)
   end
 
@@ -371,6 +376,20 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     case parse_non_negative(id, nil) do
       nil -> nil
       id -> Subscription.get_bundle_subscription(id)
+    end
+  end
+
+  defp delete_local_subscription(socket, subscription) do
+    case Repo.delete(subscription) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Deleted the test subscription and its items.")
+         |> assign(:selected_id, nil)
+         |> load()}
+
+      {:error, changeset} ->
+        {:noreply, put_flash(socket, :error, changeset_message(changeset))}
     end
   end
 
@@ -1167,6 +1186,12 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
                 phx-click="delete_subscription"
                 phx-value-id={@selected.id}
                 data-confirm="Delete this test subscription and its items?"
+                disabled={not is_nil(@selected.stripe_id)}
+                title={
+                  if @selected.stripe_id,
+                    do: "Exists in Stripe - cancel it instead of deleting the row",
+                    else: nil
+                }
                 class="btn btn-xs btn-soft btn-error"
               >
                 Delete

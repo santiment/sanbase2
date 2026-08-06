@@ -16,6 +16,7 @@ defmodule Sanbase.Billing.StripeEvent do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing.Plan.Bundle.ItemSync
   alias Sanbase.StripeApi
 
   require Logger
@@ -145,10 +146,28 @@ defmodule Sanbase.Billing.StripeEvent do
 
   defp handle_event(_), do: :ok
 
+  # A bundle Stripe subscription cannot go down the legacy path: that path reads
+  # item[0]'s `plan` and looks it up in `plans`, and a bundle's item prices live
+  # only in `bundle_prices`. On stage that left the event `is_processed: false`
+  # with "Plan for subscription_id ... does not exist" logged, so the branch is
+  # taken before anything else happens. The legacy clause below is unchanged.
   defp handle_subscription_created(id, type, subscription_id) do
-    with {:ok, stripe_sub} <-
-           StripeApi.retrieve_subscription(subscription_id),
-         {_, {:ok, %User{} = user}} <- {:user?, User.by_stripe_customer_id(stripe_sub.customer)},
+    case StripeApi.retrieve_subscription(subscription_id) do
+      {:ok, stripe_sub} ->
+        if ItemSync.bundle_stripe_subscription?(stripe_sub) do
+          handle_bundle_subscription_created(id, type, subscription_id, stripe_sub)
+        else
+          handle_legacy_subscription_created(id, type, subscription_id, stripe_sub)
+        end
+
+      {:error, reason} ->
+        Logger.error("Error handling #{type} event. Reason: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp handle_legacy_subscription_created(id, type, subscription_id, stripe_sub) do
+    with {_, {:ok, %User{} = user}} <- {:user?, User.by_stripe_customer_id(stripe_sub.customer)},
          stripe_plan_id <- stripe_sub.items.data |> hd() |> Map.get(:plan) |> Map.get(:id),
          {_, %Plan{} = plan} <- {:plan?, Plan.by_stripe_id(stripe_plan_id)},
          {:ok, _sub} <- Subscription.create_subscription_db(stripe_sub, user, plan) do
@@ -170,11 +189,33 @@ defmodule Sanbase.Billing.StripeEvent do
     end
   end
 
+  # No local subscription is created here when one already exists - the normal
+  # case, because `Bundle.Lifecycle.subscribe/2` created it before Stripe's event
+  # arrived. `ItemSync` decides between reconciling that row and adopting a
+  # subscription assembled outside our flow, and refuses to adopt one if any item
+  # price is not in the bundle catalog.
+  defp handle_bundle_subscription_created(id, type, subscription_id, stripe_sub) do
+    case ItemSync.sync_created(stripe_sub) do
+      {:ok, _result} ->
+        update(id, %{is_processed: true})
+
+      {:error, :customer_not_found} ->
+        error_msg = "Customer for subscription_id #{subscription_id} does not exist"
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      {:error, reason} ->
+        Logger.error("Error handling #{type} event. Reason: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
   defp handle_event_common(id, type, subscription_id) do
     with {:ok, stripe_sub} <- StripeApi.retrieve_subscription(subscription_id),
          {_, %Subscription{} = subscription} <- {:sub?, Subscription.by_stripe_id(stripe_sub.id)},
          {:ok, _subscription} <-
-           Subscription.sync_subscription_with_stripe(stripe_sub, subscription) do
+           Subscription.sync_subscription_with_stripe(stripe_sub, subscription),
+         :ok <- after_status_sync(type, subscription, stripe_sub) do
       update(id, %{is_processed: true})
     else
       {:sub?, _} ->
@@ -188,4 +229,35 @@ defmodule Sanbase.Billing.StripeEvent do
         {:error, reason}
     end
   end
+
+  # Everything the status sync cannot do on its own, for the two event types that
+  # need it. `invoice.payment_succeeded` and `invoice.payment_failed` also reach
+  # `handle_event_common/3` and are left exactly as they were - a renewal does not
+  # change what was bought.
+  #
+  # `subscription` is the row as it was read before the sync. Only `plan_id` and
+  # the period fields are written by the sync, and `fetch_plan_id/2` cannot move a
+  # bundle off its marker plan (a package price is never in `plans.stripe_id`), so
+  # the plan this branches on is the same either way.
+  defp after_status_sync("customer.subscription.updated", subscription, stripe_sub) do
+    if ItemSync.bundle_subscription?(subscription) do
+      with {:ok, _result} <- ItemSync.reconcile(subscription, stripe_sub), do: :ok
+    else
+      :ok
+    end
+  end
+
+  # The items and the entitlement are kept: access is already denied by the
+  # status, and the rows are what support answers a "what did I pay for" ticket
+  # from. Only the quota row has to be recomputed, because it caches resolved
+  # numbers that would otherwise keep granting a canceled bundle's allowance.
+  defp after_status_sync("customer.subscription.deleted", subscription, _stripe_sub) do
+    if ItemSync.bundle_subscription?(subscription) do
+      ItemSync.refresh_quota(subscription)
+    else
+      :ok
+    end
+  end
+
+  defp after_status_sync(_type, _subscription, _stripe_sub), do: :ok
 end

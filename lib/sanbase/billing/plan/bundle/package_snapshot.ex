@@ -203,6 +203,33 @@ defmodule Sanbase.Billing.Plan.Bundle.PackageSnapshot do
     |> Enum.sort()
   end
 
+  @doc ~s"""
+  The inverse of `metrics_for/2`: which packages a metric can be bought in,
+  according to the latest published snapshot.
+
+  A metric can be in more than one, since a metric can sit in more than one
+  category. Only packages that are still sold are listed - the answer exists to
+  tell a customer what to buy, so naming a retired slug would be worse than
+  saying nothing.
+
+  Returns `[]` rather than raising for a metric in no package, for anything that
+  is not a metric name, and when nothing has been published. The only caller is
+  an error path explaining a refusal, and failing there would replace a bad
+  message with a 500.
+  """
+  @spec packages_containing(term()) :: [String.t()]
+  def packages_containing(metric_name) when is_binary(metric_name) do
+    case latest() do
+      nil ->
+        []
+
+      %__MODULE__{contents: contents} ->
+        Enum.filter(Package.slugs(), &(metric_name in Map.get(contents, &1, [])))
+    end
+  end
+
+  def packages_containing(_metric_name), do: []
+
   # Private
 
   defp build_contents(categories) do

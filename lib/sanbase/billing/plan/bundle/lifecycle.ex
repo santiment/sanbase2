@@ -242,6 +242,51 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
+  @doc ~s"""
+  Whether the user may purchase the Institutional plan.
+
+  Institutional is sold through the ordinary `Sanbase.Billing.Subscription.subscribe/4`
+  path rather than through `subscribe/2` here - it is a fixed plan with one Stripe
+  price, so none of the multi-item machinery applies to it. What it does share with
+  a bundle is the two commercial rules, and they live here because they are about
+  the offering rather than about items:
+
+    * it is not for sale until the admin switch is on (staff can still buy it while
+      it is off, which is how it gets tested), and
+    * it never becomes a customer's second live SanAPI subscription.
+
+  A replaceable legacy SanAPI subscription is allowed to be present and is not
+  canceled here. `cancel_stale_replaced_subscriptions/0` does that within the hour,
+  once the new subscription is actually live - the same treatment a bundle gets, and
+  for the same reason: a declined first invoice must not cost the customer the plan
+  they are still paying for.
+  """
+  @spec ensure_can_subscribe_institutional(User.t()) :: :ok | {:error, String.t()}
+  def ensure_can_subscribe_institutional(%User{} = user) do
+    with :ok <- ensure_institutional_for_sale(user),
+         {:ok, _replaceable} <- classify_for_subscribe(user) do
+      :ok
+    end
+  end
+
+  @doc ~s"""
+  Whether the Institutional plan may be sold to this user at all.
+
+  The sale switch on its own, without the one-live-SanAPI-subscription rule. Moving
+  an *existing* subscription onto Institutional (`updateSubscription`) replaces
+  rather than adds, so it cannot produce a second live subscription and must not be
+  refused for having one - but it is still a sale, and a plan that is not for sale
+  must not be reachable through it.
+
+  Nothing else stops that path: `is_private` is not enforced anywhere as a purchase
+  gate, and deliberately so (§15 Q14 - `FREE` and the Sanbase tiers are all private
+  on production while being sold every day). This check is the only thing keeping
+  Institutional off sale before launch, so every route to it has to call one of
+  these two functions.
+  """
+  @spec ensure_institutional_for_sale(User.t()) :: :ok | {:error, String.t()}
+  def ensure_institutional_for_sale(%User{} = user), do: ensure_institutional_visible(user)
+
   @spec list_replaceable_sanapi_subs(User.t()) :: [Subscription.t()]
   def list_replaceable_sanapi_subs(%User{} = user) do
     case classify_active_sanapi(user) do
@@ -257,6 +302,18 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
       :ok
     else
       {:error, "Bundle plans are not available for purchase yet"}
+    end
+  end
+
+  # Same switch, different wording. `SaleControls` activates the whole new offering
+  # at once, so there is no state in which one of the two is for sale and the other
+  # is not - but a customer told "Bundle plans are not available" after clicking
+  # Institutional would reasonably think they had hit the wrong button.
+  defp ensure_institutional_visible(user) do
+    if SaleControls.bundle_plans_visible?(user) do
+      :ok
+    else
+      {:error, "The Institutional plan is not available for purchase yet"}
     end
   end
 

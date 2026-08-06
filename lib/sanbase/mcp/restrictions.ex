@@ -8,7 +8,7 @@ defmodule Sanbase.MCP.Restrictions do
     * `:pro`  — Sanbase PRO
     * `:max`  — Sanbase MAX (incl. legacy PRO_PLUS / BUSINESS_* / CUSTOM*)
                 and every paid SanAPI plan (PRO, BUSINESS_PRO, BUSINESS_MAX,
-                CUSTOM, CUSTOM_*).
+                INSTITUTIONAL, CUSTOM, CUSTOM_*).
 
   When a user has subscriptions across both products, the highest tier wins.
 
@@ -52,8 +52,8 @@ defmodule Sanbase.MCP.Restrictions do
       |         | PREMIUM                            |       |
       | SANAPI  | FREE                               | free  |
       | SANAPI  | BASIC, PRO, BUSINESS_PRO,          | max   |
-      |         | BUSINESS_MAX, CUSTOM, CUSTOM_*,    |       |
-      |         | PREMIUM                            |       |
+      |         | BUSINESS_MAX, INSTITUTIONAL,       |       |
+      |         | CUSTOM, CUSTOM_*, PREMIUM          |       |
       +---------+------------------------------------+-------+
 
   Unauthenticated users are blocked at the server layer before reaching
@@ -151,6 +151,7 @@ defmodule Sanbase.MCP.Restrictions do
   defp classify("SANAPI", "PRO"), do: :max
   defp classify("SANAPI", "BUSINESS_PRO"), do: :max
   defp classify("SANAPI", "BUSINESS_MAX"), do: :max
+  defp classify("SANAPI", "INSTITUTIONAL"), do: :max
   defp classify("SANAPI", "CUSTOM"), do: :max
   defp classify("SANAPI", "PREMIUM"), do: :max
   defp classify("SANAPI", "CUSTOM_" <> _), do: :max

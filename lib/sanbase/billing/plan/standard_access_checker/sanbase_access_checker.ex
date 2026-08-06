@@ -35,6 +35,12 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @business_max_plan_stats Plan.upgrade_plan(@business_pro_plan_stats, extends: %{})
   @custom_plan_stats Plan.upgrade_plan(@business_max_plan_stats, extends: %{})
 
+  # Institutional includes the full Sanbase experience, which is what MAX is. It
+  # is a SanAPI plan, so this is reached whenever such a customer opens Sanbase
+  # without a separate Sanbase subscription - the same route a bundle takes, only
+  # answering as MAX instead of PRO because Sanbase is part of what was sold.
+  @institutional_plan_stats Plan.upgrade_plan(@sanbase_max_plan_stats, extends: %{})
+
   def historical_data_in_days(_subscription_product, plan) do
     plan_stats(plan)
     |> Map.get(:historical_data_in_days)
@@ -83,6 +89,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       "MAX" -> @sanbase_max_plan_stats
       "BUSINESS_PRO" -> @business_pro_plan_stats
       "BUSINESS_MAX" -> @business_max_plan_stats
+      "INSTITUTIONAL" -> @institutional_plan_stats
       "CUSTOM" -> @custom_plan_stats
       "CUSTOM_" <> _ -> @custom_plan_stats
     end

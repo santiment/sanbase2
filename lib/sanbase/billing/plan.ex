@@ -157,6 +157,7 @@ defmodule Sanbase.Billing.Plan do
       "ESSENTIAL" -> "BASIC"
       "CUSTOM_" <> _ = name -> name
       @bundle_prefix <> _ = name -> name
+      @institutional_prefix <> _ = name -> name
     end
   end
 
@@ -174,7 +175,10 @@ defmodule Sanbase.Billing.Plan do
       subscription's items. See `docs/composable-api-plans-handover.md`.
 
   Note that the plan named exactly `"CUSTOM"` is `:standard` - it is a rung on
-  the ladder, not a bespoke plan.
+  the ladder, not a bespoke plan. `INSTITUTIONAL` is `:standard` too: it belongs
+  to the same new offering as `BUNDLE` commercially, but it is a fixed plan whose
+  access and quota are declared in code like every other rung, not assembled from
+  purchased items. Nothing about it needs the item or entitlement machinery.
   """
   @type plan_type :: :standard | :custom | :bundle
 
@@ -202,6 +206,9 @@ defmodule Sanbase.Billing.Plan do
 
       iex> Sanbase.Billing.Plan.type("BUNDLE")
       :bundle
+
+      iex> Sanbase.Billing.Plan.type("INSTITUTIONAL")
+      :standard
 
   ## Non-binary input
 

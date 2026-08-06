@@ -123,6 +123,9 @@ defmodule Sanbase.Queries.Authorization do
       {"SANAPI", "BUSINESS_MAX"} ->
         Sanbase.ClickhouseRepo.BusinessMaxUser
 
+      {"SANAPI", "INSTITUTIONAL"} ->
+        Sanbase.ClickhouseRepo.BusinessMaxUser
+
       {"SANAPI", "CUSTOM"} ->
         Sanbase.ClickhouseRepo.ReadOnly
 
@@ -173,6 +176,9 @@ defmodule Sanbase.Queries.Authorization do
       {"SANAPI", "BUSINESS_MAX"} ->
         %{minute: 100, hour: 3000, day: 15_000}
 
+      {"SANAPI", "INSTITUTIONAL"} ->
+        %{minute: 100, hour: 3000, day: 15_000}
+
       {"SANAPI", "CUSTOM"} ->
         %{minute: 200, hour: 3000, day: 20_000}
 
@@ -215,6 +221,9 @@ defmodule Sanbase.Queries.Authorization do
         50_000
 
       {"SANAPI", "BUSINESS_MAX"} ->
+        500_000
+
+      {"SANAPI", "INSTITUTIONAL"} ->
         500_000
 
       {"SANAPI", "CUSTOM"} ->

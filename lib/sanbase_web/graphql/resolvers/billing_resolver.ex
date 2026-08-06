@@ -173,6 +173,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
            {:not_cancelled?, subscription},
          {_, %Plan{is_deprecated: false} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
          :ok <- ensure_standard_subscribe_allowed(new_plan),
+         :ok <- ensure_new_offering_for_sale(current_user, new_plan),
          :ok <- ensure_not_bundle_subscription(subscription),
          {:ok, subscription} <- Billing.update_subscription(subscription, new_plan) do
       {:ok, subscription}
@@ -618,6 +619,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
       :ok
     end
   end
+
+  # `updateSubscription` is a second route onto a plan, and it needs the sale switch
+  # as much as `subscribe` does. Without this, any customer holding a legacy SanAPI
+  # subscription could move themselves onto Institutional while the offering is
+  # still deactivated - `is_private` is not a purchase gate anywhere in the codebase
+  # (§15 Q14), so nothing else would stop them.
+  #
+  # Only the switch is checked, not the one-live-subscription rule: this path
+  # replaces the subscription it is called on, so it cannot create a second one.
+  defp ensure_new_offering_for_sale(%User{} = user, %Plan{name: "INSTITUTIONAL" <> _}) do
+    Sanbase.Billing.Plan.Bundle.Lifecycle.ensure_institutional_for_sale(user)
+  end
+
+  defp ensure_new_offering_for_sale(_user, _plan), do: :ok
 
   defp ensure_not_bundle_subscription(%Subscription{} = subscription) do
     subscription = Sanbase.Repo.preload(subscription, :plan)

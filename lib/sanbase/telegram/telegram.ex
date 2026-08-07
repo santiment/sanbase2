@@ -113,6 +113,8 @@ defmodule Sanbase.Telegram do
       }
       |> Jason.encode!()
 
+    recipient = describe_recipient(chat_id, user)
+
     case post("sendMessage", content) do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
@@ -121,16 +123,14 @@ defmodule Sanbase.Telegram do
         body = Jason.decode!(json_body)
 
         error_msg =
-          "Telegram message not senterror 400. Reason: #{Map.get(body, "description", "Bad request")}"
+          "Telegram message not sent (#{recipient}). Error status 400. Reason: #{Map.get(body, "description", "Bad request")}"
 
         Logger.info(error_msg)
         {:error, error_msg}
 
       {:ok, %Tesla.Env{status: 403}} ->
-        user_data = if user, do: "User with id #{user.id}", else: "User"
-
         error_msg =
-          "Telegram message not sent error 403. Reason: #{user_data} has blocked the telegram bot."
+          "Telegram message not sent (#{recipient}). Error status 403. Reason: The recipient has blocked the telegram bot."
 
         Logger.info(error_msg)
         {:error, error_msg}
@@ -139,15 +139,15 @@ defmodule Sanbase.Telegram do
         body = Jason.decode!(json_body)
 
         error_msg =
-          "Telegram message not sent error 404. Reason: #{Map.get(body, "description", "Chat ID not found")}"
+          "Telegram message not sent (#{recipient}). Error status 404. Reason: #{Map.get(body, "description", "Chat ID not found")}"
 
         Logger.info(error_msg)
         {:error, error_msg}
 
       error ->
-        Logger.warning("Telegram message not sent. Reason: #{inspect(error)}")
-        {:error, "Telegram message not sent."}
-        error
+        error_msg = "Telegram message not sent (#{recipient}). Reason: #{inspect(error)}"
+        Logger.warning(error_msg)
+        {:error, error_msg}
     end
   end
 
@@ -251,4 +251,9 @@ defmodule Sanbase.Telegram do
   defp generate_link(user_token) do
     "https://telegram.me/#{Config.module_get(__MODULE__, :bot_username)}?start=#{user_token}"
   end
+
+  defp describe_recipient(chat_id, %User{id: user_id}),
+    do: "chat_id=#{chat_id} user_id=#{user_id}"
+
+  defp describe_recipient(chat_id, _user), do: "chat_id=#{chat_id}"
 end

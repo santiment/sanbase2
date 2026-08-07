@@ -218,21 +218,32 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  defp agent_server(%{auth: :user_apikey} = server, api_key) when is_binary(api_key) do
-    %{
-      "name" => server.label,
-      "label" => server.label,
-      "url" => server.url,
-      "tools" => [],
-      "headers" => %{"Authorization" => "Apikey #{api_key}"}
-    }
-  end
+  defp agent_server(%{auth: :user_apikey} = server, api_key) do
+    case apikey_override(server) || api_key do
+      key when is_binary(key) ->
+        %{
+          "name" => server.label,
+          "label" => server.label,
+          "url" => server.url,
+          "tools" => [],
+          "headers" => %{"Authorization" => "Apikey #{key}"}
+        }
 
-  # No API key available — skip a server that needs one.
-  defp agent_server(%{auth: :user_apikey}, _api_key), do: nil
+      # No API key available — skip a server that needs one.
+      _ ->
+        nil
+    end
+  end
 
   defp agent_server(server, _api_key) do
     %{"name" => server.label, "label" => server.label, "url" => server.url, "tools" => []}
+  end
+
+  defp apikey_override(server) do
+    case Map.get(server, :apikey_override) do
+      override when is_binary(override) and override != "" -> override
+      _ -> nil
+    end
   end
 
   defp fetch_api_key(%Sanbase.Accounts.User{} = user) do

@@ -299,11 +299,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
     ~H"""
     <details class="group rounded-xl border border-base-300 bg-base-200/30" open={@running}>
       <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium text-base-content/60 hover:text-base-content">
-        <span :if={@running} class="loading loading-spinner loading-xs text-primary"></span>
-        <.icon :if={@status == :ok} name="hero-check-circle" class="size-4 text-success" />
-        <span :if={@status == :interrupted} title="Interrupted — some calls did not return">
-          <.icon name="hero-minus-circle" class="size-4 text-base-content/40" />
-        </span>
+        <.status_icon status={@status} class={if(@status == :running, do: "text-primary")} />
         <span class="text-base-content/80">Research</span>
         <span class="text-base-content/50">· {@summary}</span>
         <.icon
@@ -335,15 +331,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
         <span class="text-xs text-base-content/60">
           · {length(@items)} {pluralize(length(@items), "call", "calls")}
         </span>
-        <span :if={@status == :running} class="loading loading-spinner loading-xs ml-auto"></span>
-        <.icon :if={@status == :ok} name="hero-check-circle" class="ml-auto size-3.5 text-success" />
-        <span
-          :if={@status == :interrupted}
-          class="ml-auto"
-          title="Interrupted — some calls did not return"
-        >
-          <.icon name="hero-minus-circle" class="size-3.5 text-base-content/40" />
-        </span>
+        <.status_icon status={@status} size="size-3.5" class="ml-auto" />
         <.icon
           name="hero-chevron-down"
           class="size-4 transition-transform group-open:rotate-0 -rotate-90"
@@ -468,22 +456,53 @@ defmodule SanbaseWeb.DeepResearch.Components do
         <span class="truncate font-mono text-base-content/80">
           {@call.tool}{if @args != "", do: "(#{@args})", else: "()"}
         </span>
-        <span :if={@status == :running} class="loading loading-spinner loading-xs ml-auto"></span>
-        <.icon
-          :if={@status == :ok}
-          name="hero-check-circle"
-          class="ml-auto size-3 text-success"
+        <.status_icon
+          status={@status}
+          size="size-3"
+          class="ml-auto"
+          interrupted_title="Interrupted — did not return"
         />
-        <.icon :if={@status == :error} name="hero-x-circle" class="ml-auto size-3 text-error" />
-        <span :if={@status == :interrupted} class="ml-auto" title="Interrupted — did not return">
-          <.icon name="hero-minus-circle" class="size-3 text-base-content/40" />
-        </span>
       </summary>
       <pre
         :if={@has_output}
         class="mt-1 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-base-300/40 p-2 text-[11px] text-base-content/60"
       >{@call.summary}</pre>
     </details>
+    """
+  end
+
+  attr :status, :atom, required: true, values: [:running, :ok, :error, :interrupted]
+  attr :size, :string, default: "size-4", doc: "size utility for the non-spinner glyphs"
+  attr :class, :string, default: nil, doc: "positioning/colour extras (e.g. \"ml-auto\")"
+  attr :interrupted_title, :string, default: "Interrupted — some calls did not return"
+
+  # The one status glyph used wherever a tool outcome is shown (tools summary,
+  # data-tools fold, call row): spinner while running, check on success, cross on
+  # error, neutral minus when interrupted (finished without an outcome). Statuses
+  # come from `group_status/1` / `call_status/1`.
+  defp status_icon(%{status: :running} = assigns) do
+    ~H"""
+    <span class={["loading loading-spinner loading-xs", @class]}></span>
+    """
+  end
+
+  defp status_icon(%{status: :ok} = assigns) do
+    ~H"""
+    <.icon name="hero-check-circle" class={"#{@size} text-success #{@class}"} />
+    """
+  end
+
+  defp status_icon(%{status: :error} = assigns) do
+    ~H"""
+    <.icon name="hero-x-circle" class={"#{@size} text-error #{@class}"} />
+    """
+  end
+
+  defp status_icon(%{status: :interrupted} = assigns) do
+    ~H"""
+    <span class={@class} title={@interrupted_title}>
+      <.icon name="hero-minus-circle" class={"#{@size} text-base-content/40"} />
+    </span>
     """
   end
 

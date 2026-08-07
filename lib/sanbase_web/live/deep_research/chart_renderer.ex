@@ -18,8 +18,9 @@ defmodule SanbaseWeb.DeepResearch.ChartRenderer do
   > Changing one does not change the other; a spec field added here needs its own
   > counterpart in `assets/js/hooks/lightweight_chart.js`.
 
-  The spec is **renderer-agnostic data** — parsing/validation lives in the
-  Timeline, the visual lives here — so a different backend (e.g. a JS
+  The spec is **renderer-agnostic data** — parsing/validation lives in
+  `Sanbase.DeepResearch.ReportMarkdown.split_charts/1`, the visual lives here —
+  so a different backend (e.g. a JS
   lightweight-charts → `takeScreenshot()` PNG) can consume the exact same spec:
 
     * `%{type: "pie",  title: t, slices: [%{label, value}]}`

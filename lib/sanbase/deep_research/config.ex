@@ -33,6 +33,20 @@ defmodule Sanbase.DeepResearch.Config do
   def assistant_id(), do: get(:assistant_id) || @default_assistant_id
 
   @doc """
+  Optional bearer token sent as `Authorization: Bearer <token>` on every request
+  to the LangGraph server (`DRA_AUTH_TOKEN`). `nil` (unset or blank) means no
+  auth header — fine for the local dev server, required for a remote deploy that
+  sits behind an authenticating proxy.
+  """
+  @spec auth_token() :: String.t() | nil
+  def auth_token() do
+    case get(:auth_token) do
+      token when is_binary(token) and token != "" -> token
+      _ -> nil
+    end
+  end
+
+  @doc """
   The full body POSTed to `/threads/:id/runs/stream`.
 
   Carries `assistant_id`, the user `input.messages`, the per-run

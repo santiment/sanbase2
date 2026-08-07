@@ -57,6 +57,8 @@ config :sanbase, Sanbase.DeepResearch,
   # Sanbase.DeepResearch.Config", so each default has exactly one home.
   base_url: System.get_env("DRA_BASE_URL"),
   assistant_id: System.get_env("DRA_ASSISTANT_ID"),
+  # Optional bearer token for the agent server (unset = no auth header).
+  auth_token: System.get_env("DRA_AUTH_TOKEN"),
   # Shows the model-tier dropdown in the research UI.
   tiering_dropdown_enabled: System.get_env("DRA_TIERING_DROPDOWN_ENABLED") == "true",
   # Models are selected by tier NAME only (extra-low | low | mid | high) — the

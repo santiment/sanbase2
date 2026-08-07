@@ -76,7 +76,11 @@ config :sanbase, Sanbase.DeepResearch,
       key: "santiment",
       label: "Santiment",
       url: System.get_env("DRA_MCP_URL", "http://localhost:4000/mcp"),
-      auth: :user_apikey
+      auth: :user_apikey,
+      # Dev override: send this fixed key instead of the logged-in user's key.
+      # Needed when a local UI points at a remote MCP (the local user's key is
+      # unknown to the remote DB). Unset (the default) = current user's key.
+      apikey_override: System.get_env("DRA_MCP_APIKEY")
     }
   ]
 

@@ -126,6 +126,9 @@ defmodule Sanbase.Queries.Authorization do
       {"SANAPI", "INSTITUTIONAL"} ->
         Sanbase.ClickhouseRepo.BusinessMaxUser
 
+      {"SANAPI", "ENTERPRISE"} ->
+        Sanbase.ClickhouseRepo.BusinessMaxUser
+
       {"SANAPI", "CUSTOM"} ->
         Sanbase.ClickhouseRepo.ReadOnly
 
@@ -179,6 +182,12 @@ defmodule Sanbase.Queries.Authorization do
       {"SANAPI", "INSTITUTIONAL"} ->
         %{minute: 100, hour: 3000, day: 15_000}
 
+      # Enterprise sells API volume and history, not SQL throughput. These are the
+      # `CUSTOM` figures - the highest in the table - rather than a number invented
+      # to look bigger than Institutional's.
+      {"SANAPI", "ENTERPRISE"} ->
+        %{minute: 200, hour: 3000, day: 20_000}
+
       {"SANAPI", "CUSTOM"} ->
         %{minute: 200, hour: 3000, day: 20_000}
 
@@ -224,6 +233,9 @@ defmodule Sanbase.Queries.Authorization do
         500_000
 
       {"SANAPI", "INSTITUTIONAL"} ->
+        500_000
+
+      {"SANAPI", "ENTERPRISE"} ->
         500_000
 
       {"SANAPI", "CUSTOM"} ->

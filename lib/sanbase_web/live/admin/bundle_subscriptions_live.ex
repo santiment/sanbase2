@@ -1342,7 +1342,7 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
                 <option
                   :for={
                     plan <-
-                      ~w(FREE BASIC PRO PRO_PLUS MAX BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL)
+                      ~w(FREE BASIC PRO PRO_PLUS MAX BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL ENTERPRISE)
                   }
                   value={plan}
                   selected={@compare_plan == plan}

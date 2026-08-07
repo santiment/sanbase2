@@ -2,8 +2,10 @@ defmodule Sanbase.Billing.Plan.SaleControls do
   @moduledoc ~s"""
   Admin toggles for which SanAPI plans are for sale.
 
-  * **Bundle / new plans** (`BUNDLE*`, `INSTITUTIONAL*`) — `is_private` false = active
-    (self-serve), true = deactivated (staff can still preview via team role).
+  * **Bundle / new plans** (`BUNDLE*`, `INSTITUTIONAL*`, `ENTERPRISE*`) —
+    `is_private` false = active (self-serve), true = deactivated (staff can still
+    preview via team role). One switch covers the whole offering; there is no state
+    in which packages are for sale and Institutional or Enterprise are not.
   * **Business plans** (`BUSINESS_PRO`, `BUSINESS_MAX`) — `is_deprecated` false =
     active for sale, true = withdrawn from sale. Existing subscribers keep access
     either way.
@@ -66,7 +68,8 @@ defmodule Sanbase.Billing.Plan.SaleControls do
 
     from(p in Plan,
       where: p.product_id == ^product_api,
-      where: like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%"),
+      where:
+        like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or like(p.name, "ENTERPRISE%"),
       where: p.is_private == false,
       select: count(p.id)
     )
@@ -120,7 +123,8 @@ defmodule Sanbase.Billing.Plan.SaleControls do
     ids =
       from(p in Plan,
         where: p.product_id == ^product_api,
-        where: like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%"),
+        where:
+          like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or like(p.name, "ENTERPRISE%"),
         select: p.id
       )
       |> Repo.all()
@@ -156,7 +160,8 @@ defmodule Sanbase.Billing.Plan.SaleControls do
 
     from(p in Plan,
       where: p.product_id == ^product_api,
-      where: like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%"),
+      where:
+        like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or like(p.name, "ENTERPRISE%"),
       order_by: [asc: p.name, asc: p.interval]
     )
     |> Repo.all()

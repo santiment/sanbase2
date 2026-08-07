@@ -2,8 +2,15 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
   @moduledoc """
   Keeps a Mailjet contact list populated with the email addresses of users who
   buy an API "Business or higher" subscription - `BUSINESS_PRO`, `BUSINESS_MAX`
-  or a `CUSTOM` enterprise plan. Product uses that list to trigger the API-client
-  onboarding email.
+  or a bespoke `CUSTOM*` contract. Product uses that list to trigger the
+  API-client onboarding email.
+
+  The new offering is deliberately absent: `BUNDLE`, `INSTITUTIONAL` and
+  `ENTERPRISE` customers do not land on this list. Whether they should is a
+  product question, not an oversight of this module - see §15 of
+  docs/composable-api-plans-handover.md. Note that `ENTERPRISE` here would *not*
+  be caught by the `CUSTOM*` pattern; it is a distinct fixed tier, despite the two
+  words having been used interchangeably before it existed.
 
   Membership is add-only and driven purely by subscription state. There is no
   dedicated account setting - the onboarding email is part of the purchase and

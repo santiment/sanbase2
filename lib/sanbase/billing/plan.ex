@@ -144,6 +144,23 @@ defmodule Sanbase.Billing.Plan do
   @custom_prefix "CUSTOM_"
   @institutional_prefix "INSTITUTIONAL"
 
+  # Withdrawn plans. Renaming a row to `RETIRED_*` is what retires it, and this
+  # prefix is what makes the rename mean something: `product_with_plans/0` applies
+  # `is_deprecated` only to the Business names (see its docstring), so without an
+  # explicit exclusion a renamed row stays on the pricing page under a name that
+  # reads like debug output. `ensure_plan_is_for_sale/2` refuses it too, because
+  # delisting is not a purchase gate - `subscribe(plan_id:)` takes an id.
+  @retired_prefix "RETIRED_"
+
+  # Matching `ENTERPRISE` by prefix is only safe because the two rows that used to
+  # share it - `ENTERPRISE_BASIC` (105) and `ENTERPRISE_PLUS` (106), sold in 2022
+  # and never wired into any access checker - were renamed out of the namespace by
+  # `20260810121347_retire_legacy_enterprise_plans.exs`. Do not reintroduce a plan
+  # name starting with `ENTERPRISE` for anything other than this tier: the sale
+  # switch, the `productsWithPlans` exclusion and the legacy-replacement job all
+  # match on this prefix, so a stray row would silently join the new offering.
+  @enterprise_prefix "ENTERPRISE"
+
   # The two plans whose availability for sale is toggled by
   # `Sanbase.Billing.Plan.SaleControls`.
   @business_plan_names ["BUSINESS_PRO", "BUSINESS_MAX"]
@@ -158,6 +175,7 @@ defmodule Sanbase.Billing.Plan do
       "CUSTOM_" <> _ = name -> name
       @bundle_prefix <> _ = name -> name
       @institutional_prefix <> _ = name -> name
+      @enterprise_prefix <> _ = name -> name
     end
   end
 
@@ -175,10 +193,17 @@ defmodule Sanbase.Billing.Plan do
       subscription's items. See `docs/composable-api-plans-handover.md`.
 
   Note that the plan named exactly `"CUSTOM"` is `:standard` - it is a rung on
-  the ladder, not a bespoke plan. `INSTITUTIONAL` is `:standard` too: it belongs
-  to the same new offering as `BUNDLE` commercially, but it is a fixed plan whose
-  access and quota are declared in code like every other rung, not assembled from
-  purchased items. Nothing about it needs the item or entitlement machinery.
+  the ladder, not a bespoke plan. `INSTITUTIONAL` and `ENTERPRISE` are `:standard`
+  too: they belong to the same new offering as `BUNDLE` commercially, but they are
+  fixed plans whose access and quota are declared in code like every other rung,
+  not assembled from purchased items. Nothing about them needs the item or
+  entitlement machinery.
+
+  `ENTERPRISE` is in particular *not* the `CUSTOM_*` path. Those two were used
+  interchangeably in prose for years, because every Enterprise deal used to be a
+  hand-built bespoke plan. The tier introduced in §8 **EP** is the opposite: one
+  fixed price for a declared set of access. Bespoke contracts still exist and are
+  still `CUSTOM_*`.
   """
   @type plan_type :: :standard | :custom | :bundle
 
@@ -208,6 +233,9 @@ defmodule Sanbase.Billing.Plan do
       :bundle
 
       iex> Sanbase.Billing.Plan.type("INSTITUTIONAL")
+      :standard
+
+      iex> Sanbase.Billing.Plan.type("ENTERPRISE")
       :standard
 
   ## Non-binary input
@@ -277,12 +305,23 @@ defmodule Sanbase.Billing.Plan do
   @doc """
   List all products with corresponding subscription plans
 
-  `BUNDLE` and `INSTITUTIONAL` rows are left out. They are markers that a
-  subscription belongs to the new offering, not tiers anyone can subscribe to -
-  their amount is 0 and the real prices live per item in the bundle price
-  catalog. Listing them here would show a $0 plan on the pricing page and offer
-  `subscribe(plan_id:)` a plan that flow cannot correctly create. The bundle
-  catalog is served by `bundleCatalog` instead.
+  `BUNDLE`, `INSTITUTIONAL` and `ENTERPRISE` rows are left out - the whole new
+  offering. For `BUNDLE` the reason is that the row is a marker rather than a
+  tier: its amount is 0 and the real prices live per item in the bundle price
+  catalog, so listing it would show a $0 plan and offer `subscribe(plan_id:)` a
+  plan that flow cannot correctly create. The bundle catalog is served by
+  `bundleCatalog` instead.
+
+  `INSTITUTIONAL` and `ENTERPRISE` are real priced plans and both are self-serve,
+  but they are still excluded here: this query backs the legacy pricing grid,
+  which renders a column per row and knows nothing about the three-column
+  offering. The new purchase surface addresses them by plan id (§8 **UI**).
+
+  `RETIRED_*` rows are excluded as well - withdrawn plans kept only so the
+  subscriptions that reference them still resolve. The exclusion has to be by name
+  because of the `is_deprecated` rule below: setting that field is what a caller
+  would expect to withdraw a row, and for everything outside the Business names it
+  does nothing here.
 
   ## Why `is_deprecated` is only applied to the Business plans
 
@@ -300,6 +339,8 @@ defmodule Sanbase.Billing.Plan do
   def product_with_plans do
     bundle_pattern = @bundle_prefix <> "%"
     institutional_pattern = @institutional_prefix <> "%"
+    enterprise_pattern = @enterprise_prefix <> "%"
+    retired_pattern = @retired_prefix <> "%"
 
     query =
       from(p in Product,
@@ -308,6 +349,8 @@ defmodule Sanbase.Billing.Plan do
         where:
           not pl.is_ppp and not like(pl.name, ^bundle_pattern) and
             not like(pl.name, ^institutional_pattern) and
+            not like(pl.name, ^enterprise_pattern) and
+            not like(pl.name, ^retired_pattern) and
             (pl.name not in ^@business_plan_names or
                coalesce(pl.is_deprecated, false) == false),
         order_by: [desc: pl.order, asc: pl.id],

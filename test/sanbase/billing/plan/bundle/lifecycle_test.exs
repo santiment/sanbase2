@@ -173,7 +173,7 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
         stripe_id: "sub_custom_" <> Ecto.UUID.generate()
       )
 
-      assert {:error, "Active custom/enterprise SanAPI subscription cannot be auto-replaced"} =
+      assert {:error, "Active bespoke (custom) SanAPI subscription cannot be auto-replaced"} =
                Lifecycle.subscribe(user, packages: ["market"], interval: "month")
     end
 

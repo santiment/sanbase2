@@ -60,6 +60,15 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval, "order", is
   ON CONFLICT DO NOTHING
 """)
 
+# The ENTERPRISE row. The tier above Institutional - unlimited history and 300,000
+# calls a month - and yearly only, because that is the only figure the pricing page
+# quotes. Not to be confused with CUSTOM_*, which remains the bespoke path.
+Sanbase.Repo.query!("""
+INSERT INTO plans (id, name, product_id, amount, currency, interval, "order", is_private) VALUES
+  (313,'ENTERPRISE',1,1999900,'USD','year',34,'t')
+  ON CONFLICT DO NOTHING
+""")
+
 # Local bundle catalog only (12 rows). Stripe Prices are created by
 # Sanbase.Billing.sync_bundle_catalog_with_stripe/0 (also on @reboot via
 # sync_products_with_stripe/0).

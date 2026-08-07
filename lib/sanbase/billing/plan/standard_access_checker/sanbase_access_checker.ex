@@ -41,6 +41,13 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   # answering as MAX instead of PRO because Sanbase is part of what was sold.
   @institutional_plan_stats Plan.upgrade_plan(@sanbase_max_plan_stats, extends: %{})
 
+  # Enterprise is Institutional plus more API, so its Sanbase experience is the same
+  # one - MAX. Derived from `@sanbase_max_plan_stats` rather than from
+  # `@institutional_plan_stats` on purpose: the two coincide today, and deriving one
+  # from the other would make a future change to Institutional's Sanbase side change
+  # Enterprise's silently.
+  @enterprise_plan_stats Plan.upgrade_plan(@sanbase_max_plan_stats, extends: %{})
+
   def historical_data_in_days(_subscription_product, plan) do
     plan_stats(plan)
     |> Map.get(:historical_data_in_days)
@@ -90,6 +97,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       "BUSINESS_PRO" -> @business_pro_plan_stats
       "BUSINESS_MAX" -> @business_max_plan_stats
       "INSTITUTIONAL" -> @institutional_plan_stats
+      "ENTERPRISE" -> @enterprise_plan_stats
       "CUSTOM" -> @custom_plan_stats
       "CUSTOM_" <> _ -> @custom_plan_stats
     end

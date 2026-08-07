@@ -7,9 +7,10 @@ defmodule Sanbase.DeepResearch.Timeline do
   Shaping the *finished* report markdown (source reflow, in-report chart specs)
   is a separate concern — see `Sanbase.DeepResearch.ReportMarkdown`.
 
-  A transcript is a list of `turn` maps. A turn holds an ordered `timeline` of
-  items (thinking / search / mcp / status / skill), accumulated `sources`, the
-  final `report`, clarifying `clarification` questions, and a `phase`.
+  A transcript is a list of `Sanbase.DeepResearch.Turn` structs. A turn holds an
+  ordered `timeline` of items (thinking / search / mcp / status / skill),
+  accumulated `sources`, the final `report`, clarifying `clarification`
+  questions, and a `phase`.
 
   Item shapes (plain maps keyed by `:kind`):
 
@@ -35,23 +36,14 @@ defmodule Sanbase.DeepResearch.Timeline do
           | :failed
           | :cancelled
 
-  @type turn :: map()
+  alias Sanbase.DeepResearch.Turn
+
+  @type turn :: Turn.t()
 
   @doc "A fresh turn for `question`, starting in the `:planning` phase."
   @spec new_turn(String.t(), integer(), non_neg_integer()) :: turn()
   def new_turn(question, id, started_at_ms) do
-    %{
-      id: id,
-      question: question,
-      phase: :planning,
-      timeline: [],
-      sources: [],
-      report: nil,
-      clarification: nil,
-      started_at: started_at_ms,
-      finished_at: nil,
-      error: nil
-    }
+    %Turn{id: id, question: question, started_at: started_at_ms}
   end
 
   @doc "Is `phase` a terminal (sticky) phase?"

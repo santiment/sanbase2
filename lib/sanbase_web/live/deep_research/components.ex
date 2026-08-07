@@ -440,7 +440,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
     ~H"""
     <img
       :if={@domain not in [nil, ""]}
-      src={"https://www.google.com/s2/favicons?domain=#{@domain}&sz=32"}
+      src={"https://www.google.com/s2/favicons?domain=#{URI.encode_www_form(@domain)}&sz=32"}
       alt=""
       class="size-3.5 shrink-0 rounded-sm"
     />
@@ -670,9 +670,15 @@ defmodule SanbaseWeb.DeepResearch.Components do
   # sanitize the rendered HTML (Earmark is a converter, not a sanitizer) before
   # injecting it raw — strips scripts and `javascript:` links, keeps the tags a
   # report needs (headings, links, tables, code, lists).
+  #
+  # `as_html/1`, not `as_html!/1`: streaming renders parse PARTIAL markdown (an
+  # still-open ``` fence mid-stream), and the bang variant prints each parse
+  # error to stderr on every re-render. Both variants return best-effort HTML;
+  # the messages are expected noise here, so they are dropped.
   defp markdown(text) when is_binary(text) do
-    text
-    |> Earmark.as_html!()
+    {_status, html, _messages} = Earmark.as_html(text)
+
+    html
     |> HtmlSanitizeEx.markdown_html()
     |> Phoenix.HTML.raw()
   end

@@ -49,6 +49,41 @@ end
 config :sanbase, Sanbase.SmartContracts.SanrNFT,
   alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
 
+# Deep research agent (LangGraph). The LiveView connects directly to the agent's
+# HTTP/SSE API. Keys left unset fall back to the agent server's own .env defaults
+# (per-run `configurable` only overrides what we send).
+config :sanbase, Sanbase.DeepResearch,
+  # No literal defaults here — unset means "fall back to the module attribute in
+  # Sanbase.DeepResearch.Config", so each default has exactly one home.
+  base_url: System.get_env("DRA_BASE_URL"),
+  assistant_id: System.get_env("DRA_ASSISTANT_ID"),
+  # Optional bearer token for the agent server (unset = no auth header).
+  auth_token: System.get_env("DRA_AUTH_TOKEN"),
+  # Shows the model-tier dropdown in the research UI.
+  tiering_dropdown_enabled: System.get_env("DRA_TIERING_DROPDOWN_ENABLED") == "true",
+  # Models are selected by tier NAME only (extra-low | low | mid | high) — the
+  # models behind each name live in the agent's code (MODEL_TIERS in config.py).
+  # Per-model env vars (DRA_RESEARCH_MODEL etc.) are no longer honored anywhere.
+  model_tier: System.get_env("DRA_MODEL_TIER"),
+  openrouter_api_key: System.get_env("OPENROUTER_API_KEY"),
+  tavily_api_key: System.get_env("TAVILY_API_KEY"),
+  # Catalog of MCP servers the research UI can connect to. Each entry:
+  # %{key, label, url, auth}. auth: :user_apikey sends the caller's Santiment
+  # API key as `Authorization: Apikey <key>`. Add more entries (local or remote)
+  # here — no code changes needed.
+  mcp_servers: [
+    %{
+      key: "santiment",
+      label: "Santiment",
+      url: System.get_env("DRA_MCP_URL", "http://localhost:4000/mcp"),
+      auth: :user_apikey,
+      # Dev override: send this fixed key instead of the logged-in user's key.
+      # Needed when a local UI points at a remote MCP (the local user's key is
+      # unknown to the remote DB). Unset (the default) = current user's key.
+      apikey_override: System.get_env("DRA_MCP_APIKEY")
+    }
+  ]
+
 # CSV string of extra emails to treat as "team members" in the MCP admin
 # views. The @santiment.net domain is excluded unconditionally; this
 # variable lets us add gmail/personal accounts of teammates.

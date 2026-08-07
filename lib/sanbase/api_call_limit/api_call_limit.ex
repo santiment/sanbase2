@@ -21,8 +21,13 @@ defmodule Sanbase.ApiCallLimit do
   @product_api_id Product.product_api()
   @product_sanbase_id Product.product_sanbase()
 
+  # `"sanapi_enterprise"` used to be here, from when Enterprise meant a bespoke
+  # `CUSTOM_*` contract with no ceiling. It is now a listed tier with a published
+  # 300,000 calls a month, so leaving it in would have made that number
+  # unenforceable. Removing it was safe: it matched zero `api_call_limits` rows on
+  # production, because no plan has ever been named exactly `ENTERPRISE` on SanAPI.
+  # Bespoke contracts keep their exemption through `"sanapi_custom"`.
   @plans_without_limits [
-    "sanapi_enterprise",
     "sanapi_custom"
   ]
   @api_call_limits_per_month Restrictions.call_limits_per_month()

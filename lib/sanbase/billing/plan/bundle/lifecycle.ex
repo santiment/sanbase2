@@ -287,6 +287,38 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   @spec ensure_institutional_for_sale(User.t()) :: :ok | {:error, String.t()}
   def ensure_institutional_for_sale(%User{} = user), do: ensure_institutional_visible(user)
 
+  @doc ~s"""
+  Whether the user may purchase the Enterprise plan.
+
+  Enterprise is the tier above Institutional: the same fixed-plan shape, sold at one
+  yearly price, with unlimited history and a larger API allowance. It goes through
+  `Sanbase.Billing.Subscription.subscribe/4` for exactly the reasons Institutional
+  does, and it shares the same two commercial rules for the same reason - they are
+  about the offering, not about items.
+
+  Not to be confused with `CUSTOM_*`. Those remain what they have always been:
+  bespoke, hand-built, negotiated per contract. Enterprise is a listed tier with a
+  price. The two words were used interchangeably before this tier existed.
+  """
+  @spec ensure_can_subscribe_enterprise(User.t()) :: :ok | {:error, String.t()}
+  def ensure_can_subscribe_enterprise(%User{} = user) do
+    with :ok <- ensure_enterprise_for_sale(user),
+         {:ok, _replaceable} <- classify_for_subscribe(user) do
+      :ok
+    end
+  end
+
+  @doc ~s"""
+  Whether the Enterprise plan may be sold to this user at all.
+
+  The sale switch on its own, without the one-live-SanAPI-subscription rule. Same
+  split and same reasoning as `ensure_institutional_for_sale/1`: `updateSubscription`
+  replaces rather than adds, so it must not be refused for an existing subscription,
+  but it is still a sale.
+  """
+  @spec ensure_enterprise_for_sale(User.t()) :: :ok | {:error, String.t()}
+  def ensure_enterprise_for_sale(%User{} = user), do: ensure_enterprise_visible(user)
+
   @spec list_replaceable_sanapi_subs(User.t()) :: [Subscription.t()]
   def list_replaceable_sanapi_subs(%User{} = user) do
     case classify_active_sanapi(user) do
@@ -306,14 +338,22 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   end
 
   # Same switch, different wording. `SaleControls` activates the whole new offering
-  # at once, so there is no state in which one of the two is for sale and the other
-  # is not - but a customer told "Bundle plans are not available" after clicking
+  # at once, so there is no state in which one of them is for sale and the others
+  # are not - but a customer told "Bundle plans are not available" after clicking
   # Institutional would reasonably think they had hit the wrong button.
   defp ensure_institutional_visible(user) do
     if SaleControls.bundle_plans_visible?(user) do
       :ok
     else
       {:error, "The Institutional plan is not available for purchase yet"}
+    end
+  end
+
+  defp ensure_enterprise_visible(user) do
+    if SaleControls.bundle_plans_visible?(user) do
+      :ok
+    else
+      {:error, "The Enterprise plan is not available for purchase yet"}
     end
   end
 
@@ -626,7 +666,8 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
         where:
           s.status in ^@active_statuses and p.product_id == ^product_api and
             not is_nil(s.stripe_id) and
-            (like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%")),
+            (like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or
+               like(p.name, "ENTERPRISE%")),
         select: s.user_id
       )
 
@@ -661,8 +702,12 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
       subs == [] ->
         {:ok, :none}
 
+      # Wording matters here now that ENTERPRISE is a plan name of its own. This
+      # branch is about `CUSTOM_*` - a bespoke, negotiated contract - and calling it
+      # "enterprise" would point a customer holding the Enterprise tier at the wrong
+      # explanation. Enterprise itself is caught by the next branch, as new offering.
       Enum.any?(subs, &custom_plan?/1) ->
-        {:error, "Active custom/enterprise SanAPI subscription cannot be auto-replaced"}
+        {:error, "Active bespoke (custom) SanAPI subscription cannot be auto-replaced"}
 
       Enum.any?(subs, &new_offering_plan?/1) ->
         {:error, "You already have an active SanAPI subscription on the new offering"}
@@ -689,6 +734,7 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
 
   defp new_offering_plan?(%Subscription{plan: %Plan{name: "BUNDLE" <> _}}), do: true
   defp new_offering_plan?(%Subscription{plan: %Plan{name: "INSTITUTIONAL" <> _}}), do: true
+  defp new_offering_plan?(%Subscription{plan: %Plan{name: "ENTERPRISE" <> _}}), do: true
   defp new_offering_plan?(_), do: false
 
   defp replaceable_plan?(%Subscription{plan: %Plan{name: name}})

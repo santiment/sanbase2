@@ -53,6 +53,7 @@ defmodule Sanbase.Billing.AccessMatrix do
       "BUSINESS_PRO",
       "BUSINESS_MAX",
       "INSTITUTIONAL",
+      "ENTERPRISE",
       "CUSTOM",
       "PREMIUM"
     ]

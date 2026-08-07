@@ -66,7 +66,7 @@ defmodule Sanbase.Queries.QueryExecution do
   # read_bytes / result_rows / result_bytes / elapsed_ns) and multiply
   # by this factor to cover the missing memory_usage_gb +
   # cpu_time_microseconds + read_compressed_gb terms AND act as a
-  # privacy premium baked into their enterprise contract.
+  # privacy premium baked into their bespoke contract.
   @activity_traces_hidden_multiplier 2
   @bytes_per_gb 1_073_741_824
 

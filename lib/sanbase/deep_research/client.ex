@@ -71,6 +71,40 @@ defmodule Sanbase.DeepResearch.Client do
       :ok
   end
 
+  @doc """
+  Cancel every in-flight run on `thread_id`. Covers the early-cancel window: the
+  user hits Stop before the stream has delivered a `run_id`, but the server-side
+  run already exists — so look up the thread's active runs and cancel each.
+  Best-effort, like `cancel_run/2`.
+  """
+  @spec cancel_active_runs(String.t()) :: :ok
+  def cancel_active_runs(thread_id) do
+    case Req.get(url("/threads/#{thread_id}/runs"),
+           receive_timeout: @request_timeout,
+           retry: false
+         ) do
+      {:ok, %{status: status, body: runs}} when status in 200..299 and is_list(runs) ->
+        runs
+        |> Enum.filter(&(&1["status"] in ["pending", "running"]))
+        |> Enum.each(&cancel_run(thread_id, &1["run_id"]))
+
+      {:ok, %{status: status, body: body}} ->
+        Logger.warning(
+          "DeepResearch cancel_active_runs failed (HTTP #{status}): #{inspect(body)}"
+        )
+
+        :ok
+
+      {:error, error} ->
+        Logger.warning("DeepResearch cancel_active_runs failed: #{error_message(error)}")
+        :ok
+    end
+  rescue
+    error ->
+      Logger.warning("DeepResearch cancel_active_runs failed: #{Exception.message(error)}")
+      :ok
+  end
+
   @doc "Fetch the thread state (poll fallback after the stream closes)."
   @spec get_state(String.t()) :: {:ok, map()} | {:error, String.t()}
   def get_state(thread_id) do

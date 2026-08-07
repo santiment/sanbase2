@@ -236,14 +236,9 @@ defmodule Sanbase.DeepResearch.Timeline do
   """
   @spec upsert_thinking([map()], String.t(), String.t()) :: [map()]
   def upsert_thinking(items, id, text) do
-    if Enum.any?(items, &(&1.kind == :thinking and &1.id == id)) do
-      Enum.map(items, fn
-        %{kind: :thinking, id: ^id} = it -> %{it | text: text}
-        it -> it
-      end)
-    else
-      items ++ [%{kind: :thinking, id: id, text: text}]
-    end
+    upsert_by_id(items, :thinking, id, fn _existing ->
+      %{kind: :thinking, id: id, text: text}
+    end)
   end
 
   @doc """
@@ -277,16 +272,17 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `{:chart, [chart_item, ...]}`        - contiguous run of charts (always-visible widgets)
     * `{:findings, [finding_item, ...]}`   - contiguous run of sub-agent findings (folded tables)
   """
+  # Item kinds that render as their own block type (and so break a tools run);
+  # every other kind folds into a `{:tools, items, running?}` block.
+  @block_tag %{thinking: :narration, skill: :skill, chart: :chart, subagent_findings: :findings}
+
   @spec segment([map()]) :: [tuple()]
   def segment(items) do
     {blocks, tools} =
       Enum.reduce(items, {[], []}, fn item, {blocks, tools} ->
-        case item.kind do
-          :thinking -> {push_narration(flush_tools(blocks, tools), item), []}
-          :skill -> {push_skill(flush_tools(blocks, tools), item), []}
-          :chart -> {push_chart(flush_tools(blocks, tools), item), []}
-          :subagent_findings -> {push_findings(flush_tools(blocks, tools), item), []}
-          _ -> {blocks, tools ++ [item]}
+        case @block_tag[item.kind] do
+          nil -> {blocks, tools ++ [item]}
+          tag -> {push_block(flush_tools(blocks, tools), tag, item), []}
         end
       end)
 
@@ -301,21 +297,10 @@ defmodule Sanbase.DeepResearch.Timeline do
   defp flush_tools(blocks, tools),
     do: [{:tools, tools, tools_running?(tools)} | blocks]
 
-  defp push_narration([{:narration, items} | rest], item),
-    do: [{:narration, items ++ [item]} | rest]
-
-  defp push_narration(blocks, item), do: [{:narration, [item]} | blocks]
-
-  defp push_skill([{:skill, items} | rest], item), do: [{:skill, items ++ [item]} | rest]
-  defp push_skill(blocks, item), do: [{:skill, [item]} | blocks]
-
-  defp push_chart([{:chart, items} | rest], item), do: [{:chart, items ++ [item]} | rest]
-  defp push_chart(blocks, item), do: [{:chart, [item]} | blocks]
-
-  defp push_findings([{:findings, items} | rest], item),
-    do: [{:findings, items ++ [item]} | rest]
-
-  defp push_findings(blocks, item), do: [{:findings, [item]} | blocks]
+  # Append to the newest block when it carries the same tag (keeping the run
+  # contiguous), otherwise start a new block.
+  defp push_block([{tag, items} | rest], tag, item), do: [{tag, items ++ [item]} | rest]
+  defp push_block(blocks, tag, item), do: [{tag, [item]} | blocks]
 
   @doc "True if any tool item in the run is still in flight (search awaiting results / mcp not done)."
   @spec tools_running?([map()]) :: boolean()

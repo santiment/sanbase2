@@ -48,6 +48,24 @@ defmodule Sanbase.DeepResearch.ConfigTest do
     end
   end
 
+  describe "auth_token/0" do
+    test "nil when unset or blank — no auth header for the local dev server" do
+      put_env([])
+      assert Config.auth_token() == nil
+
+      put_env(auth_token: nil)
+      assert Config.auth_token() == nil
+
+      put_env(auth_token: "")
+      assert Config.auth_token() == nil
+    end
+
+    test "returns the configured token" do
+      put_env(auth_token: "secret-token")
+      assert Config.auth_token() == "secret-token"
+    end
+  end
+
   describe "run_payload/2" do
     test "wraps the message and requests all three stream channels" do
       put_env([])

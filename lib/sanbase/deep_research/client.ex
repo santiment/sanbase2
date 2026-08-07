@@ -1,8 +1,10 @@
 defmodule Sanbase.DeepResearch.Client do
   @moduledoc """
   HTTP/SSE client for the LangGraph deep research agent. The LiveView connects
-  directly to the LangGraph server (`Sanbase.DeepResearch.Config.base_url/0`),
-  no auth header (trusted internal dev service) — no separate proxy tier.
+  directly to the LangGraph server (`Sanbase.DeepResearch.Config.base_url/0`) —
+  no separate proxy tier. When `Config.auth_token/0` is set, every request
+  carries it as an `Authorization: Bearer` header; unset means no auth header
+  (the trusted local dev server).
 
   `stream_run/4` is meant to run via the LiveView's `start_async/3`. During the
   stream it forwards each parsed event to the LiveView pid as a
@@ -30,7 +32,10 @@ defmodule Sanbase.DeepResearch.Client do
   @doc "Create a new thread. Returns `{:ok, thread_id}` or `{:error, reason}`."
   @spec create_thread() :: {:ok, String.t()} | {:error, String.t()}
   def create_thread() do
-    case Req.post(url("/threads"), json: %{}, receive_timeout: @request_timeout, retry: false) do
+    case Req.post(
+           url("/threads"),
+           request_opts(json: %{}, receive_timeout: @request_timeout, retry: false)
+         ) do
       {:ok, %{status: status, body: %{"thread_id" => thread_id}}} when status in 200..299 ->
         {:ok, thread_id}
 
@@ -49,10 +54,9 @@ defmodule Sanbase.DeepResearch.Client do
   """
   @spec cancel_run(String.t(), String.t()) :: :ok
   def cancel_run(thread_id, run_id) do
-    case Req.post(url("/threads/#{thread_id}/runs/#{run_id}/cancel"),
-           json: %{},
-           receive_timeout: @request_timeout,
-           retry: false
+    case Req.post(
+           url("/threads/#{thread_id}/runs/#{run_id}/cancel"),
+           request_opts(json: %{}, receive_timeout: @request_timeout, retry: false)
          ) do
       {:ok, %{status: status}} when status in 200..299 ->
         :ok
@@ -79,9 +83,9 @@ defmodule Sanbase.DeepResearch.Client do
   """
   @spec cancel_active_runs(String.t()) :: :ok
   def cancel_active_runs(thread_id) do
-    case Req.get(url("/threads/#{thread_id}/runs"),
-           receive_timeout: @request_timeout,
-           retry: false
+    case Req.get(
+           url("/threads/#{thread_id}/runs"),
+           request_opts(receive_timeout: @request_timeout, retry: false)
          ) do
       {:ok, %{status: status, body: runs}} when status in 200..299 and is_list(runs) ->
         runs
@@ -108,9 +112,9 @@ defmodule Sanbase.DeepResearch.Client do
   @doc "Fetch the thread state (poll fallback after the stream closes)."
   @spec get_state(String.t()) :: {:ok, map()} | {:error, String.t()}
   def get_state(thread_id) do
-    case Req.get(url("/threads/#{thread_id}/state"),
-           receive_timeout: @request_timeout,
-           retry: false
+    case Req.get(
+           url("/threads/#{thread_id}/state"),
+           request_opts(receive_timeout: @request_timeout, retry: false)
          ) do
       {:ok, %{status: status, body: body}} when status in 200..299 -> {:ok, body}
       {:ok, %{status: status}} -> {:error, "get_state failed (HTTP #{status})"}
@@ -135,18 +139,21 @@ defmodule Sanbase.DeepResearch.Client do
     payload = Config.run_payload(message, opts)
 
     result =
-      Req.post(url("/threads/#{thread_id}/runs/stream"),
-        json: payload,
-        receive_timeout: @stream_receive_timeout,
-        retry: false,
-        # The partial-line buffer rides along on the response's private map, so
-        # the framing state is explicit and scoped to this request rather than
-        # hidden in the calling process's dictionary.
-        into: fn {:data, data}, {req, resp} ->
-          {lines, buffer} = SSE.feed(Req.Response.get_private(resp, @buffer_key, ""), data)
-          Enum.each(lines, &handle_line(&1, lv_pid, ref))
-          {:cont, {req, Req.Response.put_private(resp, @buffer_key, buffer)}}
-        end
+      Req.post(
+        url("/threads/#{thread_id}/runs/stream"),
+        request_opts(
+          json: payload,
+          receive_timeout: @stream_receive_timeout,
+          retry: false,
+          # The partial-line buffer rides along on the response's private map, so
+          # the framing state is explicit and scoped to this request rather than
+          # hidden in the calling process's dictionary.
+          into: fn {:data, data}, {req, resp} ->
+            {lines, buffer} = SSE.feed(Req.Response.get_private(resp, @buffer_key, ""), data)
+            Enum.each(lines, &handle_line(&1, lv_pid, ref))
+            {:cont, {req, Req.Response.put_private(resp, @buffer_key, buffer)}}
+          end
+        )
       )
 
     # The last SSE event may arrive without a trailing newline, leaving it in the
@@ -185,6 +192,14 @@ defmodule Sanbase.DeepResearch.Client do
   defp handle_line(_line, _lv_pid, _ref), do: :ok
 
   defp url(path), do: Config.base_url() <> path
+
+  # Attach the deploy's bearer token (if configured) to a request's options.
+  defp request_opts(opts) do
+    case Config.auth_token() do
+      nil -> opts
+      token -> Keyword.put(opts, :auth, {:bearer, token})
+    end
+  end
 
   # The run payload carries the OpenRouter/Tavily API keys, so a non-local plain
   # HTTP base URL puts them on the wire in cleartext. Warn once per run rather

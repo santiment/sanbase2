@@ -103,6 +103,11 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
+  # A cancel with no run in flight (double click, crafted event) must not touch
+  # the finished turn or fire a cancel request at the agent server.
+  def handle_event("cancel", _params, %{assigns: %{running: false}} = socket),
+    do: {:noreply, socket}
+
   def handle_event("cancel", _params, socket) do
     cancel_run_async(socket.assigns.thread_id, socket.assigns.run_id)
 
@@ -440,6 +445,16 @@ defmodule SanbaseWeb.DeepResearchLive do
     end)
   end
 
+  # Cancel arrived before the stream delivered a run_id: the server-side run
+  # already exists, so cancel whatever is active on the thread — otherwise it
+  # keeps running (and billing) invisibly after the UI shows "cancelled".
+  defp cancel_run_async(thread_id, nil) when is_binary(thread_id) do
+    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+      Client.cancel_active_runs(thread_id)
+    end)
+  end
+
+  # No thread yet (cancel raced thread creation) — nothing server-side to cancel.
   defp cancel_run_async(_thread_id, _run_id), do: :ok
 
   defp schedule_tick(socket) do

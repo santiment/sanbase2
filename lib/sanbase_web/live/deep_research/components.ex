@@ -22,7 +22,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
   @doc "The question input: auto-growing textarea plus send / stop buttons."
   def composer(assigns) do
     ~H"""
-    <form phx-submit="submit" phx-change="update_query">
+    <form id="dr-composer" phx-submit="submit" phx-change="update_query">
       <div class="flex items-end gap-2 rounded-[1.75rem] border border-base-300 bg-base-100 py-1.5 pl-4 pr-2 shadow-sm transition focus-within:border-base-content/25 focus-within:shadow-md">
         <textarea
           id="dr-composer-input"

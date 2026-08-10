@@ -126,6 +126,17 @@ defmodule Sanbase.AvailableMetrics do
     end
   end
 
+  @hidden_group_names ["Deprecated", "Internal Metrics"]
+
+  @doc ~s"""
+  Groups that exist for bookkeeping only and are never shown to users.
+
+  A metric that lives only in such a group is not part of any sold package, so
+  it is excluded from the available metrics page and its CSV export, and the
+  groups themselves are not offered as a filter.
+  """
+  def hidden_group_names, do: @hidden_group_names
+
   def apply_filters(metrics_map, filters) when is_map(metrics_map) do
     metrics_map
     |> Map.values()
@@ -134,12 +145,24 @@ defmodule Sanbase.AvailableMetrics do
 
   def apply_filters(metrics_list, filters) when is_list(metrics_list) do
     metrics_list
+    |> reject_hidden_group_metrics()
     |> maybe_apply_filter(:only_with_docs, filters)
     |> maybe_apply_filter(:only_intraday_metrics, filters)
     |> maybe_apply_filter(:match_metric_name, filters)
     |> maybe_apply_filter(:metric_supports_asset, filters)
     |> maybe_apply_filter(:only_asset_metrics, filters)
     |> maybe_apply_filter(:categorization, filters)
+  end
+
+  # Dropped only when every group the metric belongs to is hidden. A metric that
+  # is also in a sellable group keeps its row there.
+  defp reject_hidden_group_metrics(metrics) do
+    Enum.reject(metrics, fn metric ->
+      categories = metric.categories || []
+
+      categories != [] and
+        Enum.all?(categories, &(&1.group_name in @hidden_group_names))
+    end)
   end
 
   defp maybe_apply_filter(metrics, :only_with_docs, %{"only_with_docs" => "on"}) do

@@ -68,6 +68,27 @@ defmodule Sanbase.AvailableMetricsCategorizationFilterTest do
     assert result == ["ungrouped_market"]
   end
 
+  test "hides metrics that only live in a hidden group" do
+    metrics = [
+      metric("social_volume_twitter_news", [
+        %{category_id: 2, category_name: "Social", group_id: 21, group_name: "Deprecated"}
+      ]),
+      metric("mentions_count_reddit", [
+        %{category_id: 2, category_name: "Social", group_id: 22, group_name: "Internal Metrics"}
+      ]),
+      metric("also_sellable", [
+        %{category_id: 2, category_name: "Social", group_id: 21, group_name: "Deprecated"},
+        %{category_id: 2, category_name: "Social", group_id: 20, group_name: "Social Volume"}
+      ])
+    ]
+
+    result =
+      AvailableMetrics.apply_filters(metrics, %{})
+      |> Enum.map(& &1.metric)
+
+    assert result == ["also_sellable"]
+  end
+
   test "does not match category and group across different mappings" do
     metrics = [
       metric("multi", [

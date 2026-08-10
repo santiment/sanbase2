@@ -84,15 +84,6 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         </:col>
         <:col
           :let={row}
-          label="Internal Name"
-          popover_target="popover-internal-name"
-          popover_target_text={get_popover_text(%{key: "Internal Name"})}
-          col_class="min-w-[16rem] whitespace-nowrap"
-        >
-          {row.internal_name}
-        </:col>
-        <:col
-          :let={row}
           label="Category"
           popover_target="popover-category"
           popover_target_text={get_popover_text(%{key: "Category"})}
@@ -442,9 +433,11 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   end
 
   defp group_names(categories) do
+    hidden = Sanbase.AvailableMetrics.hidden_group_names()
+
     categories
     |> Enum.map(& &1.group_name)
-    |> Enum.reject(&is_nil/1)
+    |> Enum.reject(&(is_nil(&1) or &1 in hidden))
     |> Enum.uniq()
   end
 
@@ -459,7 +452,10 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   defp group_selected?(value, expected), do: value == expected
 
   defp groups_by_category_id do
+    hidden = Sanbase.AvailableMetrics.hidden_group_names()
+
     MetricGroup.list_with_category()
+    |> Enum.reject(&(&1.name in hidden))
     |> Enum.group_by(& &1.category_id)
   end
 

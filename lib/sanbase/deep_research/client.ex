@@ -220,8 +220,10 @@ defmodule Sanbase.DeepResearch.Client do
 
   # The run payload carries the OpenRouter/Tavily API keys, so a non-local plain
   # HTTP base URL puts them on the wire in cleartext. On a deployed environment
-  # (stage/prod) fail closed and refuse the run; in local dev only warn — the
-  # default is localhost and a remote agent may sit on a trusted network.
+  # (stage/prod) fail closed and refuse the run — except for cluster-internal
+  # hosts (*.cluster.local), whose traffic never leaves the k8s network. In
+  # local dev only warn — the default is localhost and a remote agent may sit
+  # on a trusted network.
   defp check_base_url_security() do
     case URI.parse(Config.base_url()) do
       %URI{scheme: "http", host: host} when host not in ["localhost", "127.0.0.1", "::1"] ->
@@ -229,7 +231,7 @@ defmodule Sanbase.DeepResearch.Client do
           "DeepResearch base_url is plain HTTP to a non-local host (#{host}) — the run " <>
             "payload's API keys are sent in cleartext. Use https for remote agents."
 
-        if deployed_env?() do
+        if deployed_env?() and not cluster_internal_host?(host) do
           Logger.error(message)
           {:error, message}
         else
@@ -240,6 +242,10 @@ defmodule Sanbase.DeepResearch.Client do
       _ ->
         :ok
     end
+  end
+
+  defp cluster_internal_host?(host) do
+    String.ends_with?(host, ".svc.cluster.local") or String.ends_with?(host, ".cluster.local")
   end
 
   defp deployed_env?() do

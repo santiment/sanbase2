@@ -228,28 +228,31 @@ defmodule SanbaseWeb.AvailableMetricsLive do
 
   def checkbox_with_popover(assigns) do
     ~H"""
-    <div class="dropdown dropdown-hover dropdown-bottom flex items-center">
-      <div tabindex="0" class="flex items-center">
-        <input
-          id={@input_id}
-          type="checkbox"
-          name={@input_name}
-          checked={@input_checked}
-          class="checkbox checkbox-sm hover:cursor-pointer"
-        />
+    <div class="flex items-center">
+      <input
+        id={@input_id}
+        type="checkbox"
+        name={@input_name}
+        checked={@input_checked}
+        class="checkbox checkbox-sm hover:cursor-pointer"
+      />
+      <%!-- The popover wraps only the label. Wrapping the checkbox in a daisyUI
+      dropdown trigger breaks it: daisyUI sets `pointer-events: none` on the
+      `[tabindex]` trigger while the dropdown has focus within it, so the click
+      that focuses the checkbox also kills the click that would toggle it. --%>
+      <div class="dropdown dropdown-hover dropdown-bottom">
         <label
           for={@input_id}
           class="ms-2 text-sm font-medium border-b border-dotted hover:cursor-pointer"
         >
           {@input_label}
         </label>
-      </div>
-      <div
-        id={@popover_target}
-        tabindex="0"
-        class="dropdown-content card card-compact bg-base-100 border border-base-300 shadow-2xl z-10 w-80 text-justify px-8 py-6 text-sm font-medium text-base-content/70"
-      >
-        <span>{@popover_text}</span>
+        <div
+          id={@popover_target}
+          class="dropdown-content card card-compact bg-base-100 border border-base-300 shadow-2xl z-10 w-80 text-justify px-8 py-6 text-sm font-medium text-base-content/70"
+        >
+          <span>{@popover_text}</span>
+        </div>
       </div>
     </div>
     """

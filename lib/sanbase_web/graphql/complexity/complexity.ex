@@ -91,6 +91,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
       "BUSINESS_PRO" -> 6
       "BUSINESS_MAX" -> 7
       "INSTITUTIONAL" -> 7
+      "ENTERPRISE" -> 7
       "CUSTOM" -> 7
       # TODO: Move complexity reducer to restrictions map
       "CUSTOM_" <> _ -> 7

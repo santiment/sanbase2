@@ -55,7 +55,8 @@ defmodule SanbaseWeb.Admin.ApiBusinessOnboardingLive do
 
       <p class="text-sm text-base-content/60 mb-4">
         Contacts currently on the Mailjet onboarding list - Business Pro, Business Max and
-        enterprise (CUSTOM) API subscribers. This reflects Mailjet's live state; new active
+        bespoke CUSTOM API subscribers. Does not include the new offering (packages,
+        Institutional, Enterprise). This reflects Mailjet's live state; new active
         subscribers are added automatically when they purchase.
       </p>
 

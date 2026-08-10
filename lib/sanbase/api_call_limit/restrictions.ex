@@ -16,6 +16,23 @@ defmodule Sanbase.ApiCallLimit.Restrictions do
   proportion to the month: the monthly figure is the constraint being sold, and an
   institutional customer backfilling a dataset should not be throttled harder than
   a package customer while still inside their monthly allowance.
+
+  ## `sanapi_enterprise`
+
+  300,000 calls a month, the figure on the pricing page - six times Institutional's.
+  Its bursts are `sanapi_business_max`'s rather than `sanapi_pro`'s, because the
+  monthly allowance has to be reachable: at Institutional's 30,000 an hour a
+  customer would need ten full hours of sustained traffic to spend a month, which
+  turns a volume tier into a throttling complaint.
+
+  Response size stays at `sanapi_business_max`'s 100,000 MB. That is the largest
+  figure in the table, and there is nothing above it to give.
+
+  Note this key used to mean the opposite. `"sanapi_enterprise"` was listed in
+  `Sanbase.ApiCallLimit`'s `@plans_without_limits` - a leftover from when Enterprise
+  meant a bespoke `CUSTOM_*` contract with no ceiling at all. It was removed when
+  this tier landed, having matched zero `api_call_limits` rows on production. See
+  `docs/composable-api-plans-handover.md` §8 task EP.
   """
 
   def call_limits_per_month() do
@@ -29,7 +46,8 @@ defmodule Sanbase.ApiCallLimit.Restrictions do
       "sanapi_pro" => 600_000,
       "sanapi_business_pro" => 600_000,
       "sanapi_business_max" => 1_200_000,
-      "sanapi_institutional" => 50_000
+      "sanapi_institutional" => 50_000,
+      "sanapi_enterprise" => 300_000
     }
   end
 
@@ -44,7 +62,8 @@ defmodule Sanbase.ApiCallLimit.Restrictions do
       "sanapi_pro" => 30_000,
       "sanapi_business_pro" => 30_000,
       "sanapi_business_max" => 60_000,
-      "sanapi_institutional" => 30_000
+      "sanapi_institutional" => 30_000,
+      "sanapi_enterprise" => 60_000
     }
   end
 
@@ -59,7 +78,8 @@ defmodule Sanbase.ApiCallLimit.Restrictions do
       "sanapi_pro" => 600,
       "sanapi_business_pro" => 600,
       "sanapi_business_max" => 1200,
-      "sanapi_institutional" => 600
+      "sanapi_institutional" => 600,
+      "sanapi_enterprise" => 1200
     }
   end
 
@@ -76,7 +96,8 @@ defmodule Sanbase.ApiCallLimit.Restrictions do
       "sanapi_pro" => 40_000,
       "sanapi_business_pro" => 50_000,
       "sanapi_business_max" => 100_000,
-      "sanapi_institutional" => 50_000
+      "sanapi_institutional" => 50_000,
+      "sanapi_enterprise" => 100_000
     }
   end
 end

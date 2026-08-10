@@ -27,7 +27,11 @@ defmodule Sanbase.ApiCallLimit.SyncTest do
       user_id: user.id,
       api_calls_limit_plan: plan,
       api_calls_limit_subscription_status: status,
-      has_limits: plan != "sanapi_enterprise",
+      # Asked rather than restated. This used to hardcode `plan != "sanapi_enterprise"`,
+      # which went stale twice over: no test here passes that plan, so the comparison
+      # was always true, and `"sanapi_enterprise"` has since stopped being exempt at
+      # all. Deferring to the real function means the helper cannot drift again.
+      has_limits: ApiCallLimit.plan_has_limits?(plan),
       api_calls: %{month_str => 0, hour_str => 0, minute_str => 0},
       api_calls_responses_size_mb: %{month_str => 0, hour_str => 0, minute_str => 0}
     })

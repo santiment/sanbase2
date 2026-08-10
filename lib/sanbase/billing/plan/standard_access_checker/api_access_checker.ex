@@ -68,6 +68,16 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
                               }
                             )
 
+  # The Enterprise tier sits above Institutional and its history window is the
+  # difference: `nil` means no limit, which is what "full historical data across
+  # all five pillars" on the pricing page amounts to. Institutional stays at three
+  # years, so full history remains something a customer either buys as packages or
+  # buys by moving up to here.
+  # See `docs/composable-api-plans-handover.md` §8 task EP.
+  @enterprise_plan_stats Plan.upgrade_plan(@institutional_plan_stats,
+                           extends: %{historical_data_in_days: nil}
+                         )
+
   def historical_data_in_days(subscription_product, plan) do
     case subscription_product do
       nil -> historical_data_in_days_api(plan)
@@ -86,6 +96,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       "BUSINESS_PRO" -> @business_pro_plan_stats[:historical_data_in_days]
       "BUSINESS_MAX" -> @business_max_plan_stats[:historical_data_in_days]
       "INSTITUTIONAL" -> @institutional_plan_stats[:historical_data_in_days]
+      "ENTERPRISE" -> @enterprise_plan_stats[:historical_data_in_days]
       "CUSTOM" -> @custom_plan_stats[:historical_data_in_days]
     end
   end
@@ -117,6 +128,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       "BUSINESS_PRO" -> @business_pro_plan_stats[:realtime_data_cut_off_in_days]
       "BUSINESS_MAX" -> @business_max_plan_stats[:realtime_data_cut_off_in_days]
       "INSTITUTIONAL" -> @institutional_plan_stats[:realtime_data_cut_off_in_days]
+      "ENTERPRISE" -> @enterprise_plan_stats[:realtime_data_cut_off_in_days]
       "CUSTOM" -> @custom_plan_stats[:realtime_data_cut_off_in_days]
     end
   end

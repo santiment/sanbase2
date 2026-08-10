@@ -372,6 +372,14 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       assert Plan.plan_name(%Plan{name: "INSTITUTIONAL"}) == "INSTITUTIONAL"
     end
 
+    test "accepts an ENTERPRISE plan without raising" do
+      # Same reason again. This one is worth its own test because the name was live
+      # in the database for four years without a clause: `ENTERPRISE_BASIC` and
+      # `ENTERPRISE_PLUS` were listed on the pricing page while raising
+      # `CaseClauseError` for anyone who bought one.
+      assert Plan.plan_name(%Plan{name: "ENTERPRISE"}) == "ENTERPRISE"
+    end
+
     test "still normalises and passes through existing names" do
       assert Plan.plan_name(%Plan{name: "ESSENTIAL"}) == "BASIC"
       assert Plan.plan_name(%Plan{name: "PRO"}) == "PRO"

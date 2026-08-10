@@ -736,14 +736,32 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  # Institutional belongs to the new SanAPI offering, so it answers to that
-  # offering's two commercial rules rather than only to `has_active_subscriptions/2`
-  # above - which compares plan ids and would happily sell it to a customer who is
-  # already on a bundle, leaving two live SanAPI subscriptions billing at once.
+  # Institutional and Enterprise belong to the new SanAPI offering, so they answer
+  # to that offering's two commercial rules rather than only to
+  # `has_active_subscriptions/2` above - which compares plan ids and would happily
+  # sell one to a customer who is already on a bundle, leaving two live SanAPI
+  # subscriptions billing at once.
   #
-  # Every other plan keeps exactly the behavior it had before this clause existed.
+  # Every other plan keeps exactly the behavior it had before these clauses existed.
   defp ensure_plan_is_for_sale(user, %Plan{name: "INSTITUTIONAL" <> _}) do
     case Sanbase.Billing.Plan.Bundle.Lifecycle.ensure_can_subscribe_institutional(user) do
+      :ok -> :ok
+      {:error, message} -> {:error, %__MODULE__.Error{message: message}}
+    end
+  end
+
+  # A withdrawn plan. Delisting it from `product_with_plans/0` is not enough on its
+  # own: `subscribe` takes a plan id, not a name, and `is_private` is not a gate
+  # anywhere (§15 Q14). Without this, `ENTERPRISE_BASIC` stayed buyable by anyone
+  # who knew the id was 105 - and since no access checker has ever had a clause for
+  # it, the charge went through and then every authenticated request raised
+  # `CaseClauseError` in `Plan.plan_name/1`.
+  defp ensure_plan_is_for_sale(_user, %Plan{name: "RETIRED_" <> _}) do
+    {:error, %__MODULE__.Error{message: "This plan is no longer available for purchase"}}
+  end
+
+  defp ensure_plan_is_for_sale(user, %Plan{name: "ENTERPRISE" <> _}) do
+    case Sanbase.Billing.Plan.Bundle.Lifecycle.ensure_can_subscribe_enterprise(user) do
       :ok -> :ok
       {:error, message} -> {:error, %__MODULE__.Error{message: message}}
     end
@@ -806,11 +824,13 @@ defmodule Sanbase.Billing.Subscription do
       product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id, plan) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 
-      # BUSINESS plans are excluded from API trial. So is INSTITUTIONAL: it is the
-      # flagship SanAPI plan, and a 14-day trial of it is a decision for product to
-      # make deliberately (task TR) rather than something it inherits by being new.
+      # BUSINESS plans are excluded from API trial. So are INSTITUTIONAL and
+      # ENTERPRISE: they are the top SanAPI plans, and a 14-day trial of either is a
+      # decision for product to make deliberately (task TR) rather than something
+      # they inherit by being new. Enterprise especially - a free fortnight of
+      # unlimited history is the whole product.
       product_id == @product_api and
-        plan.name not in ~w(BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL) and
+        plan.name not in ~w(BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL ENTERPRISE) and
           Billing.eligible_for_api_trial?(user.id) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 

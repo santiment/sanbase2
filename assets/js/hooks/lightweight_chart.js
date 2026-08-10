@@ -34,12 +34,19 @@ function palette() {
 export const LightweightChart = {
   mounted() {
     this.render()
+    // re-color when the admin theme toggle stamps <html data-theme>
+    this.themeObserver = new MutationObserver(() => this.render())
+    this.themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    })
   },
   updated() {
     // Chart data is terminal — only rebuild if the payload actually changed.
     if (this.el.dataset.chart !== this._raw) this.render()
   },
   destroyed() {
+    if (this.themeObserver) this.themeObserver.disconnect()
     if (this.chart) {
       this.chart.remove()
       this.chart = null
@@ -56,7 +63,6 @@ export const LightweightChart = {
     }
     const series = Array.isArray(spec.series) ? spec.series : []
     const shape = series.map((s) => `${s.style}:${(s.data || []).length}pts`).join(", ")
-    console.debug("[LightweightChart] mounted; series =", shape || "(none)", spec)
 
     const canvas = this.el.querySelector(".dra-chart-canvas") || this.el
     if (this.chart) {
@@ -66,10 +72,9 @@ export const LightweightChart = {
     canvas.innerHTML = ""
 
     // Self-describing states so a blank box is never ambiguous: no series / no
-    // data points → say so in the box (and console), rather than render nothing.
+    // data points → say so in the box, rather than render nothing.
     const totalPoints = series.reduce((n, s) => n + ((s.data && s.data.length) || 0), 0)
     if (!series.length || !totalPoints) {
-      console.warn("[LightweightChart] nothing to draw — series:", shape || "(none)")
       canvas.innerHTML = note(`No chart data returned${shape ? ` (${shape})` : ""}.`)
       return
     }

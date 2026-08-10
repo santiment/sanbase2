@@ -35,6 +35,11 @@ defmodule Sanbase.DeepResearch.ReportMarkdownTest do
       # The later section keeps its heading and prose — not folded into bullets.
       assert out =~ "## Appendix\nFollow-up on [1] and [2] with more detail.\n"
     end
+
+    test "is a no-op when a heading directly follows an empty Sources section" do
+      md = "Intro text.\n\n## Sources\n## Conclusion\nText citing [1] and [2] again.\n"
+      assert ReportMarkdown.reflow_sources(md) == md
+    end
   end
 
   describe "split_charts" do

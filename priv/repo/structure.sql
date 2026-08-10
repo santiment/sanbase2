@@ -2671,8 +2671,7 @@ CREATE TABLE public.metric_registry (
     last_sync_datetime timestamp(0) without time zone,
     stabilization_period character varying(255),
     can_mutate boolean,
-    allow_early_access boolean DEFAULT false NOT NULL,
-    yearly_plan_only_versions jsonb
+    allow_early_access boolean DEFAULT false NOT NULL
 );
 
 
@@ -12901,7 +12900,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260709120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260720115000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722130000);
-INSERT INTO public."schema_migrations" (version) VALUES (20260727120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260728132322);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803141812);

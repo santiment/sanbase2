@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.CreateDeepResearchSessionsAndTurns do
   use Ecto.Migration
 
-  def change do
+  def change() do
     create table(:deep_research_sessions, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:user_id, references(:users, on_delete: :delete_all), null: false)

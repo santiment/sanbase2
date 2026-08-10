@@ -92,9 +92,17 @@ defmodule Sanbase.DeepResearch.Client do
            request_opts(receive_timeout: @request_timeout, retry: false)
          ) do
       {:ok, %{status: status, body: runs}} when status in 200..299 and is_list(runs) ->
+        # Cancel concurrently: sequential cancels stack their HTTP timeouts,
+        # and a Stop should take effect on every run at once.
         runs
         |> Enum.filter(&(&1["status"] in ["pending", "running"]))
-        |> Enum.each(&cancel_run(thread_id, &1["run_id"]))
+        |> Task.async_stream(&cancel_run(thread_id, &1["run_id"]),
+          max_concurrency: 5,
+          ordered: false,
+          timeout: @request_timeout + 1_000,
+          on_timeout: :kill_task
+        )
+        |> Stream.run()
 
       {:ok, %{status: status, body: body}} ->
         Logger.warning(

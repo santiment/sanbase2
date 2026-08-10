@@ -21,6 +21,13 @@ export const KeepDetailsOpen = {
   updated() {
     this.apply()
   },
+  destroyed() {
+    // The store is page-lifetime; without pruning it grows with every element
+    // that ever mounted (timeline resets, session switches). Morphdom patches a
+    // same-id element in place rather than destroy/remount, so a destroy really
+    // means the element is gone.
+    delete openState[this.el.id]
+  },
   apply() {
     const want = openState[this.el.id]
     if (want !== undefined && this.el.open !== want) {

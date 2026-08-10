@@ -221,11 +221,18 @@ defmodule SanbaseWeb.DeepResearchLive do
 
     socket
     |> cancel_async(:research)
-    |> update_current_turn(fn turn ->
-      %{turn | phase: :cancelled, finished_at: turn.finished_at || now_ms()}
-    end)
+    |> update_current_turn(&cancel_turn/1)
     |> assign(running: false)
   end
+
+  # A Stop that races the report is a race the report already won: the stream
+  # stays open a little after delivering it, so a cancel in that window must
+  # finalize the turn as completed — not mark (and persist) a delivered report
+  # as :cancelled.
+  defp cancel_turn(%{report: report} = turn) when is_binary(report), do: finalize_turn(turn)
+
+  defp cancel_turn(turn),
+    do: %{turn | phase: :cancelled, finished_at: turn.finished_at || now_ms()}
 
   defp start_research(socket, text) do
     id = socket.assigns.next_id
@@ -238,6 +245,12 @@ defmodule SanbaseWeb.DeepResearchLive do
     enabled_mcp = enabled_mcp_servers(socket)
     model_tier = socket.assigns.model_tier
     user = socket.assigns[:current_user]
+
+    # A new question can arrive while the previous turn's no-report poll is
+    # still in flight (running is already false then). Once :current_turn
+    # changes, that poll result is dropped as stale and nothing would ever
+    # settle the old turn — fail it before it is archived.
+    socket = settle_abandoned_turn(socket)
 
     # Everything network/DB-bound runs off the socket via start_async/3 (like
     # AskLive) so the LiveView keeps serving heartbeats; incremental events
@@ -265,6 +278,14 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   defp archive_current_turn(%{assigns: %{current_turn: nil, turns: turns}}), do: turns
   defp archive_current_turn(%{assigns: %{current_turn: turn, turns: turns}}), do: turns ++ [turn]
+
+  defp settle_abandoned_turn(%{assigns: %{current_turn: %{phase: phase}}} = socket) do
+    if Timeline.settled_phase?(phase),
+      do: socket,
+      else: update_current_turn(socket, &fail_no_report/1)
+  end
+
+  defp settle_abandoned_turn(socket), do: socket
 
   # Persist the new turn (and, on the first turn, the session row) before the
   # run starts, so a browser closed mid-run still leaves the question behind.

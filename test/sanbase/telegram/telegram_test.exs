@@ -123,6 +123,21 @@ defmodule Sanbase.TelegramTest do
     assert has_telegram_connected == true
   end
 
+  test "unhandled telegram API response does not leak the bot token" do
+    Tesla.Mock.mock(fn %Tesla.Env{method: :post} = env ->
+      %Tesla.Env{env | status: 500, body: "Internal Server Error"}
+    end)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        assert {:error, error_msg} = Telegram.send_message_to_chat_id(123, "test message")
+        assert error_msg == "Telegram message not sent (chat_id=123). Error status 500."
+        refute error_msg =~ "api.telegram.org"
+      end)
+
+    refute log =~ "api.telegram.org"
+  end
+
   # Private functions
 
   defp get_telegram_deep_link(context) do

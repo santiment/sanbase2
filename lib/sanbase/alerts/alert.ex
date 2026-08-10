@@ -278,35 +278,32 @@ defimpl Sanbase.Alert, for: Any do
 
   defp maybe_send_preview_image_as_reply(_, _, _, _), do: :ok
 
-  # Convert known telegram API errors to reason maps. The scheduler
-  # deactivates alerts whose reason marks a permanently broken destination.
-  defp normalize_telegram_response({:error, error}, user_trigger) do
-    cond do
-      not is_binary(error) ->
-        # If the error is not binary, for example :closed, do not alerts_template
-        # the other functions
-        :ok
+  defp normalize_telegram_response({:error, error}, user_trigger) when is_binary(error) do
+    %{id: trigger_id, user: %User{id: user_id}} = user_trigger
 
-      String.contains?(error, "chat not found") ->
-        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
-        {:error, %{reason: :telegram_chat_not_found, user_id: user_id, trigger_id: trigger_id}}
+    reason =
+      cond do
+        String.contains?(error, "chat not found") -> :telegram_chat_not_found
+        String.contains?(error, "blocked the telegram bot") -> :telegram_bot_blocked
+        String.contains?(error, "status 404") -> :telegram_chat_not_found_404
+        true -> nil
+      end
 
-      String.contains?(error, "blocked the telegram bot") ->
-        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
-        {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
-
-      String.contains?(error, "error 404. Reason: Not Found") ->
-        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
-
-        {:error,
-         %{reason: :telegram_chat_not_found_404, user_id: user_id, trigger_id: trigger_id}}
-
-      true ->
+    case reason do
+      nil ->
         {:error, error}
+
+      reason ->
+        Logger.info(
+          "Failed to deliver telegram alert with user_trigger_id=#{trigger_id} " <>
+            "user_id=#{user_id}. Reason: #{reason}"
+        )
+
+        {:error, %{reason: reason, user_id: user_id, trigger_id: trigger_id}}
     end
   end
 
-  defp normalize_telegram_response(_response, _trigger), do: :ok
+  defp normalize_telegram_response({:ok, _response}, _user_trigger), do: :ok
 
   defp send_preview_image(response, channel, short_url_id) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->

@@ -26,7 +26,12 @@ defmodule Sanbase.ApiCallLimit do
   # 300,000 calls a month, so leaving it in would have made that number
   # unenforceable. Removing it was safe: it matched zero `api_call_limits` rows on
   # production, because no plan has ever been named exactly `ENTERPRISE` on SanAPI.
-  # Bespoke contracts keep their exemption through `"sanapi_custom"`.
+  #
+  # Note how little this list covers. The key is `"sanapi_" <> downcase(plan_name)`,
+  # so `"sanapi_custom"` matches only a plan named exactly `CUSTOM` - not the bespoke
+  # `CUSTOM_*` contracts, which never got their exemption from here. Those reach
+  # `plan_has_limits?/1`'s `:custom` branch, which reads `has_limits` out of the
+  # plan's own embedded restrictions.
   @plans_without_limits [
     "sanapi_custom"
   ]

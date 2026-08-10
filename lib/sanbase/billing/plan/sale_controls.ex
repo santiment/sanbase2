@@ -2,13 +2,35 @@ defmodule Sanbase.Billing.Plan.SaleControls do
   @moduledoc ~s"""
   Admin toggles for which SanAPI plans are for sale.
 
-  * **Bundle / new plans** (`BUNDLE*`, `INSTITUTIONAL*`, `ENTERPRISE*`) —
+  * **Bundle / new plans** (`BUNDLE*`, `INSTITUTIONAL*`, `ENTERPRISE`) —
     `is_private` false = active (self-serve), true = deactivated (staff can still
     preview via team role). One switch covers the whole offering; there is no state
     in which packages are for sale and Institutional or Enterprise are not.
   * **Business plans** (`BUSINESS_PRO`, `BUSINESS_MAX`) — `is_deprecated` false =
     active for sale, true = withdrawn from sale. Existing subscribers keep access
     either way.
+
+  ## Why `ENTERPRISE` is matched exactly and the other two by prefix
+
+  `BUNDLE` and `INSTITUTIONAL` own their namespaces - every row whose name has ever
+  started with either belongs to the new offering. `ENTERPRISE` does not.
+  `ENTERPRISE_BASIC` (105) and `ENTERPRISE_PLUS` (106) were sold in 2022, and they
+  are `is_private = false` on production because the migration that inserted them
+  never set the column and its default is `false`.
+
+  Matching those by prefix would make `bundle_plans_active?/0` answer `true` on the
+  strength of two rows nobody can buy. That turns the entire offering on - this
+  function is the only thing the sale gates in
+  `Sanbase.Billing.Plan.Bundle.Lifecycle` consult - and it also disables the
+  Deactivate button that would undo it, because the admin panel reads the same
+  answer. It would hold until
+  `20260810121347_retire_legacy_enterprise_plans.exs` renamed them, and it would
+  come back the moment that migration was rolled back underneath this code. An
+  exact match removes the dependency rather than relying on it.
+
+  Nothing is lost by it: `ENTERPRISE` is yearly-only, so there is exactly one row.
+  A second one would have to be named here by hand, which is the point - joining
+  the offering should be a decision, not a consequence of how a row was named.
 
   ## Why the Business plans do not touch `is_private`
 
@@ -68,8 +90,7 @@ defmodule Sanbase.Billing.Plan.SaleControls do
 
     from(p in Plan,
       where: p.product_id == ^product_api,
-      where:
-        like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or like(p.name, "ENTERPRISE%"),
+      where: like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or p.name == "ENTERPRISE",
       where: p.is_private == false,
       select: count(p.id)
     )
@@ -124,7 +145,7 @@ defmodule Sanbase.Billing.Plan.SaleControls do
       from(p in Plan,
         where: p.product_id == ^product_api,
         where:
-          like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or like(p.name, "ENTERPRISE%"),
+          like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or p.name == "ENTERPRISE",
         select: p.id
       )
       |> Repo.all()
@@ -160,8 +181,7 @@ defmodule Sanbase.Billing.Plan.SaleControls do
 
     from(p in Plan,
       where: p.product_id == ^product_api,
-      where:
-        like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or like(p.name, "ENTERPRISE%"),
+      where: like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or p.name == "ENTERPRISE",
       order_by: [asc: p.name, asc: p.interval]
     )
     |> Repo.all()

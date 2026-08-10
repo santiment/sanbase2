@@ -462,13 +462,95 @@ defmodule Sanbase.Billing.Plan.EnterpriseTest do
     end
 
     test "a retired legacy row does not report the offering active" do
-      # The reason the migration had to rename rather than just hide them. A row
-      # still called ENTERPRISE_BASIC with is_private = false would have pinned
-      # `bundle_plans_active?/0` to true, permanently disabling the admin
-      # off-switch for bundles and Institutional as well.
       retired_legacy_plan(is_private: false)
 
       refute Sanbase.Billing.Plan.SaleControls.bundle_plans_active?()
+    end
+
+    test "an un-renamed legacy row does not report the offering active either" do
+      # The state production is in before `20260810121347` runs, and the state it
+      # returns to if that migration is rolled back: `ENTERPRISE_BASIC` still named
+      # that, and public, because the 2022 migration never set `is_private` and the
+      # column defaults to false.
+      #
+      # Matching the new offering as `ENTERPRISE%` made this row alone answer the
+      # sale switch, putting bundles and Institutional on public sale as well - with
+      # the admin Deactivate button greyed out, because the panel reads the same
+      # answer. This is why the switch matches `"ENTERPRISE"` exactly.
+      legacy = legacy_enterprise_plan()
+
+      refute legacy.is_private
+      refute Sanbase.Billing.Plan.SaleControls.bundle_plans_active?()
+    end
+
+    test "an un-renamed legacy row is not touched by the sale switch" do
+      # The other half of the same rule. Were it matched, `activate_bundle_plans/0`
+      # would un-hide a row nobody can buy, and `deactivate_bundle_plans/0` would
+      # report it in the count an operator uses to judge the blast radius.
+      legacy = legacy_enterprise_plan()
+      enterprise = enterprise_plan()
+
+      assert {:ok, activated} = Sanbase.Billing.Plan.SaleControls.activate_bundle_plans()
+      assert enterprise.id in activated
+      refute legacy.id in activated
+
+      assert {:ok, deactivated} = Sanbase.Billing.Plan.SaleControls.deactivate_bundle_plans()
+      refute legacy.id in deactivated
+
+      # The row count the admin panel shows next to the switch comes from here.
+      refute legacy.id in Sanbase.Billing.Plan.SaleControls.status().bundle_plan_ids
+    end
+
+    test "an un-renamed legacy row is still kept out of the pricing page listing" do
+      # `product_with_plans/0` keeps the `ENTERPRISE%` prefix on purpose: there,
+      # matching the legacy rows is the point. It delists them on deploy rather than
+      # on migrate, which is what stops `subscribe(planId: 105)` being discoverable.
+      legacy = legacy_enterprise_plan()
+
+      assert {:ok, products} = Plan.product_with_plans()
+
+      refute legacy.name in Enum.flat_map(products, fn product ->
+               Enum.map(product.plans, & &1.name)
+             end)
+    end
+
+    test "an un-renamed legacy row does not get another subscription canceled" do
+      # The worst of the three. Treating an `ENTERPRISE_BASIC` holder as a
+      # new-offering customer would have had the scheduled replacement job cancel
+      # their genuine, paid SanAPI subscription - with proration, in Stripe,
+      # unprompted.
+      user = insert(:user)
+
+      insert(:subscription_pro,
+        user_id: user.id,
+        plan_id: legacy_enterprise_plan().id,
+        status: :active,
+        stripe_id: "sub_legacy_ent_" <> Ecto.UUID.generate()
+      )
+
+      other =
+        insert(:subscription_pro,
+          user_id: user.id,
+          plan_id: business_pro_plan().id,
+          status: :active,
+          stripe_id: "sub_other_" <> Ecto.UUID.generate()
+        )
+
+      with_mocks([
+        {StripeApi, [:passthrough],
+         [
+           cancel_subscription_with_proration: fn stripe_id ->
+             Sanbase.StripeApiTestResponse.cancel_subscription_with_proration_resp(
+               stripe_id: stripe_id
+             )
+           end
+         ]}
+      ]) do
+        assert %{canceled: 0, failed: 0} = Lifecycle.cancel_stale_replaced_subscriptions()
+        assert_not_called(StripeApi.cancel_subscription_with_proration(:_))
+      end
+
+      assert Repo.reload!(other).status == :active
     end
   end
 
@@ -559,6 +641,34 @@ defmodule Sanbase.Billing.Plan.EnterpriseTest do
           is_private: true,
           is_deprecated: false,
           stripe_id: "plan_#{String.downcase(name)}_#{interval}_" <> Ecto.UUID.generate()
+        )
+    end
+  end
+
+  # What `20260810121347_retire_legacy_enterprise_plans.exs` finds. The 2022
+  # migration inserted 105 and 106 without `is_private`, and the column defaults to
+  # false, so on production these rows are public - which is what made prefix
+  # matching on `ENTERPRISE%` a live problem rather than a hypothetical one.
+  defp legacy_enterprise_plan do
+    name = "ENTERPRISE_BASIC"
+    product_api_id = Sanbase.Billing.Product.product_api()
+
+    case Repo.get_by(Plan, name: name, product_id: product_api_id) do
+      %Plan{} = plan ->
+        plan
+
+      nil ->
+        Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9915")
+
+        insert(:plan_pro,
+          id: 9815,
+          name: name,
+          product_id: product_api_id,
+          interval: "month",
+          amount: 150_000,
+          is_private: false,
+          is_deprecated: false,
+          stripe_id: "plan_legacy_enterprise_" <> Ecto.UUID.generate()
         )
     end
   end

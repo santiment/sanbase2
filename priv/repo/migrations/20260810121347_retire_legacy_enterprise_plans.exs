@@ -23,15 +23,25 @@ defmodule Sanbase.Repo.Migrations.RetireLegacyEnterprisePlans do
   is worth doing to a billing record. Renaming retires the names while leaving the
   history intact and readable.
 
-  After this, `ENTERPRISE%` is safe to match by prefix. That matters, because the
-  sale switch (`Sanbase.Billing.Plan.SaleControls`), the `productsWithPlans`
-  exclusion and the legacy-replacement job all match the new offering that way. A
-  row still called `ENTERPRISE_BASIC` would have joined the new offering by
-  accident: `bundle_plans_active?/0` would have returned true whenever 105 was
-  `is_private = false`, permanently disabling the admin off-switch for bundles and
-  Institutional as well, and `stale_replaced_subscriptions/0` would have treated an
-  `ENTERPRISE_BASIC` holder as a new-offering customer and canceled their other
-  SanAPI subscription with proration.
+  ## What this migration is and is not responsible for
+
+  It makes the `ENTERPRISE` name unambiguous. It is deliberately not what keeps the
+  legacy rows out of the new offering, because a migration cannot be a safety
+  property: it has a moment before it runs and it has a `down`.
+
+  The two decisions that would have been dangerous to get wrong - putting the
+  offering on sale, and canceling a customer's other subscription - match
+  `"ENTERPRISE"` exactly rather than by prefix, so neither depends on this having
+  run. That matters most for the sale switch. 105 and 106 are `is_private = false`
+  on production (`20220620132733` never set the column and the default is `false`),
+  so a prefix there would have made `bundle_plans_active?/0` answer true on their
+  strength alone - turning the whole offering on, for bundles and Institutional too,
+  with the Deactivate button greyed out because the admin panel reads the same
+  answer. See `Sanbase.Billing.Plan.SaleControls`.
+
+  What still reads the prefix is `Plan.product_with_plans/0`, and there the legacy
+  rows matching is the desired outcome: it delists them, which is the other half of
+  retiring them and which happens on deploy rather than on migrate.
 
   The rows are also marked private and deprecated. Neither field is what delists
   them, though - `product_with_plans/0` applies `is_deprecated` only to the Business

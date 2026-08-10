@@ -3,7 +3,8 @@ defmodule SanbaseWeb.Admin.BundleOfferingLive do
   Activate / deactivate SanAPI self-serve plan groups.
 
   * Bundle / new plans — toggles `is_private` on `BUNDLE*`, `INSTITUTIONAL*` and
-    `ENTERPRISE*`. One switch for the whole offering.
+    `ENTERPRISE` (that one matched exactly, not by prefix - see
+    `Sanbase.Billing.Plan.SaleControls`). One switch for the whole offering.
   * Business plans — toggles `is_deprecated` on `BUSINESS_PRO` / `BUSINESS_MAX`.
     That is the only field the pricing page reads; `is_private` is deliberately
     left alone.
@@ -98,7 +99,7 @@ defmodule SanbaseWeb.Admin.BundleOfferingLive do
         <section id="bundle-plan-controls" class="space-y-3 border rounded p-4">
           <h2 class="text-lg font-semibold">Bundle / new plans</h2>
           <p class="text-sm text-gray-600">
-            `BUNDLE*`, `INSTITUTIONAL*` and `ENTERPRISE*` — toggles <code>is_private</code>.
+            `BUNDLE*`, `INSTITUTIONAL*` and `ENTERPRISE` — toggles <code>is_private</code>.
             One switch for the whole offering, so activating also puts Institutional
             ($799/mo · $9,500/yr) and Enterprise ($19,999/yr) on self-serve sale.
             Deactivated = hidden from public catalog; Santiment team can still preview and subscribe.

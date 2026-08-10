@@ -656,6 +656,14 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   # Stripe object, and without this condition a test bundle handed to a real
   # account would cancel that customer's genuine, paid SanAPI subscription an hour
   # later - with proration, in Stripe, unprompted.
+  #
+  # `ENTERPRISE` is matched exactly for the reason `SaleControls` matches it exactly
+  # (see that module's docs): the name has two legacy rows in it, 105 and 106, which
+  # this query has no business treating as the new offering. Being wrong here is
+  # worse than being wrong there - an `ENTERPRISE_BASIC` holder would have had their
+  # other SanAPI subscription canceled with proration, on a schedule, with no
+  # request from them. `BUNDLE` and `INSTITUTIONAL` stay prefixes because they own
+  # their namespaces.
   defp stale_replaced_subscriptions do
     product_api = Product.product_api()
 
@@ -667,7 +675,7 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
           s.status in ^@active_statuses and p.product_id == ^product_api and
             not is_nil(s.stripe_id) and
             (like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or
-               like(p.name, "ENTERPRISE%")),
+               p.name == "ENTERPRISE"),
         select: s.user_id
       )
 
@@ -732,6 +740,12 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   defp custom_plan?(%Subscription{plan: %Plan{name: "CUSTOM_" <> _}}), do: true
   defp custom_plan?(_), do: false
 
+  # A prefix here, unlike in `stale_replaced_subscriptions/0` and `SaleControls`, and
+  # the difference is deliberate. Answering `true` for a legacy `ENTERPRISE_BASIC`
+  # holder refuses them a second purchase; answering `false` sells them one and
+  # leaves two live SanAPI subscriptions billing. The over-broad answer is the safe
+  # one when the question is "does this customer already have something", so this is
+  # the one place the wider match is what we want.
   defp new_offering_plan?(%Subscription{plan: %Plan{name: "BUNDLE" <> _}}), do: true
   defp new_offering_plan?(%Subscription{plan: %Plan{name: "INSTITUTIONAL" <> _}}), do: true
   defp new_offering_plan?(%Subscription{plan: %Plan{name: "ENTERPRISE" <> _}}), do: true

@@ -19,6 +19,8 @@ defmodule Sanbase.DeepResearch.Config do
   defaults in `runtime.exs`.
   """
 
+  require Logger
+
   @default_base_url "http://127.0.0.1:2024"
   @default_assistant_id "deep_research_agent"
 
@@ -122,13 +124,25 @@ defmodule Sanbase.DeepResearch.Config do
   Santiment API key). Defined in `runtime.exs` under `:mcp_servers`, so more
   servers (local or remote) can be added without code changes; an empty or
   missing list simply means the UI offers no data sources.
+
+  Entries missing any of the required keys are dropped (with a warning) rather
+  than handed to the LiveView, where a malformed map would crash the mount.
   """
   @spec mcp_catalog() :: [map()]
   def mcp_catalog() do
     case get(:mcp_servers) do
-      servers when is_list(servers) -> servers
+      servers when is_list(servers) -> Enum.filter(servers, &valid_mcp_server?/1)
       _ -> []
     end
+  end
+
+  defp valid_mcp_server?(%{key: key, label: label, url: url, auth: auth})
+       when is_binary(key) and is_binary(label) and is_binary(url) and is_atom(auth),
+       do: true
+
+  defp valid_mcp_server?(server) do
+    Logger.warning("DeepResearch dropping malformed :mcp_servers entry: #{inspect(server)}")
+    false
   end
 
   defp maybe_put_mcp(configurable, []), do: configurable

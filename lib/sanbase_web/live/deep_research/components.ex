@@ -3,9 +3,9 @@ defmodule SanbaseWeb.DeepResearch.Components do
   Presentation for `SanbaseWeb.DeepResearchLive` — everything from a turn bubble
   down to a single MCP call row, plus the view helpers those components need.
 
-  Only `composer/1` and `turn_view/1` are public; they are the two seams the
-  LiveView's own `render/1` reaches for. Everything else is an implementation
-  detail of a turn's rendering.
+  Only `composer/1`, `turn_view/1` and `sidebar/1` are public; they are the
+  seams the LiveViews' own `render/1` reach for. Everything else is an
+  implementation detail of a turn's rendering.
 
   Nothing here touches the socket or issues events beyond `phx-click`/`phx-submit`
   names, so a component can be rendered in isolation from a plain turn map.
@@ -55,6 +55,114 @@ defmodule SanbaseWeb.DeepResearch.Components do
         </div>
       </div>
     </form>
+    """
+  end
+
+  attr :sessions, :list, required: true, doc: "the user's sessions, most recent first"
+  attr :current_session_id, :string, default: nil
+  attr :running, :boolean, required: true, doc: "navigation is disabled while a run streams"
+
+  @doc "Past-sessions sidebar: open / share / delete a session, start a new one."
+  def sidebar(assigns) do
+    ~H"""
+    <aside class="hidden w-72 shrink-0 flex-col lg:flex">
+      <button
+        type="button"
+        phx-click="new_session"
+        disabled={@running}
+        class="mb-3 inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-base-300 bg-base-100 px-3 py-2 text-sm font-medium text-base-content/80 transition hover:border-base-content/20 hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <.icon name="hero-plus" class="size-4" /> New session
+      </button>
+
+      <p :if={@sessions == []} class="px-1 text-xs text-base-content/40">
+        Past research sessions will appear here.
+      </p>
+
+      <div class="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
+        <%!-- The whole row opens the session (a title-only click target is too
+              easy to miss); the action icons carry their own phx-click, and
+              LiveView dispatches to the closest binding only, so they do not
+              also open it. select-none: a fast double click must not start a
+              text selection instead of navigating. --%>
+        <div
+          :for={session <- @sessions}
+          phx-click={!@running && "open_session"}
+          phx-value-id={session.id}
+          title={session.title}
+          class={[
+            "group select-none rounded-xl border px-3 py-2 transition",
+            if(@running, do: "cursor-not-allowed opacity-60", else: "cursor-pointer"),
+            if(session.id == @current_session_id,
+              do: "border-primary/40 bg-primary/5",
+              else: "border-transparent hover:border-base-300 hover:bg-base-200/60"
+            )
+          ]}
+        >
+          <p class="truncate text-sm text-base-content/80">{session.title}</p>
+          <div class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-base-content/40">
+            <span class="whitespace-nowrap">
+              {Calendar.strftime(session.updated_at, "%b %d, %H:%M")}
+            </span>
+            <span class="whitespace-nowrap rounded-full bg-base-200 px-1.5 py-0.5">
+              {session.model_tier}
+            </span>
+            <span
+              :if={session.is_public}
+              class="whitespace-nowrap rounded-full bg-success/10 px-1.5 py-0.5 text-success"
+            >
+              public
+            </span>
+            <span class="ml-auto flex items-center opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+              <button
+                type="button"
+                phx-click="toggle_public"
+                phx-value-id={session.id}
+                title={if session.is_public, do: "Make private", else: "Share (logged-in users)"}
+                class={[
+                  "cursor-pointer rounded p-1 transition hover:bg-base-200",
+                  if(session.is_public, do: "text-success", else: "hover:text-base-content")
+                ]}
+              >
+                <.icon
+                  name={if session.is_public, do: "hero-lock-open", else: "hero-lock-closed"}
+                  class="size-3.5"
+                />
+              </button>
+              <%!-- Copying is handled client-side by the Copy hook; the empty
+                    JS command claims the click so it does not bubble into the
+                    row's open_session. --%>
+              <button
+                :if={session.is_public}
+                type="button"
+                id={"copy-share-link-#{session.id}"}
+                phx-hook="Copy"
+                phx-click={%JS{}}
+                data-copy={url(~p"/deep_research/shared/#{session.id}")}
+                title="Copy share link"
+                class="cursor-pointer rounded p-1 transition hover:bg-base-200 hover:text-base-content"
+              >
+                <.icon name="hero-link" class="size-3.5 [.copied_&]:hidden" />
+                <.icon
+                  name="hero-check"
+                  class="hidden size-3.5 text-success [.copied_&]:inline-block"
+                />
+              </button>
+              <button
+                type="button"
+                phx-click="delete_session"
+                phx-value-id={session.id}
+                data-confirm="Delete this research session? This cannot be undone."
+                title="Delete session"
+                class="cursor-pointer rounded p-1 transition hover:bg-base-200 hover:text-error"
+              >
+                <.icon name="hero-trash" class="size-3.5" />
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </aside>
     """
   end
 

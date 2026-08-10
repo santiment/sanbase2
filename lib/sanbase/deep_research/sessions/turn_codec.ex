@@ -102,6 +102,7 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
   defp decode_item(%{"kind" => "subagent_findings"} = m) do
     %{
       kind: :subagent_findings,
+      id: m["id"],
       unit: m["unit"],
       summary: m["summary"],
       findings: m["findings"] || [],

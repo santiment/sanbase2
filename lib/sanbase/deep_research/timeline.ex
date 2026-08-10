@@ -206,6 +206,10 @@ defmodule Sanbase.DeepResearch.Timeline do
       [
         %{
           kind: :subagent_findings,
+          # The event carries no id; stamp the append position (immutable —
+          # items are only appended or replaced in place) so the renderer can
+          # key DOM state on the item instead of its drifting screen position.
+          id: "sf#{length(prev)}",
           unit: a[:unit],
           summary: a[:summary],
           findings: a[:findings] || [],

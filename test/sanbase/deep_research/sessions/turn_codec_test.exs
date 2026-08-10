@@ -63,6 +63,7 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
         },
         %{
           kind: :subagent_findings,
+          id: "sf5",
           unit: "eth-onchain",
           summary: "Activity up",
           findings: [

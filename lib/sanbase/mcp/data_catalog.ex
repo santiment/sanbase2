@@ -1,6 +1,8 @@
 defmodule Sanbase.MCP.DataCatalog do
   @moduledoc "Centralized catalog of available metrics and slugs for MCP tools"
 
+  require Logger
+
   @available_metrics Sanbase.MCP.DataCatalog.AvailableMetrics.list()
 
   @spec get_all_projects() :: list(map())
@@ -60,7 +62,11 @@ defmodule Sanbase.MCP.DataCatalog do
             |> Map.put(:default_aggregation, metadata.default_aggregation)
           ]
 
-        _error ->
+        error ->
+          Logger.warning(
+            "MCP data catalog dropping metric #{m.name}: metadata lookup failed: #{inspect(error)}"
+          )
+
           []
       end
     end)

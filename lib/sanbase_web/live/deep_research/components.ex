@@ -255,8 +255,11 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
       <.report_card :if={@turn.report} id={@turn.id} report={@turn.report} />
 
+      <%!-- A running *phase* after the stream closed (@running false) is the
+      no-report poll window — the turn is still being resolved, keep the
+      spinner up rather than freezing the timeline footerless. --%>
       <div
-        :if={@running}
+        :if={@running or Timeline.running_phase?(@turn.phase)}
         class="flex items-center gap-2 text-xs font-medium text-base-content/60"
       >
         <span class="loading loading-spinner loading-xs text-primary"></span>
@@ -320,7 +323,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
     <div class="space-y-3">
       <div
         :for={{chart, ci} <- Enum.with_index(@items)}
-        id={"dra-chart-#{@turn_id}-#{@index}-#{ci}"}
+        id={stable_dom_id("dra-chart", @turn_id, chart, "#{@index}-#{ci}")}
         phx-hook="LightweightChart"
         phx-update="ignore"
         data-chart={
@@ -350,7 +353,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
     <div class="space-y-2">
       <details
         :for={{f, fi} <- Enum.with_index(@items)}
-        id={"dra-findings-#{@turn_id}-#{@index}-#{fi}"}
+        id={stable_dom_id("dra-findings", @turn_id, f, "#{@index}-#{fi}")}
         phx-hook="KeepDetailsOpen"
         class="group rounded-lg border border-base-300 bg-indigo-500/5"
       >
@@ -417,12 +420,30 @@ defmodule SanbaseWeb.DeepResearch.Components do
       </summary>
       <div class="space-y-3 border-t border-base-300 px-3.5 py-3">
         <%= for {item, i} <- Enum.with_index(Timeline.coalesce(@items)) do %>
-          <.tool_item item={item} index={i} dom_id={"dra-tools-#{@turn_id}-#{@index}-#{i}"} />
+          <.tool_item item={item} index={i} dom_id={tool_dom_id(@turn_id, item, "#{@index}-#{i}")} />
         <% end %>
       </div>
     </details>
     """
   end
+
+  # Hooked (KeepDetailsOpen) and phx-update="ignore" (chart) elements key
+  # client-side state on their DOM id, so the id must follow the ITEM, not its
+  # screen position — positional indices shift when an earlier block appears
+  # mid-run (e.g. a narration item splitting a tools run), silently rebinding
+  # that state to a different element. Position is only the fallback for
+  # id-less items (persisted rows written before ids were stamped).
+  defp stable_dom_id(prefix, turn_id, %{id: id}, _fallback) when not is_nil(id),
+    do: "#{prefix}-#{turn_id}-#{String.replace(to_string(id), ~r/\s+/, "-")}"
+
+  defp stable_dom_id(prefix, turn_id, _item, fallback), do: "#{prefix}-#{turn_id}-#{fallback}"
+
+  # An mcp group is identified by its first call: a group only ever grows at
+  # its tail, so the head call is its stable identity.
+  defp tool_dom_id(turn_id, {:mcp_group, [first | _]}, fallback),
+    do: stable_dom_id("dra-tools", turn_id, first, fallback)
+
+  defp tool_dom_id(turn_id, _item, fallback), do: "dra-tools-#{turn_id}-#{fallback}"
 
   attr :item, :any, required: true
   attr :index, :integer, required: true

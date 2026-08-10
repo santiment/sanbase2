@@ -39,9 +39,10 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
 
   # The Sources block ends at the next Markdown heading (if any) — anything after
   # it is a separate section and must be left untouched, even if it has citation
-  # markers of its own.
+  # markers of its own. `(^|\n)` (not just `\n`): a heading can sit directly
+  # after the Sources heading (an empty Sources section), at position 0 of tail.
   defp split_at_next_heading(tail) do
-    case Regex.run(~r/\n\#{1,6}\s/, tail, return: :index) do
+    case Regex.run(~r/(^|\n)\#{1,6}\s/, tail, return: :index) do
       [{h_start, _} | _] ->
         {binary_part(tail, 0, h_start), binary_part(tail, h_start, byte_size(tail) - h_start)}
 

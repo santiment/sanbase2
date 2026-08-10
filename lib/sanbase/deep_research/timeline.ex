@@ -46,8 +46,20 @@ defmodule Sanbase.DeepResearch.Timeline do
     %Turn{id: id, question: question, started_at: started_at_ms}
   end
 
+  @doc "Every phase a turn can be in, running and terminal."
+  @spec all_phases() :: [phase()]
+  def all_phases(), do: @phases ++ @terminal_phases
+
   @doc "Is `phase` a terminal (sticky) phase?"
   def terminal_phase?(phase), do: phase in @terminal_phases
+
+  @doc """
+  A settled turn needs no further work: any terminal phase, plus
+  `:awaiting_user` — a clarification request is a finished exchange (the reply
+  arrives as a new turn), not an interrupted run.
+  """
+  @spec settled_phase?(phase()) :: boolean()
+  def settled_phase?(phase), do: terminal_phase?(phase) or phase == :awaiting_user
 
   @doc "Is `phase` an in-progress (running) phase?"
   def running_phase?(phase), do: phase in @running_phases

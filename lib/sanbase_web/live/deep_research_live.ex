@@ -27,9 +27,11 @@ defmodule SanbaseWeb.DeepResearchLive do
   """
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.DeepResearch.Components, only: [composer: 1, turn_view: 1]
+  require Logger
 
-  alias Sanbase.DeepResearch.{Client, Config, EventParser, Timeline}
+  import SanbaseWeb.DeepResearch.Components, only: [composer: 1, turn_view: 1, sidebar: 1]
+
+  alias Sanbase.DeepResearch.{Client, Config, EventParser, Sessions, Timeline}
 
   @no_report_error "The research run finished without producing a report — the agent stopped " <>
                      "before delivering one (it may have hit a tool/iteration budget or been " <>
@@ -39,26 +41,90 @@ defmodule SanbaseWeb.DeepResearchLive do
   def mount(_params, _session, socket) do
     catalog = Config.mcp_catalog()
 
-    {:ok,
-     assign(socket,
-       turns: [],
-       current_turn: nil,
-       thread_id: nil,
-       run_id: nil,
-       running: false,
-       query: "",
-       mcp_warning: nil,
-       mcp_catalog: catalog,
-       # All configured MCP servers are enabled (connected) by default.
-       mcp_enabled: MapSet.new(Enum.map(catalog, & &1.key)),
-       # Model price tier (the only model knob the agent exposes per run). The
-       # dropdown is feature-flagged; when off, every run uses the deploy default.
-       tiering_dropdown_enabled: Config.tiering_dropdown_enabled?(),
-       model_tiers: Config.model_tiers(),
-       model_tier: Config.default_model_tier(),
-       next_id: 1,
-       now_ms: now_ms()
-     )}
+    socket =
+      socket
+      |> assign(
+        mcp_catalog: catalog,
+        # All configured MCP servers are enabled (connected) by default.
+        mcp_enabled: MapSet.new(Enum.map(catalog, & &1.key)),
+        # Model price tier (the only model knob the agent exposes per run). The
+        # dropdown is feature-flagged; when off, every run uses the deploy default.
+        tiering_dropdown_enabled: Config.tiering_dropdown_enabled?(),
+        model_tiers: Config.model_tiers(),
+        model_tier: Config.default_model_tier()
+      )
+      |> reset_conversation()
+      |> refresh_sessions()
+
+    {:ok, socket}
+  end
+
+  # Fires on mount and on every push_patch. Navigating away from a streaming
+  # run cancels it first — a reused LiveView process must not keep an orphaned
+  # run streaming (and billing) into state the user just left.
+  @impl true
+  def handle_params(params, _uri, socket) do
+    if params["id"] && params["id"] == socket.assigns.session_id do
+      # Our own patch announcing the session the process already holds — the
+      # permalink issued on first submit, or a sidebar click on the open
+      # session. The state (possibly a streaming run) is current; reloading
+      # would destroy it.
+      {:noreply, socket}
+    else
+      socket = if socket.assigns.running, do: cancel_current_run(socket), else: socket
+
+      case socket.assigns.live_action do
+        :show -> open_session(socket, params["id"])
+        _ -> {:noreply, reset_conversation(socket)}
+      end
+    end
+  end
+
+  # Reopen a past session: the owner can keep chatting with it. Restoring the
+  # session's thread_id resumes the same LangGraph thread, so the agent keeps
+  # its context; new turns append after the last persisted position.
+  defp open_session(socket, session_id) do
+    user = socket.assigns[:current_user]
+
+    case user && Sessions.get_session_for_user(session_id, user.id) do
+      {:ok, %{session: session, turns: turns}} ->
+        {:noreply,
+         socket
+         |> reset_conversation()
+         |> assign(
+           turns: turns,
+           session_id: session.id,
+           thread_id: session.thread_id,
+           next_id: next_position(turns)
+         )}
+
+      # :forbidden collapses into "not found" so a session id never leaks
+      # whether it exists. push_navigate (not patch): this branch can run
+      # during mount, where patching is not allowed.
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Research session not found.")
+         |> push_navigate(to: ~p"/admin/deep_research")}
+    end
+  end
+
+  defp next_position([]), do: 1
+  defp next_position(turns), do: List.last(turns).id + 1
+
+  defp reset_conversation(socket) do
+    assign(socket,
+      turns: [],
+      current_turn: nil,
+      thread_id: nil,
+      run_id: nil,
+      running: false,
+      query: "",
+      mcp_warning: nil,
+      next_id: 1,
+      session_id: nil,
+      now_ms: now_ms()
+    )
   end
 
   # -- events ------------------------------------------------------------------
@@ -109,17 +175,52 @@ defmodule SanbaseWeb.DeepResearchLive do
     do: {:noreply, socket}
 
   def handle_event("cancel", _params, socket) do
+    {:noreply, cancel_current_run(socket)}
+  end
+
+  # -- sidebar events ------------------------------------------------------------
+
+  def handle_event("new_session", _params, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/deep_research")}
+  end
+
+  def handle_event("open_session", %{"id" => id}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/deep_research/#{id}")}
+  end
+
+  def handle_event("toggle_public", %{"id" => id}, socket) do
+    with %{} = user <- socket.assigns[:current_user] do
+      Sessions.toggle_public(id, user.id)
+    end
+
+    {:noreply, refresh_sessions(socket)}
+  end
+
+  def handle_event("delete_session", %{"id" => id}, socket) do
+    with %{} = user <- socket.assigns[:current_user] do
+      Sessions.delete_session(id, user.id)
+    end
+
+    socket = refresh_sessions(socket)
+
+    # Deleting the session that is open (or streaming into) leaves nothing to
+    # show — navigate to a fresh conversation.
+    if socket.assigns.session_id == id do
+      {:noreply, push_patch(socket, to: ~p"/admin/deep_research")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  defp cancel_current_run(socket) do
     cancel_run_async(socket.assigns.thread_id, socket.assigns.run_id)
 
-    socket =
-      socket
-      |> cancel_async(:research)
-      |> update_current_turn(fn turn ->
-        %{turn | phase: :cancelled, finished_at: turn.finished_at || now_ms()}
-      end)
-      |> assign(running: false)
-
-    {:noreply, socket}
+    socket
+    |> cancel_async(:research)
+    |> update_current_turn(fn turn ->
+      %{turn | phase: :cancelled, finished_at: turn.finished_at || now_ms()}
+    end)
+    |> assign(running: false)
   end
 
   defp start_research(socket, text) do
@@ -138,6 +239,7 @@ defmodule SanbaseWeb.DeepResearchLive do
     # AskLive) so the LiveView keeps serving heartbeats; incremental events
     # arrive as {:dra_event, ref, _} messages, the terminal status via handle_async/3.
     socket
+    |> persist_new_turn(turn)
     |> assign(
       # The turn that just finished (if any) is now history — moving it out of
       # :current_turn is what stops it re-rendering for the rest of the session.
@@ -159,6 +261,71 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   defp archive_current_turn(%{assigns: %{current_turn: nil, turns: turns}}), do: turns
   defp archive_current_turn(%{assigns: %{current_turn: turn, turns: turns}}), do: turns ++ [turn]
+
+  # Persist the new turn (and, on the first turn, the session row) before the
+  # run starts, so a browser closed mid-run still leaves the question behind.
+  # A persistence failure must never block research — log and carry on.
+  defp persist_new_turn(socket, turn) do
+    case {socket.assigns[:current_user], socket.assigns.session_id} do
+      {nil, _} ->
+        socket
+
+      {_user, session_id} when is_binary(session_id) ->
+        with {:error, error} <- Sessions.create_turn(session_id, turn, socket.assigns.model_tier) do
+          log_persist_error("create_turn", error)
+        end
+
+        socket
+
+      {user, nil} ->
+        case Sessions.start_session(user.id, socket.assigns.model_tier, turn) do
+          {:ok, %{session: session}} ->
+            # The URL becomes the session's permalink the moment it exists, so
+            # it can be copied mid-run. handle_params recognizes the id it
+            # already holds and leaves the streaming state alone.
+            socket
+            |> assign(:session_id, session.id)
+            |> refresh_sessions()
+            |> push_patch(to: ~p"/admin/deep_research/#{session.id}")
+
+          {:error, error} ->
+            log_persist_error("start_session", error)
+            socket
+        end
+    end
+  end
+
+  # Write the turn's row once it settles (terminal phase or :awaiting_user); a
+  # follow-up settled change (e.g. finalize stamping finished_at after a
+  # clarification) re-writes, an unchanged turn never does.
+  defp maybe_persist_settled(socket, prev, next) do
+    if socket.assigns.session_id && Timeline.settled_phase?(next.phase) && next != prev do
+      with {:error, error} <- Sessions.update_turn(socket.assigns.session_id, next.id, next) do
+        log_persist_error("update_turn", error)
+      end
+
+      Sessions.touch_session(socket.assigns.session_id)
+      # touch_session just changed the sidebar ordering.
+      refresh_sessions(socket)
+    else
+      socket
+    end
+  end
+
+  defp refresh_sessions(socket) do
+    user = socket.assigns[:current_user]
+
+    # Skip the query on the static (disconnected) render — the connected mount
+    # runs it again anyway.
+    sessions =
+      if user && connected?(socket), do: Sessions.list_user_sessions(user.id), else: []
+
+    assign(socket, :sessions, sessions)
+  end
+
+  defp log_persist_error(operation, error) do
+    Logger.warning("Deep research session persistence failed in #{operation}: #{inspect(error)}")
+  end
 
   # The enabled catalog entries — pure, runs in the LiveView process (no DB/IO).
   defp enabled_mcp_servers(socket) do
@@ -261,9 +428,14 @@ defmodule SanbaseWeb.DeepResearchLive do
   @impl true
   def handle_info({:dra_thread, thread_id}, socket) do
     socket =
-      if is_nil(socket.assigns.thread_id),
-        do: assign(socket, :thread_id, thread_id),
-        else: socket
+      if is_nil(socket.assigns.thread_id) do
+        if socket.assigns.session_id,
+          do: Sessions.set_thread_id(socket.assigns.session_id, thread_id)
+
+        assign(socket, :thread_id, thread_id)
+      else
+        socket
+      end
 
     {:noreply, socket}
   end
@@ -434,8 +606,17 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   defp update_current_turn(%{assigns: %{current_turn: nil}} = socket, _fun), do: socket
 
-  defp update_current_turn(socket, fun),
-    do: assign(socket, :current_turn, fun.(socket.assigns.current_turn))
+  # The single choke point every turn mutation flows through (stream events,
+  # poll, cancel, finalize, fail) — which makes it the one place persistence
+  # has to watch for a turn settling.
+  defp update_current_turn(socket, fun) do
+    prev = socket.assigns.current_turn
+    next = fun.(prev)
+
+    socket
+    |> assign(:current_turn, next)
+    |> maybe_persist_settled(prev, next)
+  end
 
   defp poll_state_async(thread_id, lv, ref) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
@@ -480,118 +661,121 @@ defmodule SanbaseWeb.DeepResearchLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto flex h-[calc(100vh-10rem)] w-full max-w-5xl flex-col px-4">
-      <div
-        :if={@turns == [] and is_nil(@current_turn)}
-        class="flex min-h-0 flex-1 flex-col items-center justify-center text-center"
-      >
-        <div class="mb-6 flex size-12 items-center justify-center rounded-2xl bg-base-200 text-base-content/70">
-          <.icon name="hero-beaker" class="size-6" />
-        </div>
-        <h1 class="text-3xl font-semibold tracking-tight sm:text-[2rem]">
-          What do you want to research?
-        </h1>
-        <p class="mt-3 max-w-lg text-base-content/55">
-          A crypto research agent. I'll plan, search the web and Santiment data, and write a cited,
-          sourced report — asking a clarifying question or two first if the request is broad.
-        </p>
-        <div class="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            :for={{label, prompt} <- example_prompts()}
-            type="button"
-            phx-click="use_example"
-            phx-value-q={prompt}
-            class="rounded-full border border-base-300 bg-base-100 px-3.5 py-1.5 text-sm text-base-content/70 transition hover:border-base-content/20 hover:bg-base-200 hover:text-base-content"
-          >
-            {label}
-          </button>
-        </div>
-      </div>
-
-      <div
-        :if={@turns != [] or @current_turn}
-        class="min-h-0 flex-1 space-y-8 overflow-y-auto py-4"
-      >
-        <%!-- Finished turns carry their own finished_at, so they take no now_ms and
-              stay untouched while the current turn streams. --%>
-        <.turn_view :for={turn <- @turns} turn={turn} running={false} />
-        <.turn_view :if={@current_turn} turn={@current_turn} running={@running} now_ms={@now_ms} />
-      </div>
-
-      <div class="shrink-0 pt-2">
+    <div class="mx-auto flex h-[calc(100vh-10rem)] w-full max-w-7xl gap-6 px-4">
+      <.sidebar sessions={@sessions} current_session_id={@session_id} running={@running} />
+      <div class="flex min-h-0 min-w-0 flex-1 flex-col">
         <div
-          :if={@tiering_dropdown_enabled or @mcp_catalog != []}
-          class="mb-2 flex flex-wrap items-center gap-2 px-1"
+          :if={@turns == [] and is_nil(@current_turn)}
+          class="flex min-h-0 flex-1 flex-col items-center justify-center text-center"
         >
-          <span
-            :if={@tiering_dropdown_enabled}
-            class="text-[11px] font-medium uppercase tracking-wide text-base-content/40"
-          >
-            Model tier
-          </span>
-          <form :if={@tiering_dropdown_enabled} phx-change="select_tier">
-            <select
-              name="model_tier"
-              title={tier_hint(@model_tiers, @model_tier)}
-              class="rounded-full border border-base-300 bg-base-100 px-2.5 py-1 text-xs text-base-content/70 transition hover:border-base-content/20 focus:outline-none"
+          <div class="mb-6 flex size-12 items-center justify-center rounded-2xl bg-base-200 text-base-content/70">
+            <.icon name="hero-beaker" class="size-6" />
+          </div>
+          <h1 class="text-3xl font-semibold tracking-tight sm:text-[2rem]">
+            What do you want to research?
+          </h1>
+          <p class="mt-3 max-w-lg text-base-content/55">
+            A crypto research agent. I'll plan, search the web and Santiment data, and write a cited,
+            sourced report — asking a clarifying question or two first if the request is broad.
+          </p>
+          <div class="mt-6 flex flex-wrap justify-center gap-2">
+            <button
+              :for={{label, prompt} <- example_prompts()}
+              type="button"
+              phx-click="use_example"
+              phx-value-q={prompt}
+              class="rounded-full border border-base-300 bg-base-100 px-3.5 py-1.5 text-sm text-base-content/70 transition hover:border-base-content/20 hover:bg-base-200 hover:text-base-content"
             >
-              <option
-                :for={{value, label, hint} <- @model_tiers}
-                value={value}
-                selected={value == @model_tier}
-              >
-                {label} — {hint}
-              </option>
-            </select>
-          </form>
-          <span
-            :if={@mcp_catalog != []}
-            class={[
-              "text-[11px] font-medium uppercase tracking-wide text-base-content/40",
-              @tiering_dropdown_enabled && "ml-2"
-            ]}
-          >
-            Data sources
-          </span>
-          <button
-            :for={server <- @mcp_catalog}
-            type="button"
-            phx-click="toggle_mcp"
-            phx-value-key={server.key}
-            aria-pressed={MapSet.member?(@mcp_enabled, server.key)}
-            title={"Connect the agent to #{server.label} MCP tools"}
-            class={[
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition",
-              if(MapSet.member?(@mcp_enabled, server.key),
-                do: "border-primary/40 bg-primary/10 text-primary",
-                else:
-                  "border-base-300 text-base-content/50 hover:border-base-content/20 hover:text-base-content"
-              )
-            ]}
-          >
-            <.icon name="hero-circle-stack" class="size-3.5" />
-            {server.label}
-            <span
-              :if={MapSet.member?(@mcp_enabled, server.key)}
-              class="size-1.5 rounded-full bg-success"
-            ></span>
-          </button>
+              {label}
+            </button>
+          </div>
         </div>
-        <p :if={@mcp_warning} class="mb-2 px-1 text-xs text-warning" role="status">
-          {@mcp_warning}
-        </p>
-        <.composer
-          query={@query}
-          running={@running}
-          placeholder={
-            if @turns == [] and is_nil(@current_turn),
-              do: "Ask anything about crypto markets, assets, on-chain & social metrics…",
-              else: "Reply, or ask a follow-up…"
-          }
-        />
-        <p class="mt-2 text-center text-[11px] text-base-content/40">
-          Deep research runs can take a few minutes · responses include cited sources
-        </p>
+
+        <div
+          :if={@turns != [] or @current_turn}
+          class="min-h-0 flex-1 space-y-8 overflow-y-auto py-4"
+        >
+          <%!-- Finished turns carry their own finished_at, so they take no now_ms and
+                stay untouched while the current turn streams. --%>
+          <.turn_view :for={turn <- @turns} turn={turn} running={false} />
+          <.turn_view :if={@current_turn} turn={@current_turn} running={@running} now_ms={@now_ms} />
+        </div>
+
+        <div class="shrink-0 pt-2">
+          <div
+            :if={@tiering_dropdown_enabled or @mcp_catalog != []}
+            class="mb-2 flex flex-wrap items-center gap-2 px-1"
+          >
+            <span
+              :if={@tiering_dropdown_enabled}
+              class="text-[11px] font-medium uppercase tracking-wide text-base-content/40"
+            >
+              Model tier
+            </span>
+            <form :if={@tiering_dropdown_enabled} phx-change="select_tier">
+              <select
+                name="model_tier"
+                title={tier_hint(@model_tiers, @model_tier)}
+                class="rounded-full border border-base-300 bg-base-100 px-2.5 py-1 text-xs text-base-content/70 transition hover:border-base-content/20 focus:outline-none"
+              >
+                <option
+                  :for={{value, label, hint} <- @model_tiers}
+                  value={value}
+                  selected={value == @model_tier}
+                >
+                  {label} — {hint}
+                </option>
+              </select>
+            </form>
+            <span
+              :if={@mcp_catalog != []}
+              class={[
+                "text-[11px] font-medium uppercase tracking-wide text-base-content/40",
+                @tiering_dropdown_enabled && "ml-2"
+              ]}
+            >
+              Data sources
+            </span>
+            <button
+              :for={server <- @mcp_catalog}
+              type="button"
+              phx-click="toggle_mcp"
+              phx-value-key={server.key}
+              aria-pressed={MapSet.member?(@mcp_enabled, server.key)}
+              title={"Connect the agent to #{server.label} MCP tools"}
+              class={[
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition",
+                if(MapSet.member?(@mcp_enabled, server.key),
+                  do: "border-primary/40 bg-primary/10 text-primary",
+                  else:
+                    "border-base-300 text-base-content/50 hover:border-base-content/20 hover:text-base-content"
+                )
+              ]}
+            >
+              <.icon name="hero-circle-stack" class="size-3.5" />
+              {server.label}
+              <span
+                :if={MapSet.member?(@mcp_enabled, server.key)}
+                class="size-1.5 rounded-full bg-success"
+              ></span>
+            </button>
+          </div>
+          <p :if={@mcp_warning} class="mb-2 px-1 text-xs text-warning" role="status">
+            {@mcp_warning}
+          </p>
+          <.composer
+            query={@query}
+            running={@running}
+            placeholder={
+              if @turns == [] and is_nil(@current_turn),
+                do: "Ask anything about crypto markets, assets, on-chain & social metrics…",
+                else: "Reply, or ask a follow-up…"
+            }
+          />
+          <p class="mt-2 text-center text-[11px] text-base-content/40">
+            Deep research runs can take a few minutes · responses include cited sources
+          </p>
+        </div>
       </div>
     </div>
     """

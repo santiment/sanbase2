@@ -127,6 +127,26 @@ defmodule SanbaseWeb.Router do
     live("/suggest_github_organizations", SuggestGithubOrganizationsLive)
   end
 
+  # Shared deep research sessions: any logged-in user on the admin pod may view
+  # them — deliberately no admin-panel role plug (a sibling of /admin, not a
+  # child, because that scope enforces the role at the conn level).
+  scope "/deep_research", SanbaseWeb do
+    pipe_through([
+      :admin_pod_only,
+      :browser,
+      :assign_current_user_or_redirect,
+      :assign_current_user_roles
+    ])
+
+    live_session :deep_research_shared,
+      on_mount: [
+        {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
+        {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles}
+      ] do
+      live("/shared/:id", DeepResearchShareLive, :show)
+    end
+  end
+
   scope "/admin", SanbaseWeb do
     pipe_through([
       :admin_pod_only,
@@ -213,6 +233,7 @@ defmodule SanbaseWeb.Router do
     scope "/deep_research" do
       live_session :deep_research_authenticated_user, on_mount: @admin_panel_on_mount do
         live("/", DeepResearchLive, :index)
+        live("/:id", DeepResearchLive, :show)
       end
     end
 

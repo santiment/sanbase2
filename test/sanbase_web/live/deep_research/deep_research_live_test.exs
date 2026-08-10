@@ -15,6 +15,11 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
+  import Sanbase.DeepResearch.Fixtures, only: [completed_session: 1]
+
+  alias Sanbase.DeepResearch.Sessions
+  alias Sanbase.DeepResearch.Sessions.SessionTurn
+  alias Sanbase.Repo
 
   @path "/admin/deep_research"
 
@@ -41,7 +46,8 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       end
     end)
 
-    {:ok, conn: admin_conn()}
+    {conn, user} = admin_conn()
+    {:ok, conn: conn, user: user}
   end
 
   defp admin_conn() do
@@ -50,7 +56,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     Sanbase.Accounts.UserRole.create(user.id, role.id)
     {:ok, jwt_tokens} = SanbaseWeb.Guardian.get_jwt_tokens(user)
 
-    Plug.Test.init_test_session(Phoenix.ConnTest.build_conn(), jwt_tokens)
+    {Plug.Test.init_test_session(Phoenix.ConnTest.build_conn(), jwt_tokens), user}
   end
 
   # The first turn of a fresh LiveView always gets id 1 — the ref echoed back in
@@ -147,5 +153,188 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     html = render_click(view, "cancel", %{})
 
     assert html =~ "What do you want to research?"
+  end
+
+  describe "session persistence" do
+    test "submit creates a session with a pending turn row", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, @path)
+
+      submit(view, "What is driving ETH?")
+
+      assert [session] = Sessions.list_user_sessions(user.id)
+      assert session.title == "What is driving ETH?"
+      assert session.is_public == false
+
+      assert [row] = Repo.all(SessionTurn)
+      assert row.session_id == session.id
+      assert row.position == 1
+      assert row.question == "What is driving ETH?"
+      assert row.phase == :planning
+    end
+
+    test "the first question turns the URL into the session permalink mid-stream", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, view, _html} = live(conn, @path)
+
+      submit(view, "What is driving ETH?")
+
+      assert [session] = Sessions.list_user_sessions(user.id)
+      assert_patch(view, "#{@path}/#{session.id}")
+
+      # The patch must NOT reset the conversation: the live run keeps
+      # streaming into the same process.
+      send(view.pid, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      html = render(view)
+      assert html =~ "Scanning"
+      assert html =~ "dr-composer"
+    end
+
+    test "a poll-completed turn is persisted with its report", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "q")
+
+      send(view.pid, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      send(view.pid, {:dra_poll, @ref, %{report: "## Recovered report"}})
+      render(view)
+
+      assert [row] = Repo.all(SessionTurn)
+      assert row.phase == :completed
+      assert row.report =~ "Recovered report"
+      assert row.finished_at
+      assert [%{"kind" => "thinking", "text" => "Scanning"}] = row.timeline
+    end
+
+    test "cancel persists the cancelled turn", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "q")
+
+      render_click(view, "cancel", %{})
+
+      assert [row] = Repo.all(SessionTurn)
+      assert row.phase == :cancelled
+      assert row.finished_at
+    end
+
+    test "a follow-up question lands in the same session", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, @path)
+
+      submit(view, "first question")
+      render_click(view, "cancel", %{})
+      submit(view, "second question")
+
+      assert [session] = Sessions.list_user_sessions(user.id)
+      assert session.title == "first question"
+
+      rows = SessionTurn |> Repo.all() |> Enum.sort_by(& &1.position)
+      assert [%{position: 1, phase: :cancelled}, %{position: 2, phase: :planning}] = rows
+      assert Enum.all?(rows, &(&1.session_id == session.id))
+    end
+  end
+
+  describe "history sidebar and reopened sessions" do
+    test "the sidebar lists past sessions", %{conn: conn, user: user} do
+      session = completed_session(user)
+
+      {:ok, _view, html} = live(conn, @path)
+
+      assert html =~ "ETH drivers?"
+      assert html =~ session.id
+    end
+
+    test "opening a session by URL shows its history with the composer ready", %{
+      conn: conn,
+      user: user
+    } do
+      session = completed_session(user)
+
+      {:ok, _view, html} = live(conn, "#{@path}/#{session.id}")
+
+      assert html =~ "Fees fell."
+      assert html =~ "dr-composer"
+    end
+
+    test "clicking a sidebar session patches into it", %{conn: conn, user: user} do
+      session = completed_session(user)
+      {:ok, view, _html} = live(conn, @path)
+
+      render_click(view, "open_session", %{"id" => session.id})
+
+      assert_patch(view, "#{@path}/#{session.id}")
+      html = render(view)
+      assert html =~ "Fees fell."
+      assert html =~ "dr-composer"
+    end
+
+    test "the owner can continue a reopened session", %{conn: conn, user: user} do
+      session = completed_session(user)
+      {:ok, view, _html} = live(conn, "#{@path}/#{session.id}")
+
+      submit(view, "And what about SOL?")
+
+      # The follow-up appends to the same session — no new session is created.
+      assert [%{id: id}] = Sessions.list_user_sessions(user.id)
+      assert id == session.id
+
+      rows = SessionTurn |> Repo.all() |> Enum.sort_by(& &1.position)
+      assert [%{position: 1, phase: :completed}, %{position: 2, phase: :planning}] = rows
+      assert Enum.all?(rows, &(&1.session_id == session.id))
+      assert render(view) =~ "And what about SOL?"
+    end
+
+    test "someone else's session redirects away without leaking it", %{conn: conn} do
+      other = Sanbase.Factory.insert(:user)
+      session = completed_session(other)
+
+      assert {:error, {:live_redirect, %{to: @path}}} = live(conn, "#{@path}/#{session.id}")
+    end
+
+    test "an unknown session id redirects away", %{conn: conn} do
+      assert {:error, {:live_redirect, %{to: @path}}} =
+               live(conn, "#{@path}/#{Ecto.UUID.generate()}")
+    end
+
+    test "deleting a session removes it from the sidebar and the database", %{
+      conn: conn,
+      user: user
+    } do
+      session = completed_session(user)
+      {:ok, view, _html} = live(conn, @path)
+
+      html = render_click(view, "delete_session", %{"id" => session.id})
+
+      refute html =~ "ETH drivers?"
+      assert Sessions.list_user_sessions(user.id) == []
+    end
+
+    test "toggle_public flips the share flag and reveals the share link", %{
+      conn: conn,
+      user: user
+    } do
+      session = completed_session(user)
+      {:ok, view, html} = live(conn, @path)
+      refute html =~ "copy-share-link-#{session.id}"
+
+      html = render_click(view, "toggle_public", %{"id" => session.id})
+
+      assert html =~ "copy-share-link-#{session.id}"
+      assert html =~ "/deep_research/shared/#{session.id}"
+      assert [%{is_public: true}] = Sessions.list_user_sessions(user.id)
+
+      html = render_click(view, "toggle_public", %{"id" => session.id})
+      refute html =~ "copy-share-link-#{session.id}"
+    end
+
+    test "navigating away from a streaming run cancels and persists it", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "long question")
+
+      render_click(view, "new_session", %{})
+
+      assert [row] = Repo.all(SessionTurn)
+      assert row.phase == :cancelled
+      assert render(view) =~ "What do you want to research?"
+    end
   end
 end

@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict s9Vapljad5VgGR1ddgyi9A86qR7ClD5NPJ2qZgbcBNqA9rPyYSb3sh1oHiGtzCF
+\restrict mh3np2WADm0zF4YyrpmTleQAUUja6HEQ8vU5oE81GQDwsskr8VdFWDF68M2WUgJ
 
--- Dumped from database version 17.10 (Homebrew)
--- Dumped by pg_dump version 17.10 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1376,6 +1376,46 @@ ALTER SEQUENCE public.dashboards_id_seq OWNED BY public.dashboards.id;
 
 
 --
+-- Name: deep_research_sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.deep_research_sessions (
+    id uuid NOT NULL,
+    user_id bigint NOT NULL,
+    title text NOT NULL,
+    model_tier character varying(255) NOT NULL,
+    thread_id character varying(255),
+    is_public boolean DEFAULT false NOT NULL,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: deep_research_turns; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.deep_research_turns (
+    id uuid NOT NULL,
+    session_id uuid NOT NULL,
+    "position" integer NOT NULL,
+    question text NOT NULL,
+    report text,
+    error text,
+    clarification character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    phase character varying(255) DEFAULT 'planning'::character varying NOT NULL,
+    model_tier character varying(255),
+    timeline jsonb[] DEFAULT ARRAY[]::jsonb[],
+    sources jsonb[] DEFAULT ARRAY[]::jsonb[],
+    started_at timestamp without time zone NOT NULL,
+    finished_at timestamp without time zone,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL,
+    CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
+);
+
+
+--
 -- Name: disagreement_tweets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -2631,7 +2671,8 @@ CREATE TABLE public.metric_registry (
     last_sync_datetime timestamp(0) without time zone,
     stabilization_period character varying(255),
     can_mutate boolean,
-    allow_early_access boolean DEFAULT false NOT NULL
+    allow_early_access boolean DEFAULT false NOT NULL,
+    yearly_plan_only_versions jsonb
 );
 
 
@@ -7631,6 +7672,22 @@ ALTER TABLE ONLY public.dashboards
 
 
 --
+-- Name: deep_research_sessions deep_research_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.deep_research_sessions
+    ADD CONSTRAINT deep_research_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: deep_research_turns deep_research_turns_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.deep_research_turns
+    ADD CONSTRAINT deep_research_turns_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: classified_tweets disagreement_tweets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9136,6 +9193,20 @@ CREATE INDEX dashboards_history_dashboard_id_index ON public.dashboards_history 
 --
 
 CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING btree (hash);
+
+
+--
+-- Name: deep_research_sessions_user_id_updated_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX deep_research_sessions_user_id_updated_at_index ON public.deep_research_sessions USING btree (user_id, updated_at);
+
+
+--
+-- Name: deep_research_turns_session_id_position_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX deep_research_turns_session_id_position_index ON public.deep_research_turns USING btree (session_id, "position");
 
 
 --
@@ -10928,6 +10999,22 @@ ALTER TABLE ONLY public.dashboards
 
 
 --
+-- Name: deep_research_sessions deep_research_sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.deep_research_sessions
+    ADD CONSTRAINT deep_research_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: deep_research_turns deep_research_turns_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.deep_research_turns
+    ADD CONSTRAINT deep_research_turns_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.deep_research_sessions(id) ON DELETE CASCADE;
+
+
+--
 -- Name: discord_dashboards discord_dashboards_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12227,7 +12314,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict s9Vapljad5VgGR1ddgyi9A86qR7ClD5NPJ2qZgbcBNqA9rPyYSb3sh1oHiGtzCF
+\unrestrict mh3np2WADm0zF4YyrpmTleQAUUja6HEQ8vU5oE81GQDwsskr8VdFWDF68M2WUgJ
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12814,6 +12901,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260709120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260720115000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260727120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260728132322);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260803141812);
@@ -12825,5 +12913,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260804145231);
 INSERT INTO public."schema_migrations" (version) VALUES (20260805111145);
 INSERT INTO public."schema_migrations" (version) VALUES (20260805125543);
 INSERT INTO public."schema_migrations" (version) VALUES (20260806120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260810120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121347);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121612);

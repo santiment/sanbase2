@@ -48,11 +48,12 @@ defmodule Sanbase.DeepResearch.Client do
   end
 
   @doc """
-  Cancel an in-flight run. Best-effort (always returns `:ok`), but every failure
-  is logged instead of swallowed silently — the thread is reused for later turns,
-  so a failed cancel leaving the previous run alive is worth a warning.
+  Cancel an in-flight run. Returns `{:error, reason}` on failure (also logged) —
+  the thread is reused for later turns, so a failed cancel leaving the previous
+  run alive is worth surfacing. The LiveView fires cancels from a supervised
+  task and treats them as best-effort, but callers that care can react.
   """
-  @spec cancel_run(String.t(), String.t()) :: :ok
+  @spec cancel_run(String.t(), String.t()) :: :ok | {:error, String.t()}
   def cancel_run(thread_id, run_id) do
     case Req.post(
            url("/threads/#{thread_id}/runs/#{run_id}/cancel"),
@@ -63,23 +64,26 @@ defmodule Sanbase.DeepResearch.Client do
 
       {:ok, %{status: status, body: body}} ->
         Logger.warning("DeepResearch cancel_run failed (HTTP #{status}): #{inspect(body)}")
-        :ok
+        {:error, "cancel_run failed (HTTP #{status})"}
 
       {:error, error} ->
-        Logger.warning("DeepResearch cancel_run failed: #{error_message(error)}")
-        :ok
+        message = error_message(error)
+        Logger.warning("DeepResearch cancel_run failed: #{message}")
+        {:error, message}
     end
   rescue
     error ->
-      Logger.warning("DeepResearch cancel_run failed: #{Exception.message(error)}")
-      :ok
+      message = Exception.message(error)
+      Logger.warning("DeepResearch cancel_run failed: #{message}")
+      {:error, message}
   end
 
   @doc """
   Cancel every in-flight run on `thread_id`. Covers the early-cancel window: the
   user hits Stop before the stream has delivered a `run_id`, but the server-side
   run already exists — so look up the thread's active runs and cancel each.
-  Best-effort, like `cancel_run/2`.
+  Best-effort (`:ok` regardless): individual cancel failures are logged by
+  `cancel_run/2`.
   """
   @spec cancel_active_runs(String.t()) :: :ok
   def cancel_active_runs(thread_id) do
@@ -134,7 +138,12 @@ defmodule Sanbase.DeepResearch.Client do
   """
   @spec stream_run(String.t(), String.t(), pid(), keyword()) :: :ok | {:error, String.t()}
   def stream_run(thread_id, message, lv_pid, opts \\ []) do
-    warn_if_insecure_base_url()
+    with :ok <- check_base_url_security() do
+      do_stream_run(thread_id, message, lv_pid, opts)
+    end
+  end
+
+  defp do_stream_run(thread_id, message, lv_pid, opts) do
     {ref, opts} = Keyword.pop(opts, :ref)
     payload = Config.run_payload(message, opts)
 
@@ -202,19 +211,31 @@ defmodule Sanbase.DeepResearch.Client do
   end
 
   # The run payload carries the OpenRouter/Tavily API keys, so a non-local plain
-  # HTTP base URL puts them on the wire in cleartext. Warn once per run rather
-  # than refuse — the default is localhost and a remote deploy should be https.
-  defp warn_if_insecure_base_url() do
+  # HTTP base URL puts them on the wire in cleartext. On a deployed environment
+  # (stage/prod) fail closed and refuse the run; in local dev only warn — the
+  # default is localhost and a remote agent may sit on a trusted network.
+  defp check_base_url_security() do
     case URI.parse(Config.base_url()) do
       %URI{scheme: "http", host: host} when host not in ["localhost", "127.0.0.1", "::1"] ->
-        Logger.warning(
+        message =
           "DeepResearch base_url is plain HTTP to a non-local host (#{host}) — the run " <>
             "payload's API keys are sent in cleartext. Use https for remote agents."
-        )
+
+        if deployed_env?() do
+          Logger.error(message)
+          {:error, message}
+        else
+          Logger.warning(message)
+          :ok
+        end
 
       _ ->
         :ok
     end
+  end
+
+  defp deployed_env?() do
+    Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) in ["stage", "prod"]
   end
 
   defp error_message(%{__exception__: true} = error), do: Exception.message(error)

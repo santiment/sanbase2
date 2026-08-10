@@ -729,10 +729,14 @@ defmodule SanbaseWeb.DeepResearch.Components do
   # rendered separately, so showing the same text in the feed is just noise.
   defp visible_items(timeline, report, clarification) do
     Enum.reject(timeline, fn item ->
+      # A thinking item's text may be nil (e.g. a persisted turn decoded from an
+      # older row) — same defence as Timeline.direct_answer?/1.
+      text = (item.kind == :thinking && item.text) || ""
+
       item.kind == :thinking and
-        ((is_binary(report) and String.trim(item.text) == String.trim(report)) or
+        ((is_binary(report) and String.trim(text) == String.trim(report)) or
            (is_list(clarification) and clarification != [] and
-              Enum.all?(clarification, &String.contains?(item.text, &1))))
+              Enum.all?(clarification, &String.contains?(text, &1))))
     end)
   end
 

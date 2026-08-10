@@ -51,7 +51,11 @@ defmodule SanbaseWeb.DeepResearchLive do
         # dropdown is feature-flagged; when off, every run uses the deploy default.
         tiering_dropdown_enabled: Config.tiering_dropdown_enabled?(),
         model_tiers: Config.model_tiers(),
-        model_tier: Config.default_model_tier()
+        model_tier: Config.default_model_tier(),
+        # Whether a :tick timer is already pending. Lives outside
+        # reset_conversation/1 on purpose: a pending timer survives a
+        # conversation reset, and forgetting it would let a second loop start.
+        tick_scheduled?: false
       )
       |> reset_conversation()
       |> refresh_sessions()
@@ -492,6 +496,8 @@ defmodule SanbaseWeb.DeepResearchLive do
   end
 
   def handle_info(:tick, socket) do
+    socket = assign(socket, :tick_scheduled?, false)
+
     if socket.assigns.running do
       {:noreply, socket |> assign(:now_ms, now_ms()) |> schedule_tick()}
     else
@@ -649,9 +655,14 @@ defmodule SanbaseWeb.DeepResearchLive do
   # No thread yet (cancel raced thread creation) — nothing server-side to cancel.
   defp cancel_run_async(_thread_id, _run_id), do: :ok
 
+  # At most one :tick is ever in flight. Without the guard, a timer left over
+  # from a run that just ended can fire after a new run has scheduled its own,
+  # leaving two loops that each re-render every second for the session's rest.
+  defp schedule_tick(%{assigns: %{tick_scheduled?: true}} = socket), do: socket
+
   defp schedule_tick(socket) do
     Process.send_after(self(), :tick, 1000)
-    socket
+    assign(socket, :tick_scheduled?, true)
   end
 
   defp now_ms(), do: System.system_time(:millisecond)

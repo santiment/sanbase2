@@ -6,30 +6,28 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   alias Sanbase.Metric.Category.MetricCategory
   alias Sanbase.Metric.Category.MetricGroup
 
+  # The view the bare URL shows. A filter at its default value is left out of the
+  # query string, so `/available_metrics` and the URL of an untouched page are the
+  # same thing.
+  @default_docs "with"
+
   @impl true
   def mount(_params, _session, socket) do
-    metrics_map = Sanbase.AvailableMetrics.get_metrics_map()
-    categories = MetricCategory.list_ordered()
-    groups_by_category = groups_by_category_id()
-
-    default_filter = %{"only_asset_metrics" => "on", "only_with_docs" => "on"}
-
-    visible_metrics =
-      metrics_map
-      |> Sanbase.AvailableMetrics.apply_filters(default_filter)
-      |> Enum.map(& &1.metric)
-
     {:ok,
      socket
      |> assign(
        page_title: "Santiment | Available Metrics",
-       visible_metrics: visible_metrics,
-       metrics_map: metrics_map,
-       filter: default_filter,
-       categories: categories,
-       groups_by_category: groups_by_category,
-       groups_for_selected_category: []
+       metrics_map: Sanbase.AvailableMetrics.get_metrics_map(),
+       categories: MetricCategory.list_ordered(),
+       groups_by_category: groups_by_category_id()
      )}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    filter = filter_from_query(params, socket.assigns.groups_by_category)
+
+    {:noreply, assign_filter(socket, filter)}
   end
 
   @impl true
@@ -37,7 +35,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     ordered_visible_metrics =
       Map.take(assigns.metrics_map, assigns.visible_metrics)
       |> Map.values()
-      |> Enum.sort_by(& &1.metric, :asc)
+      |> Sanbase.AvailableMetrics.sort_by_taxonomy()
 
     total_assets_with_metrics =
       Enum.reduce(
@@ -72,6 +70,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       <AvailableMetricsComponents.table_with_popover_th
         id="available_metrics"
         rows={@ordered_visible_metrics}
+        section_label={&section_label/1}
       >
         <:col
           :let={row}
@@ -188,24 +187,82 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     """
   end
 
+  # The form does not filter directly: it patches the URL and `handle_params/3`
+  # does the work, so the address bar always describes what is on screen and the
+  # view can be linked to or reloaded. `replace: true` keeps a debounced search
+  # box from filling the history with one entry per keystroke.
   @impl true
   def handle_event("apply_filters", params, socket) do
-    params = maybe_reset_group_for_category(params, socket.assigns.groups_by_category)
+    filter = filter_from_form(params, socket.assigns.groups_by_category)
 
+    {:noreply, push_patch(socket, to: ~p"/available_metrics?#{to_query(filter)}", replace: true)}
+  end
+
+  defp assign_filter(socket, filter) do
     visible_metrics =
       socket.assigns.metrics_map
-      |> Sanbase.AvailableMetrics.apply_filters(params)
+      |> Sanbase.AvailableMetrics.apply_filters(filter)
       |> Enum.map(& &1.metric)
 
-    {:noreply,
-     socket
-     |> assign(
-       visible_metrics: visible_metrics,
-       filter: params,
-       groups_for_selected_category:
-         groups_for_category(params, socket.assigns.groups_by_category)
-     )}
+    assign(socket,
+      visible_metrics: visible_metrics,
+      filter: filter,
+      groups_for_selected_category: groups_for_category(filter, socket.assigns.groups_by_category)
+    )
   end
+
+  # A checkbox sends nothing when it is off, so the form and the query string
+  # disagree about what a missing `only_asset_metrics` means: off in the form,
+  # default-on in a URL. Everything else they agree on.
+  defp filter_from_form(params, groups_by_category) do
+    params
+    |> shared_filter()
+    |> put_asset_metrics(params["only_asset_metrics"] == "on")
+    |> maybe_reset_group_for_category(groups_by_category)
+  end
+
+  defp filter_from_query(params, groups_by_category) do
+    params
+    |> shared_filter()
+    |> put_asset_metrics(params["only_asset_metrics"] != "off")
+    |> maybe_reset_group_for_category(groups_by_category)
+  end
+
+  defp shared_filter(params) do
+    %{"docs" => docs_param(params)}
+    |> put_present("category_id", params["category_id"])
+    |> put_present("group_id", params["group_id"])
+    |> put_present("match_metric_name", params["match_metric_name"])
+    |> put_present("metric_supports_asset", params["metric_supports_asset"])
+  end
+
+  # `only_with_docs=on` is the checkbox the docs select replaced. Old links keep
+  # working.
+  defp docs_param(%{"docs" => docs}) when docs in ["with", "without", "all"], do: docs
+  defp docs_param(%{"only_with_docs" => "on"}), do: "with"
+  defp docs_param(_params), do: @default_docs
+
+  defp put_asset_metrics(filter, true), do: Map.put(filter, "only_asset_metrics", "on")
+  defp put_asset_metrics(filter, false), do: filter
+
+  defp put_present(filter, _key, value) when value in [nil, ""], do: filter
+  defp put_present(filter, key, value), do: Map.put(filter, key, value)
+
+  # Only what differs from the default view, so a shared link is as short as what
+  # the person actually chose.
+  defp to_query(filter) do
+    [
+      {"only_asset_metrics", if(filter["only_asset_metrics"] != "on", do: "off")},
+      {"docs", unless_default(filter["docs"], @default_docs)},
+      {"category_id", unless_default(filter["category_id"], "all")},
+      {"group_id", unless_default(filter["group_id"], "all")},
+      {"match_metric_name", filter["match_metric_name"]},
+      {"metric_supports_asset", filter["metric_supports_asset"]}
+    ]
+    |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
+  end
+
+  defp unless_default(value, default), do: if(value == default, do: nil, else: value)
 
   @doc ~s"""
   Checkbox that display description on hover.
@@ -253,6 +310,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     ~H"""
     <div>
       <form
+        id="available-metrics-filters"
         phx-change="apply_filters"
         class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-8"
       >
@@ -265,14 +323,19 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           input_label="Filter asset metrics"
         />
 
-        <.checkbox_with_popover
-          popover_text="Show only the metrics that have documentation"
-          popover_target="popover-with-docs"
-          input_id="with-docs-checkbox"
-          input_name="only_with_docs"
-          input_checked={@filter["only_with_docs"] == "on"}
-          input_label="Only with docs"
-        />
+        <div>
+          <select id="docs-filter" name="docs" class="select select-bordered select-sm w-56">
+            <option value="with" selected={docs_selected?(@filter, "with")}>
+              With docs
+            </option>
+            <option value="without" selected={docs_selected?(@filter, "without")}>
+              Without docs
+            </option>
+            <option value="all" selected={docs_selected?(@filter, "all")}>
+              With and without docs
+            </option>
+          </select>
+        </div>
 
         <div>
           <select
@@ -425,6 +488,16 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     """
   end
 
+  # The heading above each block of rows. Matches where `sort_by_taxonomy/1` puts
+  # the metric, so a block is always contiguous.
+  defp section_label(row) do
+    case Sanbase.AvailableMetrics.taxonomy_placement(row) do
+      %{category_name: nil} -> "Uncategorized"
+      %{category_name: category, group_name: nil} -> "#{category} › Ungrouped"
+      %{category_name: category, group_name: group} -> "#{category} › #{group}"
+    end
+  end
+
   defp category_names(categories) do
     categories
     |> Enum.map(& &1.category_name)
@@ -440,6 +513,12 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     |> Enum.reject(&(is_nil(&1) or &1 in hidden))
     |> Enum.uniq()
   end
+
+  # `only_with_docs` is the checkbox this select replaced. A link carrying it
+  # still selects "With docs" rather than silently showing everything.
+  defp docs_selected?(%{"docs" => value}, option), do: value == option
+  defp docs_selected?(%{"only_with_docs" => "on"}, option), do: option == "with"
+  defp docs_selected?(_filter, option), do: option == "all"
 
   defp category_selected?(nil, "all"), do: true
   defp category_selected?("", "all"), do: true

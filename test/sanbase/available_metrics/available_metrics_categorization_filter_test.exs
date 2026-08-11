@@ -68,6 +68,41 @@ defmodule Sanbase.AvailableMetricsCategorizationFilterTest do
     assert result == ["ungrouped_market"]
   end
 
+  describe "docs filter" do
+    setup do
+      %{
+        metrics: [
+          %{metric: "documented", docs: [%{link: "https://example.com"}], categories: []},
+          %{metric: "undocumented", docs: [], categories: []}
+        ]
+      }
+    end
+
+    test "with", %{metrics: metrics} do
+      assert filtered(metrics, %{"docs" => "with"}) == ["documented"]
+    end
+
+    test "without", %{metrics: metrics} do
+      assert filtered(metrics, %{"docs" => "without"}) == ["undocumented"]
+    end
+
+    test "all", %{metrics: metrics} do
+      assert filtered(metrics, %{"docs" => "all"}) == ["documented", "undocumented"]
+    end
+
+    test "no docs filter at all leaves both", %{metrics: metrics} do
+      assert filtered(metrics, %{}) == ["documented", "undocumented"]
+    end
+
+    test "the old only_with_docs checkbox still filters", %{metrics: metrics} do
+      assert filtered(metrics, %{"only_with_docs" => "on"}) == ["documented"]
+    end
+  end
+
+  defp filtered(metrics, filter) do
+    AvailableMetrics.apply_filters(metrics, filter) |> Enum.map(& &1.metric)
+  end
+
   test "hides metrics that only live in a hidden group" do
     metrics = [
       metric("social_volume_twitter_news", [

@@ -87,6 +87,16 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
     doc: "the function for mapping each row before calling the :col and :action slots"
   )
 
+  attr(:section_label, :any,
+    default: nil,
+    doc: """
+    fun(row) -> label. Rows that share a label are one section: the label is
+    rendered as a full-width heading row above the first row of each section.
+    Expects the rows to already be sorted by section - a label that reappears
+    after a different one starts a second section. Ignored for streams.
+    """
+  )
+
   slot :col, required: true do
     attr(:label, :string)
     attr(:col_class, :string)
@@ -102,6 +112,12 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
       with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
         assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
       end
+
+    assigns =
+      assign(assigns,
+        sectioned_rows: sectioned_rows(assigns.rows, assigns.section_label),
+        column_count: length(assigns.col) + if(assigns.action == [], do: 0, else: 1)
+      )
 
     ~H"""
     <div class="w-full overflow-x-auto px-4 sm:px-0">
@@ -129,43 +145,69 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
           phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
           class="relative divide-y divide-base-300 border-t border-base-300 text-sm leading-6 text-base-content/80"
         >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-base-200">
-            <td
-              :for={{col, i} <- Enum.with_index(@col)}
-              phx-click={@row_click && @row_click.(row)}
-              class={[
-                "relative p-0",
-                col[:col_class],
-                @row_click && "hover:cursor-pointer",
-                i == 0 && "sticky left-0 z-10 bg-base-100 group-hover:bg-base-200"
-              ]}
-            >
-              <div class="block py-4 px-6">
-                <span class={[
-                  "absolute -inset-y-px right-0 left-0 group-hover:bg-base-200",
-                  i == 0 && "-left-8 sm:rounded-l-xl",
-                  i == length(@col) - 1 && @action == [] && "-right-8 sm:rounded-r-xl"
-                ]} />
-                <span class={["relative", i == 0 && "font-medium text-base-content"]}>
-                  {render_slot(col, @row_item.(row))}
-                </span>
-              </div>
-            </td>
-            <td :if={@action != []} class="relative w-14 p-0">
-              <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-8 left-0 group-hover:bg-base-200 sm:rounded-r-xl" />
-                <span
-                  :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-base-content hover:text-base-content/70"
-                >
-                  {render_slot(action, @row_item.(row))}
-                </span>
-              </div>
-            </td>
-          </tr>
+          <%= for {row, section} <- @sectioned_rows do %>
+            <tr :if={section} class="bg-base-200/60">
+              <td colspan={@column_count} class="sticky left-0 z-10 bg-base-200/60 p-0">
+                <div class="py-2 px-6 text-sm font-semibold text-base-content whitespace-nowrap">
+                  {section}
+                </div>
+              </td>
+            </tr>
+            <tr id={@row_id && @row_id.(row)} class="group hover:bg-base-200">
+              <td
+                :for={{col, i} <- Enum.with_index(@col)}
+                phx-click={@row_click && @row_click.(row)}
+                class={[
+                  "relative p-0",
+                  col[:col_class],
+                  @row_click && "hover:cursor-pointer",
+                  i == 0 && "sticky left-0 z-10 bg-base-100 group-hover:bg-base-200"
+                ]}
+              >
+                <div class="block py-4 px-6">
+                  <span class={[
+                    "absolute -inset-y-px right-0 left-0 group-hover:bg-base-200",
+                    i == 0 && "-left-8 sm:rounded-l-xl",
+                    i == length(@col) - 1 && @action == [] && "-right-8 sm:rounded-r-xl"
+                  ]} />
+                  <span class={["relative", i == 0 && "font-medium text-base-content"]}>
+                    {render_slot(col, @row_item.(row))}
+                  </span>
+                </div>
+              </td>
+              <td :if={@action != []} class="relative w-14 p-0">
+                <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
+                  <span class="absolute -inset-y-px -right-8 left-0 group-hover:bg-base-200 sm:rounded-r-xl" />
+                  <span
+                    :for={action <- @action}
+                    class="relative ml-4 font-semibold leading-6 text-base-content hover:text-base-content/70"
+                  >
+                    {render_slot(action, @row_item.(row))}
+                  </span>
+                </div>
+              </td>
+            </tr>
+          <% end %>
         </tbody>
       </table>
     </div>
     """
+  end
+
+  # Pairs every row with the section heading to render above it, or nil when the
+  # previous row was already in that section.
+  defp sectioned_rows(rows, nil), do: Enum.map(rows, &{&1, nil})
+
+  defp sectioned_rows(%Phoenix.LiveView.LiveStream{} = rows, _section_label),
+    do: Enum.map(rows, &{&1, nil})
+
+  defp sectioned_rows(rows, section_label) when is_function(section_label, 1) do
+    rows
+    |> Enum.map_reduce(:none, fn row, previous ->
+      label = section_label.(row)
+
+      {{row, if(label == previous, do: nil, else: label)}, label}
+    end)
+    |> elem(0)
   end
 end

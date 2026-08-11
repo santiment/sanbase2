@@ -544,7 +544,44 @@ defmodule Sanbase.Metric.Category.TaxonomyImporterTest do
     end
   end
 
+  describe "category order" do
+    test "renumbers the taxonomy's categories and leaves the others alone" do
+      # The five real categories are what @category_display_order names; the two
+      # from `setup` are not in it and must keep their order.
+      for {name, display_order} <- Enum.with_index(real_categories(), 40) do
+        {:ok, _} =
+          MetricCategory.create_if_not_exists(%{name: name, display_order: display_order})
+      end
+
+      quietly(fn -> TaxonomyImporter.apply_category_order!() end)
+
+      ordered =
+        MetricCategory.list_ordered()
+        |> Enum.map(& &1.name)
+        |> Enum.filter(&(&1 in real_categories()))
+
+      assert ordered == real_categories()
+
+      assert MetricCategory.get_by_name("TaxTest Market").display_order == 1
+      assert MetricCategory.get_by_name("TaxTest Labels").display_order == 2
+    end
+
+    test "is a no-op on a second run" do
+      for {name, display_order} <- Enum.with_index(real_categories(), 1) do
+        {:ok, _} =
+          MetricCategory.create_if_not_exists(%{name: name, display_order: display_order})
+      end
+
+      output = with_io(fn -> TaxonomyImporter.apply_category_order!() end) |> elem(1)
+
+      assert output =~ "category order: already correct"
+    end
+  end
+
   # ------------------------------------------------------------------ helpers
+
+  defp real_categories,
+    do: ["Market", "Development", "Social", "On-chain", "On-chain Labels"]
 
   defp apply_fixture(category, groups) do
     TaxonomyImporter.apply_spec!("fixture", %{category: category.name, groups: groups})

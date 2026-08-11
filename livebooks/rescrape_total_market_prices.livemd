@@ -1,0 +1,210 @@
+# Rescrape TOTAL_MARKET prices
+
+## About
+
+`TOTAL_MARKET` is a synthetic slug without a project record, so the
+`schedule_rescrape_prices` admin UI cannot be used for it. This notebook:
+
+1. Finds gaps in the `TOTAL_MARKET` coinmarketcap prices in ClickHouse and
+   merges nearby gaps into a small number of rescrape windows.
+2. Rescrapes each window from the CMC web API and exports the points to
+   Kafka, exactly like `WebApi.store_price_points/3` does, but **without**
+   touching the `price_scraping_progress` cursor, so the realtime
+   TOTAL_MARKET scraping is not affected.
+
+> **Warning:** Do not use `WebApi.fetch_and_store_prices("TOTAL_MARKET", from)`
+> for this. It calls `PriceScrapingProgress.store_progress/3` internally and
+> will move the scraping cursor back in time, causing a full rescrape from
+> `from` up to the present.
+
+**Where to run:** attach the notebook to a node running the `scrapers`
+container type. The rescrape step needs the `:prices_exporter` Kafka exporter
+and the `:graph_coinmarketcap_rate_limiter` process, which are only started
+there (see `Sanbase.Application.Scrapers`). The gap detection step only needs
+`Sanbase.ClickhouseRepo`. Use the Preflight section below to check the node.
+
+## Config
+
+```elixir
+# Tune and re-run. All values are in seconds.
+config = %{
+  # A gap is reported if the distance between two consecutive points is
+  # bigger than this. Data is on a 5 minute grid, so 600 means at least
+  # one missing point. Values below 600 mostly report grid jitter.
+  min_gap_seconds: 600,
+  # Gaps closer than this to each other are merged into one rescrape window
+  merge_within_seconds: 6 * 3600,
+  # Each window is padded on both sides. Also guarantees the >= 1 hour
+  # minimum range that WebApi.price_stream/3 requires.
+  pad_seconds: 1800
+}
+```
+
+## Preflight
+
+```elixir
+[
+  {:prices_exporter, "Kafka exporter for prices (rescrape step)"},
+  {:graph_coinmarketcap_rate_limiter, "CMC web API rate limiter (rescrape step)"},
+  {Sanbase.ClickhouseRepo, "ClickHouse repo (gap detection step)"}
+]
+|> Enum.map(fn {name, hint} ->
+  case Process.whereis(name) do
+    pid when is_pid(pid) -> {:ok, name, hint}
+    nil -> {:missing_attach_to_a_scrapers_node!, name, hint}
+  end
+end)
+```
+
+## Find gap windows
+
+```elixir
+# TOTAL_MARKET data on coinmarketcap starts at 2013-04-28 18:47:21
+# (WebApi.first_datetime/1). The dt/prev_dt filters below both exclude
+# everything before that and kill the fake `1970-01-01 -> first point` gap
+# produced by lagInFrame's default value (epoch 0, not NULL).
+#
+# A `now() - pad_seconds` sentinel row is appended to the stored points so
+# an ongoing outage (nothing stored after the last point) is reported as a
+# trailing gap too. The sentinel lags now() by pad_seconds so that normal
+# scrape cadence + Kafka->ClickHouse ingestion lag is not flagged as a gap;
+# the +pad on gap_end then brings rescrape_to back up to ~now. Trailing
+# outages shorter than pad_seconds + min_gap_seconds are left to the
+# realtime scraper, which resumes from its own untouched cursor.
+gaps_sql = """
+SELECT
+    toUnixTimestamp(min(gap_start) - {{pad_seconds}}) AS rescrape_from,
+    toUnixTimestamp(max(gap_end) + {{pad_seconds}}) AS rescrape_to,
+    count() AS gaps,
+    toUInt32(sum(greatest(round(gap_seconds / 300) - 1, 0))) AS missing_points_est
+FROM
+(
+    SELECT
+        gap_start,
+        gap_end,
+        gap_seconds,
+        sum(new_window) OVER (ORDER BY gap_start ASC
+                              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS window_id
+    FROM
+    (
+        SELECT
+            gap_start,
+            gap_end,
+            gap_seconds,
+            if(dateDiff('second',
+                        lagInFrame(gap_end) OVER (ORDER BY gap_start ASC),
+                        gap_start) > {{merge_within_seconds}}, 1, 0) AS new_window
+        FROM
+        (
+            SELECT
+                prev_dt                         AS gap_start,
+                dt                              AS gap_end,
+                dateDiff('second', prev_dt, dt) AS gap_seconds
+            FROM
+            (
+                SELECT
+                    dt,
+                    lagInFrame(dt) OVER (ORDER BY dt ASC) AS prev_dt
+                FROM
+                (
+                    SELECT dt
+                    FROM asset_prices_v3
+                    FINAL
+                    PREWHERE (source = 'coinmarketcap') AND (lower(slug) = 'total_market')
+                    WHERE dt >= toDateTime('2013-04-28 19:00:00')
+                    UNION ALL
+                    SELECT toDateTime(now() - {{pad_seconds}}) AS dt
+                )
+            )
+            WHERE prev_dt >= toDateTime('2013-04-28 19:00:00')
+              AND dateDiff('second', prev_dt, dt) > {{min_gap_seconds}}
+        )
+    )
+)
+GROUP BY window_id
+ORDER BY rescrape_from ASC
+"""
+
+query =
+  Sanbase.Clickhouse.Query.new(gaps_sql, %{
+    min_gap_seconds: config.min_gap_seconds,
+    merge_within_seconds: config.merge_within_seconds,
+    pad_seconds: config.pad_seconds
+  })
+
+{:ok, windows} =
+  Sanbase.ClickhouseRepo.query_transform(query, fn [from_unix, to_unix, gaps, points_est] ->
+    %{
+      from: DateTime.from_unix!(from_unix),
+      to: DateTime.from_unix!(to_unix),
+      gaps: gaps,
+      missing_points_est: points_est
+    }
+  end)
+
+total_points_est = windows |> Enum.map(& &1.missing_points_est) |> Enum.sum()
+
+IO.puts("#{length(windows)} rescrape windows, ~#{total_points_est} missing points:\n")
+
+Enum.each(windows, fn w ->
+  IO.puts("#{w.from} - #{w.to}  (#{w.gaps} gaps, ~#{w.missing_points_est} points)")
+end)
+
+windows
+```
+
+## Rescrape
+
+Review the windows above before running this cell. Roughly one CMC API
+request is made per day of each window, throttled by the
+`:graph_coinmarketcap_rate_limiter`.
+
+Note: the day chunker caps chunk ends at "now", not at the window end, so a
+chunk can overshoot the window end by up to a day. Harmless - the extra
+points are re-exports of already existing data.
+
+```elixir
+alias Sanbase.ExternalServices.Coinmarketcap.{WebApi, PricePoint}
+
+results =
+  Enum.map(windows, fn %{from: from, to: to} ->
+    IO.puts("=== window #{from} - #{to}")
+
+    WebApi.price_stream("TOTAL_MARKET", from, to)
+    |> Enum.map(fn
+      {:ok, points, _interval} ->
+        points = PricePoint.sanity_filters(points, "TOTAL_MARKET")
+
+        points
+        |> Enum.map(&PricePoint.json_kv_tuple(&1, "TOTAL_MARKET"))
+        |> Sanbase.KafkaExporter.persist_sync(:prices_exporter)
+        |> case do
+          :ok ->
+            IO.puts("exported #{length(points)} points")
+            {:ok, length(points)}
+
+          error ->
+            IO.inspect(error, label: "kafka export error")
+            error
+        end
+
+      error ->
+        IO.inspect(error, label: "scrape error")
+        error
+    end)
+  end)
+  |> List.flatten()
+
+exported = results |> Enum.map(fn {:ok, n} -> n; _ -> 0 end) |> Enum.sum()
+errors = Enum.reject(results, &match?({:ok, _}, &1))
+
+IO.puts("\nExported #{exported} points, #{length(errors)} errors")
+errors
+```
+
+## Verify
+
+Wait a couple of minutes for the Kafka consumer to write the points into
+ClickHouse, then re-run the **Find gap windows** cell. Windows that survive
+a rescrape are holes in CMC's own data and cannot be filled - stop chasing
+them.

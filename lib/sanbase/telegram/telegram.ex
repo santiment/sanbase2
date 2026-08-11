@@ -101,7 +101,7 @@ defmodule Sanbase.Telegram do
   The chat_id is the `@<alias name>` of a channel when the channel is pubic
   The chat_id is `-100<chat id>` when the channel is private
   """
-  @spec send_message_to_chat_id(non_neg_integer(), message, nil | %User{}) ::
+  @spec send_message_to_chat_id(integer() | String.t(), message, nil | %User{}) ::
           {:ok, any()} | {:error, String.t()}
   def send_message_to_chat_id(chat_id, text, user \\ nil) do
     content =
@@ -113,6 +113,8 @@ defmodule Sanbase.Telegram do
       }
       |> Jason.encode!()
 
+    recipient = describe_recipient(chat_id, user)
+
     case post("sendMessage", content) do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
@@ -121,16 +123,14 @@ defmodule Sanbase.Telegram do
         body = Jason.decode!(json_body)
 
         error_msg =
-          "Telegram message not senterror 400. Reason: #{Map.get(body, "description", "Bad request")}"
+          "Telegram message not sent (#{recipient}). Error status 400. Reason: #{Map.get(body, "description", "Bad request")}"
 
         Logger.info(error_msg)
         {:error, error_msg}
 
       {:ok, %Tesla.Env{status: 403}} ->
-        user_data = if user, do: "User with id #{user.id}", else: "User"
-
         error_msg =
-          "Telegram message not sent error 403. Reason: #{user_data} has blocked the telegram bot."
+          "Telegram message not sent (#{recipient}). Error status 403. Reason: The recipient has blocked the telegram bot."
 
         Logger.info(error_msg)
         {:error, error_msg}
@@ -139,15 +139,26 @@ defmodule Sanbase.Telegram do
         body = Jason.decode!(json_body)
 
         error_msg =
-          "Telegram message not sent error 404. Reason: #{Map.get(body, "description", "Chat ID not found")}"
+          "Telegram message not sent (#{recipient}). Error status 404. Reason: #{Map.get(body, "description", "Chat ID not found")}"
 
         Logger.info(error_msg)
         {:error, error_msg}
 
-      error ->
-        Logger.warning("Telegram message not sent. Reason: #{inspect(error)}")
-        {:error, "Telegram message not sent."}
-        error
+      # Do not inspect Tesla.Env/Tesla.Error - their request URL embeds the bot token
+      {:ok, %Tesla.Env{status: status}} ->
+        error_msg = "Telegram message not sent (#{recipient}). Error status #{status}."
+        Logger.warning(error_msg)
+        {:error, error_msg}
+
+      %Tesla.Error{reason: reason} ->
+        error_msg = "Telegram message not sent (#{recipient}). Reason: #{inspect(reason)}"
+        Logger.warning(error_msg)
+        {:error, error_msg}
+
+      {:error, reason} ->
+        error_msg = "Telegram message not sent (#{recipient}). Reason: #{inspect(reason)}"
+        Logger.warning(error_msg)
+        {:error, error_msg}
     end
   end
 
@@ -251,4 +262,9 @@ defmodule Sanbase.Telegram do
   defp generate_link(user_token) do
     "https://telegram.me/#{Config.module_get(__MODULE__, :bot_username)}?start=#{user_token}"
   end
+
+  defp describe_recipient(chat_id, %User{id: user_id}),
+    do: "chat_id=#{chat_id} user_id=#{user_id}"
+
+  defp describe_recipient(chat_id, _user), do: "chat_id=#{chat_id}"
 end

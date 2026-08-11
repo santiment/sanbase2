@@ -205,6 +205,7 @@ defmodule Sanbase.AvailableMetrics do
   def apply_filters(metrics_list, filters) when is_list(metrics_list) do
     metrics_list
     |> reject_hidden_group_metrics()
+    |> maybe_apply_filter(:docs, filters)
     |> maybe_apply_filter(:only_with_docs, filters)
     |> maybe_apply_filter(:only_intraday_metrics, filters)
     |> maybe_apply_filter(:match_metric_name, filters)
@@ -222,6 +223,19 @@ defmodule Sanbase.AvailableMetrics do
       categories != [] and
         Enum.all?(categories, &(&1.group_name in @hidden_group_names))
     end)
+  end
+
+  # "with" | "without" | "all". `only_with_docs` is the older boolean form of the
+  # same thing - the page sends `docs`, links and saved exports may still send the
+  # checkbox.
+  defp maybe_apply_filter(metrics, :docs, %{"docs" => "with"}) do
+    metrics
+    |> Enum.filter(&(&1.docs != []))
+  end
+
+  defp maybe_apply_filter(metrics, :docs, %{"docs" => "without"}) do
+    metrics
+    |> Enum.filter(&(&1.docs == []))
   end
 
   defp maybe_apply_filter(metrics, :only_with_docs, %{"only_with_docs" => "on"}) do

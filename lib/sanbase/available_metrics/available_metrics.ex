@@ -128,6 +128,65 @@ defmodule Sanbase.AvailableMetrics do
 
   @hidden_group_names ["Deprecated", "Internal Metrics"]
 
+  # Every position is a tuple, so a metric with no category sorts after every
+  # metric that has one, and an ungrouped metric after every grouped one in the
+  # same category.
+  @order_sentinel 1_000_000
+
+  @doc ~s"""
+  Order the metrics the way the taxonomy does: by category, then by group inside
+  the category, then by the metric's position inside the group. The metric name
+  is only a tiebreaker.
+
+  The three `display_order` columns behind this are written by
+  `Sanbase.Metric.Category.TaxonomyImporter` from the Notion data plan pages, so
+  the page reads in the same order as the source document. Anything the taxonomy
+  does not place - an ungrouped metric, a metric in no category - sorts last.
+  """
+  def sort_by_taxonomy(metrics) when is_list(metrics) do
+    Enum.sort_by(metrics, &{taxonomy_position(&1), &1.metric})
+  end
+
+  @doc ~s"""
+  The category and group a metric is listed under, as names. Either can be nil -
+  no group, or no category at all. Hidden groups are never picked.
+
+  A metric can be mapped more than once (a narrow group and a roll-up, or two
+  categories). The one that comes first in the taxonomy wins, so it matches
+  where `sort_by_taxonomy/1` puts the row.
+  """
+  def taxonomy_placement(%{} = metric), do: taxonomy_placement(metric[:categories] || [])
+
+  def taxonomy_placement(categories) when is_list(categories) do
+    case primary_categorization(categories) do
+      nil -> %{category_name: nil, group_name: nil}
+      categorization -> Map.take(categorization, [:category_name, :group_name])
+    end
+  end
+
+  defp taxonomy_position(%{} = metric) do
+    case primary_categorization(metric[:categories] || []) do
+      nil -> categorization_position(%{})
+      categorization -> categorization_position(categorization)
+    end
+  end
+
+  defp primary_categorization(categories) do
+    categories
+    |> Enum.reject(&(&1[:group_name] in @hidden_group_names))
+    |> Enum.min_by(&categorization_position/1, fn -> nil end)
+  end
+
+  defp categorization_position(categorization) do
+    {
+      categorization[:category_display_order] || @order_sentinel,
+      categorization[:category_name] || "",
+      categorization[:group_display_order] || @order_sentinel,
+      categorization[:group_name] || "",
+      categorization[:display_order] || @order_sentinel
+    }
+  end
+
   @doc ~s"""
   Groups that exist for bookkeeping only and are never shown to users.
 
@@ -279,8 +338,11 @@ defmodule Sanbase.AvailableMetrics do
       categorization = %{
         category_id: mapping.category_id,
         category_name: mapping.category && mapping.category.name,
+        category_display_order: mapping.category && mapping.category.display_order,
         group_id: mapping.group_id,
-        group_name: mapping.group && mapping.group.name
+        group_name: mapping.group && mapping.group.name,
+        group_display_order: mapping.group && mapping.group.display_order,
+        display_order: mapping.display_order
       }
 
       public_names =

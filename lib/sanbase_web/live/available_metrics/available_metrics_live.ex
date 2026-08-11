@@ -37,7 +37,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     ordered_visible_metrics =
       Map.take(assigns.metrics_map, assigns.visible_metrics)
       |> Map.values()
-      |> Enum.sort_by(& &1.metric, :asc)
+      |> Sanbase.AvailableMetrics.sort_by_taxonomy()
 
     total_assets_with_metrics =
       Enum.reduce(
@@ -72,6 +72,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       <AvailableMetricsComponents.table_with_popover_th
         id="available_metrics"
         rows={@ordered_visible_metrics}
+        section_label={&section_label/1}
       >
         <:col
           :let={row}
@@ -423,6 +424,16 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     <span :if={@names == []} class="text-base-content/40">—</span>
     <span :if={@names != []}>{Enum.join(@names, ", ")}</span>
     """
+  end
+
+  # The heading above each block of rows. Matches where `sort_by_taxonomy/1` puts
+  # the metric, so a block is always contiguous.
+  defp section_label(row) do
+    case Sanbase.AvailableMetrics.taxonomy_placement(row) do
+      %{category_name: nil} -> "Uncategorized"
+      %{category_name: category, group_name: nil} -> "#{category} › Ungrouped"
+      %{category_name: category, group_name: group} -> "#{category} › #{group}"
+    end
   end
 
   defp category_names(categories) do

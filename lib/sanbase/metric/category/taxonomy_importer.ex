@@ -1517,6 +1517,18 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     {"social", @taxonomy_social}
   ]
 
+  # Reading order of the packages on the Notion index, which is the order
+  # /available_metrics lists them in. Categories are shared by all five specs, so
+  # this is applied once per run rather than per spec. A name that does not exist
+  # in an environment is skipped.
+  @category_display_order [
+    "Market",
+    "Development",
+    "Social",
+    "On-chain",
+    "On-chain Labels"
+  ]
+
   @doc ~s"""
   The names of the available specs, in apply order.
   """
@@ -1534,6 +1546,7 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     plans = names |> selected_specs() |> Enum.map(fn {name, spec} -> build_plan(name, spec) end)
 
     Enum.each(plans, &print_plan/1)
+    print_category_order(category_order_plan())
     print_summary(plans, false)
 
     plans
@@ -1575,12 +1588,31 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
         plan
       end)
 
+    apply_category_order!()
     print_summary(plans, true)
     log("done")
 
     {refused, applied} = Enum.split_with(plans, &Map.has_key?(&1, :error))
 
     %{applied: Enum.map(applied, & &1.name), refused: Enum.map(refused, & &1.name)}
+  end
+
+  @doc ~s"""
+  Renumber `metric_categories.display_order` to `@category_display_order`.
+
+  Called by `apply!/1` - the categories are shared by every spec, so the order is
+  a property of the taxonomy as a whole rather than of one package. Idempotent,
+  and exposed on its own so the order can be fixed without touching mappings.
+  """
+  @spec apply_category_order!() :: :ok
+  def apply_category_order! do
+    changes = category_order_plan()
+
+    print_category_order(changes)
+
+    Enum.each(changes, fn %{category: category, to: display_order} ->
+      {:ok, _} = MetricCategory.update(category, %{display_order: display_order})
+    end)
   end
 
   @doc ~s"""
@@ -1962,6 +1994,32 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
       log(
         "  move #{move.metric} -> #{move.to_category} / #{move.to_group} (#{length(rows)} rows)"
       )
+
+  # Only the categories whose order is wrong, in target order. A category named in
+  # the list but missing from this environment is skipped, same as a group name.
+  defp category_order_plan do
+    existing = Map.new(MetricCategory.list_ordered(), &{&1.name, &1})
+
+    @category_display_order
+    |> Enum.with_index(1)
+    |> Enum.flat_map(fn {name, display_order} ->
+      case Map.get(existing, name) do
+        nil -> []
+        %{display_order: ^display_order} -> []
+        category -> [%{category: category, from: category.display_order, to: display_order}]
+      end
+    end)
+  end
+
+  defp print_category_order([]), do: log("category order: already correct")
+
+  defp print_category_order(changes) do
+    log("category order: #{length(changes)} to renumber")
+
+    Enum.each(changes, fn %{category: category, from: from, to: to} ->
+      log("  #{category.name}: #{inspect(from)} -> #{to}")
+    end)
+  end
 
   defp print_summary(plans, apply?) do
     runnable = Enum.reject(plans, &Map.has_key?(&1, :error))

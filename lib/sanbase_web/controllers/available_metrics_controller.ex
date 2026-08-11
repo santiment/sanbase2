@@ -20,7 +20,9 @@ defmodule SanbaseWeb.AvailableMetricsController do
     metrics_map = Sanbase.AvailableMetrics.get_metrics_map()
 
     metrics =
-      Sanbase.AvailableMetrics.apply_filters(metrics_map, filter)
+      metrics_map
+      |> Sanbase.AvailableMetrics.apply_filters(filter)
+      |> Sanbase.AvailableMetrics.sort_by_taxonomy()
 
     csv_content =
       metrics

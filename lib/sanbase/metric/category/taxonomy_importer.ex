@@ -967,10 +967,9 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     # metrics all live in On-chain Labels now. The union of what production and
     # stage each have is listed; a name absent from an environment is a no-op.
     #
-    # "Euler" is deliberately NOT here: it still holds eight metrics that appear
-    # on neither Notion page (Q12), so dissolving it would be a decision nobody
-    # has made. "Morpho" is listed but will refuse for the same reason until
-    # `morpho_supply_apy` is placed (Q11) - the refusal is the point.
+    # "Euler" and "Morpho" hold the nine metrics of `moves` below, which is what
+    # lets them be dissolved: a metric that leaves the category counts as placed
+    # for the dissolve guard, and the moves run before the deletes.
     delete_groups: [
       "Beacon",
       "ETH 2.0",
@@ -986,6 +985,7 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
       "Maple",
       "Spark",
       "Fluid",
+      "Euler",
       "Morpho",
       "Liquity",
       "Fraxlend",
@@ -995,6 +995,83 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
       "crvUSD Savings",
       "GHO Savings",
       "Aggregate Lending and Borrowing Metrics"
+    ],
+    # Two families leave the category.
+    #
+    # The first three are the "Move to onchan labels" block at the bottom of the
+    # Onchain core plan page. They are listed in the On-chain Labels spec as well;
+    # without a move here they would hold a row in both categories, and a metric
+    # in two categories is sold by two packages.
+    #
+    # The rest are the eight `euler_*` and one `morpho_*` metric of Q11 and Q12 -
+    # on neither Notion page, in an On-chain protocol group, and answered by
+    # product: they go next to the other lending metrics.
+    #
+    # A move needs its target group to exist, and `onchain_labels` creates those
+    # groups earlier in the same `apply!/0`. A first run therefore reports these
+    # names as unknown in the labels spec - the row is still in On-chain when
+    # that spec is planned - and moves them in when the onchain spec runs.
+    moves: [
+      %{
+        metric: "active_withdrawals",
+        to_category: "On-chain Labels",
+        to_group: "Centralized Exchanges"
+      },
+      %{
+        metric: "percent_of_total_supply_on_exchanges_change_{{interval}}",
+        to_category: "On-chain Labels",
+        to_group: "Centralized Exchanges"
+      },
+      %{
+        metric: "holders_labeled_distribution_{{lower}}_to_{{upper}}",
+        to_category: "On-chain Labels",
+        to_group: "Labeled Supply Distribution"
+      },
+      %{
+        metric: "euler_borrow_apy",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      },
+      %{
+        metric: "euler_supply_apy",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      },
+      %{
+        metric: "euler_total_protocol_borrowed_usd",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      },
+      %{
+        metric: "euler_total_protocol_supplied_usd",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      },
+      %{
+        metric: "euler_vaults_borrow_apy",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      },
+      %{
+        metric: "euler_vaults_supply_apy",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      },
+      %{
+        metric: "euler_vaults_total_borrowed_usd",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      },
+      %{
+        metric: "euler_vaults_total_supplied_usd",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      },
+      %{
+        metric: "morpho_supply_apy",
+        to_category: "On-chain Labels",
+        to_group: "Lending and Borrowing Protocols"
+      }
     ]
   }
 
@@ -1128,10 +1205,18 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
           "euler_action_repayments",
           "euler_action_repayments_usd",
           "euler_active_addresses",
+          "euler_borrow_apy",
+          "euler_supply_apy",
           "euler_total_deposits_usd",
           "euler_total_liquidations_usd",
           "euler_total_new_debt_usd",
+          "euler_total_protocol_borrowed_usd",
+          "euler_total_protocol_supplied_usd",
           "euler_total_repayments_usd",
+          "euler_vaults_borrow_apy",
+          "euler_vaults_supply_apy",
+          "euler_vaults_total_borrowed_usd",
+          "euler_vaults_total_supplied_usd",
           "fluid_action_deposits",
           "fluid_action_deposits_usd",
           "fluid_action_liquidations",
@@ -1241,6 +1326,7 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
           "morpho_flashloan_usd",
           "morpho_protocol_total_borrowed_usd",
           "morpho_protocol_total_supplied_usd",
+          "morpho_supply_apy",
           "morpho_total_deposits_usd",
           "morpho_total_flashloan_usd",
           "morpho_total_liquidations_usd",
@@ -1863,11 +1949,21 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
   # A group can only be dissolved when every metric in it is placed elsewhere by
   # this spec. Otherwise the delete drops the metric out of the taxonomy, and
   # nothing downstream would notice.
+  #
+  # A metric in `moves` is placed too - in another category. Its row leaves the
+  # group before the dissolve rather than being deleted with it, so it is neither
+  # an orphan nor one of the rows to delete. `execute/1` relies on that: it runs
+  # the moves first, and would otherwise delete the row it had just moved.
   defp plan_group_deletions(spec, existing_groups, desired, mappings) do
+    moved = MapSet.new(Map.get(spec, :moves, []), & &1.metric)
+
     for name <- Map.get(spec, :delete_groups, []),
         group = Enum.find(existing_groups, &(&1.name == name)),
         not is_nil(group) do
-      rows = Enum.filter(mappings, &(&1.group_id == group.id))
+      {moving, rows} =
+        mappings
+        |> Enum.filter(&(&1.group_id == group.id))
+        |> Enum.split_with(&MapSet.member?(moved, mapping_name(&1)))
 
       orphans =
         rows
@@ -1876,7 +1972,7 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
         |> Enum.uniq()
         |> Enum.sort()
 
-      %{group: group, rows: rows, orphans: orphans}
+      %{group: group, rows: rows, moving: moving, orphans: orphans}
     end
   end
 
@@ -2061,6 +2157,14 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
           _refused -> :ok
         end)
 
+        # Before the dissolves: a moved row keeps its id and would be deleted
+        # along with the group it is leaving.
+        Enum.each(plan.moves, fn
+          %{target: nil} -> :ok
+          %{target_group: nil} -> :ok
+          %{rows: rows, target: target, target_group: group} -> move_rows(rows, target, group)
+        end)
+
         Enum.each(plan.group_deletions, fn
           %{orphans: [], rows: rows, group: group} ->
             Enum.each(rows, &Repo.delete!/1)
@@ -2068,12 +2172,6 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
 
           _refused ->
             :ok
-        end)
-
-        Enum.each(plan.moves, fn
-          %{target: nil} -> :ok
-          %{target_group: nil} -> :ok
-          %{rows: rows, target: target, target_group: group} -> move_rows(rows, target, group)
         end)
 
         renumber_mappings(plan, group_ids)
@@ -2086,11 +2184,30 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     end
   end
 
+  # The row keeps the display_order it had in the group it is leaving, which
+  # collides with whatever already holds that number in the target group. Park it
+  # after the last row there instead; the next apply of the target's own spec
+  # renumbers the group into spec order.
   defp move_rows(rows, target, group) do
-    Enum.each(rows, fn row ->
+    rows
+    |> Enum.with_index(last_display_order(group.id) + 1)
+    |> Enum.each(fn {row, display_order} ->
       {:ok, _} =
-        MetricCategoryMapping.update(row, %{category_id: target.id, group_id: group.id})
+        MetricCategoryMapping.update(row, %{
+          category_id: target.id,
+          group_id: group.id,
+          display_order: display_order
+        })
     end)
+  end
+
+  defp last_display_order(group_id) do
+    from(m in MetricCategoryMapping,
+      where: m.group_id == ^group_id,
+      select: max(m.display_order)
+    )
+    |> Repo.one()
+    |> Kernel.||(0)
   end
 
   defp upsert_groups(plan) do

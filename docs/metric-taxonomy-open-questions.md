@@ -201,17 +201,22 @@ answer, but it is a cleanup now.
 
 ---
 
-## Q7. Two metrics on the page that do not exist
+## Q7. Two metrics on the page that do not exist — **answered, no action**
 
 **Category:** On-chain Labels, group **Labeled Balances**.
 
 - `inflow_per_label_and_owner`
 - `outflow_per_label_and_owner`
 
-Neither is in `metric_registry` and neither has a mapping row, so there is
-nothing to group. Either they were never built, or they are named differently in
-the database. The group ships with the two that do exist
-(`balance_per_owner`, `balance_per_label_and_owner_delta`).
+They are **aliases**, not metrics of their own:
+`lib/sanbase/clickhouse/metric/metric_files/label_based_metric_metrics.json`
+lists them as the aliases of `exchange_inflow_per_exchange` and
+`exchange_outflow_per_exchange`. Both canonical names are on the same page under
+Centralized Exchanges / Labeled exchange, and the spec places them there. The
+page lists one family twice under two names; nothing is missing.
+
+Labeled Balances therefore ships with `balance_per_owner` and
+`balance_per_label_and_owner_delta`, which is complete.
 
 ---
 
@@ -288,37 +293,58 @@ the apply rather than after.
 
 ---
 
-## Q11. `morpho_supply_apy` - which group?
+## Q11 and Q12. `morpho_supply_apy` and the eight Euler metrics - **answered**
 
-**Category:** On-chain. Found by the stage dry run: it exists on stage, is in the
-old `Morpho` group, and is absent from the Onchain core plan page. Because of it
-the importer **refuses to dissolve `Morpho`**, which is the guard working as
-intended - the group survives until the metric is placed.
+**Answered 2026-08-11.** All nine go to **On-chain Labels / Lending and Borrowing
+Protocols**, and the `Euler` and `Morpho` groups are dissolved from On-chain.
 
-Everything else that was in the protocol-specific On-chain groups has moved to
-On-chain Labels, so the likely answer is On-chain Labels / Lending and Borrowing
-protocols, next to `morpho_vaults_apy`. It needs saying out loud because that is
-a cross-category move, not a regrouping.
+- `euler_borrow_apy`, `euler_supply_apy`, `euler_total_protocol_borrowed_usd`,
+  `euler_total_protocol_supplied_usd`, `euler_vaults_borrow_apy`,
+  `euler_vaults_supply_apy`, `euler_vaults_total_borrowed_usd`,
+  `euler_vaults_total_supplied_usd`
+- `morpho_supply_apy`
+
+They were on neither Notion page and sat in protocol-specific On-chain groups
+that are leftovers of the v1 taxonomy; the other thirteen `euler_*` and twenty-one
+`morpho_*` metrics are already in that group. Product's answer was "if there is
+no better place" - so if one of these turns out to belong somewhere else, it is a
+one-line spec change, not a decision that has to be made again.
+
+Implemented as `moves` in `@taxonomy_onchain` plus the names in the On-chain
+Labels group, with `Euler` and `Morpho` in `delete_groups`. A move is a delete
+plus an insert, so nothing stays sellable through the On-chain package.
 
 ---
 
-## Q12. Eight Euler metrics in an On-chain group, absent from both pages
+## Q14. Three `crvusd_savings_*` names the page spells with a trailing `crv`
 
-**Category:** On-chain, group `Euler` (id 601 on stage) - a group that exists on
-stage and not on production. Reported by the dry run as "unrequested grouped rows
-(kept)"; the importer leaves them exactly where they are, and `Euler` is
-deliberately left out of `delete_groups` until this is answered:
+**Category:** On-chain Labels, group **Yield, Savings & Staking**. Low stakes.
 
-`euler_borrow_apy`, `euler_supply_apy`, `euler_total_protocol_borrowed_usd`,
-`euler_total_protocol_supplied_usd`, `euler_vaults_borrow_apy`,
-`euler_vaults_supply_apy`, `euler_vaults_total_borrowed_usd`,
-`euler_vaults_total_supplied_usd`
+The Onchain Labels page cells read `crvusd_savings_total_suppliedcrv`,
+`crvusd_savings_distributionscrv` and `crvusd_savings_apycrv`. The spec uses the
+names without the trailing `crv`, which is what the neighbouring `sky_savings_*`
+and `gho_savings_*` rows look like, so this reads as a paste artifact in Notion.
 
-The other thirteen `euler_*` metrics are on the Onchain Labels page and are
-placed in Lending and Borrowing protocols. These eight are on neither page, and
-they sit in the On-chain category rather than On-chain Labels. Same shape as Q11:
-almost certainly On-chain Labels / Lending and Borrowing protocols, but that is a
-cross-category move and needs confirming.
+Nothing is at risk either way: a name with no mapping row is reported as unknown
+and skipped, so a wrong guess writes nothing and shows up in `plan()`.
+
+---
+
+## Q15. Three metrics the spec places that no page names
+
+Real metrics, in the category, closest group chosen by name. Confirm or move:
+
+| Metric | Spec puts it in | Page has |
+|---|---|---|
+| `liquity_action_new_debt_usd` | On-chain Labels / Lending and Borrowing Protocols | `liquity_action_new_debt` only |
+| `average_transfer_5m` | On-chain / Transaction and Payment | `median_transfer_5m` only |
+| `miners_balance` | On-chain / Miners | `miners_total_supply`, `avg_difficulty` |
+
+Two more where the page and the metric name disagree, and the spec follows the
+name: `sentiment_neutral_youtube_videos` is listed under *Neutral ratio* but is
+not a `_ratio_` metric, so it is in **Neutral Sentiment**;
+`neutral_docs_count_telegram` is listed under *Positive docs count* and is in
+**Neutral Docs Count**.
 
 ---
 
@@ -351,7 +377,8 @@ list is environment-specific and is not evidence of a bad spec:
 - Production has metrics stage lacks - Market 76 mappings vs 41, Development 15
   vs 3, and `fluid_total_protocol_supplied_usd` in On-chain Labels.
 - Stage has metrics production lacks - `morpho_supply_apy` and the eight
-  `euler_*` metrics of Q11 and Q12 did not appear in production's ungrouped list.
+  `euler_*` metrics of Q11 and Q12 did not appear in production's ungrouped list,
+  so on production those moves are a no-op.
 
 Compare an unknown list against that environment's own ungrouped rows before
 treating an entry as a spec error.

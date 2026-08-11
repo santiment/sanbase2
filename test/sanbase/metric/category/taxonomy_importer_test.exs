@@ -489,6 +489,110 @@ defmodule Sanbase.Metric.Category.TaxonomyImporterTest do
       assert [%{display_order: 1}] = rows_for("tax_nft_market_volume", labels)
     end
 
+    test "a moved row is parked after the last row of the target group", %{
+      market: market,
+      labels: labels
+    } do
+      # Without this the row keeps the order it had in the group it left, which
+      # collides with whatever holds that number in the target group.
+      ungrouped("tax_nft_market_volume", market)
+
+      TaxonomyImporter.apply_spec!("labels", %{
+        category: labels.name,
+        groups: [%{name: "NFT", metrics: []}]
+      })
+
+      nft = MetricGroup.get_by_name_and_category("NFT", labels.id)
+
+      {:ok, _} =
+        MetricCategoryMapping.create(%{
+          metric_registry_id: MetricRegistryHelpers.create_registry_metric("tax_nft_resident").id,
+          category_id: labels.id,
+          group_id: nft.id,
+          display_order: 1
+        })
+
+      TaxonomyImporter.apply_spec!("market", %{
+        category: market.name,
+        groups: [%{name: "Pricing", metrics: []}],
+        moves: [
+          %{metric: "tax_nft_market_volume", to_category: labels.name, to_group: "NFT"}
+        ]
+      })
+
+      assert [%{display_order: 2}] = rows_for("tax_nft_market_volume", labels)
+    end
+
+    test "a group whose metrics all move out is dissolved", %{market: market, labels: labels} do
+      # Euler and Morpho: the group's metrics belong to another category, so
+      # "placed elsewhere" means moved, not regrouped.
+      {:ok, euler} =
+        MetricGroup.create(%{name: "Euler", category_id: market.id, display_order: 1})
+
+      {:ok, _} =
+        MetricCategoryMapping.create(%{
+          metric_registry_id: MetricRegistryHelpers.create_registry_metric("tax_euler_apy").id,
+          category_id: market.id,
+          group_id: euler.id
+        })
+
+      {:ok, lending} =
+        MetricGroup.create(%{name: "Lending", category_id: labels.id, display_order: 1})
+
+      spec = %{
+        category: market.name,
+        groups: [%{name: "Pricing", metrics: []}],
+        delete_groups: ["Euler"],
+        moves: [%{metric: "tax_euler_apy", to_category: labels.name, to_group: "Lending"}]
+      }
+
+      assert [%{orphans: []}] = TaxonomyImporter.plan_spec("fixture", spec).group_deletions
+
+      TaxonomyImporter.apply_spec!("fixture", spec)
+
+      refute "Euler" in Enum.map(MetricGroup.list_by_category(market.id), & &1.name)
+      assert rows_for("tax_euler_apy", market) == []
+      assert [%{group_id: group_id}] = rows_for("tax_euler_apy", labels)
+      assert group_id == lending.id
+    end
+
+    test "a dissolve still refuses when only some of the group moves", %{
+      market: market,
+      labels: labels
+    } do
+      {:ok, euler} =
+        MetricGroup.create(%{name: "Euler", category_id: market.id, display_order: 1})
+
+      for metric <- ["tax_euler_apy", "tax_euler_stays"] do
+        {:ok, _} =
+          MetricCategoryMapping.create(%{
+            metric_registry_id: MetricRegistryHelpers.create_registry_metric(metric).id,
+            category_id: market.id,
+            group_id: euler.id
+          })
+      end
+
+      {:ok, _} = MetricGroup.create(%{name: "Lending", category_id: labels.id, display_order: 1})
+
+      spec = %{
+        category: market.name,
+        groups: [%{name: "Pricing", metrics: []}],
+        delete_groups: ["Euler"],
+        moves: [%{metric: "tax_euler_apy", to_category: labels.name, to_group: "Lending"}]
+      }
+
+      assert [%{orphans: ["tax_euler_stays"]}] =
+               TaxonomyImporter.plan_spec("fixture", spec).group_deletions
+
+      TaxonomyImporter.apply_spec!("fixture", spec)
+
+      # The move still happens; the group survives with the metric that has
+      # nowhere to go, rather than dropping it.
+      assert "Euler" in Enum.map(MetricGroup.list_by_category(market.id), & &1.name)
+      assert rows_for("tax_euler_apy", market) == []
+      assert groups_of("tax_euler_stays", market) == ["Euler"]
+    end
+
     test "refuses when the target group does not exist yet", %{market: market, labels: labels} do
       ungrouped("tax_nft_market_volume", market)
 

@@ -175,7 +175,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     |> on_load(fn loader ->
       result =
         Dataloader.get(loader, SanbaseDataloader, query, selector)
-        |> DataFetchErrors.unwrap(query)
+        |> DataFetchErrors.unwrap(query, selector)
 
       result = result || %{total_votes: 0, total_voters: 0, current_user_votes: 0}
 
@@ -189,7 +189,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     |> on_load(fn loader ->
       result =
         Dataloader.get(loader, SanbaseDataloader, query, selector)
-        |> DataFetchErrors.unwrap(query)
+        |> DataFetchErrors.unwrap(query, selector)
 
       result = (result && result[:voted_at]) || nil
 

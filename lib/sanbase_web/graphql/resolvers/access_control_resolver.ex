@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
           :available_metric_versions,
           restriction.name
         )
-        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:available_metric_versions)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:available_metric_versions, restriction.name)
 
       versions = versions || []
 

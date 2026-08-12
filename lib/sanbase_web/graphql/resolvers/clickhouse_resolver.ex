@@ -100,7 +100,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     average_daa_activity_map =
       loader
       |> Dataloader.get(SanbaseDataloader, :average_daily_active_addresses, {from, to})
-      |> DataFetchErrors.unwrap(:average_daily_active_addresses)
+      |> DataFetchErrors.unwrap(:average_daily_active_addresses, {from, to})
 
     average_daa_activity_map = average_daa_activity_map || %{}
 

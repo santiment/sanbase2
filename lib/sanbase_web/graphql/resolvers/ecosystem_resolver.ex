@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
           :ecosystem_aggregated_metric_data,
           {ecosystem, args}
         )
-        |> DataFetchErrors.unwrap(:ecosystem_aggregated_metric_data)
+        |> DataFetchErrors.unwrap(:ecosystem_aggregated_metric_data, {ecosystem, args})
 
       {:ok, data || 0}
     end)
@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
     |> on_load(fn loader ->
       result =
         Dataloader.get(loader, SanbaseDataloader, key, {ecosystem, args})
-        |> DataFetchErrors.unwrap(key)
+        |> DataFetchErrors.unwrap(key, {ecosystem, args})
 
       result = result || []
 

@@ -25,8 +25,14 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
         data =
           case Metric.aggregated_timeseries_data(metric, %{slug: slugs}, from, to, opts) do
-            {:ok, result} -> result
-            {:error, error} -> {:error, error}
+            {:ok, result} ->
+              # TEMP: drop ~10% of the slugs from the successful result to
+              # simulate per-slug fetch failures. Remove after testing —
+              # keep only `result`.
+              Map.reject(result, fn {_slug, _value} -> :rand.uniform(50) == 1 end)
+
+            {:error, error} ->
+              {:error, error}
           end
 
         {selector, data}

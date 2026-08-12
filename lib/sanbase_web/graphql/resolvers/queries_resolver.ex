@@ -563,7 +563,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     |> on_load(fn loader ->
       count =
         Dataloader.get(loader, SanbaseDataloader, :dashboard_comments_count, id)
-        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:dashboard_comments_count)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:dashboard_comments_count, id)
 
       {:ok, count || 0}
     end)

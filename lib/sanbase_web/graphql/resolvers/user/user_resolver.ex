@@ -415,7 +415,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     |> on_load(fn loader ->
       user =
         Dataloader.get(loader, SanbaseDataloader, :users_by_id, user_id)
-        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:users_by_id)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:users_by_id, user_id)
 
       {:ok, user}
     end)

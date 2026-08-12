@@ -217,7 +217,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     |> on_load(fn loader ->
       categories =
         Dataloader.get(loader, SanbaseDataloader, :post_categories, id)
-        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:post_categories)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:post_categories, id)
         |> List.wrap()
         |> Enum.map(fn %{category_name: name} -> %{name: name} end)
 
@@ -286,7 +286,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     |> on_load(fn loader ->
       val =
         Dataloader.get(loader, SanbaseDataloader, :insights_count_per_user, id)
-        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:insights_count_per_user)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:insights_count_per_user, id)
 
       {:ok, val || %{total_count: 0, draft_count: 0, pulse_count: 0, paywall_count: 0}}
     end)
@@ -307,7 +307,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     |> on_load(fn loader ->
       count =
         Dataloader.get(loader, SanbaseDataloader, :insights_comments_count, id)
-        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:insights_comments_count)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:insights_comments_count, id)
 
       {:ok, count || 0}
     end)

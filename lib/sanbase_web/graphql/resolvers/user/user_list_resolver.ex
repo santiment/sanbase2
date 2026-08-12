@@ -136,7 +136,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     |> on_load(fn loader ->
       count =
         Dataloader.get(loader, SanbaseDataloader, :watchlist_comments_count, id)
-        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:watchlist_comments_count)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:watchlist_comments_count, id)
 
       {:ok, count || 0}
     end)

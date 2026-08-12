@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentEntityIdResolver do
     |> on_load(fn loader ->
       entity_id =
         Dataloader.get(loader, SanbaseDataloader, entity_id_name, id)
-        |> DataFetchErrors.unwrap(entity_id_name)
+        |> DataFetchErrors.unwrap(entity_id_name, id)
 
       {:ok, entity_id}
     end)

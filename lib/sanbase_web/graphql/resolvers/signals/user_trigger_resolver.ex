@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     |> on_load(fn loader ->
       project =
         Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)
-        |> DataFetchErrors.unwrap(:project_by_slug)
+        |> DataFetchErrors.unwrap(:project_by_slug, slug)
 
       {:ok, project}
     end)

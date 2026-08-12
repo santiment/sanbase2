@@ -99,7 +99,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     |> on_load(fn loader ->
       result =
         Dataloader.get_many(loader, SanbaseDataloader, :social_documents_by_ids, doc_ids)
-        |> Enum.map(&DataFetchErrors.unwrap(&1, :social_documents_by_ids))
+        |> Enum.zip(doc_ids)
+        |> Enum.map(fn {result, doc_id} ->
+          DataFetchErrors.unwrap(result, :social_documents_by_ids, doc_id)
+        end)
 
       {:ok, result}
     end)
@@ -111,7 +114,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     |> on_load(fn loader ->
       project =
         Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)
-        |> DataFetchErrors.unwrap(:project_by_slug)
+        |> DataFetchErrors.unwrap(:project_by_slug, slug)
 
       {:ok, project}
     end)
@@ -123,7 +126,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     |> on_load(fn loader ->
       project =
         Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)
-        |> DataFetchErrors.unwrap(:project_by_slug)
+        |> DataFetchErrors.unwrap(:project_by_slug, slug)
 
       {:ok, project}
     end)

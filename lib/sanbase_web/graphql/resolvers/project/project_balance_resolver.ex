@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
             :address_selector_current_balance,
             {address, selector}
           )
-          |> DataFetchErrors.unwrap(:address_selector_current_balance)
+          |> DataFetchErrors.unwrap(:address_selector_current_balance, {address, selector})
 
         balance || +0.0
       end)
@@ -82,7 +82,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     else
       error ->
         case error do
-          {:error, reason} -> DataFetchErrors.record(:last_price_usd, reason)
+          {:error, reason} -> DataFetchErrors.record(:last_price_usd, reason, "ethereum")
           _ -> :ok
         end
 

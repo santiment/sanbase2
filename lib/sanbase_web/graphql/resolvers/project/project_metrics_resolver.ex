@@ -145,10 +145,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   defp aggregated_metric_from_loader(loader, data, error_on_data_fetch_fail) do
     %{selector: selector, slug: slug, metric: metric} = data
 
-    loader
-    |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
-    |> case do
-      map when is_map(map) ->
+    case Dataloader.get(loader, SanbaseDataloader, :aggregated_metric, selector) do
+      {:ok, map} when is_map(map) ->
         aggregated_metric_from_loader_map(map, slug, metric, data[:opts])
 
       _ignored when error_on_data_fetch_fail == false ->

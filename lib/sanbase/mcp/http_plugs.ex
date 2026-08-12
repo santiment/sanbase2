@@ -3,12 +3,20 @@ defmodule Sanbase.MCP.AuthPlug do
   Plug that enforces authentication for MCP endpoints.
   Supports both OAuth Bearer tokens and API key authentication.
   Rejects unauthenticated requests with 401 before they reach the MCP server.
+
+  The MCP handshake and tool-surface introspection (`initialize`, `tools/list`,
+  `ping`, the `notifications/initialized` notification) are allowed without
+  credentials so MCP directory probes and anonymous clients can discover the
+  available tools. No data is reachable this way: `Sanbase.MCP.Server` rejects
+  `tools/call` and `prompts/get` when there is no `current_user`.
   """
   @behaviour Plug
 
   import Plug.Conn
 
   alias Boruta.Oauth.Authorization
+
+  @public_methods ["initialize", "notifications/initialized", "ping", "tools/list"]
 
   @doc "Returns the given options unchanged."
   @spec init(opts :: term()) :: term()
@@ -21,15 +29,41 @@ defmodule Sanbase.MCP.AuthPlug do
   def call(conn, _opts) do
     case get_authorization_value(conn) do
       nil ->
-        reject(conn, "Authorization header required")
+        if public_request?(conn) do
+          conn
+        else
+          reject(conn, "Authorization header required")
+        end
 
       header_value ->
+        # Credentials that fail validation are rejected even for public
+        # methods, so clients with expired tokens get the 401 + www-authenticate
+        # that restarts their OAuth flow instead of silently degrading to
+        # an anonymous session.
         case try_oauth(header_value) || try_apikey(header_value) do
           {:ok, user} -> assign(conn, :current_user, user)
           nil -> reject(conn, "Invalid credentials")
         end
     end
   end
+
+  defp public_request?(%Plug.Conn{method: "POST", body_params: body_params}) do
+    case body_params do
+      %{"method" => method} ->
+        method in @public_methods
+
+      # JSON-RPC batch requests: Plug.Parsers wraps top-level arrays in "_json"
+      %{"_json" => requests} when is_list(requests) and requests != [] ->
+        Enum.all?(requests, fn request ->
+          is_map(request) and request["method"] in @public_methods
+        end)
+
+      _ ->
+        false
+    end
+  end
+
+  defp public_request?(_conn), do: false
 
   defp get_authorization_value(conn) do
     case get_req_header(conn, "authorization") do

@@ -389,7 +389,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
   defp source_first_datetime("youtube_videos"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("4chan"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
-  defp source_first_datetime("farcaster"), do: {:ok, ~U[2024-01-01 00:00:00Z]}
   # twitter_crypto is not a source itself, but a source selector value of social_active_users
   defp source_first_datetime("twitter_crypto"), do: source_first_datetime("twitter")
 

@@ -67,7 +67,6 @@ defmodule Sanbase.SocialData.SocialDocument do
       "reddit" <> _ -> "reddit"
       "twitter" <> _ -> "twitter"
       "4chan" <> _ -> "4chan"
-      "farcaster" <> _ -> "farcaster"
       "telegram" <> _ -> "telegram"
       "bitcointalk" <> _ -> "bitcointalk"
       _ -> nil

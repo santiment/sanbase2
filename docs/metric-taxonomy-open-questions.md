@@ -166,18 +166,18 @@ nowhere by the spec until confirmed.
 
 ---
 
-## Q4. The 40 Farcaster / Discord / Professional-Traders-Chat rows
+## Q4. The Discord / Professional-Traders-Chat rows
 
 **Category:** Social. **We made an assumption here - please confirm or correct.**
 
 On the page these sit in the same unheaded block as `nft_social_volume`, after
 the Deprecated rows, and they are **not** struck through. We filed each one into
-the group its name implies - `sentiment_positive_farcaster` into Positive
-Sentiment, `social_dominance_discord` into Social dominance, and so on - rather
-than into Deprecated.
+the group its name implies - `social_dominance_discord` into Social dominance,
+and so on - rather than into Deprecated.
 
-If those sources are being retired, say so and they move to Deprecated as a
-block.
+Both sources are deprecated (their metric definitions live in
+`metric_files/deprecated/`), so these rows likely belong in Deprecated as a
+block - confirm and they move.
 
 ---
 

@@ -307,7 +307,52 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     assert Enum.all?(tools, fn tool -> is_binary(tool["name"]) end)
 
     # Data-returning methods are still rejected with 401 at the HTTP layer
-    assert {:error, _} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
+    assert {:error,
+            %Anubis.MCP.Error{
+              reason: :send_failure,
+              data: %{original_reason: {:http_error, 401, _}}
+            }} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
+  end
+
+  test "unauthenticated - direct tools/call POST returns 401 with www-authenticate", %{
+    conn: conn
+  } do
+    body =
+      Jason.encode!(%{
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: %{name: "check_authentication", arguments: %{}}
+      })
+
+    conn =
+      conn
+      |> put_req_header("content-type", "application/json")
+      |> post("/mcp", body)
+
+    assert conn.status == 401
+    assert [www_authenticate] = get_resp_header(conn, "www-authenticate")
+    assert www_authenticate =~ "resource_metadata"
+  end
+
+  test "unauthenticated - batch mixing public and private methods returns 401", %{conn: conn} do
+    body =
+      Jason.encode!([
+        %{jsonrpc: "2.0", id: 1, method: "tools/list"},
+        %{
+          jsonrpc: "2.0",
+          id: 2,
+          method: "tools/call",
+          params: %{name: "check_authentication", arguments: %{}}
+        }
+      ])
+
+    conn =
+      conn
+      |> put_req_header("content-type", "application/json")
+      |> post("/mcp", body)
+
+    assert conn.status == 401
   end
 
   test "unauthenticated - invalid bearer token returns 401", _context do

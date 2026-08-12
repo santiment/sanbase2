@@ -72,6 +72,7 @@ defmodule SanbaseWeb.Router do
   scope "/.well-known" do
     get("/oauth-authorization-server", SanbaseWeb.OAuthController, :metadata)
     get("/oauth-protected-resource", SanbaseWeb.OAuthController, :protected_resource)
+    get("/glama.json", SanbaseWeb.WellKnownController, :glama)
     options("/oauth-authorization-server", SanbaseWeb.OAuthController, :preflight)
     options("/oauth-protected-resource", SanbaseWeb.OAuthController, :preflight)
   end

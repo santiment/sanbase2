@@ -271,11 +271,9 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     assert String.slice(obfuscated_apikey, -3, 3) == String.slice(context.apikey, -3, 3)
   end
 
-  test "unauthenticated - no authorization header returns 401", _context do
+  test "unauthenticated - initialize and tools/list are public, tools/call is rejected",
+       _context do
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
-
-    # The client process starts but crashes when the initialize request gets 401
-    Process.flag(:trap_exit, true)
 
     {:ok, client} =
       Sanbase.MCP.Client.start_link(
@@ -293,8 +291,23 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
         protocol_version: "2025-03-26"
       )
 
-    # The client should shut down because the 401 prevents initialization
-    assert_receive {:EXIT, ^client, :shutdown}, 5000
+    # The handshake succeeds without credentials so directory probes can
+    # introspect the tool surface
+    assert Process.alive?(client)
+    wait_for_mcp_initialization()
+
+    assert {:ok, %Anubis.MCP.Response{result: %{"tools" => tools}}} =
+             try_few_times(fn -> Anubis.Client.list_tools(Sanbase.MCP.Client) end,
+               attempts: 3,
+               sleep: 250
+             )
+
+    assert is_list(tools)
+    assert length(tools) > 0
+    assert Enum.all?(tools, fn tool -> is_binary(tool["name"]) end)
+
+    # Data-returning methods are still rejected with 401 at the HTTP layer
+    assert {:error, _} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
   end
 
   test "unauthenticated - invalid bearer token returns 401", _context do

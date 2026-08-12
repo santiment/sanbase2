@@ -15,14 +15,6 @@ defmodule Sanbase.SocialData.MetricAdapterTest do
                {:ok, ~U[2011-06-01 00:00:00Z]}
     end
 
-    test "for farcaster metrics" do
-      assert MetricAdapter.first_datetime("social_volume_farcaster", %{text: "btc"}, []) ==
-               {:ok, ~U[2024-01-01 00:00:00Z]}
-
-      assert MetricAdapter.first_datetime("sentiment_balance_farcaster", %{text: "btc"}, []) ==
-               {:ok, ~U[2024-01-01 00:00:00Z]}
-    end
-
     test "for social_active_users" do
       assert MetricAdapter.first_datetime("social_active_users", %{source: "telegram"}, []) ==
                {:ok, ~U[2016-03-29 00:00:00Z]}

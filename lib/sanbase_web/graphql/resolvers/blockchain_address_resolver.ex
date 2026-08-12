@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   alias Sanbase.BlockchainAddress.{BlockchainAddressUserPair, BlockchainAddressLabelChange}
 
   alias Sanbase.Utils.BlockchainAddressUtils
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Clickhouse.Label
   alias Sanbase.Project
@@ -75,7 +76,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :current_user_address_details, elem)
     |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, :current_user_address_details, elem)
+      result =
+        Dataloader.get(loader, SanbaseDataloader, :current_user_address_details, elem)
+        |> DataFetchErrors.unwrap(:current_user_address_details)
 
       {:ok, result}
     end)
@@ -267,29 +270,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         loader
         |> Dataloader.load(SanbaseDataloader, :address_labels, address)
         |> on_load(fn loader ->
-          with {:ok, santiment_labels} <-
-                 Dataloader.get(loader, SanbaseDataloader, :address_labels, address) do
-            santiment_labels = santiment_labels || []
+          santiment_labels =
+            Dataloader.get(loader, SanbaseDataloader, :address_labels, address)
+            |> DataFetchErrors.unwrap(:address_labels)
 
-            # The root can be built either from a BlockchainAddress in case the
-            # `blockchain_address` query is used, or from a BlockchainAddressUserPair
-            # in casethe address is part of a watchlist. In the second case, the root
-            # has an additional `labels` key which holds the list of user-defined labels
-            # for that address. The santiment defined labels from CH are provided with a
-            # `origin: "santiment"` key-value pair so they could be distinguished from
-            # the user-defined labels.
-            user_labels =
-              Map.get(root, :labels, [])
-              |> Enum.map(fn label ->
-                label |> Map.put(:origin, "user")
-              end)
+          santiment_labels = santiment_labels || []
 
-            labels =
-              (user_labels ++ santiment_labels)
-              |> Enum.sort_by(& &1.name)
+          # The root can be built either from a BlockchainAddress in case the
+          # `blockchain_address` query is used, or from a BlockchainAddressUserPair
+          # in casethe address is part of a watchlist. In the second case, the root
+          # has an additional `labels` key which holds the list of user-defined labels
+          # for that address. The santiment defined labels from CH are provided with a
+          # `origin: "santiment"` key-value pair so they could be distinguished from
+          # the user-defined labels.
+          user_labels =
+            Map.get(root, :labels, [])
+            |> Enum.map(fn label ->
+              label |> Map.put(:origin, "user")
+            end)
 
-            {:ok, labels}
-          end
+          labels =
+            (user_labels ++ santiment_labels)
+            |> Enum.sort_by(& &1.name)
+
+          {:ok, labels}
         end)
     end
   end
@@ -303,7 +307,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         loader
         |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
         |> on_load(fn loader ->
-          {:ok, Dataloader.get(loader, SanbaseDataloader, :infrastructure, infrastructure_id)}
+          infrastructure =
+            Dataloader.get(loader, SanbaseDataloader, :infrastructure, infrastructure_id)
+            |> DataFetchErrors.unwrap(:infrastructure)
+
+          {:ok, infrastructure}
         end)
     end
   end
@@ -314,13 +322,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :address_selector_current_balance, {address, selector})
     |> on_load(fn loader ->
-      {:ok,
-       Dataloader.get(
-         loader,
-         SanbaseDataloader,
-         :address_selector_current_balance,
-         {address, selector}
-       )}
+      balance =
+        Dataloader.get(
+          loader,
+          SanbaseDataloader,
+          :address_selector_current_balance,
+          {address, selector}
+        )
+        |> DataFetchErrors.unwrap(:address_selector_current_balance)
+
+      {:ok, balance}
     end)
   end
 
@@ -337,6 +348,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
           :address_selector_current_balance,
           [{address, selector}, {:total_balance, selector}]
         )
+        |> Enum.map(&DataFetchErrors.unwrap(&1, :address_selector_current_balance))
 
       dominance =
         Sanbase.Math.percent_of(address_balance, total_balance, type: :between_0_and_100)
@@ -358,13 +370,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
       {address, selector, from, to}
     )
     |> on_load(fn loader ->
-      {:ok,
-       Dataloader.get(
-         loader,
-         SanbaseDataloader,
-         :address_selector_balance_change,
-         {address, selector, from, to}
-       )}
+      balance_change =
+        Dataloader.get(
+          loader,
+          SanbaseDataloader,
+          :address_selector_balance_change,
+          {address, selector, from, to}
+        )
+        |> DataFetchErrors.unwrap(:address_selector_balance_change)
+
+      {:ok, balance_change}
     end)
   end
 
@@ -375,7 +390,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :blockchain_addresses_comments_count, id)
     |> on_load(fn loader ->
-      count = Dataloader.get(loader, SanbaseDataloader, :blockchain_addresses_comments_count, id)
+      count =
+        Dataloader.get(loader, SanbaseDataloader, :blockchain_addresses_comments_count, id)
+        |> DataFetchErrors.unwrap(:blockchain_addresses_comments_count)
+
       {:ok, count || 0}
     end)
   end

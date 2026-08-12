@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.CommentEntityIdResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def insight_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
@@ -32,7 +33,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentEntityIdResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, entity_id_name, id)
     |> on_load(fn loader ->
-      Dataloader.get(loader, SanbaseDataloader, entity_id_name, id)
+      entity_id =
+        Dataloader.get(loader, SanbaseDataloader, entity_id_name, id)
+        |> DataFetchErrors.unwrap(entity_id_name)
+
+      {:ok, entity_id}
     end)
   end
 end

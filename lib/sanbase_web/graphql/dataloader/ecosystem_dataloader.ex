@@ -14,16 +14,19 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       fn {args, ecosystems} ->
         opts = [aggregation: args[:aggregation]]
 
-        {:ok, data} =
-          Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
-            ecosystems,
-            args.metric,
-            args.from,
-            args.to,
-            opts
-          )
+        case Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
+               ecosystems,
+               args.metric,
+               args.from,
+               args.to,
+               opts
+             ) do
+          {:ok, data} ->
+            aggregated_transform_to_map(data, args)
 
-        aggregated_transform_to_map(data, args)
+          {:error, error} ->
+            Map.new(ecosystems, fn ecosystem -> {{ecosystem, args}, {:error, error}} end)
+        end
       end,
       max_concurrency: 4,
       timeout: 60_000,
@@ -48,17 +51,20 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       fn {args, ecosystems} ->
         opts = [aggregation: args[:aggregation]]
 
-        {:ok, data} =
-          Sanbase.Ecosystem.Metric.timeseries_data(
-            ecosystems,
-            args.metric,
-            args.from,
-            args.to,
-            args.interval,
-            opts
-          )
+        case Sanbase.Ecosystem.Metric.timeseries_data(
+               ecosystems,
+               args.metric,
+               args.from,
+               args.to,
+               args.interval,
+               opts
+             ) do
+          {:ok, data} ->
+            timeseries_transform_to_map(data, args)
 
-        timeseries_transform_to_map(data, args)
+          {:error, error} ->
+            Map.new(ecosystems, fn ecosystem -> {{ecosystem, args}, {:error, error}} end)
+        end
       end,
       max_concurrency: 4,
       timeout: 60_000,

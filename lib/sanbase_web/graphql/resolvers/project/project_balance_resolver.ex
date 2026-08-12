@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
   alias Sanbase.Project
   alias Sanbase.ProjectEthAddress
 
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   defp current_balance_loader(loader, address_or_addresses, selector) do
@@ -33,6 +34,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
             :address_selector_current_balance,
             {address, selector}
           )
+          |> DataFetchErrors.unwrap(:address_selector_current_balance)
 
         balance || +0.0
       end)
@@ -74,11 +76,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
   def usd_balance_from_loader(loader, eth_addresses, project) do
     with {:ok, eth_balance} <-
            current_combined_balance_from_loader(loader, eth_addresses, %{slug: "ethereum"}),
-         eth_price_usd when not is_nil(eth_price_usd) <-
+         {:ok, eth_price_usd} when not is_nil(eth_price_usd) <-
            Dataloader.get(loader, SanbaseDataloader, :last_price_usd, "ethereum") do
       {:ok, eth_balance * eth_price_usd}
     else
       error ->
+        case error do
+          {:error, reason} -> DataFetchErrors.record(:last_price_usd, reason)
+          _ -> :ok
+        end
+
         Logger.warning(
           "Cannot calculate USD balance for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )

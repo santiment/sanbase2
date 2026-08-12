@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   alias Sanbase.Transfers
   alias Sanbase.Project
   alias Sanbase.Utils.BlockchainAddressUtils
-  alias SanbaseWeb.Graphql.{Cache, SanbaseDataloader}
+  alias SanbaseWeb.Graphql.{Cache, DataFetchErrors, SanbaseDataloader}
   alias Sanbase.Clickhouse.{Label, HistoricalBalance.EthSpent}
 
   @max_concurrency 100
@@ -57,11 +57,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     loader
     |> Dataloader.get(SanbaseDataloader, :eth_spent, days)
     |> case do
-      %{} = eth_spent_map ->
+      {:ok, %{} = eth_spent_map} ->
         case Map.get(eth_spent_map, id) do
           nil -> {:ok, 0}
           result -> result
         end
+
+      {:error, error} ->
+        DataFetchErrors.record(:eth_spent, error)
+        {:nocache, {:ok, nil}}
 
       _ ->
         {:nocache, {:ok, nil}}

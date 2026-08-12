@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   alias Sanbase.Project
   alias Sanbase.Metric
   alias Sanbase.Cache.RehydratingCache
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   @ttl 7200
@@ -149,12 +150,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
       {:ok, map} when is_map(map) ->
         aggregated_metric_from_loader_map(map, slug, metric, data[:opts])
 
-      _ignored when error_on_data_fetch_fail == false ->
-        {:nocache, {:ok, nil}}
-
       _ignored when error_on_data_fetch_fail == true ->
         {:error,
          "Failed to fetch aggregatedTimeseriesData for metric #{metric} and asset #{slug}"}
+
+      {:error, reason} ->
+        DataFetchErrors.record(:aggregated_metric, reason)
+        {:nocache, {:ok, nil}}
+
+      _ignored ->
+        {:nocache, {:ok, nil}}
     end
   end
 

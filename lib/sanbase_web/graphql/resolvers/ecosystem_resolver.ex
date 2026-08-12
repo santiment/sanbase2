@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [fit_from_datetime: 2]
 
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.Resolvers.MetricTransform
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
@@ -20,9 +21,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
           SanbaseDataloader,
           :ecosystem_aggregated_metric_data,
           {ecosystem, args}
-        ) || 0
+        )
+        |> DataFetchErrors.unwrap(:ecosystem_aggregated_metric_data)
 
-      {:ok, data}
+      {:ok, data || 0}
     end)
   end
 
@@ -44,7 +46,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, key, {ecosystem, args})
     |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, key, {ecosystem, args}) || []
+      result =
+        Dataloader.get(loader, SanbaseDataloader, key, {ecosystem, args})
+        |> DataFetchErrors.unwrap(key)
+
+      result = result || []
 
       with {:ok, result} <- MetricTransform.apply_transform(args.transform, result),
            {:ok, result} <- fit_from_datetime(result, %{args | from: args.original_from}) do

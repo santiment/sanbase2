@@ -55,8 +55,12 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
 
         Map.put(balance_map, {:total_balance, selector}, total_balance)
 
-      {:error, _error} ->
-        %{}
+      {:error, error} ->
+        # Per-key errors so the resolvers can degrade gracefully and record
+        # the failure instead of silently showing empty balances.
+        addresses
+        |> Map.new(fn address -> {{address, selector}, {:error, error}} end)
+        |> Map.put({:total_balance, selector}, {:error, error})
     end
   end
 
@@ -70,8 +74,8 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
             Map.put(acc, {address, selector, from, to}, result)
         end)
 
-      {:error, _error} ->
-        %{}
+      {:error, error} ->
+        Map.new(addresses, fn address -> {{address, selector, from, to}, {:error, error}} end)
     end
   end
 end

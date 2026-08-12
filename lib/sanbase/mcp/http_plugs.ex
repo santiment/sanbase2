@@ -4,11 +4,12 @@ defmodule Sanbase.MCP.AuthPlug do
   Supports both OAuth Bearer tokens and API key authentication.
   Rejects unauthenticated requests with 401 before they reach the MCP server.
 
-  The MCP handshake and tool-surface introspection (`initialize`, `tools/list`,
-  `ping`, the `notifications/initialized` notification) are allowed without
-  credentials so MCP directory probes and anonymous clients can discover the
-  available tools. No data is reachable this way: `Sanbase.MCP.Server` rejects
-  `tools/call` and `prompts/get` when there is no `current_user`.
+  The MCP handshake and surface introspection (`initialize`, `ping`, the
+  `notifications/initialized` notification and the `*/list` methods) are
+  allowed without credentials so MCP directory probes and anonymous clients
+  can discover the available tools, prompts and resources. No data is
+  reachable this way: `Sanbase.MCP.Server` rejects `tools/call` and
+  `prompts/get` when there is no `current_user`.
   """
   @behaviour Plug
 
@@ -16,7 +17,16 @@ defmodule Sanbase.MCP.AuthPlug do
 
   alias Boruta.Oauth.Authorization
 
-  @public_methods ["initialize", "notifications/initialized", "ping", "tools/list"]
+  @public_methods [
+    "initialize",
+    "notifications/initialized",
+    "ping",
+    "tools/list",
+    "prompts/list",
+    "resources/list",
+    "resources/templates/list",
+    "tasks/list"
+  ]
 
   @doc "Returns the given options unchanged."
   @spec init(opts :: term()) :: term()

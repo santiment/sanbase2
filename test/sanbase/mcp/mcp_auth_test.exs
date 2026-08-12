@@ -271,7 +271,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     assert String.slice(obfuscated_apikey, -3, 3) == String.slice(context.apikey, -3, 3)
   end
 
-  test "unauthenticated - initialize and tools/list are public, tools/call is rejected",
+  test "unauthenticated - initialize and list methods are public, tools/call is rejected",
        _context do
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
@@ -305,6 +305,17 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     assert is_list(tools)
     assert length(tools) > 0
     assert Enum.all?(tools, fn tool -> is_binary(tool["name"]) end)
+
+    # Prompt and resource introspection is public as well
+    assert {:ok, %Anubis.MCP.Response{result: %{"prompts" => prompts}}} =
+             Anubis.Client.list_prompts(Sanbase.MCP.Client)
+
+    assert is_list(prompts)
+
+    assert {:ok, %Anubis.MCP.Response{result: %{"resources" => resources}}} =
+             Anubis.Client.list_resources(Sanbase.MCP.Client)
+
+    assert is_list(resources)
 
     # Data-returning methods are still rejected with 401 at the HTTP layer
     assert {:error,

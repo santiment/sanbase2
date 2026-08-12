@@ -86,6 +86,7 @@ defmodule Sanbase.AvailableMetrics do
     metric_to_supported_assets_map = metric_to_available_slugs_maps()
     access_map = Sanbase.Metric.Helper.access_map()
     metric_to_categories = metric_to_categories_map()
+    hidden_metrics = Sanbase.Metric.hidden_metrics()
 
     metrics
     |> Enum.map(fn metric ->
@@ -99,6 +100,12 @@ defmodule Sanbase.AvailableMetrics do
         internal_name: m.internal_metric,
         status: m.status,
         docs: Map.get(m, :docs) || [],
+        # `is_deprecated` is the derived flag: the registry's own column, or a
+        # `hard_deprecate_after` that is set - including a date still in the
+        # future, which is a metric on its way out and not worth advertising.
+        is_deprecated: Map.get(m, :is_deprecated) == true,
+        hard_deprecate_after: Map.get(m, :hard_deprecate_after),
+        is_hidden: MapSet.member?(hidden_metrics, m.metric),
         available_assets: Map.get(metric_to_supported_assets_map, m.metric) || [],
         default_aggregation: m.default_aggregation,
         frequency: m.min_interval,
@@ -205,6 +212,7 @@ defmodule Sanbase.AvailableMetrics do
   def apply_filters(metrics_list, filters) when is_list(metrics_list) do
     metrics_list
     |> reject_hidden_group_metrics()
+    |> reject_hidden_and_deprecated_metrics()
     |> maybe_apply_filter(:docs, filters)
     |> maybe_apply_filter(:only_with_docs, filters)
     |> maybe_apply_filter(:only_intraday_metrics, filters)
@@ -223,6 +231,17 @@ defmodule Sanbase.AvailableMetrics do
       categories != [] and
         Enum.all?(categories, &(&1.group_name in @hidden_group_names))
     end)
+  end
+
+  # A deprecated or hidden metric is not part of any sold package -
+  # `Bundle.PackageSnapshot.sellable?/1` rejects both flags - so listing it here
+  # advertises something a customer cannot buy.
+  #
+  # Neither flag stops the metric being fetched by name, and the details page
+  # reads its metadata directly, so a link to one keeps working. Only the list and
+  # its CSV export drop it.
+  defp reject_hidden_and_deprecated_metrics(metrics) do
+    Enum.reject(metrics, &(&1[:is_deprecated] == true or &1[:is_hidden] == true))
   end
 
   # "with" | "without" | "all". `only_with_docs` is the older boolean form of the

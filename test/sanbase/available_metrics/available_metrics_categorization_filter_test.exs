@@ -124,6 +124,18 @@ defmodule Sanbase.AvailableMetricsCategorizationFilterTest do
     assert result == ["also_sellable"]
   end
 
+  test "hides deprecated and hidden metrics" do
+    metrics = [
+      metric("live", []),
+      metric("soft_deprecated", []) |> Map.put(:is_deprecated, true),
+      metric("scheduled_for_deprecation", [])
+      |> Map.merge(%{is_deprecated: true, hard_deprecate_after: ~U[2030-01-01 00:00:00Z]}),
+      metric("internal", []) |> Map.put(:is_hidden, true)
+    ]
+
+    assert AvailableMetrics.apply_filters(metrics, %{}) |> Enum.map(& &1.metric) == ["live"]
+  end
+
   test "does not match category and group across different mappings" do
     metrics = [
       metric("multi", [

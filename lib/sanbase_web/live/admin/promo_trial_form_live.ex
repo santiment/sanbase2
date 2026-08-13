@@ -108,13 +108,13 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                :info,
                "Created #{length(subs)} promo subscription(s) for #{user.email}."
              )
-             |> push_navigate(to: ~p"/admin/generic?resource=promo_trials")}
+             |> push_navigate(to: ~p"/admin/promo_trials")}
 
           {:ok, _sub} ->
             {:noreply,
              socket
              |> put_flash(:info, "Created promo subscription for #{user.email}.")
-             |> push_navigate(to: ~p"/admin/generic?resource=promo_trials")}
+             |> push_navigate(to: ~p"/admin/promo_trials")}
 
           {:error, reason} ->
             {:noreply, put_flash(socket, :error, "Failed: #{inspect(reason)}")}
@@ -203,7 +203,7 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
             </li>
             <li>
               <.link
-                navigate={~p"/admin/generic?resource=promo_trials"}
+                navigate={~p"/admin/promo_trials"}
                 class="link-hover"
               >
                 Promo Trials
@@ -222,7 +222,7 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
             </p>
           </div>
           <.link
-            navigate={~p"/admin/generic?resource=promo_trials"}
+            navigate={~p"/admin/promo_trials"}
             class="btn btn-ghost btn-sm"
           >
             <.icon name="hero-arrow-left" class="size-4" /> Back

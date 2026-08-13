@@ -3,6 +3,12 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   Fetch metric timeseries for one metric and one or many slugs.
 
   Defaults: last 30 days (time_period="30d"), interval="1d".
+
+  Use this when the assets are already known and the values over time matter.
+  For the opposite direction — "which assets satisfy X" / "top N by X", one
+  aggregated value per asset across the whole universe — use
+  `assets_by_metric_tool`. To confirm a metric exists for a slug first, use
+  `metrics_and_assets_discovery_tool`; to draw the result, use `show_chart`.
   """
 
   use Anubis.Server.Component, type: :tool

@@ -1,5 +1,73 @@
 defmodule Sanbase.MCP.InsightDiscoveryTool do
-  @moduledoc "Discovery tool for santiment crypto insights with basic info (id, title, tags, link) in time period"
+  @moduledoc """
+  List Santiment insights (analyst-written crypto articles) published in a
+  lookback window. Returns metadata only — id, title, tags, author, link,
+  published_at, prediction — never the article body.
+
+  ## When to use
+
+  - The user asks what Santiment analysts have written or published recently.
+  - As step 1 of a two-step read: discover ids here, then pass them to
+    `fetch_insights_tool` for the full text.
+
+  ## When not to use
+
+  - Full text of an insight — use `fetch_insights_tool` (it needs ids, so call
+    this tool first).
+  - What the market is talking about right now — use `trending_stories_tool`
+    (stories only) or `combined_trends_tool` (stories + trending words).
+    Insights are human-authored articles, not live social signal.
+  - Numeric metric timeseries for an asset — use `fetch_metric_data_tool`.
+  - Ranking or screening assets by a metric — use `assets_by_metric_tool`.
+
+  ## Parameters
+
+  - `time_period` (optional, default `"30d"`) — lookback window as
+    `<integer><unit>`, unit one of `s`, `m`, `h`, `d`, `w`, `y`
+    (e.g. `"12h"`, `"7d"`, `"90d"`, `"1y"`). The window is always
+    `now - time_period` .. `now`; absolute dates and future ranges are not
+    supported. An unparsable value returns an error, not a default.
+
+  There is no tag, author, asset or full-text filter — filter the returned
+  list yourself.
+
+  ## Behavior
+
+  - Read-only: no writes, no state change, nothing destructive.
+  - Requires an authenticated Santiment account (API key or OAuth token);
+    every call counts against the account plan's MCP rate limits.
+  - Returns only published, moderator-approved insights, newest first, hard
+    capped at 100 per call. A wide `time_period` can hit that cap and silently
+    omit the oldest insights — if `total_count` is 100, narrow the window and
+    call again.
+
+  ## Response
+
+  JSON object:
+
+      {
+        "insights": [
+          {
+            "id": 1234,                          // integer, feed to fetch_insights_tool
+            "title": "...",
+            "tags": ["BTC", "bitcoin"],          // asset tickers/slugs and topics
+            "link": "https://app.santiment.net/insights/read/1234",
+            "published_at": "2025-01-30T10:00:00Z",
+            "author": "username",                // "Anonymous" when unset
+            "prediction": "semi_bullish"         // heavy_bullish | semi_bullish |
+                                                 // semi_bearish | heavy_bearish |
+                                                 // none | unspecified | null
+          }
+        ],
+        "time_period": "30d",
+        "total_count": 1,
+        "period_start": "2024-12-31T10:00:00Z",
+        "period_end": "2025-01-30T10:00:00Z"
+      }
+
+  An empty `insights` list with `total_count: 0` means nothing was published in
+  the window — a valid result, not an error.
+  """
 
   use Anubis.Server.Component, type: :tool
 
@@ -21,11 +89,10 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
     field(:time_period, :string,
       required: false,
       description: """
-      Time period for insights (e.g., '7d', '30d', '90d').
-      This parameter defines the range of insights to fetch - from <time_period> time
-      ago up until now.
-
-      Defaults to 30d.
+      Lookback window as <integer><unit>, unit one of s, m, h, d, w, y
+      (e.g. '12h', '7d', '30d', '90d', '1y'). Insights published in
+      `now - time_period` .. `now` are returned. Absolute dates and future
+      ranges are not supported. Defaults to '30d'.
       """
     )
   end

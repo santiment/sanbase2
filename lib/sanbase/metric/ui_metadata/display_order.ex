@@ -11,7 +11,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   alias Sanbase.Metric.UIMetadata.MetricsImporter
 
   @allowed_chart_styles ["filledLine", "greenRedBar", "bar", "line", "area", "reference"]
-  @allowed_unit_formats ["", "usd", "percent"]
+  @allowed_unit_formats ["", "usd", "percent", "mvrv_percent"]
   @allowed_metric_types ["metric", "query"]
   @allowed_statuses [:live, :hidden, :under_maintenance]
 

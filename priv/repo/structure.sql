@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict mh3np2WADm0zF4YyrpmTleQAUUja6HEQ8vU5oE81GQDwsskr8VdFWDF68M2WUgJ
+\restrict k0Ia0sKSdIUkCcQfB44ncftyFrd0nmnEqOOuQiqjstZ5aXyBKeORFiaTOV5C3bJ
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 17.10 (Homebrew)
+-- Dumped by pg_dump version 17.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -4119,7 +4119,8 @@ CREATE TABLE public.promo_trials (
     trial_days integer NOT NULL,
     plans character varying(255)[] NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    subscription_ids integer[] DEFAULT ARRAY[]::integer[] NOT NULL
 );
 
 
@@ -12313,7 +12314,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict mh3np2WADm0zF4YyrpmTleQAUUja6HEQ8vU5oE81GQDwsskr8VdFWDF68M2WUgJ
+\unrestrict k0Ia0sKSdIUkCcQfB44ncftyFrd0nmnEqOOuQiqjstZ5aXyBKeORFiaTOV5C3bJ
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12914,3 +12915,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260806120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121347);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121612);
+INSERT INTO public."schema_migrations" (version) VALUES (20260813090000);

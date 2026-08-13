@@ -341,6 +341,7 @@ defmodule SanbaseWeb.Router do
     get("/generic/show_action", GenericAdminController, :show_action)
 
     live_session :promo_trials_admin, on_mount: @admin_panel_on_mount do
+      live "/promo_trials", Admin.PromoTrialLive.Index, :index
       live "/promo_trials/new", Admin.PromoTrialLive.Form, :new
     end
 

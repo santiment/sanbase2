@@ -163,6 +163,10 @@ defmodule SanbaseWeb.GenericAdminController do
     render(conn, "home.html")
   end
 
+  def index(%Plug.Conn{} = conn, %{"resource" => "promo_trials"}) do
+    Phoenix.Controller.redirect(conn, to: "/admin/promo_trials")
+  end
+
   def index(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
     page = params["page"] || 0
     page_size = params["page_size"] || 10

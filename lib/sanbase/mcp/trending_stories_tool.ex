@@ -2,6 +2,15 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
   @moduledoc """
   Fetch current trending crypto stories with sentiment analysis
 
+  ## When to use vs `combined_trends_tool`
+
+  Prefer this tool when only stories are needed: it is the cheap, fast path and
+  has no per-tool rate-limit sub-cap. `combined_trends_tool` is a superset —
+  same stories plus trending words, their context and AI-generated bull/bear
+  summaries — but it calls an LLM, so it is slower and capped much lower per
+  plan. Use it only when trending *words* or those summaries are actually
+  needed, and never call both for the same question.
+
   ## Parameters
 
   - `time_period` - Time period for trending stories (e.g., '1h', '6h', '1d', '7d'). Defaults to '1h' (last hour).

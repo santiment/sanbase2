@@ -10,6 +10,14 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   metrics over time periods. You can filter projects by absolute values (greater_than/less_than thresholds)
   or by percentage changes, or just sort projects by some metric.
 
+  ## When to use vs other metric tools
+
+  This tool scans the whole asset universe and returns one aggregated value per
+  matching asset — use it for "which assets satisfy X" and "top N by X".
+  It never returns a timeseries: for the values of a metric over time for
+  already-known slugs use `fetch_metric_data_tool`. To check that a metric
+  exists (or fix a mistyped metric/slug) use `metrics_and_assets_discovery_tool`.
+
   ## Use Cases
   - Get top 10 assets by marketcap, sorted in descending order
   - Get top 50 assets with highest dev_activity_1d

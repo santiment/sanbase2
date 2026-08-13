@@ -5,6 +5,15 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
   This tool provides a unified view of all trending data - words with their documents
   and stories - in a single response across all crypto projects.
 
+  ## When to use vs `trending_stories_tool`
+
+  This is a superset of `trending_stories_tool`: same stories, plus trending
+  words, their context and AI-generated bull/bear summaries. It calls an LLM, so
+  it is slower and has a tighter per-tool rate-limit sub-cap than every other
+  tool. If only trending stories are needed, call `trending_stories_tool`
+  instead; set `include_words: false` / `include_stories: false` to drop a half
+  that is not needed. Do not call both tools for the same question.
+
   ## Parameters
 
   - `time_period` - Time period for trending data (e.g., '1h', '6h', '1d', '7d'). Defaults to '1h' (last hour).

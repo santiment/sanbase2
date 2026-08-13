@@ -1,50 +1,95 @@
 defmodule Sanbase.MCP.MetricsAndAssetsDiscoveryTool do
   @moduledoc """
-  ## Metrics and Assets Discovery Tool
+  Catalog lookup: which metrics and which crypto assets (slugs) Santiment
+  supports, and whether a given metric exists for a given asset. Returns names
+  and metadata only — it never returns metric values or timeseries.
 
-  This tool enables AI clients to intelligently explore and filter the available
-  metrics and crypto assets (slugs) on the Sanbase platform.
+  ## When to use
 
-  ### Capabilities
+  - Resolve a name before any data call: turn "Ethereum" into the slug
+    `ethereum`, or "active addresses" into the metric `daily_active_addresses`.
+  - Check availability before calling `fetch_metric_data_tool`,
+    `assets_by_metric_tool` or `show_chart`, so a bad slug/metric does not
+    waste a data call.
+  - Recover from a "metric/slug not supported" error from any other tool.
 
-  - **List all metrics and assets:** Retrieve a comprehensive list of all supported
-      metrics and crypto asset slugs.
-  - **Filter by asset (slug):** Get all metrics available for a specific asset
-      by providing its slug (e.g., `"bitcoin"`, `"ethereum"`).
-  - **Filter by metric:** Discover which assets support a specific metric by
-      providing the metric name (e.g., `"price_usd"`, `"marketcap_usd"`).
-  - **Combined filtering:** Find if a particular metric is available for a specific
-      asset by providing both the slug and metric.
+  ## When not to use
 
-  ### Usage Guidance
+  - Actual metric values over time — use `fetch_metric_data_tool`.
+  - Ranking, filtering or screening assets by a metric value — use
+    `assets_by_metric_tool`.
+  - Rendering a chart — use `show_chart`.
+  - Trending words/stories or insights — use `combined_trends_tool` or
+    `insight_discovery_tool`. Those data sets are not in this catalog.
 
-  - **slug**: The unique, lowercase, hyphen-separated identifier for a crypto asset
-    (e.g., "bitcoin"). Use this to focus results on a single asset.
-  - **metric**: The unique, lowercase, snake_case identifier for a metric
-    (e.g., "price_usd"). Use this to focus results on a single metric.
-  - **interval**: The datetime interval between two data points in the result.
-    (e.g. 5m means 5 minutes, 1h means 1 hour, 2d means 2 days, etc.). Default is 1d.
-  - **time_period**: How far back in time to fetch data. Examples: "7d" (7 days),
-    "30d" (30 days), etc. Default is 30d.
+  ## Parameters
 
-  ### Example Parameters
+  Both parameters are optional and the four combinations do four different
+  things:
 
-  - **List all metrics and assets:**
-    ```
-    {}
-    ```
-  - **List all metrics for Ethereum:**
-    ```
-    { "slug": "ethereum" }
-    ```
-  - **List all assets supporting the `price_usd` metric:**
-    ```
-    { "metric": "price_usd" }
-    ```
-  - **Check if `daily_active_addresses` is available for Bitcoin:**
-    ```
-    { "slug": "bitcoin", "metric": "daily_active_addresses" }
-    ```
+  | Arguments                  | Returns                                           |
+  |----------------------------|---------------------------------------------------|
+  | `{}`                       | Every supported metric and every supported asset  |
+  | `{"slug": ...}`            | All metrics available for that one asset          |
+  | `{"metric": ...}`          | All assets that support that one metric           |
+  | `{"slug":..., "metric":...}`| Whether that exact pair is available (validation) |
+
+  - `slug` — lowercase, hyphen-separated asset id: `"bitcoin"`, `"ethereum"`,
+    `"avalanche"`. Not a ticker: use `"bitcoin"`, not `"BTC"`. One slug per
+    call; lists are not accepted.
+  - `metric` — lowercase snake_case metric id: `"price_usd"`,
+    `"marketcap_usd"`, `"daily_active_addresses"`. One metric per call.
+
+  Examples:
+
+      {}
+      {"slug": "ethereum"}
+      {"metric": "price_usd"}
+      {"slug": "bitcoin", "metric": "daily_active_addresses"}
+
+  ## Behavior
+
+  - Read-only: no writes, no state change, nothing destructive.
+  - Requires an authenticated Santiment account (API key or OAuth token);
+    every call counts against the account plan's MCP rate limits.
+  - Results are cached server-side, so the catalog can lag a newly listed asset
+    by a few minutes.
+  - Large responses (notably `{}`, which covers ~500 assets) are truncated to
+    stay under the client token limit. When that happens the response carries
+    `"truncated": true` plus `"truncation_notice"`, and the counts are adjusted
+    to what was actually returned — pass `slug` or `metric` to get a complete
+    answer instead of a truncated one.
+
+  ## Response
+
+  Always a JSON object. Its shape depends on the arguments.
+
+  `{}` — full catalog:
+
+      {
+        "metrics": [{"name": "price_usd", "description": "...", "unit": "USD",
+                     "supports_many_slugs": true, "min_interval": "1m",
+                     "default_aggregation": "last",
+                     "documentation_urls": [{"url": "..."}]}],
+        "assets": [{"name": "Bitcoin", "slug": "bitcoin", "ticker": "BTC"}],
+        "metrics_count": 120, "assets_count": 500, "description": "..."
+      }
+
+  `{"slug": ...}` — `{"slug", "metrics" (same metric objects as above),
+  "metrics_count", "description"}`.
+
+  `{"metric": ...}` — `{"metric", "assets" (same asset objects as above),
+  "assets_count", "description"}`.
+
+  `{"slug": ..., "metric": ...}` — on success
+  `{"slug", "metric": <metric object>, "available": true, "description"}`.
+
+  Unsupported input is reported inside a successful response, not as a tool
+  error: an unknown `slug` yields `{"error": "...", "available_assets": [...]}`,
+  an unknown `metric` yields `{"error": "...", "available_metrics": [...]}`.
+  There is no `"available": false` — read `error`. Error messages include a
+  fuzzy suggestion for near-miss metric names (`price_uds` -> `price_usd`), so
+  retry with the suggested name.
   """
 
   use Anubis.Server.Component, type: :tool
@@ -66,21 +111,26 @@ defmodule Sanbase.MCP.MetricsAndAssetsDiscoveryTool do
     field(:slug, :string,
       required: false,
       description: """
-      The unique identifier (slug) for a specific crypto asset such as 'bitcoin' or 'ethereum'.
-      Use this field to filter results to a single asset. Slugs are lowercase,
-      hyphen-separated names used throughout the platform.
+      Santiment slug of one crypto asset: lowercase, hyphen-separated, e.g.
+      'bitcoin', 'ethereum', 'avalanche'. Not a ticker - use 'bitcoin', not
+      'BTC'. One slug per call; lists are not accepted.
+
+      Alone: returns all metrics available for this asset. With `metric`:
+      checks only whether that metric exists for this asset. Omit both to list
+      the whole catalog.
       """
     )
 
     field(:metric, :string,
       required: false,
       description: """
-      The unique identifier for a specific metric, such as 'price_usd',
-      'marketcap_usd', or 'daily_active_addresses'. Metrics are lowercase and snake_case.
-      Use this field to filter results to a single metric across all assets
-      or in combination with a specific slug. Metrics represent quantitative or
-      qualitative data points tracked for crypto assets and are used throughout
-      the platform for analysis and insights.
+      Santiment id of one metric: lowercase snake_case, e.g. 'price_usd',
+      'marketcap_usd', 'daily_active_addresses'. One metric per call; lists are
+      not accepted.
+
+      Alone: returns all assets that support this metric. With `slug`: checks
+      only whether this metric exists for that asset. Omit both to list the
+      whole catalog.
       """
     )
   end

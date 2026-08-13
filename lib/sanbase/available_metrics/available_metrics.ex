@@ -233,16 +233,32 @@ defmodule Sanbase.AvailableMetrics do
     end)
   end
 
-  # A deprecated or hidden metric is not part of any sold package -
-  # `Bundle.PackageSnapshot.sellable?/1` rejects both flags - so listing it here
-  # advertises something a customer cannot buy.
+  # The page lists what the API will actually serve.
   #
-  # Neither flag stops the metric being fetched by name, and the details page
-  # reads its metadata directly, so a link to one keeps working. Only the list and
-  # its CSV export drop it.
+  # `is_hidden` means "keep out of metric lists", so it is dropped here. A
+  # `hard_deprecate_after` that has passed makes every request fail, so it is
+  # dropped too - `Sanbase.Metric.available_metrics/0` normally does that already,
+  # but it filters at refresh time into a cache with no TTL, so a date that passes
+  # between refreshes leaves the metric listed. Filtering again here is what keeps
+  # the page honest in that window, and it also catches a name that a code adapter
+  # keeps advertising while the registry deprecates it.
+  #
+  # A metric that is only `is_deprecated` is deliberately kept: it still returns
+  # data, with no end date, so it belongs in the inventory. Note that it is not in
+  # any package - `Bundle.PackageSnapshot.sellable?/1` rejects the flag - so the
+  # page shows it while nobody can buy it any more.
   defp reject_hidden_and_deprecated_metrics(metrics) do
-    Enum.reject(metrics, &(&1[:is_deprecated] == true or &1[:is_hidden] == true))
+    now = DateTime.utc_now()
+
+    Enum.reject(metrics, fn metric ->
+      metric[:is_hidden] == true or hard_deprecated?(metric[:hard_deprecate_after], now)
+    end)
   end
+
+  defp hard_deprecated?(%DateTime{} = deprecate_after, now),
+    do: DateTime.before?(deprecate_after, now)
+
+  defp hard_deprecated?(_deprecate_after, _now), do: false
 
   # "with" | "without" | "all". `only_with_docs` is the older boolean form of the
   # same thing - the page sends `docs`, links and saved exports may still send the

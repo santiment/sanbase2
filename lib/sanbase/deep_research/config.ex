@@ -23,6 +23,7 @@ defmodule Sanbase.DeepResearch.Config do
 
   @default_base_url "http://127.0.0.1:2024"
   @default_assistant_id "deep_research_agent"
+  @default_pause_after_disconnect_ms 60_000
 
   @doc "Base URL of the LangGraph server (no trailing slash)."
   @spec base_url() :: String.t()
@@ -33,6 +34,14 @@ defmodule Sanbase.DeepResearch.Config do
   @doc "Graph id / assistant id to run."
   @spec assistant_id() :: String.t()
   def assistant_id(), do: get(:assistant_id) || @default_assistant_id
+
+  @doc """
+  How long a runner keeps a run alive with no LiveView attached: long enough for a
+  websocket reconnect, short enough that a closed tab stops burning tokens.
+  """
+  @spec pause_after_disconnect_ms() :: non_neg_integer()
+  def pause_after_disconnect_ms(),
+    do: get(:pause_after_disconnect_ms, @default_pause_after_disconnect_ms)
 
   @doc """
   Optional bearer token sent as `Authorization: Bearer <token>` on every request
@@ -120,10 +129,11 @@ defmodule Sanbase.DeepResearch.Config do
 
   @doc """
   The catalog of MCP servers the UI can offer. Each entry is
-  `%{key, label, url, auth}` (`auth: :user_apikey` resolves to the caller's
-  Santiment API key). Defined in `runtime.exs` under `:mcp_servers`, so more
-  servers (local or remote) can be added without code changes; an empty or
-  missing list simply means the UI offers no data sources.
+  `%{key, label, url, auth}`, where `auth` names how THAT server is
+  authenticated — `:none`, `:santiment_apikey` (sanbase's own MCP) or `:bearer`;
+  see `Sanbase.DeepResearch.McpServers`. Defined in `runtime.exs` under
+  `:mcp_servers`, so more servers (local or remote) can be added without code
+  changes; an empty or missing list simply means the UI offers no data sources.
 
   Entries missing any of the required keys are dropped (with a warning) rather
   than handed to the LiveView, where a malformed map would crash the mount.

@@ -326,6 +326,10 @@ defmodule Sanbase.Application do
       # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
+      # Deep research runners keep a run alive across LiveView disconnects.
+      {Registry, [keys: :unique, name: Sanbase.DeepResearch.Registry]},
+      {DynamicSupervisor, [name: Sanbase.DeepResearch.RunnerSupervisor, strategy: :one_for_one]},
+
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,
 

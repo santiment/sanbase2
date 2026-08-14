@@ -181,20 +181,36 @@ defmodule Sanbase.DeepResearch.SessionsTest do
   end
 
   describe "interrupted turn reconciliation" do
-    test "a non-terminal turn loads as failed and the coercion is persisted" do
+    test "a non-terminal turn loads as paused (resumable), without touching the row" do
       user = insert(:user)
       {:ok, %{session: session}} = Sessions.start_session(user.id, "mid", new_turn())
 
-      # The row is stuck in :planning — the LiveView died before the terminal write.
+      # The row is stuck in :planning — the runner died before the settling write.
       assert {:ok, %{turns: [turn]}} = Sessions.get_session_for_user(session.id, user.id)
 
-      assert turn.phase == :failed
-      assert turn.error =~ "Interrupted"
+      assert turn.phase == :paused
+      assert turn.error == nil
+      assert turn.finished_at
+
+      # Not persisted: the row may belong to a runner on another node.
+      row = Repo.one!(from(t in SessionTurn, where: t.session_id == ^session.id))
+      assert row.phase == :planning
+      assert row.finished_at == nil
+    end
+
+    test "a public read shows an interrupted turn as paused, without touching the row" do
+      user = insert(:user)
+      {:ok, %{session: session}} = Sessions.start_session(user.id, "mid", new_turn())
+      {:ok, _} = Sessions.toggle_public(session.id, user.id)
+
+      assert {:ok, %{turns: [turn]}} = Sessions.get_public_session(session.id)
+
+      assert turn.phase == :paused
       assert turn.finished_at
 
       row = Repo.one!(from(t in SessionTurn, where: t.session_id == ^session.id))
-      assert row.phase == :failed
-      assert row.error =~ "Interrupted"
+      assert row.phase == :planning
+      assert row.finished_at == nil
     end
 
     test "a terminal turn is left untouched" do

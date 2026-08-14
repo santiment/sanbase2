@@ -1411,7 +1411,7 @@ CREATE TABLE public.deep_research_turns (
     finished_at timestamp without time zone,
     inserted_at timestamp(0) without time zone NOT NULL,
     updated_at timestamp(0) without time zone NOT NULL,
-    CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
+    CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'paused'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
 );
 
 
@@ -12915,4 +12915,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260806120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121347);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121612);
+INSERT INTO public."schema_migrations" (version) VALUES (20260812120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260813090000);

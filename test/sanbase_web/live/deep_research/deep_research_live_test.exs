@@ -1,39 +1,36 @@
 defmodule SanbaseWeb.DeepResearchLiveTest do
   @moduledoc """
-  LiveView-level tests for the deep research UI: mount, the submit → streamed
-  events → report flow, ref staleness, and cancellation.
+  LiveView-level tests: mount, submit → streamed events → report, ref staleness,
+  cancellation and the runner lifecycle (detach/reattach, pause, continue).
 
-  No agent server is involved. The base URL points at a local TCP socket that
-  accepts and never answers, so the async `create_thread` call blocks for the
-  duration of each test — the current turn stays alive and the streamed-event
-  handlers are driven deterministically with hand-sent `{:dra_event, ref, result}`
-  / `{:dra_poll, ref, result}` messages (exactly what `Client.stream_run` and the
-  poll task send).
+  No agent server: the base URL points at a socket that accepts and never answers,
+  so the stream task blocks in `create_thread` while events are sent to the
+  `Runner` directly. `:sys.get_state(runner)` after each send forces a broadcast.
   """
 
-  # Not async: rewrites the Sanbase.DeepResearch app env.
+  # Not async: rewrites app env, and the runners need the shared sandbox mode.
   use SanbaseWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
-  import Sanbase.DeepResearch.Fixtures, only: [completed_session: 1]
+  import Sanbase.DeepResearch.Fixtures, only: [completed_session: 1, paused_session: 1]
 
-  alias Sanbase.DeepResearch.Sessions
+  alias Sanbase.DeepResearch.{Runner, Sessions}
   alias Sanbase.DeepResearch.Sessions.SessionTurn
   alias Sanbase.Repo
 
   @path "/admin/deep_research"
+  @runner_supervisor Sanbase.DeepResearch.RunnerSupervisor
 
   setup do
     original = Application.get_env(:sanbase, Sanbase.DeepResearch)
 
-    # A listener that accepts connections (into the backlog) but never responds.
+    # Accepts connections into the backlog, never responds.
     {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false])
     {:ok, port} = :inet.port(listen)
 
     Application.put_env(:sanbase, Sanbase.DeepResearch,
       base_url: "http://127.0.0.1:#{port}",
-      # No MCP catalog: the async task must not resolve API keys (a DB read from
-      # a process outside the sandbox owner's tree).
+      # No catalog: the stream task's API key lookup would race the sandbox owner.
       mcp_servers: []
     )
 
@@ -45,6 +42,9 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
         env -> Application.put_env(:sanbase, Sanbase.DeepResearch, env)
       end
     end)
+
+    # Registered last, so it runs FIRST: runners must die before the sandbox does.
+    on_exit(fn -> stop_all_runners() end)
 
     {conn, user} = admin_conn()
     {:ok, conn: conn, user: user}
@@ -59,14 +59,42 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     {Plug.Test.init_test_session(Phoenix.ConnTest.build_conn(), jwt_tokens), user}
   end
 
-  # The first turn of a fresh LiveView always gets id 1 — the ref echoed back in
-  # every {:dra_event, ref, _} message.
+  # Runners outlive their watchers by design, so they outlive the test too.
+  defp stop_all_runners() do
+    for {_, pid, _, _} <- DynamicSupervisor.which_children(@runner_supervisor), is_pid(pid) do
+      DynamicSupervisor.terminate_child(@runner_supervisor, pid)
+    end
+  end
+
+  defp put_pause_grace(ms) do
+    env = Application.get_env(:sanbase, Sanbase.DeepResearch)
+
+    Application.put_env(
+      :sanbase,
+      Sanbase.DeepResearch,
+      Keyword.put(env, :pause_after_disconnect_ms, ms)
+    )
+  end
+
+  # A fresh session's first turn is id 1, echoed as the ref in every event.
   @ref 1
 
   defp submit(view, query) do
     view
     |> element("#dr-composer")
     |> render_submit(%{"query" => query})
+  end
+
+  defp runner_of(user) do
+    [session] = Sessions.list_user_sessions(user.id)
+    pid = Runner.whereis(session.id)
+    assert is_pid(pid)
+    {session, pid}
+  end
+
+  defp send_sync(runner, message) do
+    send(runner, message)
+    :sys.get_state(runner)
   end
 
   test "mounts with the empty state", %{conn: conn} do
@@ -85,15 +113,23 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     assert html =~ "phx-click=\"cancel\""
   end
 
-  test "streamed events fold into the current turn, ending in a report", %{conn: conn} do
+  test "streamed events fold into the current turn, ending in a report", %{
+    conn: conn,
+    user: user
+  } do
     {:ok, view, _html} = live(conn, @path)
     submit(view, "What is driving ETH?")
+    {_session, runner} = runner_of(user)
 
-    send(view.pid, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning on-chain data"}}})
+    send_sync(
+      runner,
+      {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning on-chain data"}}}
+    )
+
     assert render(view) =~ "Scanning on-chain data"
 
-    send(
-      view.pid,
+    send_sync(
+      runner,
       {:dra_event, @ref, %{activity: %{kind: :search_query, id: "s1", query: "eth gas fees"}}}
     )
 
@@ -101,48 +137,55 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     assert html =~ "Research"
     assert html =~ "eth gas fees"
 
-    send(view.pid, {:dra_event, @ref, %{report: "## Findings\n\nFees fell.", phase: :writing}})
+    send_sync(runner, {:dra_event, @ref, %{report: "## Findings\n\nFees fell.", phase: :writing}})
     html = render(view)
     assert html =~ "Research report"
     assert html =~ "Fees fell."
   end
 
-  test "events with a stale ref are dropped", %{conn: conn} do
+  test "events with a stale ref are dropped", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, @path)
     submit(view, "q")
+    {_session, runner} = runner_of(user)
 
-    send(view.pid, {:dra_event, @ref + 1, %{thinking: %{id: "m1", text: "stale text"}}})
+    send_sync(runner, {:dra_event, @ref + 1, %{thinking: %{id: "m1", text: "stale text"}}})
 
     refute render(view) =~ "stale text"
   end
 
-  test "a state-poll result can complete the turn with a recovered report", %{conn: conn} do
+  test "a state-poll result can complete the turn with a recovered report", %{
+    conn: conn,
+    user: user
+  } do
     {:ok, view, _html} = live(conn, @path)
     submit(view, "q")
+    {_session, runner} = runner_of(user)
 
-    send(view.pid, {:dra_poll, @ref, %{report: "## Recovered report"}})
+    send_sync(runner, {:dra_poll, @ref, %{report: "## Recovered report"}})
 
     assert render(view) =~ "Recovered report"
   end
 
-  test "a stale state-poll result is dropped", %{conn: conn} do
+  test "a stale state-poll result is dropped", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, @path)
     submit(view, "q")
+    {_session, runner} = runner_of(user)
 
-    send(view.pid, {:dra_poll, @ref + 1, %{report: "stale poll report"}})
+    send_sync(runner, {:dra_poll, @ref + 1, %{report: "stale poll report"}})
 
     refute render(view) =~ "stale poll report"
   end
 
-  test "cancel stops the run and later events are dropped", %{conn: conn} do
+  test "cancel stops the run and later events are dropped", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, @path)
     submit(view, "q")
+    {_session, runner} = runner_of(user)
 
     html = render_click(view, "cancel", %{})
     refute html =~ "phx-click=\"cancel\""
 
     # Events queued behind the cancel must not grow the cancelled turn.
-    send(view.pid, {:dra_event, @ref, %{thinking: %{id: "m1", text: "late event"}}})
+    send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "late event"}}})
     refute render(view) =~ "late event"
   end
 
@@ -180,23 +223,23 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
 
       submit(view, "What is driving ETH?")
 
-      assert [session] = Sessions.list_user_sessions(user.id)
+      {session, runner} = runner_of(user)
       assert_patch(view, "#{@path}/#{session.id}")
 
-      # The patch must NOT reset the conversation: the live run keeps
-      # streaming into the same process.
-      send(view.pid, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      # The patch must not reset the conversation — still attached, same turn.
+      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
       html = render(view)
       assert html =~ "Scanning"
       assert html =~ "dr-composer"
     end
 
-    test "a poll-completed turn is persisted with its report", %{conn: conn} do
+    test "a poll-completed turn is persisted with its report", %{conn: conn, user: user} do
       {:ok, view, _html} = live(conn, @path)
       submit(view, "q")
+      {_session, runner} = runner_of(user)
 
-      send(view.pid, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
-      send(view.pid, {:dra_poll, @ref, %{report: "## Recovered report"}})
+      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      send_sync(runner, {:dra_poll, @ref, %{report: "## Recovered report"}})
       render(view)
 
       assert [row] = Repo.all(SessionTurn)
@@ -230,6 +273,103 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       rows = SessionTurn |> Repo.all() |> Enum.sort_by(& &1.position)
       assert [%{position: 1, phase: :cancelled}, %{position: 2, phase: :planning}] = rows
       assert Enum.all?(rows, &(&1.session_id == session.id))
+    end
+  end
+
+  describe "runner lifecycle across the LiveView" do
+    test "a run survives navigating away and reattaches on return", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "long question")
+      {session, runner} = runner_of(user)
+
+      # Leaving only detaches — within the grace period the runner keeps going.
+      render_click(view, "new_session", %{})
+      assert render(view) =~ "What do you want to research?"
+      assert Process.alive?(runner)
+
+      render_click(view, "open_session", %{"id" => session.id})
+      assert_patch(view, "#{@path}/#{session.id}")
+
+      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Still going"}}})
+      html = render(view)
+      assert html =~ "Still going"
+      assert html =~ "phx-click=\"cancel\""
+
+      assert [%{phase: :planning}] = Repo.all(SessionTurn)
+    end
+
+    test "a second LiveView on the session URL attaches to the streaming run", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "q")
+      {session, runner} = runner_of(user)
+
+      {:ok, reconnected, html} = live(conn, "#{@path}/#{session.id}")
+      assert html =~ "loading-spinner"
+
+      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      assert render(reconnected) =~ "Scanning"
+      assert render(view) =~ "Scanning"
+    end
+
+    test "with nobody attached the run is paused after the grace period", %{
+      conn: conn,
+      user: user
+    } do
+      put_pause_grace(1)
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "long question")
+      {_session, runner} = runner_of(user)
+      ref = Process.monitor(runner)
+
+      render_click(view, "new_session", %{})
+      assert render(view) =~ "What do you want to research?"
+
+      assert_receive {:DOWN, ^ref, :process, ^runner, :normal}, 2_000
+
+      assert [row] = Repo.all(SessionTurn)
+      assert row.phase == :paused
+      assert row.error == nil
+      assert row.finished_at
+    end
+
+    test "a paused turn offers Continue, which resumes it in place", %{conn: conn, user: user} do
+      session = paused_session(user)
+
+      {:ok, view, html} = live(conn, "#{@path}/#{session.id}")
+
+      assert html =~ "Research paused"
+      assert html =~ "phx-click=\"continue_turn\""
+
+      html = render_click(view, "continue_turn", %{"id" => "1"})
+
+      assert html =~ "loading-spinner"
+      assert html =~ "phx-click=\"cancel\""
+      refute html =~ "phx-click=\"continue_turn\""
+      # The partial timeline keeps growing in the SAME turn.
+      assert html =~ "Scanning on-chain data"
+
+      runner = Runner.whereis(session.id)
+      assert is_pid(runner)
+      assert :sys.get_state(runner).running
+
+      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m2", text: "Resumed research"}}})
+      assert render(view) =~ "Resumed research"
+    end
+
+    test "continue_turn on a settled turn is a no-op", %{conn: conn, user: user} do
+      session = completed_session(user)
+
+      {:ok, view, html} = live(conn, "#{@path}/#{session.id}")
+      refute html =~ "phx-click=\"continue_turn\""
+
+      # A crafted event must not start a run on a completed turn.
+      html = render_click(view, "continue_turn", %{"id" => "1"})
+
+      refute html =~ "loading-spinner"
+      assert Runner.whereis(session.id) == nil
     end
   end
 
@@ -273,7 +413,6 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
 
       submit(view, "And what about SOL?")
 
-      # The follow-up appends to the same session — no new session is created.
       assert [%{id: id}] = Sessions.list_user_sessions(user.id)
       assert id == session.id
 
@@ -308,6 +447,19 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       assert Sessions.list_user_sessions(user.id) == []
     end
 
+    test "deleting the streaming session also stops its runner", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "q")
+      {session, runner} = runner_of(user)
+      ref = Process.monitor(runner)
+
+      render_click(view, "delete_session", %{"id" => session.id})
+
+      assert_receive {:DOWN, ^ref, :process, ^runner, _}, 2_000
+      assert Sessions.list_user_sessions(user.id) == []
+      assert render(view) =~ "What do you want to research?"
+    end
+
     test "toggle_public flips the share flag and reveals the share link", %{
       conn: conn,
       user: user
@@ -324,17 +476,6 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
 
       html = render_click(view, "toggle_public", %{"id" => session.id})
       refute html =~ "copy-share-link-#{session.id}"
-    end
-
-    test "navigating away from a streaming run cancels and persists it", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @path)
-      submit(view, "long question")
-
-      render_click(view, "new_session", %{})
-
-      assert [row] = Repo.all(SessionTurn)
-      assert row.phase == :cancelled
-      assert render(view) =~ "What do you want to research?"
     end
   end
 end

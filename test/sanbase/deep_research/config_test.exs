@@ -198,7 +198,10 @@ defmodule Sanbase.DeepResearch.ConfigTest do
     end
 
     test "the configured list is returned as-is" do
-      catalog = [%{key: "santiment", label: "Santiment", url: "http://x/mcp", auth: :user_apikey}]
+      catalog = [
+        %{key: "santiment", label: "Santiment", url: "http://x/mcp", auth: :santiment_apikey}
+      ]
+
       put_env(mcp_servers: catalog)
       assert Config.mcp_catalog() == catalog
     end

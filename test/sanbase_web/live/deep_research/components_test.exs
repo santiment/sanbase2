@@ -26,7 +26,8 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
     render_component(&turn_view/1,
       turn: turn,
       running: Keyword.get(opts, :running, false),
-      now_ms: Keyword.get(opts, :now_ms)
+      now_ms: Keyword.get(opts, :now_ms),
+      can_continue: Keyword.get(opts, :can_continue, false)
     )
   end
 
@@ -55,6 +56,32 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
       html = render_turn(turn([%{thinking: %{id: "m1", text: "Planning the research"}}]))
 
       assert html =~ "Planning the research"
+    end
+
+    test "a paused turn shows the pause footer even with an empty timeline" do
+      html = render_turn(turn([], %{phase: :paused, finished_at: @now + 5_000}))
+
+      assert html =~ "Research paused"
+      # Not the owner's resumable view — no Continue button.
+      refute html =~ "phx-click=\"continue_turn\""
+      refute html =~ "loading-spinner"
+    end
+
+    test "a continuable paused turn offers the Continue button" do
+      html =
+        render_turn(
+          turn([%{thinking: %{id: "m1", text: "Scanning"}}], %{
+            phase: :paused,
+            finished_at: @now + 5_000
+          }),
+          can_continue: true
+        )
+
+      assert html =~ "Research paused"
+      assert html =~ "phx-click=\"continue_turn\""
+      assert html =~ "phx-value-id=\"1\""
+      # The interrupted tool spinner settles — paused is inactive.
+      refute html =~ "loading-spinner"
     end
 
     test "renders a search query with its results, linking only safe http(s) urls" do

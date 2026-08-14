@@ -172,6 +172,76 @@ defmodule Sanbase.DeepResearch.TimelineTest do
     test "reaching terminal wins over in-progress" do
       assert Timeline.merge_phase(:researching, :completed) == :completed
     end
+
+    test "a resumed run moves a paused turn forward again" do
+      assert Timeline.merge_phase(:paused, :planning) == :planning
+      assert Timeline.merge_phase(:paused, :researching) == :researching
+    end
+  end
+
+  describe "phase predicates for :paused" do
+    test "paused is settled and inactive, but NOT terminal (it is resumable)" do
+      assert Timeline.settled_phase?(:paused)
+      assert Timeline.inactive_phase?(:paused)
+      refute Timeline.terminal_phase?(:paused)
+    end
+
+    test "running phases are neither settled nor inactive" do
+      for phase <- [:planning, :researching, :writing] do
+        refute Timeline.settled_phase?(phase)
+        refute Timeline.inactive_phase?(phase)
+      end
+    end
+  end
+
+  describe "settling a turn" do
+    test "complete_turn completes a running turn, keeps a settled phase" do
+      completed = Timeline.complete_turn(turn(), 500)
+
+      assert completed.phase == :completed
+      assert completed.finished_at == 500
+
+      awaiting = %{turn() | phase: :awaiting_user}
+      assert Timeline.complete_turn(awaiting, 500).phase == :awaiting_user
+    end
+
+    test "fail_turn records the reason and keeps an earlier error" do
+      failed = Timeline.fail_turn(turn(), "boom", 500)
+
+      assert failed.phase == :failed
+      assert failed.error == "boom"
+      assert Timeline.fail_turn(failed, "later", 900) == failed
+    end
+
+    test "cancel_turn cancels, unless a report already arrived" do
+      assert Timeline.cancel_turn(turn(), 500).phase == :cancelled
+      assert Timeline.cancel_turn(%{turn() | report: "## Done"}, 500).phase == :completed
+    end
+
+    test "pause_turn parks an unfinished turn, returns a settled one as is" do
+      paused = Timeline.pause_turn(turn(), 500)
+
+      assert paused.phase == :paused
+      assert paused.finished_at == 500
+
+      settled = %{turn() | phase: :completed, finished_at: 10}
+      assert Timeline.pause_turn(settled, 500) == settled
+    end
+
+    test "stamp_finished_at records the finish time without settling the phase" do
+      stamped = Timeline.stamp_finished_at(turn(), 500)
+
+      assert stamped.phase == :planning
+      assert stamped.finished_at == 500
+    end
+
+    test "the first finish time wins" do
+      finished = %{turn() | finished_at: 10}
+
+      assert Timeline.complete_turn(finished, 500).finished_at == 10
+      assert Timeline.cancel_turn(finished, 500).finished_at == 10
+      assert Timeline.stamp_finished_at(finished, 500).finished_at == 10
+    end
   end
 
   describe "segment" do

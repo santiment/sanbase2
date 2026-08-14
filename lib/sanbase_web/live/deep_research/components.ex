@@ -60,17 +60,18 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   attr :sessions, :list, required: true, doc: "the user's sessions, most recent first"
   attr :current_session_id, :string, default: nil
-  attr :running, :boolean, required: true, doc: "navigation is disabled while a run streams"
 
-  @doc "Past-sessions sidebar: open / share / delete a session, start a new one."
+  @doc """
+  Past-sessions sidebar: open / share / delete a session, start a new one.
+  Navigation stays enabled mid-run — leaving only detaches from the runner.
+  """
   def sidebar(assigns) do
     ~H"""
     <aside class="hidden w-72 shrink-0 flex-col lg:flex">
       <button
         type="button"
         phx-click="new_session"
-        disabled={@running}
-        class="mb-3 inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-base-300 bg-base-100 px-3 py-2 text-sm font-medium text-base-content/80 transition hover:border-base-content/20 hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-40"
+        class="mb-3 inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-base-300 bg-base-100 px-3 py-2 text-sm font-medium text-base-content/80 transition hover:border-base-content/20 hover:bg-base-200"
       >
         <.icon name="hero-plus" class="size-4" /> New session
       </button>
@@ -87,12 +88,11 @@ defmodule SanbaseWeb.DeepResearch.Components do
               text selection instead of navigating. --%>
         <div
           :for={session <- @sessions}
-          phx-click={!@running && "open_session"}
+          phx-click="open_session"
           phx-value-id={session.id}
           title={session.title}
           class={[
-            "group select-none rounded-xl border px-3 py-2 transition",
-            if(@running, do: "cursor-not-allowed opacity-60", else: "cursor-pointer"),
+            "group cursor-pointer select-none rounded-xl border px-3 py-2 transition",
             if(session.id == @current_session_id,
               do: "border-primary/40 bg-primary/5",
               else: "border-transparent hover:border-base-300 hover:bg-base-200/60"
@@ -174,6 +174,10 @@ defmodule SanbaseWeb.DeepResearch.Components do
     doc:
       "wall clock for the live elapsed counter; nil for a finished turn, whose own finished_at is authoritative"
 
+  attr :can_continue, :boolean,
+    default: false,
+    doc: "offer Continue on a :paused turn (owner, last turn, nothing running)"
+
   @doc "One question/answer exchange: the asked question, its research timeline, and any error."
   def turn_view(assigns) do
     ~H"""
@@ -184,7 +188,12 @@ defmodule SanbaseWeb.DeepResearch.Components do
         </div>
       </div>
 
-      <.research_timeline turn={@turn} running={@running} now_ms={@now_ms} />
+      <.research_timeline
+        turn={@turn}
+        running={@running}
+        now_ms={@now_ms}
+        can_continue={@can_continue}
+      />
 
       <.clarification_card
         :if={@turn.clarification && @turn.clarification != []}
@@ -225,15 +234,14 @@ defmodule SanbaseWeb.DeepResearch.Components do
   attr :turn, :map, required: true
   attr :running, :boolean, required: true
   attr :now_ms, :integer, default: nil
+  attr :can_continue, :boolean, default: false
 
   defp research_timeline(assigns) do
     turn = assigns.turn
     proc_items = visible_items(turn.timeline, turn.report, turn.clarification)
-    # A terminal turn has nothing in flight — settle any tool item still marked
-    # running so it shows a final state, not a perpetual spinner (e.g. when a run was
-    # interrupted before a call returned, like a dev hot-reload killing the workers).
+    # Nothing in flight: an item left marked running would spin forever.
     proc_items =
-      if Timeline.terminal_phase?(turn.phase),
+      if Timeline.inactive_phase?(turn.phase),
         do: Enum.map(proc_items, &settle_item/1),
         else: proc_items
 
@@ -248,7 +256,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
       )
 
     ~H"""
-    <div :if={not (@empty? and not @running)} class="space-y-3">
+    <%!-- A paused turn renders even when empty, to keep Continue reachable. --%>
+    <div :if={not (@empty? and not @running) or @turn.phase == :paused} class="space-y-3">
       <%= for {block, index} <- Enum.with_index(@blocks) do %>
         <.timeline_block block={block} index={index} turn_id={@turn.id} />
       <% end %>
@@ -278,6 +287,22 @@ defmodule SanbaseWeb.DeepResearch.Components do
       >
         <.icon name="hero-no-symbol" class="size-3.5" />
         Stopped after {format_duration(elapsed_seconds(@turn, @now_ms))}
+      </div>
+      <div
+        :if={@turn.phase == :paused}
+        class="flex items-center gap-2 text-xs text-base-content/50"
+      >
+        <.icon name="hero-pause-circle" class="size-3.5 text-warning" />
+        <span>Research paused — the connection was lost while it was running.</span>
+        <button
+          :if={@can_continue}
+          type="button"
+          phx-click="continue_turn"
+          phx-value-id={@turn.id}
+          class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition hover:bg-primary/20"
+        >
+          <.icon name="hero-play" class="size-3" /> Continue
+        </button>
       </div>
     </div>
     """
@@ -840,5 +865,6 @@ defmodule SanbaseWeb.DeepResearch.Components do
   defp phase_label(:planning), do: "Planning research"
   defp phase_label(:researching), do: "Researching"
   defp phase_label(:writing), do: "Writing report"
+  defp phase_label(:paused), do: "Paused"
   defp phase_label(_), do: "Working"
 end

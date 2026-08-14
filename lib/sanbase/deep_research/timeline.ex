@@ -1,8 +1,9 @@
 defmodule Sanbase.DeepResearch.Timeline do
   @moduledoc """
   Pure state reducer for a research transcript: folds parsed stream events into
-  per-turn timeline state (`reduce_timeline`, `upsert_thinking`, `merge_phase`)
-  and groups it for rendering (`segment`, `coalesce`).
+  per-turn timeline state (`reduce_timeline`, `upsert_thinking`, `merge_phase`),
+  settles a turn once its run ends (`complete_turn`, `fail_turn`, `cancel_turn`,
+  `pause_turn`) and groups it for rendering (`segment`, `coalesce`).
 
   Shaping the *finished* report markdown (source reflow, in-report chart specs)
   is a separate concern — see `Sanbase.DeepResearch.ReportMarkdown`.
@@ -32,6 +33,7 @@ defmodule Sanbase.DeepResearch.Timeline do
           | :researching
           | :writing
           | :awaiting_user
+          | :paused
           | :completed
           | :failed
           | :cancelled
@@ -46,20 +48,66 @@ defmodule Sanbase.DeepResearch.Timeline do
     %Turn{id: id, question: question, started_at: started_at_ms}
   end
 
+  # -- settling a turn -----------------------------------------------------------
+  # One rule for all of these: `finished_at` is stamped once (the first settling
+  # write owns it) and an already-terminal phase is never downgraded.
+
+  @doc "Mark a finished run `:completed`; an already settled turn keeps its phase."
+  @spec complete_turn(turn(), non_neg_integer()) :: turn()
+  def complete_turn(turn, now_ms) do
+    phase = if settled_phase?(turn.phase), do: turn.phase, else: :completed
+
+    settle(turn, phase, now_ms)
+  end
+
+  @doc "Fail a turn with `reason`, keeping any error it already carries."
+  @spec fail_turn(turn(), String.t(), non_neg_integer()) :: turn()
+  def fail_turn(turn, reason, now_ms) do
+    %{settle(turn, merge_phase(turn.phase, :failed), now_ms) | error: turn.error || reason}
+  end
+
+  @doc "Cancel a turn (the user's Stop). One that already has a report completes instead."
+  @spec cancel_turn(turn(), non_neg_integer()) :: turn()
+  def cancel_turn(%{report: report} = turn, now_ms) when is_binary(report),
+    do: complete_turn(turn, now_ms)
+
+  def cancel_turn(turn, now_ms), do: settle(turn, :cancelled, now_ms)
+
+  @doc "Park an unfinished turn as `:paused`; a settled turn is returned as is."
+  @spec pause_turn(turn(), non_neg_integer()) :: turn()
+  def pause_turn(turn, now_ms) do
+    if settled_phase?(turn.phase), do: turn, else: settle(turn, :paused, now_ms)
+  end
+
+  @doc "Stamp the finish time without settling the phase (a run awaiting its poll)."
+  @spec stamp_finished_at(turn(), non_neg_integer()) :: turn()
+  def stamp_finished_at(turn, now_ms), do: settle(turn, turn.phase, now_ms)
+
+  defp settle(turn, phase, now_ms),
+    do: %{turn | phase: phase, finished_at: turn.finished_at || now_ms}
+
+  # -- phases --------------------------------------------------------------------
+
   @doc "Every phase a turn can be in, running and terminal."
   @spec all_phases() :: [phase()]
-  def all_phases(), do: @phases ++ @terminal_phases
+  def all_phases(), do: @phases ++ [:paused] ++ @terminal_phases
 
   @doc "Is `phase` a terminal (sticky) phase?"
   def terminal_phase?(phase), do: phase in @terminal_phases
 
   @doc """
-  A settled turn needs no further work: any terminal phase, plus
-  `:awaiting_user` — a clarification request is a finished exchange (the reply
-  arrives as a new turn), not an interrupted run.
+  Needs no further work: any terminal phase, plus `:awaiting_user` (a finished
+  exchange, not an interrupted run) and `:paused` (interrupted but resumable).
   """
   @spec settled_phase?(phase()) :: boolean()
-  def settled_phase?(phase), do: terminal_phase?(phase) or phase == :awaiting_user
+  def settled_phase?(phase), do: terminal_phase?(phase) or phase in [:awaiting_user, :paused]
+
+  @doc """
+  Nothing left in flight to render: terminal or `:paused`. Settles spinners the
+  interrupted run never closed. `:awaiting_user` is live, so not inactive.
+  """
+  @spec inactive_phase?(phase()) :: boolean()
+  def inactive_phase?(phase), do: terminal_phase?(phase) or phase == :paused
 
   @doc "Is `phase` an in-progress (running) phase?"
   def running_phase?(phase), do: phase in @running_phases
@@ -254,11 +302,14 @@ defmodule Sanbase.DeepResearch.Timeline do
 
     * terminal phases are sticky (never moved by a later update);
     * reaching a terminal phase always wins over the in-progress phases;
+    * `:paused` leaves via a running phase (a resumed run's first events). No
+      event moves a turn INTO `:paused`, so it has no phase-order index;
     * otherwise advance monotonically through the in-progress order.
   """
   @spec merge_phase(phase(), phase() | nil) :: phase()
   def merge_phase(current, nil), do: current
   def merge_phase(current, current), do: current
+  def merge_phase(:paused, next) when next in @running_phases, do: next
 
   def merge_phase(current, next) do
     cond do

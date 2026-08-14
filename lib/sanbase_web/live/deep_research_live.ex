@@ -1,29 +1,12 @@
 defmodule SanbaseWeb.DeepResearchLive do
   @moduledoc """
-  Deep research agent UI, implemented as a Phoenix LiveView.
+  Deep research agent UI. Holds only socket/UI state; the run lifecycle lives in a
+  detached `Sanbase.DeepResearch.Runner` (one per session) that this LiveView
+  attaches to and mirrors — so a websocket drop leaves the run streaming, to be
+  reattached on remount or left `:paused` for the owner to Continue.
 
-  The LiveView connects directly to a LangGraph deep research agent over SSE
-  (`Sanbase.DeepResearch.Client`), streams the typed event protocol, reduces it
-  into per-turn state (`Sanbase.DeepResearch.Timeline`) and renders it through
-  `SanbaseWeb.DeepResearch.Components`. This module owns only the socket state
-  and the async plumbing; all markup lives in the components module.
-
-  The streaming run is driven by `start_async/3` (like `AskLive`) so the LiveView
-  process keeps serving websocket heartbeats during long runs and the task is
-  auto-cancelled if the LiveView goes down.
-
-  ## Turn state
-
-  The transcript is split in two assigns on purpose:
-
-    * `:turns` — finished turns, oldest first. Never touched while a run streams,
-      so LiveView re-renders none of them per event or per one-second tick.
-    * `:current_turn` — the turn being streamed into (or the most recent finished
-      one, until the next question pushes it onto `:turns`).
-
-  Every message from the async work carries the turn id as an opaque `ref`.
-  Anything whose ref is not the current turn's is dropped: a slow state poll or a
-  late event from a cancelled run must never land on a turn that started after it.
+  `:turns` (finished, untouched mid-run) is split from `:current_turn` so a stream
+  event re-renders one turn, not the transcript.
   """
   use SanbaseWeb, :live_view
 
@@ -31,11 +14,7 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   import SanbaseWeb.DeepResearch.Components, only: [composer: 1, turn_view: 1, sidebar: 1]
 
-  alias Sanbase.DeepResearch.{Client, Config, EventParser, Sessions, Timeline}
-
-  @no_report_error "The research run finished without producing a report — the agent stopped " <>
-                     "before delivering one (it may have hit a tool/iteration budget or been " <>
-                     "unable to complete the task). Try rephrasing or narrowing your question."
+  alias Sanbase.DeepResearch.{Config, Runner, Sessions, Timeline, Turn}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -45,16 +24,12 @@ defmodule SanbaseWeb.DeepResearchLive do
       socket
       |> assign(
         mcp_catalog: catalog,
-        # All configured MCP servers are enabled (connected) by default.
         mcp_enabled: MapSet.new(Enum.map(catalog, & &1.key)),
-        # Model price tier (the only model knob the agent exposes per run). The
-        # dropdown is feature-flagged; when off, every run uses the deploy default.
+        # Price tier, the only per-run model knob. Flagged off = deploy default.
         tiering_dropdown_enabled: Config.tiering_dropdown_enabled?(),
         model_tiers: Config.model_tiers(),
         model_tier: Config.default_model_tier(),
-        # Whether a :tick timer is already pending. Lives outside
-        # reset_conversation/1 on purpose: a pending timer survives a
-        # conversation reset, and forgetting it would let a second loop start.
+        # Outside reset_conversation/1: a pending timer survives a reset.
         tick_scheduled?: false
       )
       |> reset_conversation()
@@ -63,19 +38,14 @@ defmodule SanbaseWeb.DeepResearchLive do
     {:ok, socket}
   end
 
-  # Fires on mount and on every push_patch. Navigating away from a streaming
-  # run cancels it first — a reused LiveView process must not keep an orphaned
-  # run streaming (and billing) into state the user just left.
+  # Mount and every push_patch. Navigating away only DETACHES; the run keeps going.
   @impl true
   def handle_params(params, _uri, socket) do
     if params["id"] && params["id"] == socket.assigns.session_id do
-      # Our own patch announcing the session the process already holds — the
-      # permalink issued on first submit, or a sidebar click on the open
-      # session. The state (possibly a streaming run) is current; reloading
-      # would destroy it.
+      # Our own patch for the session already held — reloading destroys a live run.
       {:noreply, socket}
     else
-      socket = if socket.assigns.running, do: cancel_current_run(socket), else: socket
+      socket = detach_runner(socket)
 
       case socket.assigns.live_action do
         :show -> open_session(socket, params["id"])
@@ -84,27 +54,26 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  # Reopen a past session: the owner can keep chatting with it. Restoring the
-  # session's thread_id resumes the same LangGraph thread, so the agent keeps
-  # its context; new turns append after the last persisted position.
+  # A live runner (reconnect, second tab) is reattached in the same call, so its
+  # snapshot replaces the loaded row of the turn it is still streaming.
   defp open_session(socket, session_id) do
     user = socket.assigns[:current_user]
 
     case user && Sessions.get_session_for_user(session_id, user.id) do
       {:ok, %{session: session, turns: turns}} ->
-        {:noreply,
-         socket
-         |> reset_conversation()
-         |> assign(
-           turns: turns,
-           session_id: session.id,
-           thread_id: session.thread_id,
-           next_id: next_position(turns)
-         )}
+        socket =
+          socket
+          |> reset_conversation()
+          |> assign(
+            turns: turns,
+            session_id: session.id,
+            thread_id: session.thread_id,
+            next_id: next_position(turns)
+          )
 
-      # :forbidden collapses into "not found" so a session id never leaks
-      # whether it exists. push_navigate (not patch): this branch can run
-      # during mount, where patching is not allowed.
+        {:noreply, attach_runner(socket, session.id, Runner.whereis(session.id))}
+
+      # :forbidden collapses into "not found". push_navigate: this runs on mount too.
       _ ->
         {:noreply,
          socket
@@ -121,12 +90,14 @@ defmodule SanbaseWeb.DeepResearchLive do
       turns: [],
       current_turn: nil,
       thread_id: nil,
-      run_id: nil,
       running: false,
       query: "",
       mcp_warning: nil,
       next_id: 1,
       session_id: nil,
+      runner_pid: nil,
+      runner_ref: nil,
+      runner_key: nil,
       now_ms: now_ms()
     )
   end
@@ -143,8 +114,7 @@ defmodule SanbaseWeb.DeepResearchLive do
   end
 
   def handle_event("select_tier", %{"model_tier" => tier}, socket) do
-    # Whitelist against the catalog (and the feature flag — a crafted event must
-    # not change the tier when the dropdown is off). Anything else keeps current.
+    # A crafted event must not change the tier when the dropdown is off.
     valid? =
       socket.assigns.tiering_dropdown_enabled and
         Enum.any?(socket.assigns.model_tiers, fn {value, _, _} -> value == tier end)
@@ -173,13 +143,25 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  # A cancel with no run in flight (double click, crafted event) must not touch
-  # the finished turn or fire a cancel request at the agent server.
+  # A cancel with nothing in flight must not touch the finished turn.
   def handle_event("cancel", _params, %{assigns: %{running: false}} = socket),
     do: {:noreply, socket}
 
   def handle_event("cancel", _params, socket) do
-    {:noreply, cancel_current_run(socket)}
+    case socket.assigns.runner_pid && Runner.cancel(socket.assigns.runner_pid) do
+      {:ok, snapshot} -> {:noreply, apply_snapshot(socket, snapshot)}
+      _ -> {:noreply, assign(socket, :running, false)}
+    end
+  end
+
+  def handle_event("continue_turn", _params, %{assigns: %{running: true}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("continue_turn", %{"id" => id}, socket) do
+    case continuable_turn(socket, id) do
+      %Turn{} = turn -> {:noreply, resume_research(socket, turn)}
+      nil -> {:noreply, socket}
+    end
   end
 
   # -- sidebar events ------------------------------------------------------------
@@ -201,14 +183,15 @@ defmodule SanbaseWeb.DeepResearchLive do
   end
 
   def handle_event("delete_session", %{"id" => id}, socket) do
-    with %{} = user <- socket.assigns[:current_user] do
-      Sessions.delete_session(id, user.id)
+    # Stop the runner only AFTER delete_session's owner check.
+    with %{} = user <- socket.assigns[:current_user],
+         {:ok, _session} <- Sessions.delete_session(id, user.id),
+         pid when is_pid(pid) <- Runner.whereis(id) do
+      Runner.shutdown(pid)
     end
 
     socket = refresh_sessions(socket)
 
-    # Deleting the session that is open (or streaming into) leaves nothing to
-    # show — navigate to a fresh conversation.
     if socket.assigns.session_id == id do
       {:noreply, push_patch(socket, to: ~p"/admin/deep_research")}
     else
@@ -216,143 +199,175 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  defp cancel_current_run(socket) do
-    cancel_run_async(socket.assigns.thread_id, socket.assigns.run_id)
+  # -- runner plumbing -----------------------------------------------------------
 
-    socket
-    |> cancel_async(:research)
-    |> update_current_turn(&cancel_turn/1)
-    |> assign(running: false)
+  # Only the LAST turn can be continued — the thread has moved past earlier ones.
+  defp continuable_turn(socket, id_param) do
+    last = socket.assigns.current_turn || List.last(socket.assigns.turns)
+
+    with %Turn{phase: :paused} = turn <- last,
+         {id, ""} <- Integer.parse(to_string(id_param)),
+         true <- turn.id == id do
+      turn
+    else
+      _ -> nil
+    end
   end
-
-  # A Stop that races the report is a race the report already won: the stream
-  # stays open a little after delivering it, so a cancel in that window must
-  # finalize the turn as completed — not mark (and persist) a delivered report
-  # as :cancelled.
-  defp cancel_turn(%{report: report} = turn) when is_binary(report), do: finalize_turn(turn)
-
-  defp cancel_turn(turn),
-    do: %{turn | phase: :cancelled, finished_at: turn.finished_at || now_ms()}
 
   defp start_research(socket, text) do
-    id = socket.assigns.next_id
-    now = now_ms()
-    turn = Timeline.new_turn(text, id, now)
-    lv = self()
-    thread_id = socket.assigns.thread_id
-    # Pure, in-memory: which MCP servers are toggled on. Auth resolution (a DB
-    # read) is deferred into the async task so the LiveView process never blocks.
-    enabled_mcp = enabled_mcp_servers(socket)
-    model_tier = socket.assigns.model_tier
+    socket = socket |> ensure_session(text) |> ensure_runner()
+
+    case socket.assigns.runner_pid &&
+           Runner.ask(socket.assigns.runner_pid, text, run_opts(socket)) do
+      {:ok, snapshot} ->
+        socket |> assign(:query, "") |> apply_snapshot(snapshot)
+
+      # Another tab already started a run on this session.
+      {:error, :busy} ->
+        socket
+
+      _ ->
+        put_flash(socket, :error, "Could not start the research run — please retry.")
+    end
+  end
+
+  defp resume_research(socket, turn) do
+    socket = ensure_runner(socket)
+
+    case socket.assigns.runner_pid &&
+           Runner.continue(socket.assigns.runner_pid, turn, run_opts(socket)) do
+      {:ok, snapshot} -> apply_snapshot(socket, snapshot)
+      {:error, :busy} -> socket
+      _ -> put_flash(socket, :error, "Could not resume the research — please retry.")
+    end
+  end
+
+  defp run_opts(socket) do
+    [
+      enabled_mcp: enabled_mcp_servers(socket),
+      model_tier: socket.assigns.model_tier
+    ]
+  end
+
+  # The first question creates the row: registry key, persistence, permalink. A
+  # failure must not block research — the conversation continues unpersisted.
+  defp ensure_session(%{assigns: %{session_id: id}} = socket, _text) when is_binary(id),
+    do: socket
+
+  defp ensure_session(socket, text) do
     user = socket.assigns[:current_user]
 
-    # A new question can arrive while the previous turn's no-report poll is
-    # still in flight (running is already false then). Once :current_turn
-    # changes, that poll result is dropped as stale and nothing would ever
-    # settle the old turn — fail it before it is archived.
-    socket = settle_abandoned_turn(socket)
+    case user && Sessions.create_session(user.id, socket.assigns.model_tier, text) do
+      {:ok, session} ->
+        socket
+        |> assign(:session_id, session.id)
+        |> refresh_sessions()
+        |> push_patch(to: ~p"/admin/deep_research/#{session.id}")
 
-    # Everything network/DB-bound runs off the socket via start_async/3 (like
-    # AskLive) so the LiveView keeps serving heartbeats; incremental events
-    # arrive as {:dra_event, ref, _} messages, the terminal status via handle_async/3.
-    socket
-    |> persist_new_turn(turn)
-    |> assign(
-      # The turn that just finished (if any) is now history — moving it out of
-      # :current_turn is what stops it re-rendering for the rest of the session.
-      turns: archive_current_turn(socket),
-      current_turn: turn,
-      running: true,
-      query: "",
-      run_id: nil,
-      # A warning belongs to the run that produced it; a new run starts clean.
-      mcp_warning: nil,
-      next_id: id + 1,
-      now_ms: now
-    )
-    |> schedule_tick()
-    |> start_async(:research, fn ->
-      run_stream(thread_id, text, lv, enabled_mcp, user, model_tier, id)
-    end)
-  end
-
-  defp archive_current_turn(%{assigns: %{current_turn: nil, turns: turns}}), do: turns
-  defp archive_current_turn(%{assigns: %{current_turn: turn, turns: turns}}), do: turns ++ [turn]
-
-  defp settle_abandoned_turn(%{assigns: %{current_turn: %{phase: phase}}} = socket) do
-    if Timeline.settled_phase?(phase),
-      do: socket,
-      else: update_current_turn(socket, &fail_no_report/1)
-  end
-
-  defp settle_abandoned_turn(socket), do: socket
-
-  # Persist the new turn (and, on the first turn, the session row) before the
-  # run starts, so a browser closed mid-run still leaves the question behind.
-  # A persistence failure must never block research — log and carry on.
-  defp persist_new_turn(socket, turn) do
-    case {socket.assigns[:current_user], socket.assigns.session_id} do
-      {nil, _} ->
+      {:error, error} ->
+        Logger.warning("Deep research session creation failed: #{inspect(error)}")
         socket
 
-      {_user, session_id} when is_binary(session_id) ->
-        with {:error, error} <- Sessions.create_turn(session_id, turn, socket.assigns.model_tier) do
-          log_persist_error("create_turn", error)
-        end
-
+      nil ->
         socket
-
-      {user, nil} ->
-        case Sessions.start_session(user.id, socket.assigns.model_tier, turn) do
-          {:ok, %{session: session}} ->
-            # The URL becomes the session's permalink the moment it exists, so
-            # it can be copied mid-run. handle_params recognizes the id it
-            # already holds and leaves the streaming state alone.
-            socket
-            |> assign(:session_id, session.id)
-            |> refresh_sessions()
-            |> push_patch(to: ~p"/admin/deep_research/#{session.id}")
-
-          {:error, error} ->
-            log_persist_error("start_session", error)
-            socket
-        end
     end
   end
 
-  # Write the turn's row once it settles (terminal phase or :awaiting_user); a
-  # follow-up settled change (e.g. finalize stamping finished_at after a
-  # clarification) re-writes, an unchanged turn never does.
-  defp maybe_persist_settled(socket, prev, next) do
-    if socket.assigns.session_id && Timeline.settled_phase?(next.phase) && next != prev do
-      with {:error, error} <- Sessions.update_turn(socket.assigns.session_id, next.id, next) do
-        log_persist_error("update_turn", error)
-      end
+  defp ensure_runner(%{assigns: %{runner_pid: pid}} = socket) when is_pid(pid), do: socket
 
-      Sessions.touch_session(socket.assigns.session_id)
-      # touch_session just changed the sidebar ordering.
-      refresh_sessions(socket)
-    else
-      socket
+  defp ensure_runner(socket) do
+    key = socket.assigns.session_id || ephemeral_key()
+
+    init_arg = %{
+      key: key,
+      session_id: socket.assigns.session_id,
+      user: socket.assigns[:current_user],
+      model_tier: socket.assigns.model_tier,
+      thread_id: socket.assigns.thread_id,
+      next_id: socket.assigns.next_id
+    }
+
+    case Runner.ensure_started(init_arg) do
+      {:ok, pid} ->
+        attach_runner(socket, key, pid)
+
+      {:error, error} ->
+        Logger.warning("Deep research runner failed to start: #{inspect(error)}")
+        socket
     end
+  end
+
+  # No runner, or it stopped between lookup and attach — the transcript is authoritative.
+  defp attach_runner(socket, _key, nil), do: socket
+
+  defp attach_runner(socket, key, pid) do
+    case Runner.attach(pid, self()) do
+      {:ok, snapshot} ->
+        socket
+        |> assign(runner_pid: pid, runner_ref: Process.monitor(pid), runner_key: key)
+        |> apply_snapshot(snapshot)
+
+      {:error, :not_alive} ->
+        socket
+    end
+  end
+
+  defp detach_runner(%{assigns: %{runner_pid: nil}} = socket), do: socket
+
+  defp detach_runner(socket) do
+    Process.demonitor(socket.assigns.runner_ref, [:flush])
+    Runner.detach(socket.assigns.runner_pid, self())
+    forget_runner(socket)
+  end
+
+  defp forget_runner(socket) do
+    assign(socket, runner_pid: nil, runner_ref: nil, runner_key: nil)
+  end
+
+  # An anonymous conversation gets a runner too, under a key no URL can find again.
+  defp ephemeral_key(), do: "ephemeral-#{System.unique_integer([:positive])}"
+
+  defp apply_snapshot(socket, snapshot) do
+    was_running = socket.assigns.running
+
+    socket =
+      assign(socket,
+        turns: settled_turns(socket, snapshot.current_turn),
+        current_turn: snapshot.current_turn || socket.assigns.current_turn,
+        running: snapshot.running,
+        mcp_warning: snapshot.mcp_warning,
+        thread_id: snapshot.thread_id || socket.assigns.thread_id,
+        next_id: max(socket.assigns.next_id, snapshot.next_id),
+        now_ms: now_ms()
+      )
+
+    socket = if snapshot.running, do: schedule_tick(socket), else: socket
+
+    # A run just settled: touch_session changed the sidebar ordering.
+    if was_running and not snapshot.running, do: refresh_sessions(socket), else: socket
+  end
+
+  # The transcript minus the turn the runner owns — a reattach loaded its row too.
+  # A turn the runner has moved past (a follow-up started elsewhere) joins the transcript.
+  defp settled_turns(socket, nil), do: socket.assigns.turns
+
+  defp settled_turns(socket, runner_turn) do
+    prev = socket.assigns.current_turn
+    kept = Enum.reject(socket.assigns.turns, &(&1.id == runner_turn.id))
+
+    if prev && prev.id != runner_turn.id, do: kept ++ [prev], else: kept
   end
 
   defp refresh_sessions(socket) do
     user = socket.assigns[:current_user]
 
-    # Skip the query on the static (disconnected) render — the connected mount
-    # runs it again anyway.
+    # Skip the query on the static render; the connected mount runs it anyway.
     sessions =
       if user && connected?(socket), do: Sessions.list_user_sessions(user.id), else: []
 
     assign(socket, :sessions, sessions)
   end
 
-  defp log_persist_error(operation, error) do
-    Logger.warning("Deep research session persistence failed in #{operation}: #{inspect(error)}")
-  end
-
-  # The enabled catalog entries — pure, runs in the LiveView process (no DB/IO).
   defp enabled_mcp_servers(socket) do
     Enum.filter(socket.assigns.mcp_catalog, &MapSet.member?(socket.assigns.mcp_enabled, &1.key))
   end
@@ -364,156 +379,26 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  # Runs INSIDE the async task (off the LiveView process): resolve MCP auth (a
-  # DB read), create the thread on the first turn, then stream. Returns the
-  # terminal status, handled by handle_async/3.
-  defp run_stream(thread_id, text, lv, enabled_mcp, user, model_tier, ref) do
-    mcp_servers = build_mcp_servers(enabled_mcp, user)
+  # -- runner messages -----------------------------------------------------------
 
-    do_run_stream(thread_id, text, lv,
-      mcp_servers: mcp_servers,
-      model_tier: model_tier,
-      ref: ref
-    )
-  end
-
-  defp do_run_stream(nil, text, lv, opts) do
-    case Client.create_thread() do
-      {:ok, thread_id} ->
-        send(lv, {:dra_thread, thread_id})
-        Client.stream_run(thread_id, text, lv, opts)
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp do_run_stream(thread_id, text, lv, opts) when is_binary(thread_id) do
-    Client.stream_run(thread_id, text, lv, opts)
-  end
-
-  # Build agent MCP server maps from the enabled catalog entries, resolving
-  # `:user_apikey` auth to the user's Santiment API key. Runs in the async task.
-  defp build_mcp_servers([], _user), do: []
-
-  defp build_mcp_servers(enabled, user) do
-    api_key = resolve_api_key(enabled, user)
-    enabled |> Enum.map(&agent_server(&1, api_key)) |> Enum.reject(&is_nil/1)
-  end
-
-  defp resolve_api_key(enabled, user) do
-    if Enum.any?(enabled, &(&1.auth == :user_apikey)) do
-      case fetch_api_key(user) do
-        {:ok, key} -> key
-        _ -> nil
-      end
-    end
-  end
-
-  defp agent_server(%{auth: :user_apikey} = server, api_key) do
-    case apikey_override(server) || api_key do
-      key when is_binary(key) ->
-        %{
-          "name" => server.label,
-          "label" => server.label,
-          "url" => server.url,
-          "tools" => [],
-          "headers" => %{"Authorization" => "Apikey #{key}"}
-        }
-
-      # No API key available — skip a server that needs one.
-      _ ->
-        nil
-    end
-  end
-
-  defp agent_server(server, _api_key) do
-    %{"name" => server.label, "label" => server.label, "url" => server.url, "tools" => []}
-  end
-
-  defp apikey_override(server) do
-    case Map.get(server, :apikey_override) do
-      override when is_binary(override) and override != "" -> override
-      _ -> nil
-    end
-  end
-
-  defp fetch_api_key(%Sanbase.Accounts.User{} = user) do
-    case Sanbase.Accounts.Apikey.apikeys_list(user) do
-      {:ok, [key | _]} -> {:ok, key}
-      {:ok, []} -> Sanbase.Accounts.Apikey.generate_apikey(user)
-      other -> other
-    end
-  end
-
-  defp fetch_api_key(_), do: {:error, :no_user}
-
-  # -- streamed messages -------------------------------------------------------
-
+  # A snapshot from a runner we no longer follow falls through to the catch-all below.
   @impl true
-  def handle_info({:dra_thread, thread_id}, socket) do
-    socket =
-      if is_nil(socket.assigns.thread_id) do
-        if socket.assigns.session_id,
-          do: Sessions.set_thread_id(socket.assigns.session_id, thread_id)
+  def handle_info({:dra_runner, key, snapshot}, %{assigns: %{runner_key: key}} = socket),
+    do: {:noreply, apply_snapshot(socket, snapshot)}
 
-        assign(socket, :thread_id, thread_id)
-      else
-        socket
-      end
+  # A clean stop already settled the turn.
+  def handle_info({:DOWN, ref, :process, _pid, :normal}, %{assigns: %{runner_ref: ref}} = socket),
+    do: {:noreply, forget_runner(socket)}
+
+  # A crash settled nothing, so park the turn :paused locally.
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, %{assigns: %{runner_ref: ref}} = socket) do
+    socket =
+      socket
+      |> forget_runner()
+      |> assign(:running, false)
+      |> update(:current_turn, &(&1 && Timeline.pause_turn(&1, now_ms())))
 
     {:noreply, socket}
-  end
-
-  def handle_info({:dra_event, ref, result}, socket) do
-    # Two ways an event can be stale, both of which would corrupt a live turn:
-    # a ref from a superseded run (see the moduledoc), or an event queued behind
-    # a terminal status — dropping the latter stops a cancelled turn from
-    # growing new thinking/tools or being handed a late report.
-    if stale_ref?(socket, ref) or current_turn_terminal?(socket) do
-      {:noreply, socket}
-    else
-      socket =
-        socket
-        |> apply_socket_level(result)
-        |> update_current_turn(&Timeline.apply_result(&1, result))
-
-      {:noreply, socket}
-    end
-  end
-
-  # Poll-state fallback after a no-report stream close: recover a report from the
-  # thread state if present, otherwise fail the turn with an explanation. The poll
-  # can take up to 30s, by which time the user may have asked something else —
-  # hence the ref check, without which this would fail the *new* turn.
-  def handle_info({:dra_poll, ref, result}, socket) do
-    if stale_ref?(socket, ref) do
-      {:noreply, socket}
-    else
-      socket =
-        update_current_turn(socket, fn turn ->
-          cond do
-            turn.phase in [:failed, :cancelled, :awaiting_user] ->
-              turn
-
-            turn.report ->
-              %{turn | phase: :completed, finished_at: turn.finished_at || now_ms()}
-
-            is_binary(result[:report]) ->
-              %{
-                turn
-                | report: result[:report],
-                  phase: :completed,
-                  finished_at: turn.finished_at || now_ms()
-              }
-
-            true ->
-              fail_no_report(turn)
-          end
-        end)
-
-      {:noreply, socket}
-    end
   end
 
   def handle_info(:tick, socket) do
@@ -526,159 +411,11 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  # Terminal status of the streaming run (start_async/3). The async task is
-  # automatically cancelled if the LiveView process goes down.
-  @impl true
-  def handle_async(:research, {:ok, :ok}, socket) do
-    {:noreply, finalize_run(socket)}
-  end
+  # A snapshot or :DOWN from a runner we dropped, and late replies to a timed-out
+  # Runner.safe_call/2 (they land as {ref, reply}).
+  def handle_info(_msg, socket), do: {:noreply, socket}
 
-  def handle_async(:research, {:ok, {:error, reason}}, socket) do
-    {:noreply, fail_run(socket, reason)}
-  end
-
-  def handle_async(:research, {:exit, reason}, socket) do
-    {:noreply, fail_run(socket, "Research stopped unexpectedly (#{inspect(reason)})")}
-  end
-
-  # -- state helpers -----------------------------------------------------------
-
-  defp finalize_run(%{assigns: %{running: false}} = socket), do: socket
-
-  defp finalize_run(socket) do
-    socket = assign(socket, running: false)
-    turn = socket.assigns.current_turn
-
-    cond do
-      is_nil(turn) ->
-        socket
-
-      # A report was delivered, the turn already ended in a known state (failed
-      # via a `status: error`, cancelled, or awaiting a clarification), or the
-      # agent answered conversationally in plain text (a follow-up/simple
-      # question — no report is expected, so it is NOT a missing-report failure).
-      turn.report || turn.phase in [:failed, :cancelled, :awaiting_user] ||
-          Timeline.direct_answer?(turn) ->
-        update_current_turn(socket, &finalize_turn/1)
-
-      # The stream closed with NO report and no explicit error. Poll the thread
-      # state as a fallback; the {:dra_poll, _, _} handler then either completes
-      # the turn (report recovered) or fails it with an explanation.
-      socket.assigns.thread_id ->
-        poll_state_async(socket.assigns.thread_id, self(), turn.id)
-        update_current_turn(socket, fn t -> %{t | finished_at: t.finished_at || now_ms()} end)
-
-      true ->
-        update_current_turn(socket, &fail_no_report/1)
-    end
-  end
-
-  # A run that ends without ever delivering a report is a failure — show why.
-  # Keep any error reason the agent already surfaced (e.g. a `status: error`
-  # detail); otherwise explain the missing report.
-  defp fail_no_report(turn) do
-    %{
-      turn
-      | phase: :failed,
-        error: turn.error || @no_report_error,
-        finished_at: turn.finished_at || now_ms()
-    }
-  end
-
-  defp fail_run(socket, reason) do
-    if socket.assigns.running do
-      socket
-      |> update_current_turn(fn turn ->
-        %{
-          turn
-          | phase: Timeline.merge_phase(turn.phase, :failed),
-            error: turn.error || reason,
-            finished_at: turn.finished_at || now_ms()
-        }
-      end)
-      |> assign(running: false)
-    else
-      socket
-    end
-  end
-
-  defp apply_socket_level(socket, result) do
-    socket =
-      case result do
-        %{run_id: id} -> assign(socket, :run_id, id)
-        _ -> socket
-      end
-
-    case result do
-      %{meta: %{mcp_warning: warning}} -> assign(socket, :mcp_warning, warning)
-      _ -> socket
-    end
-  end
-
-  defp finalize_turn(turn) do
-    phase =
-      if turn.phase in [:failed, :cancelled, :awaiting_user], do: turn.phase, else: :completed
-
-    %{turn | phase: phase, finished_at: turn.finished_at || now_ms()}
-  end
-
-  # A message is stale when it belongs to any turn other than the current one.
-  defp stale_ref?(%{assigns: %{current_turn: %{id: id}}}, ref), do: ref != id
-  defp stale_ref?(_socket, _ref), do: true
-
-  defp current_turn_terminal?(%{assigns: %{current_turn: %{phase: phase}}}),
-    do: Timeline.terminal_phase?(phase)
-
-  defp current_turn_terminal?(_socket), do: false
-
-  defp update_current_turn(%{assigns: %{current_turn: nil}} = socket, _fun), do: socket
-
-  # The single choke point every turn mutation flows through (stream events,
-  # poll, cancel, finalize, fail) — which makes it the one place persistence
-  # has to watch for a turn settling.
-  defp update_current_turn(socket, fun) do
-    prev = socket.assigns.current_turn
-    next = fun.(prev)
-
-    socket
-    |> assign(:current_turn, next)
-    |> maybe_persist_settled(prev, next)
-  end
-
-  defp poll_state_async(thread_id, lv, ref) do
-    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      result =
-        case Client.get_state(thread_id) do
-          {:ok, state} -> EventParser.parse_thread_state(state)
-          _ -> %{}
-        end
-
-      # Always reply so the LiveView can finalize (recover report or fail).
-      send(lv, {:dra_poll, ref, result})
-    end)
-  end
-
-  defp cancel_run_async(thread_id, run_id) when is_binary(thread_id) and is_binary(run_id) do
-    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      Client.cancel_run(thread_id, run_id)
-    end)
-  end
-
-  # Cancel arrived before the stream delivered a run_id: the server-side run
-  # already exists, so cancel whatever is active on the thread — otherwise it
-  # keeps running (and billing) invisibly after the UI shows "cancelled".
-  defp cancel_run_async(thread_id, nil) when is_binary(thread_id) do
-    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      Client.cancel_active_runs(thread_id)
-    end)
-  end
-
-  # No thread yet (cancel raced thread creation) — nothing server-side to cancel.
-  defp cancel_run_async(_thread_id, _run_id), do: :ok
-
-  # At most one :tick is ever in flight. Without the guard, a timer left over
-  # from a run that just ended can fire after a new run has scheduled its own,
-  # leaving two loops that each re-render every second for the session's rest.
+  # At most one :tick in flight; a leftover timer would start a second loop.
   defp schedule_tick(%{assigns: %{tick_scheduled?: true}} = socket), do: socket
 
   defp schedule_tick(socket) do
@@ -694,7 +431,7 @@ defmodule SanbaseWeb.DeepResearchLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto flex h-[calc(100vh-10rem)] w-full max-w-7xl gap-6 px-4">
-      <.sidebar sessions={@sessions} current_session_id={@session_id} running={@running} />
+      <.sidebar sessions={@sessions} current_session_id={@session_id} />
       <div class="flex min-h-0 min-w-0 flex-1 flex-col">
         <div
           :if={@turns == [] and is_nil(@current_turn)}
@@ -727,10 +464,19 @@ defmodule SanbaseWeb.DeepResearchLive do
           :if={@turns != [] or @current_turn}
           class="min-h-0 flex-1 space-y-8 overflow-y-auto py-4"
         >
-          <%!-- Finished turns carry their own finished_at, so they take no now_ms and
-                stay untouched while the current turn streams. --%>
-          <.turn_view :for={turn <- @turns} turn={turn} running={false} />
-          <.turn_view :if={@current_turn} turn={@current_turn} running={@running} now_ms={@now_ms} />
+          <.turn_view
+            :for={turn <- @turns}
+            turn={turn}
+            running={false}
+            can_continue={is_nil(@current_turn) and not @running and turn == List.last(@turns)}
+          />
+          <.turn_view
+            :if={@current_turn}
+            turn={@current_turn}
+            running={@running}
+            now_ms={@now_ms}
+            can_continue={not @running}
+          />
         </div>
 
         <div class="shrink-0 pt-2">

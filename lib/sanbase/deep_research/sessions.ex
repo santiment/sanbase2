@@ -1,16 +1,12 @@
 defmodule Sanbase.DeepResearch.Sessions do
   @moduledoc """
-  Persistence for deep research conversations: sessions (author, model tier,
-  share flag) and their turns, stored as one row per turn.
+  Persistence for deep research sessions and their turns (one row per turn); the
+  only Repo access for the feature. Reads decode rows back into
+  `Sanbase.DeepResearch.Turn` structs, so history renders like a live transcript.
 
-  All Repo access for the feature lives here. Reads decode rows back into
-  `Sanbase.DeepResearch.Turn` structs (via `TurnCodec`), so callers render
-  persisted history exactly like a live transcript.
-
-  Authorization: mutations and `get_session_for_user/2` are owner-only;
-  `get_public_session/1` only requires `is_public` — "must be logged in" is the
-  router's concern. `:forbidden` and `:not_found` are distinct here for tests;
-  the UI collapses both so a session id never leaks its existence.
+  Mutations and `get_session_for_user/2` are owner-only; `get_public_session/1`
+  needs only `is_public`. `:forbidden` vs `:not_found` matters to tests; the UI
+  collapses both so an id never leaks its existence.
   """
 
   import Ecto.Query
@@ -20,23 +16,28 @@ defmodule Sanbase.DeepResearch.Sessions do
   alias Sanbase.Repo
 
   @title_max_length 80
-  @interrupted_error "Interrupted — the research run did not finish (connection lost or the app restarted)."
 
   @type session_with_turns :: %{session: Session.t(), turns: [Turn.t()]}
+
+  @doc "Create a session row owned by `user_id`, titled after its first question."
+  @spec create_session(integer(), String.t(), String.t()) ::
+          {:ok, Session.t()} | {:error, Ecto.Changeset.t()}
+  def create_session(user_id, model_tier, question) do
+    %Session{}
+    |> Session.changeset(%{
+      user_id: user_id,
+      model_tier: model_tier,
+      title: generate_title(question)
+    })
+    |> Repo.insert()
+  end
 
   @doc "Create a session owned by `user_id` plus the row for its first turn."
   @spec start_session(integer(), String.t(), Turn.t()) ::
           {:ok, %{session: Session.t(), turn: SessionTurn.t()}} | {:error, Ecto.Changeset.t()}
   def start_session(user_id, model_tier, %Turn{} = turn) do
     Repo.transaction(fn ->
-      with {:ok, session} <-
-             %Session{}
-             |> Session.changeset(%{
-               user_id: user_id,
-               model_tier: model_tier,
-               title: generate_title(turn.question)
-             })
-             |> Repo.insert(),
+      with {:ok, session} <- create_session(user_id, model_tier, turn.question),
            {:ok, row} <- create_turn(session.id, turn, model_tier) do
         %{session: session, turn: row}
       else
@@ -162,33 +163,19 @@ defmodule Sanbase.DeepResearch.Sessions do
   end
 
   defp load_turns(session) do
-    rows =
+    turns =
       from(t in SessionTurn, where: t.session_id == ^session.id, order_by: [asc: t.position])
       |> Repo.all()
-      |> Enum.map(&reconcile_interrupted_turn/1)
+      |> Enum.map(&(&1 |> pause_if_interrupted() |> TurnCodec.from_row()))
 
-    %{session: session, turns: Enum.map(rows, &TurnCodec.from_row/1)}
+    %{session: session, turns: turns}
   end
 
-  # A row still unsettled at read time means the LiveView died mid-run (the
-  # settling write never happened). Coerce it to a stable failed state and
-  # PERSIST the coercion, so every later viewer sees the same thing. A second
-  # tab peeking at a session still streaming in another tab would mark it
-  # failed early — accepted: the real settling write self-heals the row.
-  defp reconcile_interrupted_turn(row) do
-    if Timeline.settled_phase?(row.phase) do
-      row
-    else
-      attrs = %{
-        phase: :failed,
-        error: row.error || @interrupted_error,
-        finished_at: row.finished_at || DateTime.utc_now()
-      }
-
-      case row |> SessionTurn.changeset(attrs) |> Repo.update() do
-        {:ok, updated} -> updated
-        {:error, _} -> row
-      end
-    end
+  # Unsettled at read time = the runner died mid-run; show :paused, resumable since
+  # the thread survives. Never written back: another node's runner may still own it.
+  defp pause_if_interrupted(row) do
+    if Timeline.settled_phase?(row.phase),
+      do: row,
+      else: %{row | phase: :paused, finished_at: row.finished_at || DateTime.utc_now()}
   end
 end

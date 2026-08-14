@@ -68,15 +68,16 @@ config :sanbase, Sanbase.DeepResearch,
   openrouter_api_key: System.get_env("OPENROUTER_API_KEY"),
   tavily_api_key: System.get_env("TAVILY_API_KEY"),
   # Catalog of MCP servers the research UI can connect to. Each entry:
-  # %{key, label, url, auth}. auth: :user_apikey sends the caller's Santiment
-  # API key as `Authorization: Apikey <key>`. Add more entries (local or remote)
-  # here — no code changes needed.
+  # %{key, label, url, auth}, where auth says how THAT server authenticates —
+  # :santiment_apikey (only ours accepts a Santiment key), :bearer (with a
+  # token: field) or :none. Add more entries (local or remote) here — no code
+  # changes needed. See Sanbase.DeepResearch.McpServers.
   mcp_servers: [
     %{
       key: "santiment",
       label: "Santiment",
       url: System.get_env("DRA_MCP_URL", "http://localhost:4000/mcp"),
-      auth: :user_apikey,
+      auth: :santiment_apikey,
       # Dev override: send this fixed key instead of the logged-in user's key.
       # Needed when a local UI points at a remote MCP (the local user's key is
       # unknown to the remote DB). Unset (the default) = current user's key.

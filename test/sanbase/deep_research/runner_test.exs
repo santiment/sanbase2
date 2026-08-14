@@ -1,0 +1,227 @@
+defmodule Sanbase.DeepResearch.RunnerTest do
+  @moduledoc """
+  Runner unit tests: attach/detach, the pause grace period, continue.
+
+  Every runner is EPHEMERAL (no session_id), so nothing touches the DB —
+  persistence is covered in `SanbaseWeb.DeepResearchLiveTest`. The base URL points
+  at a listener that never answers, so a run stays in flight until settled.
+  """
+
+  use ExUnit.Case, async: false
+
+  alias Sanbase.DeepResearch.{Runner, Timeline, Turn}
+
+  @supervisor Sanbase.DeepResearch.RunnerSupervisor
+
+  setup do
+    original = Application.get_env(:sanbase, Sanbase.DeepResearch)
+
+    {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false])
+    {:ok, port} = :inet.port(listen)
+
+    Application.put_env(:sanbase, Sanbase.DeepResearch,
+      base_url: "http://127.0.0.1:#{port}",
+      mcp_servers: []
+    )
+
+    on_exit(fn ->
+      # Runners first: one still holding the port would outlive the test.
+      for {_, pid, _, _} <- DynamicSupervisor.which_children(@supervisor), is_pid(pid) do
+        DynamicSupervisor.terminate_child(@supervisor, pid)
+      end
+
+      :gen_tcp.close(listen)
+
+      case original do
+        nil -> Application.delete_env(:sanbase, Sanbase.DeepResearch)
+        env -> Application.put_env(:sanbase, Sanbase.DeepResearch, env)
+      end
+    end)
+
+    :ok
+  end
+
+  defp put_pause_grace(ms) do
+    env = Application.get_env(:sanbase, Sanbase.DeepResearch)
+
+    Application.put_env(
+      :sanbase,
+      Sanbase.DeepResearch,
+      Keyword.put(env, :pause_after_disconnect_ms, ms)
+    )
+  end
+
+  defp start_runner() do
+    key = "runner-test-#{System.unique_integer([:positive])}"
+
+    {:ok, pid} =
+      Runner.ensure_started(%{
+        key: key,
+        session_id: nil,
+        user: nil,
+        model_tier: "mid",
+        thread_id: nil,
+        next_id: 1
+      })
+
+    {key, pid}
+  end
+
+  test "ensure_started is idempotent per key" do
+    {key, pid} = start_runner()
+
+    assert {:ok, ^pid} =
+             Runner.ensure_started(%{key: key, session_id: nil, user: nil, next_id: 1})
+
+    assert Runner.whereis(key) == pid
+  end
+
+  test "attach returns the current snapshot; ask starts a run and broadcasts" do
+    {key, pid} = start_runner()
+
+    assert {:ok, snapshot} = Runner.attach(pid, self())
+    assert snapshot.key == key
+    assert snapshot.running == false
+    assert snapshot.current_turn == nil
+
+    assert {:ok, snapshot} = Runner.ask(pid, "What is driving ETH?")
+    assert snapshot.running == true
+
+    assert %Turn{id: 1, question: "What is driving ETH?", phase: :planning} =
+             snapshot.current_turn
+
+    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "Scanning"}}})
+
+    assert_receive {:dra_runner, ^key, %{current_turn: %Turn{timeline: [%{text: "Scanning"}]}}}
+  end
+
+  test "ask while a run streams is busy" do
+    {_key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    {:ok, _} = Runner.ask(pid, "first")
+
+    assert {:error, :busy} = Runner.ask(pid, "second")
+  end
+
+  test "cancel settles the turn; later events are dropped" do
+    {key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    {:ok, _} = Runner.ask(pid, "q")
+
+    assert {:ok, snapshot} = Runner.cancel(pid)
+    assert snapshot.running == false
+    assert snapshot.current_turn.phase == :cancelled
+
+    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "late event"}}})
+    :sys.get_state(pid)
+
+    refute_receive {:dra_runner, ^key, %{current_turn: %Turn{timeline: [_ | _]}}}
+  end
+
+  test "an idle runner stops as soon as its last watcher detaches" do
+    {_key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    ref = Process.monitor(pid)
+
+    Runner.detach(pid, self())
+
+    assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+  end
+
+  test "a streaming runner pauses (and stops) once the grace period expires" do
+    put_pause_grace(1)
+    {_key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    {:ok, _} = Runner.ask(pid, "q")
+    ref = Process.monitor(pid)
+
+    Runner.detach(pid, self())
+
+    assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 2_000
+  end
+
+  test "reattaching within the grace period cancels the pause" do
+    {_key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    {:ok, _} = Runner.ask(pid, "q")
+
+    Runner.detach(pid, self())
+    assert :sys.get_state(pid).pause_timer != nil
+
+    {:ok, snapshot} = Runner.attach(pid, self())
+    assert :sys.get_state(pid).pause_timer == nil
+    assert snapshot.running == true
+    assert Process.alive?(pid)
+  end
+
+  test "a watcher dying counts as a detach" do
+    put_pause_grace(1)
+    {_key, pid} = start_runner()
+
+    watcher = spawn(fn -> Process.sleep(:infinity) end)
+    {:ok, _} = Runner.attach(pid, watcher)
+    {:ok, _} = Runner.ask(pid, "q")
+    ref = Process.monitor(pid)
+
+    Process.exit(watcher, :kill)
+
+    assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 2_000
+  end
+
+  test "continue resumes a paused turn in place" do
+    {_key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+
+    paused = %{Timeline.new_turn("ETH drivers?", 1, 123) | phase: :paused, finished_at: 456}
+
+    assert {:ok, snapshot} = Runner.continue(pid, paused)
+    assert snapshot.running == true
+    assert %Turn{id: 1, phase: :planning, finished_at: nil, error: nil} = snapshot.current_turn
+
+    # The resume run streams into the SAME turn id.
+    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "Resumed"}}})
+    :sys.get_state(pid)
+    assert_receive {:dra_runner, _key, %{current_turn: %Turn{timeline: [%{text: "Resumed"}]}}}
+  end
+
+  test "continue settles the unrelated turn it replaces" do
+    {key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    {:ok, _} = Runner.ask(pid, "first")
+
+    # Land the first turn in "not running, not settled": its stream ended and it
+    # waits for a state poll that never answers.
+    send(pid, {:dra_thread, "th1"})
+    task_ref = :sys.get_state(pid).task.ref
+    send(pid, {task_ref, :ok})
+    refute :sys.get_state(pid).running
+
+    paused = %{Timeline.new_turn("another question", 7, 123) | phase: :paused}
+    assert {:ok, %{current_turn: %Turn{id: 7}}} = Runner.continue(pid, paused)
+
+    # Nothing else would have settled turn 1 once :current_turn moved on.
+    assert_receive {:dra_runner, ^key, %{current_turn: %Turn{id: 1, phase: :failed}}}
+  end
+
+  test "continue rejects a turn that is not paused" do
+    {_key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+
+    settled = %{Timeline.new_turn("q", 1, 123) | phase: :completed}
+
+    assert {:error, :not_paused} = Runner.continue(pid, settled)
+    assert {:ok, %{running: false}} = Runner.attach(pid, self())
+  end
+
+  test "calls against a dead runner return not_alive instead of exiting" do
+    {_key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    ref = Process.monitor(pid)
+    Runner.shutdown(pid)
+    assert_receive {:DOWN, ^ref, :process, ^pid, _}, 1_000
+
+    assert {:error, :not_alive} = Runner.ask(pid, "q")
+    assert {:error, :not_alive} = Runner.attach(pid, self())
+    assert {:error, :not_alive} = Runner.cancel(pid)
+  end
+end

@@ -107,11 +107,11 @@ defmodule Sanbase.NonCryptoAsset do
   end
 
   @doc ~s"""
-  Slugs of all visible non-crypto assets.
+  Slugs of the non-crypto assets. Accepts the same options as `list/1`.
   """
-  @spec slugs() :: [String.t()]
-  def slugs() do
-    base_query([])
+  @spec slugs(Keyword.t()) :: [String.t()]
+  def slugs(opts \\ []) do
+    base_query(opts)
     |> select([a], a.slug)
     |> Repo.all()
   end

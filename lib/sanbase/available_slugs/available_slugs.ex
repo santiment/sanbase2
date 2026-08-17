@@ -19,9 +19,15 @@ defmodule Sanbase.AvailableSlugs do
     "crypto_market",
     "TOTAL_ERC20"
   ]
-  @non_project_slugs ~w(s-and-p-500 gold silver crude-oil dxy gbtc ibit fbtc arkb btco bitb hodl m2-money)
 
-  def non_project_slugs(), do: @non_project_slugs
+  # Predate the `non_crypto_assets` table. New non-crypto assets go there, not here.
+  @legacy_non_project_slugs ~w(s-and-p-500 gold silver crude-oil dxy gbtc ibit fbtc arkb btco bitb hodl m2-money)
+
+  def non_project_slugs() do
+    (@legacy_non_project_slugs ++ Sanbase.NonCryptoAsset.slugs(include_hidden: true))
+    |> Enum.uniq()
+  end
+
   @ets_table :available_projects_slugs_ets_table
   use GenServer
 
@@ -32,16 +38,18 @@ defmodule Sanbase.AvailableSlugs do
         Process.sleep(200 * round(:math.pow(2, 5 - retries)))
         valid_slug?(slug, retries - 1)
       else
-        # Fallback to static lists if table still isn't available after retries
-        slug in @non_project_slugs or slug in @group_of_slugs
+        # Fallback to the static lists if table still isn't available after retries
+        static_slug?(slug)
       end
     else
       case :ets.lookup(@ets_table, slug) do
-        [] -> slug in @non_project_slugs or slug in @group_of_slugs
+        [] -> static_slug?(slug)
         _ -> true
       end
     end
   end
+
+  defp static_slug?(slug), do: slug in @group_of_slugs or slug in @legacy_non_project_slugs
 
   ### Internals
 
@@ -72,10 +80,7 @@ defmodule Sanbase.AvailableSlugs do
   defp refill_slugs(state) do
     %{ets_table: ets_table} = state
 
-    slugs =
-      @non_project_slugs ++
-        @group_of_slugs ++
-        Sanbase.Project.List.projects_slugs(include_hidden: true)
+    slugs = @group_of_slugs ++ non_project_slugs() ++ project_slugs()
 
     ets_slugs = :ets.tab2list(ets_table) |> Enum.map(&elem(&1, 0))
     slugs_to_remove = ets_slugs -- slugs
@@ -86,4 +91,6 @@ defmodule Sanbase.AvailableSlugs do
 
     state
   end
+
+  defp project_slugs(), do: Sanbase.Project.List.projects_slugs(include_hidden: true)
 end

@@ -1137,9 +1137,19 @@ defmodule Sanbase.Metric do
         source = Keyword.get(metric_opts, :source) || Map.get(selector, :source)
 
         cond do
-          source == "cryptocompare" -> Sanbase.PricePair.MetricAdapter
-          metric == "price_eth" and source != "cryptocompare" -> Sanbase.Clickhouse.MetricAdapter
-          true -> metric_to_single_module(metric, opts)
+          # Hyperliquid quotes a book, not a computed price, so it is served from
+          # `hyperliquid_bbo_prices` and only for price_usd.
+          source == "hyperliquid" and metric == "price_usd" ->
+            Sanbase.Hyperliquid.Bbo.MetricAdapter
+
+          source == "cryptocompare" ->
+            Sanbase.PricePair.MetricAdapter
+
+          metric == "price_eth" and source != "cryptocompare" ->
+            Sanbase.Clickhouse.MetricAdapter
+
+          true ->
+            metric_to_single_module(metric, opts)
         end
 
       true ->

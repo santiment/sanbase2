@@ -48,4 +48,26 @@ defmodule Sanbase.Hyperliquid.Bbo.BboSqlQuery do
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
+
+  @doc ~s"""
+  Build a query returning the unix timestamp of the oldest `dt` for `slug`.
+  """
+  @spec first_datetime_query(String.t()) :: Sanbase.Clickhouse.Query.t()
+  def first_datetime_query(slug), do: boundary_datetime_query(slug, "min")
+
+  @doc ~s"""
+  Build a query returning the unix timestamp of the newest `dt` for `slug`.
+  """
+  @spec last_datetime_computed_at_query(String.t()) :: Sanbase.Clickhouse.Query.t()
+  def last_datetime_computed_at_query(slug), do: boundary_datetime_query(slug, "max")
+
+  defp boundary_datetime_query(slug, aggregation) do
+    sql = """
+    SELECT toUnixTimestamp(#{aggregation}(dt))
+    FROM #{@table}
+    WHERE slug = cast({{slug}}, 'LowCardinality(String)')
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, %{slug: slug})
+  end
 end

@@ -21,6 +21,9 @@ defmodule Sanbase.Metric.Helper do
   # This way the default data shown is for the metrics from the Price module
   # This way the behavior is backward compatible
   @modules [
+    # First in the list means last to be picked when a metric is exposed by more
+    # than one module - this one is reached only via an explicit `source` selector.
+    Sanbase.Hyperliquid.Bbo.MetricAdapter,
     Sanbase.PricePair.MetricAdapter,
     Sanbase.Price.MetricAdapter,
     Sanbase.Clickhouse.Github.MetricAdapter,

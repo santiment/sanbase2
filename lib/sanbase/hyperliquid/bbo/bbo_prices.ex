@@ -13,7 +13,13 @@ defmodule Sanbase.Hyperliquid.Bbo.BboPrices do
   """
 
   import Sanbase.Hyperliquid.Bbo.BboSqlQuery,
-    only: [timeseries_data_query: 4]
+    only: [
+      timeseries_data_query: 4,
+      first_datetime_query: 1,
+      last_datetime_computed_at_query: 1
+    ]
+
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Project.SourceSlugMapping
@@ -63,6 +69,39 @@ defmodule Sanbase.Hyperliquid.Bbo.BboPrices do
           weighted_mid_price: weighted_mid_price(bid_price, bid_volume, ask_price, ask_volume)
         }
     end)
+  end
+
+  @doc ~s"""
+  Return `weighted_mid_price` as a `%{datetime: _, value: _}` timeseries - the
+  `price_usd` metric for the `hyperliquid` source. Buckets where the value
+  cannot be computed carry a nil value, as for every other metric.
+  """
+  @spec price_usd_timeseries_data(String.t(), DateTime.t(), DateTime.t(), String.t()) ::
+          {:ok, [%{datetime: DateTime.t(), value: float() | nil}]} | {:error, String.t()}
+  def price_usd_timeseries_data(slug, from, to, interval) do
+    with {:ok, data} <- timeseries_data(slug, from, to, interval) do
+      {:ok, Enum.map(data, &%{datetime: &1.datetime, value: &1.weighted_mid_price})}
+    end
+  end
+
+  @doc ~s"""
+  Return the datetime of the oldest BBO record for `slug`.
+  """
+  @spec first_datetime(String.t()) :: {:ok, DateTime.t()} | {:error, String.t()}
+  def first_datetime(slug) do
+    first_datetime_query(slug)
+    |> ClickhouseRepo.query_transform(fn [timestamp] -> DateTime.from_unix!(timestamp) end)
+    |> maybe_unwrap_ok_value()
+  end
+
+  @doc ~s"""
+  Return the datetime of the newest BBO record for `slug`.
+  """
+  @spec last_datetime_computed_at(String.t()) :: {:ok, DateTime.t()} | {:error, String.t()}
+  def last_datetime_computed_at(slug) do
+    last_datetime_computed_at_query(slug)
+    |> ClickhouseRepo.query_transform(fn [timestamp] -> DateTime.from_unix!(timestamp) end)
+    |> maybe_unwrap_ok_value()
   end
 
   # Hyperliquid quotes some low-priced assets per 1000 underlying tokens. The

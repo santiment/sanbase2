@@ -49,6 +49,19 @@ defmodule Sanbase.AvailableSlugs do
     end
   end
 
+  @doc ~s"""
+  Check if the slug is a non-crypto asset - stock, commodity, index, ETF, etc.
+  """
+  def non_crypto_asset_slug?(slug) do
+    if :ets.whereis(@ets_table) == :undefined do
+      # No table - the test env, where the GenServer is not started, or a call
+      # racing the first fill. Everywhere else this is a single ETS lookup.
+      slug in @legacy_non_project_slugs or Sanbase.NonCryptoAsset.id_by_slug(slug) != nil
+    else
+      match?([{_slug, :non_crypto_asset}], :ets.lookup(@ets_table, slug))
+    end
+  end
+
   defp static_slug?(slug), do: slug in @group_of_slugs or slug in @legacy_non_project_slugs
 
   ### Internals
@@ -80,17 +93,22 @@ defmodule Sanbase.AvailableSlugs do
   defp refill_slugs(state) do
     %{ets_table: ets_table} = state
 
-    slugs = @group_of_slugs ++ non_project_slugs() ++ project_slugs()
+    # The kind is stored next to the slug so that a caller interested only in the
+    # non-crypto assets does a single ETS lookup, too.
+    entries =
+      tag(@group_of_slugs, :group_of_slugs) ++
+        tag(non_project_slugs(), :non_crypto_asset) ++
+        tag(project_slugs(), :project)
 
-    ets_slugs = :ets.tab2list(ets_table) |> Enum.map(&elem(&1, 0))
-    slugs_to_remove = ets_slugs -- slugs
-    slugs_to_add = slugs -- ets_slugs
+    ets_entries = :ets.tab2list(ets_table)
 
-    slugs_to_remove |> Enum.each(fn slug -> :ets.delete(ets_table, slug) end)
-    slugs_to_add |> Enum.each(fn slug -> :ets.insert(ets_table, {slug, true}) end)
+    (ets_entries -- entries) |> Enum.each(fn {slug, _kind} -> :ets.delete(ets_table, slug) end)
+    (entries -- ets_entries) |> Enum.each(fn entry -> :ets.insert(ets_table, entry) end)
 
     state
   end
+
+  defp tag(slugs, kind), do: Enum.map(slugs, &{&1, kind})
 
   defp project_slugs(), do: Sanbase.Project.List.projects_slugs(include_hidden: true)
 end

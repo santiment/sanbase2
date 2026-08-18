@@ -86,6 +86,28 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {:error, unsupported_selector_error(selector)}
   end
 
+  @doc ~s"""
+  Like timeseries_data/6, but without deduplication by computed_at and without
+  interval/aggregation - every stored row in the time range is returned as-is.
+  """
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_data_with_duplicates(_metric, %{slug: []}, _from, _to, _interval, _opts),
+    do: {:ok, []}
+
+  def timeseries_data_with_duplicates(metric, selector, from, to, _interval, opts)
+      when is_supported_selector(selector) do
+    opts = resolve_fixed_parameters(opts, metric)
+    filters = get_filters(metric, opts)
+
+    timeseries_data_with_duplicates_query(metric, selector, from, to, filters, opts)
+    |> exec_timeseries_data_query()
+  end
+
+  def timeseries_data_with_duplicates(_metric, selector, _from, _to, _interval, _opts)
+      when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
     aggregation =

@@ -283,6 +283,37 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
+  Returns timeseries data without deduplication by computed_at - if an
+  asset/metric/dt has multiple values with different computed_at, all of them
+  are returned. No interval aggregation is applied - the data is returned as
+  it is stored. Supported only by adapters that implement the optional
+  timeseries_data_with_duplicates/6 callback (the Clickhouse adapter).
+  """
+  @spec timeseries_data_with_duplicates(metric, selector, datetime, datetime, interval, opts) ::
+          Type.timeseries_data_result()
+  def timeseries_data_with_duplicates(metric, selector, from, to, interval, opts \\ [])
+
+  def timeseries_data_with_duplicates(metric, selector, from, to, interval, opts) do
+    metric = maybe_replace_metric(metric, selector)
+
+    case get_module(metric, selector: selector, opts: opts) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        with :ok <- check_metric_data_type(metric, :timeseries) do
+          if function_exported?(module, :timeseries_data_with_duplicates, 6) do
+            module.timeseries_data_with_duplicates(metric, selector, from, to, interval, opts)
+            |> maybe_round_floats(:timeseries_data)
+          else
+            {:error,
+             "The metric #{metric} does not support fetching timeseries data with duplicates"}
+          end
+        end
+    end
+  end
+
+  @doc ~s"""
   Returns timeseries data (pairs of datetime and float value) for every slug
   separately.
 

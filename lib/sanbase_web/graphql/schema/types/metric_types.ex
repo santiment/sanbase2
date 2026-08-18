@@ -688,6 +688,37 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       middleware(AfterCacheTransform)
     end
 
+    @desc ~s"""
+    Similar to `timeseriesDataJson`, but the data is not deduplicated by the
+    `computedAt` value - if a given asset/metric/datetime has multiple values
+    with different `computedAt`, all of them are returned. The data is returned
+    as it is stored, without interval aggregation - the `interval` argument is
+    used only for complexity computation. Supported only by metrics stored in
+    Clickhouse.
+    """
+    field :timeseries_data_json_with_duplicates, :json do
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+      arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:only_finalized_data, :boolean, default_value: false)
+      arg(:caching_params, :caching_params_input_object)
+      arg(:fields, :timeseries_data_json_fields)
+      arg(:include_computed_at, :boolean, default_value: true)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl, resolve_slugs_list: true)
+
+      cache_resolve(&MetricResolver.timeseries_data_with_duplicates/3,
+        ttl: 300,
+        max_ttl_offset: 90
+      )
+
+      middleware(AfterCacheTransform)
+    end
+
     field :timeseries_data_per_slug_json, :json do
       arg(:selector, :metric_target_selector_input_object)
       arg(:from, non_null(:datetime))

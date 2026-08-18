@@ -253,8 +253,25 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
 
     test "renders the error of a failed turn" do
       turn = turn([], %{phase: :failed, error: "Agent budget exhausted", finished_at: @now})
+      html = render_turn(turn)
 
-      assert render_turn(turn) =~ "Agent budget exhausted"
+      assert html =~ "Agent budget exhausted"
+      assert html =~ "bg-error/5"
+    end
+
+    test "why a paused turn stopped reads as a warning — it is still resumable" do
+      turn =
+        turn([], %{
+          phase: :paused,
+          error: "Connection to the research agent failed: the request timed out",
+          finished_at: @now
+        })
+
+      html = render_turn(turn)
+
+      assert html =~ "the request timed out"
+      assert html =~ "bg-warning/5"
+      refute html =~ "bg-error/5"
     end
 
     test "a finished turn needs no wall clock — it renders with now_ms nil" do

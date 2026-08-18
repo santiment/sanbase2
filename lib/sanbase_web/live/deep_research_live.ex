@@ -14,7 +14,7 @@ defmodule SanbaseWeb.DeepResearchLive do
 
   import SanbaseWeb.DeepResearch.Components, only: [composer: 1, turn_view: 1, sidebar: 1]
 
-  alias Sanbase.DeepResearch.{Config, Runner, Sessions, Timeline, Turn}
+  alias Sanbase.DeepResearch.{Config, Failure, Runner, Sessions, Timeline, Turn}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -390,13 +390,16 @@ defmodule SanbaseWeb.DeepResearchLive do
   def handle_info({:DOWN, ref, :process, _pid, :normal}, %{assigns: %{runner_ref: ref}} = socket),
     do: {:noreply, forget_runner(socket)}
 
-  # A crash settled nothing, so park the turn :paused locally.
-  def handle_info({:DOWN, ref, :process, _pid, _reason}, %{assigns: %{runner_ref: ref}} = socket) do
+  # A crash settled nothing, so park the turn :paused locally — with the reason, so
+  # the tab says what interrupted the research instead of silently going quiet.
+  def handle_info({:DOWN, ref, :process, _pid, reason}, %{assigns: %{runner_ref: ref}} = socket) do
+    why = Failure.crashed(reason).message
+
     socket =
       socket
       |> forget_runner()
       |> assign(:running, false)
-      |> update(:current_turn, &(&1 && Timeline.pause_turn(&1, now_ms())))
+      |> update(:current_turn, &(&1 && Timeline.pause_turn(&1, now_ms(), why)))
 
     {:noreply, socket}
   end

@@ -3,7 +3,8 @@ defmodule Sanbase.DeepResearch.Runner do
   Run engine of a deep research session, detached from any LiveView. One runner per
   session in `Sanbase.DeepResearch.Registry`: it streams the run, folds events into
   the current `Turn` (`ref` = turn id; others are stale), persists settled turns
-  and pushes `{:dra_runner, key, snapshot}` to watchers.
+  (plus a periodic checkpoint of the one in flight) and pushes
+  `{:dra_runner, key, snapshot}` to watchers.
 
   It outlives its watchers, so a reconnect reattaches mid-stream. Unwatched for
   `Config.pause_after_disconnect_ms/0` it parks the turn `:paused` (resume with
@@ -15,7 +16,16 @@ defmodule Sanbase.DeepResearch.Runner do
 
   require Logger
 
-  alias Sanbase.DeepResearch.{Client, Config, EventParser, McpServers, Sessions, Timeline, Turn}
+  alias Sanbase.DeepResearch.{
+    Client,
+    Config,
+    EventParser,
+    Failure,
+    McpServers,
+    Sessions,
+    Timeline,
+    Turn
+  }
 
   @registry Sanbase.DeepResearch.Registry
   @supervisor Sanbase.DeepResearch.RunnerSupervisor
@@ -37,6 +47,7 @@ defmodule Sanbase.DeepResearch.Runner do
     :current_turn,
     :task,
     :pause_timer,
+    :checkpointed_at,
     running: false,
     mcp_warning: nil,
     next_id: 1,
@@ -68,6 +79,10 @@ defmodule Sanbase.DeepResearch.Runner do
     end
   end
 
+  # Called by the supervisor through `ensure_started/1`, never directly: a runner
+  # started outside the supervisor is not restarted and not found by `whereis/1`.
+  @doc false
+  @spec start_link(map()) :: GenServer.on_start()
   def start_link(init_arg) do
     GenServer.start_link(__MODULE__, init_arg, name: via(init_arg.key))
   end
@@ -265,6 +280,14 @@ defmodule Sanbase.DeepResearch.Runner do
     end
   end
 
+  # The poll could not be made. That says nothing about the run, so the turn is
+  # settled from the failure instead of being blamed for delivering no report.
+  def handle_info({:dra_poll, ref, %Failure{} = failure}, %{current_turn: %{id: ref}} = state) do
+    state = update_current_turn(state, &settle_failure(&1, failure, now_ms()))
+
+    maybe_wind_down(state)
+  end
+
   def handle_info({:dra_poll, ref, result}, %{current_turn: %{id: ref}} = state) do
     state =
       update_current_turn(state, fn turn ->
@@ -287,7 +310,7 @@ defmodule Sanbase.DeepResearch.Runner do
     state =
       case result do
         :ok -> finalize_run(state)
-        {:error, reason} -> fail_run(state, reason)
+        {:error, failure} -> fail_run(state, failure)
       end
 
     maybe_wind_down(state)
@@ -296,7 +319,7 @@ defmodule Sanbase.DeepResearch.Runner do
   def handle_info({:DOWN, ref, :process, _pid, reason}, %{task: %Task{ref: ref}} = state) do
     state =
       %{state | task: nil}
-      |> fail_run("Research stopped unexpectedly (#{inspect(reason)})")
+      |> fail_run(Failure.crashed(reason))
 
     maybe_wind_down(state)
   end
@@ -384,12 +407,22 @@ defmodule Sanbase.DeepResearch.Runner do
     end
   end
 
-  defp fail_run(%{running: false} = state, _reason), do: state
+  defp fail_run(%{running: false} = state, _failure), do: state
 
-  defp fail_run(state, reason) do
+  defp fail_run(state, %Failure{} = failure) do
     %{state | running: false}
-    |> update_current_turn(&Timeline.fail_turn(&1, reason, now_ms()))
+    |> update_current_turn(&settle_failure(&1, failure, now_ms()))
   end
+
+  # A turn the connection broke under is parked `:paused`, not `:failed`: the agent
+  # kept the thread and the work on it, so the turn stays resumable with
+  # `continue/3` — the same treatment a runner that died mid-run gets. Only the
+  # agent's own refusals settle a turn as failed. See `DeepResearch.Failure`.
+  defp settle_failure(turn, %Failure{resumable?: true} = failure, now_ms),
+    do: Timeline.pause_turn(turn, now_ms, failure.message)
+
+  defp settle_failure(turn, %Failure{} = failure, now_ms),
+    do: Timeline.fail_turn(turn, failure.message, now_ms)
 
   # The agent stopped without ever delivering a report.
   defp fail_no_report(turn), do: Timeline.fail_turn(turn, @no_report_error, now_ms())
@@ -468,17 +501,47 @@ defmodule Sanbase.DeepResearch.Runner do
     prev = state.current_turn
     next = fun.(prev)
 
-    maybe_persist_settled(state, prev, next)
-    broadcast(%{state | current_turn: next})
+    %{state | current_turn: next}
+    |> persist_turn(prev, next)
+    |> broadcast()
   end
 
-  defp maybe_persist_settled(state, prev, next) do
-    if state.session_id && Timeline.settled_phase?(next.phase) && next != prev do
-      with {:error, error} <- Sessions.update_turn(state.session_id, next.id, next) do
-        log_persist_error("update_turn", error)
-      end
+  # Two reasons to write a turn's row — and neither of them is "every event": the
+  # settling write, which is the row's final state, and a checkpoint while the turn
+  # is still streaming.
+  defp persist_turn(%{session_id: nil} = state, _prev, _next), do: state
+  defp persist_turn(state, prev, next) when next == prev, do: state
 
-      Sessions.touch_session(state.session_id)
+  defp persist_turn(state, _prev, next) do
+    cond do
+      Timeline.settled_phase?(next.phase) ->
+        write_turn(state, next)
+        Sessions.touch_session(state.session_id)
+
+        # Reset, so the next turn's checkpoint clock starts from its own first event.
+        %{state | checkpointed_at: nil}
+
+      # The first event of a turn needs no write — `persist_new_turn/2` just made the
+      # row. It only starts the clock.
+      is_nil(state.checkpointed_at) ->
+        %{state | checkpointed_at: now_ms()}
+
+      # Bounds what an abrupt node loss (pod eviction, VM kill) can take with it:
+      # nothing settles the turn then, so without checkpoints the row keeps only the
+      # question and the turn comes back with an empty timeline. Timed rather than
+      # per-event, because each write serializes the whole timeline.
+      now_ms() - state.checkpointed_at >= Config.checkpoint_every_ms() ->
+        write_turn(state, next)
+        %{state | checkpointed_at: now_ms()}
+
+      true ->
+        state
+    end
+  end
+
+  defp write_turn(state, turn) do
+    with {:error, error} <- Sessions.update_turn(state.session_id, turn.id, turn) do
+      log_persist_error("update_turn", error)
     end
 
     :ok
@@ -525,14 +588,15 @@ defmodule Sanbase.DeepResearch.Runner do
 
   defp poll_state_async(thread_id, sink, ref) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      result =
-        case Client.get_state(thread_id) do
-          {:ok, state} -> EventParser.parse_thread_state(state)
-          _ -> %{}
-        end
-
-      send(sink, {:dra_poll, ref, result})
+      send(sink, {:dra_poll, ref, poll_result(thread_id)})
     end)
+  end
+
+  defp poll_result(thread_id) do
+    case Client.get_state(thread_id) do
+      {:ok, state} -> EventParser.parse_thread_state(state)
+      {:error, failure} -> failure
+    end
   end
 
   # No run_id yet (the stream never reported one) — cancel whatever the thread has active.

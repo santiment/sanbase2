@@ -21,7 +21,15 @@ defmodule Sanbase.DeepResearch.Fixtures do
     end
   end
 
-  @doc "A one-turn session owned by `user`, its turn left `:paused` mid-timeline."
+  @doc """
+  A one-turn session owned by `user`, its turn left `:paused` mid-timeline — what a
+  runner interrupted mid-run leaves behind, and what Continue resumes from.
+
+      session = paused_session(user)
+
+      {:ok, %{turns: [%{phase: :paused, timeline: [_scanning]}]}} =
+        Sessions.get_session_for_user(session.id, user.id)
+  """
   def paused_session(user) do
     one_turn_session(user,
       phase: :paused,

@@ -73,10 +73,18 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   def cancel_turn(turn, now_ms), do: settle(turn, :cancelled, now_ms)
 
-  @doc "Park an unfinished turn as `:paused`; a settled turn is returned as is."
-  @spec pause_turn(turn(), non_neg_integer()) :: turn()
-  def pause_turn(turn, now_ms) do
-    if settled_phase?(turn.phase), do: turn, else: settle(turn, :paused, now_ms)
+  @doc """
+  Park an unfinished turn as `:paused`; a settled turn is returned as is.
+
+  `reason` (why it stopped — a lost connection, a crashed run) is kept alongside
+  the resumable phase, so the UI can say what interrupted the turn while still
+  offering Continue. Nothing to say (the ordinary disconnect pause): `nil`.
+  """
+  @spec pause_turn(turn(), non_neg_integer(), String.t() | nil) :: turn()
+  def pause_turn(turn, now_ms, reason \\ nil) do
+    if settled_phase?(turn.phase),
+      do: turn,
+      else: %{settle(turn, :paused, now_ms) | error: turn.error || reason}
   end
 
   @doc "Stamp the finish time without settling the phase (a run awaiting its poll)."
@@ -93,6 +101,7 @@ defmodule Sanbase.DeepResearch.Timeline do
   def all_phases(), do: @phases ++ [:paused] ++ @terminal_phases
 
   @doc "Is `phase` a terminal (sticky) phase?"
+  @spec terminal_phase?(phase()) :: boolean()
   def terminal_phase?(phase), do: phase in @terminal_phases
 
   @doc """

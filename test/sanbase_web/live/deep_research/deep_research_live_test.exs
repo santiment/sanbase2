@@ -66,14 +66,13 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     end
   end
 
-  defp put_pause_grace(ms) do
+  defp put_pause_grace(ms), do: put_env(:pause_after_disconnect_ms, ms)
+  defp put_checkpoint_every(ms), do: put_env(:checkpoint_every_ms, ms)
+
+  defp put_env(key, value) do
     env = Application.get_env(:sanbase, Sanbase.DeepResearch)
 
-    Application.put_env(
-      :sanbase,
-      Sanbase.DeepResearch,
-      Keyword.put(env, :pause_after_disconnect_ms, ms)
-    )
+    Application.put_env(:sanbase, Sanbase.DeepResearch, Keyword.put(env, key, value))
   end
 
   # A fresh session's first turn is id 1, echoed as the ref in every event.
@@ -258,6 +257,45 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       assert [row] = Repo.all(SessionTurn)
       assert row.phase == :cancelled
       assert row.finished_at
+    end
+
+    test "a streaming turn is checkpointed, so an abrupt loss keeps its timeline", %{
+      conn: conn,
+      user: user
+    } do
+      # Checkpoint on every event: the interval is what keeps writes off the hot path,
+      # not anything about which events deserve one.
+      put_checkpoint_every(0)
+
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "q")
+      {_session, runner} = runner_of(user)
+
+      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m2", text: "Reading"}}})
+      render(view)
+
+      assert [row] = Repo.all(SessionTurn)
+      # A checkpoint, not the settling write: the turn is still in flight.
+      assert row.phase == :planning
+      refute row.finished_at
+      assert [_scanning, %{"kind" => "thinking", "text" => "Reading"}] = row.timeline
+    end
+
+    test "the first event of a turn writes nothing — the row was just created", %{
+      conn: conn,
+      user: user
+    } do
+      put_checkpoint_every(0)
+
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "q")
+      {_session, runner} = runner_of(user)
+
+      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      render(view)
+
+      assert [%{timeline: []}] = Repo.all(SessionTurn)
     end
 
     test "a follow-up question lands in the same session", %{conn: conn, user: user} do

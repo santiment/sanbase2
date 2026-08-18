@@ -58,7 +58,7 @@ defmodule Sanbase.DeepResearch.Sessions do
     %SessionTurn{} |> SessionTurn.changeset(attrs) |> Repo.insert()
   end
 
-  @doc "Patch the turn at `position` with the turn's current state (the terminal write)."
+  @doc "Patch the turn at `position` with its current state (a checkpoint, or the settling write)."
   @spec update_turn(Ecto.UUID.t(), integer(), Turn.t()) ::
           {:ok, SessionTurn.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_turn(session_id, position, %Turn{} = turn) do

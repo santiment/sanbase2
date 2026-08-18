@@ -223,9 +223,20 @@ defmodule Sanbase.DeepResearch.TimelineTest do
 
       assert paused.phase == :paused
       assert paused.finished_at == 500
+      assert paused.error == nil
 
       settled = %{turn() | phase: :completed, finished_at: 10}
       assert Timeline.pause_turn(settled, 500) == settled
+    end
+
+    test "pause_turn keeps why the turn stopped, without overwriting an earlier error" do
+      paused = Timeline.pause_turn(turn(), 500, "the connection closed mid-request")
+
+      assert paused.phase == :paused
+      assert paused.error == "the connection closed mid-request"
+
+      # A turn that already knows what went wrong keeps its own account of it.
+      assert Timeline.pause_turn(%{turn() | error: "first"}, 500, "second").error == "first"
     end
 
     test "stamp_finished_at records the finish time without settling the phase" do

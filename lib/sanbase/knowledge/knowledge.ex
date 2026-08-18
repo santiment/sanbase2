@@ -5,6 +5,7 @@ defmodule Sanbase.Knowledge do
   alias Sanbase.Knowledge.Citations
   alias Sanbase.Knowledge.Context
   alias Sanbase.Knowledge.ContextExpansion
+  alias Sanbase.Knowledge.PlanRestrictions
   alias Sanbase.Knowledge.QueryPlan
   alias Sanbase.Knowledge.Reranker
   alias Sanbase.Knowledge.Reranker.CandidateFormatter
@@ -655,7 +656,9 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp generate_initial_prompt(question, options) do
+  # Public only so a test can use it.
+  @doc false
+  def generate_initial_prompt(question, options) do
     today = Date.to_iso8601(Date.utc_today())
 
     prompt = """
@@ -668,8 +671,13 @@ defmodule Sanbase.Knowledge do
 
     <Instructions>
     <Grounding>
-    - Use the provided content (FAQ, Academy, Insights, etc.) as the SOLE basis for your answer.
-      Do not add information, assumptions, or outside knowledge that is not present in it.
+    - Use the provided content (FAQ, Academy, Insights, the access-restriction block, etc.) as the SOLE
+      source of FACTS for your answer. Do not introduce facts, figures, or outside knowledge that are
+      not present in it.
+    - Reasoning over the provided facts IS expected and is not "adding information": compare them,
+      do arithmetic on them, match the user's reported numbers against them, and state the conclusion
+      they support. Do not withhold an obvious conclusion merely because no single block states it
+      verbatim — state it, and say which provided facts it rests on.
     - If the content does not contain enough information to answer, clearly state that you cannot
       answer based on the available data. Answer the parts you can and explicitly flag the parts you cannot.
     - If the content is similar but not an exact match, say so, clarify the context, and suggest
@@ -701,6 +709,40 @@ defmodule Sanbase.Knowledge do
       `financial_disclaimer` output field to `true` so the standard disclaimer is appended for you. Set it to
       `false` for purely technical, account, or product questions. Do NOT write the disclaimer text yourself.
     </Not_Financial_Advice>
+
+    <SanAPI_Data_Access_Restrictions>
+    #{PlanRestrictions.render_inner_section()}
+    </SanAPI_Data_Access_Restrictions>
+
+    <Troubleshooting>
+    - Some questions are not "explain X" questions but SYMPTOM REPORTS: the user describes what they
+      observed — a date range that is shorter than expected, missing recent data, an absent metric, an
+      error, a limit they did not expect — and wants to know why.
+    - For those, DIAGNOSE. Do not stop at "that metric has restricted access, please contact support":
+      that is a restatement of the symptom, not an answer, and it is the wrong answer whenever the
+      user's own plan already grants what they are asking for.
+      1. Restate the symptom concretely: which metrics, which date range, what exactly is missing.
+      2. Match it against the facts provided above and in the content blocks — including the plan
+        access-restriction table — and name the MOST LIKELY cause explicitly.
+      3. Give verification steps the user can run themselves and interpret without help.
+      4. Only if no provided fact explains the symptom, point the user to Santiment Support.
+    - Per Grounding above, name the likely cause as a likely cause — and also say what would confirm
+      or rule it out.
+    - Useful, concrete verification steps for API access symptoms:
+      - Confirm the request is authenticated at all: send the key as the HTTP header
+        `Authorization: Apikey <your-api-key>` and query `{ currentUser { id email } }`. A null user
+        means the key never reached the server, so the request was served as an anonymous FREE user.
+      - Confirm what the key is actually entitled to: query
+        `{ getAccessRestrictions(product: SANAPI) { name isRestricted restrictedFrom restrictedTo } }`
+        WITH the key attached. `restrictedFrom` / `restrictedTo` are the real window being applied to
+        that key, so comparing them against the plan table shows which plan it is being served as.
+      - Check that the key belongs to the account holding the subscription — a key generated on a
+        different or personal account carries that account's plan, not the paying one.
+    - When the user asks you to CHANGE their access — enable a metric, extend a trial, lift a limit —
+      you cannot make account changes; say so once, briefly. Still diagnose the symptom first: the
+      common case is that no change is needed because the plan already grants the access and the
+      requests are simply not being authenticated as that plan.
+    </Troubleshooting>
 
     <Content_Freshness>
     - Today's date is #{today}. Use it to judge whether dated content is still current.

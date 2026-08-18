@@ -2,6 +2,7 @@ defmodule Sanbase.KnowledgeTest do
   use ExUnit.Case, async: true
 
   alias Sanbase.Knowledge
+  alias Sanbase.Knowledge.PlanRestrictions
   alias Sanbase.Knowledge.QueryPlan
   alias Sanbase.Knowledge.Reranker.Noop
 
@@ -197,6 +198,33 @@ defmodule Sanbase.KnowledgeTest do
 
     test "returns an empty list for no hits" do
       assert Knowledge.diversify_by_document([], & &1.doc, 5) == []
+    end
+  end
+
+  describe "generate_initial_prompt/2" do
+    setup do
+      {:ok, prompt} = Knowledge.generate_initial_prompt("why is my history clipped?", [])
+
+      %{prompt: prompt}
+    end
+
+    test "carries the generated access-restriction matrix inside its own tags", %{prompt: prompt} do
+      assert prompt =~ "<SanAPI_Data_Access_Restrictions>"
+      assert prompt =~ "</SanAPI_Data_Access_Restrictions>"
+      assert prompt =~ PlanRestrictions.render_inner_section()
+    end
+
+    test "carries the troubleshooting instructions", %{prompt: prompt} do
+      assert prompt =~ "<Troubleshooting>"
+      assert prompt =~ "</Troubleshooting>"
+    end
+
+    # Static text must precede the date interpolation to stay cacheable.
+    test "places the matrix before the first date interpolation", %{prompt: prompt} do
+      {matrix_at, _} = :binary.match(prompt, "<SanAPI_Data_Access_Restrictions>")
+      {today_at, _} = :binary.match(prompt, "Today's date is")
+
+      assert matrix_at < today_at
     end
   end
 end

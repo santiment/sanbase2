@@ -618,6 +618,44 @@
       tags: ["recency", "insights", "mvrv", "bitcoin"]
     },
 
+    # === Support diagnosis: a reported SYMPTOM, not a "what is X" question ===
+    #
+    # `faq_ids` are empty until the seeded "Why do I only get about a year of
+    # history..." entry is created in the live FAQ table and indexed; a context
+    # recall of 0 is the signal that it is still missing.
+    #
+    # `Eval` never builds the answer prompt, so these measure retrievability only.
+    # Whether the model diagnoses instead of deflecting still has to be read.
+    %{
+      id: "diagnosis-free-tier-window",
+      question:
+        "Our API key returns full history for daily active addresses and price, but MVRV, " <>
+          "exchange inflow and whale metrics only go back about 335 days and stop 30 days " <>
+          "before today. We are on a paid plan. Why?",
+      answer_facts: ["30 days", "Authorization: Apikey", "freely available"],
+      tags: ["support-diagnosis", "api", "plans", "access"]
+    },
+    %{
+      id: "diagnosis-missing-recent-data",
+      question: "Why is the most recent month of data missing for the metrics I query?",
+      answer_facts: ["30 days"],
+      tags: ["support-diagnosis", "api", "access"]
+    },
+    %{
+      id: "diagnosis-enable-restricted-metrics-request",
+      question:
+        "Please enable full historical and recent-data access for the restricted metrics on " <>
+          "our trial so we can evaluate the API properly.",
+      answer_facts: ["Authorization: Apikey"],
+      tags: ["support-diagnosis", "api", "access", "trial"]
+    },
+    %{
+      id: "diagnosis-plan-history-depth",
+      question: "How far back does my API key let me query restricted metrics on each plan?",
+      answer_facts: ["1 year of history", "Pro grants 600,000 API calls"],
+      tags: ["support-diagnosis", "plans", "api"]
+    },
+
     # === Should-not-answer sentinels (track no-info fallback / drift) ===
     %{
       id: "off-topic-football",

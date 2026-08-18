@@ -8,11 +8,51 @@ faqs = [
   %{
     question: "Could you help me understand the difference between your plans?",
     answer: """
-    Absolutely! As soon as you register on our platform and generate an API key, we provide you with our free plan.
-    This grants you 1000 API calls per month and limited access to historical data, which is useful for beginners or
-    those wanting to familiarize themselves with our API. For further access, our Basic plan includes most metrics,
-    excluding the Advanced, and offers 300,000 API calls per month and 2 years of historical data.
-    For unrestricted metrics and historical data access, our Pro plan grants you 600,000 API calls per month.
+    As soon as you register and generate an API key you are on the free plan: 1000 API calls per month,
+    and for restricted metrics 1 year of history with the most recent 30 days withheld — so a window
+    roughly 335 days wide that ends about a month ago.
+
+    Basic adds 300,000 API calls per month and removes the 30-day cut-off, so you get the last year of
+    data up to now. Pro grants 600,000 API calls per month with no history limit at all. The Business,
+    Institutional and Enterprise tiers differ in both call volume and history depth — Business Max and
+    Enterprise include unlimited history — and are best compared on the pricing page.
+
+    Two things are worth separating: **which metrics** a plan includes, and **how much data** it
+    returns for them. Metrics classified as freely available ignore the history and recency limits
+    completely, on every plan — including the free one — which is why some metrics return their full
+    history even on a free key while others are clipped.
+    """
+  },
+  %{
+    question:
+      "Why do I only get about a year of history for some metrics, with the last 30 days missing?",
+    answer: """
+    That specific pattern — roughly 335 days of data, ending about 30 days before today — is the free
+    tier's window: 1 year of history minus a 30-day realtime cut-off. If you are on a paid plan and
+    seeing it, the most likely explanation is that your requests are not reaching us as your paid
+    subscription, not that the metrics need extra permissions.
+
+    It is also normal for the SAME key to return full, up-to-date history for some metrics (for example
+    daily active addresses, network growth, transaction volume, development activity, price and volume)
+    while others are clipped. Those metrics are classified as freely available and ignore the history
+    and recency limits on every plan, so they look correct even when the key is being served as free.
+
+    To check, in order:
+
+    1. Confirm the key is being sent. It goes in an HTTP header, not a query parameter:
+       `Authorization: Apikey <your-api-key>`. A typo in the header name, a missing `Apikey ` prefix, or
+       a client that drops headers on redirect all result in an anonymous request.
+    2. Confirm the server sees you. Query `{ currentUser { id email } }` with the key attached. If
+       `currentUser` comes back `null`, the key never arrived and everything was served as free tier.
+    3. Confirm what the key is entitled to. Query
+       `{ getAccessRestrictions(product: SANAPI) { name isRestricted restrictedFrom restrictedTo } }`
+       with the key attached. `restrictedFrom` and `restrictedTo` are the exact window being applied to
+       that key — if they show a year back and 30 days ago, the request is on the free tier.
+    4. Confirm the key belongs to the paying account. A key generated on a different or personal
+       account carries that account's plan, not the subscription you bought.
+
+    If all four check out and the window is still narrower than your plan should give, contact
+    [support@santiment.net](mailto:support@santiment.net) with the exact query and the returned range.
     """
   },
   %{
@@ -141,10 +181,17 @@ faqs = [
   }
 ]
 
+alias Sanbase.Knowledge.Faq
+alias Sanbase.Knowledge.FaqEntry
+
+# Upsert on the question: `faq_entries.question` is uniquely indexed, so creating
+# an existing one raises and a corrected answer above would never land. Both
+# branches regenerate the embedding.
 for faq <- faqs do
-  try do
-    Sanbase.Knowledge.Faq.create_entry(%{question: faq.question, answer_markdown: faq.answer})
-  rescue
-    _ -> :ok
+  attrs = %{question: faq.question, answer_markdown: faq.answer}
+
+  case Sanbase.Repo.get_by(FaqEntry, question: faq.question) do
+    nil -> Faq.create_entry(attrs)
+    %FaqEntry{} = entry -> Faq.update_entry(entry, attrs)
   end
 end

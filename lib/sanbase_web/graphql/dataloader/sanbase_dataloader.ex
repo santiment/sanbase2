@@ -29,12 +29,42 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   # process-boundary hop (transitional, for callers that still read ctx
   # via `RequestContext.current/0`) and (b) thread ctx into our own
   # `query/3` so downstream code can take it as an explicit argument.
-  defp make_kv_fun(nil), do: fn batch_key, args -> query(batch_key, args, nil) end
+  defp make_kv_fun(nil) do
+    fn batch_key, args ->
+      query(batch_key, args, nil) |> to_total_result_map(args)
+    end
+  end
 
   defp make_kv_fun(%Sanbase.RequestContext{} = ctx) do
     fn batch_key, args ->
       Sanbase.RequestContext.put_logger_metadata(ctx)
-      query(batch_key, args, ctx)
+      query(batch_key, args, ctx) |> to_total_result_map(args)
+    end
+  end
+
+  # Under `get_policy: :tuples`, an id missing from the batch result map is
+  # returned as `{:error, "Unable to find id ..."}` instead of the `nil` the
+  # resolvers expect for "no data". Make every batch result total by filling
+  # the missing ids with nil, preserving the old nil semantics.
+  #
+  # A whole-batch `{:error, reason}` (or any non-map result) is converted to a
+  # per-id error map — `Dataloader.KV` would otherwise crash with BadMapError.
+  # The per-id `{:error, reason}` values are returned to the resolvers as-is.
+  #
+  # Some sources key their result map by something else than the loaded ids
+  # (e.g. `:eth_spent` loads `%{project:, days:}` but keys by `days`). The
+  # extra nil entries added for their loaded ids are never fetched - harmless.
+  defp to_total_result_map(result, ids) do
+    case result do
+      map when is_map(map) and not is_struct(map) ->
+        Enum.reduce(ids, map, fn id, acc -> Map.put_new(acc, id, nil) end)
+
+      {:error, reason} ->
+        Map.new(ids, fn id -> {id, {:error, reason}} end)
+
+      other ->
+        reason = "Unexpected dataloader batch result: #{inspect(other, limit: 5)}"
+        Map.new(ids, fn id -> {id, {:error, reason}} end)
     end
   end
 

@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   alias Sanbase.Project
   alias Sanbase.Metric
   alias Sanbase.Cache.RehydratingCache
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   @ttl 7200
@@ -109,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   def aggregated_timeseries_data(
         %Project{slug: slug},
         %{from: from, to: to, metric: metric} = args,
-        %{context: %{loader: loader}}
+        %{context: %{loader: loader}} = resolution
       ) do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
@@ -134,33 +135,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
       error_on_data_fetch_fail = Map.get(args, :error_on_data_fetch_fail, false)
 
+      # The response field the value appears under — the alias if the query
+      # used one (`price: aggregatedTimeseriesData(...)`), the field name
+      # otherwise. Kept out of `data` so it does not split the dataloader batch.
+      field = resolution.definition.alias || resolution.definition.name
+
       loader
       |> Dataloader.load(SanbaseDataloader, :aggregated_metric, data)
-      |> on_load(&aggregated_metric_from_loader(&1, data, error_on_data_fetch_fail))
+      |> on_load(&aggregated_metric_from_loader(&1, data, field, error_on_data_fetch_fail))
     end
   end
 
   # Private functions
 
-  defp aggregated_metric_from_loader(loader, data, error_on_data_fetch_fail) do
+  defp aggregated_metric_from_loader(loader, data, field, error_on_data_fetch_fail) do
     %{selector: selector, slug: slug, metric: metric} = data
 
-    loader
-    |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
-    |> case do
-      map when is_map(map) ->
-        aggregated_metric_from_loader_map(map, slug, metric, data[:opts])
-
-      _ignored when error_on_data_fetch_fail == false ->
-        {:nocache, {:ok, nil}}
+    case Dataloader.get(loader, SanbaseDataloader, :aggregated_metric, selector) do
+      {:ok, map} when is_map(map) ->
+        aggregated_metric_from_loader_map(map, slug, metric, data[:opts], field)
 
       _ignored when error_on_data_fetch_fail == true ->
         {:error,
          "Failed to fetch aggregatedTimeseriesData for metric #{metric} and asset #{slug}"}
+
+      {:error, reason} ->
+        DataFetchErrors.record(:aggregated_metric, reason, slug, field: field, metric: metric)
+        {:nocache, {:ok, nil}}
+
+      _ignored ->
+        {:nocache, {:ok, nil}}
     end
   end
 
-  defp aggregated_metric_from_loader_map(map, slug, metric, opts) do
+  defp aggregated_metric_from_loader_map(map, slug, metric, opts, field) do
     case Map.fetch(map, slug) do
       {:ok, value} ->
         {:ok, value}
@@ -170,10 +178,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
         # Determine whether the value is missing because it failed to compute or
         # because the metric is not available for the given slug. In the first case
-        # return a :nocache tuple so an attempt to compute it is made on the next call
+        # record a soft error and return a :nocache tuple so an attempt to
+        # compute it is made on the next call
         case slug in slugs_for_metric do
-          true -> {:nocache, {:ok, nil}}
-          false -> {:ok, nil}
+          true ->
+            DataFetchErrors.record(
+              :aggregated_metric,
+              "Failed to compute #{metric} value for some assets",
+              slug,
+              field: field,
+              metric: metric
+            )
+
+            {:nocache, {:ok, nil}}
+
+          false ->
+            {:ok, nil}
         end
     end
   end

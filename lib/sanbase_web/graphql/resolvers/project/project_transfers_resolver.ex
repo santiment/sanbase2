@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   alias Sanbase.Transfers
   alias Sanbase.Project
   alias Sanbase.Utils.BlockchainAddressUtils
-  alias SanbaseWeb.Graphql.{Cache, SanbaseDataloader}
+  alias SanbaseWeb.Graphql.{Cache, DataFetchErrors, SanbaseDataloader}
   alias Sanbase.Clickhouse.{Label, HistoricalBalance.EthSpent}
 
   @max_concurrency 100
@@ -42,26 +42,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     end
   end
 
-  def eth_spent(%Project{} = project, %{days: days}, %{
-        context: %{loader: loader}
-      }) do
+  def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}} = resolution) do
+    field = resolution.definition.alias || resolution.definition.name
+
     loader
     |> Dataloader.load(SanbaseDataloader, :eth_spent, %{
       project: project,
       days: days
     })
-    |> on_load(&eth_spent_from_loader(&1, project, days))
+    |> on_load(&eth_spent_from_loader(&1, project, days, field))
   end
 
-  def eth_spent_from_loader(loader, %Project{id: id}, days) do
+  def eth_spent_from_loader(loader, %Project{id: id, slug: slug}, days, field) do
     loader
     |> Dataloader.get(SanbaseDataloader, :eth_spent, days)
     |> case do
-      %{} = eth_spent_map ->
+      {:ok, %{} = eth_spent_map} ->
         case Map.get(eth_spent_map, id) do
           nil -> {:ok, 0}
           result -> result
         end
+
+      {:error, error} ->
+        DataFetchErrors.record(:eth_spent, error, slug, field: field)
+        {:nocache, {:ok, nil}}
 
       _ ->
         {:nocache, {:ok, nil}}

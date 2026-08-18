@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   alias Sanbase.BlockchainAddress.{BlockchainAddressUserPair, BlockchainAddressLabelChange}
 
   alias Sanbase.Utils.BlockchainAddressUtils
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Clickhouse.Label
   alias Sanbase.Project
@@ -75,7 +76,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :current_user_address_details, elem)
     |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, :current_user_address_details, elem)
+      result =
+        Dataloader.get(loader, SanbaseDataloader, :current_user_address_details, elem)
+        |> DataFetchErrors.unwrap(:current_user_address_details, elem)
 
       {:ok, result}
     end)
@@ -268,8 +271,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         |> Dataloader.load(SanbaseDataloader, :address_labels, address)
         |> on_load(fn loader ->
           santiment_labels =
-            Dataloader.get(loader, SanbaseDataloader, :address_labels, address) ||
-              []
+            Dataloader.get(loader, SanbaseDataloader, :address_labels, address)
+            |> DataFetchErrors.unwrap(:address_labels, address)
+
+          santiment_labels = santiment_labels || []
 
           # The root can be built either from a BlockchainAddress in case the
           # `blockchain_address` query is used, or from a BlockchainAddressUserPair
@@ -302,7 +307,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         loader
         |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
         |> on_load(fn loader ->
-          {:ok, Dataloader.get(loader, SanbaseDataloader, :infrastructure, infrastructure_id)}
+          infrastructure =
+            Dataloader.get(loader, SanbaseDataloader, :infrastructure, infrastructure_id)
+            |> DataFetchErrors.unwrap(:infrastructure, infrastructure_id)
+
+          {:ok, infrastructure}
         end)
     end
   end
@@ -313,13 +322,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :address_selector_current_balance, {address, selector})
     |> on_load(fn loader ->
-      {:ok,
-       Dataloader.get(
-         loader,
-         SanbaseDataloader,
-         :address_selector_current_balance,
-         {address, selector}
-       )}
+      balance =
+        Dataloader.get(
+          loader,
+          SanbaseDataloader,
+          :address_selector_current_balance,
+          {address, selector}
+        )
+        |> DataFetchErrors.unwrap(:address_selector_current_balance, {address, selector})
+
+      {:ok, balance}
     end)
   end
 
@@ -336,6 +348,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
           :address_selector_current_balance,
           [{address, selector}, {:total_balance, selector}]
         )
+        |> Enum.zip([{address, selector}, {:total_balance, selector}])
+        |> Enum.map(fn {result, key} ->
+          DataFetchErrors.unwrap(result, :address_selector_current_balance, key)
+        end)
 
       dominance =
         Sanbase.Math.percent_of(address_balance, total_balance, type: :between_0_and_100)
@@ -357,13 +373,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
       {address, selector, from, to}
     )
     |> on_load(fn loader ->
-      {:ok,
-       Dataloader.get(
-         loader,
-         SanbaseDataloader,
-         :address_selector_balance_change,
-         {address, selector, from, to}
-       )}
+      balance_change =
+        Dataloader.get(
+          loader,
+          SanbaseDataloader,
+          :address_selector_balance_change,
+          {address, selector, from, to}
+        )
+        |> DataFetchErrors.unwrap(:address_selector_balance_change, {address, selector, from, to})
+
+      {:ok, balance_change}
     end)
   end
 
@@ -374,7 +393,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :blockchain_addresses_comments_count, id)
     |> on_load(fn loader ->
-      count = Dataloader.get(loader, SanbaseDataloader, :blockchain_addresses_comments_count, id)
+      count =
+        Dataloader.get(loader, SanbaseDataloader, :blockchain_addresses_comments_count, id)
+        |> DataFetchErrors.unwrap(:blockchain_addresses_comments_count, id)
+
       {:ok, count || 0}
     end)
   end

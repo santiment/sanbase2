@@ -28,8 +28,10 @@ defmodule SanbaseWeb.Graphql.LabelsDataloader do
       {:ok, map} ->
         map
 
-      {:error, _error} ->
-        %{}
+      {:error, error} ->
+        # Per-address errors so the resolvers can degrade gracefully and
+        # record the failure instead of silently showing no labels.
+        Map.new(addresses, fn address -> {address, {:error, error}} end)
     end
   end
 end

@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.Project
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
@@ -98,8 +99,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
     average_daa_activity_map =
       loader
-      |> Dataloader.get(SanbaseDataloader, :average_daily_active_addresses, {from, to}) ||
-        %{}
+      |> Dataloader.get(SanbaseDataloader, :average_daily_active_addresses, {from, to})
+      |> DataFetchErrors.unwrap(:average_daily_active_addresses, {from, to})
+
+    average_daa_activity_map = average_daa_activity_map || %{}
 
     case Map.get(average_daa_activity_map, project.slug) do
       value when is_number(value) ->

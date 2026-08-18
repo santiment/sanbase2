@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
   alias Sanbase.Vote
@@ -172,7 +173,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, query, selector)
     |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, query, selector)
+      result =
+        Dataloader.get(loader, SanbaseDataloader, query, selector)
+        |> DataFetchErrors.unwrap(query, selector)
 
       result = result || %{total_votes: 0, total_voters: 0, current_user_votes: 0}
 
@@ -184,7 +187,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, query, selector)
     |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, query, selector)
+      result =
+        Dataloader.get(loader, SanbaseDataloader, query, selector)
+        |> DataFetchErrors.unwrap(query, selector)
 
       result = (result && result[:voted_at]) || nil
 

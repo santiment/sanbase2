@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   alias Sanbase.Accounts.User
   alias Sanbase.Alert.{Trigger, UserTrigger}
   alias Sanbase.Telegram
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
@@ -15,7 +16,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+      project =
+        Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)
+        |> DataFetchErrors.unwrap(:project_by_slug, slug)
+
+      {:ok, project}
     end)
   end
 

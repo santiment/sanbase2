@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.SocialData
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   @context_words_default_size 10
@@ -96,7 +97,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :social_documents_by_ids, doc_ids)
     |> on_load(fn loader ->
-      result = Dataloader.get_many(loader, SanbaseDataloader, :social_documents_by_ids, doc_ids)
+      result =
+        Dataloader.get_many(loader, SanbaseDataloader, :social_documents_by_ids, doc_ids)
+        |> Enum.zip(doc_ids)
+        |> Enum.map(fn {result, doc_id} ->
+          DataFetchErrors.unwrap(result, :social_documents_by_ids, doc_id)
+        end)
 
       {:ok, result}
     end)
@@ -106,7 +112,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+      project =
+        Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)
+        |> DataFetchErrors.unwrap(:project_by_slug, slug)
+
+      {:ok, project}
     end)
   end
 
@@ -114,7 +124,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+      project =
+        Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)
+        |> DataFetchErrors.unwrap(:project_by_slug, slug)
+
+      {:ok, project}
     end)
   end
 

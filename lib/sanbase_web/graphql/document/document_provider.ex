@@ -44,6 +44,10 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
       Absinthe.Phase.Document.Result,
       SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent
     )
+    |> Absinthe.Pipeline.insert_after(
+      Absinthe.Phase.Document.Result,
+      SanbaseWeb.Graphql.Phase.Document.Result.DataFetchErrors
+    )
     |> transform_for_persistent_term_backend()
   end
 

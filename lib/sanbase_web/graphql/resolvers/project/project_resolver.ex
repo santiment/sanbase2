@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.Insight.Post
   alias SanbaseWeb.Graphql.Cache
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def available_queries(%Project{} = project, _args, _resolution) do
@@ -76,6 +77,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     |> on_load(fn loader ->
       infrastructure =
         Dataloader.get(loader, SanbaseDataloader, :infrastructure, infrastructure_id)
+        |> DataFetchErrors.unwrap(:infrastructure, infrastructure_id)
 
       {:ok, infrastructure}
     end)
@@ -85,7 +87,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :traded_on_exchanges, slug)
     |> on_load(fn loader ->
-      exchanges = Dataloader.get(loader, SanbaseDataloader, :traded_on_exchanges, slug)
+      exchanges =
+        Dataloader.get(loader, SanbaseDataloader, :traded_on_exchanges, slug)
+        |> DataFetchErrors.unwrap(:traded_on_exchanges, slug)
+
       {:ok, exchanges}
     end)
   end
@@ -94,7 +99,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :traded_on_exchanges_count, slug)
     |> on_load(fn loader ->
-      count = Dataloader.get(loader, SanbaseDataloader, :traded_on_exchanges_count, slug)
+      count =
+        Dataloader.get(loader, SanbaseDataloader, :traded_on_exchanges_count, slug)
+        |> DataFetchErrors.unwrap(:traded_on_exchanges_count, slug)
 
       {:ok, count}
     end)
@@ -104,7 +111,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :project_info, slug)
     |> on_load(fn loader ->
-      description = Dataloader.get(loader, SanbaseDataloader, :project_info, slug)
+      description =
+        Dataloader.get(loader, SanbaseDataloader, :project_info, slug)
+        |> DataFetchErrors.unwrap(:project_info, slug)
 
       {:ok, description}
     end)
@@ -116,7 +125,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :contract_addresses, id)
     |> on_load(fn loader ->
-      contract_addresses = Dataloader.get(loader, SanbaseDataloader, :contract_addresses, id)
+      contract_addresses =
+        Dataloader.get(loader, SanbaseDataloader, :contract_addresses, id)
+        |> DataFetchErrors.unwrap(:contract_addresses, id)
 
       result =
         case contract_addresses do
@@ -137,7 +148,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     |> Dataloader.load(SanbaseDataloader, :contract_addresses, id)
     |> on_load(fn loader ->
       contract_addresses =
-        Dataloader.get(loader, SanbaseDataloader, :contract_addresses, id) || []
+        Dataloader.get(loader, SanbaseDataloader, :contract_addresses, id)
+        |> DataFetchErrors.unwrap(:contract_addresses, id) || []
 
       {:ok, contract_addresses |> Enum.reject(&is_nil(&1.decimals))}
     end)
@@ -147,7 +159,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :eth_addresses, id)
     |> on_load(fn loader ->
-      eth_addresses = Dataloader.get(loader, SanbaseDataloader, :eth_addresses, id) || []
+      eth_addresses =
+        Dataloader.get(loader, SanbaseDataloader, :eth_addresses, id)
+        |> DataFetchErrors.unwrap(:eth_addresses, id) || []
+
       {:ok, eth_addresses}
     end)
   end
@@ -156,7 +171,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :social_volume_query, id)
     |> on_load(fn loader ->
-      svq = Dataloader.get(loader, SanbaseDataloader, :social_volume_query, id)
+      svq =
+        Dataloader.get(loader, SanbaseDataloader, :social_volume_query, id)
+        |> DataFetchErrors.unwrap(:social_volume_query, id)
 
       result =
         case svq do
@@ -179,7 +196,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     |> Dataloader.load(SanbaseDataloader, :source_slug_mappings, id)
     |> on_load(fn loader ->
       source_slug_mappings =
-        Dataloader.get(loader, SanbaseDataloader, :source_slug_mappings, id) || []
+        Dataloader.get(loader, SanbaseDataloader, :source_slug_mappings, id)
+        |> DataFetchErrors.unwrap(:source_slug_mappings, id) || []
 
       {:ok, source_slug_mappings}
     end)
@@ -189,7 +207,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :market_segments, id)
     |> on_load(fn loader ->
-      query = Dataloader.get(loader, SanbaseDataloader, :market_segments, id)
+      query =
+        Dataloader.get(loader, SanbaseDataloader, :market_segments, id)
+        |> DataFetchErrors.unwrap(:market_segments, id)
+
       list = List.wrap(query)
       {:ok, list |> Enum.map(& &1.name) |> List.first()}
     end)
@@ -199,7 +220,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :market_segments, id)
     |> on_load(fn loader ->
-      query = Dataloader.get(loader, SanbaseDataloader, :market_segments, id)
+      query =
+        Dataloader.get(loader, SanbaseDataloader, :market_segments, id)
+        |> DataFetchErrors.unwrap(:market_segments, id)
+
       list = List.wrap(query)
       {:ok, Enum.map(list, & &1.name)}
     end)
@@ -209,7 +233,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :market_segments, id)
     |> on_load(fn loader ->
-      query = Dataloader.get(loader, SanbaseDataloader, :market_segments, id)
+      query =
+        Dataloader.get(loader, SanbaseDataloader, :market_segments, id)
+        |> DataFetchErrors.unwrap(:market_segments, id)
+
       {:ok, List.wrap(query)}
     end)
   end
@@ -308,6 +335,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     volume_change_24h =
       loader
       |> Dataloader.get(SanbaseDataloader, :volume_change_24h, project.slug)
+      |> DataFetchErrors.unwrap(:volume_change_24h, project.slug)
 
     {:ok, volume_change_24h}
   end
@@ -334,6 +362,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       founders =
         loader
         |> Dataloader.get(SanbaseDataloader, :available_founders_per_slug, slug)
+        |> DataFetchErrors.unwrap(:available_founders_per_slug, slug)
 
       {:ok, founders}
     end)
@@ -378,8 +407,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       {:ok, nil}
   end
 
-  def average_dev_activity(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
+  def average_dev_activity(
+        %Project{} = project,
+        %{days: days},
+        %{context: %{loader: loader}} = resolution
+      ) do
     data = %{project: project, days: days}
+    field = resolution.definition.alias || resolution.definition.name
 
     loader
     |> Dataloader.load(
@@ -387,18 +421,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       :average_dev_activity,
       data
     )
-    |> on_load(&average_dev_activity_from_loader(&1, data))
+    |> on_load(&average_dev_activity_from_loader(&1, data, field))
   end
 
-  def average_dev_activity_from_loader(loader, data) do
+  def average_dev_activity_from_loader(loader, data, field) do
     %{project: project, days: days} = data
 
     case Project.github_organizations(project) do
       {:ok, orgs} when is_list(orgs) and orgs != [] ->
-        average_dev_activity = average_dev_activity_per_org(loader, orgs, days)
+        average_dev_activity = average_dev_activity_per_org(loader, orgs, days, field)
         values = for {:ok, val} <- average_dev_activity, is_number(val), do: val
 
-        if Enum.member?(values, &match?({:error, _}, &1)) do
+        if Enum.any?(average_dev_activity, &match?({:error, _}, &1)) do
           {:nocache, {:ok, Enum.sum(values)}}
         else
           {:ok, Enum.sum(values)}
@@ -409,11 +443,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  defp average_dev_activity_per_org(loader, organizations, days) do
+  defp average_dev_activity_per_org(loader, organizations, days, field) do
     dev_activity_map =
       loader
-      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, days) ||
-        %{}
+      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, days)
+      |> DataFetchErrors.unwrap(:average_dev_activity, days, field: field, metric: "dev_activity")
+
+    dev_activity_map = dev_activity_map || %{}
 
     organizations
     |> Enum.map(fn org ->

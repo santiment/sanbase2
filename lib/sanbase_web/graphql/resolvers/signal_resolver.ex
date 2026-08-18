@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
   alias Sanbase.Signal
+  alias SanbaseWeb.Graphql.DataFetchErrors
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Billing.Plan.Restrictions
 
@@ -18,7 +19,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+      project =
+        Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)
+        |> DataFetchErrors.unwrap(:project_by_slug, slug)
+
+      {:ok, project}
     end)
   end
 

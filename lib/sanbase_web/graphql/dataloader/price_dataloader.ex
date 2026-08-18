@@ -52,16 +52,20 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
     slugs = Enum.to_list(slugs)
 
     # Returns result like: {:ok, %{"bitcoin" => 31886.7990282547, "santiment" => 0.07190104}}
-    {:ok, result} =
-      Sanbase.Metric.aggregated_timeseries_data(
-        "price_usd",
-        %{slug: slugs},
-        yesterday,
-        now,
-        aggregation: :last
-      )
+    case Sanbase.Metric.aggregated_timeseries_data(
+           "price_usd",
+           %{slug: slugs},
+           yesterday,
+           now,
+           aggregation: :last
+         ) do
+      {:ok, result} ->
+        result
 
-    result
+      {:error, error} ->
+        # Converted to per-slug errors by SanbaseDataloader.to_total_result_map/2
+        {:error, error}
+    end
   end
 
   # Helper functions
@@ -81,16 +85,22 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
              earliest_dt,
              middle_dt
            ) do
-      calculate_volume_percent_change(volumes_previous_24h_map, volumes_last_24h_map)
+      calculate_volume_percent_change(volumes_previous_24h_map, volumes_last_24h_map, slugs)
     else
-      _ ->
-        []
+      {:error, error} ->
+        # Per-slug errors so the resolvers can degrade gracefully and record
+        # the failure instead of silently showing no volume change.
+        Enum.map(slugs, fn slug -> {slug, {:error, error}} end)
     end
   end
 
-  defp calculate_volume_percent_change(previous_map, current_map) do
-    current_map
-    |> Enum.map(fn {slug, volume} ->
+  # Every slug in the chunk gets an entry (value or nil) so the batch result
+  # map is total and a missing slug is not turned into an error by the
+  # `:tuples` get policy.
+  defp calculate_volume_percent_change(previous_map, current_map, slugs) do
+    slugs
+    |> Enum.map(fn slug ->
+      volume = Map.get(current_map, slug)
       previous_volume = Map.get(previous_map, slug, 0)
 
       if is_number(previous_volume) and previous_volume > 1 and is_number(volume) and volume > 1 do

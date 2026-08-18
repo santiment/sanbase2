@@ -101,7 +101,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :last_price_usd, slug)
     |> on_load(fn loader ->
-      price_usd = Dataloader.get(loader, SanbaseDataloader, :last_price_usd, slug)
+      price_usd =
+        Dataloader.get(loader, SanbaseDataloader, :last_price_usd, slug)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:last_price_usd, slug)
 
       {:ok, price_usd && balance * price_usd}
     end)

@@ -115,7 +115,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :chart_configuration_comments_count, id)
     |> on_load(fn loader ->
-      count = Dataloader.get(loader, SanbaseDataloader, :chart_configuration_comments_count, id)
+      count =
+        Dataloader.get(loader, SanbaseDataloader, :chart_configuration_comments_count, id)
+        |> SanbaseWeb.Graphql.DataFetchErrors.unwrap(:chart_configuration_comments_count, id)
+
       {:ok, count || 0}
     end)
   end

@@ -24,6 +24,7 @@ defmodule Sanbase.DeepResearch.Config do
   @default_base_url "http://127.0.0.1:2024"
   @default_assistant_id "deep_research_agent"
   @default_pause_after_disconnect_ms 60_000
+  @default_checkpoint_every_ms 10_000
 
   @doc "Base URL of the LangGraph server (no trailing slash)."
   @spec base_url() :: String.t()
@@ -42,6 +43,16 @@ defmodule Sanbase.DeepResearch.Config do
   @spec pause_after_disconnect_ms() :: non_neg_integer()
   def pause_after_disconnect_ms(),
     do: get(:pause_after_disconnect_ms, @default_pause_after_disconnect_ms)
+
+  @doc """
+  How often a runner rewrites the row of the turn it is streaming.
+
+  Between two checkpoints a killed runner (pod eviction, VM kill) loses the events
+  it has not written, so this trades database churn — each write serializes the
+  whole timeline — against how much of an interrupted turn survives.
+  """
+  @spec checkpoint_every_ms() :: non_neg_integer()
+  def checkpoint_every_ms(), do: get(:checkpoint_every_ms, @default_checkpoint_every_ms)
 
   @doc """
   Optional bearer token sent as `Authorization: Bearer <token>` on every request

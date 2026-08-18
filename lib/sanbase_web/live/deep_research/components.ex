@@ -200,14 +200,35 @@ defmodule SanbaseWeb.DeepResearch.Components do
         questions={@turn.clarification}
       />
 
-      <div
-        :if={@turn.error}
-        class="flex items-start gap-2 rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error"
-        role="alert"
-      >
-        <.icon name="hero-exclamation-triangle" class="mt-0.5 size-4 shrink-0" />
-        <span>{@turn.error}</span>
-      </div>
+      <.turn_error :if={@turn.error} turn={@turn} />
+    </div>
+    """
+  end
+
+  attr :turn, :map, required: true
+
+  # A `:paused` turn stopped for a reason it can be picked up from — a lost
+  # connection, a run that crashed — with a Continue offered right above it. That
+  # is a warning, not the red of research that failed and is going nowhere.
+  defp turn_error(assigns) do
+    assigns = assign(assigns, :resumable?, assigns.turn.phase == :paused)
+
+    ~H"""
+    <div
+      class={[
+        "flex items-start gap-2 rounded-xl border px-4 py-3 text-sm",
+        if(@resumable?,
+          do: "border-warning/30 bg-warning/5 text-warning",
+          else: "border-error/30 bg-error/5 text-error"
+        )
+      ]}
+      role={if @resumable?, do: "status", else: "alert"}
+    >
+      <.icon
+        name={if @resumable?, do: "hero-pause-circle", else: "hero-exclamation-triangle"}
+        class="mt-0.5 size-4 shrink-0"
+      />
+      <span>{@turn.error}</span>
     </div>
     """
   end

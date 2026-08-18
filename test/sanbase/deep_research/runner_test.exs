@@ -9,9 +9,10 @@ defmodule Sanbase.DeepResearch.RunnerTest do
 
   use ExUnit.Case, async: false
 
-  alias Sanbase.DeepResearch.{Runner, Timeline, Turn}
+  alias Sanbase.DeepResearch.{Failure, Runner, Timeline, Turn}
 
   @supervisor Sanbase.DeepResearch.RunnerSupervisor
+  @started_key :runner_test_started
 
   setup do
     original = Application.get_env(:sanbase, Sanbase.DeepResearch)
@@ -24,12 +25,20 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       mcp_servers: []
     )
 
+    # Unlinked on purpose: `on_exit` runs after the test process is gone, so the
+    # list of runners to clean up cannot live in the test process itself.
+    {:ok, started} = Agent.start(fn -> [] end)
+    Process.put(@started_key, started)
+
     on_exit(fn ->
-      # Runners first: one still holding the port would outlive the test.
-      for {_, pid, _, _} <- DynamicSupervisor.which_children(@supervisor), is_pid(pid) do
+      # Only this test's runners: the supervisor is shared, so any other child of it
+      # belongs to someone else. Runners first — one still holding the port would
+      # outlive the test.
+      for pid <- Agent.get(started, & &1), Process.alive?(pid) do
         DynamicSupervisor.terminate_child(@supervisor, pid)
       end
 
+      Agent.stop(started)
       :gen_tcp.close(listen)
 
       case original do
@@ -63,6 +72,8 @@ defmodule Sanbase.DeepResearch.RunnerTest do
         thread_id: nil,
         next_id: 1
       })
+
+    Agent.update(Process.get(@started_key), &[pid | &1])
 
     {key, pid}
   end
@@ -141,6 +152,8 @@ defmodule Sanbase.DeepResearch.RunnerTest do
   end
 
   test "reattaching within the grace period cancels the pause" do
+    # Explicit, so shortening the default grace cannot make this race.
+    put_pause_grace(60_000)
     {_key, pid} = start_runner()
     {:ok, _} = Runner.attach(pid, self())
     {:ok, _} = Runner.ask(pid, "q")
@@ -166,6 +179,67 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     Process.exit(watcher, :kill)
 
     assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 2_000
+  end
+
+  describe "a run that ends in a failure" do
+    defp end_run(pid, failure) do
+      send(pid, {:sys.get_state(pid).task.ref, {:error, failure}})
+    end
+
+    defp timeout(), do: %Req.TransportError{reason: :timeout}
+    defp refused(), do: %Req.TransportError{reason: :econnrefused}
+
+    test "parks the turn :paused when the connection broke — it is resumable" do
+      {key, pid} = start_runner()
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+
+      end_run(pid, Failure.connection("create_thread", "http://127.0.0.1:1", refused()))
+
+      assert_receive {:dra_runner, ^key, %{running: false, current_turn: turn}}
+      assert %Turn{phase: :paused, error: error} = turn
+      assert error =~ "nothing is listening"
+    end
+
+    test "fails the turn when the agent itself answered" do
+      {key, pid} = start_runner()
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+
+      end_run(pid, Failure.response("The run", 500, "boom"))
+
+      assert_receive {:dra_runner, ^key, %{current_turn: %Turn{phase: :failed, error: error}}}
+      assert error =~ "HTTP 500"
+    end
+
+    test "parks the turn :paused when the state poll could not be made" do
+      {key, pid} = start_runner()
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+
+      # The stream ended with no report, so the turn waits on the thread's state.
+      send(pid, {:dra_thread, "th1"})
+      send(pid, {:sys.get_state(pid).task.ref, :ok})
+
+      send(pid, {:dra_poll, 1, Failure.connection("get_state", "http://x", timeout())})
+
+      assert_receive {:dra_runner, ^key, %{current_turn: %Turn{phase: :paused, error: error}}}
+      assert error =~ "timed out"
+      # NOT the "finished without producing a report" verdict — we never asked.
+      refute error =~ "without producing a report"
+    end
+
+    test "parks the turn :paused when the stream task itself died" do
+      {key, pid} = start_runner()
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+
+      task = :sys.get_state(pid).task
+      Process.exit(task.pid, :kill)
+
+      assert_receive {:dra_runner, ^key, %{current_turn: %Turn{phase: :paused, error: error}}}
+      assert error =~ "stopped unexpectedly"
+    end
   end
 
   test "continue resumes a paused turn in place" do

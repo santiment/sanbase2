@@ -13,8 +13,9 @@ defmodule Sanbase.DeepResearch.McpServers do
     * `:bearer` — `Authorization: Bearer <token>` with the entry's `:token`, for a
       third-party server we hold a static credential for.
 
-  An entry is dropped rather than sent unauthenticated when its credential does
-  not resolve, or when its `:auth` is one this module does not implement.
+  An entry is dropped (with a warning) rather than sent unauthenticated when its
+  credential does not resolve, when its `:auth` is one this module does not
+  implement, or when the entry itself is malformed — no `:label`/`:url` strings.
   """
 
   require Logger
@@ -80,11 +81,27 @@ defmodule Sanbase.DeepResearch.McpServers do
   defp authenticated(_server, _scheme, credential) when credential in [nil, ""], do: nil
 
   defp authenticated(server, scheme, credential) do
-    Map.put(base_config(server), "headers", %{"Authorization" => "#{scheme} #{credential}"})
+    case base_config(server) do
+      nil -> nil
+      config -> Map.put(config, "headers", %{"Authorization" => "#{scheme} #{credential}"})
+    end
   end
 
+  defp base_config(%{label: label, url: url}) when is_binary(label) and is_binary(url) do
+    %{"name" => label, "label" => label, "url" => url, "tools" => []}
+  end
+
+  # A catalog entry comes from `runtime.exs`, so it can be malformed (an env var
+  # nobody set leaves `url: nil`). Dropping it with a warning keeps the run going
+  # without that server; reading the keys blind would raise inside the stream task,
+  # which parks the turn `:paused` and makes Continue repeat the same crash.
   defp base_config(server) do
-    %{"name" => server.label, "label" => server.label, "url" => server.url, "tools" => []}
+    Logger.warning(
+      "DeepResearch dropping MCP server #{inspect(server[:key])}: " <>
+        "label and url must both be strings, got #{inspect(Map.take(server, [:label, :url]))}"
+    )
+
+    nil
   end
 
   defp apikey_override(server) do

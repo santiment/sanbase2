@@ -33,16 +33,15 @@ defmodule Sanbase.Cache.RehydratingCache do
   # (partial) results are NOT backed off - they re-evaluate until a clean success.
   @max_retry_backoff_ms :timer.minutes(5)
 
-  # Registered closures refresh forever, so an unread key would query upstreams
-  # indefinitely. Unread for `@unused_key_pause_ms` pauses its refresh (a later `get`
-  # resumes it); unread for `@unused_key_drop_ms` forgets it (a `get` re-registers it).
-  # The pause threshold is >= the longest refresh cadence a caller uses (30-60 min), so a
-  # key in active rotation is never paused between refreshes.
+  # Registered closures refresh forever, so an unread key would query upstreams for good.
+  # Unread for `@unused_key_pause_ms` pauses the refresh (a later `get` resumes it);
+  # unread for `@unused_key_drop_ms` forgets it (a `get` re-registers it). The pause
+  # threshold is >= the longest refresh cadence a caller uses (30-60 min), so a key in
+  # active rotation is never paused between refreshes.
   @unused_key_pause_ms :timer.hours(1)
   @unused_key_drop_ms :timer.hours(3)
 
-  # Cap on new computation tasks per :run tick - no thundering herd when many keys come
-  # due at once. The overflow stays due and runs on later ticks.
+  # Cap on new tasks per :run tick, against a thundering herd. The overflow stays due.
   @max_spawns_per_run 250
 
   defguard are_proper_function_arguments(fun, ttl, refresh_time_delta)
@@ -61,19 +60,17 @@ defmodule Sanbase.Cache.RehydratingCache do
     initial_state = %{
       init_time: Timex.now(),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
-      # These knobs are configurable so tests can drive behavior quickly instead
-      # of depending on the production defaults.
+      # Configurable so tests can drive the behavior without the production timings.
       run_interval: Keyword.get(opts, :run_interval, @run_interval),
       function_runtime_timeout:
         Keyword.get(opts, :function_runtime_timeout, @function_runtime_timeout),
       unused_key_pause_ms: Keyword.get(opts, :unused_key_pause_ms, @unused_key_pause_ms),
       unused_key_drop_ms: Keyword.get(opts, :unused_key_drop_ms, @unused_key_drop_ms),
       max_spawns_per_run: Keyword.get(opts, :max_spawns_per_run, @max_spawns_per_run),
-      # `key => Entry.t` - all per-key state (function, progress, last read,
-      # backoff) in one place. See `Sanbase.Cache.RehydratingCache.Entry`.
+      # `key => Entry.t` - all per-key state. See `Sanbase.Cache.RehydratingCache.Entry`.
       entries: %{},
-      # `key => [{from, deadline}]` - callers parked waiting for a first
-      # computation. Transient, so kept separate from the per-key entries.
+      # `key => [{from, deadline}]` - callers parked on a first computation. Transient,
+      # so kept out of the per-key entries.
       waiting: %{}
     }
 
@@ -127,8 +124,8 @@ defmodule Sanbase.Cache.RehydratingCache do
         |> handle_get_response(opts)
 
       {:ok, value} ->
-        # Served straight from ETS without touching the GenServer, so tell it
-        # this key is still being read (otherwise its refresh would be paused).
+        # Served from ETS without touching the GenServer, so tell it the key is still
+        # read - otherwise its refresh gets paused.
         touch(key)
         {:ok, value}
 
@@ -145,9 +142,9 @@ defmodule Sanbase.Cache.RehydratingCache do
       {:error, :timeout}
   end
 
-  # A cast, not a call, so ETS-hit reads never block on the GenServer. `get/3`'s only
-  # caller is the GraphQL resolver, itself behind Absinthe request caching, so cast
-  # volume is low; for a high-QPS caller, move `last_access` to a writable ETS table.
+  # A cast, not a call, so ETS-hit reads never block on the GenServer. Cast volume is low
+  # because `get/3` is only called by the GraphQL resolver, itself behind request caching;
+  # for a high-QPS caller, move `last_access` to a writable ETS table.
   defp touch(key), do: GenServer.cast(@name, {:touch, key})
 
   defp handle_get_response(data, opts) do
@@ -186,14 +183,12 @@ defmodule Sanbase.Cache.RehydratingCache do
         {:reply, value, state}
 
       %{entry: %Entry{progress: %Progress{status: status}}} when status in [:running, :failed] ->
-        # A :running value will be delivered once its task finishes. A :failed
-        # one will get started on the next run. Either way, park the caller.
+        # :running delivers when the task finishes, :failed restarts on the next run.
         new_state = do_fill_waiting_list(state, key, from, timeout)
         {:noreply, new_state}
 
       %{entry: %Entry{} = entry} ->
-        # Registered but idle (scheduled/paused) and nothing stored yet - start
-        # a computation now instead of making the caller wait for the next tick.
+        # Idle and nothing stored yet - compute now instead of waiting for the tick.
         new_state =
           state
           |> restart_entry(entry)
@@ -282,8 +277,8 @@ defmodule Sanbase.Cache.RehydratingCache do
         key ->
           new_entries = update_progress(entries, key, Progress.failed())
 
-          # Free any callers parked on this key instead of letting them block
-          # until their own timeout. They get an error and can retry.
+          # Free the parked callers with an error instead of blocking them until their
+          # own timeout.
           new_waiting = pop_and_reply(waiting, key, {:error, :computation_failed})
 
           %{state | entries: new_entries, waiting: new_waiting}
@@ -299,8 +294,7 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   # Private functions
 
-  # Build a fresh entry from a registration (the map shipped by
-  # register_function/5) and start its first computation.
+  # Build an entry from a registration and start its first computation.
   defp do_register_function(state, registration) do
     %{key: key, function: function} = registration
     now_unix = now_unix()
@@ -319,8 +313,7 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{state | entries: Map.put(state.entries, key, entry)}
   end
 
-  # Kick off a computation for an existing idle entry (a `get` with no stored
-  # value), refreshing its read time so it is not immediately paused again.
+  # Compute for an idle entry, refreshing its read time so it is not paused again.
   defp restart_entry(state, entry) do
     now_unix = now_unix()
     %{pid: pid} = run_function(self(), entry.key, entry.function, state.task_supervisor)
@@ -334,8 +327,7 @@ defmodule Sanbase.Cache.RehydratingCache do
 
     new_waiting =
       Enum.reduce(waiting, %{}, fn {key, waiting_for_key}, acc ->
-        # Remove from the waiting list all timed out records. These are the `call`s
-        # that are no longer waiting for response.
+        # Drop the timed out records - those `call`s no longer wait for a response.
         still_waiting_for_key =
           waiting_for_key
           |> Enum.filter(fn {_from, send_before} ->
@@ -352,15 +344,13 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{state | waiting: new_waiting}
   end
 
-  # Spawn a computation for an entry during a run tick and return its :running
-  # progress (do_run writes it back onto the entry).
+  # Spawn a computation and return its :running progress (do_run writes it back).
   defp spawn_and_track(state, entry) do
     %{pid: pid} = run_function(self(), entry.key, entry.function, state.task_supervisor)
     Progress.running(pid, state.now_unix)
   end
 
-  # Update just an entry's progress, leaving the rest of the entry intact.
-  # No-op if the key is no longer present.
+  # Update only the progress. No-op if the key is gone.
   defp update_progress(entries, key, progress) do
     case Map.get(entries, key) do
       nil -> entries
@@ -368,9 +358,8 @@ defmodule Sanbase.Cache.RehydratingCache do
     end
   end
 
-  # Re-evaluate the entries that are due, threading each one's next progress into a
-  # fresh accumulator. The reduce also collects keys to forget (unread for too long)
-  # and caps how many tasks a single tick spawns.
+  # Re-evaluate the due entries, threading each next progress into a fresh accumulator.
+  # Also collects the keys to forget and caps the tasks a single tick spawns.
   defp do_run(state) do
     now_unix = now_unix()
     state = Map.put(state, :now_unix, now_unix)
@@ -393,8 +382,8 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{state | entries: new_entries}
   end
 
-  # `{next_progress, spawned?}` for an entry. `spawned?` is true only when a fresh task
-  # was started, so the caller can enforce the per-tick spawn cap.
+  # `{next_progress, spawned?}`. `spawned?` is true only for a fresh task, so the caller
+  # can enforce the per-tick cap.
   defp next_progress(state, entry, spawns) do
     now_unix = state.now_unix
 
@@ -407,8 +396,7 @@ defmodule Sanbase.Cache.RehydratingCache do
         maybe_spawn(state, entry, spawns)
 
       %Progress{status: :paused} = progress ->
-        # Unread key - stays paused until a read resumes it (see
-        # put_last_access/2) or it ages out and is dropped.
+        # Unread - paused until a read resumes it or it ages out and is dropped.
         {progress, false}
 
       %Progress{status: :scheduled, run_after_unix: run_after_unix}
@@ -422,10 +410,9 @@ defmodule Sanbase.Cache.RehydratingCache do
     end
   end
 
-  # `{next_progress, spawned?}` for a :running entry. A dead or stuck task restarts
-  # through the same gating as any spawn (unused-key pause + per-tick cap), so a wave of
-  # them cannot burst past it. A stuck task is killed first even when the restart is
-  # deferred, so it never leaks.
+  # `{next_progress, spawned?}` for a :running entry. A dead or stuck task restarts under
+  # the same gating as any spawn, so a wave of them cannot burst past it. A stuck task is
+  # killed even when the restart is deferred, so it never leaks.
   defp handle_running(
          state,
          entry,
@@ -434,8 +421,7 @@ defmodule Sanbase.Cache.RehydratingCache do
        ) do
     cond do
       not Process.alive?(pid) ->
-        # Dead but still marked :running (e.g. the :DOWN has not been handled
-        # yet). Restart it, subject to gating.
+        # Dead but still marked :running (the :DOWN is not handled yet) - restart it.
         maybe_spawn(state, entry, spawns)
 
       elapsed_ms(started_unix, state.now_unix) > state.function_runtime_timeout ->
@@ -454,14 +440,13 @@ defmodule Sanbase.Cache.RehydratingCache do
 
     cond do
       unused_entry?(entry, now_unix, state.unused_key_pause_ms) ->
-        # Not read recently - pause refreshing. A distinct :paused status (rather than
-        # a future timestamp) lets a later read resume the key as immediately due,
-        # instead of serving a stale value for a whole refresh window.
+        # Not read recently - pause. A distinct :paused status (rather than a future
+        # timestamp) lets a later read resume the key as immediately due, instead of
+        # serving a stale value for a whole refresh window.
         {Progress.paused(), false}
 
       spawns >= state.max_spawns_per_run ->
-        # Spawn budget for this tick is exhausted; stay due and run on a
-        # subsequent tick.
+        # Spawn budget for this tick is spent; stay due and run on a later one.
         {Progress.scheduled(now_unix), false}
 
       true ->
@@ -469,8 +454,8 @@ defmodule Sanbase.Cache.RehydratingCache do
     end
   end
 
-  # Dropped once unread for `unused_key_drop_ms`, so forgotten keys stop consuming
-  # state and refresh cycles. Never mid-flight; a later `get` re-registers the closure.
+  # Dropped once unread for `unused_key_drop_ms`, never mid-flight. A later `get`
+  # re-registers the closure.
   defp droppable_entry?(entry, now_unix, drop_ms) do
     not match?(%Progress{status: :running}, entry.progress) and
       entry_unread_ms(entry, now_unix) > drop_ms
@@ -483,28 +468,24 @@ defmodule Sanbase.Cache.RehydratingCache do
   # Milliseconds since the entry was last read.
   defp entry_unread_ms(entry, now_unix), do: elapsed_ms(entry.last_access_unix, now_unix)
 
-  # The single time source for the cache's second-granularity domain (progress
-  # schedules, last_access), so every "now" is comparable.
+  # The single time source for the second-granularity domain, so every "now" compares.
   defp now_unix(), do: System.system_time(:second)
 
-  # The cache's time domain (last_access, progress, ttl) is unix seconds, the interval
-  # attributes are ms (`:timer.*`) - convert an elapsed span so the two compare.
+  # The cache's time domain is unix seconds, the interval attributes are ms.
   defp elapsed_ms(from_unix, now_unix), do: (now_unix - from_unix) * 1000
 
   defp drop_unused_keys(state, []), do: state
 
   defp drop_unused_keys(state, keys) do
-    # Evict the stored values too, not just the entries: otherwise `get/3` serves the
-    # dropped key from the store until its TTL, never falls through to :not_registered,
-    # and the caller never re-registers the function.
+    # Evict the stored values too: otherwise `get/3` serves the dropped key until its TTL,
+    # never falls through to :not_registered, and the caller never re-registers.
     Enum.each(keys, &Store.delete(@store_name, &1))
 
     %{state | entries: Map.drop(state.entries, keys)}
   end
 
-  # Record a read of `key`. A no-op for keys with no entry (unregistered, or dropped
-  # since the read hit the store) so no orphan is created. A read also resumes a paused
-  # key as immediately due, replacing its stale value on the next tick.
+  # A no-op for keys with no entry (unregistered, or dropped since the read hit the
+  # store), so no orphan is created. A read also resumes a paused key as immediately due.
   defp put_last_access(state, key) do
     case Map.get(state.entries, key) do
       nil ->
@@ -544,14 +525,12 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{state | waiting: new_waiting}
   end
 
-  # Exponential backoff for a failing entry: the delay doubles per consecutive failure
-  # from one run interval, capped at @max_retry_backoff_ms and at the entry's
-  # refresh_time_delta, so a broken upstream is still retried within minutes. Returns the
-  # next `:scheduled` progress and the bumped fail count.
+  # The delay doubles per consecutive failure from one run interval, capped at
+  # @max_retry_backoff_ms and at the entry's refresh_time_delta, so a broken upstream is
+  # still retried within minutes.
   defp backoff_progress(entry, now_unix, run_interval) do
     fail_count = entry.backoff_count + 1
-    # Progress timestamps are second-granularity, so the base is at least 1s
-    # even when the run interval is sub-second (as in tests).
+    # Progress timestamps are second-granularity, so the base is at least 1s.
     base_seconds = max(div(run_interval, 1000), 1)
     exponent = min(fail_count - 1, 16)
 
@@ -561,8 +540,7 @@ defmodule Sanbase.Cache.RehydratingCache do
     {Progress.scheduled(now_unix + delay), fail_count}
   end
 
-  # Reply the given value to every caller parked on `key` and return the waiting
-  # map with that key removed.
+  # Reply to every caller parked on `key` and drop it from the waiting map.
   defp pop_and_reply(waiting, key, value) do
     {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
     reply_to_waiting(reply_to_list, value)
@@ -578,13 +556,13 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   ################################################################################
-  ## Handle a computation result reported by a task. Each clause replies to the parked
-  ## callers and returns the entry updated for the next run. The entry is always present
-  ## (a :running key can't be dropped) - see the caller.
+  ## Handle a computation result. Each clause replies to the parked callers and returns
+  ## the entry updated for the next run. The entry is always present (a :running key
+  ## can't be dropped).
 
   defp store_result_handle_info({:error, _} = error, state, key, entry, now_unix) do
-    # Errors are not stored. Reply so parked callers fail fast instead of blocking until
-    # their own timeout, and back off so a broken upstream is not re-run every tick.
+    # Errors are not stored. Reply so parked callers fail fast, and back off so a broken
+    # upstream is not re-run every tick.
     new_waiting = pop_and_reply(state.waiting, key, error)
     {progress, backoff_count} = backoff_progress(entry, now_unix, state.run_interval)
     new_entry = %{entry | progress: progress, backoff_count: backoff_count}
@@ -594,9 +572,8 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   defp store_result_handle_info({:nocache, {:ok, _value}} = result, state, key, entry, now_unix) do
     # Store and serve the partial result, but respect the :nocache tag: re-evaluate every
-    # tick until a clean {:ok, _} lands. Cheap, not a hammer on the failing upstream -
-    # healthy modules come from the per-module cache, a failing one is short-circuited by
-    # its cooldown marker (see Sanbase.Metric.available_metrics_for_selector/2).
+    # tick until a clean {:ok, _} lands. Cheap - healthy modules come from the per-module
+    # cache and a failing one is short-circuited by its cooldown marker.
     new_waiting = pop_and_reply(state.waiting, key, result)
 
     new_entry = %{

@@ -36,9 +36,8 @@ defmodule Sanbase.DeepResearch.Client do
 
   # See the moduledoc's "Timeouts" section for why each of these exists.
 
-  # Per chunk, not per run: Finch restarts the clock on every byte
-  # (`Mint.HTTP.recv/3` in its receive loop). Not `:infinity`, or a half-open socket
-  # hangs the run forever.
+  # Per chunk, not per run: Finch restarts the clock on every byte (`Mint.HTTP.recv/3`).
+  # Not `:infinity`, or a half-open socket hangs the run forever.
   @stream_idle_timeout 900_000
 
   @connect_timeout 5_000
@@ -49,9 +48,8 @@ defmodule Sanbase.DeepResearch.Client do
   # arithmetic instead of a guess.
   @retry_delay 500
 
-  # Worst cost of ONE one-shot call: each attempt spends connect + read, plus the
-  # backoff between. A caller wrapping such a call in its own task must outlast this.
-  # Bounds no run — see `@stream_idle_timeout`.
+  # Worst cost of ONE one-shot call: connect + read per attempt, plus the backoff between.
+  # A caller wrapping one in its own task must outlast this. Bounds no run.
   @oneshot_worst_case (@request_retries + 1) * (@connect_timeout + @request_timeout) +
                         @request_retries * @retry_delay + 1_000
 
@@ -170,8 +168,7 @@ defmodule Sanbase.DeepResearch.Client do
           receive_timeout: @stream_idle_timeout,
           # A retry would start a SECOND run, interleaving its events with the first's.
           retry: false,
-          # Framing state on the response's private map — scoped to this request, not
-          # the calling process's dictionary.
+          # Framing state on the response's private map, scoped to this request.
           into: fn {:data, data}, {req, resp} ->
             {lines, buffer} = SSE.feed(Req.Response.get_private(resp, @buffer_key, ""), data)
             Enum.each(lines, &handle_line(&1, lv_pid, ref))
@@ -180,8 +177,8 @@ defmodule Sanbase.DeepResearch.Client do
         )
       )
 
-    # A last event without a trailing newline stays in the buffer — flush it, or a
-    # terminal `run_id`/`error`/`report` is lost.
+    # A last event without a trailing newline stays in the buffer - flush it, or a terminal
+    # `run_id`/`error`/`report` is lost.
     flush_buffer(result, lv_pid, ref)
 
     case result do
@@ -217,8 +214,8 @@ defmodule Sanbase.DeepResearch.Client do
 
   defp url(path), do: Config.base_url() <> path
 
-  # `:transient`, not the default `:safe_transient`, so the POSTs retry too: a
-  # retried create leaves one unused thread, a repeated cancel is idempotent.
+  # `:transient`, not `:safe_transient`, so the POSTs retry too: a retried create leaves
+  # one unused thread, a repeated cancel is idempotent.
   defp oneshot_opts(opts) do
     opts
     |> Keyword.merge(
@@ -239,9 +236,9 @@ defmodule Sanbase.DeepResearch.Client do
     end
   end
 
-  # The run payload carries the OpenRouter/Tavily keys, so plain HTTP to a non-local
-  # host sends them in cleartext. Deployed: fail closed, except cluster-internal
-  # hosts (*.cluster.local). Dev: warn — a remote agent may be on a trusted network.
+  # The run payload carries the OpenRouter/Tavily keys, so plain HTTP to a non-local host
+  # sends them in cleartext. Deployed fails closed, except *.cluster.local; dev only warns,
+  # since a remote agent may be on a trusted network.
   defp check_base_url_security() do
     case URI.parse(Config.base_url()) do
       %URI{scheme: "http", host: host} when host not in ["localhost", "127.0.0.1", "::1"] ->

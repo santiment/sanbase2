@@ -58,32 +58,26 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
 
   alias Sanbase.Utils.Config
 
-  # A disconnect this soon after an unconfirmed subscribe puts that coin on probation as a
-  # suspect. HL kills the connection within 200-300ms of the offending subscribe, every
-  # time, so 1.5s is ~5x margin. At the scraper's 200ms pacing it sweeps the culprit plus
-  # ~4-6 neighbours - a few extra innocents (each cleared by a probe) beats missing it.
+  # A disconnect this soon after an unconfirmed subscribe makes that coin a suspect. HL
+  # kills within 200-300ms of the offending subscribe, so 1.5s is ~5x margin. At 200ms
+  # pacing it sweeps the culprit plus ~4-6 neighbours, each cleared by a probe.
   @suspect_window_ms 1_500
-  # A probed coin, confirmed and with the connection still alive this long after its
-  # subscribe hit the wire (track_send/4 restarts the clock there), is innocent. Must
-  # exceed @probe_strike_window_ms: never clear a coin while a kill could still be its.
+  # A confirmed probe whose connection is still alive this long after its subscribe hit
+  # the wire is innocent. Must exceed @probe_strike_window_ms, or a coin could be cleared
+  # while a kill could still be its.
   @probe_verdict_ms 2_000
   # A crash within this window after a probe subscribe is that probe's strike; later ones
-  # are infra noise (the coin keeps its spot, no strike). Kill lag is typically 200-300ms
-  # but jitters - kills near 500ms went unattributed and left strike counts stuck below
-  # conviction, hence the margin. Strictly less than @probe_spacing_ms, so a crash at the
-  # boundary cannot blame two in-flight probes.
+  # are infra noise. Kill lag is 200-300ms but jitters - kills near 500ms went
+  # unattributed and left strike counts below conviction, hence the margin. Strictly less
+  # than @probe_spacing_ms, so a boundary crash cannot blame two in-flight probes.
   @probe_strike_window_ms 1_500
-  # Minimum gap between probe starts. Probes are pipelined - a new one starts every
-  # spacing while earlier ones await verdicts - so probation drains at ~1 coin per 1.6s (a
-  # 5-8 coin sweep in ~10s). Must exceed @probe_strike_window_ms, or one crash could
-  # implicate several probes.
+  # Minimum gap between probe starts. Probes pipeline, so probation drains at ~1 coin per
+  # 1.6s. Must exceed @probe_strike_window_ms, or one crash implicates several probes.
   @probe_spacing_ms 1_600
-  # Don't start a probe until the connection has been up this long with an
-  # empty outbound queue, so the verdict isn't polluted by startup churn.
+  # Uptime with an empty outbound queue required before a probe, against startup churn.
   @probe_min_uptime_ms 10_000
-  # How many recently-sent subscribe frames to keep as crash evidence. MUST cover
-  # @suspect_window_ms at the scraper's 200ms pacing — a culprit that falls off the list
-  # before the crash is never caught. 10 entries = 2s of sends, above the window.
+  # Recently-sent subscribe frames kept as crash evidence. MUST cover @suspect_window_ms
+  # at the scraper's 200ms pacing, else the culprit falls off the list before the crash.
   @recent_sends_size 10
 
   defstruct probation: [],
@@ -92,9 +86,8 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
             probe_strikes: %{},
             quarantined: %{},
             audit_excluded: %{},
-            # Crash evidence: the last @recent_sends_size subscribe frames sent on the
-            # CURRENT connection, newest first — %{coin: _, slugs: _, sent_at_ms: _}.
-            # Fed by track_send/4, reset by on_connect/1, consumed by handle_crash/3.
+            # Crash evidence: the last @recent_sends_size subscribe frames of the CURRENT
+            # connection, newest first. Fed by track_send/4, reset by on_connect/1.
             recent_sends: []
 
   @type t :: %__MODULE__{}
@@ -152,10 +145,9 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   def track_send(%__MODULE__{} = q, coin, slugs, now) do
     entry = %{coin: coin, slugs: slugs, sent_at_ms: now}
 
-    # A probe's strike/verdict clock restarts when its frame reaches the wire. started_ms
-    # is first set at QUEUE time, but flush pacing can burn 200ms before the send - on top
-    # of a kill lag already near the strike window, real kills would go unattributed and
-    # strikes would stick below conviction forever.
+    # The strike/verdict clock restarts when the frame reaches the wire. started_ms is set
+    # at QUEUE time, but flush pacing can burn 200ms before the send - on top of a kill lag
+    # already near the strike window, real kills would go unattributed.
     probing =
       Enum.map(q.probing, fn
         %{coin: ^coin} = probe -> %{probe | started_ms: now}
@@ -294,9 +286,8 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
   end
 
   defp do_probe_tick(%__MODULE__{} = q, active_subs, uptime_ms, queue_empty?, now) do
-    # Resolve every probe whose verdict window has elapsed (probes pipeline,
-    # so several can come due together), then start the next probe if the
-    # spacing since the newest in-flight one has passed.
+    # Resolve every probe whose verdict window elapsed (several can come due together),
+    # then start the next one if the spacing since the newest in-flight has passed.
     {due, in_flight} =
       Enum.split_with(q.probing, fn %{started_ms: started} ->
         now - started >= @probe_verdict_ms
@@ -310,11 +301,10 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
     maybe_start_probe(q, uptime_ms, queue_empty?, now)
   end
 
-  # The crash's verdict on the in-flight probes. Only a probe younger than
-  # @probe_strike_window_ms is blamed - at most one, since probes start @probe_spacing_ms
-  # apart. Older unresolved probes fall back to probation (same spot, no strike) and are
-  # re-probed. A struck coin is convicted at @probe_strikes_to_convict, else it moves to
-  # the END of probation so the other suspects are probed before its retry.
+  # Only a probe younger than @probe_strike_window_ms is blamed - at most one, since
+  # probes start @probe_spacing_ms apart. Older unresolved probes fall back to probation
+  # and are re-probed. A struck coin is convicted at @probe_strikes_to_convict, else it
+  # moves to the END of probation so the other suspects are probed before its retry.
   defp resolve_probe_crash(%__MODULE__{} = q, now) do
     guilty =
       Enum.filter(q.probing, fn %{started_ms: started} ->
@@ -352,10 +342,9 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
     end
   end
 
-  # The connection survived @probe_verdict_ms after the probe subscribe. Confirmed ->
-  # innocent, back to normal subscriptions (already streaming; reconcile keeps it). Never
-  # confirmed -> HL silently ignores this coin ("bbo" only accepts tradeable pair names),
-  # so quarantine it. The caller has already dropped the probe from `probing`.
+  # The connection survived @probe_verdict_ms after the probe subscribe. Confirmed means
+  # innocent and already streaming. Never confirmed means HL silently ignores this coin
+  # ("bbo" only accepts tradeable pair names), so quarantine it.
   defp resolve_probe_survival(%__MODULE__{} = q, coin, active_subs) do
     q = %{q | probation: List.delete(q.probation, coin)}
 
@@ -371,9 +360,8 @@ defmodule Sanbase.Hyperliquid.Bbo.Quarantine do
     end
   end
 
-  # Starts the next probe when it can produce a clean verdict: connection
-  # settled, and at least @probe_spacing_ms since the newest in-flight probe.
-  # A coin stays in probation until its verdict; `probing` marks it in flight.
+  # Starts the next probe only when it can produce a clean verdict: connection settled and
+  # @probe_spacing_ms since the newest in-flight one. `probing` marks a coin in flight.
   defp maybe_start_probe(%__MODULE__{} = q, uptime_ms, true = _queue_empty?, now)
        when uptime_ms >= @probe_min_uptime_ms do
     in_flight = probing_coins(q)

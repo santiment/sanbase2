@@ -21,11 +21,10 @@ defmodule Sanbase.ApiCallLimit do
   @product_api_id Product.product_api()
   @product_sanbase_id Product.product_sanbase()
 
-  # The key is `"sanapi_" <> downcase(plan_name)`, so `"sanapi_custom"` matches only a
-  # plan named exactly `CUSTOM`, not the bespoke `CUSTOM_*` contracts - those take
-  # `plan_has_limits?/1`'s `:custom` branch, which reads `has_limits` out of the plan's
-  # own restrictions. `ENTERPRISE` is deliberately absent: it is a listed tier now, with
-  # a published 300,000 calls a month to enforce.
+  # The key is `"sanapi_" <> downcase(plan_name)`, so `"sanapi_custom"` matches only a plan
+  # named exactly `CUSTOM`, not the bespoke `CUSTOM_*` contracts - those take
+  # `plan_has_limits?/1`'s `:custom` branch. `ENTERPRISE` is absent on purpose: it is a
+  # listed tier now, with a published 300,000 calls a month to enforce.
   @plans_without_limits [
     "sanapi_custom"
   ]
@@ -38,8 +37,8 @@ defmodule Sanbase.ApiCallLimit do
   # @response_size_limits_per_minute Restrictions.response_size_limits_per_minute()
 
   schema "api_call_limits" do
-    # If has_limits_no_matter_plan is false then plan is not checked.
-    # This is used for manually setting no limits api customers without resetting on plan change.
+    # `false` skips the plan check, for manually setting unlimited customers that must
+    # survive a plan change.
     field(:has_limits_no_matter_plan, :boolean, default: true)
     field(:has_limits, :boolean, default: true)
     field(:api_calls_limit_plan, :string, default: "sanapi_free")
@@ -48,9 +47,8 @@ defmodule Sanbase.ApiCallLimit do
     field(:api_calls_responses_size_mb, :map, default: %{})
     field(:remote_ip, :string, default: nil)
 
-    # Only ever set for a bundle: every bundle is named BUNDLE while the numbers differ
-    # per customer, so they cannot be derived from the name. `nil` means "derive from the
-    # name", which is what happens for every other plan.
+    # Only set for a bundle: every bundle is named BUNDLE while the numbers differ per
+    # customer. `nil` means "derive from the name", as every other plan does.
     field(:resolved_api_call_limits, :map, default: nil)
 
     belongs_to(:user, User)
@@ -80,8 +78,7 @@ defmodule Sanbase.ApiCallLimit do
 
     {plan, subscription_status, resolved_api_call_limits} = user_to_plan_state(user)
 
-    # Some users have don't have limits regardless of their plan
-    # In case the user has limits - check the plan
+    # Some users have no limits regardless of plan; the rest are checked against it.
     has_limits =
       case user_has_limits?(user) do
         false -> false
@@ -93,17 +90,16 @@ defmodule Sanbase.ApiCallLimit do
       |> changeset(%{
         api_calls_limit_plan: plan,
         api_calls_limit_subscription_status: subscription_status,
-        # Always written, including the `nil` that every non-bundle plan resolves
-        # to. Leaving a stale value behind would keep a customer who moved off a
-        # bundle on the bundle's numbers.
+        # Always written, `nil` included: a stale value would keep a customer who moved
+        # off a bundle on the bundle's numbers.
         resolved_api_call_limits: resolved_api_call_limits,
         has_limits: has_limits
       })
 
     case Repo.update(changeset) do
       {:ok, _} = result ->
-        # Clear the in-memory data for a user so the new restrictions
-        # can be picked up faster. Do this only if the plan actually changes
+        # Clear the in-memory data so the new restrictions apply sooner. Only on a real
+        # plan change.
         __MODULE__.ETS.clear_data(:user, user)
 
         if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
@@ -156,9 +152,8 @@ defmodule Sanbase.ApiCallLimit do
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
     result_mb = acc_byte_size |> Kernel./(1024 * 1024) |> Float.round(6)
 
-    # Use separate parameters for JSONB keys ($1-$3) and COALESCE lookups ($4-$6)
-    # to avoid Postgres "ambiguous parameter" error (42P08) — jsonb_build_object
-    # and ->> both expect text, and reusing the same $N for both confuses type resolution.
+    # Separate parameters for the JSONB keys ($1-$3) and the COALESCE lookups ($4-$6):
+    # reusing one $N for both confuses type resolution ("ambiguous parameter", 42P08).
     sql = """
     UPDATE api_call_limits
     SET
@@ -195,8 +190,8 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   def reset(%User{} = user) do
-    # Flush any in-memory usage to the OLD row before deleting it,
-    # so clear_data doesn't accidentally write stale usage into the new row.
+    # Flush the in-memory usage to the OLD row first, so clear_data cannot write stale
+    # usage into the new one.
     __MODULE__.ETS.clear_data(:user, user)
 
     if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete!(struct)
@@ -245,8 +240,8 @@ defmodule Sanbase.ApiCallLimit do
         user_id: user.id,
         api_calls_limit_plan: subscription_plan,
         api_calls_limit_subscription_status: subscription_status,
-        # A bundle customer's row is created by their first request, so the limits
-        # have to be here from the start - not only on later plan changes.
+        # A bundle row is created by the first request, so the limits belong here too,
+        # not only on later plan changes.
         resolved_api_call_limits: resolved_api_call_limits,
         has_limits: has_limits,
         api_calls: api_calls,
@@ -254,8 +249,8 @@ defmodule Sanbase.ApiCallLimit do
       })
 
     # `on_conflict: :nothing` so a concurrent INSERT winning the race does not poison the
-    # surrounding transaction - the unique-constraint violation would make every later
-    # statement, the fallback SELECT included, fail with "transaction is aborted".
+    # transaction - the constraint violation would fail every later statement, the
+    # fallback SELECT included.
     case Repo.insert(changeset, on_conflict: :nothing, conflict_target: :user_id) do
       {:ok, %{id: id} = acl} when not is_nil(id) ->
         {:ok, acl}
@@ -354,9 +349,8 @@ defmodule Sanbase.ApiCallLimit do
 
     case result do
       nil ->
-        # Ensure that the result we get back has a lock. This is making more
-        # DB calls, but it should be executed only once per user/remote_ip and
-        # after that all subsequent calls should go into the second case.
+        # Make sure the result has a lock. Costs extra DB calls, but runs once per
+        # user/remote_ip - everything after it takes the second case.
         {:ok, _acl} = create(:user, user)
         get_by_and_lock(:user, user)
 
@@ -373,9 +367,8 @@ defmodule Sanbase.ApiCallLimit do
     |> Repo.one()
     |> case do
       nil ->
-        # Ensure that the result we get back has a lock. This is making more
-        # DB calls, but it should be executed only once per user/remote_ip and
-        # after that all subsequent calls should go into the second case.
+        # Make sure the result has a lock. Costs extra DB calls, but runs once per
+        # user/remote_ip - everything after it takes the second case.
         {:ok, _acl} = create(:remote_ip, remote_ip)
         get_by_and_lock(:remote_ip, remote_ip)
 
@@ -404,9 +397,8 @@ defmodule Sanbase.ApiCallLimit do
 
   def subscription_to_plan_name(_sub), do: "sanapi_free"
 
-  # Returns the plan name, the subscription status, and - for bundles only - the
-  # resolved call limits to store on the row. One subscription lookup answers all
-  # three.
+  # Plan name, subscription status and - bundles only - the call limits to store on the
+  # row. One subscription lookup answers all three.
   defp user_to_plan_state(%User{} = user) do
     subscription =
       Subscription.current_subscription(user, @product_api_id) ||
@@ -423,9 +415,8 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   # `nil` for every plan whose limits follow from its name, i.e. everything but a bundle.
-  # A bundle with no entitlement yet stores `nil` too rather than raising: this runs on
-  # every plan change, and failing would leave a stale plan name behind. The read path is
-  # where a missing entitlement has to be loud.
+  # A bundle with no entitlement yet stores `nil` rather than raising: this runs on every
+  # plan change, and failing would leave a stale plan name behind. The read path is loud.
   defp subscription_to_resolved_api_call_limits(%Subscription{} = sub) do
     plan_name = subscription_to_plan_name(sub)
 
@@ -519,9 +510,8 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defp get_quota() do
-    # Randomize the quota size so when the API calls are distributed among all
-    # API pods the quotas don't expire at the same time.
-    # Uses runtime config so tests can override via Application.put_env.
+    # Randomized so quotas across API pods do not expire at the same time. Runtime config,
+    # so tests can override it via Application.put_env.
     base = Application.get_env(:sanbase, __MODULE__)[:quota_size] || @default_quota_size
 
     offset =
@@ -573,9 +563,8 @@ defmodule Sanbase.ApiCallLimit do
     }
   end
 
-  # Public (but undocumented) so that the plan -> limits resolution can be
-  # exercised directly by the access-matrix characterization fixture and the
-  # plan-type dispatch smoke matrix. Not part of the public API.
+  # Public but undocumented, so the plan -> limits resolution can be exercised directly
+  # by the access-matrix and plan-dispatch fixtures. Not part of the public API.
   @doc false
   def plan_has_limits?(plan) do
     case plan do
@@ -585,9 +574,8 @@ defmodule Sanbase.ApiCallLimit do
       _ ->
         case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
           :bundle ->
-            # Every bundle has a monthly call limit - a flat 100k plus whatever
-            # add-ons were bought (§9). There is no unlimited bundle, so this
-            # needs no entitlement to answer.
+            # Every bundle has a monthly call limit - a flat 100k plus the add-ons bought
+            # (§9). There is no unlimited bundle, so no entitlement is needed here.
             true
 
           :custom ->
@@ -637,8 +625,8 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   # A bundle row with nothing stored means the subscription never synced. Raising is
-  # deliberate: inventing numbers either refuses a paying customer's requests or gives
-  # calls away, and both look like a working configuration from the outside.
+  # deliberate: invented numbers either refuse a paying customer or give calls away, and
+  # both look like a working configuration from the outside.
   defp bundle_api_call_limits(%__MODULE__{resolved_api_call_limits: limits})
        when is_map(limits) do
     %{
@@ -659,9 +647,8 @@ defmodule Sanbase.ApiCallLimit do
   def plan_to_api_call_limits(plan) do
     case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
       :bundle ->
-        # Reachable only by calling this directly with a bundle plan name. The
-        # numbers are per-customer and live on the api_call_limits row, so the
-        # name alone cannot answer - use acl_to_api_call_limits/1.
+        # Reachable only by calling this directly with a bundle plan name. The numbers are
+        # per-customer and live on the api_call_limits row - use acl_to_api_call_limits/1.
         Sanbase.Billing.Plan.Bundle.not_implemented!(
           {:plan_to_api_call_limits, :read_from_api_call_limits_row_instead},
           plan
@@ -689,9 +676,8 @@ defmodule Sanbase.ApiCallLimit do
   def plan_to_response_size_limits(plan) do
     case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
       :bundle ->
-        # Response size is not sold in packages (§6.2), so there is nothing per-customer
-        # to resolve or store. A bundle answers as the standard tier it is priced against,
-        # like everything that is neither metric access nor call quota (§5.9).
+        # Response size is not sold in packages (§6.2), so nothing is per-customer here. A
+        # bundle answers as the standard tier it is priced against (§5.9).
         equivalent =
           "sanapi_" <> String.downcase(Sanbase.Billing.Plan.Bundle.equivalent_standard_plan())
 

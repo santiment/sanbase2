@@ -70,22 +70,19 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       get_queries_in_document(blueprint)
 
     # No successful queries means only an error was returned. Error queries are not
-    # exported and do not bump the user's API calls count. (Idea: export them to a
-    # separate Kafka topic to spot spikes of user errors, e.g. mistyped assets.)
+    # exported and do not bump the user's API calls count.
     if success_queries != [] and enabled?() do
       query_metadata = query_metadata(conn, blueprint, success_queries, error_queries)
 
       maybe_async(fn -> export_api_call_data(query_metadata) end)
       maybe_async(fn -> maybe_update_api_call_limit_usage(query_metadata) end)
 
-      # In some cases the resolver asks for the query to not be cached.
-      # In some cases this is done because the result depends on the user who queried it.
       do_not_cache? = Process.get(:do_not_cache_query) == true
 
-      # Do not cache when a resolver returned `:nocache` (handled inside the Cache
-      # implementation), when it set the do_not_cache_query flag in the process
-      # dictionary, or when the result came from the cache - storing it again `touch`es
-      # it and restarts the TTL, so with enough requests it could live forever.
+      # Do not cache when a resolver returned `:nocache` (its result may depend on the
+      # user), when it set the do_not_cache_query flag, or when the result came from the
+      # cache - storing it again `touch`es it and restarts the TTL, so with enough
+      # requests it could live forever.
       case do_not_cache? or error_queries != [] do
         true -> :ok
         # The pre_override_queries are the getMetric and getSignal query names
@@ -213,10 +210,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     end
   end
 
-  # A cache_key is `{key, ttl}` or just `key`; both store under `key`, the tuple form only
-  # changing the ttl. `get` ignores the ttl, so `{key, 300}` is retrievable with
-  # `{key, 10}` - which is how the DocumentProvider's cache_key takes the ttl the graphql
-  # cache sets via `caching_params`.
+  # A cache_key is `{key, ttl}` or just `key`; both store under `key`. `get` ignores the
+  # ttl, so `{key, 300}` is retrievable with `{key, 10}` - which is how the
+  # DocumentProvider's cache_key takes the ttl `caching_params` sets.
   defp get_cache_key(blueprint) do
     case Process.get(:__change_absinthe_before_send_caching_ttl__) do
       ttl when is_number(ttl) ->
@@ -243,15 +239,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp maybe_create_or_drop_session(conn, _), do: conn
 
   defp queries_in_request(%{operations: operations}) do
-    # We need to use both the name and the alias in order to properly export only the successful ones
-    # And also to count them
+    # Both the name and the alias are needed to export and count only the successful ones.
     operations
     |> Enum.flat_map(fn %{selections: selections} ->
       selections
       |> Enum.map(fn %{name: name, alias: alias} ->
-        # Use the alias as key when there is one, so it can be mapped back to the
-        # underlying GraphQL query later; otherwise use the query name. A document
-        # repeating the same query must alias all but one of them anyway.
+        # The alias is the key when there is one, so it maps back to the underlying query
+        # later. A document repeating a query must alias all but one of them anyway.
         {Sanbase.Utils.Inflect.camelize(alias || name, :lower),
          Sanbase.Utils.Inflect.camelize(name, :lower)}
       end)
@@ -303,8 +297,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         remote_ip: if(activity_traces_hidden?, do: nil, else: query_metadata.remote_ip),
         user_agent: if(activity_traces_hidden?, do: nil, else: query_metadata.user_agent),
         duration_ms: query_metadata.duration_ms,
-        # Response size is a side-channel for correlating masked queries
-        # back to known result shapes — drop it for protected users.
+        # Response size correlates a masked query back to a known result shape.
         response_size_byte:
           if(activity_traces_hidden?, do: nil, else: query_metadata.result_sizes.byte_size),
         compressed_response_size_byte:
@@ -317,17 +310,15 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp generate_id() do
-    # All ids in the batch need to be different so there's at least one field
-    # that is different for all api calls, otherwise they can be squashed into
-    # a single row when ingested in Clickhouse
+    # The ids must differ inside a batch, or Clickhouse squashes the api calls into one
+    # row on ingestion.
     case Logger.metadata() |> Keyword.get(:request_id) do
       request_id when is_binary(request_id) ->
         request_id <> "|" <> (:crypto.strong_rand_bytes(3) |> Base.encode64())
 
       nil ->
-        # The ID only needs to differ between queries in the same document - the API
-        # call table's unique key is (dt, user_id, query, id). 6 bytes is plenty:
-        # 2^(6*8) =~ 2.81e+14 possibilities.
+        # Only has to differ inside a document - the unique key is
+        # (dt, user_id, query, id). 6 bytes is 2^48 =~ 2.81e+14 possibilities.
         "gen_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64(padding: false))
     end
   end
@@ -369,25 +360,20 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     do: %{user_id: nil, san_balance: nil, auth_method: nil, api_token: nil}
 
   defp get_queries_in_document(blueprint) do
-    # queries_in_request/1 returns %{"alias" => "query_name"}; with no alias the query
-    # name itself is the key. GraphQL aliases are defined as:
-    # { price_usd: getMetric(metric: "price_usd") ... }
-    #
-    # `data` and `errors` use the alias names, so this map is what deduces which queries
-    # succeeded and lets the export record the real query - `getMetric|price_usd` instead
-    # of `myCustomAlias123`.
+    # queries_in_request/1 returns %{"alias" => "query_name"} - with no alias the query
+    # name is the key. `data` and `errors` use the alias names, so this map is what
+    # deduces which queries succeeded and lets the export record `getMetric|price_usd`
+    # instead of `myCustomAlias123`.
     alias_to_query_name_map = queries_in_request(blueprint)
 
-    # All the aliases. No `errors` field -- every query succeeded, return them directly.
-    # No `data` field -- every query failed, return all aliases as errors. Aliases are
-    # renamed to the actual query names before returning.
+    # No `errors` field means every query succeeded, no `data` field means every one
+    # failed. Aliases are renamed to the actual query names before returning.
     all_aliases = Map.keys(alias_to_query_name_map)
 
     case blueprint.result do
-      # Data means at least some queries succeeded. In a multi-query document the others
-      # may still have failed, but not with a graphql-level critical error - these are
-      # the checks we run once the document is known to be valid GraphQL (authorization
-      # against the user's plan, a non-existent metric or asset, etc).
+      # Data means at least some queries succeeded. The others may still have failed, but
+      # not at GraphQL level - these are the checks run once the document is known valid
+      # (plan authorization, a non-existent metric or asset, etc).
       %{data: data, errors: errors} when is_map(data) and is_list(errors) ->
         error_queries =
           errors
@@ -409,9 +395,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       %{data: data} = map when is_map(data) and not is_map_key(map, :errors) ->
         %{success: all_aliases, error: []}
 
-      # If there is no 'data' then we do not return any result, so all queries
-      # in the request have failed. Some queries can fail because there is some breaking
-      # GraphQL error in another query -- mistyped field, type violation, etc.
+      # No 'data' means every query in the request failed - possibly because a breaking
+      # GraphQL error in another query (mistyped field, type violation) took them down.
       %{errors: errors} = map when is_list(errors) and not is_map_key(map, :data) ->
         %{
           success: [],
@@ -427,16 +412,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          %Absinthe.Blueprint{} = blueprint
        )
        when is_map(alias_to_query_name_map) do
-    # The TransformResolution middleware enriches the getMetric and getSignal APIs so the
-    # export records what was actually called -- `getMetric` plus the metric name and
-    # selector, not just `getMetric`. It also records the user's GraphQL alias, used
-    # later to resolve aliases to query names.
+    # The TransformResolution middleware enriches getMetric and getSignal so the export
+    # records the metric name and selector, not just `getMetric`, plus the user's alias.
 
-    # A map keyed by the alias, with values one of:
-    # - {:get_metric, alias, metric, selector, version}
-    # - {:get_signal, alias, signal, selector}
-    # These replace the `alias: getMetric` entries in the queries list, enriching them
-    # with the metric/signal the user queried.
+    # A map keyed by the alias, with values {:get_metric, alias, metric, selector, version}
+    # or {:get_signal, alias, signal, selector}. These replace the `alias: getMetric`
+    # entries in the queries list.
     alias_to_get_query_tuple_map =
       Map.get(blueprint.execution.context, :__get_query_name_arg__, [])
       |> Map.new(fn
@@ -447,9 +428,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
           {Sanbase.Utils.Inflect.camelize(alias, :lower), tuple}
       end)
 
-    # Rename aliases to the query name itself, or in case of getMetric and getSignal -- the whole tuple.
-    # The tuple is used in export_api_call_data/1 to construct the query name (like getMetric|price_usd) and
-    # the selector that has been provided (like {"slugs": ["bitcoin", "ethereum"]})
+    # Rename aliases to the query name, or to the whole tuple for getMetric/getSignal.
+    # export_api_call_data/1 builds the query name (getMetric|price_usd) and the selector
+    # ({"slugs": ["bitcoin", "ethereum"]}) out of that tuple.
     rename_mapper = fn list ->
       Enum.map(list, fn alias ->
         alias = alias |> Sanbase.Utils.Inflect.camelize(:lower)

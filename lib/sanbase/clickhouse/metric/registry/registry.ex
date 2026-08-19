@@ -39,8 +39,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def table_map(), do: get(:table_map)
   def timebound_flag_map(), do: get(:timebound_flag_map)
 
-  # Internals below. Some of the functions are public as they are called from
-  # other modules, for example when refreshing the stored data in the persistent_term
+  # Internals below. Some are public because other modules call them, for example when
+  # refreshing the data stored in the persistent_term.
 
   @functions [
     {:access_map, []},
@@ -113,9 +113,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   def refresh_stored_terms() do
     Logger.info("Refreshing stored terms in the #{__MODULE__} module")
-    # First clear the registry cache so the new data can be fetched
-    # from the DB, otherwise the changes that triggered this refresh won't
-    # be reflected here
+    # Clear the registry cache first, or the changes that triggered this refresh are not
+    # re-fetched from the DB.
     Sanbase.Cache.clear(registry_cache_key([]))
     Sanbase.Cache.clear(registry_cache_key(remove_hard_deprecated: true))
     Sanbase.Cache.clear(registry_cache_key(remove_hard_deprecated: false))
@@ -141,9 +140,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp get_metrics_from_registry(opts) do
-    # Do not allow any other keys to be passed.
-    # This is important as we need to invalidate all possible caches when
-    # refreshign the stored terms
+    # No other keys allowed - every possible cache must be invalidated on refresh.
     Keyword.validate!(opts, [:remove_hard_deprecated])
 
     Sanbase.Cache.get_or_store(registry_cache_key(opts), fn ->
@@ -164,8 +161,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp filter_exposed_environments(metrics, _opts) do
     deploy_env = Sanbase.Utils.Config.module_get(Sanbase, :deployment_env)
 
-    # exposed_environments is one of: all, none, stage, prod. The metric is visible when it
-    # is "all" or when it matches the current deploy env. In dev all metrics are visible.
+    # exposed_environments is all/none/stage/prod: visible when "all" or when it matches
+    # the deploy env. In dev everything is visible.
     Enum.filter(
       metrics,
       fn m ->
@@ -211,8 +208,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end)
   end
 
-  # Fetching the metrics from the DB is retried a few times, sleeping between 5ms and 2s
-  # from the second attempt on. If every attempt fails, the local files are used.
+  # Retried a few times, sleeping 5ms to 2s from the second attempt on. If every attempt
+  # fails, the local files are used.
   @sleep_time_ms %{
     1 => 0,
     2 => 5,
@@ -247,11 +244,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end
   end
 
-  # Get the data stored in persistent_term under `key`, computing it with `compute(key)`
-  # and storing it first if it is missing. `fun` is the name of the function and `args` the
-  # arguments passed to compute. Packing all arguments in one list keeps `compute/2` a
-  # 2-argument function, which is what makes refresh_stored_terms/0 able to refresh
-  # everything automatically.
+  # The data in persistent_term under `key`, computed with `compute(key)` and stored first
+  # if missing. Packing `fun` and `args` in one list keeps `compute/2` two-argument, which
+  # is what lets refresh_stored_terms/0 refresh everything automatically.
   defp get(fun, args \\ []) when is_atom(fun) and is_list(args) do
     key = key(fun, args)
 
@@ -269,9 +264,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp key(fun, args) when is_atom(fun) and is_list(args),
     do: {__MODULE__, fun, args}
 
-  # NOTE: compute/2 must NEVER call a public function that reads from the persistent_term.
-  # That interferes with the refresh and leaves the data stale instead of reloading it from
-  # the database.
+  # NOTE: compute/2 must NEVER call a public function reading from the persistent_term -
+  # that interferes with the refresh and leaves the data stale.
   defp compute(:aggregations, []), do: Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   defp compute(:aggregations_with_nil, []), do: [nil] ++ aggregations()
@@ -284,9 +278,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp compute(:table_map, []) do
     get_metrics([])
     |> Map.new(fn map ->
-      # Almost all metrics have a single source table. The exceptions are custom metrics
-      # handled in a custom way, which emit no "FROM #{Map.get(Registry.table_map(), metric)}",
-      # so unpacking the single-table list is safe.
+      # Almost all metrics have a single source table; the exceptions are custom metrics
+      # emitting no "FROM ...", so unpacking the single-table list is safe.
       table_or_tables =
         case map.tables do
           [table] -> table.name
@@ -390,9 +383,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     get_metrics([])
     |> Enum.reject(&(&1.required_selectors == []))
     |> Map.new(fn m ->
-      # ["slug", "label_fqn|label_fqns"] parses as [:slug, [:label_fqn, :label_fqns]]. A
-      # nested list means one of its elements must be present, so here the user must
-      # provide slug plus either label_fqn or label_fqns.
+      # ["slug", "label_fqn|label_fqns"] parses as [:slug, [:label_fqn, :label_fqns]]: a
+      # nested list means one of its elements must be present.
       required_selectors =
         m.required_selectors
         |> Enum.map(& &1.type)

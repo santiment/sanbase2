@@ -86,8 +86,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
         case auth_struct do
           %{auth: %{current_user: %{id: user_id}}} ->
-            # Tag Sentry events with the user id so exceptions are attributable without
-            # cross-referencing Logger metadata. `RequestContextPlug` clears it between
+            # Tag Sentry events with the user id. `RequestContextPlug` clears it between
             # requests, so Cowboy worker reuse cannot leak the previous user's id.
             Sentry.Context.set_user_context(%{id: user_id})
 
@@ -108,9 +107,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  # Extend the auth struct with extra information - not core authentication, only
-  # additions to it. For example a `shared access token`, which grants access to the
-  # metrics of a chart layout.
+  # Additions to the auth struct, not authentication itself. For example a shared access
+  # token, which grants access to the metrics of a chart layout.
   defp augment_auth(%AuthStruct{} = auth_struct, %Plug.Conn{} = conn) do
     @augmenting_auth_methods
     |> Enum.reduce(auth_struct, fn augment_auth_method, auth_struct_acc ->
@@ -118,9 +116,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end)
   end
 
-  # Authenticate via the X-SharedAccess-Authorization header, whose token resolves to
-  # access for the metrics and queries of a chart layout. Only augments the existing
-  # auth_struct with new fields; not a main authentication method, for some pages only.
+  # The X-SharedAccess-Authorization header's token grants access to the metrics and
+  # queries of a chart layout. Only augments the auth struct, used on some pages only.
   def augment_auth_with_shared_access_token(%AuthStruct{} = auth_struct, %Plug.Conn{} = conn) do
     with ["SharedAccessToken " <> uuid] <- get_req_header(conn, "x-sharedaccess-authorization"),
          {:ok, sat} <- SharedAccessToken.by_uuid(uuid),
@@ -163,9 +160,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   defp authenticate(conn, []) do
     case get_req_header(conn, "authorization") do
       header when no_auth_header(header) ->
-        # If there is no authentication method that succeeded
-        # but also there is no authentication header, then the
-        # request is coming from an anonymous user.
+        # No authentication succeeded and no authentication header - an anonymous user.
         {:ok, anon_user_auth_struct(conn)}
 
       [header] ->
@@ -186,9 +181,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
     case access_token && bearer_authenticate(conn, access_token) do
       {:ok, %{current_user: current_user} = map} ->
-        # This will fetch the subscription of the primary user, if any is linked.
-        # If there is no primary user linked it will return the subscription of the
-        # current user
+        # The subscription of the linked primary user, or of the current user if none.
         subscription = get_user_subscription_for_sanbase(current_user.id)
         subscription_product_id = if subscription, do: subscription.plan.product_id, else: nil
 
@@ -274,9 +267,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         :try_next
 
       _ ->
-        # Do not error on wrong basic auth. This prevents issues when developing
-        # locally. It is also not a used user-flow in produciton, so not
-        # returning an error here won't hurt much.
+        # Do not error on wrong basic auth - it breaks local development and is not a
+        # production user flow.
         anon_user_auth_struct(conn)
     end
   end
@@ -320,10 +312,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   # Private functions
 
   defp find_best_subscription(requested_product, user_id) do
-    # Cross-product fallback in both directions so paying customers keep their benefits in
-    # the other product (Sanbase MAX gets API access, SanAPI BUSINESS_PRO gets Sanbase
-    # benefits). Plan name translation for the destination product happens in
-    # effective_plan_name/2.
+    # Cross-product fallback both ways, so paying customers keep their benefits in the
+    # other product. The plan name is translated in effective_plan_name/2.
     api_sub = Subscription.current_subscription(user_id, @product_id_api)
     sanbase_sub = Subscription.current_subscription(user_id, @product_id_sanbase)
 
@@ -333,15 +323,14 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  # A SanAPI custom plan's raw name (e.g. "CUSTOM_FOO") encodes an API-specific metric
-  # whitelist that must not apply to Sanbase calls, so a Sanbase request falling back to
-  # one resolves the plan's `restricted_access_as_plan` (default FREE) instead.
+  # A SanAPI custom plan's raw name ("CUSTOM_FOO") encodes an API-specific metric
+  # whitelist that must not apply to Sanbase, so a Sanbase request falling back to one
+  # resolves the plan's `restricted_access_as_plan` (default FREE) instead.
   #
-  # A bundle needs the same treatment for the same reason: its packages say which
-  # *metrics* were bought, which means nothing for Sanbase, and letting the name through
-  # would send Sanbase access checks down the bundle path where the Sanbase-specific
-  # limits have no per-package answer. Per product (§15 Q5) these customers get what a
-  # SanAPI PRO customer with no Sanbase subscription gets.
+  # A bundle is the same case: its packages say which *metrics* were bought, which means
+  # nothing for Sanbase, and letting the name through sends Sanbase access checks down the
+  # bundle path where the Sanbase limits have no per-package answer. Per product (§15 Q5)
+  # these customers get what a SanAPI PRO customer with no Sanbase subscription gets.
   defp effective_plan_name(subscription, "SANBASE") do
     case subscription do
       %Subscription{plan: %{has_custom_restrictions: true, name: name}} ->
@@ -363,8 +352,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   end
 
   defp get_user_subscription(user_id, product) do
-    # If there is an account linked, get the subscription of the
-    # primary user. Otherwise, get the subscription of that user.
+    # The linked primary user's subscription, or this user's own.
 
     case Subscription.get_user_subscription(user_id, product) do
       {:ok, subscription} -> subscription
@@ -373,9 +361,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   end
 
   defp get_user_subscription_for_sanbase(user_id) do
-    # Falls back to a SanAPI subscription so paying SanAPI users keep their
-    # Sanbase benefits. Custom plans are translated separately via
-    # effective_plan_name/2.
+    # Falls back to a SanAPI subscription so paying SanAPI users keep their Sanbase
+    # benefits. Custom plans are translated in effective_plan_name/2.
     get_user_subscription(user_id, @product_id_sanbase) ||
       get_user_subscription(user_id, @product_id_api)
   end
@@ -426,8 +413,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
     case Base.encode64(username <> ":" <> password) do
       ^auth_attempt ->
-        # Put roles as [] otherwise we get Ecto.Association.NotLoaded error
-        # when computing moderator and superuser
+        # Roles must be [], or computing moderator/superuser hits NotLoaded.
         {:ok, %User{id: -1, is_superuser: true, roles: []}}
 
       _ ->
@@ -483,9 +469,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  # The argument is a host, not a URL. A bare suffix test on it also accepts
-  # `evilsantiment.net`, so the domain must either match exactly or be reached
-  # over a dot boundary.
+  # The argument is a host, not a URL. A bare suffix test accepts `evilsantiment.net`, so
+  # the domain must match exactly or over a dot boundary.
   defp sanbase_origin_host?(host) do
     Enum.any?(@sanbase_origin_domains, fn domain ->
       host == domain or String.ends_with?(host, "." <> domain)

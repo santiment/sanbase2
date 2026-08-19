@@ -23,15 +23,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @max_heap_size_in_mbs 500
   @max_heap_size_in_words div(@max_heap_size_in_mbs * 1024 * 1024, @wordsize)
 
-  # The `*Json` schema fields return a raw `:json` scalar (the whole map serialized),
-  # while the typed fields let GraphQL field selection filter keys. `timeseries_data/3` and
-  # `timeseries_data_per_slug/3` back both, hence the check on which field is resolved.
+  # The `*Json` fields return a raw `:json` scalar (the whole map), the typed ones let
+  # field selection filter keys. One resolver backs both, hence the check on the field.
   @json_field_identifiers [:timeseries_data_json, :timeseries_data_per_slug_json]
 
   def get_metric(_root, %{metric: metric} = args, resolution) do
     # TODO: Check that the version is also deprecated
-    # `||` (not a Map.get default) so an explicit `version: null` argument —
-    # present in args as nil — also falls back to the default version.
+    # `||`, not a Map.get default, so an explicit `version: null` also falls back.
     version = Map.get(args, :version) || Sanbase.Metric.default_version()
 
     with false <- Metric.hard_deprecated?(metric),
@@ -43,16 +41,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  # With the `store_executed_clickhouse_sql` flag set, mark the process dictionary so
-  # ClickhouseRepo stores the executed queries there.
+  # Mark the process dictionary so ClickhouseRepo stores the executed queries there.
   defp maybe_enable_clickhouse_sql_storage(args) do
     if Map.get(args, :store_executed_clickhouse_sql, false),
       do: Process.put(:__store_executed_clickhouse_sql__, true)
   end
 
-  # The list of executed Clickhouse SQL queries. Empty unless the
-  # `store_executed_clickhouse_sql` flag was set and queries actually ran - they may have
-  # been served from cache.
+  # Empty unless the flag was set and queries really ran - they may have been cached.
   def get_executed_clickhouse_sql(_root, _args, _resolution) do
     {:ok, Process.get(:__executed_clickhouse_sql_list__, []) |> Enum.reverse()}
   end
@@ -159,8 +154,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         _args,
         %{source: %{metric: metric, version: version}} = resolution
       ) do
-    # Returns the non-crypto assets that actually have data for this metric,
-    # determined per adapter by checking the `available_metrics` table.
+    # The non-crypto assets that have data for this metric, per the adapter's
+    # `available_metrics` table.
     lookback_days = resolution_to_available_metrics_lookback_days(resolution)
 
     with {:ok, slugs} <-
@@ -334,14 +329,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     requested_fields = requested_fields(resolution)
     json_variant? = json_variant?(resolution)
 
-    # A heap-capped fetch: on overrun the BEAM kills the worker with an
-    # untrappable :killed exit, which we turn into a friendly error instead of a
-    # Sentry alert. See run_per_slug_in_bounded_process/5.
+    # Heap-capped: on overrun the BEAM kills the worker with an untrappable :killed exit,
+    # turned into a friendly error instead of a Sentry alert.
     run_per_slug_in_bounded_process(metric, version, args, requested_fields, json_variant?)
   rescue
-    # CatchableError raised during the per-slug fetch is handled inside the
-    # bounded worker (see run_per_slug_in_bounded_process/5) and returned as an
-    # {:error, message} tuple, so this clause is only a defensive fallback.
+    # The bounded worker already turns a CatchableError into an {:error, message} tuple,
+    # so this clause is only a defensive fallback.
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
   end
@@ -420,9 +413,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   # Private functions
 
-  # required_selectors is a list of lists like [["slug"], ["label_fqn", "label_fqns"]]
-  # At least one of the elements in every list must be present. A list of length
-  # greater than 1 is used mostly with singlure/plural versions of the same thing.
+  # A list of lists like [["slug"], ["label_fqn", "label_fqns"]] - at least one element of
+  # every list must be present. Longer lists are mostly singular/plural pairs.
   defp all_required_selectors_present?(metric, selector) do
     selector_names = Map.keys(selector)
 
@@ -458,17 +450,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  # Runs the fetch in an unlinked, monitored worker with a capped heap. On overrun the
-  # BEAM kills it (`kill: true`) without logging (`error_logger: false`); being unlinked,
-  # that :killed exit leaves the request process alone - we see the :DOWN and return a
-  # friendly error. Other outcomes are caught in the worker and sent back, so inline
-  # behaviour (CatchableError, raises we still want in Sentry) is preserved.
+  # An unlinked, monitored worker with a capped heap. On overrun the BEAM kills it
+  # (`kill: true`, `error_logger: false`); being unlinked, that :killed exit leaves the
+  # request process alone - we see the :DOWN and return a friendly error. Other outcomes
+  # are caught in the worker, so inline behaviour (CatchableError, Sentry) is preserved.
   defp run_per_slug_in_bounded_process(metric, version, args, requested_fields, json_variant?) do
     parent = self()
     ref = make_ref()
 
-    # The worker runs with a fresh, empty process dictionary, so any flags the
-    # request process relies on must be forwarded explicitly.
+    # The worker has a fresh process dictionary, so flags must be forwarded explicitly.
     user_id = Process.get(:__graphql_query_current_user_id__)
     store_executed_sql? = Process.get(:__store_executed_clickhouse_sql__, false)
 
@@ -499,8 +489,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
             e -> {:raise, e, __STACKTRACE__}
           end
 
-        # The ClickHouse SQL is recorded into the worker's process dictionary, so
-        # hand it back to the request process where `executedClickhouseSql` is read.
+        # Recorded in the worker's process dictionary - hand it back to the request
+        # process, where `executedClickhouseSql` is read.
         executed_sql = Process.get(:__executed_clickhouse_sql_list__, [])
         send(parent, {ref, outcome, executed_sql})
       end)
@@ -515,8 +505,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         Process.demonitor(monitor_ref, [:flush])
         reraise(e, stacktrace)
 
-      # The heap cap kills the worker with an untrappable :killed exit - the one
-      # outcome we turn into a friendly error instead of a crash.
+      # The heap cap kills the worker with an untrappable :killed exit - the one outcome
+      # turned into a friendly error instead of a crash.
       {:DOWN, ^monitor_ref, :process, _pid, :killed} ->
         {:error,
          "The metric '#{metric}' returned too much data for `timeseriesDataPerSlug`. " <>
@@ -528,9 +518,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  # The bounded worker accumulates executed ClickHouse SQL in its own (initially
-  # empty) process dictionary. Prepend those entries onto whatever the request
-  # process already recorded, keeping the newest-first ordering the reader expects.
+  # The worker accumulates executed SQL in its own process dictionary. Prepend it to what
+  # the request process recorded, keeping the newest-first order the reader expects.
   defp merge_worker_executed_clickhouse_sql([]), do: :ok
 
   defp merge_worker_executed_clickhouse_sql(executed_sql) do
@@ -538,9 +527,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     Process.put(:__executed_clickhouse_sql_list__, executed_sql ++ existing)
   end
 
-  # timeseries_data and timeseries_data_per_slug are processed and fetched in
-  # exactly the same way. The only difference is the function that is called
-  # from the Metric module.
+  # timeseries_data and timeseries_data_per_slug differ only in the Metric function called.
   defp fetch_timeseries_data(metric, version, args, requested_fields, function, json_variant?)
        when function in [:timeseries_data, :timeseries_data_per_slug] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
@@ -573,9 +560,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  # Naming `computedAt` in `fields` only renames the key; `includeComputedAt: true`
-  # is what actually includes it. Naming it while the flag is off is a
-  # contradiction, so reject it rather than silently ignoring one of the two.
+  # Naming `computedAt` in `fields` only renames the key, `includeComputedAt: true`
+  # includes it. Naming it with the flag off is a contradiction, so reject it.
   defp valid_computed_at_selection?(args, true = _json_variant?) do
     fields = Map.get(args, :fields)
     include_computed_at? = Map.get(args, :include_computed_at, false)
@@ -591,13 +577,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp valid_computed_at_selection?(_args, false = _json_variant?), do: true
 
-  # Typed variants return the maps unchanged - GraphQL field selection picks the
-  # keys (computed_at is present and exposed only when `computedAt` is selected).
+  # Typed variants return the maps unchanged - field selection picks the keys.
   defp format_output(result, _function, _args, false = _json_variant?), do: result
 
-  # The `*Json` variants serialize the whole map. `fields` only *renames* output keys -
-  # every default field is always present. `include_computed_at` additionally appends
-  # `computedAt` (renamable via the `computed_at` entry of `fields`).
+  # The `*Json` variants serialize the whole map. `fields` only *renames* output keys, and
+  # `include_computed_at` appends `computedAt` (renamable via the `computed_at` entry).
   defp format_output(result, function, args, true = _json_variant?) do
     fields = Map.get(args, :fields) || %{}
     append_computed_at? = Map.get(args, :include_computed_at, false)
@@ -626,8 +610,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     |> maybe_put_computed_at(point, fields, append?)
   end
 
-  # For per-slug, `computed_at` belongs to each (datetime, slug) pair, so it is
-  # appended inside every data element rather than at the top level.
+  # Per-slug, `computed_at` belongs to each (datetime, slug) pair, not the top level.
   defp json_row(%{datetime: datetime, data: data}, :timeseries_data_per_slug, fields, append?) do
     elements =
       Enum.map(data, fn elem ->
@@ -644,20 +627,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     }
   end
 
-  # The output key for `field`: the caller's rename from `fields`, else the field
-  # name itself.
+  # The caller's rename from `fields`, else the field name itself.
   defp output_key(fields, field), do: Map.get(fields, field, field)
 
-  # `include_computed_at` appends the compute timestamp, renamable via the
-  # `computed_at` entry of `fields` (default key `computedAt`); `nil` for adapters
-  # that do not track it.
+  # The compute timestamp, renamable via the `computed_at` entry of `fields` (default
+  # `computedAt`); `nil` for adapters that do not track it.
   defp maybe_put_computed_at(row, _source, _fields, false), do: row
 
   defp maybe_put_computed_at(row, source, fields, true),
     do: Map.put(row, Map.get(fields, :computed_at, :computedAt), Map.get(source, :computed_at))
 
-  # Which schema field is being resolved - `timeseriesDataJson` /
-  # `timeseriesDataPerSlugJson` (raw `:json` scalar) or their typed counterparts.
+  # `timeseriesDataJson`/`timeseriesDataPerSlugJson` (raw `:json`) or the typed ones.
   defp json_variant?(%Absinthe.Resolution{definition: %{schema_node: %{identifier: identifier}}}),
     do: identifier in @json_field_identifiers
 

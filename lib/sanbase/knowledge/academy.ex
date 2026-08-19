@@ -21,13 +21,13 @@ defmodule Sanbase.Knowledge.Academy do
   @github_repo_name "academy"
   # Version of the indexing pipeline. `maybe_use_cached/3` treats an article as unchanged
   # only when both `content_sha` and `index_version` match - a SHA match alone would revive
-  # chunks/embeddings produced by a pipeline that has since changed.
+  # chunks/embeddings from a pipeline that has since changed.
   #
   # Bump it whenever anything affecting the derived data changes: chunk size/overlap,
   # embedding model or dimensions, the chunking algorithm, heading/frontmatter/title
-  # extraction, or what is stored on `AcademyArticleChunk`. A bump invalidates every cached
-  # row and forces a full reindex; the source SHA still skips the GitHub content fetch for
-  # articles whose markdown is unchanged *and* whose pipeline version matches.
+  # extraction, or what is stored on `AcademyArticleChunk`. A bump forces a full reindex;
+  # the source SHA still skips the GitHub content fetch for articles whose markdown is
+  # unchanged *and* whose pipeline version matches.
   #
   # v2: `to_academy_url/1` strips the `ai-toolkit/` root section, fixing academy_url for
   # ai-toolkit articles that 404'd. Their markdown is unchanged, so without the bump the
@@ -168,8 +168,8 @@ defmodule Sanbase.Knowledge.Academy do
       Repo.transaction(fn ->
         mark_all_articles_stale()
         clear_stale_for_unchanged(unchanged)
-        # Prune stale rows before upserting so their academy_url/github_path
-        # do not block new inserts via the unique constraints.
+        # Prune stale rows first, or their academy_url/github_path block the new inserts
+        # via the unique constraints.
         delete_stale_records()
         finalize_indexing(to_index)
       end)
@@ -319,8 +319,7 @@ defmodule Sanbase.Knowledge.Academy do
             to_academy_url(path)
 
         github_path = Map.get(entry, :github_path, path)
-        # Only the sanpy additional source has predefined title at the moment.
-        # All of the academy articles' titles will be extracted
+        # Only the sanpy source has a predefined title; academy titles are extracted.
         title =
           present_string(Map.get(entry, :title)) ||
             present_string(Map.get(frontmatter, :title)) ||
@@ -634,11 +633,10 @@ defmodule Sanbase.Knowledge.Academy do
     end
   end
 
-  # The academy site derives a doc's public URL by stripping the first path segment when it
-  # is a "root section" (`ROOT_SECTIONS` in the academy repo's src/config/navigation.ts ->
-  # src/modules/navigation/paths.ts). This list MUST stay in sync with it: a missing entry
-  # produces URLs with an extra leading segment that 404 (/ai-toolkit/mcp-connector/
-  # instead of /mcp-connector/).
+  # The academy site strips the first path segment when it is a "root section"
+  # (`ROOT_SECTIONS` in the academy repo's src/config/navigation.ts). This list MUST stay in
+  # sync: a missing entry gives URLs with an extra leading segment that 404
+  # (/ai-toolkit/mcp-connector/ instead of /mcp-connector/).
   defp to_academy_url(path) do
     path
     |> String.trim_leading("src/content/docs/")

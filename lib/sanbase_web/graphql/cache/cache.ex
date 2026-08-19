@@ -136,17 +136,16 @@ defmodule SanbaseWeb.Graphql.Cache do
       %{} = root, args, resolution ->
         fun = fn -> resolver_fn.(root, args, resolution) end
 
-        # If the root object is not empty map use some if its arguments as
-        # additional arguments
+        # A non-empty root object contributes some of its arguments to the key.
         additional_args = Map.take(root, [:id, :slug, :word])
+
         # resolution.source holds the arguments passed to a parent object. To cache
         # {getMetric(metric: "nvt") {timeseriesData(...)}} correctly, the key must include
         # `metric` from the parent's args.
         args_from_source = generate_source_args(resolution.source)
 
-        # With `include_subscription_in_key: true` the current product and plan become part
-        # of the cache key, for results that depend on the user's subscription, such as
-        # metric restrictions.
+        # `include_subscription_in_key: true` puts the current product and plan in the key,
+        # for results depending on the user's subscription such as metric restrictions.
         args_from_subscription = generate_subscription_args(resolution.context, opts)
         args_from_user_details = generate_user_details_args(resolution.context, opts)
 
@@ -158,10 +157,10 @@ defmodule SanbaseWeb.Graphql.Cache do
             opts
           )
 
-        # Caching can be disabled per query: all_projects_by_function sets the
-        # do_not_cache_query: true process-dictionary key when base_projects depends on a
-        # watchlist. Only cache resolvers that pass `honor_do_no_cache_flag: true` react to
-        # it, so the flag disables the caching that matters rather than all of it.
+        # Caching is disabled per query: all_projects_by_function sets the
+        # do_not_cache_query: true process key when base_projects depends on a watchlist.
+        # Only resolvers passing `honor_do_no_cache_flag: true` react to it, so it disables
+        # the caching that matters rather than all of it.
         skip_cache? =
           Keyword.get(opts, :honor_do_not_cache_flag, false) and
             Process.get(:do_not_cache_query) == true
@@ -222,8 +221,8 @@ defmodule SanbaseWeb.Graphql.Cache do
     )
   end
 
-  # `cache_modify_middleware` is called only from within `get_or_store`, which guarantees
-  # a single execution under concurrent access, so calling `store` explicitly is race-free.
+  # `cache_modify_middleware` runs only inside `get_or_store`, which serializes concurrent
+  # access, so calling `store` explicitly is race-free.
   defp cache_modify_middleware(cache_name, cache_key, {:ok, value} = result) do
     CacheProvider.store(cache_name, cache_key, result)
 
@@ -285,9 +284,9 @@ defmodule SanbaseWeb.Graphql.Cache do
 
     args = args |> convert_values(ttl)
 
-    # Include the current datetime bucket so a lock that is never released cannot pin the
-    # key forever - it changes after base_ttl + max_ttl_offset. The 0-180 offset derived
-    # from the query and slug spreads expirations and avoids a thundering herd.
+    # The datetime bucket is included so a never-released lock cannot pin the key forever -
+    # it changes after base_ttl + max_ttl_offset. The 0-180 offset derived from the query
+    # and slug spreads expirations and avoids a thundering herd.
     bucket_ttl = base_ttl + max_ttl_offset + :erlang.phash2({name, args}, 180)
     current_bucket = convert_values(DateTime.utc_now(), bucket_ttl)
 
@@ -298,8 +297,8 @@ defmodule SanbaseWeb.Graphql.Cache do
     {cache_key, ttl}
   end
 
-  # Convert the values for using in the cache. A special treatement is done for
-  # `%DateTime{}` so all datetimes in a @ttl sized window are treated the same
+  # Values as used in the cache. `%DateTime{}` is special-cased so all datetimes in a
+  # @ttl sized window are treated the same.
   defp convert_values(%DateTime{} = v, ttl), do: div(DateTime.to_unix(v, :second), ttl)
   defp convert_values(%_{} = v, _), do: Map.from_struct(v)
 

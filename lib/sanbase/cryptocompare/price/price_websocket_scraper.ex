@@ -28,10 +28,10 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   @asset_price_pairs_only_exporter :asset_price_pairs_only_exporter
   @asset_prices_exporter :prices_exporter
 
-  # Every `@healthcheck_interval` ms, check that the last price message arrived within the
-  # last `@price_message_timeout` ms. After `@healthcheck_max_failures` failures the
-  # exporter is terminated, as the connection is likely broken. The values are kept large
-  # so resets stay rare and the allowed number of websocket connection attempts is not hit.
+  # Every `@healthcheck_interval` ms, check the last price message arrived within
+  # `@price_message_timeout` ms. `@healthcheck_max_failures` failures terminate the
+  # exporter - the connection is likely broken. Kept large so resets stay rare and the
+  # allowed number of websocket connection attempts is not hit.
   @healthcheck_interval 60_000
   @healthcheck_tolerance 60_000
   @healthcheck_max_failures 5
@@ -83,9 +83,8 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   end
 
   def handle_info(:healthcheck, state) do
-    # If more than 3 consecutive times there are no new messages in the last
-    # 30 seconds, we consider the connection to be dead and it will be terminated
-    # so it can be freshly started.
+    # No new messages for 30 seconds, 3 times running: the connection is dead and is
+    # terminated so it can start fresh.
     last_message_elapsed =
       DateTime.diff(DateTime.utc_now(), state.last_price_message_time, :millisecond)
 
@@ -122,7 +121,7 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   end
 
   def handle_frame({_type, json_msg} = frame, state) when is_binary(json_msg) do
-    # Decode the JSON so it can be pattern matches in the function header
+    # Decoded so the function header can pattern match on it
     decoded_json = Jason.decode!(json_msg)
     handle_frame(decoded_json, frame, state)
   end
@@ -150,15 +149,13 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
     point_unique_key = {"CCCAGG", msg["FROMSYMBOL"], msg["TOSYMBOL"]}
 
     last_point = Map.get(state.last_points, point_unique_key, %{})
-    # The websocket messages contain only the values that changed since the previous one.
-    # The last point, identified by the 3 fields of the unique key defined above, is stored
-    # and used to fill the missing fields in subsequent frames.
+    # A message carries only what changed, so the last point (identified by the 3 fields of
+    # the unique key above) is stored and fills the missing fields of later frames.
     point =
       point_from_aggregated_index_message(msg)
       |> Enum.reduce(last_point, fn
-        # In case the value is `nil`, put it only if the key is not present at all
-        # This can happen with the first data point or if the pair does not have
-        # support for some of the fields
+        # A `nil` value is put only when the key is absent entirely - the first data point,
+        # or a pair not supporting some of the fields.
         {key, nil}, acc -> Map.put_new(acc, key, nil)
         {key, value}, acc -> Map.put(acc, key, value)
       end)
@@ -200,9 +197,8 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   def handle_disconnect(_connetion_status_map, state) do
     Logger.info("[CryptocompareWS] Handle disconnect")
 
-    # Cryptocompare websockets documentation states that after a disconnect,
-    # the reconnect attempt must not happen sooner than 5 seconds after that
-    # This disconnect handles all the cases of websocket disconnection.
+    # Cryptocompare's docs require at least 5 seconds before reconnecting. This handles
+    # every websocket disconnection case.
     Process.sleep(5000)
     state = Map.put(state, :subscriptions, MapSet.new())
     {:reconnect, state}
@@ -245,9 +241,9 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
         :ok
 
       [_ | _] = slugs ->
-        # A point carries either USD or BTC data, but both are needed here. Since the
-        # point is added to last_points before the export function is called, both can be
-        # read from there - no conditional on which quote asset arrived.
+        # A point carries either USD or BTC data, but both are needed. The point is added
+        # to last_points before this is called, so both are read from there without
+        # branching on which quote asset arrived.
         usd_point = Map.get(last_points, {"CCCAGG", point.base_asset, "USD"}, %{})
         btc_point = Map.get(last_points, {"CCCAGG", point.base_asset, "BTC"}, %{})
 

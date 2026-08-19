@@ -473,9 +473,9 @@ defmodule SanbaseWeb.DeepResearch.Components do
   end
 
   # Hooked (KeepDetailsOpen) and phx-update="ignore" elements key client-side state on
-  # their DOM id, so the id must follow the ITEM: positional indices shift when a block
-  # appears mid-run, silently rebinding that state elsewhere. Position is the fallback
-  # for id-less items (rows persisted before ids were stamped).
+  # their DOM id, so the id must follow the ITEM: a positional index shifts when a block
+  # appears mid-run and silently rebinds that state elsewhere. Position is the fallback for
+  # id-less items (rows persisted before ids were stamped).
   defp stable_dom_id(prefix, turn_id, %{id: id}, _fallback) when not is_nil(id),
     do: "#{prefix}-#{turn_id}-#{String.replace(to_string(id), ~r/\s+/, "-")}"
 
@@ -591,9 +591,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   attr :domain, :string, default: nil
 
-  # Google's favicon service, so the browser discloses each researched domain to
-  # Google. Accepted: internal admin tool, and the alternative is proxying icons from
-  # arbitrary hosts ourselves. Swap the src to change that.
+  # Google's favicon service, so the browser discloses each researched domain to Google.
+  # Accepted for an internal admin tool; the alternative is proxying icons ourselves.
   defp favicon(assigns) do
     ~H"""
     <img
@@ -674,9 +673,9 @@ defmodule SanbaseWeb.DeepResearch.Components do
     """
   end
 
-  # :running while anything is in flight, :interrupted when a call never returned,
-  # else :ok. Individual failures stay on their own row: a run routinely tolerates a
-  # failed call, but a group cut short must not claim success either.
+  # :running while anything is in flight, :interrupted when a call never returned, else
+  # :ok. Individual failures stay on their own row - a run tolerates a failed call, but a
+  # group cut short must not claim success.
   defp group_status(items) do
     cond do
       Timeline.tools_running?(items) -> :running
@@ -852,13 +851,10 @@ defmodule SanbaseWeb.DeepResearch.Components do
     "#{minutes}m #{String.pad_leading(Integer.to_string(rest), 2, "0")}s"
   end
 
-  # The markdown arrives over the wire, so sanitize before injecting it raw (Earmark
-  # converts, it does not sanitize): scripts and `javascript:` links out, the tags a
-  # report needs in.
-  #
-  # `as_html/1`, not the bang: streaming renders parse PARTIAL markdown (an open ```
-  # fence), and `as_html!/1` prints every parse error to stderr on each re-render.
-  # Both return best-effort HTML.
+  # The markdown arrives over the wire, so sanitize before injecting it raw - Earmark
+  # converts, it does not sanitize. `as_html/1`, not the bang: streaming renders parse
+  # PARTIAL markdown (an open ``` fence) and `as_html!/1` prints every parse error to
+  # stderr on each re-render. Both return best-effort HTML.
   defp markdown(text) when is_binary(text) do
     {_status, html, _messages} = Earmark.as_html(text)
 

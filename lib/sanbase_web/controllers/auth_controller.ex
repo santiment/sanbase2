@@ -18,9 +18,9 @@ defmodule SanbaseWeb.AuthController do
   }
 
   def request(conn, %{"provider" => provider} = params) do
-    # Instead of `use Ueberauth`, a custom `request/2` action puts a few parameters in the
-    # session before `callback/2` runs. Sharing state between the request and callback
-    # phases is what allows the redirect URLs and the real origin URL to be set dynamically.
+    # Instead of `use Ueberauth`, a custom `request/2` puts a few parameters in the session
+    # before `callback/2` runs - sharing state between the two phases is what lets the
+    # redirect URLs and the real origin URL be set dynamically.
 
     referer_url = Plug.Conn.get_req_header(conn, "referer") |> List.first()
     referer_url = referer_url || SanbaseWeb.Endpoint.website_url()
@@ -55,9 +55,9 @@ defmodule SanbaseWeb.AuthController do
   end
 
   def callback(conn, %{"provider" => "google"}) do
-    # With a custom `request/2`, the callback invokes Ueberauth.run_callback/2 by hand. On
-    # entry the conn assigns are not filled yet, so a failure cannot be matched with
-    # callback(%{assigns: %{ueberauth_failure: _}}) and has to be handled after the call.
+    # With a custom `request/2` the callback calls Ueberauth.run_callback/2 by hand. The
+    # conn assigns are not filled on entry, so a failure cannot be matched with
+    # callback(%{assigns: %{ueberauth_failure: _}}) and is handled after the call.
     case Ueberauth.run_callback(conn, "google", @providers["google"]) do
       %{assigns: %{ueberauth_failure: _}} = conn ->
         conn |> redirect(to: ~p"/")
@@ -183,21 +183,20 @@ defmodule SanbaseWeb.AuthController do
 
   defp twitter_login(email, twitter_id)
        when is_binary(email) and byte_size(email) > 0 do
-    # The user may have made their email address visible only after their first sanbase
-    # login. Then find_or_insert_by/3 returns a new user and update_field/3 fails, because
-    # another user already has the same twitter_id.
+    # A user who made their email visible only after their first sanbase login gets a new
+    # user from find_or_insert_by/3, and update_field/3 then fails on the duplicate
+    # twitter_id.
 
     case User.by_selector(%{twitter_id: twitter_id}) do
       {:ok, user} ->
-        # The email can be missing for a user created back when it was not visible. This
-        # succeeds or fails depending on whether another user has the same email, and the
-        # login succeeds either way.
+        # The email can be missing for a user created while it was not visible. Whether
+        # this succeeds depends on another user having the same email; the login works
+        # either way.
         _ = User.Email.update_email(user, email)
         {:ok, user, _first_login = false}
 
       _ ->
-        # If there is not user with that twitter_id then fetch or create a user with that email
-        # and put the twitter_id.
+        # No user with that twitter_id: fetch or create one by email and set it.
         args = %{login_origin: :twitter}
 
         with {:ok, %{first_login: first_login} = user} <-
@@ -218,9 +217,9 @@ defmodule SanbaseWeb.AuthController do
   defp get_redirect_url(params, url_key, referer_url) do
     url = params[url_key] || referer_url || SanbaseWeb.Endpoint.website_url()
 
-    # Phoenix/Plug decodes URL parameters once, but mobile deep links can arrive with a
-    # double-encoded scheme ("sanbase%3A%2F%2F..." instead of "sanbase://..."). Decode only
-    # when an encoded scheme is detected, or legitimately encoded query characters break.
+    # Phoenix/Plug decodes URL parameters once, but a mobile deep link can arrive with a
+    # double-encoded scheme ("sanbase%3A%2F%2F..."). Decode only when one is detected, or
+    # legitimately encoded query characters break.
     processed_url =
       if String.starts_with?(url, "sanbase%3A") do
         URI.decode(url)
@@ -249,8 +248,8 @@ defmodule SanbaseWeb.AuthController do
       @valid_redirect_hosts ["localhost" | @valid_redirect_hosts]
   end
 
-  # Temporary headroom — real FE redirect URLs should fit in 2048, but until we
-  # audit every deep-link case we keep 4096 to avoid breaking login returns.
+  # Temporary headroom: real FE redirect URLs fit in 2048, but 4096 until every deep-link
+  # case is audited, so login returns are not broken.
   @max_redirect_url_length 4096
 
   @doc false
@@ -312,16 +311,15 @@ defmodule SanbaseWeb.AuthController do
     _ -> "<unparseable>"
   end
 
-  # Reject CR/LF/NUL/tab and any other ASCII control byte. These have no
-  # business in a URL and are classic vectors for log-injection and HTTP
-  # response splitting.
+  # CR/LF/NUL/tab and every other ASCII control byte: not valid in a URL, and classic
+  # log-injection and HTTP response splitting vectors.
   defp contains_control_chars?(url) do
     String.match?(url, ~r/[\x00-\x1F\x7F]/)
   end
 
-  # The sanbase:// deep-link scheme uses the host component as an "action" (sanbase://home,
-  # sanbase://portfolio/btc). Rejecting anything that looks like a real DNS host (contains
-  # a dot) stops attackers smuggling their own domain through the app's deep-link handler.
+  # The sanbase:// scheme uses the host component as an "action" (sanbase://home). Anything
+  # that looks like a real DNS host (contains a dot) is rejected, so a domain cannot be
+  # smuggled through the deep-link handler.
   defp valid_sanbase_deeplink_host?(host) when is_binary(host) and host != "" do
     not String.contains?(host, ".") and String.match?(host, ~r/^[a-zA-Z0-9_-]+$/)
   end

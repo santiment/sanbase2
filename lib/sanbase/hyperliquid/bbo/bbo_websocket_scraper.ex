@@ -88,32 +88,24 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   @url "wss://api.hyperliquid.xyz/ws"
   @source "hyperliquid"
 
-  # Outbound app-level ping; HL closes idle sockets ~60s.
+  # HL closes idle sockets after ~60s.
   @ping_interval 30_000
-  # Periodic check that we've received a frame recently.
   @healthcheck_interval 60_000
   # Max gap between inbound frames before counting a miss.
   @healthcheck_tolerance 60_000
-  # Consecutive misses tolerated before raising and forcing reconnect.
+  # Misses tolerated before raising and forcing a reconnect.
   @healthcheck_max_failures 5
-  # Resync subscriptions against SourceSlugMapping on this cadence.
+  # Resync subscriptions against SourceSlugMapping.
   @reconcile_interval 60_000
-  # Refresh the universe audit on this cadence while connected.
   @audit_interval 300_000
-  # Hard floor between audit runs, whatever triggers them (connect or the periodic
-  # tick) — a crash-looping scraper must not hammer the HL info endpoint.
+  # Floor between audit runs, whatever triggers them, so a crash loop cannot hammer HL.
   @audit_min_gap_ms 30_000
-  # HL limits outbound client messages to 2000/min (~33/sec). Pacing sub/unsub frames
-  # at 1 per 200ms = 5/sec = 300/min leaves ~85% headroom; a cold-start burst of ~200
-  # coins drains in ~40s.
+  # HL allows 2000 outbound messages/min; 1 per 200ms = 300/min leaves ~85% headroom.
   @flush_subs_interval 200
-  # Tick rate for draining the per-coin coalesce buffer.
   @flush_coalesced_interval 250
-  # Default debounce window per coin; overridable via app config.
+  # Per-coin debounce; overridable via app config.
   @coalesce_window_default_ms 1_000
-  # Cadence of the probation worker tick (probe windows and pacing live in Quarantine).
-  # Probe starts land on this tick grid, so it must divide the 1600ms probe spacing evenly
-  # (4 x 400); a 500ms tick would stretch it to 2000ms and slow the drain.
+  # Probe starts land on this grid, so it must divide the 1600ms probe spacing evenly.
   @probe_interval 400
 
   def child_spec(_opts \\ []) do
@@ -123,9 +115,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   def start_link() do
     state = initial_state()
 
-    # The pid identifies the process INSTANCE: a new pid means a supervisor restart
-    # (fresh state — quarantine/probation forgotten), while reconnects keep it. Logged
-    # on every connect/disconnect/terminate line to tell restarts from reconnects.
+    # A new pid means a supervisor restart (fresh state, quarantine forgotten); reconnects
+    # keep it. Logged on every connect/disconnect/terminate line to tell the two apart.
     case WebSockex.start_link(@url, __MODULE__, state, name: @name) do
       {:ok, pid} = ok ->
         Logger.info("[HyperliquidBboWS] started pid=#{inspect(pid)} url=#{@url}")
@@ -148,12 +139,10 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   defp initial_state() do
     %{
       active_subs: MapSet.new(),
-      # Coin discipline (audit exclusions, probation, probes, convictions, send log) —
-      # see Sanbase.Hyperliquid.Bbo.Quarantine. Kept across reconnects.
+      # Coin discipline, kept across reconnects. See Sanbase.Hyperliquid.Bbo.Quarantine.
       quarantine: Quarantine.new(),
-      # Coins already awaiting a subscribe confirmation at the end of the previous
-      # reconcile round. probate_unconfirmed/2 probates only coins present in BOTH rounds,
-      # so a first-time coin is never flagged. Cleared on disconnect.
+      # Coins awaiting a subscribe confirmation at the end of the previous reconcile round;
+      # only coins present in BOTH rounds get probated. Cleared on disconnect.
       prev_unconfirmed: MapSet.new(),
       slug_map: %{},
       pending_sub_queue: :queue.new(),
@@ -164,22 +153,19 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       healthcheck_failures: 0,
       coalesce_window_ms: coalesce_window_ms(),
       timers: %{},
-      # Diagnostics. connected_at/bbo_in reset per connection in handle_connect/2;
-      # reconnects is cumulative since boot. Read via Map.get/bump so a hot recompile
-      # against an old state never raises.
+      # Diagnostics. connected_at/bbo_in reset per connection, reconnects is cumulative.
+      # Read via Map.get/bump so a hot recompile against an old state never raises.
       connected_at: nil,
       bbo_in: 0,
       reconnects: 0,
-      # Timestamps (ms) of successful connects in the last minute, newest
-      # first — compared against HL's 30 new connections/min/IP limit.
+      # Connect timestamps (ms) of the last minute, newest first. HL allows 30/min/IP.
       connect_times: [],
       last_audit_at: 0,
       # Ref of the newest in-flight audit; only its result is applied.
       audit_ref: nil,
-      # Diagnostics: per-coin record of the last point handed to the Kafka exporter,
-      # %{coin => %{point: map, exported_at_ms: ms, count: n}}. Never cleared, so
-      # :sys.get_state/1 still answers "ever exported, when, how often" after reconnects.
-      # Bounded by the mapped-coin set.
+      # Diagnostics: %{coin => %{point: map, exported_at_ms: ms, count: n}} of the last
+      # point handed to Kafka. Never cleared, so :sys.get_state/1 still answers "ever
+      # exported, when, how often" after a reconnect.
       last_exported: %{}
     }
   end
@@ -207,11 +193,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
     state =
       %{state | last_message_time: now}
-      # Reset per-connection diagnostics; Map.merge is recompile-safe. The reconnect
-      # backoff is NOT reset here - only a connection surviving the stability threshold
-      # earns that (see Reconnect), else a remote dropping us seconds after connect pins
-      # the backoff at its minimum. connected_at is monotonic so an NTP step cannot fake a
-      # "stable" lifetime.
+      # Map.merge is recompile-safe. The backoff is NOT reset here - only a connection
+      # surviving the stability threshold earns that (see Reconnect), else a remote
+      # dropping us seconds after connect pins the backoff at its minimum.
       |> Map.merge(%{
         connected_at: System.monotonic_time(:millisecond),
         bbo_in: 0,
@@ -231,8 +215,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     lifetime_ms =
       if connected_at, do: System.monotonic_time(:millisecond) - connected_at, else: nil
 
-    # WebSockex always passes a connection-status map here; crash loudly if
-    # that contract ever changes rather than guessing at the shape.
+    # WebSockex always passes a status map here; crash loudly if that contract changes.
     reason = Map.get(status, :reason)
     attempt = Map.get(status, :attempt_number, 1)
 
@@ -242,11 +225,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     now = System.system_time(:millisecond)
     q = quarantine_state(state)
 
-    # lifetime_ms shows whether the socket dies on a fixed cadence (policy/limit) or
-    # randomly (network); bbo_in>0 means data flowed right up to the drop, so mappings are
-    # fine; pending_subs>0 means we died mid-drain; last_subs_sent points at the trigger
-    # when the same coin keeps preceding the crash. Monotonic ages, so NTP steps cannot
-    # skew the suspect/probe windows.
+    # lifetime_ms tells a fixed cadence (policy/limit) from a random drop (network);
+    # bbo_in>0 means data flowed until the drop; pending_subs>0 means we died mid-drain;
+    # last_subs_sent names the trigger when the same coin keeps preceding the crash.
     mono_now = System.monotonic_time(:millisecond)
 
     Logger.warning(
@@ -282,8 +263,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:reconnect, state}
   end
 
-  # A terminate log with a pid that never reappears = the supervisor started
-  # a REPLACEMENT process with fresh state (quarantine/probation forgotten).
+  # A pid that never reappears after this = the supervisor started a replacement
+  # process with fresh state (quarantine/probation forgotten).
   def terminate(reason, _state) do
     Logger.warning(
       "[HyperliquidBboWS] terminate pid=#{inspect(self())} reason=#{inspect(reason)}"
@@ -378,8 +359,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     :ok = Sanbase.KafkaExporter.persist_async(tuples, @exporter)
   end
 
-  # Record a successful emit for diagnostics. Map.update with a default (not
-  # `%{state | ...}`) so a live process predating this key never raises.
+  # Map.update with a default (not `%{state | ...}`) so a process predating the key lives.
   defp record_exported(state, coin, data) do
     entry = %{
       point: data,
@@ -422,8 +402,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:ok, state}
   end
 
-  # Probation worker tick — verdicts and probe selection live in Quarantine; this
-  # supplies the connection facts and queues the subscribe frame when a probe starts.
+  # Verdicts and probe selection live in Quarantine; this supplies the connection facts
+  # and queues the subscribe frame when a probe starts.
   def handle_info(:probe_next, state) do
     {q, action} =
       Quarantine.probe_tick(
@@ -459,10 +439,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:ok, state}
   end
 
-  # Drain one queued sub/unsub frame per tick at @flush_subs_interval, re-armed only while
-  # frames remain. The just-fired timer ref is stale - clear it first so
-  # maybe_schedule_flush_subs/1 sees an accurate state. Sent subscribes go to Quarantine as
-  # crash evidence (slugs resolved now, since slug_map may differ by crash time).
+  # One frame per tick, re-armed only while frames remain. The just-fired timer ref is
+  # stale - clear it first so maybe_schedule_flush_subs/1 sees an accurate state. Sent
+  # subscribes go to Quarantine as crash evidence, with slugs resolved now.
   def handle_info(:flush_subs, state) do
     state = %{state | timers: Map.delete(state.timers, :flush_subs)}
 
@@ -495,9 +474,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     now = System.system_time(:millisecond)
     window = state.coalesce_window_ms
 
-    # Reconcile prunes the buffer only for coins in active_subs, so a coin buffered
-    # before its sub was confirmed can outlive its slug_map entry. Drop those instead of
-    # crashing on the emit lookup below.
+    # Reconcile prunes the buffer only for coins in active_subs, so a coin buffered before
+    # its sub was confirmed can outlive its slug_map entry. Drop it, don't crash below.
     buffer =
       Enum.filter(state.coalesce_buffer, fn {coin, _} ->
         Map.has_key?(state.slug_map, coin)
@@ -529,12 +507,10 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:ok, state |> maybe_start_audit() |> schedule(:audit, @audit_interval)}
   end
 
-  # An audit verdict from the separate audit process - Quarantine applies it. Only the
-  # NEWEST in-flight audit counts: the ref must match the one stored at spawn, else a slow
-  # older audit could reply last and overwrite fresh verdicts. Any change to the exclusion
-  # *set* (new offenders OR recovered coins) reconciles at once instead of waiting out the
-  # 60s tick; already-queued subscribes are dropped at send time by send_banned?/3. A
-  # failed audit sends an error tuple and keeps the previous verdicts.
+  # Only the NEWEST in-flight audit counts: the ref must match the one stored at spawn,
+  # else a slow older audit replies last and overwrites fresh verdicts. Any change to the
+  # exclusion *set* reconciles at once instead of waiting out the 60s tick; already-queued
+  # subscribes are then dropped at send time by send_banned?/3.
   def handle_info({:audit_result, ref, %{reasons: reasons}}, state) do
     if ref == Map.get(state, :audit_ref) do
       prev_keys = quarantine_state(state).audit_excluded |> Map.keys() |> MapSet.new()
@@ -561,16 +537,14 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     excluded = Quarantine.excluded(q)
     probation = Quarantine.probation(q)
 
-    # Subscribe to everything mapped, minus excluded coins (env ignores, audit verdicts,
-    # probe convictions) and coins on probation (retried by the probe worker, never by
-    # the bulk subscribe).
+    # Everything mapped, minus excluded coins and coins on probation (those are retried by
+    # the probe worker, never by the bulk subscribe).
     desired_set =
       full_desired
       |> MapSet.difference(MapSet.new(Map.keys(excluded)))
       |> MapSet.difference(MapSet.new(probation))
 
-    # In-flight probes subscribed their coins deliberately — don't let the
-    # probation exclusion above unsubscribe them mid-verdict.
+    # In-flight probes subscribed their coins on purpose - don't unsubscribe mid-verdict.
     probe_exempt = MapSet.new(Quarantine.probing_coins(q))
 
     to_subscribe = MapSet.difference(desired_set, state.active_subs)
@@ -588,11 +562,10 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
       )
     end
 
-    # Queue {method, coin} tuples, not encoded frames - flush_subs builds the frame at
-    # send time and needs the coin to record what was sent. Shuffled because MapSet order
-    # is deterministic: if the remote kills the connection at a fixed point in the drain
-    # (e.g. an IP-level limit), the SAME innocent coins sit newest-before-death every time
-    # and look guilty. Random order makes a repeat offender a real per-coin signal.
+    # Tuples, not encoded frames - flush_subs needs the coin to record what was sent.
+    # Shuffled because MapSet order is deterministic: if the remote kills the connection at
+    # a fixed point in the drain (e.g. an IP limit), the same innocent coins sit
+    # newest-before-death every time. Random order makes a repeat offender a real signal.
     new_queue =
       to_subscribe
       |> Enum.shuffle()
@@ -618,10 +591,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     |> maybe_schedule_flush_subs()
   end
 
-  # Probe verdicts must stay unambiguous: while probes are in flight, defer NEW bulk
-  # subscribes to the next reconcile (<=60s) so probe frames are the only unconfirmed
-  # subscribes on the wire. Unsubscribes proceed - they don't trigger kills. Deferred coins
-  # stay out of prev_unconfirmed (nothing was queued for them this round).
+  # While probes are in flight, defer NEW bulk subscribes to the next reconcile (<=60s) so
+  # probe frames are the only unconfirmed subscribes on the wire and their verdict is
+  # unambiguous. Unsubscribes proceed - they don't trigger kills.
   defp defer_while_probing(to_subscribe, q) do
     case Quarantine.probing_coins(q) do
       [] ->
@@ -639,12 +611,10 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     end
   end
 
-  # Ground truth on coin support: a subscribe frame sent a full reconcile round ago with
-  # no subscriptionResponse means HL silently ignored it - the audit validates against
-  # tradeable pair names, but only this proves a coin streams. Such coins move to probation
-  # for an individual probe verdict instead of being re-queued forever. Only coins awaiting
-  # confirmation on the PREVIOUS round count, and only once the connection has outlived two
-  # reconcile rounds with an empty outbound queue; during churn it stays silent.
+  # A subscribe sent a full reconcile round ago with no subscriptionResponse means HL
+  # silently ignored it - the audit only checks pair names, this proves a coin streams.
+  # Such coins go to probation for a probe verdict instead of being re-queued forever.
+  # Requires two reconcile rounds of uptime and an empty queue, so churn stays silent.
   defp probate_unconfirmed(state, to_subscribe) do
     age_ms = connection_uptime_ms(state)
 
@@ -668,9 +638,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   end
 
   defp load_mappings() do
-    # Hyperliquid lists crypto projects and non-crypto assets (gold, SPX, …), so
-    # subscribe to mappings of either kind. `:all` excludes hidden assets: hiding one
-    # stops its Kafka export on the next reconcile (≤60s), unhiding resumes it.
+    # HL lists crypto projects and non-crypto assets (gold, SPX), so take either kind.
+    # `:all` excludes hidden assets: hiding one stops its export within a reconcile.
     rows = SourceSlugMapping.get_source_slug_mappings(@source, return: :all)
 
     slug_map =
@@ -685,10 +654,9 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     {:text, Jason.encode!(%{method: method, subscription: %{type: "bbo", coin: coin}})}
   end
 
-  # A subscribe queued before an audit verdict, conviction or probation landed must not
-  # reach the wire - the queue can lag reconcile's decision by (queue length x
-  # @flush_subs_interval). Unsubscribes always pass, and so do probe subscribes: their coin
-  # is on probation by design, marked in-flight in Quarantine before queuing.
+  # A subscribe queued before a verdict landed must not reach the wire - the queue lags
+  # reconcile by (queue length x @flush_subs_interval). Unsubscribes always pass, and so do
+  # probe subscribes: their coin is on probation by design, marked in-flight before queuing.
   defp send_banned?(state, "subscribe", coin) do
     q = quarantine_state(state)
 
@@ -700,9 +668,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
   # Quarantine glue
 
-  # Crash forensics — probe verdicts and probation live in Quarantine; this runs BEFORE
-  # active_subs is cleared. attempt > 1 = a failed reconnect attempt: no new frames were
-  # sent, nothing to learn.
+  # Crash forensics, run BEFORE active_subs is cleared. attempt > 1 is a failed reconnect:
+  # no new frames were sent, nothing to learn.
   defp handle_crash_suspects(state, _now, attempt) when attempt != 1, do: state
 
   defp handle_crash_suspects(state, now, 1) do
@@ -724,8 +691,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
 
   defp track_sub_send(state, _method, _coin), do: state
 
-  # Recompile-safe accessor: a live process predating the :quarantine key
-  # gets a fresh struct instead of a crash.
+  # Recompile-safe: a process predating the :quarantine key gets a fresh struct.
   defp quarantine_state(state), do: Map.get(state, :quarantine) || Quarantine.new()
 
   defp connection_uptime_ms(state) do
@@ -735,21 +701,17 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     end
   end
 
-  # Run the universe audit in its own supervised process (the HTTP calls must never block
-  # frame handling; the supervisor makes a crash visible), at most once per
-  # @audit_min_gap_ms whatever triggers it - last_audit_at survives disconnects, so a
+  # Audit in a supervised task so its HTTP calls never block frame handling, at most once
+  # per @audit_min_gap_ms whatever triggers it - last_audit_at survives disconnects, so a
   # crash-connect loop stays rate-limited. The timestamp advances at SPAWN, not at result
-  # receipt: the gap bounds requests against HL, and a crashed audit is retried by the next
-  # :audit tick anyway. The task audits the FULL mapped set (audit/0 loads it itself) and
-  # sends {:audit_result, ...} back here.
+  # receipt: the gap bounds requests against HL, and the next :audit tick retries a crash.
   defp maybe_start_audit(state) do
     now = System.system_time(:millisecond)
 
     if now - Map.get(state, :last_audit_at, 0) >= @audit_min_gap_ms do
       parent = self()
-      # Correlates the async result with the newest request — the gap bounds audit
-      # STARTS, not durations, so audits can overlap and a stale reply must not
-      # overwrite a newer verdict (see the :audit_result handler).
+      # The gap bounds audit STARTS, not durations, so audits can overlap and a stale
+      # reply must not overwrite a newer verdict (see the :audit_result handler).
       ref = make_ref()
 
       Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
@@ -776,8 +738,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     |> schedule(:audit, @audit_interval)
   end
 
-  # Arms :flush_subs only when there's something to drain and no timer is
-  # already pending. Avoids polling an empty queue forever.
+  # Arm only with something to drain and no timer pending, else we poll an empty queue.
   defp maybe_schedule_flush_subs(state) do
     cond do
       :queue.is_empty(state.pending_sub_queue) -> state
@@ -786,8 +747,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     end
   end
 
-  # Safe counter bump — creates the key at 1 if the running process predates it
-  # (relevant when recompiling this module against a live process via `r/1`).
+  # Creates the key at 1 if the running process predates it (hot recompile via `r/1`).
   defp bump(state, key), do: Map.update(state, key, 1, &(&1 + 1))
 
   defp schedule(state, key, ms) do

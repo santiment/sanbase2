@@ -63,11 +63,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
 
   # Private functions
 
-  # No catch-all on purpose - an unknown plan should fail loudly rather than silently get
+  # No catch-all on purpose - an unknown plan fails loudly instead of silently getting
   # FREE-tier complexity. A bundle resolves to its equivalent standard plan first: query
-  # cost has nothing to do with which packages were bought, and every bundle shares the one
-  # name `BUNDLE`. Runs in Absinthe's document phase, not through `AccessChecker`; covered
-  # by `Sanbase.Billing.PlanTypeDispatchTest`.
+  # cost has nothing to do with the packages bought, and every bundle is named `BUNDLE`.
   defp complexity_divider_number(%Subscription{plan: plan}) do
     case Plan.type(plan.name) do
       :bundle -> divider_for_plan_name(Sanbase.Billing.Plan.Bundle.equivalent_standard_plan())
@@ -107,10 +105,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
     # when called from MetricResolver.timeseries_data_complexity/3.
     metric = get_metric_name(struct)
 
-    # Weights: child_complexity (selected fields; total returned is child_complexity *
-    # data_points_count), data_points_count, years_difference_weight (a long span scans
-    # more data) and selector_weight (timeseriesDataPerSlug scales with the number of
-    # slugs: 10 assets return 10x the points of a single-slug query).
+    # Weights: child_complexity (selected fields), data_points_count,
+    # years_difference_weight (a long span scans more data) and selector_weight
+    # (timeseriesDataPerSlug returns 10x the points for 10 assets).
     data_points_count = seconds_difference / interval_seconds
 
     selector_weight = selector_weight(args, opts)
@@ -168,29 +165,25 @@ defmodule SanbaseWeb.Graphql.Complexity do
   end
 
   defp do_selector_weight(args) do
-    # Compute the selector weight as the number of slugs multiplied by @assets_count_weight
-    # We could replace this with some function that gives increasingly higher weights
-    # as the number of assets grow, for example: 0.1*x + 0.001*x*x
+    # Number of slugs times @assets_count_weight. Could be superlinear instead, e.g.
+    # 0.1*x + 0.001*x*x.
     case args do
       %{selector: %{slugs: slugs}} ->
         slugs_list_to_weight(slugs)
 
       %{selector: %{slug: slug_or_slugs}} ->
-        # From the API the `slug` can be binary, but if it comes
-        # from args_to_selector/1 it can also be a list
+        # A binary from the API, a list when it comes from args_to_selector/1.
         List.wrap(slug_or_slugs) |> slugs_list_to_weight()
 
       _ ->
-        # The complexity check runs BEFORE every middleware and the macro returns just a
-        # number, so the resolved selector cannot be put on the resolution struct - it is
-        # stashed in the process dictionary for the middleware to reuse.
+        # The complexity check runs BEFORE every middleware and returns just a number, so
+        # the resolved selector goes to the process dictionary for the middleware to reuse.
         case Sanbase.Project.Selector.args_to_selector(args, use_process_dictionary: true) do
           {:ok, %{slug: slugs}} ->
             slugs_list_to_weight(slugs)
 
           _ ->
-            # Most likely the selector is empty. The resolver should return a proper error
-            # Put some default weight here
+            # Most likely an empty selector - the resolver returns the proper error.
             1
         end
     end
@@ -200,17 +193,15 @@ defmodule SanbaseWeb.Graphql.Complexity do
     Enum.max([1, length(slugs) * @assets_count_weight])
   end
 
-  # The `timeseries_data_complexity` flow: the name is taken from the manually passed
-  # %Absinthe.Resolution{}. Otherwise one `getMetric` resolution could pass through here
-  # twice (timeseries_data and timeseries_data_complexity) and remove two metrics.
+  # The name comes from the manually passed %Absinthe.Resolution{}, or one `getMetric`
+  # resolution would pass here twice and remove two metrics.
   defp get_metric_name(%{source: %{metric: metric}}), do: metric
 
   defp get_metric_name(_) do
     case Process.get(:__metric_name_from_get_metric_api__) do
       [metric | rest] ->
-        # If there are batched requests they will be resolved in the same order
-        # as their are in the list. When computing complexity for a metric put back
-        # the list without this one metric so the next one can be properly fetched.
+        # Batched requests resolve in list order, so put the list back without this
+        # metric and the next one is fetched correctly.
         Process.put(:__metric_name_from_get_metric_api__, rest)
         metric
 

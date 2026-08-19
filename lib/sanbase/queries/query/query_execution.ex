@@ -57,21 +57,16 @@ defmodule Sanbase.Queries.QueryExecution do
     result_gb: 2000
   }
 
-  # Users with `activity_traces_hidden` set log_queries=0 in their ClickHouse SETTINGS, so
-  # `system.query_log` has no row for them and the full per-execution stats are missing.
-  # The fallback uses the driver's HTTP summary (read_rows / read_bytes / result_rows /
-  # result_bytes / elapsed_ns) times this factor, covering the absent memory_usage_gb +
-  # cpu_time_microseconds + read_compressed_gb terms and acting as the privacy premium
-  # baked into their bespoke contract.
+  # `activity_traces_hidden` users set log_queries=0, so `system.query_log` has no row and
+  # the full stats are missing. The fallback multiplies the driver's HTTP summary by this
+  # factor, covering the absent memory_usage_gb + cpu_time_microseconds +
+  # read_compressed_gb terms and acting as the privacy premium in their bespoke contract.
   @activity_traces_hidden_multiplier 2
   @bytes_per_gb 1_073_741_824
 
-  # Flat credits charge for an `activity_traces_hidden` execution whose
-  # HTTP summary is entirely missing (driver failure/timeout). We can't
-  # measure the real cost and won't drop the billing row, so charge a
-  # modest non-trivial default — deliberately above the module minimum
-  # of 1 so an unmeasured query can't be effectively free. Summary
-  # gaps are rare; when present the real per-query formula is used.
+  # Flat charge for an `activity_traces_hidden` execution whose HTTP summary is missing
+  # (driver failure/timeout): the real cost is unmeasurable but the billing row stays, and
+  # this is above the module minimum of 1 so an unmeasured query is not effectively free.
   @summary_missing_credits_cost 10
 
   @timestamps_opts [type: :utc_datetime]
@@ -130,9 +125,8 @@ defmodule Sanbase.Queries.QueryExecution do
     beginning_of_month = Timex.beginning_of_month(now)
 
     from(c in __MODULE__,
-      # The c.credits_cost > 0 is added to avoid counting the queries that have been "cleared"
-      # when a moderator/admin has cleared the user's queries to reset their limits. If they
-      # are counted, the user might still be restricted after cleaning their limits.
+      # c.credits_cost > 0 skips queries "cleared" by a moderator resetting the user's
+      # limits - counting them would leave the user restricted afterwards.
       where:
         c.user_id == ^user_id and c.inserted_at >= ^beginning_of_month and c.credits_cost > 0,
       select: %{
@@ -172,23 +166,20 @@ defmodule Sanbase.Queries.QueryExecution do
   def store_execution(query_result, user_id, wait_fetching_details_ms, attempts_left \\ 3) do
     %{credits_cost: credits_cost, execution_details: execution_details} =
       if Sanbase.Accounts.activity_traces_hidden?(user_id) do
-        # `system.query_log` has no row for this user (log_queries=0),
-        # so skip the flush wait + lookup entirely and compute from the
-        # driver's HTTP summary instead.
+        # No `system.query_log` row for this user (log_queries=0): skip the flush wait and
+        # lookup, compute from the driver's HTTP summary.
         compute_credits_cost_from_summary(query_result)
       else
-        # The query_log needs 7.5 seconds to be flushed to disk. Trying to
-        # read the data before that can result in an empty result. The wait_fetching_details_ms
-        # can be changed in tests to speed up the tests
+        # The query_log takes 7.5s to flush to disk; reading earlier can come back empty.
+        # wait_fetching_details_ms is lowered in tests.
         Process.sleep(wait_fetching_details_ms)
         compute_credits_cost(query_result)
       end
 
     credits_cost = [credits_cost, 1] |> Enum.max() |> Kernel.trunc()
 
-    # credits_cost is stored outside the execution_details as it's not
-    # really an execution detail, but a business logic detail. Also having
-    # it in a separate field makes it easier to compute the total credits spent
+    # credits_cost is business logic, not an execution detail, and a separate field makes
+    # summing the total credits spent easier.
 
     args =
       query_result
@@ -205,9 +196,8 @@ defmodule Sanbase.Queries.QueryExecution do
     |> Sanbase.Repo.insert()
   rescue
     _e ->
-      # This can happen if the query details are not flushed to the system.query_log
-      # table or some other clickouse error occurs. Allow for 3 attempts in total before
-      # reraising the exception.
+      # Happens when the details are not yet flushed to system.query_log, or on another
+      # clickhouse error. 3 attempts in total, then reraise.
 
       case attempts_left <= 0 do
         true ->
@@ -293,10 +283,9 @@ defmodule Sanbase.Queries.QueryExecution do
 
   # Private functions
 
-  # Credits cost for an `activity_traces_hidden` user. The driver's HTTP
-  # `summary` map gives us 5 of the 8 fields the regular formula uses;
-  # the remaining 3 (memory_usage_gb, cpu_time_microseconds,
-  # read_compressed_gb) are covered by `@activity_traces_hidden_multiplier`.
+  # Credits for an `activity_traces_hidden` user: the driver's HTTP `summary` gives 5 of
+  # the 8 fields the regular formula uses, and `@activity_traces_hidden_multiplier` covers
+  # the other 3 (memory_usage_gb, cpu_time_microseconds, read_compressed_gb).
   defp compute_credits_cost_from_summary(%Result{summary: %{} = summary}) do
     read_rows = summary_int(summary, "read_rows")
     read_bytes = summary_int(summary, "read_bytes")
@@ -327,9 +316,8 @@ defmodule Sanbase.Queries.QueryExecution do
       result_rows: result_rows,
       result_gb: Float.round(result_gb, 6),
       query_duration_ms: Float.round(query_duration_ms, 3),
-      # Unavailable without `system.query_log`; zeroed so the
-      # `non_null(:float)` fields on `:sql_query_execution_stats` still
-      # resolve for protected users.
+      # Unavailable without `system.query_log`; zeroed so the `non_null(:float)` fields on
+      # `:sql_query_execution_stats` still resolve for protected users.
       read_compressed_gb: 0.0,
       cpu_time_microseconds: 0.0,
       memory_usage_gb: 0.0,
@@ -340,11 +328,9 @@ defmodule Sanbase.Queries.QueryExecution do
     %{credits_cost: credits_cost, execution_details: execution_details}
   end
 
-  # Driver timeout / failure can leave summary as nil. Fall back to a
-  # flat safe minimum so the billing row is still written and the user
-  # is still accounted for, instead of crashing through the rescue and
-  # dropping the execution entirely. All stat fields are zeroed so the
-  # `non_null(:float)` fields on `:sql_query_execution_stats` resolve.
+  # A driver timeout/failure leaves summary nil. A flat safe minimum still writes the
+  # billing row instead of crashing through the rescue and dropping the execution. Stat
+  # fields are zeroed so the `non_null(:float)` fields still resolve.
   defp compute_credits_cost_from_summary(_) do
     %{
       credits_cost: @summary_missing_credits_cost,
@@ -388,8 +374,7 @@ defmodule Sanbase.Queries.QueryExecution do
       query_start_time: query_start_time
     } = args
 
-    # If there is no result yet this will return {:ok, nil} which will fail and will be retried
-    # from inside the rescue block
+    # With no result yet this returns {:ok, nil}, which fails and is retried in the rescue.
     {:ok, %{} = execution_details} =
       compute_execution_details(clickhouse_query_id, query_start_time)
 
@@ -399,9 +384,8 @@ defmodule Sanbase.Queries.QueryExecution do
         acc + value * Map.fetch!(@credit_cost_weights, key)
       end)
 
-    # The credits cost cannot be 0. The only way a credits cost can be 0 is if it has been
-    # set to 0 by a moderator/admin after it was executed. This happens when a moderator/admin
-    # clears the user's executions to reset their limits via the admin panel.
+    # A credits cost is 0 only if a moderator zeroed it afterwards, clearing the user's
+    # executions to reset their limits via the admin panel.
     credits_cost = Enum.max([credits_cost, 1])
 
     %{execution_details: execution_details, credits_cost: credits_cost}

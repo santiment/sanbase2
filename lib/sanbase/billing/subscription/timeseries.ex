@@ -250,11 +250,10 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     }
   end
 
-  # Names the row - the nickname and the product it is filed under. Stripe gives no order
-  # guarantee for the items, so a multi-item subscription picks its representative
-  # deterministically: the lowest id among the items that carry billing data, so one
-  # unusable item cannot drop an otherwise reportable subscription. Which item it is stays
-  # arbitrary in meaning; only `amount/1` below describes the whole subscription.
+  # Names the row - the nickname and the product it is filed under. Stripe does not order
+  # the items, so a multi-item subscription picks the lowest id among those carrying billing
+  # data: deterministic, and one unusable item cannot drop a reportable subscription. Which
+  # item it is means nothing; only `amount/1` describes the whole subscription.
   defp plan(subscription) do
     subscription.items.data
     |> Enum.filter(&item_price/1)
@@ -264,9 +263,9 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     end
   end
 
-  # Sum over the items, so a bundle reports the subscription's whole MRR rather than one
-  # package's, and an item bought several times reports what is actually billed. A single
-  # unusable item answers `nil`, which is what `extract_fields/1` drops the row on.
+  # Summed over the items, so a bundle reports the whole MRR and an item bought several
+  # times reports what is billed. One unusable item answers `nil`, which drops the row in
+  # `extract_fields/1`.
   defp amount(subscription) do
     case subscription.items.data do
       [item] ->
@@ -282,9 +281,9 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     end
   end
 
-  # Prefers the modern `price`, falling back to the legacy `plan`. Either object names the
-  # item and carries its amount, and a subscription Stripe reports through only one of them
-  # is still a subscription - dropping it loses real revenue from the report.
+  # The modern `price`, falling back to the legacy `plan` - either names the item and
+  # carries its amount, and dropping a subscription Stripe reports through only one of them
+  # loses real revenue from the report.
   defp item_price(item), do: Map.get(item, :price) || Map.get(item, :plan)
 
   # `Stripe.Price` calls the field `unit_amount`, the legacy `Stripe.Plan` calls
@@ -329,8 +328,8 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
       DateTime.compare(date, end_date) in [:lt, :eq]
   end
 
-  # These functions filter in-memory maps from the Stripe API where status is a string.
-  # The Ecto queries (get_active_*_count) use atom comparisons via Ecto.Enum.
+  # These filter in-memory Stripe API maps, where status is a string; the Ecto queries
+  # (get_active_*_count) compare atoms via Ecto.Enum.
   def active_subscriptions(subscriptions) do
     Enum.filter(subscriptions, fn subscription ->
       subscription.status in ["active", "past_due"]

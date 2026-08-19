@@ -105,18 +105,16 @@ defmodule Sanbase.Hyperliquid.Bbo.BboPrices do
   end
 
   # Hyperliquid quotes some low-priced assets per 1000 underlying tokens, signalled only by
-  # a lowercase "k" (kilo) prefix on the coin name: "kPEPE", "kSHIB", "kBONK", "kLUNC",
-  # "kFLOKI". For those, `px` is USD per 1000 underlying tokens and `sz` a number of
-  # contracts of 1000 tokens each, so exposing native-token units while preserving notional
-  # (`price * volume`) means dividing price by 1000 and multiplying volume by 1000.
+  # a lowercase "k" prefix on the coin name ("kPEPE", "kSHIB", ...): `px` is USD per 1000
+  # tokens and `sz` a number of 1000-token contracts. Native-token units preserving notional
+  # (`price * volume`) therefore divide price by 1000 and multiply volume by 1000.
   #
-  # The convention is NOT documented (perpetuals info endpoint, tick/lot size, contract
-  # specifications), and `POST /info {"type":"meta"}` exposes no price/size multiplier -
-  # only `name`, `szDecimals`, `maxLeverage`, `marginTableId`, `marginMode`. It was
-  # verified against `POST /info {"type":"l2Book","coin":"kPEPE"}`: `px=0.003691` with
-  # `sz=202527` is a notional of ~$748, realistic only if `px` is per 1000 PEPE and `sz` is
-  # in contracts. Matching the name prefix beats hardcoding a list that goes stale as
-  # Hyperliquid adds k-assets.
+  # The convention is NOT documented and `POST /info {"type":"meta"}` exposes no
+  # price/size multiplier - only `name`, `szDecimals`, `maxLeverage`, `marginTableId`,
+  # `marginMode`. Verified against `POST /info {"type":"l2Book","coin":"kPEPE"}`:
+  # `px=0.003691` with `sz=202527` is a notional of ~$748, realistic only if `px` is per
+  # 1000 PEPE and `sz` is in contracts. Matching the prefix beats a hardcoded list that
+  # goes stale as Hyperliquid adds k-assets.
   defp k_factor(sanbase_slug) do
     case SourceSlugMapping.get_source_slug(sanbase_slug, @source) do
       "k" <> _ -> 1000

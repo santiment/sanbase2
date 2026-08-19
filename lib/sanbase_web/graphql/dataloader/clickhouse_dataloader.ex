@@ -53,20 +53,10 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Map.new()
   end
 
-  # Returns a map with the average dev activity for every project passed in `args`.
-  #
-  # The map key is the `days` argument passed. This is done so aliases are
-  # supported in the format:
-  #   ```
-  #   ...
-  #   dev_7d: averageDevActivity(days: 7)
-  #   dev_30d: averageDevActivity(days: 30)
-  #   ...
-  #   ```
-  #
-  # The `days` key points to a map of results or to an {:error, error} tuple.
-  # The map of results has github organizations as key and their average activity
-  # as value.
+  # Returns a map with the average dev activity for every project passed in `args`, keyed
+  # by the `days` argument so aliases like `dev_7d: averageDevActivity(days: 7)` and
+  # `dev_30d: averageDevActivity(days: 30)` are supported. Each `days` key points to an
+  # {:error, error} tuple or to a map of github organization => average activity.
   def query(:average_dev_activity, args, ctx) do
     args = Enum.to_list(args)
 
@@ -81,11 +71,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Map.new()
   end
 
-  # Returns a map with the ethereum spent by each project passed in `args`.
-  # The map key is the project's id.
-  # The map value is either `{:ok, value}` or `{:nocache, {:ok, value}}`.
-  # The :nocache value is returned if some problems were encountered while calculating the
-  # ethereum spent and the value won't be put in the cache.
+  # Returns a map of project id => ethereum spent, the value being `{:ok, value}` or, when
+  # problems were encountered while calculating it, `{:nocache, {:ok, value}}` so it is not
+  # put in the cache.
   def query(:eth_spent, args, ctx) do
     args = Enum.to_list(args)
 
@@ -178,10 +166,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Map.new()
   end
 
-  # Calculate the ethereum spent for a single project by summing the ethereum
-  # spent for each of its ethereum addresses. If an error is encountered while
-  # calculating, the value will be wrapped in a :nocache tuple that the cache
-  # knows how to handle
+  # Sum the ethereum spent by each of a project's ethereum addresses. On error the value is
+  # wrapped in a :nocache tuple that the cache knows how to handle.
   defp eth_spent_per_project(project, eth_spent_per_address) do
     {:ok, addresses} = Project.eth_addresses(project)
 

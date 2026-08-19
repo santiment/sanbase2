@@ -45,11 +45,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @freely_available_slugs ["santiment"]
   @minimal_datetime_param ~U[2009-01-01 00:00:00Z]
 
-  # Apply restrictions based on the subscription plan and query made. The check
-  # is split into two main categories:
-  # - When the auth method is `basic` - no restrictions are applied and only
-  #   some sanity checks are done
-  # - When the auth method is not `basic` - all the required checks are done
+  # Apply restrictions based on the subscription plan and the query made. Two cases:
+  # - auth method `basic` - no restrictions, only some sanity checks
+  # - any other auth method - all the required checks are done
   def call(resolution, opts) do
     resolution
     |> transform_resolution(opts)
@@ -163,12 +161,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     |> apply_if_not_resolved(&check_from_to_both_outside/1)
   end
 
-  # If a step has rejected the access, the resolution goes into a resolved
-  # state so no further checks are needed. This way it can also
-  # return the "most specific" error message. For example if a user does
-  # not have any access to a metric it makes no sense to check the from-to
-  # params and return errors for them instead of the more specific error -
-  # no access for this metric because of the plan.
+  # A step that rejects access resolves the resolution, so no further checks run. That
+  # also keeps the error message the most specific one: with no access to the metric at
+  # all, from-to errors are noise next to "no access to this metric on this plan".
   defp apply_if_not_resolved(%Resolution{state: :resolved} = resolution, _) do
     resolution
   end
@@ -243,13 +238,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  # The request will be granted further access in two cases:
-  # - The request contains a shared access token that has access to the
-  #   query/metric. This can also be an anonymous user who has this token.
-  # - The user has a subscription plan that has access to the query/metric.
-  #
-  # The shared access token is checked first and if it gives access to the
-  # request, the user plan access is bypassed
+  # Access is granted either by a shared access token that covers the query/metric (its
+  # holder can be anonymous) or by the user's subscription plan. The token is checked
+  # first; if it grants access, the plan check is bypassed.
   defp check_plan_has_access(%Resolution{} = resolution) do
     case check_shared_access_token_has_access?(resolution) do
       true -> resolution
@@ -341,10 +332,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     """
   end
 
-  # A bundle's access comes from the packages it bought, not from the ordinal plan
-  # ladder, so `min_plan` has no meaningful answer here - it told a customer
-  # paying $1050/month to "upgrade to SANAPI FREE". What they need instead is the
-  # name of the package the metric is sold in.
+  # A bundle's access comes from the packages it bought, not the ordinal plan ladder, so
+  # `min_plan` has no meaningful answer here - it told a customer paying $1050/month to
+  # "upgrade to SANAPI FREE". They need the name of the package the metric is sold in.
   defp build_access_error_message(
          argument,
          argument_name,
@@ -390,11 +380,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     """
   end
 
-  # Only metrics are sold in packages. Queries and signals reach here too - every
-  # bundle is granted all of them, so a refusal for one is unexpected rather than
-  # impossible - and they are matched out rather than looked up, because a name
-  # that happened to coincide with a metric would name a package that would not
-  # actually grant it.
+  # Only metrics are sold in packages. Queries and signals reach here too - every bundle
+  # is granted all of them, so a refusal is unexpected rather than impossible - and they
+  # are matched out rather than looked up, because a name coinciding with a metric would
+  # name a package that would not actually grant it.
   defp bundle_packages_for(:metric, metric_name),
     do: PackageSnapshot.packages_containing(metric_name)
 
@@ -409,10 +398,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     "the #{Enum.join(rest, ", ")} and #{last} packages"
   end
 
-  # `by_slug/1` cannot fail on a slug that came from `packages_containing/1`,
-  # which only returns packages that are still sold. The error branch is here
-  # because a CaseClauseError on an error path would hide the refusal it is
-  # trying to explain.
+  # `by_slug/1` cannot fail on a slug from `packages_containing/1`, which only returns
+  # packages still sold. The error branch exists because a CaseClauseError on an error
+  # path would hide the refusal it is trying to explain.
   defp package_name(slug) do
     case Package.by_slug(slug) do
       {:ok, %{name: name}} -> name
@@ -732,11 +720,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     }
   end
 
-  # Only bundle plans read this. Every bundle subscription is named `BUNDLE`, so
-  # the plan name identifies nothing and what the customer bought has to travel
-  # with the request. The subscription is already in the context (`auth_plug.ex`
-  # puts it there); this just stops it being dropped on the way to the access
-  # checker. See §5.8 of docs/composable-api-plans-handover.md.
+  # Only bundle plans read this. Every bundle subscription is named `BUNDLE`, so the plan
+  # name identifies nothing and what the customer bought has to travel with the request.
+  # The subscription is already in the context (`auth_plug.ex` puts it there); this stops
+  # it being dropped on the way to the access checker. See §5.8 of
+  # docs/composable-api-plans-handover.md.
   defp bundle_entitlement(context),
     do: Sanbase.Billing.Subscription.bundle_entitlement(context[:auth][:subscription])
 end

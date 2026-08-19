@@ -1,19 +1,14 @@
 defmodule Sanbase.DeepResearch.Timeline do
   @moduledoc """
   Pure state reducer for a research transcript: folds parsed stream events into
-  per-turn timeline state (`reduce_timeline`, `upsert_thinking`, `merge_phase`),
-  settles a turn once its run ends (`complete_turn`, `fail_turn`, `cancel_turn`,
-  `pause_turn`) and groups it for rendering (`segment`, `coalesce`).
+  per-turn state (`reduce_timeline`, `upsert_thinking`, `merge_phase`), settles a
+  turn once its run ends (`complete_turn`, `fail_turn`, `cancel_turn`, `pause_turn`)
+  and groups it for rendering (`segment`, `coalesce`). Shaping the *finished* report
+  markdown is separate — see `Sanbase.DeepResearch.ReportMarkdown`.
 
-  Shaping the *finished* report markdown (source reflow, in-report chart specs)
-  is a separate concern — see `Sanbase.DeepResearch.ReportMarkdown`.
-
-  A transcript is a list of `Sanbase.DeepResearch.Turn` structs. A turn holds an
-  ordered `timeline` of items (thinking / search / mcp / status / skill),
-  accumulated `sources`, the final `report`, clarifying `clarification`
-  questions, and a `phase`.
-
-  Item shapes (plain maps keyed by `:kind`):
+  A transcript is a list of `Sanbase.DeepResearch.Turn` structs, each holding an
+  ordered `timeline`, accumulated `sources`, the `report`, `clarification`
+  questions and a `phase`. Item shapes (plain maps keyed by `:kind`):
 
     * `%{kind: :thinking, id, text}`
     * `%{kind: :search, id, query, count, results}`   (count/results filled in later)
@@ -48,9 +43,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     %Turn{id: id, question: question, started_at: started_at_ms}
   end
 
-  # -- settling a turn -----------------------------------------------------------
-  # One rule for all of these: `finished_at` is stamped once (the first settling
-  # write owns it) and an already-terminal phase is never downgraded.
+  # -- settling a turn: `finished_at` stamped once, terminal phase never downgraded -
 
   @doc "Mark a finished run `:completed`; an already settled turn keeps its phase."
   @spec complete_turn(turn(), non_neg_integer()) :: turn()
@@ -74,11 +67,10 @@ defmodule Sanbase.DeepResearch.Timeline do
   def cancel_turn(turn, now_ms), do: settle(turn, :cancelled, now_ms)
 
   @doc """
-  Park an unfinished turn as `:paused`; a settled turn is returned as is.
-
-  `reason` (why it stopped — a lost connection, a crashed run) is kept alongside
-  the resumable phase, so the UI can say what interrupted the turn while still
-  offering Continue. Nothing to say (the ordinary disconnect pause): `nil`.
+  Park an unfinished turn as `:paused`; a settled one is returned as is. `reason`
+  (lost connection, crashed run) is kept alongside the resumable phase, so the UI can
+  say what interrupted the turn while still offering Continue. `nil` for the ordinary
+  disconnect pause.
   """
   @spec pause_turn(turn(), non_neg_integer(), String.t() | nil) :: turn()
   def pause_turn(turn, now_ms, reason \\ nil) do
@@ -105,15 +97,15 @@ defmodule Sanbase.DeepResearch.Timeline do
   def terminal_phase?(phase), do: phase in @terminal_phases
 
   @doc """
-  Needs no further work: any terminal phase, plus `:awaiting_user` (a finished
-  exchange, not an interrupted run) and `:paused` (interrupted but resumable).
+  Needs no further work: terminal, plus `:awaiting_user` (a finished exchange) and
+  `:paused` (interrupted but resumable).
   """
   @spec settled_phase?(phase()) :: boolean()
   def settled_phase?(phase), do: terminal_phase?(phase) or phase in [:awaiting_user, :paused]
 
   @doc """
-  Nothing left in flight to render: terminal or `:paused`. Settles spinners the
-  interrupted run never closed. `:awaiting_user` is live, so not inactive.
+  Nothing left in flight to render (terminal or `:paused`), so spinners the run never
+  closed can settle. `:awaiting_user` is live, so not inactive.
   """
   @spec inactive_phase?(phase()) :: boolean()
   def inactive_phase?(phase), do: terminal_phase?(phase) or phase == :paused
@@ -122,16 +114,13 @@ defmodule Sanbase.DeepResearch.Timeline do
   def running_phase?(phase), do: phase in @running_phases
 
   @doc """
-  True when the turn delivered a direct conversational answer — a non-empty
-  assistant text message, with no report, no clarification questions, and no
-  research tool calls.
+  True when the turn delivered a direct conversational answer: assistant text, no
+  report, no clarification questions, no research tool calls.
 
-  The agent triages every turn: a simple or follow-up question is answered
-  briefly in plain text and it deliberately does NOT call `submit_report` (that
-  channel is for research reports only). Such a turn emits no `report` event, so
-  the absence of a report is expected here, not a failed run. The LiveView uses
-  this to avoid the spurious "no report" error on conversational replies. A turn
-  that DID research but produced no report is a genuine stall and is excluded.
+  The agent triages every turn and answers a simple one in plain text without calling
+  `submit_report`, so a missing report is expected rather than a failed run — the
+  LiveView uses this to suppress the spurious "no report" error. A turn that DID
+  research and still produced no report is a genuine stall, and is excluded.
   """
   @spec direct_answer?(turn()) :: boolean()
   def direct_answer?(turn) do
@@ -146,8 +135,8 @@ defmodule Sanbase.DeepResearch.Timeline do
   end
 
   @doc """
-  Apply one parsed `EventParser` result map to `turn`. A single result may carry
-  several effects at once (e.g. report + phase, or activity + phase).
+  Apply one parsed `EventParser` result to `turn`; one result may carry several
+  effects (report + phase, activity + phase).
   """
   @spec apply_result(turn(), map()) :: turn()
   def apply_result(turn, result) do
@@ -263,9 +252,8 @@ defmodule Sanbase.DeepResearch.Timeline do
       [
         %{
           kind: :subagent_findings,
-          # The event carries no id; stamp the append position (immutable —
-          # items are only appended or replaced in place) so the renderer can
-          # key DOM state on the item instead of its drifting screen position.
+          # No id on the event: stamp the append position, which is immutable, so the
+          # renderer keys DOM state on the item, not its drifting screen position.
           id: "sf#{length(prev)}",
           unit: a[:unit],
           summary: a[:summary],
@@ -277,8 +265,7 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   def reduce_timeline(prev, _), do: prev
 
-  # Find the item of `kind` with `id` and replace it via `fun.(existing)`;
-  # if none (or id is nil), append `fun.(nil)`.
+  # Replace the `kind`/`id` item via `fun.(existing)`, or append `fun.(nil)`.
   defp upsert_by_id(prev, kind, id, fun) do
     index =
       if is_nil(id),
@@ -296,8 +283,8 @@ defmodule Sanbase.DeepResearch.Timeline do
   defp blank_to(value, _fallback), do: value
 
   @doc """
-  LangGraph streams CUMULATIVE message snapshots per id, so replace the block for
-  that id rather than append (appending snowballs the text).
+  LangGraph streams CUMULATIVE snapshots per id, so replace that id's block rather
+  than append — appending snowballs the text.
   """
   @spec upsert_thinking([map()], String.t(), String.t()) :: [map()]
   def upsert_thinking(items, id, text) do
@@ -340,8 +327,8 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `{:chart, [chart_item, ...]}`        - contiguous run of charts (always-visible widgets)
     * `{:findings, [finding_item, ...]}`   - contiguous run of sub-agent findings (folded tables)
   """
-  # Item kinds that render as their own block type (and so break a tools run);
-  # every other kind folds into a `{:tools, items, running?}` block.
+  # Kinds that render as their own block, breaking a tools run; the rest fold into
+  # `{:tools, items, running?}`.
   @block_tag %{thinking: :narration, skill: :skill, chart: :chart, subagent_findings: :findings}
 
   @spec segment([map()]) :: [tuple()]
@@ -365,8 +352,7 @@ defmodule Sanbase.DeepResearch.Timeline do
   defp flush_tools(blocks, tools),
     do: [{:tools, tools, tools_running?(tools)} | blocks]
 
-  # Append to the newest block when it carries the same tag (keeping the run
-  # contiguous), otherwise start a new block.
+  # Same tag as the newest block appends (keeping the run contiguous), else new block.
   defp push_block([{tag, items} | rest], tag, item), do: [{tag, items ++ [item]} | rest]
   defp push_block(blocks, tag, item), do: [{tag, [item]} | blocks]
 
@@ -380,9 +366,8 @@ defmodule Sanbase.DeepResearch.Timeline do
   end
 
   @doc """
-  Coalesce consecutive `:mcp` items into one `{:mcp_group, items}` so a run of
-  data-tool/MCP calls renders as a single folded entry, preserving interleaving
-  with searches and statuses.
+  Coalesce consecutive `:mcp` items into one `{:mcp_group, items}`, so a run of data
+  tool calls folds into a single entry while keeping its place among searches.
   """
   @spec coalesce([map()]) :: [map() | {:mcp_group, [map()]}]
   def coalesce(items) do

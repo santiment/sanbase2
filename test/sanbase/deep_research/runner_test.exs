@@ -2,9 +2,9 @@ defmodule Sanbase.DeepResearch.RunnerTest do
   @moduledoc """
   Runner unit tests: attach/detach, the pause grace period, continue.
 
-  Every runner is EPHEMERAL (no session_id), so nothing touches the DB —
-  persistence is covered in `SanbaseWeb.DeepResearchLiveTest`. The base URL points
-  at a listener that never answers, so a run stays in flight until settled.
+  Every runner is EPHEMERAL (no session_id), so nothing touches the DB — persistence
+  is covered in `SanbaseWeb.DeepResearchLiveTest`. The base URL points at a listener
+  that never answers, so a run stays in flight until settled.
   """
 
   use ExUnit.Case, async: false
@@ -25,15 +25,14 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       mcp_servers: []
     )
 
-    # Unlinked on purpose: `on_exit` runs after the test process is gone, so the
-    # list of runners to clean up cannot live in the test process itself.
+    # Unlinked: `on_exit` runs after the test process dies, so the cleanup list cannot
+    # live in that process.
     {:ok, started} = Agent.start(fn -> [] end)
     Process.put(@started_key, started)
 
     on_exit(fn ->
-      # Only this test's runners: the supervisor is shared, so any other child of it
-      # belongs to someone else. Runners first — one still holding the port would
-      # outlive the test.
+      # Only this test's runners (the supervisor is shared), and before the port, which
+      # one of them may still hold.
       for pid <- Agent.get(started, & &1), Process.alive?(pid) do
         DynamicSupervisor.terminate_child(@supervisor, pid)
       end
@@ -217,7 +216,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       {:ok, _} = Runner.attach(pid, self())
       {:ok, _} = Runner.ask(pid, "q")
 
-      # The stream ended with no report, so the turn waits on the thread's state.
+      # Stream over with no report: the turn waits on the thread's state.
       send(pid, {:dra_thread, "th1"})
       send(pid, {:sys.get_state(pid).task.ref, :ok})
 
@@ -263,8 +262,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     {:ok, _} = Runner.attach(pid, self())
     {:ok, _} = Runner.ask(pid, "first")
 
-    # Land the first turn in "not running, not settled": its stream ended and it
-    # waits for a state poll that never answers.
+    # Land turn 1 in "not running, not settled": stream over, poll never answers.
     send(pid, {:dra_thread, "th1"})
     task_ref = :sys.get_state(pid).task.ref
     send(pid, {task_ref, :ok})

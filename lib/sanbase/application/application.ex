@@ -23,20 +23,18 @@ defmodule Sanbase.Application do
     # Get the proper children that have to be started in the current container type
     {children, opts} = children_opts(container_type)
 
-    # Some of the children must be expliclitly started before others. Because the
-    # container type `all` is a combination of all other container types, we need to
-    # additionally prepend these children, otherwise they can end up in the middle
-    # of the list
+    # Some children must be started before others. The `all` container type combines every
+    # other type, so these children are prepended explicitly, or they end up in the middle
+    # of the list.
     prepended_children = prepended_children(container_type)
 
     # This list contains all children that are common to all container types. These
     # include some Ecto adapters, Telemetry, Phoenix Endpoint, etc.
     common_children = common_children()
 
-    # Combine all the children to be started. Run a normalization. This normalization
-    # takes care of the results of some custom `start_in` and `start_if` custom cases.
-    # They might return `nil` to signal that they don't have to be started and these
-    # values need to be cleaned.
+    # Combine all the children to be started and normalize: custom `start_in`/`start_if`
+    # cases can return `nil` to signal that a child is not started, and those need
+    # cleaning out.
     children =
       (prepended_children ++ common_children ++ children)
       |> Sanbase.ApplicationUtils.normalize_children()
@@ -395,10 +393,9 @@ defmodule Sanbase.Application do
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
 
-      # Drain the running connections before closing. This will allow the
-      # currently executing API calls to finish. The drainer first makes
-      # the TCP acceptor to stop accepting new connections and then waits
-      # until there are no connections or 30 seconds pass.
+      # Drain the running connections before closing so executing API calls can finish:
+      # the drainer stops the TCP acceptor taking new connections, then waits until there
+      # are none left or 30 seconds pass.
       {SanbaseWeb.ConnectionDrainer, shutdown: 30_000, ranch_ref: SanbaseWeb.Endpoint.HTTP},
 
       # Process that starts test-only deps

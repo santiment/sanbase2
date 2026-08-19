@@ -57,10 +57,10 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
     {"VM ETS", :vm_ets_bytes}
   ]
 
-  # The three accounting layers plus the RSS high-water mark. The gaps name
-  # the cause of RSS growth: allocated − used = carrier slack (spike ratchet /
-  # fragmentation, not a leak); RSS − allocated = native/NIF memory invisible
-  # to the VM; RSS converging toward a flat early high-water = past spike.
+  # The three accounting layers plus the RSS high-water mark. The gaps name the cause of
+  # RSS growth: allocated − used = carrier slack (spike ratchet or fragmentation, not a
+  # leak), RSS − allocated = native/NIF memory invisible to the VM, and RSS converging
+  # toward a flat early high-water = a past spike.
   @pod_layer_series [
     {"RSS high-water", :rss_hwm_bytes},
     {"OS RSS", :rss_bytes},
@@ -191,10 +191,10 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
     |> push_chart_events()
   end
 
-  # Only the chart payload depends on the metric/window/mode badges — the pod
-  # tables and the details below them do not. Reloading everything on a badge
-  # click would re-run the cross-pod aggregates for nothing. The selected
-  # pod's own rows are re-read because a wider window needs more of them.
+  # Only the chart payload depends on the metric/window/mode badges, not the pod tables or
+  # the details below them, so reloading everything on a badge click would re-run the
+  # cross-pod aggregates for nothing. The selected pod's rows are re-read because a wider
+  # window needs more of them.
   defp refresh_charts(socket) do
     socket
     |> assign_effective_metrics()
@@ -247,10 +247,9 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
     |> assign_pod_rows()
   end
 
-  # One fetch feeds both the per-pod chart and everything below it: the rows
-  # are read once over the widest window in play and then sliced. `series`
-  # stays the fixed @series_hours window that the samples table and the window
-  # stats describe.
+  # One fetch feeds both the per-pod chart and everything below it - the rows are read once
+  # over the widest window in play, then sliced. `series` stays the fixed @series_hours
+  # window that the samples table and the window stats describe.
   defp assign_pod_rows(socket) do
     case socket.assigns.selected do
       nil ->
@@ -336,11 +335,10 @@ defmodule SanbaseWeb.Admin.MemoryStatsLive do
   defp overview_value_kind(["process_count"]), do: :count
   defp overview_value_kind(_metrics), do: :bytes
 
-  # Per-metric stats over the CURRENT BEAM incarnation only (a restart resets
-  # memory, so mixing incarnations is meaningless). Point-in-time diffs are
-  # traffic noise — the trend column instead compares the AVERAGE of the first
-  # 10% of samples with the average of the last 10%, which smooths out the
-  # second-to-second load swings and answers "is it actually growing".
+  # Per-metric stats over the CURRENT BEAM incarnation only - a restart resets memory, so
+  # mixing incarnations is meaningless. Point-in-time diffs are traffic noise, so the trend
+  # column compares the average of the first 10% of samples with the average of the last
+  # 10%, smoothing out load swings to answer "is it actually growing".
   defp incarnation_stats(series, latest) do
     same =
       series

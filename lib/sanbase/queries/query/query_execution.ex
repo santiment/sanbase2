@@ -44,10 +44,8 @@ defmodule Sanbase.Queries.QueryExecution do
 
   @preload [:user, :query]
 
-  # The credits cost is computed as the dot product of the vectors
-  # representing the stats' values and the weights, i.e
-  # value(read_gb)*weight(read_gb) + value(result_gb)*weight(result_gb) + ...
-  # The values for the weights are manually picked.
+  # The credits cost is the dot product of the stats' values and these (manually picked)
+  # weights: value(read_gb)*weight(read_gb) + value(result_gb)*weight(result_gb) + ...
   @credit_cost_weights %{
     read_compressed_gb: 0.2,
     cpu_time_microseconds: 0.0000007,
@@ -59,14 +57,12 @@ defmodule Sanbase.Queries.QueryExecution do
     result_gb: 2000
   }
 
-  # Users with `activity_traces_hidden` set log_queries=0 in their
-  # ClickHouse SETTINGS, so `system.query_log` has no row for them and
-  # the full per-execution stats are unavailable. We fall back to the
-  # subset of metrics in the driver's HTTP summary (read_rows /
-  # read_bytes / result_rows / result_bytes / elapsed_ns) and multiply
-  # by this factor to cover the missing memory_usage_gb +
-  # cpu_time_microseconds + read_compressed_gb terms AND act as a
-  # privacy premium baked into their bespoke contract.
+  # Users with `activity_traces_hidden` set log_queries=0 in their ClickHouse SETTINGS, so
+  # `system.query_log` has no row for them and the full per-execution stats are missing.
+  # The fallback uses the driver's HTTP summary (read_rows / read_bytes / result_rows /
+  # result_bytes / elapsed_ns) times this factor, covering the absent memory_usage_gb +
+  # cpu_time_microseconds + read_compressed_gb terms and acting as the privacy premium
+  # baked into their bespoke contract.
   @activity_traces_hidden_multiplier 2
   @bytes_per_gb 1_073_741_824
 

@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.DeepResearchLive do
   @moduledoc """
-  Deep research agent UI. Holds only socket/UI state; the run lifecycle lives in a
-  detached `Sanbase.DeepResearch.Runner` (one per session) that this LiveView
-  attaches to and mirrors — so a websocket drop leaves the run streaming, to be
-  reattached on remount or left `:paused` for the owner to Continue.
+  Deep research agent UI. Holds only socket/UI state; the lifecycle lives in a
+  detached `Sanbase.DeepResearch.Runner` this LiveView attaches to and mirrors, so a
+  websocket drop leaves the run streaming — reattached on remount, or left `:paused`
+  for the owner to Continue.
 
-  `:turns` (finished, untouched mid-run) is split from `:current_turn` so a stream
-  event re-renders one turn, not the transcript.
+  `:turns` (finished) is split from `:current_turn` so a stream event re-renders one
+  turn, not the transcript.
   """
   use SanbaseWeb, :live_view
 
@@ -54,8 +54,8 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  # A live runner (reconnect, second tab) is reattached in the same call, so its
-  # snapshot replaces the loaded row of the turn it is still streaming.
+  # A live runner (reconnect, second tab) reattaches here, so its snapshot replaces
+  # the loaded row of the turn it still streams.
   defp open_session(socket, session_id) do
     user = socket.assigns[:current_user]
 
@@ -249,8 +249,8 @@ defmodule SanbaseWeb.DeepResearchLive do
     ]
   end
 
-  # The first question creates the row: registry key, persistence, permalink. A
-  # failure must not block research — the conversation continues unpersisted.
+  # The first question creates the row (registry key, persistence, permalink); on
+  # failure the conversation continues unpersisted rather than blocking research.
   defp ensure_session(%{assigns: %{session_id: id}} = socket, _text) when is_binary(id),
     do: socket
 
@@ -347,8 +347,8 @@ defmodule SanbaseWeb.DeepResearchLive do
     if was_running and not snapshot.running, do: refresh_sessions(socket), else: socket
   end
 
-  # The transcript minus the turn the runner owns — a reattach loaded its row too.
-  # A turn the runner has moved past (a follow-up started elsewhere) joins the transcript.
+  # The transcript minus the turn the runner owns (a reattach loaded its row too); a
+  # turn the runner moved past rejoins it.
   defp settled_turns(socket, nil), do: socket.assigns.turns
 
   defp settled_turns(socket, runner_turn) do
@@ -390,8 +390,8 @@ defmodule SanbaseWeb.DeepResearchLive do
   def handle_info({:DOWN, ref, :process, _pid, :normal}, %{assigns: %{runner_ref: ref}} = socket),
     do: {:noreply, forget_runner(socket)}
 
-  # A crash settled nothing, so park the turn :paused locally — with the reason, so
-  # the tab says what interrupted the research instead of silently going quiet.
+  # A crash settled nothing: park the turn :paused locally, with the reason, so the
+  # tab says what interrupted the research instead of going quiet.
   def handle_info({:DOWN, ref, :process, _pid, reason}, %{assigns: %{runner_ref: ref}} = socket) do
     why = Failure.crashed(reason).message
 
@@ -414,8 +414,8 @@ defmodule SanbaseWeb.DeepResearchLive do
     end
   end
 
-  # A snapshot or :DOWN from a runner we dropped, and late replies to a timed-out
-  # Runner.safe_call/2 (they land as {ref, reply}).
+  # Snapshots or :DOWN from a dropped runner, plus late `{ref, reply}` replies to a
+  # timed-out Runner.safe_call/2.
   def handle_info(_msg, socket), do: {:noreply, socket}
 
   # At most one :tick in flight; a leftover timer would start a second loop.

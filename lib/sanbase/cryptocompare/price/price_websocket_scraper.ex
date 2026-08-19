@@ -28,12 +28,10 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   @asset_price_pairs_only_exporter :asset_price_pairs_only_exporter
   @asset_prices_exporter :prices_exporter
 
-  # Attempt a healthcheck every `@healthcheck_interval milliseconds` and check
-  # whether the last price message was received within the last `@price_message_timeout`
-  # milliseconds. If this check fails `@healthcheck_max_failures` times, terminate
-  # the exporter as there might be something wrong with the connection. The parameters
-  # are picked to be bigger so the number of resets is not too high and we don't
-  # reach the allowed number of websocket connections attempts.
+  # Every `@healthcheck_interval` ms, check that the last price message arrived within the
+  # last `@price_message_timeout` ms. After `@healthcheck_max_failures` failures the
+  # exporter is terminated, as the connection is likely broken. The values are kept large
+  # so resets stay rare and the allowed number of websocket connection attempts is not hit.
   @healthcheck_interval 60_000
   @healthcheck_tolerance 60_000
   @healthcheck_max_failures 5
@@ -152,10 +150,9 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
     point_unique_key = {"CCCAGG", msg["FROMSYMBOL"], msg["TOSYMBOL"]}
 
     last_point = Map.get(state.last_points, point_unique_key, %{})
-    # The websocket messages received contain only the changed values compared to
-    # the previous message. Store the last point, uniquely identified by the
-    # 3 fields used in the unique key defined aboe fields, and use it to fill the
-    # missing fields in subsequent frames.
+    # The websocket messages contain only the values that changed since the previous one.
+    # The last point, identified by the 3 fields of the unique key defined above, is stored
+    # and used to fill the missing fields in subsequent frames.
     point =
       point_from_aggregated_index_message(msg)
       |> Enum.reduce(last_point, fn
@@ -248,11 +245,9 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
         :ok
 
       [_ | _] = slugs ->
-        # This works because before calling the export function, the point is
-        # added to the last_points map. This implementation avoids any conditionals
-        # that could be used to determine the current quote asset and fetch only
-        # the other one. This is needed because one point contains data either
-        # for USD or for BTC, but we need to combine both of them here.
+        # A point carries either USD or BTC data, but both are needed here. Since the
+        # point is added to last_points before the export function is called, both can be
+        # read from there - no conditional on which quote asset arrived.
         usd_point = Map.get(last_points, {"CCCAGG", point.base_asset, "USD"}, %{})
         btc_point = Map.get(last_points, {"CCCAGG", point.base_asset, "BTC"}, %{})
 

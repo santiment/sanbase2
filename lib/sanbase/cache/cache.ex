@@ -94,26 +94,20 @@ defmodule Sanbase.Cache do
   layer wraps this call, otherwise the outer layer sees a plain `{:ok, _}` and
   caches it permanently, defeating the `:nocache` signal.
 
-  # TODO (2026-04-23): audit `:nocache` propagation across all `get_or_store`
-  # callers.
+  # TODO (2026-04-23): audit `:nocache` propagation across all `get_or_store` callers.
   #
-  # Change: `get_or_store/3` gained an `opts` arg with `return_nocache: true`.
-  # Default remains "strip the tag" to preserve historical behavior for the ~52
-  # existing callers. Only the `Sanbase.Metric` facade fns (timeseries/histogram/
-  # table) were flipped to preserve, because the resolver wraps them in
-  # `RehydratingCache` and the stripped `{:ok, _}` was being cached permanently
-  # — a latent bug that silently defeated `:nocache` retries.
+  # `get_or_store/3` gained an `opts` arg with `return_nocache: true`. The default still
+  # strips the tag, preserving the behavior the ~52 existing callers rely on. Only the
+  # `Sanbase.Metric` facade fns (timeseries/histogram/table) preserve it, because the
+  # resolver wraps them in `RehydratingCache` and the stripped `{:ok, _}` was cached
+  # permanently - a latent bug that silently defeated `:nocache` retries. The same applies
+  # anywhere an inner fn can return `{:nocache, {:ok, _}}` and an outer cache
+  # (Sanbase.Cache, RehydratingCache, CachexProvider) wraps the call.
   #
-  # Anywhere an inner fn can return `{:nocache, {:ok, _}}` AND an outer cache
-  # (Sanbase.Cache, RehydratingCache, CachexProvider) wraps the call, the outer
-  # needs `return_nocache: true`. Otherwise the same latent bug applies.
-  #
-  # Possible follow-up: swap opt-in tag preservation for a `Process.put`-based
-  # signal like `SanbaseWeb.Graphql.CachexProvider` — set a process-dict flag on
-  # `:nocache` and let the request pipeline read it at the top. Avoids threading
-  # the opt through every layer, but only works inside a request-scoped process
-  # (GraphQL resolution). Not universally applicable because `Sanbase.Cache` is
-  # also used outside request context.
+  # Possible follow-up: replace opt-in tag preservation with a `Process.put` signal like
+  # `SanbaseWeb.Graphql.CachexProvider` does. That avoids threading the opt through every
+  # layer, but only works inside a request-scoped process, and `Sanbase.Cache` is used
+  # outside request context too.
   """
   @impl Sanbase.Cache.Behaviour
   def get_or_store(cache \\ @cache_name, key, func, opts \\ [])
@@ -131,10 +125,8 @@ defmodule Sanbase.Cache do
   end
 
   defp get_or_store_isolated(cache, key, true_key, func, opts) do
-    # This function is to be executed inside ConCache.isolated/3 call.
-    # This isolated call locks the access for that key before doing anything else
-    # Doing this ensures that the case where another process modified the key
-    # before in the time between the previous check and the locking.
+    # Executed inside ConCache.isolated/3, which locks the key first. That covers the case
+    # where another process modified the key between the previous check and the locking.
     fun = fn ->
       case ConCache.get(cache, true_key) do
         {:stored, value} ->

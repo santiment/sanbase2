@@ -24,8 +24,8 @@ defmodule Sanbase.SocialDataTest do
        }}
     )
 
-    # As the HTTP call is mocked these arguemnts do no have much effect,
-    # though you should try to put the real ones that are used
+    # As the HTTP call is mocked these arguments do not have much effect, though you should
+    # try to put the real ones that are used
     result =
       SocialData.word_context(
         "merry",

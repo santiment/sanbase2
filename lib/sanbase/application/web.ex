@@ -20,19 +20,13 @@ defmodule Sanbase.Application.Web do
       {Guardian.DB.Sweeper, [interval: 20 * 60 * 1000]},
 
       # Rehydrating cache — intentionally NOT started in the test env.
-      #
-      # `Sanbase.Cache.RehydratingCache` is a globally-named GenServer that
-      # periodically re-runs every registered closure. In test, closures
-      # registered inside a `with_mocks` block can outlive that block and
-      # fire later against real code paths (e.g. Clickhouse adapters),
-      # producing intermittent
-      #   "could not lookup Ecto repo Sanbase.ClickhouseRepo"
-      # warnings during otherwise unrelated tests and making the suite
-      # flaky. Gating the supervisor here keeps the test app clean by
-      # default; tests that genuinely need RC (e.g.
-      # `project_available_metrics_test.exs` and the dedicated
-      # `rehydrating_cache_test.exs`) start a per-test supervisor via
-      # `start_supervised!`, which ExUnit tears down at test exit.
+      # `Sanbase.Cache.RehydratingCache` is a globally-named GenServer periodically
+      # re-running every registered closure. In test a closure registered inside a
+      # `with_mocks` block can outlive it and fire against real code paths (Clickhouse
+      # adapters), giving intermittent "could not lookup Ecto repo Sanbase.ClickhouseRepo"
+      # warnings in unrelated tests. Tests that genuinely need RC
+      # (`project_available_metrics_test.exs`, `rehydrating_cache_test.exs`) start a
+      # per-test supervisor via `start_supervised!`.
       start_in(Sanbase.Cache.RehydratingCache.Supervisor, [:dev, :prod]),
 
       # Oban instance responsible for sending emails.
@@ -67,10 +61,9 @@ defmodule Sanbase.Application.Web do
   defp oban_web_config() do
     config = Application.fetch_env!(:sanbase, Oban.Web)
 
-    # In case the DB config or URL is pointing to production, put the proper
-    # schema in the config. This will be used both on prod and locally when
-    # connecting to the stage DB. This is automated so when the stage DB is
-    # used, the config should not be changed manually to include the schema
+    # When the DB config or URL points to production, put the proper schema in the config.
+    # Used on prod and locally against the stage DB, automated so nobody has to add the
+    # schema by hand.
     case Sanbase.Utils.prod_db?() do
       true -> Keyword.put(config, :prefix, "sanbase2")
       false -> config

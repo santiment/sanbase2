@@ -18,11 +18,9 @@ defmodule SanbaseWeb.AuthController do
   }
 
   def request(conn, %{"provider" => provider} = params) do
-    # Do not `use Ueberauth` but create a custom `request/2` action that adds a few
-    # parameters to the session before invoking the `callback/2` action. This allows
-    # state sharing between the request and the callback phases, which gives us the
-    # option to dynamically configure via parameters the redirect URLs and the real
-    # origin URL
+    # Instead of `use Ueberauth`, a custom `request/2` action puts a few parameters in the
+    # session before `callback/2` runs. Sharing state between the request and callback
+    # phases is what allows the redirect URLs and the real origin URL to be set dynamically.
 
     referer_url = Plug.Conn.get_req_header(conn, "referer") |> List.first()
     referer_url = referer_url || SanbaseWeb.Endpoint.website_url()
@@ -57,12 +55,9 @@ defmodule SanbaseWeb.AuthController do
   end
 
   def callback(conn, %{"provider" => "google"}) do
-    # We provide a custom `request/2` function, so in the callback we manually
-    # invoke Ueberauth.run_callback/2. Because of this when we enter the
-    # function, the assigns field of the conn is not yet filled, so we don't
-    # know if it is a failure or not. Because of this we cannot handle failure
-    # with callback(%{assigns: %{ueberauth_failure: _}}) but we need to do it
-    # after invoking Ueberauth.run_callback
+    # With a custom `request/2`, the callback invokes Ueberauth.run_callback/2 by hand. On
+    # entry the conn assigns are not filled yet, so a failure cannot be matched with
+    # callback(%{assigns: %{ueberauth_failure: _}}) and has to be handled after the call.
     case Ueberauth.run_callback(conn, "google", @providers["google"]) do
       %{assigns: %{ueberauth_failure: _}} = conn ->
         conn |> redirect(to: ~p"/")
@@ -188,17 +183,15 @@ defmodule SanbaseWeb.AuthController do
 
   defp twitter_login(email, twitter_id)
        when is_binary(email) and byte_size(email) > 0 do
-    # There are 2 cases: The user has their email address visible AFTER
-    # their first sanbase login. In this case this operation might fail - the find_or_insert_by/3
-    # will return a new user but the update_field/3 will fail as another user will have the same
-    # twitter_id
+    # The user may have made their email address visible only after their first sanbase
+    # login. Then find_or_insert_by/3 returns a new user and update_field/3 fails, because
+    # another user already has the same twitter_id.
 
     case User.by_selector(%{twitter_id: twitter_id}) do
       {:ok, user} ->
-        # The email might be missing in the database if user has been created in the past but
-        # at that point the email address was not visible.
-        # This could succeed or fail, depending on the existence of another user with the same email.
-        # Regardless of the success of this operation, the login succeeds.
+        # The email can be missing for a user created back when it was not visible. This
+        # succeeds or fails depending on whether another user has the same email, and the
+        # login succeeds either way.
         _ = User.Email.update_email(user, email)
         {:ok, user, _first_login = false}
 
@@ -225,11 +218,9 @@ defmodule SanbaseWeb.AuthController do
   defp get_redirect_url(params, url_key, referer_url) do
     url = params[url_key] || referer_url || SanbaseWeb.Endpoint.website_url()
 
-    # Phoenix/Plug already decodes URL parameters once. However, in some cases
-    # (particularly with mobile deep links), the scheme itself might come
-    # double-encoded (e.g., "sanbase%3A%2F%2F..." instead of "sanbase://...").
-    # We only decode if we detect an encoded scheme, to avoid breaking
-    # legitimately encoded characters in query parameters.
+    # Phoenix/Plug decodes URL parameters once, but mobile deep links can arrive with a
+    # double-encoded scheme ("sanbase%3A%2F%2F..." instead of "sanbase://..."). Decode only
+    # when an encoded scheme is detected, or legitimately encoded query characters break.
     processed_url =
       if String.starts_with?(url, "sanbase%3A") do
         URI.decode(url)
@@ -328,11 +319,9 @@ defmodule SanbaseWeb.AuthController do
     String.match?(url, ~r/[\x00-\x1F\x7F]/)
   end
 
-  # The sanbase:// deep-link scheme uses the host component as an "action"
-  # (e.g., sanbase://home, sanbase://portfolio/btc). Reject anything that
-  # looks like a real DNS host (contains a dot) or is otherwise non-empty
-  # nonsense — that prevents attackers from smuggling their own domain
-  # through the mobile app's deep-link handler.
+  # The sanbase:// deep-link scheme uses the host component as an "action" (sanbase://home,
+  # sanbase://portfolio/btc). Rejecting anything that looks like a real DNS host (contains
+  # a dot) stops attackers smuggling their own domain through the app's deep-link handler.
   defp valid_sanbase_deeplink_host?(host) when is_binary(host) and host != "" do
     not String.contains?(host, ".") and String.match?(host, ~r/^[a-zA-Z0-9_-]+$/)
   end

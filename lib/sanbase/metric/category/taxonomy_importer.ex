@@ -264,10 +264,9 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     ]
   }
 
-  # Social Sentiment package taxonomy.
-  # Source: Notion "Social data plan" (37d2a82d136180cf8711e9a0e1f8419c).
-  # The four pre-existing groups (Total/Twitter/Telegram/Reddit sentiment) are dissolved
-  # into the groups below and then deleted.
+  # Social Sentiment package taxonomy. Source: Notion "Social data plan"
+  # (37d2a82d136180cf8711e9a0e1f8419c). The four pre-existing groups (Total/Twitter/
+  # Telegram/Reddit sentiment) are dissolved into the groups below and deleted.
   @taxonomy_social %{
     category: "Social",
     groups: [
@@ -681,11 +680,9 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
         ]
       }
     ],
-    # No renames: "Social Dominance" and "Social Volume" already exist under
-    # exactly these names, so their ids and rows are reused.
-    # The first four are production's pre-existing groups, "Sentiment" is stage's.
-    # A name that does not exist in an environment is a no-op, so the union is
-    # listed and the same spec works in both.
+    # No renames: "Social Dominance" and "Social Volume" already exist under exactly these
+    # names, so ids and rows are reused. The first four groups are production's,
+    # "Sentiment" is stage's - a missing name is a no-op, so the union works in both.
     delete_groups: [
       "Total sentiment",
       "Twitter sentiment",
@@ -695,10 +692,9 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     ]
   }
 
-  # On-chain (Core) package taxonomy.
-  # Source: Notion "Onchain core plan" (3842a82d13618064814bf990b6ba1ddb).
-  # Network Activity and Network value are roll-ups: their members arrive via `also`
-  # from the sub-groups, matching the nesting on the Notion page.
+  # On-chain (Core) package taxonomy. Source: Notion "Onchain core plan"
+  # (3842a82d13618064814bf990b6ba1ddb). Network Activity and Network value are roll-ups:
+  # their members arrive via `also` from the sub-groups, as nested on the Notion page.
   @taxonomy_onchain %{
     category: "On-chain",
     groups: [
@@ -932,13 +928,11 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     # Only two real renames remain. "Holders Distribution" and "Network Value"
     # already match, now that the spec follows the database's Title Case.
     rename_groups: %{"XRP" => "XRPL Chain", "NFT harbor" => "NFT"},
-    # The protocol-specific groups are leftovers of the v1 taxonomy - their
-    # metrics all live in On-chain Labels now. The union of what production and
-    # stage each have is listed; a name absent from an environment is a no-op.
-    #
-    # "Euler" and "Morpho" hold the nine metrics of `moves` below, which is what
-    # lets them be dissolved: a metric that leaves the category counts as placed
-    # for the dissolve guard, and the moves run before the deletes.
+    # The protocol-specific groups are leftovers of the v1 taxonomy - their metrics live
+    # in On-chain Labels now. The union of production's and stage's is listed; a missing
+    # name is a no-op. "Euler" and "Morpho" hold the nine metrics of `moves` below, which
+    # is what lets them be dissolved: a metric leaving the category counts as placed for
+    # the dissolve guard, and the moves run before the deletes.
     delete_groups: [
       "Beacon",
       "ETH 2.0",
@@ -965,21 +959,15 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
       "GHO Savings",
       "Aggregate Lending and Borrowing Metrics"
     ],
-    # Two families leave the category.
+    # Two families leave the category. The first three are the "Move to onchain labels"
+    # block of the Onchain core plan page; they are in the On-chain Labels spec too, and
+    # without a move here they would hold a row in both categories - i.e. be sold by two
+    # packages. The rest are the eight `euler_*` and one `morpho_*` metric of Q11 and Q12,
+    # on neither Notion page and placed next to the other lending metrics per product.
     #
-    # The first three are the "Move to onchan labels" block at the bottom of the
-    # Onchain core plan page. They are listed in the On-chain Labels spec as well;
-    # without a move here they would hold a row in both categories, and a metric
-    # in two categories is sold by two packages.
-    #
-    # The rest are the eight `euler_*` and one `morpho_*` metric of Q11 and Q12 -
-    # on neither Notion page, in an On-chain protocol group, and answered by
-    # product: they go next to the other lending metrics.
-    #
-    # A move needs its target group to exist, and `onchain_labels` creates those
-    # groups earlier in the same `apply!/0`. A first run therefore reports these
-    # names as unknown in the labels spec - the row is still in On-chain when
-    # that spec is planned - and moves them in when the onchain spec runs.
+    # A move needs its target group to exist, and `onchain_labels` creates those groups
+    # earlier in the same `apply!/0`, so a first run reports these names as unknown in the
+    # labels spec - the row is still in On-chain when it is planned - and moves them after.
     moves: [
       %{
         metric: "active_withdrawals",
@@ -1044,10 +1032,10 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     ]
   }
 
-  # On-chain Labels package taxonomy.
-  # Source: Notion "Onchain Labels(final list)" (39c2a82d136180dbb5abd7038901bea4).
-  # 104 labeled-entity flow and balance metrics are deliberately NOT placed here -
-  # they appear on no group of the page. See docs/metric-taxonomy-open-questions.md.
+  # On-chain Labels package taxonomy. Source: Notion "Onchain Labels(final list)"
+  # (39c2a82d136180dbb5abd7038901bea4). 104 labeled-entity flow and balance metrics are
+  # deliberately NOT placed - they are on no group of the page. See
+  # docs/metric-taxonomy-open-questions.md.
   @taxonomy_onchain_labels %{
     category: "On-chain Labels",
     groups: [
@@ -1382,16 +1370,11 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
       },
       %{
         name: "NFT",
-        # `nft_market_volume` arrives here from Market via that spec's `moves`.
-        # It has to be listed at the destination as well, or the row the move
-        # creates belongs to no group the spec claims: it gets no display_order
-        # and is reported as unrequested forever.
-        #
-        # On a database where the move has not run yet this name has no mapping
-        # row in On-chain Labels, so the first `apply!/0` reports it under
-        # `unknown` for this spec and the move lands afterwards in the same run.
-        # A second `apply!/0` then gives it its display_order. Everything else is
-        # complete after one pass.
+        # `nft_market_volume` arrives here from Market via that spec's `moves`, and has
+        # to be listed at the destination too, or the row the move creates belongs to no
+        # group the spec claims: no display_order, reported as unrequested forever. Before
+        # the move it has no row here, so the first `apply!/0` reports it as `unknown` and
+        # a second one gives it its display_order; everything else needs one pass.
         metrics: [
           "nft_market_volume",
           "nft_retail_trade_volume_usd",
@@ -1537,11 +1520,10 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
         ]
       }
     ],
-    # "Top Holders" is deliberately absent: it already exists under exactly this
-    # name, so it is reused, keeping its id and its three `amount_in_*` rows.
-    # `topHoldersPercentOfTotalSupply` therefore stays put instead of blocking a
-    # dissolve, which is what it did while the spec called the group
-    # "Top holders" (Q6 becomes a cleanup, not a blocker).
+    # "Top Holders" is deliberately absent: it exists under exactly this name and is
+    # reused, keeping its id and its three `amount_in_*` rows. So
+    # `topHoldersPercentOfTotalSupply` stays put instead of blocking a dissolve, as it did
+    # while the spec called the group "Top holders" (Q6 becomes a cleanup).
     delete_groups: [
       "Exchanges",
       "Exchange Users",
@@ -1573,9 +1555,9 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
   ]
 
   # Reading order of the packages on the Notion index, which is the order
-  # /available_metrics lists them in. Categories are shared by all five specs, so
-  # this is applied once per run rather than per spec. A name that does not exist
-  # in an environment is skipped.
+  # /available_metrics lists them in. Categories are shared by all five specs, so this is
+  # applied once per run rather than per spec. A name missing from an environment is
+  # skipped.
   @category_display_order [
     "Market",
     "Development",
@@ -1626,11 +1608,10 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
   """
   @spec apply!([String.t()]) :: %{applied: [String.t()], refused: [String.t()]}
   def apply!(names \\ []) do
-    # Each spec is planned immediately before it is executed, not all up front.
-    # A `moves` entry needs the target category's group to exist, and that group
-    # is created by an earlier spec in the same run - planning everything first
-    # would compute the move against a database state that no longer holds by the
-    # time it runs, and refuse a move that is in fact fine.
+    # Each spec is planned immediately before it is executed, not all up front: a `moves`
+    # entry needs a target group that an earlier spec in the same run creates, so planning
+    # everything first would compute the move against a database state that no longer
+    # holds by the time it runs, and refuse a move that is fine.
     plans =
       names
       |> selected_specs()
@@ -1870,15 +1851,11 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     end)
   end
 
-  # Ungrouped rows for metrics the spec never names. `unknown` is the mirror of
-  # this - a spec name with no row - and `extra` covers *grouped* rows the spec
-  # did not ask for. Without this third list a metric that is in the category and
-  # in neither the spec nor a group is invisible in the report and stays
-  # ungrouped forever.
-  #
-  # A metric in `moves` is not in `desired` - it is leaving the category, not
-  # joining a group here - so it has to be excluded explicitly or it reads as
-  # forgotten when it is the opposite.
+  # Ungrouped rows for metrics the spec never names. `unknown` mirrors it (a spec name
+  # with no row) and `extra` covers *grouped* rows the spec did not ask for; without this
+  # third list a metric in the category but in neither the spec nor a group is invisible
+  # in the report and stays ungrouped forever. A metric in `moves` is not in `desired` -
+  # it is leaving the category - so it is excluded explicitly or it reads as forgotten.
   defp plan_unplaced(spec, desired, mappings) do
     moved = MapSet.new(Map.get(spec, :moves, []), & &1.metric)
 
@@ -1915,14 +1892,11 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     end)
   end
 
-  # A group can only be dissolved when every metric in it is placed elsewhere by
-  # this spec. Otherwise the delete drops the metric out of the taxonomy, and
-  # nothing downstream would notice.
-  #
-  # A metric in `moves` is placed too - in another category. Its row leaves the
-  # group before the dissolve rather than being deleted with it, so it is neither
-  # an orphan nor one of the rows to delete. `execute/1` relies on that: it runs
-  # the moves first, and would otherwise delete the row it had just moved.
+  # A group can only be dissolved when every metric in it is placed elsewhere by this
+  # spec; otherwise the delete drops the metric out of the taxonomy unnoticed. A metric in
+  # `moves` is placed too, in another category: its row leaves the group before the
+  # dissolve rather than being deleted with it, so it is neither an orphan nor a row to
+  # delete. `execute/1` relies on that - it runs the moves first.
   defp plan_group_deletions(spec, existing_groups, desired, mappings) do
     moved = MapSet.new(Map.get(spec, :moves, []), & &1.metric)
 
@@ -1945,13 +1919,11 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     end
   end
 
-  # `remove_from_groups` is the per-row counterpart of `delete_groups`: the group
-  # is being kept, but one metric in it belongs somewhere else. Needed when an
-  # existing group is reused rather than dissolved - reuse leaves its current
-  # rows alone, so a metric the spec puts elsewhere would end up in two groups.
-  #
-  # Same guard as a dissolve: the row is only removed when the spec places the
-  # metric somewhere, so this can never be the last row a metric has.
+  # `remove_from_groups` is the per-row counterpart of `delete_groups`: the group stays,
+  # but one metric in it belongs somewhere else. Needed when an existing group is reused
+  # rather than dissolved - reuse leaves its rows alone, so a metric the spec puts
+  # elsewhere would end up in two groups. Same guard as a dissolve: the row is removed
+  # only when the spec places the metric somewhere, never leaving it with no row.
   defp plan_row_removals(spec, existing_groups, desired, mappings) do
     for {group_name, metrics} <- Map.get(spec, :remove_from_groups, %{}),
         group = Enum.find(existing_groups, &(&1.name == group_name)),
@@ -2153,10 +2125,9 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     end
   end
 
-  # The row keeps the display_order it had in the group it is leaving, which
-  # collides with whatever already holds that number in the target group. Park it
-  # after the last row there instead; the next apply of the target's own spec
-  # renumbers the group into spec order.
+  # The row keeps the display_order it had in the group it is leaving, which collides
+  # with whatever holds that number in the target group. Park it after the last row there;
+  # the next apply of the target's own spec renumbers the group into spec order.
   defp move_rows(rows, target, group) do
     rows
     |> Enum.with_index(last_display_order(group.id) + 1)
@@ -2207,11 +2178,10 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     ids
   end
 
-  # A group that survives because the spec neither lists nor dissolves it - Euler
-  # and Morpho on stage - keeps its old display_order, which then collides with a
-  # spec group's. Nothing enforces uniqueness, so the collision is invisible until
-  # two groups render in an arbitrary order. Park the survivors after the spec's
-  # own range instead.
+  # A group that survives because the spec neither lists nor dissolves it - Euler and
+  # Morpho on stage - keeps its old display_order, colliding with a spec group's. Nothing
+  # enforces uniqueness, so it is invisible until two groups render in an arbitrary order.
+  # Park the survivors after the spec's own range.
   defp push_unlisted_groups_to_the_end(plan, ids) do
     listed = MapSet.new(Map.values(ids))
     offset = length(plan.groups)
@@ -2227,11 +2197,10 @@ defmodule Sanbase.Metric.Category.TaxonomyImporter do
     end)
   end
 
-  # display_order is per mapping row, so a metric in two groups gets an order in
-  # each. Numbering follows the spec's metric order inside the group, and every
-  # row of a spec-managed group is renumbered - not only the ones the spec lists -
-  # so a surviving unrequested row cannot keep an order that collides with a
-  # listed one (`topHoldersPercentOfTotalSupply` did exactly that).
+  # display_order is per mapping row, so a metric in two groups gets an order in each.
+  # Numbering follows the spec's metric order, and every row of a spec-managed group is
+  # renumbered - not only the listed ones - so a surviving unrequested row cannot keep a
+  # colliding order (`topHoldersPercentOfTotalSupply` did exactly that).
   defp renumber_mappings(plan, group_ids) do
     spec_order =
       for group_spec <- plan.spec.groups,

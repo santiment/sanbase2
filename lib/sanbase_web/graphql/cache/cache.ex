@@ -139,16 +139,14 @@ defmodule SanbaseWeb.Graphql.Cache do
         # If the root object is not empty map use some if its arguments as
         # additional arguments
         additional_args = Map.take(root, [:id, :slug, :word])
-        # resolution.source contains the arguments passed to a parent object
-        # in order to properly cache timeseries data in the query
-        # {getMetric(metric: "nvt") {timeseriesData(...)}}
-        # the key must include `metric` from the parent's args
+        # resolution.source holds the arguments passed to a parent object. To cache
+        # {getMetric(metric: "nvt") {timeseriesData(...)}} correctly, the key must include
+        # `metric` from the parent's args.
         args_from_source = generate_source_args(resolution.source)
 
-        # If the `include_subscription_in_key: true` option is present, include
-        # the current product and plan as part of the cache key. This is useful
-        # when the result depends on the subscription of the user. This includes
-        # getting restrictions for metrics and other such things.
+        # With `include_subscription_in_key: true` the current product and plan become part
+        # of the cache key, for results that depend on the user's subscription, such as
+        # metric restrictions.
         args_from_subscription = generate_subscription_args(resolution.context, opts)
         args_from_user_details = generate_user_details_args(resolution.context, opts)
 
@@ -160,12 +158,10 @@ defmodule SanbaseWeb.Graphql.Cache do
             opts
           )
 
-        # In some edge-cases the caching can be disabled for some reason. In one
-        # particular case for all_projects_by_function the caching is disabled
-        # (by putting the do_not_cache_query: true Process dictionary key-value)
-        # if the base_projects depends on a watchlist. The cache resolver that
-        # is disabled must provide the `honor_do_no_cache_flag: true` explicitly,
-        # so we are not disabling all of the caching, but only the one that matters
+        # Caching can be disabled per query: all_projects_by_function sets the
+        # do_not_cache_query: true process-dictionary key when base_projects depends on a
+        # watchlist. Only cache resolvers that pass `honor_do_no_cache_flag: true` react to
+        # it, so the flag disables the caching that matters rather than all of it.
         skip_cache? =
           Keyword.get(opts, :honor_do_not_cache_flag, false) and
             Process.get(:do_not_cache_query) == true
@@ -226,10 +222,8 @@ defmodule SanbaseWeb.Graphql.Cache do
     )
   end
 
-  # `cache_modify_middleware` is called only from withing `get_or_store` that
-  # guarantees that it will be executed only once if it is accessed concurently.
-  # This is way it is safe to use `store` explicitly without worrying about race
-  # conditions
+  # `cache_modify_middleware` is called only from within `get_or_store`, which guarantees
+  # a single execution under concurrent access, so calling `store` explicitly is race-free.
   defp cache_modify_middleware(cache_name, cache_key, {:ok, value} = result) do
     CacheProvider.store(cache_name, cache_key, result)
 
@@ -291,11 +285,9 @@ defmodule SanbaseWeb.Graphql.Cache do
 
     args = args |> convert_values(ttl)
 
-    # Include the current datetime bucket to relieve some locking issues. If a process
-    # somehow does not release a lock, force the key to change after the base_ttl + max_ttl_offset
-    # time passes by including this rounded datetime to the cache key.
-    # Adding a random value between 0 and 180 based on the query and slug used helps
-    # avoid the thundering herd issue
+    # Include the current datetime bucket so a lock that is never released cannot pin the
+    # key forever - it changes after base_ttl + max_ttl_offset. The 0-180 offset derived
+    # from the query and slug spreads expirations and avoids a thundering herd.
     bucket_ttl = base_ttl + max_ttl_offset + :erlang.phash2({name, args}, 180)
     current_bucket = convert_values(DateTime.utc_now(), bucket_ttl)
 

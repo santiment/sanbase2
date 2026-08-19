@@ -1,14 +1,14 @@
 defmodule Sanbase.DeepResearch.Runner do
   @moduledoc """
   Run engine of a deep research session, detached from any LiveView. One runner per
-  session in `Sanbase.DeepResearch.Registry`: it streams the run, folds events into
-  the current `Turn` (`ref` = turn id; others are stale), persists settled turns
-  (plus a periodic checkpoint of the one in flight) and pushes
-  `{:dra_runner, key, snapshot}` to watchers.
+  session in `Sanbase.DeepResearch.Registry`: streams the run, folds events into the
+  current `Turn` (`ref` = turn id; others are stale), persists settled turns plus a
+  periodic checkpoint of the one in flight, and pushes `{:dra_runner, key, snapshot}`
+  to watchers.
 
   It outlives its watchers, so a reconnect reattaches mid-stream. Unwatched for
   `Config.pause_after_disconnect_ms/0` it parks the turn `:paused` (resume with
-  `continue/3`) and stops; idle it stops at once. The registry is node-local — a
+  `continue/3`) and stops; idle it stops at once. The registry is node-local, so a
   reconnect on another node sees `:paused`.
   """
 
@@ -79,8 +79,8 @@ defmodule Sanbase.DeepResearch.Runner do
     end
   end
 
-  # Called by the supervisor through `ensure_started/1`, never directly: a runner
-  # started outside the supervisor is not restarted and not found by `whereis/1`.
+  # Via `ensure_started/1` only — a runner outside the supervisor is not restarted
+  # and not found by `whereis/1`.
   @doc false
   @spec start_link(map()) :: GenServer.on_start()
   def start_link(init_arg) do
@@ -107,40 +107,34 @@ defmodule Sanbase.DeepResearch.Runner do
   def detach(pid, watcher), do: GenServer.cast(pid, {:detach, watcher})
 
   @doc """
-  Ask `text` — how every turn starts, the session's first and every follow-up on
-  the same thread.
+  Ask `text` — how every turn starts, first or follow-up.
 
-  Before replying it settles the previous turn if a run left it unsettled (nothing
-  else will, once `:current_turn` moves on), opens turn `next_id` in `:planning`,
-  inserts its row when the session is persisted — so a tab closed mid-run still
-  leaves the question behind — and starts the supervised stream task. The rest is
-  asynchronous: the task creates the thread if there is none and streams
-  `{:dra_event, turn_id, _}` back, which the runner folds into the turn.
+  Settles the previous turn if a run left it unsettled (nothing else will, once
+  `:current_turn` moves on), opens turn `next_id` in `:planning`, inserts its row
+  when the session is persisted — so a tab closed mid-run still leaves the question
+  behind — and starts the stream task. The rest is asynchronous: the task creates
+  the thread if needed and streams `{:dra_event, turn_id, _}` back.
 
   `opts`:
 
-    * `:enabled_mcp` — catalog entries to connect for this run (turned into agent
-      configs inside the task, see `Sanbase.DeepResearch.McpServers`);
-    * `:model_tier` — price tier, remembered for later turns and persisted rows
-      until the next `ask/3` changes it.
+    * `:enabled_mcp` — catalog entries to connect (see `McpServers`);
+    * `:model_tier` — price tier, remembered until the next `ask/3` changes it.
 
-  Replies with the post-start snapshot and broadcasts the same one, so a second
-  tab renders the new turn without having asked. `{:error, :busy}` while a run is
-  already streaming — one run per session, and the caller keeps its view.
+  Replies with the post-start snapshot and broadcasts it, so a second tab renders
+  the new turn. `{:error, :busy}` while a run streams — one run per session.
   """
   @spec ask(pid(), String.t(), keyword()) ::
           {:ok, snapshot()} | {:error, :busy | :not_alive}
   def ask(pid, text, opts \\ []), do: safe_call(pid, {:ask, text, opts})
 
   @doc """
-  Resume a `:paused` `turn` rather than asking a new one: streams a continue-run on
-  the same thread INTO that turn (same id, phase back to `:planning`, error
-  cleared), so its partial timeline keeps growing instead of restarting.
+  Resume a `:paused` `turn` instead of asking a new one: a continue-run on the same
+  thread streams INTO it (same id, phase back to `:planning`, error cleared), so its
+  partial timeline keeps growing.
 
-  Any run still live server-side is cancelled first — the runner that crashed
-  never got to. With no thread yet there is nothing to pick up, so the turn's
-  question is simply re-asked. Same `opts` as `ask/3`; `{:error, :not_paused}` for
-  a turn in any other phase.
+  Any run still live server-side is cancelled first — the crashed runner never got
+  to. With no thread there is nothing to pick up, so the question is re-asked. Same
+  `opts` as `ask/3`; `{:error, :not_paused}` in any other phase.
   """
   @spec continue(pid(), Turn.t(), keyword()) ::
           {:ok, snapshot()} | {:error, :busy | :not_paused | :not_alive}
@@ -214,8 +208,8 @@ defmodule Sanbase.DeepResearch.Runner do
     do: {:reply, {:error, :busy}, state}
 
   def handle_call({:continue, %Turn{phase: :paused} = turn, opts}, _from, state) do
-    # Resuming a DIFFERENT turn strands the current one exactly as :ask would: once
-    # :current_turn moves on, a pending poll reply no longer matches its id.
+    # Same stranding as :ask — once :current_turn moves on, a pending poll reply no
+    # longer matches its id.
     state =
       if state.current_turn && state.current_turn.id != turn.id,
         do: settle_abandoned_turn(state),
@@ -268,9 +262,8 @@ defmodule Sanbase.DeepResearch.Runner do
 
   def handle_info({:dra_thread, _thread_id}, state), do: {:noreply, state}
 
-  # `ref` is the turn id — an event for any other turn belongs to a superseded run
-  # and falls through to the catch-all clause below. A terminal turn ignores events
-  # as well; it is already settled and persisted.
+  # `ref` is the turn id; another turn's events belong to a superseded run and hit the
+  # catch-all below. A terminal turn ignores events too — already settled.
   def handle_info({:dra_event, ref, result}, %{current_turn: %{id: ref, phase: phase}} = state) do
     if Timeline.terminal_phase?(phase) do
       {:noreply, state}
@@ -280,8 +273,8 @@ defmodule Sanbase.DeepResearch.Runner do
     end
   end
 
-  # The poll could not be made. That says nothing about the run, so the turn is
-  # settled from the failure instead of being blamed for delivering no report.
+  # The poll could not be made — that says nothing about the run, so settle from the
+  # failure rather than blaming the turn for delivering no report.
   def handle_info({:dra_poll, ref, %Failure{} = failure}, %{current_turn: %{id: ref}} = state) do
     state = update_current_turn(state, &settle_failure(&1, failure, now_ms()))
 
@@ -414,17 +407,15 @@ defmodule Sanbase.DeepResearch.Runner do
     |> update_current_turn(&settle_failure(&1, failure, now_ms()))
   end
 
-  # A turn the connection broke under is parked `:paused`, not `:failed`: the agent
-  # kept the thread and the work on it, so the turn stays resumable with
-  # `continue/3` — the same treatment a runner that died mid-run gets. Only the
-  # agent's own refusals settle a turn as failed. See `DeepResearch.Failure`.
+  # A broken connection parks the turn `:paused`, not `:failed`: the agent still has
+  # the thread, so `continue/3` can resume. Only its own refusals fail a turn. See
+  # `DeepResearch.Failure`.
   defp settle_failure(turn, %Failure{resumable?: true} = failure, now_ms),
     do: Timeline.pause_turn(turn, now_ms, failure.message)
 
   defp settle_failure(turn, %Failure{} = failure, now_ms),
     do: Timeline.fail_turn(turn, failure.message, now_ms)
 
-  # The agent stopped without ever delivering a report.
   defp fail_no_report(turn), do: Timeline.fail_turn(turn, @no_report_error, now_ms())
 
   defp settle_abandoned_turn(%{current_turn: %{phase: phase}} = state) do
@@ -437,7 +428,6 @@ defmodule Sanbase.DeepResearch.Runner do
 
   defp cancel_current_run(state), do: stop_run(state, &Timeline.cancel_turn(&1, now_ms()))
 
-  # Stop what is in flight (locally and server-side), then settle the turn.
   defp stop_run(state, settle_fun) do
     if state.running, do: cancel_run_async(state.thread_id, state.run_id)
 
@@ -506,9 +496,8 @@ defmodule Sanbase.DeepResearch.Runner do
     |> broadcast()
   end
 
-  # Two reasons to write a turn's row — and neither of them is "every event": the
-  # settling write, which is the row's final state, and a checkpoint while the turn
-  # is still streaming.
+  # Two reasons to write a row, neither "every event": the settling write, and a
+  # checkpoint while the turn still streams.
   defp persist_turn(%{session_id: nil} = state, _prev, _next), do: state
   defp persist_turn(state, prev, next) when next == prev, do: state
 
@@ -521,15 +510,13 @@ defmodule Sanbase.DeepResearch.Runner do
         # Reset, so the next turn's checkpoint clock starts from its own first event.
         %{state | checkpointed_at: nil}
 
-      # The first event of a turn needs no write — `persist_new_turn/2` just made the
-      # row. It only starts the clock.
+      # A turn's first event only starts the clock; `persist_new_turn/2` wrote the row.
       is_nil(state.checkpointed_at) ->
         %{state | checkpointed_at: now_ms()}
 
-      # Bounds what an abrupt node loss (pod eviction, VM kill) can take with it:
-      # nothing settles the turn then, so without checkpoints the row keeps only the
-      # question and the turn comes back with an empty timeline. Timed rather than
-      # per-event, because each write serializes the whole timeline.
+      # Bounds what an abrupt node loss (pod eviction, VM kill) takes with it, since
+      # nothing settles the turn then. Timed, not per-event: each write serializes the
+      # whole timeline.
       now_ms() - state.checkpointed_at >= Config.checkpoint_every_ms() ->
         write_turn(state, next)
         %{state | checkpointed_at: now_ms()}

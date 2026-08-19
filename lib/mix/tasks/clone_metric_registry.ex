@@ -53,11 +53,10 @@ defmodule Mix.Tasks.CloneMetricRegistry do
             "--table=metric_registry",
             "--file=#{file}",
             "--dbname=#{db_url}",
-            # `--column-inserts` (rather than `--inserts`) emits the column names
-            # in each INSERT, so the load is independent of the physical column
-            # order. The source and local tables have the same columns but in a
-            # different order (migrations added them in a different sequence), and
-            # positional inserts would misalign the values.
+            # `--column-inserts` (not `--inserts`) emits the column names in each
+            # INSERT, making the load independent of physical column order. The source
+            # and local tables have the same columns in a different order, so positional
+            # inserts would misalign the values.
             "--column-inserts"
           ]
         )
@@ -65,10 +64,9 @@ defmodule Mix.Tasks.CloneMetricRegistry do
       contents = File.read!(file)
       contents = String.replace(contents, "sanbase2.metric_registry", "public.metric_registry")
 
-      # The dump is `--data-only --inserts` with explicit ids, so loading it on
-      # top of existing rows raises duplicate-key errors. When `--drop-existing`
-      # is passed, wipe the local table first for a clean reload. The TRUNCATE is
-      # destructive, so it is only ever allowed against the local dev database.
+      # The dump is `--data-only --inserts` with explicit ids, so loading it on top of
+      # existing rows raises duplicate-key errors. `--drop-existing` wipes the local table
+      # first for a clean reload; that TRUNCATE is destructive and local-dev only.
       contents =
         if drop_existing? do
           "TRUNCATE public.metric_registry RESTART IDENTITY CASCADE;\n\n" <> contents
@@ -150,13 +148,10 @@ defmodule Mix.Tasks.CloneMetricRegistry do
     end
   end
 
-  # The destructive TRUNCATE may run against the local dev database only. Refuse
-  # in any deployed (stage/prod) environment. Each of these independently marks a
-  # deployed environment:
-  #   * MIX_ENV is prod
-  #   * the DATABASE_URL env var is set (only deployed environments set it; local
-  #     dev hardcodes the connection in config/dev.exs)
-  #   * Sanbase.Repo is not pointed at a local host
+  # The destructive TRUNCATE may run against the local dev database only - refuse in any
+  # deployed environment. Each of these marks one on its own: MIX_ENV is prod, DATABASE_URL
+  # is set (only deployed environments set it, local dev hardcodes the connection in
+  # config/dev.exs), or Sanbase.Repo is not pointed at a local host.
   defp ensure_local_drop_allowed!() do
     cond do
       Mix.env() == :prod ->

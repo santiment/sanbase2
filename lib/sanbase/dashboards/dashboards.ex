@@ -55,10 +55,9 @@ defmodule Sanbase.Dashboards do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes ->
-      # The :queries preload is handled separately in the :maybe_load_queries step.
-      # This is because we want to preload the queries AND preserve the id of the record
-      # from the join-through table. This id is used to distinguish the mappings if the
-      # same queries is added multiple times to the same dashboard.
+      # The :queries preload is handled separately in the :maybe_load_queries step, so the
+      # join-through record's id is preserved alongside the queries. That id distinguishes
+      # the mappings when the same query is added to a dashboard more than once.
       no_queries_preload_opts = Keyword.update(opts, :preload, [], &(&1 -- [:queries]))
       query = Dashboard.get_for_read(dashboard_id, querying_user_id, no_queries_preload_opts)
 
@@ -205,22 +204,18 @@ defmodule Sanbase.Dashboards do
         parameters_override,
         force_parameters_override_to_query
       ) do
-    # Walk over the dashboard global parameters and extract a map, where the keys
-    # are parameters of the query and the values are the global values that will
-    # override the query values (like %{"slug" => "global_slug_value"}).
-    # The name of the global parameter is not needed, only the value and the list
-    # of overrides.
+    # Walk the dashboard global parameters into a map of query parameter => global value
+    # that overrides it, like %{"slug" => "global_slug_value"}. The global parameter's own
+    # name is not needed, only its value and its list of overrides.
     overrides =
       dashboard.parameters
       |> Enum.reduce(
         %{},
         fn {key, %{"value" => value, "overrides" => overrides}}, acc ->
-          # When executing a dashboard query via runDashboardSqlQuery,the user can
-          # provide a map that overrides the dashboard global parameters. The next line
-          # overrides the default dashboard global parameters with the user provided one
-          # This means that we have 2 levels of overriding: The dashboard parameters can
-          # override the query parameters and the user-provided parameters during execution
-          # can override the dashboard parameters.
+          # When executing via runDashboardSqlQuery the user can supply a map overriding
+          # the dashboard global parameters, applied on the next line. Two levels of
+          # overriding: dashboard parameters override query parameters, and the
+          # user-provided ones override the dashboard parameters.
           value = Map.get(parameters_override, key, value)
 
           case Enum.find(overrides, &(&1["dashboard_query_mapping_id"] == mapping_id)) do
@@ -949,11 +944,10 @@ defmodule Sanbase.Dashboards do
       ) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard_for_cache_update, fn _repo, _changes ->
-      # Check that the user can cache for the dashboard. When `only_owner: true`
-      # is passed (e.g. when the result is supplied by the client), only the
-      # dashboard owner is allowed - otherwise anyone could poison the cache of
-      # a public dashboard. The default also allows caching freshly recomputed
-      # results for public dashboards.
+      # Check that the user can cache for the dashboard. With `only_owner: true` (e.g.
+      # when the client supplies the result) only the owner is allowed, or anyone could
+      # poison a public dashboard's cache. The default also allows caching freshly
+      # recomputed results for public dashboards.
       get_dashboard_for_cache_update(
         dashboard_id,
         user_id,

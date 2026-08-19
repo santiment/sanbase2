@@ -23,10 +23,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @max_heap_size_in_mbs 500
   @max_heap_size_in_words div(@max_heap_size_in_mbs * 1024 * 1024, @wordsize)
 
-  # The `*Json` schema fields return a raw `:json` scalar (the whole map is
-  # serialized), while the typed fields let GraphQL field selection filter keys.
-  # `timeseries_data/3` and `timeseries_data_per_slug/3` each back both a typed
-  # and a JSON field, so we look at which schema field is being resolved.
+  # The `*Json` schema fields return a raw `:json` scalar (the whole map serialized),
+  # while the typed fields let GraphQL field selection filter keys. `timeseries_data/3` and
+  # `timeseries_data_per_slug/3` back both, hence the check on which field is resolved.
   @json_field_identifiers [:timeseries_data_json, :timeseries_data_per_slug_json]
 
   def get_metric(_root, %{metric: metric} = args, resolution) do
@@ -44,19 +43,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  # If the `store_executed_clickhouse_sql` flag is true, put a value
-  # in the process dictionary that will indicate to the ClickhouseRepo
-  # module that the executed queries need to be stored in the process
-  # dictionary.
+  # With the `store_executed_clickhouse_sql` flag set, mark the process dictionary so
+  # ClickhouseRepo stores the executed queries there.
   defp maybe_enable_clickhouse_sql_storage(args) do
     if Map.get(args, :store_executed_clickhouse_sql, false),
       do: Process.put(:__store_executed_clickhouse_sql__, true)
   end
 
-  # Return the list of executed Clickhouse SQL queries.
-  # The list is not empty if `store_executed_clickhouse_sql` flag is true
-  # and there are executed SQL queries. If the flag is set to false or there were
-  # no SQL queries executed because (not requested or served from cache)
+  # The list of executed Clickhouse SQL queries. Empty unless the
+  # `store_executed_clickhouse_sql` flag was set and queries actually ran - they may have
+  # been served from cache.
   def get_executed_clickhouse_sql(_root, _args, _resolution) do
     {:ok, Process.get(:__executed_clickhouse_sql_list__, []) |> Enum.reverse()}
   end
@@ -462,12 +458,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  # Runs the fetch in an unlinked, monitored worker with a capped heap. On
-  # overrun the BEAM kills the worker (`kill: true`) without logging it
-  # (`error_logger: false`); being unlinked, that :killed exit doesn't touch the
-  # request process - we just see the :DOWN and return a friendly error. Other
-  # outcomes (a CatchableError, or an unexpected raise we still want in Sentry)
-  # are caught in the worker and sent back, so inline behaviour is preserved.
+  # Runs the fetch in an unlinked, monitored worker with a capped heap. On overrun the
+  # BEAM kills it (`kill: true`) without logging (`error_logger: false`); being unlinked,
+  # that :killed exit leaves the request process alone - we see the :DOWN and return a
+  # friendly error. Other outcomes are caught in the worker and sent back, so inline
+  # behaviour (CatchableError, raises we still want in Sentry) is preserved.
   defp run_per_slug_in_bounded_process(metric, version, args, requested_fields, json_variant?) do
     parent = self()
     ref = make_ref()
@@ -600,10 +595,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # keys (computed_at is present and exposed only when `computedAt` is selected).
   defp format_output(result, _function, _args, false = _json_variant?), do: result
 
-  # The `*Json` variants serialize the whole map. `fields` only *renames* the
-  # output keys - every default field is always present; naming one just changes
-  # its key. `include_computed_at` additionally appends `computedAt` (renamable
-  # via the `computed_at` entry of `fields`).
+  # The `*Json` variants serialize the whole map. `fields` only *renames* output keys -
+  # every default field is always present. `include_computed_at` additionally appends
+  # `computedAt` (renamable via the `computed_at` entry of `fields`).
   defp format_output(result, function, args, true = _json_variant?) do
     fields = Map.get(args, :fields) || %{}
     append_computed_at? = Map.get(args, :include_computed_at, false)

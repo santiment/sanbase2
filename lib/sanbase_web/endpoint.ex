@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Endpoint do
   # webhooks (e.g. SES events) are parsed. Must run before Plug.Parsers.
   plug(SanbaseWeb.Plug.SnsContentType)
 
-  # The parser lenght is bigger than the FileStore limit intentionally.
+  # The parser length is bigger than the FileStore limit intentionally.
   # Plug.Parsers.length applies to the full multipart body before Sanbase.FileStore.validate/1 runs
   # and it will include headers, and possibly other parts of the request
   parser_length =

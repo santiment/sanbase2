@@ -146,11 +146,11 @@ defmodule Sanbase.Billing.StripeEvent do
 
   defp handle_event(_), do: :ok
 
-  # A bundle Stripe subscription cannot go down the legacy path: that path reads
-  # item[0]'s `plan` and looks it up in `plans`, and a bundle's item prices live
-  # only in `bundle_prices`. On stage that left the event `is_processed: false`
-  # with "Plan for subscription_id ... does not exist" logged, so the branch is
-  # taken before anything else happens. The legacy clause below is unchanged.
+  # A bundle Stripe subscription cannot take the legacy path: that path reads item[0]'s
+  # `plan` and looks it up in `plans`, while a bundle's item prices live only in
+  # `bundle_prices`. On stage that left the event `is_processed: false` with "Plan for
+  # subscription_id ... does not exist", so the branch is taken first. The legacy clause
+  # below is unchanged.
   defp handle_subscription_created(id, type, subscription_id) do
     case StripeApi.retrieve_subscription(subscription_id) do
       {:ok, stripe_sub} ->
@@ -189,11 +189,10 @@ defmodule Sanbase.Billing.StripeEvent do
     end
   end
 
-  # No local subscription is created here when one already exists - the normal
-  # case, because `Bundle.Lifecycle.subscribe/2` created it before Stripe's event
-  # arrived. `ItemSync` decides between reconciling that row and adopting a
-  # subscription assembled outside our flow, and refuses to adopt one if any item
-  # price is not in the bundle catalog.
+  # No local subscription is created when one already exists - the normal case, since
+  # `Bundle.Lifecycle.subscribe/2` created it before Stripe's event arrived. `ItemSync`
+  # decides between reconciling that row and adopting a subscription assembled outside our
+  # flow, refusing to adopt one whose item prices are not all in the bundle catalog.
   defp handle_bundle_subscription_created(id, type, subscription_id, stripe_sub) do
     case ItemSync.sync_created(stripe_sub) do
       {:ok, _result} ->
@@ -230,15 +229,13 @@ defmodule Sanbase.Billing.StripeEvent do
     end
   end
 
-  # Everything the status sync cannot do on its own, for the two event types that
-  # need it. `invoice.payment_succeeded` and `invoice.payment_failed` also reach
-  # `handle_event_common/3` and are left exactly as they were - a renewal does not
-  # change what was bought.
-  #
-  # `subscription` is the row as it was read before the sync. Only `plan_id` and
-  # the period fields are written by the sync, and `fetch_plan_id/2` cannot move a
-  # bundle off its marker plan (a package price is never in `plans.stripe_id`), so
-  # the plan this branches on is the same either way.
+  # Everything the status sync cannot do on its own, for the two event types that need it.
+  # `invoice.payment_succeeded` and `invoice.payment_failed` also reach
+  # `handle_event_common/3` and are left as they were - a renewal does not change what was
+  # bought. `subscription` is the row as read before the sync; the sync writes only
+  # `plan_id` and the period fields, and `fetch_plan_id/2` cannot move a bundle off its
+  # marker plan (a package price is never in `plans.stripe_id`), so the plan branched on
+  # here is the same either way.
   defp after_status_sync("customer.subscription.updated", subscription, stripe_sub) do
     if ItemSync.bundle_subscription?(subscription) do
       with {:ok, _result} <- ItemSync.reconcile(subscription, stripe_sub), do: :ok
@@ -247,10 +244,9 @@ defmodule Sanbase.Billing.StripeEvent do
     end
   end
 
-  # The items and the entitlement are kept: access is already denied by the
-  # status, and the rows are what support answers a "what did I pay for" ticket
-  # from. Only the quota row has to be recomputed, because it caches resolved
-  # numbers that would otherwise keep granting a canceled bundle's allowance.
+  # The items and the entitlement are kept: the status already denies access, and support
+  # answers "what did I pay for" from these rows. Only the quota row is recomputed, since
+  # it caches resolved numbers that would keep granting a canceled bundle's allowance.
   defp after_status_sync("customer.subscription.deleted", subscription, _stripe_sub) do
     if ItemSync.bundle_subscription?(subscription) do
       ItemSync.refresh_quota(subscription)

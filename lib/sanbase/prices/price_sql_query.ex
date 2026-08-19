@@ -363,12 +363,9 @@ defmodule Sanbase.Price.SqlQuery do
   end
 
   defp filter_order_base_query(metric, from, to, aggregation, source) do
-    # In case of `:last` aggregation, scanning big intervals of data leads to
-    # unnecessarily increased resources consumption as we're getting only the
-    # last value. We rewrite the `from` parameter to be closer to `to`. This
-    # rewrite has negative effect in cases there are lagging values. If the
-    # value is lagging more than 7 days, though, it's safe to assume it is not
-    # supported.
+    # With `:last` aggregation only the last value is returned, so scanning a big interval
+    # wastes resources - `from` is rewritten closer to `to`. That hurts lagging values, but
+    # a value lagging more than 7 days is safely assumed unsupported.
     from =
       case aggregation do
         :last -> Enum.max([from, Timex.shift(to, days: -7)], DateTime)

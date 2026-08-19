@@ -203,11 +203,9 @@ defmodule Sanbase.ClickhouseRepo do
     maybe_store_executed_clickhouse_sql(query, args)
     maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
-    # Pass decode: false so the `ch` driver returns the raw RowBinary
-    # response (binary data + HTTP headers) instead of decoded rows.
-    # We then decode manually in decode_result_with_metadata/1 to
-    # extract column_types, query_id, and summary — metadata that the
-    # driver's default decode path discards.
+    # decode: false makes the `ch` driver return the raw RowBinary response (binary data +
+    # HTTP headers) instead of decoded rows. decode_result_with_metadata/1 then decodes it
+    # by hand to get column_types, query_id and summary, which the driver's decode discards.
     case __MODULE__.query(query, args, decode: false) do
       {:ok, result} ->
         {:ok, decode_result_with_metadata(result)}
@@ -227,10 +225,9 @@ defmodule Sanbase.ClickhouseRepo do
   issue persists please contact Santiment Support.\
   """
 
-  # Mint's bare "timeout", DBConnection's "timed out"/"dropped from queue",
-  # ClickHouse's TIMEOUT_EXCEEDED. See docs/timeouts.md. The word boundaries
-  # keep identifiers like `timeout_ms` from being read as a timeout, which is
-  # why TIMEOUT_EXCEEDED needs an alternative of its own.
+  # Mint's bare "timeout", DBConnection's "timed out"/"dropped from queue", ClickHouse's
+  # TIMEOUT_EXCEEDED (see docs/timeouts.md). The word boundaries keep identifiers like
+  # `timeout_ms` from reading as a timeout, hence the separate TIMEOUT_EXCEEDED branch.
   @timeout_error_regex ~r/\btimed?\s*out\b|\btimeout_exceeded\b|\bdropped\s+from\s+queue\b/i
 
   # ClickHouse echoes the offending SQL back; drop it so a query containing
@@ -258,11 +255,10 @@ defmodule Sanbase.ClickhouseRepo do
     log_id = UUID.uuid4()
     error_message = extract_error_from_stacktrace(stacktrace) || Exception.message(exception)
 
-    # ClickHouse error strings + stacktraces can embed the user's query
-    # params/SQL fragments. For activity_traces_hidden users keep only a
-    # correlatable breadcrumb in the logs. The returned error still
-    # carries the real message — it goes back to the user who ran the
-    # query, not into the logs.
+    # ClickHouse error strings and stacktraces can embed the user's query params/SQL. For
+    # activity_traces_hidden users the logs keep only a correlatable breadcrumb; the
+    # returned error still carries the real message, since it goes to the user who ran the
+    # query rather than into the logs.
     if activity_traces_hidden?(opts) do
       Logger.warning(
         "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason hidden (activity_traces_hidden)"
@@ -358,10 +354,8 @@ defmodule Sanbase.ClickhouseRepo do
               error_msg
 
             [stripped_error_msg, _] ->
-              # Exclude the SETTINGS fragment from the error response
-              # so it is not shown in the result. The SETTINGS fragment
-              # are appended by the preprocessing done in the backend
-              # and not by the user, who will see the error
+              # Drop the SETTINGS fragment from the error response: it is appended by
+              # backend preprocessing, not written by the user who sees the error.
               stripped_error_msg
           end
 
@@ -388,14 +382,11 @@ defmodule Sanbase.ClickhouseRepo do
 
   case Mix.env() do
     :dev ->
-      # In dev env, if the PRINT_CLICKHOUSE_SQL env var is set to true/1
-      # the interpolated query is printed to the console — easy to copy
-      # and run directly for debugging.
-      #
-      # Skipped for users with `activity_traces_hidden` even in dev. The
-      # ctx is passed in explicitly by the Query-struct entry points;
-      # falls back to `RequestContext.current/0` when the caller didn't
-      # have one (e.g. bare SQL helpers called from a background process).
+      # In dev, with PRINT_CLICKHOUSE_SQL set to true/1, the interpolated query is
+      # printed to the console, ready to copy and run. Skipped for `activity_traces_hidden`
+      # users even in dev. The ctx comes from the Query-struct entry points, falling back
+      # to `RequestContext.current/0` for callers without one (bare SQL helpers in a
+      # background process).
       defp maybe_print_interpolated_query(query, params, ctx) do
         ctx = ctx || Sanbase.RequestContext.current()
 

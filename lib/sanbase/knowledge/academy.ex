@@ -19,29 +19,19 @@ defmodule Sanbase.Knowledge.Academy do
   @embedding_retry_backoff_ms 2_000
   @github_repo_owner "santiment"
   @github_repo_name "academy"
-  # Version of the indexing pipeline. The cache check in `maybe_use_cached/3`
-  # treats an article as unchanged only when both `content_sha` AND
-  # `index_version` match. Without this, source SHA matches alone would revive
-  # stored chunks/embeddings even after the pipeline that produced them changed.
+  # Version of the indexing pipeline. `maybe_use_cached/3` treats an article as unchanged
+  # only when both `content_sha` and `index_version` match - a SHA match alone would revive
+  # chunks/embeddings produced by a pipeline that has since changed.
   #
-  # Bump this constant whenever something that affects the derived data
-  # changes, so cached articles get reindexed instead of silently serving
-  # stale results. Examples:
-  #   - chunk size / overlap (@chunk_size, @chunk_overlap)
-  #   - embedding model or dimensions (@embedding_size)
-  #   - chunking algorithm (TextChunker options, format)
-  #   - heading / frontmatter / title extraction
-  #   - any change to what gets stored on `AcademyArticleChunk`
+  # Bump it whenever anything affecting the derived data changes: chunk size/overlap,
+  # embedding model or dimensions, the chunking algorithm, heading/frontmatter/title
+  # extraction, or what is stored on `AcademyArticleChunk`. A bump invalidates every cached
+  # row and forces a full reindex; the source SHA still skips the GitHub content fetch for
+  # articles whose markdown is unchanged *and* whose pipeline version matches.
   #
-  # A bump invalidates every cached row and forces a full reindex on the next
-  # run. The source SHA still short-circuits the GitHub content fetch for
-  # articles whose markdown has not changed *and* whose pipeline version
-  # matches the current one.
-  #
-  # v2: `to_academy_url/1` now strips the `ai-toolkit/` root section, fixing
-  # academy_url for ai-toolkit articles that previously 404'd. Existing rows
-  # have unchanged markdown, so without this bump the SHA-cache would keep the
-  # stale URLs instead of re-deriving them.
+  # v2: `to_academy_url/1` strips the `ai-toolkit/` root section, fixing academy_url for
+  # ai-toolkit articles that 404'd. Their markdown is unchanged, so without the bump the
+  # SHA-cache would keep the stale URLs.
   @index_version 2
 
   @excluded_paths MapSet.new([
@@ -644,11 +634,10 @@ defmodule Sanbase.Knowledge.Academy do
     end
   end
 
-  # The academy site derives a doc's public URL by stripping the first path
-  # segment when it is a "root section" (see `ROOT_SECTIONS` in the academy
-  # repo's src/config/navigation.ts -> src/modules/navigation/paths.ts).
-  # This list MUST stay in sync with that config; a missing entry produces URLs
-  # with an extra leading segment that 404 (e.g. /ai-toolkit/mcp-connector/
+  # The academy site derives a doc's public URL by stripping the first path segment when it
+  # is a "root section" (`ROOT_SECTIONS` in the academy repo's src/config/navigation.ts ->
+  # src/modules/navigation/paths.ts). This list MUST stay in sync with it: a missing entry
+  # produces URLs with an extra leading segment that 404 (/ai-toolkit/mcp-connector/
   # instead of /mcp-connector/).
   defp to_academy_url(path) do
     path

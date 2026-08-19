@@ -207,11 +207,10 @@ defmodule Sanbase.Monitoring.MemDbg do
     end)
   end
 
-  # Off-heap refc binaries referenced by each process. A long-lived process
-  # holding many/large refc binaries (often sub-binaries of big HTTP/DB
-  # responses) is the classic slow-rise leak. Shared binaries are counted
-  # once per referencing process, so the sum can exceed :erlang.memory(:binary).
-  # HEAVY: O(total binary refs) — do not automate.
+  # Off-heap refc binaries referenced by each process. A long-lived process holding many
+  # or large refc binaries (often sub-binaries of big HTTP/DB responses) is the classic
+  # slow-rise leak. Shared binaries count once per referencing process, so the sum can
+  # exceed :erlang.memory(:binary). HEAVY: O(total binary refs) - do not automate.
   def top_bin(n \\ 15) do
     IO.puts("\n== Top #{n} processes by referenced refc binaries ==")
 
@@ -329,12 +328,11 @@ defmodule Sanbase.Monitoring.MemDbg do
   # Active experiments
   # ---------------------------------------------------------------------------
 
-  # recon-style bin_leak: GC everything, see how much memory drops and which
-  # processes were hoarding binary refs. Big binary drop = processes keeping
-  # refc binaries alive (fix: :binary.copy/1 on the kept slice, or
-  # {:fullsweep_after, N} spawn opt / hibernate for the hoarder). Big processes
-  # drop = lazily-GC'd garbage was inflating RSS between collections.
-  # HEAVY + side effects (forces GC on every process) — never automate.
+  # recon-style bin_leak: GC everything, then see how much memory drops and who was
+  # hoarding binary refs. Big binary drop = processes keeping refc binaries alive (fix:
+  # :binary.copy/1 on the kept slice, or {:fullsweep_after, N} / hibernate for the
+  # hoarder). Big processes drop = lazily-GC'd garbage inflating RSS between collections.
+  # HEAVY + side effects (forces GC on every process) - never automate.
   def bin_leak(n \\ 15) do
     IO.puts("\n== bin_leak: GC all processes ==")
     before_bin = :erlang.memory(:binary)
@@ -370,10 +368,9 @@ defmodule Sanbase.Monitoring.MemDbg do
   end
 
   # Catch what causes memory spikes: reports any process whose heap grows past
-  # threshold_mb (fires on GC events via :erlang.system_monitor - cheap).
-  # Output goes to both the console and Logger, so spikes land in pod logs
-  # even after you detach the remote console. One watcher per node; calling
-  # again replaces it. Note: replaces any other :erlang.system_monitor user.
+  # threshold_mb (fires on GC events via :erlang.system_monitor - cheap). Output goes to
+  # the console and Logger, so spikes land in pod logs after you detach. One watcher per
+  # node; calling again replaces it, as it replaces any other :erlang.system_monitor user.
   def watch_spikes(threshold_mb \\ 200) do
     stop_watch()
     words = div(threshold_mb * 1_048_576, :erlang.system_info(:wordsize))
@@ -409,10 +406,10 @@ defmodule Sanbase.Monitoring.MemDbg do
   # OS / allocator views
   # ---------------------------------------------------------------------------
 
-  # OS/cgroup view from inside the container. Answers: is the dashboard number
-  # the beam process RSS, or RSS + page cache? cgroup "file" = page cache from
-  # files written/read in the container - reclaimable, not a leak, but counted
-  # by container_memory_usage_bytes and (active part) by working_set.
+  # OS/cgroup view from inside the container: is the dashboard number the beam process
+  # RSS, or RSS + page cache? cgroup "file" = page cache from files written/read in the
+  # container - reclaimable, not a leak, but counted by container_memory_usage_bytes and
+  # (its active part) by working_set.
   def os() do
     IO.puts("\n== OS view (inside container) ==")
     os_pid = System.pid()
@@ -474,10 +471,9 @@ defmodule Sanbase.Monitoring.MemDbg do
     :ok
   end
 
-  # Per-allocator: "allocated" = carrier sizes (what the OS gave the VM, ~RSS),
-  # "used" = block sizes (what live Erlang data occupies, ~:erlang.memory).
-  # Big unused on eheap_alloc/binary_alloc = carriers ratcheted up by past
-  # spikes and/or fragmentation, not a leak in your code.
+  # Per-allocator: "allocated" = carrier sizes (what the OS gave the VM, ~RSS), "used" =
+  # block sizes (what live Erlang data occupies, ~:erlang.memory). Big unused on
+  # eheap_alloc/binary_alloc = carriers ratcheted up by past spikes or fragmentation.
   def alloc() do
     IO.puts("\n== Allocator carriers vs blocks ==")
 

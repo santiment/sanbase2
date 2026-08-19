@@ -16,10 +16,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   @refresh_time_delta 1800
   @refresh_time_max_offset 1800
 
-  # How long the resolver waits for the first computation of a slug's available
-  # metrics. Kept just under the GraphQL request timeout. The per-module fan-out
-  # inside the computation is bounded well below this, so a single wait is enough
-  # instead of several short polling attempts.
+  # How long the resolver waits for the first computation of a slug's available metrics,
+  # kept just under the GraphQL request timeout. The fan-out inside the computation is
+  # bounded well below this, so one wait is enough instead of several short polls.
   @first_computation_wait 29_000
 
   def available_label_fqns(%Project{slug: slug}, _args, _resolution) do
@@ -70,10 +69,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
       user_metric_access_level = user_metric_access_level(resolution)
       lookback_days = user_available_metrics_lookback_days(resolution)
 
-      # A single cache key per (slug, access level, lookback) computes the full
-      # available-metrics list. The four fields (all/timeseries/histogram/table)
-      # then derive their subset from it via `filter_fn`. This registers one
-      # rehydrating closure per slug instead of four near-identical ones.
+      # One cache key per (slug, access level, lookback) computes the full available-metrics
+      # list, and the four fields (all/timeseries/histogram/table) derive their subset from
+      # it via `filter_fn` - one rehydrating closure per slug instead of four near-identical
+      # ones.
       cache_key =
         {__MODULE__, :available_metrics, slug, user_metric_access_level, lookback_days}
         |> Sanbase.Cache.hash()
@@ -188,28 +187,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     end)
   end
 
-  # Get the available metrics from the rehydrating cache. If the function that
-  # computes it is not registered yet, register it and wait once for the first
-  # computation.
+  # Get the available metrics from the rehydrating cache, registering the computing
+  # function and waiting once for the first computation if it is not registered yet.
   #
-  # In the test environment `:use_rehydrating_cache` defaults to `false` so the resolver
-  # takes the synchronous `Sanbase.Cache.get_or_store/2` fallback below. Rationale: the
-  # `RehydratingCache` GenServer periodically re-runs every registered closure, and a
-  # closure registered inside a `with_mocks` block can outlive that block and re-fire
-  # later against real code (e.g. Clickhouse adapters), producing intermittent
-  # "could not lookup Ecto repo Sanbase.ClickhouseRepo" warnings in unrelated tests.
-  # The supervisor is also not started in the test app boot path — see
-  # `Sanbase.Application.Web`. Tests that need to exercise the RC wiring end-to-end flip
-  # the flag back to `true` in their `setup` block and start a per-test
-  # `RehydratingCache.Supervisor` via `start_supervised!`.
+  # In test `:use_rehydrating_cache` defaults to `false`, so the resolver takes the
+  # synchronous `Sanbase.Cache.get_or_store/2` fallback below: the `RehydratingCache`
+  # GenServer periodically re-runs every registered closure, and one registered inside a
+  # `with_mocks` block can outlive it and re-fire against real code (Clickhouse adapters),
+  # giving intermittent "could not lookup Ecto repo Sanbase.ClickhouseRepo" warnings in
+  # unrelated tests. The supervisor is not started in the test boot path either (see
+  # `Sanbase.Application.Web`). Tests exercising the RC wiring end-to-end flip the flag back
+  # to `true` in `setup` and start a per-test `RehydratingCache.Supervisor`.
   defp maybe_register_and_get(cache_key, fun, slug, query) do
     if rehydrating_cache_enabled?() do
       register_and_get_via_rehydrating_cache(cache_key, fun, slug, query)
     else
-      # Synchronous fallback used in test only. `Sanbase.Cache.get_or_store/2` unwraps
-      # `{:nocache, {:ok, value}}` to `{:ok, value}`, so full `:nocache` semantics are
-      # NOT preserved on this path. Tests that depend on `:nocache` propagation must opt
-      # back into the RC path.
+      # Synchronous fallback, test only. `Sanbase.Cache.get_or_store/2` unwraps
+      # `{:nocache, {:ok, value}}` to `{:ok, value}`, so `:nocache` semantics are NOT
+      # preserved here - tests depending on them must opt back into the RC path.
       Sanbase.Cache.get_or_store({cache_key, @ttl}, fun)
     end
   end

@@ -81,14 +81,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   defp maybe_get_fixed_parameters(_metric, _version, selector, params, _opts)
        when is_map_key(selector, :label_fqn) or is_map_key(selector, :label_fqns) do
-    # In some cases like 'historical_balance_centralized_exchanges' the
-    # fixed parameters are used to properly list the available label_fqns.
-    # When the metric is queried and this label_fqn is provided, the fixed parameters
-    # do not need to be used anymore.
-    # In other cases like `combined_historical_balance_centralized_exchanges` the client
-    # does not provide a label_fqn parameter, as the metric itself already encompasses all
-    # centralized exchanges. The user provides only the asset in interest, and the fixed
-    # parameters needs to be usued to pin the label_fqn that is to be used (the function below)
+    # For `historical_balance_centralized_exchanges` the fixed parameters only serve to
+    # list the available label_fqns, and are redundant once the query provides one. For
+    # `combined_historical_balance_centralized_exchanges` the client provides no label_fqn
+    # - the metric covers all exchanges - so they must pin it (the function below).
     {"", params}
   end
 
@@ -197,12 +193,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters, opts) do
-    # In case of `:last` aggregation, scanning big intervals of data leads to
-    # unnecessarily increased resources consumption as we're getting only the
-    # last value. We rewrite the `from` parameter to be closer to `to`. This
-    # rewrite has negative effect in cases there are lagging values. If the
-    # value is lagging more than 7 days, though, it's safe to assume it is not
-    # supported.
+    # With `:last` aggregation, scanning big intervals wastes resources as only the last
+    # value is used, so `from` is rewritten closer to `to`. Bad for lagging values, but a
+    # value lagging more than 7 days is safely assumed to be unsupported.
     from =
       case aggregation do
         :last -> Enum.max([from, Timex.shift(to, days: -7)], DateTime)
@@ -352,12 +345,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   defp aggregated_slugs_base_query(metric, version, from, to, aggregation, filters, opts) do
-    # In case of `:last` aggregation, scanning big intervals of data leads to
-    # unnecessarily increased resources consumption as we're getting only the
-    # last value. We rewrite the `from` parameter to be closer to `to`. This
-    # rewrite has negative effect in cases there are lagging values. If the
-    # value is lagging more than 7 days, though, it's safe to assume it is not
-    # supported.
+    # With `:last` aggregation, scanning big intervals wastes resources as only the last
+    # value is used, so `from` is rewritten closer to `to`. Bad for lagging values, but a
+    # value lagging more than 7 days is safely assumed to be unsupported.
     from =
       case aggregation do
         :last -> Enum.max([from, Timex.shift(to, days: -7)], DateTime)

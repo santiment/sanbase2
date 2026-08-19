@@ -4,12 +4,12 @@ defmodule SanbaseWeb.Graphql.CachexBoundEnforcerTest do
   alias SanbaseWeb.Graphql.CachexBoundEnforcer
 
   setup do
-    # Unique cache per test — a Cachex supervisor is not stopped by the
-    # `Process.exit(pid, :normal)` in on_exit, so a shared name would leak
-    # entries between tests.
+    # Unique cache name per test so entries never leak between async tests.
+    # `start_supervised!` shuts the Cachex supervisor down gracefully at the end
+    # of the test — brutally killing it makes its courier/eternal children log
+    # `(stop) killed` crash reports.
     cache = :"cachex_bound_enforcer_test_#{System.unique_integer([:positive])}"
-    {:ok, pid} = Cachex.start_link(cache, [])
-    on_exit(fn -> Process.exit(pid, :kill) end)
+    start_supervised!(%{id: cache, start: {Cachex, :start_link, [cache, []]}})
 
     %{cache: cache}
   end

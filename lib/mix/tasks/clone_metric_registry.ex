@@ -36,8 +36,8 @@ defmodule Mix.Tasks.CloneMetricRegistry do
   def run(args) do
     opts = parse_args(args)
 
-    # Fail fast before doing any work if a destructive drop was requested in an
-    # environment where it is not allowed.
+    # Fail before doing any work if a destructive drop was requested where it is not
+    # allowed.
     drop_existing? = Keyword.get(opts, :drop_existing, false)
     if drop_existing?, do: ensure_local_drop_allowed!()
 
@@ -53,10 +53,9 @@ defmodule Mix.Tasks.CloneMetricRegistry do
             "--table=metric_registry",
             "--file=#{file}",
             "--dbname=#{db_url}",
-            # `--column-inserts` (not `--inserts`) emits the column names in each
-            # INSERT, making the load independent of physical column order. The source
-            # and local tables have the same columns in a different order, so positional
-            # inserts would misalign the values.
+            # `--column-inserts`, not `--inserts`: the column names in each INSERT make
+            # the load independent of physical column order, which differs between the
+            # source and local tables.
             "--column-inserts"
           ]
         )
@@ -64,9 +63,9 @@ defmodule Mix.Tasks.CloneMetricRegistry do
       contents = File.read!(file)
       contents = String.replace(contents, "sanbase2.metric_registry", "public.metric_registry")
 
-      # The dump is `--data-only --inserts` with explicit ids, so loading it on top of
-      # existing rows raises duplicate-key errors. `--drop-existing` wipes the local table
-      # first for a clean reload; that TRUNCATE is destructive and local-dev only.
+      # The dump has explicit ids, so loading it on top of existing rows raises
+      # duplicate-key errors. `--drop-existing` wipes the local table first - that TRUNCATE
+      # is destructive and local-dev only.
       contents =
         if drop_existing? do
           "TRUNCATE public.metric_registry RESTART IDENTITY CASCADE;\n\n" <> contents
@@ -76,9 +75,8 @@ defmodule Mix.Tasks.CloneMetricRegistry do
 
       File.write!(file, contents)
 
-      # --single-transaction + ON_ERROR_STOP make the load all-or-nothing: any
-      # failed statement (including the optional TRUNCATE) aborts the whole
-      # load instead of leaving the table half-populated.
+      # --single-transaction + ON_ERROR_STOP make the load all-or-nothing: a failed
+      # statement aborts it instead of leaving the table half-populated.
       {_output, exit_status} =
         System.cmd(
           "psql",
@@ -88,8 +86,7 @@ defmodule Mix.Tasks.CloneMetricRegistry do
             "--echo-all",
             "--single-transaction",
             "--set=ON_ERROR_STOP=1",
-            # Silence the TRUNCATE ... CASCADE NOTICE noise so a successful run
-            # does not read like a failure.
+            # Silence the TRUNCATE ... CASCADE NOTICE, or a successful run reads as failed.
             "--set=client_min_messages=warning"
           ]
         )
@@ -107,8 +104,8 @@ defmodule Mix.Tasks.CloneMetricRegistry do
           "so the in-memory metric mapsets pick up the new rows."
       )
     after
-      # `File.rm/1` (not `rm!`): if pg_dump failed before creating the file, the
-      # file may never exist — raising here would mask the original error.
+      # `File.rm/1`, not `rm!`: a pg_dump that failed before creating the file would make
+      # this raise and mask the original error.
       File.rm(file)
     end
 
@@ -124,9 +121,8 @@ defmodule Mix.Tasks.CloneMetricRegistry do
     options
   end
 
-  # OptionParser only matches the hyphenated switch form (`--database-url`); the
-  # underscore form is reported as invalid. Accept the underscore form too by
-  # rewriting just the switch token (never the value after `=`).
+  # OptionParser matches only `--database-url` and reports the underscore form as invalid.
+  # Rewrite just the switch token to accept it, never the value after `=`.
   defp normalize_switches(args) do
     Enum.map(args, fn
       "--database_url" -> "--database-url"
@@ -148,9 +144,8 @@ defmodule Mix.Tasks.CloneMetricRegistry do
     end
   end
 
-  # The destructive TRUNCATE may run against the local dev database only - refuse in any
-  # deployed environment. Each of these marks one on its own: MIX_ENV is prod, DATABASE_URL
-  # is set (only deployed environments set it, local dev hardcodes the connection in
+  # The destructive TRUNCATE is local-dev only. Each of these marks a deployed environment
+  # on its own: MIX_ENV is prod, DATABASE_URL is set (local dev hardcodes the connection in
   # config/dev.exs), or Sanbase.Repo is not pointed at a local host.
   defp ensure_local_drop_allowed!() do
     cond do

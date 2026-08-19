@@ -121,8 +121,8 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
             {:ok, bp_root}
 
           result ->
-            # Storing it again `touch`es it and the TTL timer is restarted.
-            # This can lead to infinite storing the same value
+            # Storing it again `touch`es it, restarting the TTL timer - the same value
+            # would be stored forever.
             Process.put(:do_not_cache_query, true)
 
             {:jump, %{bp_root | result: result},
@@ -151,9 +151,8 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
     }
   end
 
-  # Leave only the fields needed to generate the cache key, so values interpolated into the
-  # query string itself can be cached. Datetimes are rounded, so every datetime in a bucket
-  # produces the same cache key.
+  # Only the fields the cache key needs, so values interpolated into the query string can
+  # be cached. Datetimes are rounded, so every one in a bucket gives the same key.
   defp sanitize_blueprint(%DateTime{} = dt), do: dt
 
   defp sanitize_blueprint(
@@ -253,10 +252,9 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth do
     |> Enum.max(fn -> depth end)
   end
 
-  # Named fragment spreads carry no inline selections, so they are resolved against
-  # bp_root.fragments, tracking visited names so a cyclic fragment graph cannot loop the
-  # walker. Without this a query can chain spreads to arbitrary runtime depth while this
-  # phase reports depth 0.
+  # Named fragment spreads carry no inline selections, so they resolve against
+  # bp_root.fragments, with visited names tracked so a cyclic fragment graph cannot loop the
+  # walker. Without it a query chains spreads to arbitrary depth while this phase reports 0.
   defp node_depth(
          %Absinthe.Blueprint.Document.Fragment.Spread{name: name},
          depth,
@@ -326,11 +324,10 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
       end)
       |> Enum.reject(&is_nil/1)
 
-    # Put the metric name in the list 0, 1 or 2 times, depending on the selections.
-    # `timeseries_data` and `aggregated_timeseries_data` each go through the complexity
-    # code once, removing the metric name both times, so it has to be there twice.
-    # `timeseries_data_complexity` does not take that path, and `histogram_data` has no
-    # complexity checks right now.
+    # The metric name goes in 0, 1 or 2 times: `timeseries_data` and
+    # `aggregated_timeseries_data` each run the complexity code once and each remove the
+    # name. `timeseries_data_complexity` does not take that path, and `histogram_data` has
+    # no complexity checks yet.
     temp =
       selections --
         [

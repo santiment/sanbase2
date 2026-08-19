@@ -291,9 +291,8 @@ defmodule Sanbase.Entity do
     opts = EntityOpts.update_opts(opts)
     {:ok, query} = most_voted_base_query(entities, opts)
 
-    # Convert the rows to a list of entity_id and entity_type: every user's vote is on its
-    # own row, so counting them directly counts voters. The transformed row takes a
-    # DISTINCT before COUNT, so every entity is counted once.
+    # Every user's vote is on its own row, so counting rows counts voters. The transformed
+    # row takes a DISTINCT before COUNT, so every entity is counted once.
     query =
       from(
         v in query,
@@ -313,9 +312,8 @@ defmodule Sanbase.Entity do
     opts = EntityOpts.update_opts(opts)
     {:ok, query} = most_recent_base_query(entities, opts)
 
-    # Paginate using the map of arguments the base query above builds: it gives every type
-    # a creation time field under the same name, so the results can be sorted before limit
-    # and offset are applied.
+    # The base query gives every type a creation time field under the same name, so the
+    # results can be sorted before limit and offset are applied.
     query =
       from(
         entity in subquery(query),
@@ -330,9 +328,7 @@ defmodule Sanbase.Entity do
       |> Fetcher.fetch_entities_by_ids()
       |> Fetcher.rewrite_keys()
 
-    # Order the full list of entities by the creation time in descending order.
-    # The end result is a list like: [%{project_watchlist: w}, %{insight: i},
-    # %{chart_configuration: c}, %{screener: s}, %{address_watchlist: a}]
+    # Newest first. Result looks like [%{project_watchlist: w}, %{insight: i}, ...]
     sorted_result =
       Enum.sort_by(
         result,
@@ -342,17 +338,16 @@ defmodule Sanbase.Entity do
           {creation_time_field, creation_time_field_backup} =
             Registry.entity_creation_time_fields(type)
 
-          # In all cases the fields are the same except for insights. When
-          # fetching user own insights, some of them might be drafts so they
-          # won't have :published_at field and then :inserted_at shall be used.
+          # The fields are the same for every type except insights: a user's own drafts
+          # have no :published_at, so :inserted_at is used instead.
           creation_time =
             Map.get(entity, creation_time_field) || Map.get(entity, creation_time_field_backup)
 
           creation_time_unix =
             DateTime.from_naive!(creation_time, "Etc/UTC") |> DateTime.to_unix()
 
-          # Transform to unix timestamp so we can compare the tuples. Add the id as the secon
-          # element so in case of conflicts, we put the entity with higher id first (created later)
+          # Unix timestamps so the tuples compare. The id is the second element, so a tie
+          # puts the higher id (created later) first.
           {creation_time_unix, Map.get(entity, :id)}
         end,
         :desc
@@ -365,9 +360,8 @@ defmodule Sanbase.Entity do
     opts = EntityOpts.update_opts(opts)
     {:ok, query} = most_voted_base_query(entities, opts)
 
-    # Add ordering and pagination. The group by is required so we can count all
-    # the votes for each entity. There is exactly one non-null entity id per
-    # row, so the chosen group by expression is working as expected.
+    # The group by counts the votes per entity. Exactly one entity id per row is non-null,
+    # so the group by expression works as intended.
     query =
       from(
         v in query,
@@ -383,9 +377,8 @@ defmodule Sanbase.Entity do
       |> paginate(opts)
       |> order_by([v], desc: coalesce(sum(v.count), 0))
 
-    # For simplicity include all the known in the query here. The ones that are
-    # not wanted have their rows excluded in the above build where clause and
-    # will never match in the case statement.
+    # All known types are listed. The unwanted ones are already excluded by the where
+    # clause above and never match the case statement.
     query =
       from(v in query,
         select: %{
@@ -406,9 +399,8 @@ defmodule Sanbase.Entity do
   defp do_get_most_used(entities, opts) when is_list(entities) and entities != [] do
     # The most used entities are the ones that the user has visited the most.
 
-    # get_most_used currently serves only the querying user's own most-used entities, and
-    # must include both public entities and the user's private ones - hence both
-    # `include_public_entities` and `include_all_user_entities` set to true.
+    # It serves only the querying user's own most-used entities, which include their
+    # private ones - hence both flags are true.
     opts = EntityOpts.update_opts(opts)
 
     query = most_used_base_query(entities, opts)
@@ -437,9 +429,8 @@ defmodule Sanbase.Entity do
     opts = EntityOpts.update_opts(opts)
     similarity_threshold = Keyword.get(opts, :similarity_threshold, @default_similarity_threshold)
 
-    # For the paginated data query we want to limit the number of rows that the
-    # expensive similarity subquery returns. Use a small internal cap here to
-    # avoid fetching thousands of rows when we only need the top matches.
+    # A small internal cap on the expensive similarity subquery - only the top matches
+    # are needed, not thousands of rows.
     opts = Keyword.put_new(opts, :limit, @most_similar_max_results)
 
     case most_similar_base_query(entities, opts) do
@@ -618,14 +609,12 @@ defmodule Sanbase.Entity do
   end
 
   defp most_recent_base_query(entities, opts) when is_list(entities) and entities != [] do
-    # The most recent entity could be a private one, so look only at public entities. When
-    # the user fetches their own most-voted entities the filter changes to return only
-    # that user's creations.
+    # The most recent entity could be private, so look only at public ones. Fetching the
+    # user's own entities changes the filter to their creations only.
 
-    # Filter only rows related to the given entities. For every type build a query that
-    # returns the entity id, entity type and the creation time as a map. The queries share
-    # field names (inserted_at/published_at are renamed) so they can be combined with a
-    # UNION, which is required as the data comes from tables with different schemas.
+    # One query per type returning {entity id, entity type, creation time}. They share
+    # field names (inserted_at/published_at are renamed) so a UNION can combine them,
+    # which is required as the data comes from tables with different schemas.
     query =
       Enum.reduce(entities, nil, fn type, query_acc ->
         entity_ids_query = Registry.entity_ids_query(type, opts)
@@ -663,19 +652,15 @@ defmodule Sanbase.Entity do
   end
 
   defp most_voted_base_query(entities, opts) when is_list(entities) and entities != [] do
-    # The most voted entity could have been made private after getting its votes, so look
-    # only at public entities. When the user fetches their own most-voted entities the
-    # filter changes to return only that user's creations.
+    # The most voted entity could have been made private after its votes, so look only at
+    # public ones. Fetching the user's own entities changes the filter to their creations.
 
-    # Base query. The required ids are fetched from the votes table, where
-    # voting for every entity type is stored. Every type uses its own column
-    # that bears the enitity type name + _id suffix.
+    # The ids come from the votes table, where every type has its own <type>_id column.
     query = from(vote in Sanbase.Vote)
 
-    # Filter only rows related to the given entities, by building a list of where clauses
-    # joined with OR - one per type, keeping the rows whose id is in that type's subquery.
-    # Watchlists and screeners are both represented by the watchlist_id column, but their
-    # subqueries are disjoint - they never share ids.
+    # One where clause per type, OR-ed, keeping the rows whose id is in that type's
+    # subquery. Watchlists and screeners share the watchlist_id column, but their
+    # subqueries are disjoint.
     query =
       Enum.reduce(entities, query, fn entity, query_acc ->
         entity_ids_query = Registry.entity_ids_query(entity, opts)
@@ -693,8 +678,7 @@ defmodule Sanbase.Entity do
   defp maybe_filter_current_user_voted_for_only(query, opts, :vote) do
     case Keyword.get(opts, :current_user_voted_for_only) do
       user_id when is_integer(user_id) ->
-        # Here `query` is a query on top of the Sanbase.Vote table, so
-        # the fields of the query are post_id, watchlist_id, query_id, etc.
+        # `query` is on top of Sanbase.Vote, so its fields are post_id, watchlist_id, ...
         filter_user_voted_for_entities(query, user_id)
 
       _ ->
@@ -705,8 +689,7 @@ defmodule Sanbase.Entity do
   defp maybe_filter_current_user_voted_for_only(query, opts, :entity) do
     case Keyword.get(opts, :current_user_voted_for_only) do
       user_id when is_integer(user_id) ->
-        # Here `query` is a query that has `entity_id` and `entity_type`
-        # fields, so we can filter accordingly
+        # `query` has `entity_id` and `entity_type` fields to filter on.
         filter_entity_query_to_user_voted_only(query, user_id)
 
       _ ->
@@ -715,10 +698,9 @@ defmodule Sanbase.Entity do
   end
 
   defp filter_user_voted_for_entities(query, user_id) do
-    # Entities the user has voted for. All votes (1 to 20) live on the same row in the
-    # `count` column, so no `distinct` is needed. NOTE: `where: vote.user_id == ^user_id`
-    # would count that user's votes instead of all of them, making "sort by most voted
-    # first" impossible.
+    # Entities the user has voted for. All votes (1 to 20) live on one row in the `count`
+    # column, so no `distinct` is needed. A `where: vote.user_id == ^user_id` would count
+    # only that user's votes, making "sort by most voted first" impossible.
     result = get_entity_votes_for_user(user_id)
 
     ids_map = Enum.group_by(result, & &1.entity_type, & &1.entity_id)

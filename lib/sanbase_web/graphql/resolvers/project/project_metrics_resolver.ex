@@ -16,9 +16,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   @refresh_time_delta 1800
   @refresh_time_max_offset 1800
 
-  # How long the resolver waits for the first computation of a slug's available metrics,
-  # kept just under the GraphQL request timeout. The fan-out inside the computation is
-  # bounded well below this, so one wait is enough instead of several short polls.
+  # How long to wait for the first computation of a slug's available metrics, kept just
+  # under the GraphQL request timeout. The fan-out inside is bounded well below it, so one
+  # wait beats several short polls.
   @first_computation_wait 29_000
 
   def available_label_fqns(%Project{slug: slug}, _args, _resolution) do
@@ -69,10 +69,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
       user_metric_access_level = user_metric_access_level(resolution)
       lookback_days = user_available_metrics_lookback_days(resolution)
 
-      # One cache key per (slug, access level, lookback) computes the full available-metrics
-      # list, and the four fields (all/timeseries/histogram/table) derive their subset from
-      # it via `filter_fn` - one rehydrating closure per slug instead of four near-identical
-      # ones.
+      # One cache key per (slug, access level, lookback) holds the full available-metrics
+      # list and the four fields derive their subset from it via `filter_fn` - one
+      # rehydrating closure per slug instead of four near-identical ones.
       cache_key =
         {__MODULE__, :available_metrics, slug, user_metric_access_level, lookback_days}
         |> Sanbase.Cache.hash()
@@ -167,9 +166,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
       :error ->
         {:ok, slugs_for_metric} = available_slugs_for_metric(metric, opts)
 
-        # Determine whether the value is missing because it failed to compute or
-        # because the metric is not available for the given slug. In the first case
-        # return a :nocache tuple so an attempt to compute it is made on the next call
+        # Missing because it failed to compute, or because the metric is not available for
+        # the slug? The first returns a :nocache tuple so the next call recomputes.
         case slug in slugs_for_metric do
           true -> {:nocache, {:ok, nil}}
           false -> {:ok, nil}
@@ -187,24 +185,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     end)
   end
 
-  # Get the available metrics from the rehydrating cache, registering the computing
-  # function and waiting once for the first computation if it is not registered yet.
+  # The available metrics from the rehydrating cache, registering the computing function
+  # and waiting once for the first computation if it is not registered yet.
   #
-  # In test `:use_rehydrating_cache` defaults to `false`, so the resolver takes the
-  # synchronous `Sanbase.Cache.get_or_store/2` fallback below: the `RehydratingCache`
+  # In test `:use_rehydrating_cache` defaults to `false` and the synchronous
+  # `Sanbase.Cache.get_or_store/2` fallback below is taken instead: the `RehydratingCache`
   # GenServer periodically re-runs every registered closure, and one registered inside a
-  # `with_mocks` block can outlive it and re-fire against real code (Clickhouse adapters),
-  # giving intermittent "could not lookup Ecto repo Sanbase.ClickhouseRepo" warnings in
-  # unrelated tests. The supervisor is not started in the test boot path either (see
-  # `Sanbase.Application.Web`). Tests exercising the RC wiring end-to-end flip the flag back
-  # to `true` in `setup` and start a per-test `RehydratingCache.Supervisor`.
+  # `with_mocks` block can outlive it and re-fire against real code, giving intermittent
+  # "could not lookup Ecto repo Sanbase.ClickhouseRepo" warnings in unrelated tests. The
+  # supervisor is not started in the test boot path either. Tests exercising the RC wiring
+  # end-to-end flip the flag back on and start a per-test `RehydratingCache.Supervisor`.
   defp maybe_register_and_get(cache_key, fun, slug, query) do
     if rehydrating_cache_enabled?() do
       register_and_get_via_rehydrating_cache(cache_key, fun, slug, query)
     else
       # Synchronous fallback, test only. `Sanbase.Cache.get_or_store/2` unwraps
-      # `{:nocache, {:ok, value}}` to `{:ok, value}`, so `:nocache` semantics are NOT
-      # preserved here - tests depending on them must opt back into the RC path.
+      # `{:nocache, {:ok, value}}`, so `:nocache` semantics are NOT preserved - tests
+      # depending on them must opt back into the RC path.
       Sanbase.Cache.get_or_store({cache_key, @ttl}, fun)
     end
   end
@@ -230,8 +227,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   defp handle_rehydrating_result({:ok, value}, _slug, _query), do: {:ok, value}
   defp handle_rehydrating_result({:nocache, {:ok, _value}} = value, _slug, _query), do: value
 
-  # Both the initial not-ready timeout and a still-`:not_registered` result after
-  # we just registered mean the value is still being computed.
+  # A not-ready timeout, or `:not_registered` right after registering: still computing.
   defp handle_rehydrating_result({:error, error}, slug, query)
        when error in [:timeout, :not_registered],
        do: still_computing_error(slug, query)
@@ -244,8 +240,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     RehydratingCache.get(cache_key, @first_computation_wait, return_nocache: true)
   end
 
-  # Registering is a GenServer.call that can time out if the cache is overloaded;
-  # treat that as a soft failure rather than crashing the whole resolution.
+  # Registering is a GenServer.call that can time out on an overloaded cache - a soft
+  # failure, not a reason to crash the resolution.
   defp register_function(cache_key, fun, slug, query) do
     refresh_time_delta = @refresh_time_delta + :rand.uniform(@refresh_time_max_offset)
     description = "#{query} for #{slug} from project metrics resolver"

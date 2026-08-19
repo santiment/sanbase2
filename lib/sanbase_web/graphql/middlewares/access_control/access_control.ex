@@ -45,18 +45,15 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @freely_available_slugs ["santiment"]
   @minimal_datetime_param ~U[2009-01-01 00:00:00Z]
 
-  # Apply restrictions based on the subscription plan and the query made. Two cases:
-  # - auth method `basic` - no restrictions, only some sanity checks
-  # - any other auth method - all the required checks are done
+  # Restrictions from the subscription plan and the query. Auth method `basic` gets only
+  # sanity checks; every other one gets the full set.
   def call(resolution, opts) do
     resolution
     |> transform_resolution(opts)
     |> check_has_access(opts)
   end
 
-  # The name of the query/mutation can be passed in snake case or camel case.
-  # Here we transform the name to an atom in snake case for consistency
-  # and faster comparison of atoms
+  # The name arrives in snake or camel case; normalize to a snake case atom.
   defp transform_resolution(%Resolution{context: context} = resolution, opts) do
     context =
       context
@@ -69,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp extract_selector_data(%Absinthe.Resolution{} = resolution, _opts) do
     %{arguments: arguments} = resolution
 
-    # Make it easier to check cases where we have either %{selector: %{slug: slug}} or just %{slug: slug}
+    # Handles both %{selector: %{slug: slug}} and a bare %{slug: slug}.
     extracted_slug = Map.get(arguments, :slug) || get_in(arguments, [:selector, :slug])
 
     %{__slug__: extracted_slug}
@@ -88,9 +85,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       |> String.to_existing_atom()
       |> get_query_or_argument(source, arguments)
 
-    # Make it easier to work with the getMetric's `metric` argument,
-    # so resolution.source does not need to be checked. This way it can
-    # also be extracted from aggregatedTimeseriesData on a project type
+    # Lifts getMetric's `metric` argument so resolution.source needs no checking, and it
+    # can also be taken from aggregatedTimeseriesData on a project type.
     extracted_metric =
       case query_atom_name do
         {:metric, metric} -> metric
@@ -100,9 +96,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %{__query_argument_atom_name__: query_atom_name, __metric__: extracted_metric}
   end
 
-  # Basic auth should have no restrictions. Check only the sanity of the `from`
-  # and `to` params. This includes checks that `to` is after `from` and that
-  # both are after 2009-01-01T00:00:00Z.
+  # Basic auth has no restrictions - only sanity checks on `from`/`to`: `to` after
+  # `from`, both after 2009-01-01T00:00:00Z.
   defp check_has_access(
          %Resolution{context: %{auth: %{auth_method: :basic}}} = resolution,
          _opts
@@ -146,8 +141,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  # The auth method is not `basic` and the slug is not one of the freely available slugs
-  # all of the required checks are done
+  # Not `basic` auth and not a freely available slug - run all the checks.
   defp check_has_access(%Resolution{} = resolution, opts) do
     full_check_has_access(resolution, opts)
   end
@@ -161,9 +155,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     |> apply_if_not_resolved(&check_from_to_both_outside/1)
   end
 
-  # A step that rejects access resolves the resolution, so no further checks run. That
-  # also keeps the error message the most specific one: with no access to the metric at
-  # all, from-to errors are noise next to "no access to this metric on this plan".
+  # A rejecting step resolves the resolution, so no further checks run and the error stays
+  # the most specific one - from-to errors are noise next to "no access to this metric".
   defp apply_if_not_resolved(%Resolution{state: :resolved} = resolution, _) do
     resolution
   end
@@ -238,9 +231,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  # Access is granted either by a shared access token that covers the query/metric (its
-  # holder can be anonymous) or by the user's subscription plan. The token is checked
-  # first; if it grants access, the plan check is bypassed.
+  # Access comes from a shared access token covering the query/metric (its holder can be
+  # anonymous) or from the user's plan. The token is checked first and bypasses the plan.
   defp check_plan_has_access(%Resolution{} = resolution) do
     case check_shared_access_token_has_access?(resolution) do
       true -> resolution
@@ -332,9 +324,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     """
   end
 
-  # A bundle's access comes from the packages it bought, not the ordinal plan ladder, so
-  # `min_plan` has no meaningful answer here - it told a customer paying $1050/month to
-  # "upgrade to SANAPI FREE". They need the name of the package the metric is sold in.
+  # A bundle's access comes from the packages it bought, not the plan ladder, so `min_plan`
+  # has no answer here - it told a customer paying $1050/month to "upgrade to SANAPI FREE".
+  # They need the name of the package the metric is sold in.
   defp build_access_error_message(
          argument,
          argument_name,
@@ -380,10 +372,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     """
   end
 
-  # Only metrics are sold in packages. Queries and signals reach here too - every bundle
-  # is granted all of them, so a refusal is unexpected rather than impossible - and they
-  # are matched out rather than looked up, because a name coinciding with a metric would
-  # name a package that would not actually grant it.
+  # Only metrics are sold in packages. Queries and signals reach here too (every bundle
+  # gets all of them, so a refusal is unexpected rather than impossible) and are matched
+  # out rather than looked up: a name coinciding with a metric would name a wrong package.
   defp bundle_packages_for(:metric, metric_name),
     do: PackageSnapshot.packages_containing(metric_name)
 
@@ -398,9 +389,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     "the #{Enum.join(rest, ", ")} and #{last} packages"
   end
 
-  # `by_slug/1` cannot fail on a slug from `packages_containing/1`, which only returns
-  # packages still sold. The error branch exists because a CaseClauseError on an error
-  # path would hide the refusal it is trying to explain.
+  # `by_slug/1` cannot fail on a slug from `packages_containing/1`. The error branch is
+  # there because a CaseClauseError here would hide the refusal it explains.
   defp package_name(slug) do
     case Package.by_slug(slug) do
       {:ok, %{name: name}} -> name
@@ -408,8 +398,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  # If the query is marked as having free realtime and historical data
-  # do not restrict anything
+  # Queries marked as free realtime and historical are not restricted.
   defp maybe_apply_restrictions(%Resolution{} = resolution, %{
          allow_realtime_data: true,
          allow_historical_data: true
@@ -417,8 +406,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  # Dispatch the resolution of restricted and not-restricted queries to
-  # different functions if there are `from` and `to` parameters
+  # With `from` and `to` present, restricted and unrestricted queries take different paths.
   defp maybe_apply_restrictions(
          %Resolution{
            context: %{__query_argument_atom_name__: query_or_argument},
@@ -481,8 +469,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          _middleware_args,
          query_or_argument
        ) do
-    # The shared access token always has an access to a closed range, so
-    # full historical/realtime data is not allowed
+    # A shared access token grants a closed range, never full history or realtime.
     middleware_args = %{allow_historical_data: true, allow_realtime_data: true}
 
     %{
@@ -628,9 +615,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         resolution
 
       _ ->
-        # If we reach here the first time we checked `to < from` was not true
-        # This means that the middleware rewrote the params in a way that this is
-        # now true. If that happens - both from and to are outside the allowed interval
+        # `to < from` was false on the first check, so the middleware rewrote the params
+        # into it - which means both are outside the allowed interval.
         %{
           plan_name: plan_name,
           requested_product: requested_product,
@@ -722,9 +708,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   # Only bundle plans read this. Every bundle subscription is named `BUNDLE`, so the plan
   # name identifies nothing and what the customer bought has to travel with the request.
-  # The subscription is already in the context (`auth_plug.ex` puts it there); this stops
-  # it being dropped on the way to the access checker. See §5.8 of
-  # docs/composable-api-plans-handover.md.
+  # `auth_plug.ex` puts the subscription in the context; this keeps it from being dropped
+  # on the way to the access checker. See §5.8 of docs/composable-api-plans-handover.md.
   defp bundle_entitlement(context),
     do: Sanbase.Billing.Subscription.bundle_entitlement(context[:auth][:subscription])
 end

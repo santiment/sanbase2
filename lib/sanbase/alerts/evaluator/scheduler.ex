@@ -64,17 +64,15 @@ defmodule Sanbase.Alert.Scheduler do
       |> filter_receivable_triggers(info_map)
       |> filter_not_frozen_triggers(info_map)
 
-    # The batches are run sequentially for now. If they start running in parallel
-    # the batches creation becomes more complicated - all the alerts of a user
-    # must end up in a single batch so no race conditions updating the DB can occur.
+    # Sequential for now. Running batches in parallel needs all of a user's alerts in one
+    # batch, or two batches race on the same DB rows.
     batches =
       split_into_batches(alerts)
       |> batches_to_maps()
 
     alerts_count = length(alerts)
 
-    # Extend the info map with the data that is not not prior the first definition
-    # of it.
+    # Add the data that was not known when the map was first built.
     info_map =
       Map.merge(info_map, %{
         alerts_count: alerts_count,
@@ -92,9 +90,9 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   defp split_into_batches(alerts) do
-    # The state is a list of mapsets, each slightly larger than @batch_size. All of a
-    # user's alerts go in the same batch so batches can run concurrently. The initial state
-    # holds an empty mapset, so with no alerts the result needs Enum.reject(&Enum.empty?).
+    # A list of mapsets, each slightly larger than @batch_size. All of a user's alerts go
+    # in one batch so batches can run concurrently. The initial state holds an empty
+    # mapset, hence the Enum.reject(&Enum.empty?) on the result.
     init_state = [MapSet.new()]
 
     Enum.group_by(alerts, & &1.user_id)
@@ -110,8 +108,7 @@ defmodule Sanbase.Alert.Scheduler do
     |> Enum.reject(&Enum.empty?/1)
   end
 
-  # Turn the batches from lists into maps, adding the number of alerts in the batch and
-  # which part of the whole alerts list it covers.
+  # Batches as maps, with the alert count and the part of the list they cover.
   defp batches_to_maps(batches) do
     batches
     |> Enum.reduce({[], 0}, fn alerts, {batches, size_so_far} ->
@@ -203,9 +200,7 @@ defmodule Sanbase.Alert.Scheduler do
     """)
   end
 
-  # Do not execute alerts that are frozen. Frozen alerts are alerts
-  # that were created more than X days ago and their owner is a free user.
-  # This is the current restriction about alerts of free users.
+  # Frozen alerts - older than X days and owned by a free user - are not executed.
   defp filter_not_frozen_triggers(user_triggers, info_map) do
     %{type: type, run_uuid: run_uuid} = info_map
 
@@ -227,9 +222,9 @@ defmodule Sanbase.Alert.Scheduler do
     filtered
   end
 
-  # Deactivate legacy alerts whose only destinations are webhooks with invalid URLs (http
-  # scheme, IP address host, malformed) - they can deliver nothing. Alerts with other
-  # channels too are kept; their invalid webhook is refused at send time instead.
+  # Deactivate legacy alerts whose only destinations are invalid webhooks (http scheme, IP
+  # host, malformed) - they deliver nothing. Alerts with other channels are kept and their
+  # webhook is refused at send time.
   defp filter_and_deactivate_webhook_bad_url_triggers(user_triggers, info_map) do
     {bad_url_triggers, rest} =
       Enum.split_with(user_triggers, &only_bad_webhook_url_channels?/1)
@@ -255,8 +250,7 @@ defmodule Sanbase.Alert.Scheduler do
 
   defp only_bad_webhook_url_channels?(_user_trigger), do: false
 
-  # True only for webhook entries whose URL fails validation. Entries of
-  # other channel types are not bad entries.
+  # Only webhook entries with an invalid URL are bad entries.
   defp bad_webhook_url_entry?(entry) do
     with {:ok, url} <- NotificationChannel.webhook_url(entry),
          {:error, _} <- Sanbase.Utils.Validation.valid_webhook_url?(url) do
@@ -292,8 +286,7 @@ defmodule Sanbase.Alert.Scheduler do
     filtered
   end
 
-  # web push cannot be received currently, so its presence alone is not enough
-  # to schedule the alert.
+  # Web push cannot be received, so it alone does not schedule the alert.
   defp channel_receivable?("email", user, _ut), do: User.Alert.can_receive_email_alert?(user)
 
   defp channel_receivable?("telegram", user, _ut),
@@ -313,9 +306,8 @@ defmodule Sanbase.Alert.Scheduler do
   defp channel_receivable?(%{telegram_channel: chat_id}, user, _ut),
     do: User.Alert.can_receive_telegram_channel_alert?(user, chat_id)
 
-  # Bare "webhook" / "telegram_channel" strings or any other unknown channel
-  # cannot deliver — no URL / chat id to send to. Skip evaluation entirely so
-  # the alert does not waste resources or crash later in send_to_channel/3.
+  # A bare "webhook"/"telegram_channel" string or an unknown channel has no URL or chat id
+  # to send to. Skip the evaluation instead of crashing later in send_to_channel/3.
   defp channel_receivable?(channel, _user, ut) do
     Logger.warning(
       "Skipping alert evaluation: unsupported notification channel #{inspect(channel)} for user_trigger_id=#{ut.id}"
@@ -333,24 +325,20 @@ defmodule Sanbase.Alert.Scheduler do
 
   # returns a tuple {updated_user_triggers, send_result_list}
   defp send_and_mark_as_sent(triggers, info_map) do
-    # Group by user: separate user groups run concurrently, the triggers of one user must
-    # not. That drops the Mutex dependency the notification sending needed to track sent
-    # alerts - with two triggers of the same user running concurrently,
-    # `max_alerts_to_sent` cannot be enforced without synchronization.
+    # Separate users run concurrently, the triggers of one user do not: `max_alerts_to_sent`
+    # cannot be enforced across concurrent triggers without a mutex.
     grouped_by_user = Enum.group_by(triggers, fn %{user: user} -> user.id end)
 
-    # On timeout, the map returns {:error, :timeout} tuple, so instead of using map_type: :flat_map,
-    # we need to use map_type: :map and flatten the result with List.flatten/1, otherwise
-    # a matching error is raised
+    # A timeout returns an {:error, :timeout} tuple, which :flat_map cannot match - hence
+    # map_type: :map plus List.flatten/1.
     grouped_by_user
     |> Sanbase.Parallel.map(
       fn {_user_id, triggers} -> send_triggers_sequentially(triggers, info_map) end,
       max_concurrency: 15,
       ordered: false,
       map_type: :map,
-      # A killed task loses the not-yet-recorded send results of its in-flight
-      # trigger, which resends on the next run. Keep the timeout a generous
-      # backstop so that does not happen for legitimately slow rounds.
+      # A killed task loses its in-flight trigger's unrecorded send results and resends
+      # next run, so keep the timeout a generous backstop.
       timeout: 60_000,
       on_timeout: :kill_task
     )
@@ -381,8 +369,7 @@ defmodule Sanbase.Alert.Scheduler do
     end)
   end
 
-  # This function is called after the timeouts are removed from the result
-  # The missing alerts are those which task for sending them to the user timed out
+  # Called after the timeouts are removed - the missing alerts are the timed out ones.
   defp report_sending_alert_timeout(result, triggers, info_map) do
     %{type: type, run_uuid: run_uuid, index: index} = info_map
 
@@ -441,9 +428,8 @@ defmodule Sanbase.Alert.Scheduler do
          %{trigger: %{last_triggered: last_triggered}},
          send_results_list
        ) do
-    # Round the datetimes 30 seconds because the `last_triggered` is used as
-    # part of a cache key. If `now` is left as is the last triggered time of
-    # all alerts will be different, sometimes only by a second
+    # `last_triggered` is part of a cache key, so round to 30s - otherwise every alert
+    # gets a distinct time, sometimes off by a second.
     now =
       Timex.now()
       |> Sanbase.Utils.DateTime.round_datetime(second: 30)
@@ -455,9 +441,8 @@ defmodule Sanbase.Alert.Scheduler do
       send_results_list
       |> Enum.reduce({last_triggered, false, 0, []}, fn
         {identifier_or_list, _result = :ok}, {acc, _any_success, delivery_failures, permanent} ->
-          # Example: {["elem1", "elem2"], :ok} or {"0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", :ok}
-          # This case happens when multiple identifiers (for example emerging words)
-          # are handled in one notification.
+          # Multiple identifiers (e.g. emerging words) in one notification, like
+          # {["elem1", "elem2"], :ok}.
           list = identifier_or_list |> List.wrap()
           acc = Enum.reduce(list, acc, &Map.put(&2, &1, now))
 
@@ -496,9 +481,8 @@ defmodule Sanbase.Alert.Scheduler do
      }}
   end
 
-  # A trigger can be evaluated while all of its deliveries fail. In that case
-  # `last_triggered` deliberately remains unchanged so it can be retried, but
-  # its old value must not be recorded as a newly fired historical activity.
+  # When every delivery of an evaluated trigger fails, `last_triggered` stays unchanged so
+  # it retries - but its old value must not be recorded as a new historical activity.
   defp get_fired_alerts_data(send_results) do
     send_results
     |> Enum.map(fn

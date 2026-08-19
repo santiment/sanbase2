@@ -1473,19 +1473,11 @@ defmodule SanbaseWeb.AdminComponents do
   defp generic_admin_action_path(:edit, row, resource),
     do: ~p"/admin/generic/#{row}/edit?resource=#{resource}"
 
-  # Resolves the value to render for a single field of an admin record, looking it up as
-  # belongs_to_links (precomputed link) -> raw record field -> value_modifier override, then
-  # formatting it by its Ecto type. Parameters:
-  #   record               - the Ecto struct/map being rendered (a User, a Project, ...)
-  #   field                - atom field name to display (:email, :user_id)
-  #   belongs_to_links     - %{field_atom => rendered_link} built for this record's
-  #                          belongs_to associations by GenericAdminController.LinkBuilder;
-  #                          the link replaces the raw FK value (:user_id -> <a>..</a>)
-  #   value_modifier_funcs - %{field_atom => (record -> any)} from the resource's
-  #                          `:fields_override` config, called with the full record
-  #   field_type_map       - %{field_atom => ecto_type}, formatting :map/:list as a
-  #                          Jason-encoded string, :boolean as a green check / red x icon,
-  #                          anything else as-is
+  # The value to render for one field of an admin record: looked up as belongs_to_links
+  # (a link built by GenericAdminController.LinkBuilder, replacing the raw FK value) ->
+  # raw record field -> value_modifier_funcs override (from the resource's
+  # `:fields_override`, called with the full record), then formatted by field_type_map's
+  # Ecto type - :map/:list as Jason-encoded strings, :boolean as a check/x icon.
   defp resolve_field_value(record, field, belongs_to_links, value_modifier_funcs, field_type_map) do
     result =
       if belongs_to_links[field], do: belongs_to_links[field], else: Map.get(record, field)

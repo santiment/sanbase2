@@ -69,18 +69,16 @@ defmodule SanbaseWeb.Endpoint do
   plug(SanbaseWeb.Plug.RequestContextPlug)
   plug(Plug.Logger)
 
-  # This plug should be placed before Plug.Parsers because it is reading the
-  # request body and it can be read only once and if used anywhere else should be stored
+  # Before Plug.Parsers: it reads the request body, which can only be read once.
   plug(SanbaseWeb.Plug.VerifyStripeWebhook)
 
-  # AWS SNS posts JSON bodies with `Content-Type: text/plain`, which Plug.Parsers below
-  # would pass through unparsed (pass: ["*/*"]). Rewrite it to application/json so SNS
-  # webhooks (e.g. SES events) are parsed. Must run before Plug.Parsers.
+  # AWS SNS posts JSON with `Content-Type: text/plain`, which Plug.Parsers passes through
+  # unparsed (pass: ["*/*"]). Rewritten to application/json, before Plug.Parsers, so SNS
+  # webhooks are parsed.
   plug(SanbaseWeb.Plug.SnsContentType)
 
-  # The parser length is bigger than the FileStore limit intentionally.
-  # Plug.Parsers.length applies to the full multipart body before Sanbase.FileStore.validate/1 runs
-  # and it will include headers, and possibly other parts of the request
+  # Deliberately bigger than the FileStore limit: Plug.Parsers.length covers the full
+  # multipart body - headers and other parts included - before FileStore.validate/1 runs.
   parser_length =
     if System.get_env("CONTAINER_TYPE") in ["admin", "all"], do: 60_000_000, else: 15_000_000
 
@@ -89,9 +87,8 @@ defmodule SanbaseWeb.Endpoint do
     parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
     pass: ["*/*"],
     json_decoder: Jason,
-    # To accommodate bigger files for reports uploaded via admin panel
-    # The file store is configured to allow bigger files for the admin pod
-    # and lower for the web pod
+    # Room for the bigger report files uploaded via the admin panel - the file store allows
+    # bigger files on the admin pod than on the web pod.
     length: parser_length
   )
 

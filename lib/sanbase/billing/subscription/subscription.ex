@@ -66,16 +66,15 @@ defmodule Sanbase.Billing.Subscription do
 
     field(:payment_intent, :map, virtual: true)
 
-    # Only set for bundle subscriptions, worked out from the subscription's items when
-    # they change so access checks never decode items or call Stripe. NULL for every other
-    # subscription; see §5.4 of docs/composable-api-plans-handover.md.
-    # `on_replace: :delete`, not `:update`: merging would let a field the new calculation
-    # omits keep its old value, so a customer who dropped a package could keep part of what
-    # it gave them. See bundle_entitlement_changeset/2.
+    # Only for bundle subscriptions, recomputed when the items change so access checks
+    # never decode items or call Stripe. NULL otherwise; see §5.4 of
+    # docs/composable-api-plans-handover.md. `on_replace: :delete`, not `:update`: merging
+    # would keep the old value of a field the new calculation omits, so a customer who
+    # dropped a package could keep part of what it gave them.
     embeds_one(:bundle_entitlement, Sanbase.Billing.Plan.Bundle.Entitlement, on_replace: :delete)
 
-    # Only bundle subscriptions have items. Every other subscription has none,
-    # which is how the two are told apart without asking Stripe.
+    # Only bundle subscriptions have items - that is how the two are told apart without
+    # asking Stripe.
     has_many(:items, Sanbase.Billing.Subscription.Item, on_delete: :delete_all)
 
     belongs_to(:user, User)
@@ -217,8 +216,7 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.insert(Keyword.take(opts, [:on_conflict]))
     |> case do
       {:ok, %{id: nil}} = result ->
-        # If opts has on_conflict: :nothing and a new subscription is not created
-        # the id will be nil. In this case do not emit an event
+        # With on_conflict: :nothing and no new subscription the id is nil - no event.
         result
 
       result ->
@@ -324,7 +322,7 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  # Cancel asynchronously to avoid blocking the request. If it fails it is ok but capture the error in sentry
+  # Async so the request is not blocked. Failure is acceptable, but report it to sentry.
   def maybe_cancel_async(user_id, plan) do
     run = fn ->
       try do
@@ -734,10 +732,10 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  # Institutional and Enterprise belong to the new SanAPI offering, so they answer to that
-  # offering's commercial rules rather than only to `has_active_subscriptions/2` above,
-  # which compares plan ids and would sell one to a customer already on a bundle, leaving
-  # two live SanAPI subscriptions billing. Every other plan behaves as before.
+  # Institutional and Enterprise belong to the new SanAPI offering and answer to its
+  # commercial rules, not only to `has_active_subscriptions/2` above - that compares plan
+  # ids and would sell one to a customer already on a bundle, leaving two live SanAPI
+  # subscriptions billing. Every other plan behaves as before.
   defp ensure_plan_is_for_sale(user, %Plan{name: "INSTITUTIONAL" <> _}) do
     case Sanbase.Billing.Plan.Bundle.Lifecycle.ensure_can_subscribe_institutional(user) do
       :ok -> :ok
@@ -746,10 +744,9 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   # A withdrawn plan. Delisting it from `product_with_plans/0` is not enough: `subscribe`
-  # takes a plan id, not a name, and `is_private` gates nothing (§15 Q14). Without this,
-  # `ENTERPRISE_BASIC` stayed buyable by anyone who knew the id was 105 - the charge went
-  # through, then every authenticated request raised `CaseClauseError` in
-  # `Plan.plan_name/1`.
+  # takes a plan id and `is_private` gates nothing (§15 Q14), so `ENTERPRISE_BASIC` stayed
+  # buyable by anyone who knew the id was 105 - the charge went through, then every
+  # authenticated request raised `CaseClauseError` in `Plan.plan_name/1`.
   defp ensure_plan_is_for_sale(_user, %Plan{name: "RETIRED_" <> _}) do
     {:error, %__MODULE__.Error{message: "This plan is no longer available for purchase"}}
   end
@@ -818,9 +815,9 @@ defmodule Sanbase.Billing.Subscription do
       product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id, plan) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 
-      # BUSINESS plans are excluded from the API trial, and so are INSTITUTIONAL and
-      # ENTERPRISE: as the top SanAPI plans, trialling them is product's call to make
-      # deliberately (task TR) - a free fortnight of unlimited history is the product.
+      # BUSINESS, INSTITUTIONAL and ENTERPRISE are excluded from the API trial: for the top
+      # SanAPI plans a free fortnight of unlimited history is the product, so trialling them
+      # is product's call to make deliberately (task TR).
       product_id == @product_api and
         plan.name not in ~w(BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL ENTERPRISE) and
           Billing.eligible_for_api_trial?(user.id) ->
@@ -906,11 +903,10 @@ defmodule Sanbase.Billing.Subscription do
   def add_payment_intent(result, _), do: result
 
   defp fetch_plan_id(db_subscription, stripe_subscription) do
-    # Three cases, in order: a legacy single-item sub reports a Stripe Plan id, resolved
-    # locally; a sub created via the Price API reports `price` and no `plan`, where the
-    # legacy plan's id is reachable and resolved the same way; nothing resolvable keeps the
-    # local plan_id. Bundle items only ever hit the last two - their price ids live in
-    # `bundle_prices`, never `plans.stripe_id`, so the local BUNDLE marker is kept.
+    # In order: a legacy single-item sub reports a Stripe Plan id, resolved locally; a
+    # Price API sub reports `price` and no `plan`, whose legacy plan id resolves the same
+    # way; anything unresolvable keeps the local plan_id. Bundle items only hit the last
+    # two - their price ids live in `bundle_prices`, so the local BUNDLE marker is kept.
     case stripe_subscription.items.data do
       [%{plan: %{id: stripe_plan_id}} | _] when is_binary(stripe_plan_id) ->
         case Plan.by_stripe_id(stripe_plan_id) do

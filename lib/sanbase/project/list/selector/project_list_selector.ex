@@ -7,9 +7,8 @@ defmodule Sanbase.Project.ListSelector do
   alias Sanbase.Project
   alias Sanbase.Utils.ListSelector.Transform
 
-  # TODO: Rework this. Cycle detection needs storage between calls and uses the process
-  # dictionary for it, so the caller must resolve every watchlist in a different process or
-  # call clear_detect_cycles/0 in between.
+  # TODO: Rework. Cycle detection stores state in the process dictionary, so the caller
+  # must resolve each watchlist in its own process or call clear_detect_cycles/0 between.
   @cycle_detection_key :__get_base_projects__
   def clear_detect_cycles(), do: Process.delete(@cycle_detection_key)
 
@@ -125,8 +124,7 @@ defmodule Sanbase.Project.ListSelector do
         {:ok, Project.List.hidden_projects_slugs()}
       end)
 
-    # The &Kernel.--/2 operator removes the first occurrence only. Apply
-    # Enum.uniq/1 to make sure there are no duplicates that will be left
+    # &Kernel.--/2 removes the first occurrence only, so uniq first or duplicates remain.
     Enum.uniq(slugs) -- hidden_slugs
   end
 
@@ -146,14 +144,12 @@ defmodule Sanbase.Project.ListSelector do
   defp watchlist_args_to_str(%{watchlist_id: id}), do: "watchlist with id #{id}"
   defp watchlist_args_to_str(%{watchlist_slug: slug}), do: "watchlist with slug #{slug}"
 
-  # TODO: rework this to use an ETS table instead of the process dictionary, and to check
-  # whether a seen watchlist has been resolved - that would fix one process resolving many
-  # watchlists.
+  # TODO: use an ETS table instead of the process dictionary and check whether a seen
+  # watchlist has been resolved - that would fix one process resolving many watchlists.
   #
-  # Because the detection uses the process dictionary it can give false positives when
-  # multiple watchlists are resolved in the same process/api call. So `args_seen_so_far` is
-  # a list rather than a set, allowing some repetitions before erroring. A real cycle is
-  # still guaranteed to be detected whatever the threshold is.
+  # The process dictionary gives false positives when several watchlists are resolved in one
+  # process, so `args_seen_so_far` is a list rather than a set and tolerates some
+  # repetitions. A real cycle is still detected whatever the threshold is.
   defp detect_cycles!(args) do
     case Process.get(@cycle_detection_key) do
       nil ->
@@ -228,9 +224,8 @@ defmodule Sanbase.Project.ListSelector do
   defp included_slugs_by_filters([%{name: "erc20"}], _filters_combinator), do: {:ok, :erc20}
 
   defp included_slugs_by_filters(filters, filters_combinator) when is_list(filters) do
-    # `on_timeout: :kill_task` turns a slow filter into an `{:exit, :timeout}`
-    # element instead of exiting the whole caller process (the default
-    # `on_timeout: :exit`), which was crashing the alerts evaluator tasks.
+    # `on_timeout: :kill_task` turns a slow filter into an `{:exit, :timeout}` element
+    # instead of exiting the caller, which the default was doing to the alerts evaluator.
     result =
       filters
       |> Sanbase.Parallel.map(

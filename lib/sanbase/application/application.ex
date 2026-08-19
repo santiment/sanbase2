@@ -16,25 +16,20 @@ defmodule Sanbase.Application do
 
     print_starting_log(container_type)
 
-    # Do some initialization. This includes increasing the backtrace depth,
-    # starting the event bus, etc.
+    # Increase the backtrace depth, start the event bus, etc.
     init(container_type)
 
     # Get the proper children that have to be started in the current container type
     {children, opts} = children_opts(container_type)
 
-    # Some children must be started before others. The `all` container type combines every
-    # other type, so these children are prepended explicitly, or they end up in the middle
-    # of the list.
+    # Some children must start before others. `all` combines every other container type,
+    # so these are prepended explicitly or they end up mid-list.
     prepended_children = prepended_children(container_type)
 
-    # This list contains all children that are common to all container types. These
-    # include some Ecto adapters, Telemetry, Phoenix Endpoint, etc.
+    # Children common to all container types: Ecto adapters, Telemetry, Endpoint, etc.
     common_children = common_children()
 
-    # Combine all the children to be started and normalize: custom `start_in`/`start_if`
-    # cases can return `nil` to signal that a child is not started, and those need
-    # cleaning out.
+    # `start_in`/`start_if` return `nil` for a child that is not started - clean those out.
     children =
       (prepended_children ++ common_children ++ children)
       |> Sanbase.ApplicationUtils.normalize_children()
@@ -58,8 +53,7 @@ defmodule Sanbase.Application do
   end
 
   def init(container_type) do
-    # Increase the backtrace depth here and not in the phoenix config
-    # so it applies to all non-phoenix work, too
+    # Set here, not in the phoenix config, so it applies to non-phoenix work too.
     :erlang.system_flag(:backtrace_depth, 20)
 
     Sanbase.EventBus.init()
@@ -303,38 +297,27 @@ defmodule Sanbase.Application do
 
       # Prometheus metrics
       SanbaseWeb.Prometheus,
-
-      # Start the Postgres Ecto repository
       Sanbase.Repo,
 
-      # Start the main ClickhouseRepo. This is started in all
-      # pods as each pod will need it.
+      # The main ClickhouseRepo, needed by every pod.
       start_in_and_if(
         fn -> Sanbase.ClickhouseRepo end,
         [:dev, :prod],
         fn -> Sanbase.ClickhouseRepo.enabled?() end
       ),
-
-      # Start the main clickhouse read-only repos
       clickhouse_readonly_children,
-
-      # Start the clickhouse read-only repos for different plans
       clickhouse_readonly_per_plan_children,
-
-      # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
       # Deep research runners keep a run alive across LiveView disconnects.
       {Registry, [keys: :unique, name: Sanbase.DeepResearch.Registry]},
       {DynamicSupervisor, [name: Sanbase.DeepResearch.RunnerSupervisor, strategy: :one_for_one]},
-
-      # Star the API call service
       Sanbase.ApiCallLimit.ETS,
 
-      # Start the Hammer rate limiter backend (ETS)
+      # Hammer rate limiter backend (ETS)
       {Sanbase.RateLimit, [clean_period: :timer.minutes(10), key_older_than: :timer.hours(4)]},
 
-      # Start telegram rate limiter. Used both in web and alerts
+      # Telegram rate limiter, used both in web and alerts
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :telegram_bot_rate_limiting_server,
         scale: 1000,
@@ -354,7 +337,7 @@ defmodule Sanbase.Application do
          acquire_lock_timeout: 102_000
        ]},
 
-      # Start the graphQL in-memory cache
+      # GraphQL in-memory cache
       start_if(
         fn ->
           SanbaseWeb.Graphql.Cache.child_spec(
@@ -365,37 +348,26 @@ defmodule Sanbase.Application do
         fn -> container_type() in ["web", "all"] end
       ),
 
-      # Periodically log GraphQL cache statistics and sweep oldest entries if
-      # the payload byte size exceeds CachexProvider.max_payload_mb()
+      # Log GraphQL cache stats and sweep the oldest entries past max_payload_mb()
       start_if(
         fn -> SanbaseWeb.Graphql.CacheMonitor end,
         fn -> container_type() in ["web", "all"] end
       ),
 
-      # Record per-pod BEAM/OS memory stats to Postgres every minute,
-      # shown on the admin panel at /admin/memory_stats
+      # Per-pod BEAM/OS memory stats, shown at /admin/memory_stats
       start_if(
         fn -> Sanbase.Monitoring.MemoryCollector end,
         fn -> Sanbase.Monitoring.MemoryCollector.enabled?() end
       ),
 
-      # Service for fast checking if a slug is valid
-      # `:available_slugs_module` option changes the module
-      # used in test env to another one, this one is unused
+      # Fast slug validity check. `:available_slugs_module` swaps the module in tests.
       start_in(Sanbase.AvailableSlugs, [:dev, :prod]),
-
-      # Start the PubSub
       {Phoenix.PubSub, name: Sanbase.PubSub},
-
-      # Start the Presence
       SanbaseWeb.Presence,
-
-      # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
 
-      # Drain the running connections before closing so executing API calls can finish:
-      # the drainer stops the TCP acceptor taking new connections, then waits until there
-      # are none left or 30 seconds pass.
+      # Drain running connections so executing API calls finish: the acceptor stops taking
+      # new connections, then waits for the rest, up to 30 seconds.
       {SanbaseWeb.ConnectionDrainer, shutdown: 30_000, ranch_ref: SanbaseWeb.Endpoint.HTTP},
 
       # Process that starts test-only deps

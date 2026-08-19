@@ -203,9 +203,9 @@ defmodule Sanbase.ClickhouseRepo do
     maybe_store_executed_clickhouse_sql(query, args)
     maybe_print_interpolated_query(query, args, Keyword.get(opts, :ctx))
 
-    # decode: false makes the `ch` driver return the raw RowBinary response (binary data +
-    # HTTP headers) instead of decoded rows. decode_result_with_metadata/1 then decodes it
-    # by hand to get column_types, query_id and summary, which the driver's decode discards.
+    # decode: false returns the raw RowBinary response (data + HTTP headers) instead of
+    # decoded rows, so decode_result_with_metadata/1 can keep the column_types, query_id
+    # and summary the driver's decode discards.
     case __MODULE__.query(query, args, decode: false) do
       {:ok, result} ->
         {:ok, decode_result_with_metadata(result)}
@@ -226,12 +226,12 @@ defmodule Sanbase.ClickhouseRepo do
   """
 
   # Mint's bare "timeout", DBConnection's "timed out"/"dropped from queue", ClickHouse's
-  # TIMEOUT_EXCEEDED (see docs/timeouts.md). The word boundaries keep identifiers like
-  # `timeout_ms` from reading as a timeout, hence the separate TIMEOUT_EXCEEDED branch.
+  # TIMEOUT_EXCEEDED (docs/timeouts.md). The word boundaries keep `timeout_ms` from reading
+  # as a timeout, hence the separate TIMEOUT_EXCEEDED branch.
   @timeout_error_regex ~r/\btimed?\s*out\b|\btimeout_exceeded\b|\bdropped\s+from\s+queue\b/i
 
-  # ClickHouse echoes the offending SQL back; drop it so a query containing
-  # "timeout" isn't misclassified.
+  # ClickHouse echoes the offending SQL back; drop it, or a query containing "timeout" is
+  # misclassified.
   @query_echo_regex ~r/while processing query:/i
 
   @doc false
@@ -255,10 +255,9 @@ defmodule Sanbase.ClickhouseRepo do
     log_id = UUID.uuid4()
     error_message = extract_error_from_stacktrace(stacktrace) || Exception.message(exception)
 
-    # ClickHouse error strings and stacktraces can embed the user's query params/SQL. For
-    # activity_traces_hidden users the logs keep only a correlatable breadcrumb; the
-    # returned error still carries the real message, since it goes to the user who ran the
-    # query rather than into the logs.
+    # ClickHouse errors and stacktraces can embed the user's params/SQL, so for
+    # activity_traces_hidden users the logs keep only a correlatable breadcrumb. The
+    # returned error keeps the real message - it goes to the user who ran the query.
     if activity_traces_hidden?(opts) do
       Logger.warning(
         "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason hidden (activity_traces_hidden)"
@@ -302,9 +301,8 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  # Prefer the ctx explicitly threaded through `opts` (set by the
-  # Query-struct entry points); fall back to the ambient context for
-  # bare-SQL callers that don't carry one.
+  # The ctx threaded through `opts` by the Query-struct entry points, falling back to the
+  # ambient context for bare-SQL callers that carry none.
   defp activity_traces_hidden?(opts) do
     ctx = Keyword.get(opts, :ctx) || Sanbase.RequestContext.current()
     ActivityTracesConfig.hidden?(:hide_ch_error_logs, ctx)
@@ -354,8 +352,8 @@ defmodule Sanbase.ClickhouseRepo do
               error_msg
 
             [stripped_error_msg, _] ->
-              # Drop the SETTINGS fragment from the error response: it is appended by
-              # backend preprocessing, not written by the user who sees the error.
+              # Drop the SETTINGS fragment: backend preprocessing appends it, the user did
+              # not write it.
               stripped_error_msg
           end
 
@@ -363,14 +361,13 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  # If the `__store_executed_clickhouse_sql__` flag is set to true
-  # from the MetricResolver module, store the executed SQL query
-  # after interpolating the parameters in it.
+  # With `__store_executed_clickhouse_sql__` set by MetricResolver, store the executed SQL
+  # with its parameters interpolated.
   defp maybe_store_executed_clickhouse_sql(query, params) do
     if Process.get(:__store_executed_clickhouse_sql__, false) do
       list = Process.get(:__executed_clickhouse_sql_list__, [])
 
-      # Interpolate the parameters inside the query so it is easy to copy-paste
+      # Interpolated so the query can be copy-pasted
       interpolated_query = get_interpolated_query(query, params)
       Process.put(:__executed_clickhouse_sql_list__, [interpolated_query | list])
 
@@ -382,11 +379,9 @@ defmodule Sanbase.ClickhouseRepo do
 
   case Mix.env() do
     :dev ->
-      # In dev, with PRINT_CLICKHOUSE_SQL set to true/1, the interpolated query is
-      # printed to the console, ready to copy and run. Skipped for `activity_traces_hidden`
-      # users even in dev. The ctx comes from the Query-struct entry points, falling back
-      # to `RequestContext.current/0` for callers without one (bare SQL helpers in a
-      # background process).
+      # In dev with PRINT_CLICKHOUSE_SQL, the interpolated query is printed ready to run -
+      # never for `activity_traces_hidden` users. The ctx comes from the Query-struct entry
+      # points, falling back to `RequestContext.current/0` for callers without one.
       defp maybe_print_interpolated_query(query, params, ctx) do
         ctx = ctx || Sanbase.RequestContext.current()
 
@@ -486,9 +481,9 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   defp normalize_column_type(type) when is_binary(type), do: type
-  # Ch.Types.encode handles {:datetime, tz} only when tz is a binary,
-  # but RowBinary.decode_header returns {:datetime, nil} for plain DateTime.
-  # Same for {:datetime64, precision, nil}.
+  # Ch.Types.encode handles {:datetime, tz} only for a binary tz, but
+  # RowBinary.decode_header returns {:datetime, nil} for a plain DateTime. Same for
+  # {:datetime64, precision, nil}.
   defp normalize_column_type({:datetime, nil}), do: "DateTime"
   defp normalize_column_type({:datetime64, p, nil}), do: "DateTime64(#{p})"
 

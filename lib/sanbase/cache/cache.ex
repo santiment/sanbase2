@@ -125,8 +125,8 @@ defmodule Sanbase.Cache do
   end
 
   defp get_or_store_isolated(cache, key, true_key, func, opts) do
-    # Executed inside ConCache.isolated/3, which locks the key first. That covers the case
-    # where another process modified the key between the previous check and the locking.
+    # Inside ConCache.isolated/3, which locks the key first - covering another process
+    # modifying it between the previous check and the lock.
     fun = fn ->
       case ConCache.get(cache, true_key) do
         {:stored, value} ->
@@ -141,9 +141,7 @@ defmodule Sanbase.Cache do
   end
 
   defp execute_and_maybe_cache_function(cache, key, func, opts) do
-    # Execute the function and if it returns :ok tuple cache it
-    # Errors are not cached. Also, caching can be manually disabled by
-    # wrapping the result in a :nocache tuple
+    # An :ok tuple is cached; errors are not, and a :nocache tuple opts out manually.
     case func.() do
       {:error, _} = error ->
         error

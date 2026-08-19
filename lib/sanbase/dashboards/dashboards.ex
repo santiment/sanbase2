@@ -46,8 +46,7 @@ defmodule Sanbase.Dashboards do
   @spec get_dashboard(dashboard_id(), user_id() | nil, Keyword.t()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def get_dashboard(dashboard_id, querying_user_id, opts \\ []) do
-    # We put the preloads here, if they are missing, as the preload value
-    # is checked in this function, too.
+    # Added here when missing, as the preload value is checked in this function too.
     opts =
       opts
       |> Keyword.put_new(:preload?, true)
@@ -55,9 +54,8 @@ defmodule Sanbase.Dashboards do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes ->
-      # The :queries preload is handled separately in the :maybe_load_queries step, so the
-      # join-through record's id is preserved alongside the queries. That id distinguishes
-      # the mappings when the same query is added to a dashboard more than once.
+      # :queries is preloaded in the :maybe_load_queries step instead, so the join-through
+      # id survives - it tells the mappings apart when a query is added twice.
       no_queries_preload_opts = Keyword.update(opts, :preload, [], &(&1 -- [:queries]))
       query = Dashboard.get_for_read(dashboard_id, querying_user_id, no_queries_preload_opts)
 
@@ -84,8 +82,8 @@ defmodule Sanbase.Dashboards do
   end
 
   defp get_dashboard_queries_with_mapping_id(dashboard_id) do
-    # Get the queries for the dashboard and add the mapping id
-    # as dashboard_query_mapping_id Query virtual field
+    # The dashboard's queries, with the mapping id in the dashboard_query_mapping_id
+    # virtual field.
     DashboardQueryMapping.dashboard_id_rows(dashboard_id)
     |> Repo.all()
     |> Enum.map(fn row ->
@@ -144,7 +142,6 @@ defmodule Sanbase.Dashboards do
       Repo.update(changeset)
     end)
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       get_dashboard(dashboard_id, querying_user_id)
     end)
     |> Repo.transaction()
@@ -204,18 +201,16 @@ defmodule Sanbase.Dashboards do
         parameters_override,
         force_parameters_override_to_query
       ) do
-    # Walk the dashboard global parameters into a map of query parameter => global value
-    # that overrides it, like %{"slug" => "global_slug_value"}. The global parameter's own
-    # name is not needed, only its value and its list of overrides.
+    # The dashboard global parameters as %{query parameter => overriding global value}.
+    # Only the value and the list of overrides matter, not the global parameter's name.
     overrides =
       dashboard.parameters
       |> Enum.reduce(
         %{},
         fn {key, %{"value" => value, "overrides" => overrides}}, acc ->
-          # When executing via runDashboardSqlQuery the user can supply a map overriding
-          # the dashboard global parameters, applied on the next line. Two levels of
-          # overriding: dashboard parameters override query parameters, and the
-          # user-provided ones override the dashboard parameters.
+          # runDashboardSqlQuery accepts a map overriding the dashboard global parameters,
+          # applied next: dashboard parameters override query ones, and the user-provided
+          # map overrides the dashboard parameters.
           value = Map.get(parameters_override, key, value)
 
           case Enum.find(overrides, &(&1["dashboard_query_mapping_id"] == mapping_id)) do
@@ -225,8 +220,7 @@ defmodule Sanbase.Dashboards do
         end
       )
 
-    # If true, the parameters overrides must be applied to the query without
-    # requiring the dashboard parameters being explicilty defined
+    # If true, the overrides apply without the dashboard parameters being defined.
     overrides =
       if force_parameters_override_to_query do
         query.sql_query_parameters
@@ -283,7 +277,6 @@ defmodule Sanbase.Dashboards do
       Repo.update(changeset)
     end)
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       get_dashboard(dashboard_id, querying_user_id)
     end)
     |> Repo.transaction()
@@ -320,8 +313,7 @@ defmodule Sanbase.Dashboards do
 
           updated_parameters =
             struct.parameters
-            # Just Map.put/3 in case of updated key will leave the old key in the map and the
-            # overrides will continue to work.
+            # A plain Map.put/3 would leave the old key behind and keep its overrides live.
             |> Map.delete(key)
             |> Map.put(updated_key, updated_value)
 
@@ -331,7 +323,6 @@ defmodule Sanbase.Dashboards do
       end
     end)
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       get_dashboard(dashboard_id, querying_user_id)
     end)
     |> Repo.transaction()
@@ -357,7 +348,6 @@ defmodule Sanbase.Dashboards do
       Repo.update(changeset)
     end)
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       get_dashboard(dashboard_id, querying_user_id)
     end)
     |> Repo.transaction()
@@ -439,7 +429,6 @@ defmodule Sanbase.Dashboards do
       end
     )
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       get_dashboard(dashboard_id, querying_user_id)
     end)
     |> Repo.transaction()
@@ -520,7 +509,6 @@ defmodule Sanbase.Dashboards do
       end
     )
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       get_dashboard(dashboard_id, querying_user_id)
     end)
     |> Repo.transaction()
@@ -559,7 +547,6 @@ defmodule Sanbase.Dashboards do
       |> Repo.update()
     end)
     |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
         text_widget = Enum.find(dashboard.text_widgets, &(&1.id == text_widget_id))
         {:ok, %{dashboard: dashboard, text_widget: text_widget}}
@@ -604,7 +591,6 @@ defmodule Sanbase.Dashboards do
       end
     end)
     |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
         text_widget = Enum.find(dashboard.text_widgets, &(&1.id == text_widget_id))
         {:ok, %{dashboard: dashboard, text_widget: text_widget}}
@@ -646,7 +632,6 @@ defmodule Sanbase.Dashboards do
       end
     end)
     |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, %{delete_text_widget: map} ->
-      # Get the dashboard so the queries are properly preloaded
       with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
         {:ok, %{map | dashboard: dashboard}}
       end
@@ -686,7 +671,6 @@ defmodule Sanbase.Dashboards do
       |> Repo.update()
     end)
     |> Ecto.Multi.run(:get_dashboard_and_image_widget, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
         image_widget = Enum.find(dashboard.image_widgets, &(&1.id == image_widget_id))
         {:ok, %{dashboard: dashboard, image_widget: image_widget}}
@@ -731,7 +715,6 @@ defmodule Sanbase.Dashboards do
       end
     end)
     |> Ecto.Multi.run(:get_dashboard_and_image_widget, fn _repo, _changes_so_far ->
-      # Get the dashboard so the queries are properly preloaded
       with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
         image_widget = Enum.find(dashboard.image_widgets, &(&1.id == image_widget_id))
         {:ok, %{dashboard: dashboard, image_widget: image_widget}}
@@ -773,7 +756,6 @@ defmodule Sanbase.Dashboards do
       end
     end)
     |> Ecto.Multi.run(:get_dashboard_and_image_widget, fn _repo, %{delete_image_widget: map} ->
-      # Get the dashboard so the queries are properly preloaded
       with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
         {:ok, %{map | dashboard: dashboard}}
       end
@@ -944,10 +926,9 @@ defmodule Sanbase.Dashboards do
       ) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard_for_cache_update, fn _repo, _changes ->
-      # Check that the user can cache for the dashboard. With `only_owner: true` (e.g.
-      # when the client supplies the result) only the owner is allowed, or anyone could
-      # poison a public dashboard's cache. The default also allows caching freshly
-      # recomputed results for public dashboards.
+      # With `only_owner: true` (a client-supplied result) only the owner may cache, or
+      # anyone could poison a public dashboard's cache. The default also allows caching
+      # freshly recomputed results for public dashboards.
       get_dashboard_for_cache_update(
         dashboard_id,
         user_id,
@@ -1075,8 +1056,7 @@ defmodule Sanbase.Dashboards do
   end
 
   defp mask_dashboard_not_viewable_parts(%Dashboard{} = dashboard, querying_user_id) do
-    # When viewing a dashboard, hide the SQL query text and query parameters
-    # if the query is private and the querying user is not the owner of the query
+    # Hide the SQL text and parameters of a private query from anyone but its owner.
     masked_queries =
       dashboard.queries
       |> Enum.map(&mask_query_not_viewable_parts(&1, querying_user_id))

@@ -194,8 +194,7 @@ defmodule Sanbase.Monitoring.MemDbg do
     end)
   end
 
-  # Total memory per process name. One process at 50 MB shows up in top_procs;
-  # ten thousand at 50 KB only show up here.
+  # Memory per process name. Ten thousand processes at 50 KB show up only here.
   def by_name(n \\ 15) do
     IO.puts("\n== Top #{n} process groups by total memory ==")
 
@@ -207,10 +206,10 @@ defmodule Sanbase.Monitoring.MemDbg do
     end)
   end
 
-  # Off-heap refc binaries referenced by each process. A long-lived process holding many
-  # or large refc binaries (often sub-binaries of big HTTP/DB responses) is the classic
-  # slow-rise leak. Shared binaries count once per referencing process, so the sum can
-  # exceed :erlang.memory(:binary). HEAVY: O(total binary refs) - do not automate.
+  # Off-heap refc binaries per process. A long-lived process holding many or large ones
+  # (often sub-binaries of big HTTP/DB responses) is the classic slow-rise leak. Shared
+  # binaries count once per process, so the sum can exceed :erlang.memory(:binary).
+  # HEAVY: O(total binary refs) - do not automate.
   def top_bin(n \\ 15) do
     IO.puts("\n== Top #{n} processes by referenced refc binaries ==")
 
@@ -328,11 +327,10 @@ defmodule Sanbase.Monitoring.MemDbg do
   # Active experiments
   # ---------------------------------------------------------------------------
 
-  # recon-style bin_leak: GC everything, then see how much memory drops and who was
-  # hoarding binary refs. Big binary drop = processes keeping refc binaries alive (fix:
-  # :binary.copy/1 on the kept slice, or {:fullsweep_after, N} / hibernate for the
-  # hoarder). Big processes drop = lazily-GC'd garbage inflating RSS between collections.
-  # HEAVY + side effects (forces GC on every process) - never automate.
+  # recon-style bin_leak: GC everything, then see how much memory drops and who hoarded
+  # binary refs. A big binary drop means processes keeping refc binaries alive (fix with
+  # :binary.copy/1, {:fullsweep_after, N} or hibernate); a big processes drop means
+  # lazily-GC'd garbage inflating RSS. HEAVY + forces GC everywhere - never automate.
   def bin_leak(n \\ 15) do
     IO.puts("\n== bin_leak: GC all processes ==")
     before_bin = :erlang.memory(:binary)
@@ -367,18 +365,17 @@ defmodule Sanbase.Monitoring.MemDbg do
     end)
   end
 
-  # Catch what causes memory spikes: reports any process whose heap grows past
-  # threshold_mb (fires on GC events via :erlang.system_monitor - cheap). Output goes to
-  # the console and Logger, so spikes land in pod logs after you detach. One watcher per
-  # node; calling again replaces it, as it replaces any other :erlang.system_monitor user.
+  # Reports any process whose heap grows past threshold_mb, on GC events via
+  # :erlang.system_monitor (cheap). Output goes to the console and Logger, so spikes land
+  # in pod logs after you detach. One watcher per node - calling again replaces it, and
+  # replaces any other :erlang.system_monitor user.
   def watch_spikes(threshold_mb \\ 200) do
     stop_watch()
     words = div(threshold_mb * 1_048_576, :erlang.system_info(:wordsize))
 
     pid =
       spawn(fn ->
-        # detach from the remote console group leader so IO from crashes
-        # cannot take us down after the console disconnects
+        # Detach from the remote console group leader, or IO after it disconnects kills us.
         with user when is_pid(user) <- Process.whereis(:user) do
           Process.group_leader(self(), user)
         end
@@ -406,10 +403,9 @@ defmodule Sanbase.Monitoring.MemDbg do
   # OS / allocator views
   # ---------------------------------------------------------------------------
 
-  # OS/cgroup view from inside the container: is the dashboard number the beam process
-  # RSS, or RSS + page cache? cgroup "file" = page cache from files written/read in the
-  # container - reclaimable, not a leak, but counted by container_memory_usage_bytes and
-  # (its active part) by working_set.
+  # OS/cgroup view from inside the container: is the dashboard number beam RSS, or RSS +
+  # page cache? cgroup "file" is page cache - reclaimable, not a leak, but counted by
+  # container_memory_usage_bytes and (its active part) by working_set.
   def os() do
     IO.puts("\n== OS view (inside container) ==")
     os_pid = System.pid()
@@ -471,9 +467,9 @@ defmodule Sanbase.Monitoring.MemDbg do
     :ok
   end
 
-  # Per-allocator: "allocated" = carrier sizes (what the OS gave the VM, ~RSS), "used" =
-  # block sizes (what live Erlang data occupies, ~:erlang.memory). Big unused on
-  # eheap_alloc/binary_alloc = carriers ratcheted up by past spikes or fragmentation.
+  # Per-allocator: "allocated" is carrier sizes (what the OS gave the VM, ~RSS), "used" is
+  # block sizes (~:erlang.memory). Big unused on eheap_alloc/binary_alloc means carriers
+  # ratcheted up by past spikes or fragmentation.
   def alloc() do
     IO.puts("\n== Allocator carriers vs blocks ==")
 
@@ -647,8 +643,7 @@ defmodule Sanbase.Monitoring.MemDbg do
     safe_log(msg)
   end
 
-  # kill and wait for the name to actually free up, so an immediate restart
-  # can re-register without racing the async exit
+  # Wait for the name to free up, so an immediate restart does not race the async exit.
   defp kill_registered(name) do
     case Process.whereis(name) do
       nil ->

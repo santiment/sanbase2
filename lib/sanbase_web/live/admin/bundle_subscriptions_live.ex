@@ -220,10 +220,9 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     set_status(socket, id, :active, "Subscription reactivated.")
   end
 
-  # Only the rows this page created can be deleted. Deleting one backed by a Stripe object
-  # leaves that subscription live and billing, with nothing local to track it by - no
-  # items, no entitlement, no row for the webhook to reconcile against. Cancelling is what
-  # ends a real subscription, and its button sits right next to this one.
+  # Only rows this page created may be deleted. Deleting one backed by a Stripe object
+  # leaves it live and billing with nothing local to track it by. Cancelling is what ends a
+  # real subscription, and its button is right next to this one.
   def handle_event("delete_subscription", %{"id" => id}, socket) do
     with_subscription(socket, id, fn
       socket, %Subscription{stripe_id: stripe_id} when is_binary(stripe_id) ->
@@ -251,8 +250,7 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
      |> assign(:probe_result, decide(socket, probe, kind))}
   end
 
-  # Only the kind, so the autocomplete list swaps to queries or signals as soon
-  # as the select changes rather than after Check is pressed.
+  # Only the kind, so the autocomplete list swaps as soon as the select changes.
   def handle_event("set_probe_kind", %{"kind" => kind}, socket) do
     {:noreply, assign(socket, :probe_kind, kind)}
   end
@@ -275,9 +273,8 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
      |> assign(:inspected_name, nil)}
   end
 
-  # Expands the row in place: the Decide card sits above the table, so pushing the result
-  # only up there looked like the button did nothing. It still fills the Decide form, so
-  # the same check can be varied by hand afterwards.
+  # Expands the row in place: the Decide card is above the table, so pushing the result
+  # only up there looked like the button did nothing. It still fills the Decide form.
   def handle_event("probe_scenario", %{"kind" => kind, "name" => name}, socket) do
     if socket.assigns.inspected_name == name do
       {:noreply, assign(socket, :inspected_name, nil)}
@@ -298,9 +295,8 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
   end
 
   def handle_event("generate_own_apikey", _params, socket) do
-    # Only ever for the signed-in admin's own account. Minting or displaying a
-    # key for someone else would hand over their identity, which is a bigger
-    # power than anything else on this page.
+    # Only for the signed-in admin's own account - a key for someone else hands over their
+    # identity, a bigger power than anything else on this page.
     case Apikey.generate_apikey(socket.assigns.current_user) do
       {:ok, apikey} ->
         {:noreply,
@@ -324,8 +320,7 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
         {:noreply, put_flash(socket, :error, "Give a metric name.")}
 
       true ->
-        # Bound outside the closure so only the two strings cross into the async
-        # process, not the whole socket.
+        # Bound outside the closure so only the two strings cross into the async process.
         apikey = socket.assigns.apikey
 
         {:noreply,
@@ -348,12 +343,10 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
      |> assign(:request_result, %{status: nil, body: "Request crashed: #{inspect(reason)}"})}
   end
 
-  # The page can be open in two tabs, or left open while a row is deleted elsewhere. Every
-  # handler acting on a row goes through here, so a stale id gives a message and a reload
-  # instead of a nil reaching `.items`, a changeset or a delete. Read from the database,
-  # not the loaded list: a row deleted elsewhere is still in the list an earlier render
-  # loaded, and updating that struct raises Ecto.StaleEntryError instead of saying it is
-  # gone.
+  # Every handler acting on a row goes through here, so a stale id (two tabs, or a row
+  # deleted elsewhere) gives a message and a reload instead of a nil reaching `.items`, a
+  # changeset or a delete. Read from the database, not the list an earlier render loaded -
+  # updating a deleted struct raises Ecto.StaleEntryError instead of saying it is gone.
   defp with_subscription(socket, id, fun) do
     case fetch_subscription(id) do
       nil ->
@@ -414,11 +407,10 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     |> assign(:latest_snapshot, PackageSnapshot.latest())
   end
 
-  # Assigned once in mount rather than called from the template: these are ~1200 names, and
-  # as assigns that never change LiveView keeps them out of every diff, while a template
-  # function call would be re-sent on every keystroke. Metrics are the union of what the
-  # API serves and what the snapshot sells - the lists differ, and any name appearing in a
-  # scenario has to be suggestable.
+  # Assigned in mount, not called from the template: ~1200 names that never change stay out
+  # of every diff, while a template function call is re-sent on every keystroke. Metrics are
+  # the union of what the API serves and what the snapshot sells - the lists differ, and
+  # every name a scenario uses has to be suggestable.
   defp assign_name_suggestions(socket) do
     snapshot_metrics =
       case socket.assigns.latest_snapshot do
@@ -463,9 +455,8 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     else
       addon_quantity = socket.assigns.new_addon_quantity
 
-      # Rolled back rather than matched with `{:ok, _} =`: a MatchError would abort the
-      # transaction with a crash, the {:error, reason} branch below would never be
-      # reached, and the admin would get a dead page instead of a message.
+      # Rolled back, not matched with `{:ok, _} =`: a MatchError would crash the
+      # transaction, skip the {:error, reason} branch below and leave a dead page.
       Repo.transaction(fn ->
         with {:ok, subscription} <- insert_subscription(user, plan),
              :ok <- create_package_items(subscription, packages),
@@ -498,9 +489,8 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
   end
 
   # Inserted through the changeset, not Subscription.create/1: create/1 emits a
-  # :create_subscription billing event, and these rows have no Stripe object - the event
-  # fails validation, and the handlers behind it (emails, Discord, Stripe reconciliation)
-  # have no business acting on a local test row.
+  # :create_subscription event, which fails validation without a Stripe object - and its
+  # handlers (emails, Discord, Stripe reconciliation) must not act on a local test row.
   defp insert_subscription(user, plan) do
     %Subscription{}
     |> Subscription.changeset(%{
@@ -579,8 +569,8 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
   # ── The offline decision ────────────────────────────────────────────────
 
   # Both products: a bundle lives on SanAPI but a Sanbase request falls back to it
-  # (auth_plug.ex find_best_subscription/2), so the same entitlement answers on both - and
-  # the Sanbase side is where unimplemented functions still raise.
+  # (auth_plug.ex find_best_subscription/2), and the Sanbase side is where unimplemented
+  # functions still raise.
   defp decide(socket, probe, kind) do
     case {selected(socket.assigns), build_query_or_argument(kind, probe)} do
       {nil, _} ->
@@ -632,9 +622,9 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     }
   end
 
-  # Every function here can raise for a bundle by design, not by bug (see
-  # Bundle.NotImplementedError and Bundle.MissingEntitlementError). Showing which error
-  # came back is the useful part, so nothing may take the page down.
+  # Every function here can raise for a bundle by design (Bundle.NotImplementedError,
+  # Bundle.MissingEntitlementError). Showing which error came back is the useful part, so
+  # nothing may take the page down.
   defp safely(fun) do
     {:ok, fun.()}
   rescue
@@ -654,11 +644,10 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
 
   # ── Generated scenarios ─────────────────────────────────────────────────
 
-  # Derived from what this subscription actually bought, not a fixed list: owning Social
-  # and Development gives "a Social metric must be allowed", "a Development metric must be
-  # allowed", and one "must be refused" per package not bought. Each scenario carries its
-  # own expectation, so the table shows pass/fail instead of leaving you to work out
-  # whether "refused" was right.
+  # Derived from what this subscription bought, not a fixed list: owning Social and
+  # Development gives one "must be allowed" per owned package and one "must be refused" per
+  # package not bought. Each scenario carries its own expectation, so the table shows
+  # pass/fail instead of leaving you to work out whether "refused" was right.
   defp scenarios(nil, _snapshot), do: []
   defp scenarios(_subscription, nil), do: []
 
@@ -715,8 +704,7 @@ defmodule SanbaseWeb.Admin.BundleSubscriptionsLive do
     end
   end
 
-  # One representative metric per package. Sorted lists mean this is stable
-  # between reloads, so a scenario that failed can be looked at again.
+  # One representative metric per package. Sorted, so a failed scenario is reproducible.
   defp sample_metric(contents, slug) do
     contents |> Map.get(slug, []) |> List.first()
   end

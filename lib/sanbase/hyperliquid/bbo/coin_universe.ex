@@ -26,17 +26,17 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
   @source "hyperliquid"
   @info_url "https://api.hyperliquid.xyz/info"
 
-  # Upper bound on how long a synchronous single-coin verification (used when a
-  # mapping is created) may block before we give up and let the insert through.
+  # How long a synchronous single-coin verification (on mapping create) may block before
+  # the insert is let through unverified.
   @verify_timeout 5_000
   # Jaro-distance threshold and cap for "did you mean" suggestions.
   @suggestion_threshold 0.8
   @suggestion_limit 3
-  # Stocks/commodities/FX live on the builder dex "xyz" (e.g. "xyz:GOLD"), so a
-  # bare "GOLD" should still surface "xyz:GOLD" as a suggestion.
+  # Stocks/commodities/FX live on the builder dex "xyz", so a bare "GOLD" should still
+  # surface "xyz:GOLD".
   @rwa_dex_prefix "xyz:"
-  # Per-dex `meta`/`spotMeta` requests are fetched concurrently, each bounded so
-  # a single slow dex can't blow the caller's verification budget.
+  # Concurrent per-dex `meta`/`spotMeta` requests, each bounded so one slow dex cannot
+  # blow the caller's verification budget.
   @universe_fetch_concurrency 16
   @universe_fetch_timeout 4_000
 
@@ -147,8 +147,8 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
           | {:unsupported, :spot_token_only | :not_in_universe, [String.t()]}
           | :unverified
   def coin_supported?(coin, timeout \\ @verify_timeout) when is_binary(coin) do
-    # async_nolink: a crash inside fetch/0 must degrade to :unverified, not
-    # take down the caller (a changeset validation) with it.
+    # async_nolink: a crash in fetch/0 degrades to :unverified instead of taking the
+    # caller (a changeset validation) down.
     task = Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn -> fetch() end)
 
     case Task.yield(task, timeout) || Task.shutdown(task) do
@@ -177,9 +177,9 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
     |> MapSet.new()
   end
 
-  # Closest known coin names to `coin` by Jaro distance, for a "did you mean" hint.
-  # Case-insensitive; each candidate is scored by the better of the raw input and the input
-  # namespaced under the RWA dex, so a bare "GOLD" surfaces "xyz:GOLD" (scoring 1.0).
+  # Closest known coin names by Jaro distance, for a "did you mean" hint. Case-insensitive,
+  # each candidate scored by the better of the raw input and the input namespaced under the
+  # RWA dex, so a bare "GOLD" surfaces "xyz:GOLD" at 1.0.
   defp closest_coins(coin, universe) do
     target = String.upcase(coin)
     prefixed = String.upcase(@rwa_dex_prefix <> coin)
@@ -206,9 +206,9 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
   #   token_pairs — %{token name => [spot pair names it is the base of]}, for "map it as
   #                 @107 instead" suggestions.
   #
-  # EVERY request must succeed: a partial fetch omits part of the universe and flags real
-  # coins as unsupported, blocking valid mapping creates and unsubscribing live coins. Any
-  # failure returns an error, so callers read it as "could not verify", not "empty".
+  # EVERY request must succeed: a partial fetch flags real coins as unsupported, blocking
+  # valid mapping creates and unsubscribing live coins. Any failure returns an error, read
+  # by callers as "could not verify", not "empty".
   defp fetch() do
     with {:ok, dexs} <- info_request(%{type: "perpDexs"}) do
       meta_requests =
@@ -279,9 +279,9 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
 
   defp names_at(_, _), do: []
 
-  # %{token name => [spot pair names]} for pairs where the token is the BASE
-  # (`universe[].tokens` is `[base_index, quote_index]`), so an unsupported
-  # bare token can be reported with the pair name(s) to map instead.
+  # %{token name => [spot pair names]} where the token is the BASE (`universe[].tokens` is
+  # `[base_index, quote_index]`), so an unsupported bare token is reported with the pair
+  # names to map instead.
   defp token_pair_map(body) when is_map(body) do
     index_to_name =
       for %{"name" => name, "index" => index} <- Map.get(body, "tokens", []) |> List.wrap(),

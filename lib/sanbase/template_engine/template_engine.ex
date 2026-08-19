@@ -139,28 +139,26 @@ defmodule Sanbase.TemplateEngine do
 
   # Private
 
-  # Transform a template with `{{key}}` placeholders into a ClickHouse query with typed
-  # named parameters (`{from:Int32}`, `{slug:String}`, ...) and a matching parameter map.
+  # Turn a template with `{{key}}` placeholders into a ClickHouse query with typed named
+  # parameters (`{from:Int32}`, `{slug:String}`, ...) and a matching parameter map.
   #
   # Placeholder modes:
   #
-  #   - Inline (`{{key:inline}}`) — substituted straight into the SQL string, no
-  #     placeholder. Only alphanumerics, underscore and dot pass (anti-injection).
-  #   - Value (`{{key}}`, `{{key:UInt64}}`) — becomes a named parameter, typed from the
-  #     Elixir value or from the explicit override.
-  #   - Human-readable (`{{key:human_readable}}`) — formatted for display
-  #     (`100000` → `"100,000.00"`), then a named String parameter.
-  #   - Code (`{% expr %}`) — evaluated, the result becomes a named parameter with an
-  #     inferred type. Code captures are never deduplicated.
+  #   - Inline (`{{key:inline}}`) — substituted into the SQL string, no placeholder. Only
+  #     alphanumerics, underscore and dot pass (anti-injection).
+  #   - Value (`{{key}}`, `{{key:UInt64}}`) — a named parameter, typed from the Elixir
+  #     value or from the explicit override.
+  #   - Human-readable (`{{key:human_readable}}`) — formatted for display, then a named
+  #     String parameter.
+  #   - Code (`{% expr %}`) — evaluated into a named parameter with an inferred type.
+  #     Never deduplicated.
   #
   # Repeated keys reuse one named parameter, keyed by `{base_key, mode, ch_type}`: two
-  # `{{slug}}` share `{slug:String}`, while `{{slug}}` vs `{{slug:human_readable}}`
-  # (different mode) and `{{num}}` vs `{{num:UInt8}}` (different type) stay separate.
+  # `{{slug}}` share `{slug:String}`, while a different mode or type stays separate.
   #
   # The reduce accumulator is `{sql, args, errors, position, key_positions,
-  # used_param_names}`: the progressively rewritten template, the string-keyed argument
-  # map, the collected missing-parameter errors, the next index for generated expression
-  # names, dedup key => `{param_name, ch_type}`, and the allocated parameter names.
+  # used_param_names}`: the rewritten template, the argument map, the missing-parameter
+  # errors, the next index for generated names, the dedup map and the used names.
   defp do_run_generate_clickhouse_params(template, captures, params, env) do
     {sql, args, errors, _position, _key_positions, _used_param_names} =
       Enum.reduce(
@@ -361,8 +359,7 @@ defmodule Sanbase.TemplateEngine do
         candidate
 
       true ->
-        # If some params need sanitization, or come from code templates,
-        # their sanitized name can be duplicated, so we add a suffix here.
+        # Sanitized or code-template names can collide, hence the suffix.
         next_param_name("#{candidate}_#{suffix}", used_param_names, suffix + 1)
     end
   end
@@ -371,8 +368,7 @@ defmodule Sanbase.TemplateEngine do
     sanitized =
       name
       |> to_string()
-      # Replace all non-alphanum/underscore with underscore as Clickhouse accepts only that
-      # my-metric.name will become my_metric_name
+      # Clickhouse accepts only alphanum/underscore: my-metric.name -> my_metric_name
       |> String.replace(~r/[^a-zA-Z0-9_]/, "_")
       |> String.trim("_")
 

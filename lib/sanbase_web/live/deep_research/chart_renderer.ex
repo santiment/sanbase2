@@ -18,10 +18,9 @@ defmodule SanbaseWeb.DeepResearch.ChartRenderer do
   > Changing one does not change the other; a spec field added here needs its own
   > counterpart in `assets/js/hooks/lightweight_chart.js`.
 
-  The spec is **renderer-agnostic data** — parsing/validation lives in
-  `Sanbase.DeepResearch.ReportMarkdown.split_charts/1`, the visual lives here —
-  so a different backend (e.g. a JS
-  lightweight-charts → `takeScreenshot()` PNG) can consume the exact same spec:
+  The spec is **renderer-agnostic data** — parsing and validation live in
+  `Sanbase.DeepResearch.ReportMarkdown.split_charts/1`, the visual here — so another
+  backend (e.g. a JS lightweight-charts → `takeScreenshot()` PNG) consumes the same spec:
 
     * `%{type: "pie",  title: t, slices: [%{label, value}]}`
     * `%{type: "line", title: t, series: [%{label, points: [%{t, v}]}], spike: %{from, to} | nil}`
@@ -46,11 +45,10 @@ defmodule SanbaseWeb.DeepResearch.ChartRenderer do
   @doc "Render a normalized chart `spec` with the configured renderer."
   @spec render(map()) :: Phoenix.LiveView.Rendered.t()
   def render(spec) do
-    # The renderer module is chosen at runtime, so it is invoked by hand rather
-    # than through `<.component />`. A hand-built assigns map MUST carry
-    # `__changed__` or `Phoenix.Component.assign/3` inside the renderer raises;
-    # `nil` means "treat everything as changed", i.e. always render in full.
-    # That is correct here: a report chart is static once the report is written.
+    # The renderer is chosen at runtime, so it is invoked by hand rather than through
+    # `<.component />`. A hand-built assigns map MUST carry `__changed__` or
+    # `Phoenix.Component.assign/3` raises inside it; `nil` means "everything changed",
+    # i.e. always render in full — correct for a chart that is static once written.
     impl().chart(%{spec: spec, __changed__: nil})
   end
 end

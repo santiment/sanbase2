@@ -1,10 +1,8 @@
 defmodule SanbaseWeb.DeepResearch.ComponentsTest do
   @moduledoc """
-  Render tests for the deep research presentation layer.
-
-  These render the components directly (no LiveView mount, no auth, no DB) — the
-  point is to prove the HEEx actually renders for every kind of timeline item and
-  every phase, which compilation alone does not.
+  Render tests for the deep research presentation layer: the components directly (no
+  mount, no auth, no DB), proving the HEEx renders for every timeline item kind and
+  every phase — which compilation alone does not.
   """
   use ExUnit.Case, async: true
 

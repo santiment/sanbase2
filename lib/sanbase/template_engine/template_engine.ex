@@ -139,52 +139,28 @@ defmodule Sanbase.TemplateEngine do
 
   # Private
 
-  # Transform a template with `{{key}}` placeholders into a ClickHouse query with
-  # typed named parameters (`{from:Int32}`, `{slug:String}`, etc.) and a matching
-  # parameter map.
+  # Transform a template with `{{key}}` placeholders into a ClickHouse query with typed
+  # named parameters (`{from:Int32}`, `{slug:String}`, ...) and a matching parameter map.
   #
-  # ## Placeholder modes
+  # Placeholder modes:
   #
-  # Each `{{key}}` placeholder is classified into one of these modes:
+  #   - Inline (`{{key:inline}}`) — substituted straight into the SQL string, no
+  #     placeholder. Only alphanumerics, underscore and dot pass (anti-injection).
+  #   - Value (`{{key}}`, `{{key:UInt64}}`) — becomes a named parameter, typed from the
+  #     Elixir value or from the explicit override.
+  #   - Human-readable (`{{key:human_readable}}`) — formatted for display
+  #     (`100000` → `"100,000.00"`), then a named String parameter.
+  #   - Code (`{% expr %}`) — evaluated, the result becomes a named parameter with an
+  #     inferred type. Code captures are never deduplicated.
   #
-  #   - **Inline** (`{{key:inline}}`) — the value is substituted directly into the SQL
-  #     string (no placeholder). Only alphanumeric, underscore, and dot characters
-  #     are allowed (validated to prevent injection).
+  # Repeated keys reuse one named parameter, keyed by `{base_key, mode, ch_type}`: two
+  # `{{slug}}` share `{slug:String}`, while `{{slug}}` vs `{{slug:human_readable}}`
+  # (different mode) and `{{num}}` vs `{{num:UInt8}}` (different type) stay separate.
   #
-  #   - **Value** (`{{key}}` or `{{key:UInt64}}`) — the value becomes a named
-  #     parameter. The ClickHouse type is either inferred from the Elixir value or
-  #     taken from the explicit override.
-  #
-  #   - **Human-readable** (`{{key:human_readable}}`) — the value is formatted for
-  #     display (e.g., `100000` → `"100,000.00"`) and then treated as a named
-  #     String parameter.
-  #
-  #   - **Code** (`{% expr %}`) — the expression is evaluated and the result becomes
-  #     a named parameter with an inferred type. Code captures are never deduplicated.
-  #
-  # ## Deduplication
-  #
-  # When the same key appears multiple times, we want to reuse the same named
-  # parameter instead of creating duplicates. The dedup key is a tuple of
-  # `{base_key, mode, ch_type}`:
-  #
-  #   - `{{slug}}` twice → same dedup key `{"slug", :value, "String"}` → reuses `{slug:String}`
-  #   - `{{slug}}` and `{{slug:human_readable}}` → different modes → separate parameters
-  #   - `{{num}}` and `{{num:UInt8}}` → same mode `:value` but different ch_type →
-  #     separate parameters
-  #   - `{{num:UInt8}}` twice → same dedup key → reuses the same parameter name
-  #
-  # ## Accumulator
-  #
-  # The reduce accumulator is a 6-tuple:
-  # `{sql, args, errors, position, key_positions, used_param_names}`
-  #
-  #   - `sql` — the template string being progressively rewritten
-  #   - `args` — string-keyed argument map
-  #   - `errors` — collected missing-parameter errors
-  #   - `position` — next available index for generated expression names
-  #   - `key_positions` — map from dedup key to `{param_name, ch_type}` for reuse
-  #   - `used_param_names` — set of already allocated parameter names
+  # The reduce accumulator is `{sql, args, errors, position, key_positions,
+  # used_param_names}`: the progressively rewritten template, the string-keyed argument
+  # map, the collected missing-parameter errors, the next index for generated expression
+  # names, dedup key => `{param_name, ch_type}`, and the allocated parameter names.
   defp do_run_generate_clickhouse_params(template, captures, params, env) do
     {sql, args, errors, _position, _key_positions, _used_param_names} =
       Enum.reduce(

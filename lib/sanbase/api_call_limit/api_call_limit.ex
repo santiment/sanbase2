@@ -21,17 +21,11 @@ defmodule Sanbase.ApiCallLimit do
   @product_api_id Product.product_api()
   @product_sanbase_id Product.product_sanbase()
 
-  # `"sanapi_enterprise"` used to be here, from when Enterprise meant a bespoke
-  # `CUSTOM_*` contract with no ceiling. It is now a listed tier with a published
-  # 300,000 calls a month, so leaving it in would have made that number
-  # unenforceable. Removing it was safe: it matched zero `api_call_limits` rows on
-  # production, because no plan has ever been named exactly `ENTERPRISE` on SanAPI.
-  #
-  # Note how little this list covers. The key is `"sanapi_" <> downcase(plan_name)`,
-  # so `"sanapi_custom"` matches only a plan named exactly `CUSTOM` - not the bespoke
-  # `CUSTOM_*` contracts, which never got their exemption from here. Those reach
-  # `plan_has_limits?/1`'s `:custom` branch, which reads `has_limits` out of the
-  # plan's own embedded restrictions.
+  # The key is `"sanapi_" <> downcase(plan_name)`, so `"sanapi_custom"` matches only a
+  # plan named exactly `CUSTOM`, not the bespoke `CUSTOM_*` contracts - those take
+  # `plan_has_limits?/1`'s `:custom` branch, which reads `has_limits` out of the plan's
+  # own restrictions. `ENTERPRISE` is deliberately absent: it is a listed tier now, with
+  # a published 300,000 calls a month to enforce.
   @plans_without_limits [
     "sanapi_custom"
   ]
@@ -54,10 +48,9 @@ defmodule Sanbase.ApiCallLimit do
     field(:api_calls_responses_size_mb, :map, default: %{})
     field(:remote_ip, :string, default: nil)
 
-    # Only ever set for a bundle. Every other plan's limits are derived from its
-    # name; a bundle's cannot be, because every bundle is named BUNDLE while the
-    # numbers differ per customer. `nil` means "derive from the name", which is
-    # what happens for everyone else.
+    # Only ever set for a bundle: every bundle is named BUNDLE while the numbers differ
+    # per customer, so they cannot be derived from the name. `nil` means "derive from the
+    # name", which is what happens for every other plan.
     field(:resolved_api_call_limits, :map, default: nil)
 
     belongs_to(:user, User)
@@ -260,11 +253,9 @@ defmodule Sanbase.ApiCallLimit do
         api_calls_responses_size_mb: response_sizes
       })
 
-    # Use on_conflict: :nothing to avoid aborting a surrounding transaction
-    # when a concurrent INSERT wins the race. Without this, the unique-constraint
-    # violation poisons the Postgres transaction and every subsequent statement
-    # (including the fallback SELECT) fails with
-    # "current transaction is aborted, commands ignored until end of transaction block".
+    # `on_conflict: :nothing` so a concurrent INSERT winning the race does not poison the
+    # surrounding transaction - the unique-constraint violation would make every later
+    # statement, the fallback SELECT included, fail with "transaction is aborted".
     case Repo.insert(changeset, on_conflict: :nothing, conflict_target: :user_id) do
       {:ok, %{id: id} = acl} when not is_nil(id) ->
         {:ok, acl}
@@ -431,13 +422,10 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  # `nil` for every plan whose limits are derivable from its name, which is every
-  # plan but a bundle.
-  #
-  # A bundle with no entitlement yet also stores `nil` rather than raising here:
-  # this runs on every plan change, and failing it would leave the row with a
-  # stale plan name too. The read path is where a missing entitlement has to be
-  # loud, because that is the request that would otherwise be served wrongly.
+  # `nil` for every plan whose limits follow from its name, i.e. everything but a bundle.
+  # A bundle with no entitlement yet stores `nil` too rather than raising: this runs on
+  # every plan change, and failing would leave a stale plan name behind. The read path is
+  # where a missing entitlement has to be loud.
   defp subscription_to_resolved_api_call_limits(%Subscription{} = sub) do
     plan_name = subscription_to_plan_name(sub)
 
@@ -648,10 +636,9 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  # A bundle row with nothing stored means the subscription never synced. Raising
-  # is deliberate: the alternatives are to invent numbers, which either refuses a
-  # paying customer's requests or gives away calls, and both look like working
-  # configurations from the outside.
+  # A bundle row with nothing stored means the subscription never synced. Raising is
+  # deliberate: inventing numbers either refuses a paying customer's requests or gives
+  # calls away, and both look like a working configuration from the outside.
   defp bundle_api_call_limits(%__MODULE__{resolved_api_call_limits: limits})
        when is_map(limits) do
     %{
@@ -702,10 +689,9 @@ defmodule Sanbase.ApiCallLimit do
   def plan_to_response_size_limits(plan) do
     case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
       :bundle ->
-        # Response size is not a thing packages sell (§6.2), so there is nothing
-        # per-customer to resolve and nothing to store. A bundle answers as the
-        # standard tier it is priced against, like everything else that is neither
-        # metric access nor call quota (§5.9).
+        # Response size is not sold in packages (§6.2), so there is nothing per-customer
+        # to resolve or store. A bundle answers as the standard tier it is priced against,
+        # like everything that is neither metric access nor call quota (§5.9).
         equivalent =
           "sanapi_" <> String.downcase(Sanbase.Billing.Plan.Bundle.equivalent_standard_plan())
 

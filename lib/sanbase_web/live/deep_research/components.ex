@@ -207,9 +207,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   attr :turn, :map, required: true
 
-  # A `:paused` turn stopped for a reason it can be picked up from — a lost
-  # connection, a run that crashed — with a Continue offered right above it. That
-  # is a warning, not the red of research that failed and is going nowhere.
+  # `:paused` is resumable (lost connection, crashed run) with a Continue right above
+  # it — a warning, not the red of research going nowhere.
   defp turn_error(assigns) do
     assigns = assign(assigns, :resumable?, assigns.turn.phase == :paused)
 
@@ -473,19 +472,16 @@ defmodule SanbaseWeb.DeepResearch.Components do
     """
   end
 
-  # Hooked (KeepDetailsOpen) and phx-update="ignore" (chart) elements key
-  # client-side state on their DOM id, so the id must follow the ITEM, not its
-  # screen position — positional indices shift when an earlier block appears
-  # mid-run (e.g. a narration item splitting a tools run), silently rebinding
-  # that state to a different element. Position is only the fallback for
-  # id-less items (persisted rows written before ids were stamped).
+  # Hooked (KeepDetailsOpen) and phx-update="ignore" elements key client-side state on
+  # their DOM id, so the id must follow the ITEM: positional indices shift when a block
+  # appears mid-run, silently rebinding that state elsewhere. Position is the fallback
+  # for id-less items (rows persisted before ids were stamped).
   defp stable_dom_id(prefix, turn_id, %{id: id}, _fallback) when not is_nil(id),
     do: "#{prefix}-#{turn_id}-#{String.replace(to_string(id), ~r/\s+/, "-")}"
 
   defp stable_dom_id(prefix, turn_id, _item, fallback), do: "#{prefix}-#{turn_id}-#{fallback}"
 
-  # An mcp group is identified by its first call: a group only ever grows at
-  # its tail, so the head call is its stable identity.
+  # A group only grows at its tail, so its head call is a stable identity.
   defp tool_dom_id(turn_id, {:mcp_group, [first | _]}, fallback),
     do: stable_dom_id("dra-tools", turn_id, first, fallback)
 
@@ -557,8 +553,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   attr :result, :map, required: true
 
-  # One search hit. A result whose URL is not http(s) still shows its title, just
-  # not as a link — the label markup is shared so the two branches cannot drift.
+  # A non-http(s) URL still shows its title, just not as a link; the label markup is
+  # shared so the branches cannot drift.
   defp search_result(assigns) do
     assigns = assign(assigns, :href, safe_http_url(assigns.result.url))
 
@@ -595,10 +591,9 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   attr :domain, :string, default: nil
 
-  # Favicons are fetched from Google's public favicon service, so the browser
-  # discloses each researched domain to Google. Accepted deliberately: it is an
-  # internal admin tool and the alternative is fetching (and caching) icons from
-  # arbitrary researched hosts ourselves. Swap the src to change that.
+  # Google's favicon service, so the browser discloses each researched domain to
+  # Google. Accepted: internal admin tool, and the alternative is proxying icons from
+  # arbitrary hosts ourselves. Swap the src to change that.
   defp favicon(assigns) do
     ~H"""
     <img
@@ -651,10 +646,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
   attr :class, :string, default: nil, doc: "positioning/colour extras (e.g. \"ml-auto\")"
   attr :interrupted_title, :string, default: "Interrupted — some calls did not return"
 
-  # The one status glyph used wherever a tool outcome is shown (tools summary,
-  # data-tools fold, call row): spinner while running, check on success, cross on
-  # error, neutral minus when interrupted (finished without an outcome). Statuses
-  # come from `group_status/1` / `call_status/1`.
+  # The one glyph for every tool outcome: spinner running, check ok, cross error,
+  # neutral minus interrupted. Statuses come from `group_status/1` / `call_status/1`.
   defp status_icon(%{status: :running} = assigns) do
     ~H"""
     <span class={["loading loading-spinner loading-xs", @class]}></span>
@@ -681,11 +674,9 @@ defmodule SanbaseWeb.DeepResearch.Components do
     """
   end
 
-  # Status of a whole group of tool items (the "Research" block, the "Data tools"
-  # fold): :running while anything is in flight, :interrupted when the group holds
-  # a call that never returned, else :ok. Individual failures stay on their own
-  # row — a research run routinely tolerates a failed call, so one must not paint
-  # the whole group red; a group that was cut short must not claim success either.
+  # :running while anything is in flight, :interrupted when a call never returned,
+  # else :ok. Individual failures stay on their own row: a run routinely tolerates a
+  # failed call, but a group cut short must not claim success either.
   defp group_status(items) do
     cond do
       Timeline.tools_running?(items) -> :running
@@ -694,8 +685,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
     end
   end
 
-  # One of :running | :ok | :error | :interrupted. `ok: nil` on a finished call
-  # means the run ended before the result arrived — neither success nor failure.
+  # `ok: nil` on a finished call means the run ended before the result arrived —
+  # neither success nor failure.
   defp call_status(call) do
     cond do
       Map.get(call, :done) != true -> :running
@@ -745,9 +736,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   # -- view helpers ------------------------------------------------------------
 
-  # Mark an in-flight tool item as settled (done, outcome unknown) so a terminal
-  # turn shows no spinner. ok stays nil → the row renders a neutral "interrupted"
-  # icon, not a misleading success check or error cross.
+  # Settle an in-flight item (done, outcome unknown) so a terminal turn shows no
+  # spinner. `ok` stays nil, so the row renders "interrupted", not a false check.
   defp settle_item(%{kind: :mcp, done: true} = item), do: item
   defp settle_item(%{kind: :mcp} = item), do: Map.put(item, :done, true)
 
@@ -759,8 +749,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   defp settle_item(item), do: item
 
-  # Schema-tolerant read of a finding row: cheap models drift the keys
-  # (finding/observation, evidence/data), so try each in order.
+  # Cheap models drift the keys (finding/observation, evidence/data) — try each.
   defp finding_field(row, keys) when is_map(row) do
     Enum.find_value(keys, "", fn k ->
       case row[k] do
@@ -772,9 +761,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   defp finding_field(_, _), do: ""
 
-  # A compact caption from a (timeline) chart's slug/range plus its series labels.
-  # Series here come straight off the wire, so the keys are strings — see the
-  # "Not the only chart path" note in `SanbaseWeb.DeepResearch.ChartRenderer`.
+  # Series come straight off the wire, so the keys are strings — see the "Not the only
+  # chart path" note in `SanbaseWeb.DeepResearch.ChartRenderer`.
   defp chart_caption(chart) do
     base = [chart[:slug], chart[:range]] |> Enum.reject(&is_nil/1) |> Enum.join(" · ")
 
@@ -792,12 +780,12 @@ defmodule SanbaseWeb.DeepResearch.Components do
     end
   end
 
-  # Drop narration that duplicates the report or clarification card — those are
-  # rendered separately, so showing the same text in the feed is just noise.
+  # The report and clarification cards render separately, so narration repeating them
+  # is noise.
   defp visible_items(timeline, report, clarification) do
     Enum.reject(timeline, fn item ->
-      # A thinking item's text may be nil (e.g. a persisted turn decoded from an
-      # older row) — same defence as Timeline.direct_answer?/1.
+      # Text may be nil on a turn decoded from an older row — as in
+      # Timeline.direct_answer?/1.
       text = (item.kind == :thinking && item.text) || ""
 
       item.kind == :thinking and
@@ -849,8 +837,8 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   defp safe_http_url(_), do: nil
 
-  # A finished turn carries its own `finished_at`, so it needs no wall clock and
-  # is rendered with `now_ms: nil` — that keeps its assigns stable across ticks.
+  # A finished turn carries `finished_at`, so `now_ms: nil` keeps its assigns stable
+  # across ticks.
   defp elapsed_seconds(turn, now_ms) do
     end_ms = turn.finished_at || now_ms || turn.started_at
     max(0, div(end_ms - turn.started_at, 1000))
@@ -864,15 +852,13 @@ defmodule SanbaseWeb.DeepResearch.Components do
     "#{minutes}m #{String.pad_leading(Integer.to_string(rest), 2, "0")}s"
   end
 
-  # The report/thinking markdown comes from the research agent over the wire, so
-  # sanitize the rendered HTML (Earmark is a converter, not a sanitizer) before
-  # injecting it raw — strips scripts and `javascript:` links, keeps the tags a
-  # report needs (headings, links, tables, code, lists).
+  # The markdown arrives over the wire, so sanitize before injecting it raw (Earmark
+  # converts, it does not sanitize): scripts and `javascript:` links out, the tags a
+  # report needs in.
   #
-  # `as_html/1`, not `as_html!/1`: streaming renders parse PARTIAL markdown (an
-  # still-open ``` fence mid-stream), and the bang variant prints each parse
-  # error to stderr on every re-render. Both variants return best-effort HTML;
-  # the messages are expected noise here, so they are dropped.
+  # `as_html/1`, not the bang: streaming renders parse PARTIAL markdown (an open ```
+  # fence), and `as_html!/1` prints every parse error to stderr on each re-render.
+  # Both return best-effort HTML.
   defp markdown(text) when is_binary(text) do
     {_status, html, _messages} = Earmark.as_html(text)
 

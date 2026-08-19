@@ -337,10 +337,9 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
-  # Same switch, different wording. `SaleControls` activates the whole new offering
-  # at once, so there is no state in which one of them is for sale and the others
-  # are not - but a customer told "Bundle plans are not available" after clicking
-  # Institutional would reasonably think they had hit the wrong button.
+  # Same switch, different wording. `SaleControls` activates the whole new offering at
+  # once, so one can never be for sale without the others - but a customer told "Bundle
+  # plans are not available" after clicking Institutional would think they misclicked.
   defp ensure_institutional_visible(user) do
     if SaleControls.bundle_plans_visible?(user) do
       :ok
@@ -407,10 +406,9 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
-  # The standard `subscribe` mutation validates the coupon before charging. The
-  # bundle flow has to do the same, or a code that is expired, exhausted or
-  # restricted to another product is redeemed against our own counter and only
-  # then argued about with Stripe.
+  # The standard `subscribe` mutation validates the coupon before charging; the bundle
+  # flow must too, or a code that is expired, exhausted or bound to another product is
+  # redeemed against our own counter and only then argued about with Stripe.
   defp ensure_coupon_usable(nil, _plan), do: :ok
 
   defp ensure_coupon_usable(coupon, %Plan{} = plan) do
@@ -429,22 +427,13 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     Billing.create_or_update_stripe_customer(user, card_token)
   end
 
-  # `payment_behavior: "error_if_incomplete"` is what makes a refused card a
-  # failed purchase rather than a half-made one.
-  #
-  # Under Stripe's default (`allow_incomplete`) a declined first invoice still
-  # answers `{:ok, subscription}`, with status `incomplete` and its invoice left
-  # open - so the caller cannot tell a sale from a refusal, and Stripe goes on
-  # retrying that invoice for the next day. Since `classify_active_sanapi/1` does
-  # not count `incomplete` as active, the customer who changes card and buys
-  # again gets a second subscription, and is billed twice if the retry on the
-  # first one then collects.
-  #
-  # With this, Stripe creates nothing and returns an error, which is the truth of
-  # what happened. There is nothing to resume either way: `off_session: true`
-  # means no authentication is being offered, so a card that needs 3DS is refused
-  # here regardless. Supporting that properly is `default_incomplete` plus a
-  # client-side confirmation step - a feature, not a fallback.
+  # `payment_behavior: "error_if_incomplete"` makes a refused card a failed purchase
+  # rather than a half-made one. Under Stripe's default a declined first invoice still
+  # answers ok with status `incomplete`, which `classify_active_sanapi/1` does not count
+  # as active - so a customer who changes card and buys again gets a second subscription,
+  # and is billed twice if the first invoice later collects. Nothing is resumable either
+  # way: `off_session: true` offers no authentication, so a 3DS card is refused here
+  # regardless (supporting it means `default_incomplete` plus a confirmation step).
   defp create_stripe_bundle_sub(user, prices, coupon) do
     items = Enum.map(prices, fn %Price{stripe_price_id: id} -> %{price: id} end)
 
@@ -481,11 +470,10 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
-  # Two requests that arrive together both pass the "no active SanAPI
-  # subscription" check before either has inserted anything, and both then create
-  # a Stripe subscription. Rather than lock around a call to Stripe, both rows are
-  # allowed to land and the loser withdraws: the lowest id wins, so exactly one
-  # survives no matter which order the two finish in.
+  # Two requests arriving together both pass the "no active SanAPI subscription" check
+  # before either inserts, and both create a Stripe subscription. Rather than lock around
+  # a Stripe call, both rows land and the loser withdraws: lowest id wins, so exactly one
+  # survives whatever order they finish in.
   defp ensure_sole_bundle_subscription(%Subscription{id: id}, user) do
     winner =
       user
@@ -540,10 +528,9 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
-  # `stripe_item_id` is left nil when Stripe's response does not name the item for
-  # a price, rather than filled with something that looks like a Stripe id but is
-  # not. A synthetic id cannot be used to change or delete anything, and every
-  # later caller would have to know the difference.
+  # `stripe_item_id` is left nil when Stripe's response does not name the item for a
+  # price, rather than filled with something that merely looks like a Stripe id: a
+  # synthetic id changes and deletes nothing, and every later caller would have to know.
   defp persist_items(db_sub, prices, stripe_sub) do
     stripe_items = stripe_items_by_price(stripe_sub)
 
@@ -579,20 +566,12 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
-  # Only a subscription that is actually live replaces anything.
-  #
-  # Stripe answers `{:ok, subscription}` with status `incomplete` when the first
-  # invoice is declined, so a refused card reaches here looking exactly like a
-  # completed purchase. Cancelling on the strength of that takes away the
-  # subscription the customer is still paying for and hands them nothing in
-  # return - and it credits the unused time of the old plan onto a bundle that
-  # will never charge, so the money is gone from the accounts too.
-  #
-  # The condition is the same one `stale_replaced_subscriptions/0` applies, so
-  # this cancel and the hourly retry behind it agree on what counts as replaced.
-  # If the customer later completes the payment (`payNow`, or Stripe's own
-  # retries) the subscription becomes active and that job finishes the
-  # replacement within the hour.
+  # Only a subscription that is actually live replaces anything. Stripe reports status
+  # `incomplete` when the first invoice is declined, so a refused card reaches here
+  # looking like a completed purchase - cancelling on that takes away the plan the
+  # customer still pays for and credits its unused time onto a bundle that will never
+  # charge. The condition matches `stale_replaced_subscriptions/0`, so once the customer
+  # does pay, that hourly job finishes the replacement.
   defp cancel_replaceable_if_live(%Subscription{status: status}, replaceable)
        when status in @active_statuses do
     cancel_replaceable(replaceable)
@@ -650,20 +629,15 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
-  # `not is_nil(s.stripe_id)` is the whole safety of this job. It exists to finish
-  # a replacement that `subscribe/2` started, and only a real Stripe purchase can
-  # have started one. Bundle rows created by hand in the admin panel have no
-  # Stripe object, and without this condition a test bundle handed to a real
-  # account would cancel that customer's genuine, paid SanAPI subscription an hour
-  # later - with proration, in Stripe, unprompted.
+  # `not is_nil(s.stripe_id)` is the whole safety of this job: only a real Stripe purchase
+  # can have started a replacement. Bundle rows created by hand in the admin panel have no
+  # Stripe object, and without this a test bundle on a real account would cancel that
+  # customer's genuine SanAPI subscription an hour later, with proration, unprompted.
   #
-  # `ENTERPRISE` is matched exactly for the reason `SaleControls` matches it exactly
-  # (see that module's docs): the name has two legacy rows in it, 105 and 106, which
-  # this query has no business treating as the new offering. Being wrong here is
-  # worse than being wrong there - an `ENTERPRISE_BASIC` holder would have had their
-  # other SanAPI subscription canceled with proration, on a schedule, with no
-  # request from them. `BUNDLE` and `INSTITUTIONAL` stay prefixes because they own
-  # their namespaces.
+  # `ENTERPRISE` is matched exactly, as in `SaleControls`: the name holds two legacy rows
+  # (105, 106) that are not the new offering, and treating an `ENTERPRISE_BASIC` holder as
+  # one would cancel their other SanAPI subscription on a schedule, unasked. `BUNDLE` and
+  # `INSTITUTIONAL` stay prefixes because they own their namespaces.
   defp stale_replaced_subscriptions do
     product_api = Product.product_api()
 
@@ -710,10 +684,10 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
       subs == [] ->
         {:ok, :none}
 
-      # Wording matters here now that ENTERPRISE is a plan name of its own. This
-      # branch is about `CUSTOM_*` - a bespoke, negotiated contract - and calling it
-      # "enterprise" would point a customer holding the Enterprise tier at the wrong
-      # explanation. Enterprise itself is caught by the next branch, as new offering.
+      # Wording matters now that ENTERPRISE is a plan name of its own. This branch is
+      # about `CUSTOM_*`, a bespoke negotiated contract; calling it "enterprise" would
+      # point an Enterprise-tier customer at the wrong explanation. Enterprise itself is
+      # caught by the next branch, as new offering.
       Enum.any?(subs, &custom_plan?/1) ->
         {:error, "Active bespoke (custom) SanAPI subscription cannot be auto-replaced"}
 
@@ -740,12 +714,9 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   defp custom_plan?(%Subscription{plan: %Plan{name: "CUSTOM_" <> _}}), do: true
   defp custom_plan?(_), do: false
 
-  # A prefix here, unlike in `stale_replaced_subscriptions/0` and `SaleControls`, and
-  # the difference is deliberate. Answering `true` for a legacy `ENTERPRISE_BASIC`
-  # holder refuses them a second purchase; answering `false` sells them one and
-  # leaves two live SanAPI subscriptions billing. The over-broad answer is the safe
-  # one when the question is "does this customer already have something", so this is
-  # the one place the wider match is what we want.
+  # A prefix here, unlike in `stale_replaced_subscriptions/0` and `SaleControls`: for "does
+  # this customer already have something" the over-broad answer is the safe one - refusing
+  # a legacy `ENTERPRISE_BASIC` holder a second purchase beats two live SanAPI subs.
   defp new_offering_plan?(%Subscription{plan: %Plan{name: "BUNDLE" <> _}}), do: true
   defp new_offering_plan?(%Subscription{plan: %Plan{name: "INSTITUTIONAL" <> _}}), do: true
   defp new_offering_plan?(%Subscription{plan: %Plan{name: "ENTERPRISE" <> _}}), do: true
@@ -787,10 +758,9 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     end
   end
 
-  # The local row is written before Stripe is called so the unique index on
-  # (subscription_id, sku) is what decides a race, not a read that two requests
-  # can both pass. The loser is rejected before it can create a second Stripe item
-  # the customer would be billed for.
+  # The local row is written before Stripe is called, so a race is decided by the unique
+  # index on (subscription_id, sku), not by a read two requests can both pass. The loser
+  # is rejected before it can create a second Stripe item to bill the customer for.
   defp claim_item(sub, price) do
     case Item.create(%{
            subscription_id: sub.id,
@@ -899,31 +869,22 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   defp counterpart_interval("year"), do: {:ok, "month"}
   defp counterpart_interval(_), do: {:error, "Unknown interval"}
 
-  # `items_to_switch/1` already refuses a switch with nothing staying. This is that
-  # invariant restated where it now costs something: the deletions go out first, so
-  # an empty re-price would be a request Stripe refuses made after items have
-  # already been dropped.
+  # `items_to_switch/1` already refuses a switch with nothing staying. Restated here,
+  # where it costs something: the deletions go out first, so an empty re-price would be a
+  # request Stripe refuses, made after items were already dropped.
   defp swap_stripe_items(_sub, [], _leaving, _new_prices) do
     {:error, "This subscription has no items to switch"}
   end
 
-  # Items already scheduled for removal are dropped here rather than re-priced.
-  # Carrying them over would undo the customer's removal, and there is no period
-  # left to honour once the subscription is billed on a different cycle.
-  #
-  # Two requests, because Stripe applies one `proration_behavior` per request.
-  # Re-pricing has to prorate, and a deletion in the same request would be prorated
-  # with it - crediting the unused time of a package the customer paid for and
-  # keeps until the period ends. That credit is the whole of what `remove_item/3`
-  # promises not to give, so the deletions go out on their own with
-  # `proration_behavior: "none"`, the terms `Bundle.ItemExpiry` deletes on.
-  #
-  # Deletions first. A re-price that then fails leaves a subscription with fewer
-  # items and no credit issued, which is the cheap way to fail; the other order
-  # credits items that go on being billed. Nothing needs undoing either: the local
-  # rows for the deleted items are still there with their `stripe_item_id`, and
-  # `Bundle.ItemExpiry` counts a Stripe item that is already gone
-  # (`resource_missing`) as deleted.
+  # Items already scheduled for removal are dropped rather than re-priced: carrying them
+  # over would undo the customer's removal, and no period is left to honour on a different
+  # cycle. Two requests, because Stripe applies one `proration_behavior` per request -
+  # re-pricing has to prorate, and a deletion in the same request would prorate with it,
+  # crediting time the customer paid for and keeps, which is exactly what `remove_item/3`
+  # promises not to give. Deletions therefore go first and alone with
+  # `proration_behavior: "none"`, the terms `Bundle.ItemExpiry` deletes on: a re-price that
+  # then fails is the cheap way to fail, and nothing needs undoing because the local rows
+  # still carry their `stripe_item_id`.
   defp swap_stripe_items(sub, staying, leaving, new_prices) do
     with :ok <- drop_leaving_items(sub, leaving) do
       reprice_staying_items(sub, staying, new_prices)
@@ -946,12 +907,10 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
         {:ok, _stripe_sub} ->
           :ok
 
-        # An item Stripe no longer has is an item that does not need deleting.
-        # Without this the switch is unretryable: if this call succeeds and the
-        # re-price then fails, the local rows still name items that are already
-        # gone, and every later attempt dies here until `remove_at` finally comes
-        # around - a month away, a year on the annual interval.
-        # `ItemExpiry` treats the same error the same way, for the same reason.
+        # An item Stripe no longer has does not need deleting. Without this the switch is
+        # unretryable: the local rows still name gone items, so every later attempt dies
+        # here until `remove_at` - a month away, a year on annual. `ItemExpiry` does the
+        # same.
         {:error, %Stripe.Error{code: :resource_missing}} ->
           :ok
 
@@ -982,13 +941,11 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
     })
   end
 
-  # The item ids Stripe reports back are the authority. Changing an item's price
-  # keeps its id, but reading them from the response also repairs any row that had
-  # none, and is what lets a second switch address the existing items instead of
-  # asking Stripe to add more alongside them.
-  #
-  # One transaction, because a subscription whose plan says one interval while its
-  # items are priced on the other cannot be told apart from a correct one later.
+  # The item ids Stripe reports back are the authority: re-pricing keeps an item's id, but
+  # reading them from the response also repairs a row that had none, which is what lets a
+  # second switch address the existing items instead of adding more. One transaction, or a
+  # subscription whose plan and items disagree on the interval becomes indistinguishable
+  # from a correct one.
   defp apply_interval_switch(sub, new_plan, staying, leaving, new_prices, stripe_sub) do
     item_id_by_price = stripe_items_by_price(stripe_sub)
     price_id_by_sku = Map.new(new_prices, &{&1.sku, &1.stripe_price_id})

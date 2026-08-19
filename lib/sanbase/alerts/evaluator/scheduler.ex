@@ -92,11 +92,9 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   defp split_into_batches(alerts) do
-    # The state is going to be a list of mapsets, each of which will have a size
-    # slightly larger than the @batch_size. All of a given users' alerts are put
-    # in the same batch, so they can be run concurrently. Because the intial state
-    # contains an empty mapset, if there are no alerts the result must be run
-    # through Enum.reject(&Enum.empty?)
+    # The state is a list of mapsets, each slightly larger than @batch_size. All of a
+    # user's alerts go in the same batch so batches can run concurrently. The initial state
+    # holds an empty mapset, so with no alerts the result needs Enum.reject(&Enum.empty?).
     init_state = [MapSet.new()]
 
     Enum.group_by(alerts, & &1.user_id)
@@ -112,10 +110,8 @@ defmodule Sanbase.Alert.Scheduler do
     |> Enum.reject(&Enum.empty?/1)
   end
 
-  # Transform the list of batches represented as lists to a list of batches
-  # represented as maps. The map includes extra information for the number of
-  # alerts in the batch and what part of the whole alerts list this batch
-  # covers
+  # Turn the batches from lists into maps, adding the number of alerts in the batch and
+  # which part of the whole alerts list it covers.
   defp batches_to_maps(batches) do
     batches
     |> Enum.reduce({[], 0}, fn alerts, {batches, size_so_far} ->
@@ -231,10 +227,9 @@ defmodule Sanbase.Alert.Scheduler do
     filtered
   end
 
-  # Deactivate legacy alerts whose only destinations are webhooks with invalid
-  # URLs (http scheme, IP address host, malformed) - they cannot deliver
-  # anything. Alerts that also have other channels are kept - the invalid
-  # webhook is refused at send time instead.
+  # Deactivate legacy alerts whose only destinations are webhooks with invalid URLs (http
+  # scheme, IP address host, malformed) - they can deliver nothing. Alerts with other
+  # channels too are kept; their invalid webhook is refused at send time instead.
   defp filter_and_deactivate_webhook_bad_url_triggers(user_triggers, info_map) do
     {bad_url_triggers, rest} =
       Enum.split_with(user_triggers, &only_bad_webhook_url_channels?/1)
@@ -338,12 +333,10 @@ defmodule Sanbase.Alert.Scheduler do
 
   # returns a tuple {updated_user_triggers, send_result_list}
   defp send_and_mark_as_sent(triggers, info_map) do
-    # Group by user. Separate user groups can be executed concurrently, but
-    # the triggers of the same user must not be concurrent. By doing this we
-    # drop the Mutex dependency while sending notifications that were necessary
-    # so the alerts sent can be tracked properly. If two triggers for the same
-    # user are executed concurrently, the `max_alerts_to_sent` cannot be enforced
-    # without using any synchronization technique.
+    # Group by user: separate user groups run concurrently, the triggers of one user must
+    # not. That drops the Mutex dependency the notification sending needed to track sent
+    # alerts - with two triggers of the same user running concurrently,
+    # `max_alerts_to_sent` cannot be enforced without synchronization.
     grouped_by_user = Enum.group_by(triggers, fn %{user: user} -> user.id end)
 
     # On timeout, the map returns {:error, :timeout} tuple, so instead of using map_type: :flat_map,

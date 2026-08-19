@@ -87,9 +87,7 @@ defmodule Sanbase.DeepResearch.McpServersTest do
   end
 
   describe "a malformed catalog entry" do
-    # Entries come from runtime.exs, so an unset env var can leave :url nil. Raising
-    # here would crash the stream task, park the turn :paused, and make Continue
-    # repeat the crash — drop the server and run without it instead.
+    # Raising here would crash the stream task and make Continue repeat the crash.
     test "is dropped, whichever of label/url is missing" do
       for attrs <- [%{url: nil}, %{label: nil}, %{auth: :bearer, token: "t", url: nil}] do
         log = capture_log(fn -> assert McpServers.build([entry(attrs)], insert(:user)) == [] end)

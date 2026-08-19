@@ -86,11 +86,9 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
         case auth_struct do
           %{auth: %{current_user: %{id: user_id}}} ->
-            # Tag Sentry events with the user id so exceptions are
-            # attributable to a specific request without having to
-            # cross-reference Logger metadata. `RequestContextPlug`
-            # clears this between requests so Cowboy worker reuse
-            # cannot leak the previous user's id into a new event.
+            # Tag Sentry events with the user id so exceptions are attributable without
+            # cross-referencing Logger metadata. `RequestContextPlug` clears it between
+            # requests, so Cowboy worker reuse cannot leak the previous user's id.
             Sentry.Context.set_user_context(%{id: user_id})
 
           _ ->
@@ -110,11 +108,9 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  # Extend the auth struct with some extra information. This is
-  # not the core authentication logic, but rather some additional
-  # logic that only extends the core logic.
-  # For example, the auth struct can be extended with a `shared access token`
-  # which gives access to the metrics on a chart layout
+  # Extend the auth struct with extra information - not core authentication, only
+  # additions to it. For example a `shared access token`, which grants access to the
+  # metrics of a chart layout.
   defp augment_auth(%AuthStruct{} = auth_struct, %Plug.Conn{} = conn) do
     @augmenting_auth_methods
     |> Enum.reduce(auth_struct, fn augment_auth_method, auth_struct_acc ->
@@ -122,11 +118,9 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end)
   end
 
-  # Authenticate the user using the X-SharedAccess-Authorization header. It
-  # contains a token that, when resolved, gives access to some metrics and
-  # queries that are used in a chart layout. This authentication only augments
-  # the existing auth_struct by adding new fields to it. This is not a main
-  # authentication method but should be used only on some pages.
+  # Authenticate via the X-SharedAccess-Authorization header, whose token resolves to
+  # access for the metrics and queries of a chart layout. Only augments the existing
+  # auth_struct with new fields; not a main authentication method, for some pages only.
   def augment_auth_with_shared_access_token(%AuthStruct{} = auth_struct, %Plug.Conn{} = conn) do
     with ["SharedAccessToken " <> uuid] <- get_req_header(conn, "x-sharedaccess-authorization"),
          {:ok, sat} <- SharedAccessToken.by_uuid(uuid),
@@ -326,13 +320,10 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   # Private functions
 
   defp find_best_subscription(requested_product, user_id) do
-    # Cross-product fallback in both directions so paying customers keep their
-    # benefits in the other product (e.g. Sanbase MAX gets API access, SanAPI
-    # BUSINESS_PRO gets Sanbase benefits). Plan name translation for the
-    # destination product happens in effective_plan_name/2 — in particular,
-    # SanAPI custom plans are mapped to their `restricted_access_as_plan`
-    # when used for Sanbase requests, so their API-specific metric whitelist
-    # doesn't leak into Sanbase access checks.
+    # Cross-product fallback in both directions so paying customers keep their benefits in
+    # the other product (Sanbase MAX gets API access, SanAPI BUSINESS_PRO gets Sanbase
+    # benefits). Plan name translation for the destination product happens in
+    # effective_plan_name/2.
     api_sub = Subscription.current_subscription(user_id, @product_id_api)
     sanbase_sub = Subscription.current_subscription(user_id, @product_id_sanbase)
 
@@ -342,19 +333,15 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  # A SanAPI custom plan's raw name (e.g. "CUSTOM_FOO") encodes an
-  # API-specific metric whitelist that must not be applied to Sanbase calls.
-  # When a Sanbase request falls back to such a subscription, resolve the
-  # custom plan's `restricted_access_as_plan` (defaulting to FREE) so the
-  # Sanbase access checker treats the user as that standard tier.
-  # A bundle is a SanAPI product whose packages say which *metrics* were bought.
-  # That has no meaning for Sanbase, and letting the name through would send
-  # Sanbase access checks down the bundle path, where a package's metric list
-  # would decide Sanbase access and the Sanbase-specific limits have no
-  # per-package answer. Product's answer (§15 Q5) is that these customers get
-  # what a SanAPI PRO customer with no Sanbase subscription gets, so the name is
-  # resolved here - the same treatment, and for the same reason, as a custom plan
-  # just above.
+  # A SanAPI custom plan's raw name (e.g. "CUSTOM_FOO") encodes an API-specific metric
+  # whitelist that must not apply to Sanbase calls, so a Sanbase request falling back to
+  # one resolves the plan's `restricted_access_as_plan` (default FREE) instead.
+  #
+  # A bundle needs the same treatment for the same reason: its packages say which
+  # *metrics* were bought, which means nothing for Sanbase, and letting the name through
+  # would send Sanbase access checks down the bundle path where the Sanbase-specific
+  # limits have no per-package answer. Per product (§15 Q5) these customers get what a
+  # SanAPI PRO customer with no Sanbase subscription gets.
   defp effective_plan_name(subscription, "SANBASE") do
     case subscription do
       %Subscription{plan: %{has_custom_restrictions: true, name: name}} ->

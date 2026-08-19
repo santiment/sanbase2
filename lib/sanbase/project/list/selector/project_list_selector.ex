@@ -7,13 +7,9 @@ defmodule Sanbase.Project.ListSelector do
   alias Sanbase.Project
   alias Sanbase.Utils.ListSelector.Transform
 
-  # Important note:
-  # #TODO: Rework this
-  # Currently, the caller must make sure that every different watchlist is resolved
-  # in a different process or call clear_detect_cycles/0 function.
-  # This is because in order to detect cycles, some storage must be used to keep
-  # data between calls. For this purposes the process dictionary is used. This can
-  # lead to issues if more than 1 watchlist is resolved.
+  # TODO: Rework this. Cycle detection needs storage between calls and uses the process
+  # dictionary for it, so the caller must resolve every watchlist in a different process or
+  # call clear_detect_cycles/0 in between.
   @cycle_detection_key :__get_base_projects__
   def clear_detect_cycles(), do: Process.delete(@cycle_detection_key)
 
@@ -150,15 +146,14 @@ defmodule Sanbase.Project.ListSelector do
   defp watchlist_args_to_str(%{watchlist_id: id}), do: "watchlist with id #{id}"
   defp watchlist_args_to_str(%{watchlist_slug: slug}), do: "watchlist with slug #{slug}"
 
-  # TODO: Try reworking it to use an ETS table instead of the process dictionary
-  # Also try reworking it so it can also check if a seen watchlist has been resolved
-  # This can help working around the issue where one process resolves many watchlists.
-  # ---
-  # The cycle detection uses the process dictionary, so it can give false positivies
-  # in case multiple watchlists are being resolved in the same process/api call
-  # Because of this, the `args_seen_so_far` is a list and not a set, so we can allow
-  # for some repetitions before actually giving an error. If there is indeed a cycle,
-  # it is guaranteed that it will be detected, no matter what the threshold is.
+  # TODO: rework this to use an ETS table instead of the process dictionary, and to check
+  # whether a seen watchlist has been resolved - that would fix one process resolving many
+  # watchlists.
+  #
+  # Because the detection uses the process dictionary it can give false positives when
+  # multiple watchlists are resolved in the same process/api call. So `args_seen_so_far` is
+  # a list rather than a set, allowing some repetitions before erroring. A real cycle is
+  # still guaranteed to be detected whatever the threshold is.
   defp detect_cycles!(args) do
     case Process.get(@cycle_detection_key) do
       nil ->

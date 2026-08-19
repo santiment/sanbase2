@@ -19,18 +19,17 @@ defmodule Sanbase.Knowledge do
   @retrieval_top_k 20
   @prompt_top_n 5
 
-  # When the plan sorts by recency (see `QueryPlan`), insight retrieval reorders
-  # the candidate pool by publication date. A pool sized for relevance-ranking
-  # (@retrieval_top_k) could cut the genuinely-newest relevant insight before the
-  # date sort sees it, so the pool is widened on that path. `min_similarity` still
-  # gates relevance, so widening only adds reach, not noise.
+  # When the plan sorts by recency (see `QueryPlan`), insight retrieval reorders the
+  # candidate pool by publication date. A pool sized for relevance-ranking
+  # (@retrieval_top_k) could cut the genuinely-newest relevant insight before the date sort
+  # sees it, so it is widened here. `min_similarity` still gates relevance: reach, not
+  # noise.
   @recency_retrieval_top_k 100
 
-  # Recency intent reorders by date, but only among the most *relevant* candidates:
-  # the reranker first trims the (widened) cosine pool to this many hits, THEN we
-  # date-sort those. This stops a barely-relevant but brand-new insight from
-  # hijacking the top, while leaving enough headroom that the genuinely-newest
-  # relevant one survives the trim. Sits between @prompt_top_n and the pool size.
+  # Recency intent reorders by date, but only among the most *relevant* candidates: the
+  # reranker trims the (widened) cosine pool to this many hits, THEN they are date-sorted.
+  # Stops a barely-relevant brand-new insight from hijacking the top, with enough headroom
+  # for the genuinely-newest relevant one to survive. Between @prompt_top_n and pool size.
   @recency_relevance_window 15
 
   @doc """
@@ -118,10 +117,9 @@ defmodule Sanbase.Knowledge do
              maybe_find_most_similar_academy_articles(user_input, embedding, options, min_sim),
            {:ok, insights} <-
              maybe_find_most_similar_insights(user_input, embedding, options, min_sim) do
-        # Each retrieval helper already applied the similarity gate, so the lists
-        # are final here. Browse-mode insights are intentionally ungated — they
-        # are date-ordered and carry no score (`similarity: nil`) — and pass
-        # through unchanged.
+        # Each retrieval helper already applied the similarity gate, so the lists are
+        # final. Browse-mode insights are intentionally ungated - date-ordered, no score
+        # (`similarity: nil`) - and pass through unchanged.
         counts = %{faqs: length(faqs), academy: length(academy), insight: length(insights)}
 
         if faqs == [] and academy == [] and insights == [] do
@@ -220,24 +218,21 @@ defmodule Sanbase.Knowledge do
     {:ok, answer}
   end
 
-  # Render an insight's publication date for the smart-search source list. The
-  # date is emitted inside a `{{date:...}}` sentinel (see the insight line above)
-  # that `SanbaseWeb.AskLive` turns into a greyed span AFTER markdown rendering —
-  # this keeps Earmark escaping on for the user-generated insight titles (no XSS)
-  # while still colouring the date. Only insights carry a date (`published_at`
-  # is a `:naive_datetime` field); show the date part (the time is noise here)
-  # and fall back to "unknown date" when absent.
+  # Render an insight's publication date for the smart-search source list. It goes inside
+  # a `{{date:...}}` sentinel (see the insight line above) that `SanbaseWeb.AskLive` turns
+  # into a greyed span AFTER markdown rendering, so Earmark escaping stays on for the
+  # user-generated titles (no XSS). Only insights carry a date; show the date part, or
+  # "unknown date" when absent.
   defp format_published_at(%NaiveDateTime{} = dt),
     do: dt |> NaiveDateTime.to_date() |> Date.to_iso8601()
 
   defp format_published_at(_), do: "unknown date"
 
-  # Build the answer prompt and the citation registry together. Each enabled
-  # source contributes its final reranked hits; the hits are numbered globally
-  # (FAQ, then Insight, then Academy) so every context block carries a stable
-  # `[<id>]` the model cites by, and the returned `registry` maps each id to the
-  # `{source, prefix, label, url}` marker `Citations` turns into real links.
-  # An empty registry means no source cleared the similarity threshold.
+  # Build the answer prompt and the citation registry together. Each enabled source
+  # contributes its reranked hits, numbered globally (FAQ, Insight, Academy) so every
+  # context block carries a stable `[<id>]` the model cites by. `registry` maps each id to
+  # the `{source, prefix, label, url}` marker `Citations` turns into a link; an empty one
+  # means no source cleared the similarity threshold.
   defp build_question_answer_prompt(user_input, embedding, options) do
     min_sim = min_similarity(options)
 
@@ -294,10 +289,9 @@ defmodule Sanbase.Knowledge do
       """
   end
 
-  # FAQ retrieval is identical on both the answer and smart-search paths (no
-  # recency ordering or browse mode — only insights carry a date), so a single
-  # function serves both, unlike the insight/academy `answer_*` vs
-  # `maybe_find_most_similar_*` pairs which genuinely diverge.
+  # FAQ retrieval is identical on the answer and smart-search paths (no recency ordering
+  # or browse mode - only insights carry a date), so one function serves both, unlike the
+  # insight/academy `answer_*` vs `maybe_find_most_similar_*` pairs.
   defp retrieve_faqs(user_input, embedding, options, min_sim) do
     if Keyword.get(options, :faq, true) do
       with {:ok, raw} <- find_most_similar_faqs(embedding, @retrieval_top_k) do
@@ -316,10 +310,10 @@ defmodule Sanbase.Knowledge do
       not Keyword.get(options, :insight, true) ->
         {:ok, []}
 
-      # Browse mode (`plan.has_topic == false`, e.g. "summarize the latest
-      # insights"): no topic to embed, so cosine ranking and the similarity
-      # gate are noise. Fetch the newest posts' chunks directly; the diversity
-      # pass still spreads the prompt across distinct posts and backfills.
+      # Browse mode (`plan.has_topic == false`, e.g. "summarize the latest insights"): no
+      # topic to embed, so cosine ranking and the similarity gate are noise. Fetch the
+      # newest posts' chunks directly; the diversity pass still spreads the prompt across
+      # distinct posts.
       browse_mode?(options) ->
         with {:ok, chunks} <-
                Sanbase.Insight.Post.find_newest_insight_chunks(

@@ -62,10 +62,9 @@ defmodule Sanbase.SocialData.SocialVolume do
       if treat_word_as_lucene_query do
         result
       else
-        # If the words are **not** treated as lucene syntax (the default behaviour)
-        # they are lowercased before they are sent to metricshub. Because of that
-        # we need to properly map the result of metricshub back to the original casing
-        # of the word that came from the API call
+        # Unless the words are treated as lucene syntax, they are lowercased before being
+        # sent to metricshub, so the result must be mapped back to the original casing of
+        # the word that came from the API call.
         SocialHelper.replace_words_with_original_casing(result, words)
       end
     end)
@@ -126,27 +125,11 @@ defmodule Sanbase.SocialData.SocialVolume do
   defp maybe_format_response(_data, [] = _words), do: %{}
 
   defp maybe_format_response(data, words) do
-    # Metricshub returns different format when a single word is provided.
-    # Unify both responses so the result is handled easily
-    # When more than 1 word is returned, the result is map where the word
-    # is the key.
-    # %{
-    #   "data" => %{
-    #     "bitcoin" => %{
-    #       "2022-10-05T00:00:00Z" => 1401
-    #     },
-    #     "ethereum" => %{
-    #       "2022-10-04T12:00:00Z" => 576,
-    #     }
-    #   }
-    # }
-    #
-    # When only 1 word is used, there is no word as key.
-    # %{
-    #   "data" => %{
-    #     "2022-10-05T00:00:00Z" => 1399
-    #   }
-    # }
+    # Metricshub returns a different format for a single word - unify both. With more than
+    # one word the data is keyed by word:
+    #   %{"data" => %{"bitcoin" => %{"2022-10-05T00:00:00Z" => 1401}, "ethereum" => ...}}
+    # With one word there is no word key:
+    #   %{"data" => %{"2022-10-05T00:00:00Z" => 1399}}
     case Map.values(data) |> List.first() do
       %{} ->
         data

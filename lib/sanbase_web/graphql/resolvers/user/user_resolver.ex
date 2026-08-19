@@ -81,11 +81,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def last_sanbase_activity(%User{} = user, _args, _resolutiond) do
-    # Take advantage of the fact that there are 2 JWTs - one short-lived (5 minutes) access token
-    # and one long-lived (30 days) refresh token. When making a request, if the access token is
-    # expired, the refresh token is exchagned for a new access token and this operation is recorded
-    # in the database by bumping the `last_exchanged_at` field
-    # API calls with apikey does is not reflected here
+    # There are 2 JWTs - a short-lived (5 minutes) access token and a long-lived (30 days)
+    # refresh token. When the access token is expired, the refresh token is exchanged for a
+    # new one and the `last_exchanged_at` field is bumped. API calls with an apikey are not
+    # reflected here.
     with {:ok, datetime} <- SanbaseWeb.Guardian.Token.user_id_last_activity(user.id) do
       {:ok, format_activity_bucket(DateTime.utc_now(), datetime)}
     end
@@ -169,15 +168,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       ) do
     first_login_requested? = "firstLogin" in requested_fields(resolution)
 
-    # Appart from finishing the registration process, this code will also set the
-    # firstLogin: true, which is **very** important for the analytics, as the frontend
-    # uses it to emit events.
-    # The frontend can execute some other currentUser queries that do not request this field
-    # before executing any request that does include this field.
-    # In such cases these queries could actually trigger the firstLogin: true
-    # and any other query that actually asks for it will see false.
-    # Fix this by finishing the registration process and putting firstLogin: true
-    # only when the `firstLogin` field is requested.
+    # Besides finishing the registration process, this sets firstLogin: true, which the
+    # frontend uses to emit analytics events. The frontend can run currentUser queries that
+    # do not request the field before one that does; those would consume the firstLogin:
+    # true and leave the query asking for it seeing false. So registration is finished and
+    # firstLogin: true set only when the `firstLogin` field is requested.
     case first_login_requested? and User.RegistrationState.login_to_finish_registration?(user) do
       false ->
         {:ok, user}
@@ -188,15 +183,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
             {:ok, user}
 
           true ->
-            # This happens when the user has been created via Google/Twitter OAuth
-            # In such case the /auth/google or /auth/twitter endpoint does not return a
-            # user (like in emailLoginVerify) and the first_login: true will be put
-            # in the first `currentUser` call.
+            # Happens for users created via Google/Twitter OAuth: /auth/google and
+            # /auth/twitter return no user (unlike emailLoginVerify), so first_login: true
+            # is put in the first `currentUser` call.
             case Sanbase.Accounts.forward_registration(user, "login", %{origin_url: origin_url}) do
-              # :keep_state indicates that the change did not update because it has
-              # been already changed by a concurrent request in the same or on
-              # another node. :evolve state shows that this is the process that
-              # updated the state, so this is the true first login
+              # :keep_state means a concurrent request on this or another node already
+              # changed the state; :evolve_state means this process updated it, so this is
+              # the true first login.
               {:ok, :evolve_state, user} -> {:ok, %{user | first_login: true}}
               {:ok, :keep_state, user} -> {:ok, user}
             end

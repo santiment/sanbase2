@@ -1,22 +1,15 @@
 defmodule Sanbase.DeepResearch.Config do
   @moduledoc """
-  Configuration + run-payload assembly for the deep research agent.
+  Configuration and run-payload assembly for the deep research agent (a LangGraph
+  server running the `deep_research_agent` graph, default `http://127.0.0.1:2024`).
 
-  Builds the LangGraph run body and the per-run `configurable` overrides.
+  Builds the run body and the per-run `configurable` overrides. The agent resolves
+  `configurable` -> env var -> default, so anything left unset here falls back to its
+  own `.env`; we send only what sanbase configures, never `nil`.
 
-  The LiveView connects directly to a LangGraph dev server (default
-  `http://127.0.0.1:2024`) running the `deep_research_agent` graph. Per-run
-  `configurable` overrides are resolved by the agent as
-  `configurable` -> env var -> default; so any field we leave unset here falls
-  back to the agent server's own `.env` defaults. We therefore only send the
-  keys that are explicitly configured on the sanbase side (plus a few static
-  safety knobs), never `nil`.
-
-  All values are read from application env under `:sanbase, Sanbase.DeepResearch`,
-  populated from system env in `config/runtime.exs`. Each default lives in
-  exactly one place: literal fallbacks for the connection knobs are the module
-  attributes below, everything deploy-shaped (the MCP catalog, feature flags)
-  defaults in `runtime.exs`.
+  Values come from app env under `:sanbase, Sanbase.DeepResearch`, populated in
+  `config/runtime.exs`. Each default lives in one place: connection knobs in the
+  attributes below, deploy-shaped ones (MCP catalog, flags) in `runtime.exs`.
   """
 
   require Logger
@@ -37,28 +30,26 @@ defmodule Sanbase.DeepResearch.Config do
   def assistant_id(), do: get(:assistant_id) || @default_assistant_id
 
   @doc """
-  How long a runner keeps a run alive with no LiveView attached: long enough for a
-  websocket reconnect, short enough that a closed tab stops burning tokens.
+  How long a runner keeps a run alive unwatched: long enough for a websocket
+  reconnect, short enough that a closed tab stops burning tokens.
   """
   @spec pause_after_disconnect_ms() :: non_neg_integer()
   def pause_after_disconnect_ms(),
     do: get(:pause_after_disconnect_ms, @default_pause_after_disconnect_ms)
 
   @doc """
-  How often a runner rewrites the row of the turn it is streaming.
-
-  Between two checkpoints a killed runner (pod eviction, VM kill) loses the events
-  it has not written, so this trades database churn — each write serializes the
-  whole timeline — against how much of an interrupted turn survives.
+  How often a runner rewrites the row of the turn it is streaming. A killed runner
+  (pod eviction, VM kill) loses whatever it has not written, so this trades database
+  churn (each write serializes the whole timeline) against how much of an interrupted
+  turn survives.
   """
   @spec checkpoint_every_ms() :: non_neg_integer()
   def checkpoint_every_ms(), do: get(:checkpoint_every_ms, @default_checkpoint_every_ms)
 
   @doc """
-  Optional bearer token sent as `Authorization: Bearer <token>` on every request
-  to the LangGraph server (`DRA_AUTH_TOKEN`). `nil` (unset or blank) means no
-  auth header — fine for the local dev server, required for a remote deploy that
-  sits behind an authenticating proxy.
+  Bearer token for every request to the LangGraph server (`DRA_AUTH_TOKEN`). `nil`
+  (unset or blank) means no auth header: fine locally, required behind an
+  authenticating proxy.
   """
   @spec auth_token() :: String.t() | nil
   def auth_token() do
@@ -69,17 +60,14 @@ defmodule Sanbase.DeepResearch.Config do
   end
 
   @doc """
-  The full body POSTed to `/threads/:id/runs/stream`.
-
-  Carries `assistant_id`, the user `input.messages`, the per-run
-  `config.configurable`, and the multi-channel stream modes that surface the
-  typed event protocol (`custom`), state updates (`updates`) and assistant
+  The full body POSTed to `/threads/:id/runs/stream`: `assistant_id`, the user
+  `input.messages`, the per-run `config.configurable`, and the stream modes that
+  surface the typed event protocol (`custom`), state updates (`updates`) and
   thinking tokens (`messages`).
 
-  `opts[:mcp_servers]` is a list of agent MCP server maps
-  (`%{"name", "url", "headers", "tools"}`) to connect for this run; when present
-  the agent exposes those servers' tools (e.g. Santiment data) to the research.
-  `opts[:model_tier]` is the price-tier name picked in the UI (see `model_tiers/0`).
+  `opts[:mcp_servers]` are agent MCP server maps
+  (`%{"name", "url", "headers", "tools"}`) whose tools the run may use;
+  `opts[:model_tier]` is the price tier picked in the UI (see `model_tiers/0`).
   """
   @spec run_payload(String.t(), keyword()) :: map()
   def run_payload(message, opts \\ []) when is_binary(message) do
@@ -100,10 +88,9 @@ defmodule Sanbase.DeepResearch.Config do
       "allow_clarification" => get(:allow_clarification, true),
       "max_concurrent_research_units" => get(:max_concurrent_research_units, 2),
       "max_react_tool_calls" => get(:max_react_tool_calls, 500),
-      # Models are selected by tier NAME only (extra-low | low | mid | high); the
-      # agent ignores per-model keys (research_model etc.) with a warning. The
-      # user's UI pick (opts) wins over the deploy-wide default; unset falls back
-      # to the agent's own default tier (extra-low).
+      # Tier NAME only (extra-low | low | mid | high) — the agent warns and ignores
+      # per-model keys. UI pick wins over the deploy default; unset falls back to the
+      # agent's own.
       "model_tier" => Keyword.get(opts, :model_tier) || get(:model_tier)
     }
     |> maybe_put_api_keys()
@@ -112,9 +99,8 @@ defmodule Sanbase.DeepResearch.Config do
   end
 
   @doc """
-  Tiers selectable in the UI: `{value, label, hint}`. Must mirror `MODEL_TIERS`
-  in the agent's `config.py` — the agent warns and falls back to its default on
-  an unknown name, so a stale entry degrades gracefully.
+  Tiers selectable in the UI: `{value, label, hint}`. Mirrors `MODEL_TIERS` in the
+  agent's `config.py`; an unknown name only degrades to the agent's default.
   """
   @spec model_tiers() :: [{String.t(), String.t(), String.t()}]
   def model_tiers() do
@@ -131,23 +117,21 @@ defmodule Sanbase.DeepResearch.Config do
   def default_model_tier(), do: get(:model_tier) || "extra-low"
 
   @doc """
-  Whether the research UI shows the model-tier dropdown (`:tiering_dropdown_enabled`,
-  from `DRA_TIERING_DROPDOWN_ENABLED`; false when unset). When false, every run
-  uses the deploy-wide tier (`default_model_tier/0`).
+  Whether the UI shows the model-tier dropdown (`DRA_TIERING_DROPDOWN_ENABLED`, off
+  when unset). Off means every run uses `default_model_tier/0`.
   """
   @spec tiering_dropdown_enabled?() :: boolean()
   def tiering_dropdown_enabled?(), do: get(:tiering_dropdown_enabled, false) == true
 
   @doc """
-  The catalog of MCP servers the UI can offer. Each entry is
-  `%{key, label, url, auth}`, where `auth` names how THAT server is
-  authenticated — `:none`, `:santiment_apikey` (sanbase's own MCP) or `:bearer`;
-  see `Sanbase.DeepResearch.McpServers`. Defined in `runtime.exs` under
-  `:mcp_servers`, so more servers (local or remote) can be added without code
-  changes; an empty or missing list simply means the UI offers no data sources.
+  The catalog of MCP servers the UI can offer. Each entry is `%{key, label, url, auth}`,
+  where `auth` names how THAT server authenticates — `:none`, `:santiment_apikey`
+  (sanbase's own MCP) or `:bearer`; see `Sanbase.DeepResearch.McpServers`. Defined in
+  `runtime.exs` under `:mcp_servers`, so servers can be added without code changes; an
+  empty or missing list means the UI offers no data sources.
 
-  Entries missing any of the required keys are dropped (with a warning) rather
-  than handed to the LiveView, where a malformed map would crash the mount.
+  Entries missing a required key are dropped with a warning — a malformed map handed to
+  the LiveView would crash the mount.
   """
   @spec mcp_catalog() :: [map()]
   def mcp_catalog() do
@@ -203,9 +187,9 @@ defmodule Sanbase.DeepResearch.Config do
     |> Map.new()
   end
 
-  # The env namespace is `Sanbase.DeepResearch` (what `runtime.exs` configures),
-  # NOT this module — reading `__MODULE__` here would silently ignore every
-  # configured value and leave the whole agent on its compiled-in defaults.
+  # The env namespace is `Sanbase.DeepResearch` (what `runtime.exs` configures), NOT this
+  # module: reading `__MODULE__` would ignore every configured value and leave the agent
+  # on its compiled-in defaults.
   @env_key Sanbase.DeepResearch
 
   defp get(key, default \\ nil) do

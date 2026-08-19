@@ -263,8 +263,8 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       conn: conn,
       user: user
     } do
-      # Checkpoint on every event: the interval is what keeps writes off the hot path,
-      # not anything about which events deserve one.
+      # Checkpoint on every event — the interval, not the event kind, keeps writes off
+      # the hot path.
       put_checkpoint_every(0)
 
       {:ok, view, _html} = live(conn, @path)

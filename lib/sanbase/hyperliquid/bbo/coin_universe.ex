@@ -177,10 +177,9 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
     |> MapSet.new()
   end
 
-  # Closest known coin names to `coin` by Jaro distance, for a "did you mean"
-  # hint. Case-insensitive; each candidate is scored by the better of the raw
-  # input and the input namespaced under the RWA dex, so a bare "GOLD" surfaces
-  # "xyz:GOLD" (exact prefixed match scores 1.0).
+  # Closest known coin names to `coin` by Jaro distance, for a "did you mean" hint.
+  # Case-insensitive; each candidate is scored by the better of the raw input and the input
+  # namespaced under the RWA dex, so a bare "GOLD" surfaces "xyz:GOLD" (scoring 1.0).
   defp closest_coins(coin, universe) do
     target = String.upcase(coin)
     prefixed = String.upcase(@rwa_dex_prefix <> coin)
@@ -198,19 +197,18 @@ defmodule Sanbase.Hyperliquid.Bbo.CoinUniverse do
   end
 
   # The categorized universe:
-  #   valid       — names the bbo channel accepts: perp names from every dex
-  #                 (primary + each builder dex from `perpDexs`, which lists
-  #                 the primary as `null` and builder dexs as maps with a
-  #                 "name") plus spot PAIR names ("@107", "PURR/USDC").
-  #   spot_tokens — spot token names ("PURR"); NOT valid for bbo, tracked so
-  #                 a token-only mapping gets a precise reason.
-  #   token_pairs — %{token name => [spot pair names it is the base of]}, for
-  #                 "map it as @107 instead" suggestions.
+  #   valid       — names the bbo channel accepts: perp names from every dex (primary +
+  #                 each builder dex from `perpDexs`, which lists the primary as `null` and
+  #                 builder dexs as maps with a "name"), plus spot PAIR names ("@107",
+  #                 "PURR/USDC").
+  #   spot_tokens — spot token names ("PURR"); NOT valid for bbo, tracked so a token-only
+  #                 mapping gets a precise reason.
+  #   token_pairs — %{token name => [spot pair names it is the base of]}, for "map it as
+  #                 @107 instead" suggestions.
   #
-  # EVERY request must succeed — a partial fetch would omit part of the universe
-  # and wrongly flag real coins as unsupported (blocking valid mapping creates
-  # and unsubscribing live coins). On any failure we return an error so callers
-  # treat it as "could not verify" rather than "empty universe".
+  # EVERY request must succeed: a partial fetch omits part of the universe and flags real
+  # coins as unsupported, blocking valid mapping creates and unsubscribing live coins. Any
+  # failure returns an error, so callers read it as "could not verify", not "empty".
   defp fetch() do
     with {:ok, dexs} <- info_request(%{type: "perpDexs"}) do
       meta_requests =

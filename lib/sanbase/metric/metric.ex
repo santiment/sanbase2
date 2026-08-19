@@ -56,19 +56,17 @@ defmodule Sanbase.Metric do
   @default_version "1.0"
   def default_version(), do: @default_version
 
-  # Per-module timeout for the available-metrics fan-out. Modules run fully in
-  # parallel, so this bounds total latency at (slowest module) rather than the
-  # sum. Kept well under the resolver's wait budget so a single slow module
-  # yields a partial `:nocache` result (retried cheaply from the per-module
-  # cache) instead of failing the whole request. Trade-off: a module that
-  # consistently exceeds this leaves its metrics missing until it recovers.
+  # Per-module timeout for the available-metrics fan-out. Modules run fully in parallel,
+  # so this bounds total latency at (slowest module) rather than the sum. Kept well under
+  # the resolver's wait budget so one slow module yields a partial `:nocache` result
+  # (retried cheaply from the per-module cache) instead of failing the request. A module
+  # that consistently exceeds it leaves its metrics missing until it recovers.
   @available_metrics_module_timeout 20_000
 
-  # Per-module available-metrics cache lifetime. An explicit multi-minute TTL
-  # (plus per-module/selector jitter) lets each module's list survive across the
-  # rehydrating-cache refreshes instead of expiring on the 5-minute default, so
-  # a refresh only recomputes genuinely stale modules and refresh waves across
-  # modules and slugs do not align.
+  # Per-module available-metrics cache lifetime. An explicit multi-minute TTL (plus
+  # per-module/selector jitter) lets each module's list survive the rehydrating-cache
+  # refreshes instead of expiring on the 5-minute default, so a refresh recomputes only
+  # genuinely stale modules and refresh waves across modules and slugs do not align.
   @available_metrics_module_cache_ttl 1200
   @available_metrics_module_cache_jitter 300
 
@@ -156,10 +154,9 @@ defmodule Sanbase.Metric do
             MapSet.union(acc, MapSet.new(Registry.metrics_by_status(status)))
           end)
 
-        # We have very few metrics outside the registry, so we can
-        # call the metadata for each metric and filter them by status
-        # At some point this can be improved to use a precomputed map
-        # in each MetricAdapter
+        # Few metrics live outside the registry, so fetching metadata per metric and
+        # filtering by status is cheap enough. Could later use a precomputed map in each
+        # MetricAdapter.
         others_mapset =
           Enum.reduce(
             Helper.metric_modules() -- [Sanbase.Clickhouse.MetricAdapter],
@@ -689,13 +686,11 @@ defmodule Sanbase.Metric do
              {module, :available_non_crypto_asset_slugs, 3},
              false
            ) do
-          # TEMPORARY WORKAROUND: we provide the full list of non-crypto slugs from
-          # Postgres as the candidate set checked against `available_metrics`. This
-          # is needed only until non-crypto assets are present in ClickHouse
-          # `asset_metadata` — once they are, the available slugs can be derived
-          # from ClickHouse directly, without enumerating them here.
-          #
-          # The adapters short-circuit an empty candidate list themselves.
+          # TEMPORARY WORKAROUND: the full list of non-crypto slugs from Postgres is
+          # the candidate set checked against `available_metrics`. Needed only until
+          # non-crypto assets are present in ClickHouse `asset_metadata` — then the
+          # available slugs can be derived from ClickHouse directly. The adapters
+          # short-circuit an empty candidate list themselves.
           slugs = Sanbase.NonCryptoAsset.slugs()
           module.available_non_crypto_asset_slugs(metric, slugs, opts)
         else
@@ -837,11 +832,10 @@ defmodule Sanbase.Metric do
   def available_metrics_for_selector(selector, opts) do
     user_metric_access_level = Keyword.get(opts, :user_metric_access_level, "released")
     lookback_days = Keyword.get(opts, :lookback_days)
-    # `ordered: true` so we can zip each result back to its module even when the
-    # task exits with `{:exit, :timeout}` (exit reasons carry no module reference).
-    # `on_timeout: :kill_task` — without it the stream crashes the caller on any
-    # task timeout; with it the slow task is killed and shows up as `{:exit, :timeout}`
-    # in the result stream, letting the rest of the batch complete normally.
+    # `ordered: true` so each result zips back to its module even when the task exits
+    # with `{:exit, :timeout}` (exit reasons carry no module reference). Without
+    # `on_timeout: :kill_task` any task timeout crashes the caller; with it the slow task
+    # is killed, shows up as `{:exit, :timeout}`, and the rest of the batch completes.
     parallel_opts = [
       ordered: true,
       max_concurrency: 10,
@@ -861,11 +855,11 @@ defmodule Sanbase.Metric do
 
       breaker_id = {module, selector, user_metric_access_level, lookback_days}
 
-      # CircuitBreaker.call runs INSIDE the compute function on purpose: the
-      # get_or_store lock serializes concurrent computations of the same key, so
-      # once one caller's failure trips the breaker a concurrent caller re-checks
-      # it after acquiring the lock and cannot probe the failing upstream a
-      # second time. A cached value bypasses both - cached results always win.
+      # CircuitBreaker.call runs INSIDE the compute function on purpose: the get_or_store
+      # lock serializes concurrent computations of the same key, so once one caller's
+      # failure trips the breaker a concurrent caller re-checks it after acquiring the
+      # lock and cannot probe the failing upstream again. A cached value bypasses both -
+      # cached results always win.
       Sanbase.Cache.get_or_store({cache_key, ttl}, fn ->
         CircuitBreaker.call(breaker_id, fn ->
           module.available_metrics(selector, opts)
@@ -1001,10 +995,9 @@ defmodule Sanbase.Metric do
 
   # Private functions
 
-  # The metric -> module dispatch does not take the metric's data type into
-  # account, so without this check a histogram metric requested as timeseries
-  # (or vice versa) is dispatched to the wrong fetch function and fails deep
-  # in the SQL generation with a hard to understand error.
+  # The metric -> module dispatch ignores the metric's data type, so without this check a
+  # histogram metric requested as timeseries (or vice versa) reaches the wrong fetch
+  # function and fails deep in the SQL generation with an unhelpful error.
   defp check_metric_data_type(metric, expected_type) do
     case Map.get(Helper.metric_to_data_types_map(), metric) do
       nil ->
@@ -1064,11 +1057,9 @@ defmodule Sanbase.Metric do
     end
   end
 
-  # Returns {closest_metric_type, closest_metric}
-  # The metrics of the same type are with highest priority.
-  # If a metric of type timeseries is mistyped, then if there is a metric of
-  # the same type with a jaro distance > 0.8 it is returned. If multiple
-  # metrics have jaro distance > 0.8, the one with the highest one is returned
+  # Returns {closest_metric_type, closest_metric}. Metrics of the same type have the
+  # highest priority: for a mistyped timeseries metric, a same-type metric with a jaro
+  # distance > 0.8 is returned; if several qualify, the highest one wins.
   defp maybe_get_close_metric(metric, type) do
     timeseries = find_closest(Helper.timeseries_metrics_mapset(), metric)
     histogram = find_closest(Helper.histogram_metrics_mapset(), metric)
@@ -1182,10 +1173,9 @@ defmodule Sanbase.Metric do
             Sanbase.PricePair.MetricAdapter
 
           true ->
-            # The modules are not arbitrarily ordered. The first module is the one that appears last
-            # in the @modules module attribute in the Helper module. They are ordered in such a way
-            # that when multiple modules expose the same function, the one listed later should
-            # be preferred if the metric can be fetched from two places.
+            # The modules are not arbitrarily ordered: the first here is the one listed
+            # last in the Helper module's @modules attribute. When two modules expose the
+            # same metric, the later-listed one wins.
             module1
         end
     end
@@ -1220,12 +1210,12 @@ defmodule Sanbase.Metric do
   end
 
   defp combine_metrics_in_modules(tagged_results, selector, access_level, lookback_days) do
-    # `tagged_results` is a list of `{module, result}` pairs from parallel_fun.
-    # A module that did not return `{:ok, _}` (error, open-circuit short-circuit,
-    # a killed/timed-out task) contributes its last-known-good list instead of
-    # nothing, so a transient failure never removes a module's metrics from the
-    # combined result. The batch is still tagged `:nocache` whenever any module
-    # was not fresh, so the RehydratingCache keeps retrying until they recover.
+    # `tagged_results` is a list of `{module, result}` pairs from parallel_fun. A module
+    # that did not return `{:ok, _}` (error, open-circuit short-circuit, killed/timed-out
+    # task) contributes its last-known-good list instead of nothing, so a transient
+    # failure never removes a module's metrics from the combined result. The batch is
+    # still tagged `:nocache` whenever any module was not fresh, so the RehydratingCache
+    # keeps retrying until they recover.
     hidden = hidden_metrics()
 
     available_metrics =
@@ -1267,9 +1257,9 @@ defmodule Sanbase.Metric do
       end)
 
     # A retry where every failure is an open-circuit short-circuit carries no new
-    # information (the fresh failure was already logged at warning when the
-    # breaker tripped), and with :nocache results retried on every run tick it
-    # would repeat several times a minute per key during an outage.
+    # information - the real failure was logged at warning when the breaker tripped - and
+    # with :nocache results retried every run tick it would repeat several times a minute
+    # per key during an outage.
     only_open? =
       Enum.all?(failed_modules, fn {_module, result} ->
         match?({:error, {:circuit_open, _}}, result)

@@ -144,27 +144,24 @@ defmodule Sanbase.Billing.Plan do
   @custom_prefix "CUSTOM_"
   @institutional_prefix "INSTITUTIONAL"
 
-  # Withdrawn plans. Renaming a row to `RETIRED_*` is what retires it, and this
-  # prefix is what makes the rename mean something: `product_with_plans/0` applies
-  # `is_deprecated` only to the Business names (see its docstring), so without an
-  # explicit exclusion a renamed row stays on the pricing page under a name that
-  # reads like debug output. `ensure_plan_is_for_sale/2` refuses it too, because
-  # delisting is not a purchase gate - `subscribe(plan_id:)` takes an id.
+  # Withdrawn plans. Renaming a row to `RETIRED_*` retires it, and this prefix is what makes
+  # the rename mean something: `product_with_plans/0` applies `is_deprecated` only to the
+  # Business names (see its docstring), so without an explicit exclusion a renamed row stays
+  # on the pricing page under a name that reads like debug output.
+  # `ensure_plan_is_for_sale/2` refuses it too - delisting is not a purchase gate, since
+  # `subscribe(plan_id:)` takes an id.
   @retired_prefix "RETIRED_"
 
-  # Unlike `BUNDLE` and `INSTITUTIONAL`, this prefix is shared with rows that are not
-  # part of the new offering: `ENTERPRISE_BASIC` (105) and `ENTERPRISE_PLUS` (106),
-  # sold in 2022, never wired into any access checker, and renamed out of the way by
-  # `20260810121347_retire_legacy_enterprise_plans.exs`.
-  #
-  # So it is used for less than the other two. Here and in `plan_name/1` a prefix is
-  # correct - the widest possible answer to "is this name in the Enterprise family"
-  # is what those want. The decisions that put a plan *on sale* or *cancel someone's
-  # subscription* deliberately do not use it, and match `"ENTERPRISE"` exactly
-  # instead: `Sanbase.Billing.Plan.SaleControls`, whose docs explain why, and
-  # `Bundle.Lifecycle.stale_replaced_subscriptions/0`. `product_with_plans/0` below
-  # keeps the prefix on purpose - delisting the legacy rows is the desired outcome
-  # there.
+  # Unlike `BUNDLE` and `INSTITUTIONAL`, this prefix is shared with rows outside the new
+  # offering: `ENTERPRISE_BASIC` (105) and `ENTERPRISE_PLUS` (106), sold in 2022, never
+  # wired into any access checker, renamed out of the way by
+  # `20260810121347_retire_legacy_enterprise_plans.exs`. So it is used for less than the
+  # other two. Here and in `plan_name/1` a prefix is what is wanted - the widest answer to
+  # "is this name in the Enterprise family". The decisions that put a plan *on sale* or
+  # *cancel someone's subscription* deliberately match `"ENTERPRISE"` exactly instead:
+  # `Sanbase.Billing.Plan.SaleControls` (its docs explain why) and
+  # `Bundle.Lifecycle.stale_replaced_subscriptions/0`. `product_with_plans/0` below keeps
+  # the prefix on purpose - delisting the legacy rows is the desired outcome there.
   @enterprise_prefix "ENTERPRISE"
 
   # The two plans whose availability for sale is toggled by

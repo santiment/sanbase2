@@ -231,10 +231,9 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
 
   # --- adoption ---
 
-  # A bundle that exists in Stripe and not here. Everything that can be checked
-  # is checked before anything is written, the same order `Lifecycle.subscribe/2`
-  # uses, because a subscription row whose entitlement cannot be resolved makes
-  # the customer's requests raise rather than merely be refused.
+  # A bundle that exists in Stripe and not here. Everything checkable is checked before
+  # anything is written, in the order `Lifecycle.subscribe/2` uses, because a subscription
+  # row whose entitlement cannot be resolved makes the customer's requests raise.
   defp adopt(stripe_sub) do
     items = stripe_items(stripe_sub)
     prices = prices_for(items)
@@ -261,10 +260,9 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
   defp insert_subscription_with_items(stripe_sub, user, plan, items, prices) do
     Repo.transaction(fn ->
       case Subscription.create_subscription_db(stripe_sub, user, plan) do
-        # `create_subscription_db/3` inserts with `on_conflict: :nothing`, so
-        # another process that adopted the same `stripe_id` first is reported as a
-        # row with no id rather than as an error. Carrying on would attach items
-        # to nothing.
+        # `create_subscription_db/3` inserts with `on_conflict: :nothing`, so another
+        # process that adopted the same `stripe_id` first comes back as a row with no id
+        # rather than an error. Carrying on would attach items to nothing.
         {:ok, %Subscription{id: nil}} ->
           Repo.rollback(:already_adopted)
 
@@ -368,18 +366,11 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
 
   # --- reconciliation ---
 
-  # One transaction, so a partly reconciled item set cannot be observed or left
-  # behind, and `FOR UPDATE` on the subscription row for the same reason
-  # `Resolver.sync/1` takes it: one item change fires several
-  # `subscription.updated` events, they are handled by separate tasks, and two
-  # runs that both read the item set before either wrote would both try to insert
-  # the same SKU. Locking first makes the second run read what the first
-  # committed, so it finds nothing to do. The item set is therefore read *inside*
-  # the transaction - reading it outside would put the lock after the decision it
-  # is supposed to protect.
-  #
-  # `Resolver.sync/1` runs after this commits and takes the same lock again, in
-  # the same order, so there is nothing to deadlock against.
+  # One transaction, so a partly reconciled item set is never observed, and `FOR UPDATE`
+  # on the subscription row because one item change fires several `subscription.updated`
+  # events: two tasks that both read the item set before either wrote would insert the
+  # same SKU twice. The item set is therefore read *inside* the transaction. The same lock
+  # is taken again afterwards by `Resolver.sync/1`, in the same order - no deadlock.
   defp apply_reconciliation(subscription, stripe_items, prices) do
     Repo.transaction(fn ->
       lock_subscription(subscription.id)
@@ -425,15 +416,10 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
   defp removed_in_stripe?(%Item{sku: sku}, wanted_skus),
     do: not MapSet.member?(wanted_skus, sku)
 
-  # `mode: :savepoint` is load-bearing, not decoration. The duplicate below is
-  # tolerated and the loop carries on, but without a savepoint Postgres has
-  # already aborted the whole transaction by the time Ecto turns the unique
-  # violation into a changeset error, and every statement after it fails with
-  # `in_failed_sql_transaction` - so the "tolerated" case would take the rest of
-  # the reconciliation down with it.
-  #
-  # `Repo.insert` rather than `Item.create/1` only because the latter takes no
-  # options.
+  # `mode: :savepoint` is load-bearing: the duplicate below is tolerated and the loop
+  # carries on, but without it Postgres has already aborted the whole transaction by the
+  # time Ecto reports the unique violation, and every later statement fails with
+  # `in_failed_sql_transaction`. `Repo.insert` only because `Item.create/1` takes no opts.
   defp insert_item(subscription_id, %Price{} = price, stripe_item) do
     attrs = %{
       subscription_id: subscription_id,
@@ -455,10 +441,10 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
         item
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        # A concurrent `Lifecycle.add_item/3` claiming the same SKU - it does not
-        # hold this subscription's lock, so it can still land here - is the outcome
-        # this was converging on anyway, not an error. The row it created carries no
-        # Stripe item id yet; the next event repairs that.
+        # A concurrent `Lifecycle.add_item/3` claiming the same SKU - it holds no lock on
+        # this subscription, so it can still land here - is the outcome this was
+        # converging on, not an error. Its row has no Stripe item id yet; the next event
+        # repairs that.
         if Item.duplicate_sku_error?(changeset) do
           :ok
         else
@@ -536,15 +522,11 @@ defmodule Sanbase.Billing.Plan.Bundle.ItemSync do
 
   defp stripe_items(_), do: []
 
-  # Deliberately reads `price` before `plan`. Stripe reports both on an item
-  # created from a modern recurring Price, and only the `price` id is in the
-  # bundle catalog. The `plan` fallback is what keeps a legacy single-item
-  # subscription answering `false` to the bundle question instead of raising.
-  #
-  # The same shape exists privately in `Bundle.Lifecycle`. Kept separate rather
-  # than shared, because that copy is about what our own purchase flow just
-  # created and this one is about anything Stripe may report, including items no
-  # code here made.
+  # Reads `price` before `plan` deliberately: Stripe reports both for a modern recurring
+  # Price and only the `price` id is in the bundle catalog, while the `plan` fallback lets
+  # a legacy single-item subscription answer `false` instead of raising. `Bundle.Lifecycle`
+  # keeps its own copy - that one is about what our purchase flow just created, this one
+  # about anything Stripe may report.
   defp stripe_item_price_id(item) do
     cond do
       match?(%{price: %{id: _}}, item) -> item.price.id

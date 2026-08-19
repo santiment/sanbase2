@@ -66,14 +66,12 @@ defmodule Sanbase.Billing.Subscription do
 
     field(:payment_intent, :map, virtual: true)
 
-    # Only set for bundle subscriptions. Worked out from the subscription's items
-    # when they change, so access checks never have to decode items or call
-    # Stripe. NULL for every other subscription. See §5.4 of
-    # docs/composable-api-plans-handover.md
-    # on_replace: :delete, not :update - a new entitlement replaces the old one
-    # outright. Merging would let a field the new calculation omits keep its old
-    # value, so a customer who dropped a package could keep part of what it gave
-    # them. See bundle_entitlement_changeset/2.
+    # Only set for bundle subscriptions, worked out from the subscription's items when
+    # they change so access checks never decode items or call Stripe. NULL for every other
+    # subscription; see §5.4 of docs/composable-api-plans-handover.md.
+    # `on_replace: :delete`, not `:update`: merging would let a field the new calculation
+    # omits keep its old value, so a customer who dropped a package could keep part of what
+    # it gave them. See bundle_entitlement_changeset/2.
     embeds_one(:bundle_entitlement, Sanbase.Billing.Plan.Bundle.Entitlement, on_replace: :delete)
 
     # Only bundle subscriptions have items. Every other subscription has none,
@@ -736,13 +734,10 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  # Institutional and Enterprise belong to the new SanAPI offering, so they answer
-  # to that offering's two commercial rules rather than only to
-  # `has_active_subscriptions/2` above - which compares plan ids and would happily
-  # sell one to a customer who is already on a bundle, leaving two live SanAPI
-  # subscriptions billing at once.
-  #
-  # Every other plan keeps exactly the behavior it had before these clauses existed.
+  # Institutional and Enterprise belong to the new SanAPI offering, so they answer to that
+  # offering's commercial rules rather than only to `has_active_subscriptions/2` above,
+  # which compares plan ids and would sell one to a customer already on a bundle, leaving
+  # two live SanAPI subscriptions billing. Every other plan behaves as before.
   defp ensure_plan_is_for_sale(user, %Plan{name: "INSTITUTIONAL" <> _}) do
     case Sanbase.Billing.Plan.Bundle.Lifecycle.ensure_can_subscribe_institutional(user) do
       :ok -> :ok
@@ -750,12 +745,11 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  # A withdrawn plan. Delisting it from `product_with_plans/0` is not enough on its
-  # own: `subscribe` takes a plan id, not a name, and `is_private` is not a gate
-  # anywhere (§15 Q14). Without this, `ENTERPRISE_BASIC` stayed buyable by anyone
-  # who knew the id was 105 - and since no access checker has ever had a clause for
-  # it, the charge went through and then every authenticated request raised
-  # `CaseClauseError` in `Plan.plan_name/1`.
+  # A withdrawn plan. Delisting it from `product_with_plans/0` is not enough: `subscribe`
+  # takes a plan id, not a name, and `is_private` gates nothing (§15 Q14). Without this,
+  # `ENTERPRISE_BASIC` stayed buyable by anyone who knew the id was 105 - the charge went
+  # through, then every authenticated request raised `CaseClauseError` in
+  # `Plan.plan_name/1`.
   defp ensure_plan_is_for_sale(_user, %Plan{name: "RETIRED_" <> _}) do
     {:error, %__MODULE__.Error{message: "This plan is no longer available for purchase"}}
   end
@@ -824,11 +818,9 @@ defmodule Sanbase.Billing.Subscription do
       product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id, plan) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 
-      # BUSINESS plans are excluded from API trial. So are INSTITUTIONAL and
-      # ENTERPRISE: they are the top SanAPI plans, and a 14-day trial of either is a
-      # decision for product to make deliberately (task TR) rather than something
-      # they inherit by being new. Enterprise especially - a free fortnight of
-      # unlimited history is the whole product.
+      # BUSINESS plans are excluded from the API trial, and so are INSTITUTIONAL and
+      # ENTERPRISE: as the top SanAPI plans, trialling them is product's call to make
+      # deliberately (task TR) - a free fortnight of unlimited history is the product.
       product_id == @product_api and
         plan.name not in ~w(BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL ENTERPRISE) and
           Billing.eligible_for_api_trial?(user.id) ->
@@ -914,14 +906,11 @@ defmodule Sanbase.Billing.Subscription do
   def add_payment_intent(result, _), do: result
 
   defp fetch_plan_id(db_subscription, stripe_subscription) do
-    # Three cases, in order:
-    #   1. Legacy single-item subs report a Stripe Plan id — resolve it locally.
-    #   2. Subs created via the Price API report `price` and no `plan` — the
-    #      legacy plan's id is reachable there, so resolve it the same way.
-    #   3. Nothing resolvable — keep the local plan_id.
-    # Bundle items only ever hit 2/3: their price ids live in `bundle_prices`,
-    # never in `plans.stripe_id`, so the lookup misses and the local BUNDLE
-    # marker plan_id is kept.
+    # Three cases, in order: a legacy single-item sub reports a Stripe Plan id, resolved
+    # locally; a sub created via the Price API reports `price` and no `plan`, where the
+    # legacy plan's id is reachable and resolved the same way; nothing resolvable keeps the
+    # local plan_id. Bundle items only ever hit the last two - their price ids live in
+    # `bundle_prices`, never `plans.stripe_id`, so the local BUNDLE marker is kept.
     case stripe_subscription.items.data do
       [%{plan: %{id: stripe_plan_id}} | _] when is_binary(stripe_plan_id) ->
         case Plan.by_stripe_id(stripe_plan_id) do

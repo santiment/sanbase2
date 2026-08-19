@@ -11,8 +11,8 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
       `SanbaseWeb.DeepResearch.ChartRenderer`), leaving the surrounding markdown
       as ordinary segments.
 
-  This is deliberately separate from `Sanbase.DeepResearch.Timeline`: the
-  timeline folds the live event stream, this shapes the finished document.
+  Separate from `Sanbase.DeepResearch.Timeline` on purpose: the timeline folds the live
+  event stream, this shapes the finished document.
   """
 
   @doc """
@@ -37,10 +37,9 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
 
   def reflow_sources(md), do: md
 
-  # The Sources block ends at the next Markdown heading (if any) — anything after
-  # it is a separate section and must be left untouched, even if it has citation
-  # markers of its own. `(^|\n)` (not just `\n`): a heading can sit directly
-  # after the Sources heading (an empty Sources section), at position 0 of tail.
+  # The Sources block ends at the next Markdown heading — a later section is left
+  # untouched even if it has citation markers of its own. `(^|\n)`, not just `\n`: an
+  # empty Sources section puts that heading at position 0 of tail.
   defp split_at_next_heading(tail) do
     case Regex.run(~r/(^|\n)\#{1,6}\s/, tail, return: :index) do
       [{h_start, _} | _] ->
@@ -63,8 +62,7 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
       |> Enum.map(&(&1 |> String.replace(~r/^[-*]\s*/, "") |> String.trim()))
       |> Enum.reject(&(&1 == ""))
 
-    # Leave untouched when there are fewer than two sources or it is already
-    # one-per-line; otherwise re-bullet each entry.
+    # Leave untouched below two sources or when already one-per-line; else re-bullet.
     if markers < 2 or lines_with_marker >= markers or length(entries) < 2 do
       md
     else

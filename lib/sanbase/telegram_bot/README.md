@@ -116,6 +116,7 @@ Replies:
 | Var | Purpose |
 |---|---|
 | `TELEGRAM_QA_BOT_TOKEN` | Token of the Q&A bot from BotFather. **Must NOT be the alerts bot token** (`TELEGRAM_SIGNALS_BOT_TOKEN`) — one Telegram token can only have one updates consumer. Unset = bot disabled. |
+| `TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS` | Comma-separated whitelist of chats the bot answers in — numeric chat ids and/or public `@usernames` (e.g. `@santiment_network,-1009876543210`). Questions from any other group are silently ignored (logged as `Ignoring question in non-whitelisted chat <id> (<title>)` — mention the bot in a chat and grab its id from that log line; private/invite-only chats have no @username so they must be listed by numeric id). Unset = defaults to `@default_allowed_chats` in `message_handler.ex` (`@santiment_network`). `*` = allow all groups. |
 | `AI_SERVER_URL` | Already used by the Discord bot. Point to local/staging AI server in dev. |
 
 ## Local testing guide

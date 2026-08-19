@@ -86,6 +86,36 @@ defmodule Sanbase.Billing.Plan.Bundle.PackageSnapshotTest do
       assert contents["market"] == ["bundle_test_kept"]
     end
 
+    test "leaves out a metric whose hard_deprecate_after has passed", %{categories: categories} do
+      # The date is enforced per request by `Sanbase.Metric.hard_deprecated?/1`, and
+      # `is_deprecated` is a separate column that is usually left unset when a date
+      # is scheduled - so the snapshot has to read the date itself or it sells a
+      # metric the API refuses.
+      categorize("bundle_test_kept", categories["market"])
+
+      categorize(
+        %{metric: "bundle_test_hard_deprecated", hard_deprecate_after: ~U[2020-01-01 00:00:00Z]},
+        categories["market"]
+      )
+
+      {:ok, contents} = PackageSnapshot.materialize()
+
+      assert contents["market"] == ["bundle_test_kept"]
+    end
+
+    test "keeps a metric whose hard_deprecate_after is still in the future", %{
+      categories: categories
+    } do
+      categorize(
+        %{metric: "bundle_test_scheduled", hard_deprecate_after: ~U[2100-01-01 00:00:00Z]},
+        categories["market"]
+      )
+
+      {:ok, contents} = PackageSnapshot.materialize()
+
+      assert contents["market"] == ["bundle_test_scheduled"]
+    end
+
     test "includes metrics served by adapter modules rather than the registry", %{
       categories: categories
     } do

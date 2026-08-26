@@ -14,6 +14,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     Plan.product_with_plans()
   end
 
+  def plan_api_call_limits(%Plan{} = plan, _args, _resolution) do
+    {:ok, Plan.api_call_limits(plan)}
+  end
+
   def bundle_catalog(_root, %{interval: interval}, resolution) do
     user = current_user(resolution)
 

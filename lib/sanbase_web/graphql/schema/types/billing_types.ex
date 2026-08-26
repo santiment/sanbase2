@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.BillingTypes do
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Resolvers.BillingResolver
+
   enum :restriction_types_enum do
     value(:free)
     value(:restricted)
@@ -56,6 +58,21 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:amount, :integer)
     field(:is_deprecated, :boolean)
     field(:is_private, :boolean)
+
+    @desc ~s"""
+    The API call allowance a subscription on this plan grants. `null` when the
+    plan does not fix the numbers itself - `BUNDLE` allowances are per-customer,
+    and some bespoke plans are sold without a ceiling.
+    """
+    field :api_call_limits, :plan_api_call_limits do
+      resolve(&BillingResolver.plan_api_call_limits/3)
+    end
+  end
+
+  object :plan_api_call_limits do
+    field(:month, non_null(:integer))
+    field(:hour, non_null(:integer))
+    field(:minute, non_null(:integer))
   end
 
   object :bundle_catalog_price do

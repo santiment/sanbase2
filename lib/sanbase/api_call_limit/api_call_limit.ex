@@ -387,12 +387,9 @@ defmodule Sanbase.ApiCallLimit do
     }
   end
 
-  def subscription_to_plan_name(%Subscription{plan: %{product: %{id: @product_api_id}}} = sub) do
-    "sanapi_#{Subscription.plan_name(sub)}" |> String.downcase()
-  end
-
-  def subscription_to_plan_name(%Subscription{plan: %{product: %{id: @product_sanbase_id}}} = sub) do
-    "sanbase_#{Subscription.plan_name(sub)}" |> String.downcase()
+  def subscription_to_plan_name(%Subscription{plan: %{product: %{id: id}}} = sub)
+      when id in [@product_api_id, @product_sanbase_id] do
+    Restrictions.key(Product.code_by_id(id), Subscription.plan_name(sub))
   end
 
   def subscription_to_plan_name(_sub), do: "sanapi_free"

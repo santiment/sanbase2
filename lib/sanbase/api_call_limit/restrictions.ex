@@ -35,6 +35,17 @@ defmodule Sanbase.ApiCallLimit.Restrictions do
   `docs/composable-api-plans-handover.md` §8 task EP.
   """
 
+  @doc ~s"""
+  Build the key into this module's maps from a product code (`"SANAPI"`) and a
+  canonical plan name (`"PRO"`). The single owner of the key format - quota
+  enforcement (`Sanbase.ApiCallLimit`) and catalog display
+  (`Sanbase.Billing.Plan.api_call_limits/1`) must produce identical strings.
+  Total: a `nil` part interpolates to `""`, yielding a key no map contains.
+  """
+  def key(product_code, plan_name) do
+    String.downcase("#{product_code}_#{plan_name}")
+  end
+
   def call_limits_per_month() do
     %{
       "sanbase_basic" => 1000,

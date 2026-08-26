@@ -138,6 +138,18 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     assert result["name"] == "Sanapi by Santiment"
     assert length(result["plans"]) == 11
+
+    limits_by_name =
+      Map.new(result["plans"], fn plan -> {plan["name"], plan["apiCallLimits"]} end)
+
+    assert limits_by_name["FREE"] == %{"month" => 1000, "hour" => 500, "minute" => 100}
+    assert limits_by_name["PRO"] == %{"month" => 600_000, "hour" => 30_000, "minute" => 600}
+
+    # ESSENTIAL is metered as BASIC
+    assert limits_by_name["ESSENTIAL"] == %{"month" => 300_000, "hour" => 20_000, "minute" => 300}
+
+    # the CUSTOM rung publishes no numbers - each contract sets its own
+    assert limits_by_name["CUSTOM"] == nil
   end
 
   describe "#currentUser[subscriptions]" do
@@ -698,6 +710,11 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         name
         plans {
           name
+          apiCallLimits {
+            month
+            hour
+            minute
+          }
         }
       }
     }

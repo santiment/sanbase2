@@ -140,6 +140,11 @@ defmodule Sanbase.Billing.Plan do
     "PREMIUM"
   ]
 
+  # Names that canonicalize to another rung. Shared by `plan_name/1` and
+  # `api_call_limits/1` so a future alias cannot update one and silently miss
+  # the other.
+  @plan_name_aliases %{"ESSENTIAL" => "BASIC"}
+
   @bundle_prefix "BUNDLE"
   @custom_prefix "CUSTOM_"
   @institutional_prefix "INSTITUTIONAL"
@@ -170,9 +175,8 @@ defmodule Sanbase.Billing.Plan do
   def business_plan_names, do: @business_plan_names
 
   def plan_name(%__MODULE__{} = plan) do
-    case plan.name do
+    case Map.get(@plan_name_aliases, plan.name, plan.name) do
       name when name in @same_name_plans -> name
-      "ESSENTIAL" -> "BASIC"
       "CUSTOM_" <> _ = name -> name
       @bundle_prefix <> _ = name -> name
       @institutional_prefix <> _ = name -> name
@@ -287,6 +291,72 @@ defmodule Sanbase.Billing.Plan do
   end
 
   def type_of_api_call_limit_plan(_plan), do: :standard
+
+  @doc ~s"""
+  The API call allowance a subscription on this plan grants, as a
+  `%{month: _, hour: _, minute: _}` map, or `nil` when the row itself does not
+  fix the numbers: `BUNDLE` rows (per-customer, resolved from the subscription's
+  entitlement), `CUSTOM_*` rows sold without a ceiling, and rows with no entry
+  in `Sanbase.ApiCallLimit.Restrictions` (e.g. Sanbase `FREE`, whose users are
+  metered as `sanapi_free` because quota is keyed on the subscription, and a
+  free plan means no subscription).
+
+  `ESSENTIAL` answers as `BASIC` - the same mapping `plan_name/1` applies when a
+  subscription is metered. `plan_name/1` itself is not called here because it is
+  partial (it raises on `RETIRED_*` names), and this must answer for any row.
+
+  ## Examples
+
+      iex> Sanbase.Billing.Plan.api_call_limits(%Sanbase.Billing.Plan{name: "PRO", product_id: 1})
+      %{month: 600_000, hour: 30_000, minute: 600}
+
+      iex> Sanbase.Billing.Plan.api_call_limits(%Sanbase.Billing.Plan{name: "BUNDLE", product_id: 1})
+      nil
+  """
+  @spec api_call_limits(%__MODULE__{}) ::
+          %{month: pos_integer(), hour: pos_integer(), minute: pos_integer()} | nil
+  def api_call_limits(%__MODULE__{} = plan) do
+    case type(plan.name) do
+      # TODO: A bundle's numbers are per-customer - every bundle subscription
+      # points to the same BUNDLE marker row, and the real limits are decoded
+      # from the subscription's items. Exposing them needs a field on the
+      # subscription (Subscription.bundle_entitlement/1 +
+      # Bundle.Access.api_call_limits/1), not on the plan.
+      :bundle -> nil
+      :custom -> custom_api_call_limits(plan)
+      :standard -> standard_api_call_limits(plan)
+    end
+  end
+
+  defp custom_api_call_limits(%__MODULE__{
+         restrictions: %CustomPlan.Restrictions{
+           api_call_limits: %{"month" => month, "hour" => hour, "minute" => minute}
+         }
+       }) do
+    %{month: month, hour: hour, minute: minute}
+  end
+
+  # Matches both a missing restrictions embed and the %{"has_limits" => false}
+  # shape a bespoke contract with no ceiling stores.
+  defp custom_api_call_limits(_plan), do: nil
+
+  defp standard_api_call_limits(%__MODULE__{} = plan) do
+    name = Map.get(@plan_name_aliases, plan.name, plan.name)
+    code = Product.code_by_id(plan.product_id)
+    key = Sanbase.ApiCallLimit.Restrictions.key(code, name)
+
+    case Map.get(Sanbase.ApiCallLimit.Restrictions.call_limits_per_month(), key) do
+      nil ->
+        nil
+
+      month ->
+        %{
+          month: month,
+          hour: Map.fetch!(Sanbase.ApiCallLimit.Restrictions.call_limits_per_hour(), key),
+          minute: Map.fetch!(Sanbase.ApiCallLimit.Restrictions.call_limits_per_minute(), key)
+        }
+    end
+  end
 
   def plan_full_name(plan) do
     plan = plan |> Repo.preload(:product)

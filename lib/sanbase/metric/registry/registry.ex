@@ -370,6 +370,10 @@ defmodule Sanbase.Metric.Registry do
     # plans; it signals failure by raising.
     Sanbase.Billing.Plan.CustomPlan.Loader.put_plans_in_persistent_term()
 
+    # The metrics directory is built from the maps refreshed above, so it is
+    # dropped last and rebuilt lazily on the next read.
+    :ok = Sanbase.Metric.Catalog.Directory.expire_cache!()
+
     :ok
   end
 

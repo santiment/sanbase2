@@ -33,6 +33,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def stabilization_period_map(), do: get(:stabilization_period_map)
   def name_to_metric_map(), do: get(:name_to_metric_map)
   def name_to_status_map(), do: get(:name_to_status_map)
+  def registry_id_map(), do: get(:registry_id_map)
   def required_selectors_map(), do: get(:required_selectors_map)
   def selectors_map(), do: get(:selectors_map)
   def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
@@ -74,6 +75,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     {:min_plan_map, []},
     {:name_to_metric_map, []},
     {:name_to_status_map, []},
+    {:registry_id_map, []},
     {:can_mutate_map, []},
     {:stabilization_period_map, []},
     {:names_map, []},
@@ -331,6 +333,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   defp compute(:name_to_status_map, []) do
     get_metrics([]) |> Map.new(&{&1.metric, &1.status})
+  end
+
+  # Maps every resolved metric name to the id of the metric registry record it
+  # comes from. Template metrics and aliases all point to their parent record,
+  # which is what the category mappings reference.
+  defp compute(:registry_id_map, []) do
+    get_metrics([])
+    |> Enum.reject(&is_nil(&1.id))
+    |> Map.new(&{&1.metric, &1.id})
   end
 
   defp compute(:metric_to_names_map, []) do

@@ -240,11 +240,16 @@ defmodule Sanbase.MCP.ToolInvocation do
     %{team: team, rate_limited: rate_limited, banned: banned}
   end
 
-  # Composes the OR'd email patterns ("@santiment.net" + each configured
-  # team email) into a single dynamic clause. Requires a `[user: u]`
-  # named binding on the query.
+  # Composes the superuser flag and the OR'd email patterns ("@santiment.net" +
+  # each configured team email) into a single dynamic clause. Requires a
+  # `[user: u]` named binding on the query. `is_superuser` is nullable, hence
+  # the coalesce.
   defp team_member_condition do
-    base = dynamic([user: u], ilike(u.email, "%@santiment.net"))
+    base =
+      dynamic(
+        [user: u],
+        coalesce(u.is_superuser, false) or ilike(u.email, "%@santiment.net")
+      )
 
     Enum.reduce(team_emails(), base, fn email, dyn ->
       dynamic([user: u], ^dyn or ilike(u.email, ^email))
@@ -342,12 +347,21 @@ defmodule Sanbase.MCP.ToolInvocation do
   end
 
   @doc """
-  Returns true if the user is a Santiment team member — i.e. has an
-  `@santiment.net` email or appears in the configured `team_emails/0`
-  list. Team members bypass MCP rate limits and are filtered out of
-  headline admin stats.
+  Returns true if the user is a Santiment team member — i.e. is flagged as a
+  superuser, has an `@santiment.net` email or appears in the configured
+  `team_emails/0` list. Team members bypass MCP rate limits and are filtered
+  out of headline admin stats.
+
+  The `is_superuser` flag is togglable from the admin panel, which makes it the
+  way to exempt an individual account without a deploy or an env var change.
+  Note that it also lifts the GraphQL API call quota (see
+  `Sanbase.ApiCallLimit.user_has_limits?/1`), and that email-based admin stat
+  filtering builds SQL from `team_emails/0` only, so a superuser without a team
+  email still shows up in those stats.
   """
   @spec team_member?(map() | nil) :: boolean()
+  def team_member?(%{is_superuser: true}), do: true
+
   def team_member?(%{email: email}) when is_binary(email) do
     lower = String.downcase(email)
     String.ends_with?(lower, "@santiment.net") or lower in team_emails()
@@ -739,9 +753,12 @@ defmodule Sanbase.MCP.ToolInvocation do
   defp apply_team_exclusion(query, false), do: query
 
   defp apply_team_exclusion(query, true) do
+    # The join is a LEFT JOIN, so `u` is all-NULL for rows without a user; the
+    # coalesce keeps those rows in (and covers the nullable column itself).
     query =
-      where(
-        query,
+      query
+      |> where([user: u], not coalesce(u.is_superuser, false))
+      |> where(
         [user: u],
         is_nil(u.email) or not ilike(u.email, "%@santiment.net")
       )

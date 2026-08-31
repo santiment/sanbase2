@@ -296,6 +296,22 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
       assert nil in emails
     end
 
+    test "exclude_team_members hides superusers whatever their email", %{external_user: e} do
+      superuser = insert(:user, email: "superuser@example.com", is_superuser: true)
+      {:ok, _} = create_basic_invocation(superuser)
+
+      emails =
+        ToolInvocation.list_invocations(exclude_team_members: true)
+        |> Enum.map(fn
+          %{user: nil} -> nil
+          %{user: u} -> u.email
+        end)
+
+      refute superuser.email in emails
+      assert e.email in emails
+      assert nil in emails
+    end
+
     test "exclude_team_members also hides emails from the team_emails config",
          %{gmail_team_user: g, external_user: e} do
       previous = Application.get_env(:sanbase, ToolInvocation, [])
@@ -531,6 +547,22 @@ defmodule Sanbase.MCP.ToolInvocationAnalyticsTest do
       plan_name: plan_name,
       product_code: product_code
     })
+  end
+
+  describe "noise_counts_since/1" do
+    test "counts superuser traffic as team traffic" do
+      since = Timex.shift(Timex.now(), hours: -1)
+
+      superuser = insert(:user, email: "superuser@example.com", is_superuser: true)
+      santiment_user = insert(:user, email: "alice@santiment.net")
+      external_user = insert(:user, email: "trader@example.com")
+
+      {:ok, _} = create_basic_invocation(superuser)
+      {:ok, _} = create_basic_invocation(santiment_user)
+      {:ok, _} = create_basic_invocation(external_user)
+
+      assert %{team: 2} = ToolInvocation.noise_counts_since(since)
+    end
   end
 
   defp create_basic_invocation(user) do

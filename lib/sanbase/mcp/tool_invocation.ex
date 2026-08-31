@@ -342,12 +342,21 @@ defmodule Sanbase.MCP.ToolInvocation do
   end
 
   @doc """
-  Returns true if the user is a Santiment team member — i.e. has an
-  `@santiment.net` email or appears in the configured `team_emails/0`
-  list. Team members bypass MCP rate limits and are filtered out of
-  headline admin stats.
+  Returns true if the user is a Santiment team member — i.e. is flagged as a
+  superuser, has an `@santiment.net` email or appears in the configured
+  `team_emails/0` list. Team members bypass MCP rate limits and are filtered
+  out of headline admin stats.
+
+  The `is_superuser` flag is togglable from the admin panel, which makes it the
+  way to exempt an individual account without a deploy or an env var change.
+  Note that it also lifts the GraphQL API call quota (see
+  `Sanbase.ApiCallLimit.user_has_limits?/1`), and that email-based admin stat
+  filtering builds SQL from `team_emails/0` only, so a superuser without a team
+  email still shows up in those stats.
   """
   @spec team_member?(map() | nil) :: boolean()
+  def team_member?(%{is_superuser: true}), do: true
+
   def team_member?(%{email: email}) when is_binary(email) do
     lower = String.downcase(email)
     String.ends_with?(lower, "@santiment.net") or lower in team_emails()

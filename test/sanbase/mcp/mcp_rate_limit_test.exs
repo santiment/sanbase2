@@ -151,8 +151,17 @@ defmodule Sanbase.MCP.RateLimitTest do
       Application.put_env(:sanbase, Sanbase.MCP.ToolInvocation, original)
     end
 
+    test "matches superusers regardless of their email" do
+      assert ToolInvocation.team_member?(%{is_superuser: true, email: "external@example.com"})
+      # The factory hands out @santiment.net emails, so override it to make sure
+      # the flag alone is what matches here.
+      user = insert(:user, is_superuser: true, email: "external-superuser@example.com")
+      assert ToolInvocation.team_member?(user)
+    end
+
     test "returns false for unrelated emails and missing input" do
       refute ToolInvocation.team_member?(%{email: "external@example.com"})
+      refute ToolInvocation.team_member?(%{is_superuser: false, email: "external@example.com"})
       refute ToolInvocation.team_member?(%{email: nil})
       refute ToolInvocation.team_member?(nil)
     end

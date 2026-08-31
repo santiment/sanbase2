@@ -279,6 +279,17 @@ defmodule Sanbase.Billing.Plan.Bundle.PackageSnapshot do
 
   defp sellable?(%Registry{is_deprecated: true}), do: false
   defp sellable?(%Registry{is_hidden: true}), do: false
+
+  # A `hard_deprecate_after` that has passed is enforced on every request by
+  # `Sanbase.Metric.hard_deprecated?/1`, which returns an error rather than data.
+  # Selling it would put a metric in a package that no customer can fetch, and
+  # `is_deprecated` is a separate column that is often left unset when the date is
+  # scheduled - so this cannot rely on the flag above.
+  #
+  # A date still in the future is left sellable: the metric works until then.
+  defp sellable?(%Registry{hard_deprecate_after: %DateTime{} = deprecate_after}),
+    do: DateTime.after?(deprecate_after, DateTime.utc_now())
+
   defp sellable?(%Registry{}), do: true
   defp sellable?(_), do: false
 

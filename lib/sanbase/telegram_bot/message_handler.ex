@@ -1,7 +1,11 @@
 defmodule Sanbase.TelegramBot.MessageHandler do
   @moduledoc """
   Handles Telegram updates for the Q&A bot. Group-only - private messages are
-  ignored.
+  ignored. Only whitelisted chats are answered - questions from any other group
+  are silently ignored, so adding the bot to an arbitrary group gives nothing.
+  The whitelist is `TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS` (comma-separated numeric
+  chat ids and/or @usernames, `*` = allow all), defaulting to
+  `@default_allowed_chats` when unset.
 
   Reuses the Discord bot brains: `Sanbase.DiscordBot.AiServer` for answering and
   `Sanbase.DiscordBot.AiContext` for conversation history, votes and rate limits.
@@ -19,11 +23,19 @@ defmodule Sanbase.TelegramBot.MessageHandler do
     topic that triggers the bot continues that topic's context.
   """
 
+  require Logger
+
   alias Sanbase.DiscordBot.AiContext
   alias Sanbase.DiscordBot.AiServer
   alias Sanbase.DiscordBot.Utils
   alias Sanbase.TelegramBot.Api
   alias Sanbase.TelegramBot.BotMessage
+
+  # Chats the bot answers in when TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS is not set.
+  # Entries are numeric chat ids or @usernames (public chats only - private
+  # chats have no username, so they must be listed by numeric id).
+  # -1003992747479 is the private test supergroup.
+  @default_allowed_chats ["@santiment_network", "-1003992747479"]
 
   # Telegram hard limit is 4096
   @max_message_length 4000
@@ -69,10 +81,53 @@ defmodule Sanbase.TelegramBot.MessageHandler do
       |> String.trim()
 
     cond do
+      not mentioned? and not reply_to_bot?(message, bot) ->
+        :ignore
+
+      not chat_allowed?(message["chat"]) ->
+        Logger.info(
+          "[TelegramQABot] Ignoring question in non-whitelisted chat " <>
+            "#{message["chat"]["id"]} (#{message["chat"]["title"]})"
+        )
+
+        :ignore
+
       # Replying to a bot answer continues that conversation, mention not needed
-      reply_to_bot?(message, bot) -> continue_conversation(message, question)
-      mentioned? -> start_conversation(message, question)
-      true -> :ignore
+      reply_to_bot?(message, bot) ->
+        continue_conversation(message, question)
+
+      true ->
+        start_conversation(message, question)
+    end
+  end
+
+  # Only whitelisted chats get answers, so adding the bot to an arbitrary group
+  # gives nothing. The whitelist comes from TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS
+  # (comma-separated numeric chat ids and/or @usernames), falling back to
+  # @default_allowed_chats when the variable is not set. "*" allows all chats.
+  defp chat_allowed?(chat) do
+    case allowed_chats() do
+      :all -> true
+      entries -> Enum.any?(entries, &chat_matches?(&1, chat))
+    end
+  end
+
+  defp chat_matches?("@" <> username, chat) do
+    is_binary(chat["username"]) and String.downcase(chat["username"]) == String.downcase(username)
+  end
+
+  defp chat_matches?(chat_id, chat), do: chat_id == to_string(chat["id"])
+
+  defp allowed_chats() do
+    case System.get_env("TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS", "") |> String.trim() do
+      "" ->
+        @default_allowed_chats
+
+      "*" ->
+        :all
+
+      entries ->
+        entries |> String.split(",") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
     end
   end
 

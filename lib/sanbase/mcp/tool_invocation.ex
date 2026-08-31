@@ -240,11 +240,16 @@ defmodule Sanbase.MCP.ToolInvocation do
     %{team: team, rate_limited: rate_limited, banned: banned}
   end
 
-  # Composes the OR'd email patterns ("@santiment.net" + each configured
-  # team email) into a single dynamic clause. Requires a `[user: u]`
-  # named binding on the query.
+  # Composes the superuser flag and the OR'd email patterns ("@santiment.net" +
+  # each configured team email) into a single dynamic clause. Requires a
+  # `[user: u]` named binding on the query. `is_superuser` is nullable, hence
+  # the coalesce.
   defp team_member_condition do
-    base = dynamic([user: u], ilike(u.email, "%@santiment.net"))
+    base =
+      dynamic(
+        [user: u],
+        coalesce(u.is_superuser, false) or ilike(u.email, "%@santiment.net")
+      )
 
     Enum.reduce(team_emails(), base, fn email, dyn ->
       dynamic([user: u], ^dyn or ilike(u.email, ^email))
@@ -748,9 +753,12 @@ defmodule Sanbase.MCP.ToolInvocation do
   defp apply_team_exclusion(query, false), do: query
 
   defp apply_team_exclusion(query, true) do
+    # The join is a LEFT JOIN, so `u` is all-NULL for rows without a user; the
+    # coalesce keeps those rows in (and covers the nullable column itself).
     query =
-      where(
-        query,
+      query
+      |> where([user: u], not coalesce(u.is_superuser, false))
+      |> where(
         [user: u],
         is_nil(u.email) or not ilike(u.email, "%@santiment.net")
       )

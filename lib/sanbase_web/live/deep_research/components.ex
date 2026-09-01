@@ -138,7 +138,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
                 id={"copy-share-link-#{session.id}"}
                 phx-hook="Copy"
                 phx-click={%JS{}}
-                data-copy={url(~p"/deep_research/shared/#{session.id}")}
+                data-copy={SanbaseWeb.Endpoint.admin_url() <> "/deep_research/shared/#{session.id}"}
                 title="Copy share link"
                 class="cursor-pointer rounded p-1 transition hover:bg-base-200 hover:text-base-content"
               >

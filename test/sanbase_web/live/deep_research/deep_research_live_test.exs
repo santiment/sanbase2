@@ -515,5 +515,39 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       html = render_click(view, "toggle_public", %{"id" => session.id})
       refute html =~ "copy-share-link-#{session.id}"
     end
+
+    # The share link must be built from Endpoint.admin_url() (the VPN admin
+    # host), not the Endpoint :url config — on the deployed pods those differ,
+    # and a PHX_HOST-based link 404s on the non-admin pods. Locally both are
+    # localhost, so the env var is what makes them distinguishable here.
+    test "the copied share link targets the admin host, not the endpoint host", %{
+      conn: conn,
+      user: user
+    } do
+      original = System.get_env("SANTIMENT_ROOT_DOMAIN")
+      original_port = System.get_env("SANTIMENT_ADMIN_VPN_SERVICE_PORT")
+      System.put_env("SANTIMENT_ROOT_DOMAIN", "santiment.net")
+      System.put_env("SANTIMENT_ADMIN_VPN_SERVICE_PORT", "31080")
+
+      on_exit(fn ->
+        if original,
+          do: System.put_env("SANTIMENT_ROOT_DOMAIN", original),
+          else: System.delete_env("SANTIMENT_ROOT_DOMAIN")
+
+        if original_port,
+          do: System.put_env("SANTIMENT_ADMIN_VPN_SERVICE_PORT", original_port),
+          else: System.delete_env("SANTIMENT_ADMIN_VPN_SERVICE_PORT")
+      end)
+
+      session = completed_session(user)
+      {:ok, _session} = Sessions.toggle_public(session.id, user.id)
+
+      {:ok, view, _html} = live(conn, @path)
+
+      assert has_element?(
+               view,
+               ~s|#copy-share-link-#{session.id}[data-copy="http://santiment.net:31080/deep_research/shared/#{session.id}"]|
+             )
+    end
   end
 end

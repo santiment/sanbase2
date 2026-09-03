@@ -211,7 +211,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       assert row.session_id == session.id
       assert row.position == 1
       assert row.question == "What is driving ETH?"
-      assert row.phase == :planning
+      assert row.phase == :queued
     end
 
     test "the first question turns the URL into the session permalink mid-stream", %{
@@ -277,7 +277,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
 
       assert [row] = Repo.all(SessionTurn)
       # A checkpoint, not the settling write: the turn is still in flight.
-      assert row.phase == :planning
+      assert row.phase == :queued
       refute row.finished_at
       assert [_scanning, %{"kind" => "thinking", "text" => "Reading"}] = row.timeline
     end
@@ -309,7 +309,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       assert session.title == "first question"
 
       rows = SessionTurn |> Repo.all() |> Enum.sort_by(& &1.position)
-      assert [%{position: 1, phase: :cancelled}, %{position: 2, phase: :planning}] = rows
+      assert [%{position: 1, phase: :cancelled}, %{position: 2, phase: :queued}] = rows
       assert Enum.all?(rows, &(&1.session_id == session.id))
     end
   end
@@ -333,7 +333,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       assert html =~ "Still going"
       assert html =~ "phx-click=\"cancel\""
 
-      assert [%{phase: :planning}] = Repo.all(SessionTurn)
+      assert [%{phase: :queued}] = Repo.all(SessionTurn)
     end
 
     test "a second LiveView on the session URL attaches to the streaming run", %{
@@ -455,7 +455,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       assert id == session.id
 
       rows = SessionTurn |> Repo.all() |> Enum.sort_by(& &1.position)
-      assert [%{position: 1, phase: :completed}, %{position: 2, phase: :planning}] = rows
+      assert [%{position: 1, phase: :completed}, %{position: 2, phase: :queued}] = rows
       assert Enum.all?(rows, &(&1.session_id == session.id))
       assert render(view) =~ "And what about SOL?"
     end

@@ -13,17 +13,41 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `%{kind: :thinking, id, text}`
     * `%{kind: :search, id, query, count, results}`   (count/results filled in later)
     * `%{kind: :mcp, id, tool, args, ok, summary, done}`
-    * `%{kind: :status, state, detail}`
+    * `%{kind: :fetch, id, url, ok, summary, done}`        (a sub-agent reading a web page)
+    * `%{kind: :status, state, detail, ...}`               (optional per-state facts, see below)
+    * `%{kind: :compaction, state, tokens_estimate, messages_summarized}`
+                                                            (state: compacting → compacted)
     * `%{kind: :skill, name, path}`
     * `%{kind: :chart, id, slug, range, summary, series}`
+    * `%{kind: :usage, elapsed_s, tool_calls, model_calls, total_tokens, cost_usd, subagent_runs}`
+      — the run's ledger, one per turn; not rendered in the flow (`segment/1` skips it),
+      the footer reads it through `usage/1`.
   """
 
-  @phases [:idle, :planning, :researching, :writing, :awaiting_user]
+  # Status states worth a row in the transcript, with the optional facts each carries:
+  # `run_started`/`run_restarted` (attempt — the server's worker picked the run up,
+  # or re-ran it after a restart), `loop_*` (repeats), `budget_*` and `revising`
+  # (reason, detail). `compacting`/`compacted` build the `:compaction` item instead (see
+  # `reduce_timeline/2`). Paired states (`subagent_start`/`subagent_done`), the end
+  # `done`/`error` (the footer and error box own those) and states newer than this
+  # release are dropped.
+  @status_rows ~w(run_started run_restarted mcp_error mcp_ready loop_detected loop_halt runaway_output runaway_halt sandbox_reset budget_soft budget_halt revising)
+  @status_facts [:reason, :repeats, :attempt]
+  @compaction_facts [:tokens_estimate, :messages_summarized]
+
+  # Kinds `segment/1` leaves out of the rendered flow.
+  @hidden_kinds [:usage]
+
+  # `:queued` is where every turn starts: submitted to the agent server, no worker has
+  # picked it up yet. The run's `metadata` event (its first data event) moves it on, so
+  # a turn that never leaves `:queued` never ran any agent code at all.
+  @phases [:idle, :queued, :planning, :researching, :writing, :awaiting_user]
   @terminal_phases [:completed, :failed, :cancelled]
-  @running_phases [:planning, :researching, :writing]
+  @running_phases [:queued, :planning, :researching, :writing]
 
   @type phase ::
           :idle
+          | :queued
           | :planning
           | :researching
           | :writing
@@ -37,7 +61,7 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   @type turn :: Turn.t()
 
-  @doc "A fresh turn for `question`, starting in the `:planning` phase."
+  @doc "A fresh turn for `question`, starting `:queued` (submitted, no worker on it yet)."
   @spec new_turn(String.t(), integer(), non_neg_integer()) :: turn()
   def new_turn(question, id, started_at_ms) do
     %Turn{id: id, question: question, started_at: started_at_ms}
@@ -83,8 +107,13 @@ defmodule Sanbase.DeepResearch.Timeline do
   @spec stamp_finished_at(turn(), non_neg_integer()) :: turn()
   def stamp_finished_at(turn, now_ms), do: settle(turn, turn.phase, now_ms)
 
-  defp settle(turn, phase, now_ms),
-    do: %{turn | phase: phase, finished_at: turn.finished_at || now_ms}
+  # Settling also drops the live preview: nothing is being written any more. `Map.put`
+  # rather than update syntax here and below: a runner started before a hot code reload
+  # still holds turns built without the `live`/`last_event_at` keys.
+  defp settle(turn, phase, now_ms) do
+    %{turn | phase: phase, finished_at: turn.finished_at || now_ms}
+    |> Map.put(:live, nil)
+  end
 
   # -- phases --------------------------------------------------------------------
 
@@ -128,7 +157,11 @@ defmodule Sanbase.DeepResearch.Timeline do
       not researched?(turn.timeline) and answered_in_text?(turn.timeline)
   end
 
-  defp researched?(timeline), do: Enum.any?(timeline, &(&1.kind in [:search, :mcp]))
+  defp researched?(timeline), do: Enum.any?(timeline, &(&1.kind in [:search, :mcp, :fetch]))
+
+  @doc "The run's usage ledger (`%{kind: :usage, ...}`), or nil before the agent reports it."
+  @spec usage(turn()) :: map() | nil
+  def usage(turn), do: Enum.find(turn.timeline, &(&1.kind == :usage))
 
   defp answered_in_text?(timeline) do
     Enum.any?(timeline, &(&1.kind == :thinking and String.trim(&1.text || "") != ""))
@@ -137,6 +170,11 @@ defmodule Sanbase.DeepResearch.Timeline do
   @doc """
   Apply one parsed `EventParser` result to `turn`; one result may carry several
   effects (report + phase, activity + phase).
+
+  `:at` (stamped by the runner on receipt) becomes `last_event_at`. `:live` — the
+  tool call the model is still writing — replaces the previous preview; any other
+  substantive event (text, a tool event, the report) means that draft is finished, so
+  it clears the preview instead.
   """
   @spec apply_result(turn(), map()) :: turn()
   def apply_result(turn, result) do
@@ -146,7 +184,21 @@ defmodule Sanbase.DeepResearch.Timeline do
     |> maybe_activity(result)
     |> maybe_phase(result)
     |> maybe_error(result)
+    |> maybe_live(result)
+    |> stamp_event(result)
   end
+
+  defp maybe_live(turn, %{live: live}) when is_map(live), do: Map.put(turn, :live, live)
+
+  defp maybe_live(turn, result)
+       when is_map_key(result, :thinking) or is_map_key(result, :activity) or
+              is_map_key(result, :report),
+       do: Map.put(turn, :live, nil)
+
+  defp maybe_live(turn, _), do: turn
+
+  defp stamp_event(turn, %{at: at}) when is_integer(at), do: Map.put(turn, :last_event_at, at)
+  defp stamp_event(turn, _), do: turn
 
   defp maybe_report(turn, %{report: md}) when is_binary(md), do: %{turn | report: md}
   defp maybe_report(turn, _), do: turn
@@ -184,8 +236,9 @@ defmodule Sanbase.DeepResearch.Timeline do
   @doc """
   Fold one activity into the timeline list.
 
-  Search results merge into the matching `search_query` by id; mcp results patch
-  the matching `mcp_call` by id; skills dedupe by name.
+  Search results merge into the matching `search_query` by id; mcp and fetch
+  results patch the matching call by id; skills dedupe by name; the usage ledger
+  replaces any earlier one (a resumed run reports again).
   """
   @spec reduce_timeline([map()], map()) :: [map()]
   def reduce_timeline(prev, %{kind: :search_query} = a) do
@@ -219,9 +272,55 @@ defmodule Sanbase.DeepResearch.Timeline do
     upsert_by_id(prev, :mcp, a.id, patch)
   end
 
-  def reduce_timeline(prev, %{kind: :status, state: state} = a)
-      when state in ["mcp_error", "mcp_ready"] do
-    prev ++ [%{kind: :status, state: state, detail: a[:detail]}]
+  def reduce_timeline(prev, %{kind: :fetch_call} = a) do
+    prev ++ [%{kind: :fetch, id: a.id, url: a.url}]
+  end
+
+  def reduce_timeline(prev, %{kind: :fetch_result} = a) do
+    patch = fn existing ->
+      base = existing || %{kind: :fetch, id: a.id, url: ""}
+      Map.merge(base, %{ok: a.ok, summary: a[:summary], done: true})
+    end
+
+    upsert_by_id(prev, :fetch, a.id, patch)
+  end
+
+  # Compaction is its own element in the flow: `compacting` opens it (with the context
+  # size that triggered it), `compacted` closes the open one with what got summarized. A
+  # `compacted` with nothing open (its `compacting` was missed) still gets its element.
+  def reduce_timeline(prev, %{kind: :status, state: "compacting"} = a) do
+    prev ++ [Map.merge(%{kind: :compaction, state: "compacting"}, facts(a, @compaction_facts))]
+  end
+
+  def reduce_timeline(prev, %{kind: :status, state: "compacted"} = a) do
+    closed = Map.merge(%{kind: :compaction, state: "compacted"}, facts(a, @compaction_facts))
+
+    case Enum.find_index(prev, &match?(%{kind: :compaction, state: "compacting"}, &1)) do
+      nil -> prev ++ [closed]
+      i -> List.update_at(prev, i, &Map.merge(&1, closed))
+    end
+  end
+
+  def reduce_timeline(prev, %{kind: :status, state: state} = a) when state in @status_rows do
+    prev ++
+      [Map.merge(%{kind: :status, state: state, detail: a[:detail]}, facts(a, @status_facts))]
+  end
+
+  def reduce_timeline(prev, %{kind: :usage} = a) do
+    ledger = a |> Enum.reject(fn {_k, v} -> is_nil(v) end) |> Map.new()
+
+    Enum.reject(prev, &(&1.kind == :usage)) ++ [ledger]
+  end
+
+  # The plan (a finished `write_todos`) is one item that updates in place: the model rewrites
+  # the whole list every time a step changes status, and a transcript of six near-identical
+  # lists would bury the research. Drafts of it stream through `:live`, not here.
+  def reduce_timeline(prev, %{kind: :plan, todos: todos}) do
+    item = %{kind: :plan, todos: todos}
+
+    if Enum.any?(prev, &(&1.kind == :plan)),
+      do: Enum.map(prev, &if(&1.kind == :plan, do: item, else: &1)),
+      else: prev ++ [item]
   end
 
   def reduce_timeline(prev, %{kind: :skill, name: name} = a) do
@@ -278,6 +377,10 @@ defmodule Sanbase.DeepResearch.Timeline do
     end
   end
 
+  # The facts an event carries, minus the ones it left blank.
+  defp facts(a, keys),
+    do: a |> Map.take(keys) |> Enum.reject(fn {_k, v} -> is_nil(v) end) |> Map.new()
+
   defp blank_to(nil, fallback), do: fallback || ""
   defp blank_to("", fallback), do: fallback || ""
   defp blank_to(value, _fallback), do: value
@@ -324,17 +427,28 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `{:narration, [thinking_item, ...]}` - contiguous run of thinking (visible prose)
     * `{:tools, [item, ...], running?}`    - contiguous run of search/mcp/status (folded)
     * `{:skill, [skill_item, ...]}`        - contiguous run of skills (always-visible chips)
+    * `{:plan, [plan_item]}`                - the todo list, latest version (always visible)
     * `{:chart, [chart_item, ...]}`        - contiguous run of charts (always-visible widgets)
     * `{:findings, [finding_item, ...]}`   - contiguous run of sub-agent findings (folded tables)
+    * `{:compaction, [compaction_item]}`   - the agent rewriting its own memory (always visible)
   """
   # Kinds that render as their own block, breaking a tools run; the rest fold into
   # `{:tools, items, running?}`.
-  @block_tag %{thinking: :narration, skill: :skill, chart: :chart, subagent_findings: :findings}
+  @block_tag %{
+    thinking: :narration,
+    skill: :skill,
+    plan: :plan,
+    chart: :chart,
+    subagent_findings: :findings,
+    compaction: :compaction
+  }
 
   @spec segment([map()]) :: [tuple()]
   def segment(items) do
     {blocks, tools} =
-      Enum.reduce(items, {[], []}, fn item, {blocks, tools} ->
+      items
+      |> Enum.reject(&(&1.kind in @hidden_kinds))
+      |> Enum.reduce({[], []}, fn item, {blocks, tools} ->
         case @block_tag[item.kind] do
           nil -> {blocks, tools ++ [item]}
           tag -> {push_block(flush_tools(blocks, tools), tag, item), []}
@@ -356,12 +470,12 @@ defmodule Sanbase.DeepResearch.Timeline do
   defp push_block([{tag, items} | rest], tag, item), do: [{tag, items ++ [item]} | rest]
   defp push_block(blocks, tag, item), do: [{tag, [item]} | blocks]
 
-  @doc "True if any tool item in the run is still in flight (search awaiting results / mcp not done)."
+  @doc "True if any tool item in the run is still in flight (search awaiting results / mcp or fetch not done)."
   @spec tools_running?([map()]) :: boolean()
   def tools_running?(items) do
     Enum.any?(items, fn item ->
       (item.kind == :search and is_nil(Map.get(item, :count))) or
-        (item.kind == :mcp and Map.get(item, :done) != true)
+        (item.kind in [:mcp, :fetch] and Map.get(item, :done) != true)
     end)
   end
 

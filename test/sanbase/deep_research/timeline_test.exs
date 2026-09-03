@@ -34,6 +34,195 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       assert [%{kind: :mcp, id: "m1", ok: true, summary: "done", done: true}] = t.timeline
     end
 
+    test "web_fetch call then result patch by id (done: true)" do
+      t =
+        turn()
+        |> Timeline.apply_result(%{
+          activity: %{kind: :fetch_call, id: "f1", url: "https://example.com/a"}
+        })
+        |> Timeline.apply_result(%{
+          activity: %{kind: :fetch_result, id: "f1", ok: true, summary: "Fetched"}
+        })
+
+      assert [
+               %{
+                 kind: :fetch,
+                 id: "f1",
+                 url: "https://example.com/a",
+                 ok: true,
+                 summary: "Fetched",
+                 done: true
+               }
+             ] = t.timeline
+    end
+
+    test "status rows keep their facts, compaction becomes its own item; transient, end and unknown states are dropped" do
+      t =
+        turn()
+        |> Timeline.apply_result(%{
+          activity: %{kind: :status, state: "compacting", detail: nil, tokens_estimate: 120_000}
+        })
+        |> Timeline.apply_result(%{
+          activity: %{
+            kind: :status,
+            state: "compacted",
+            detail: nil,
+            tokens_estimate: 120_000,
+            messages_summarized: 40
+          }
+        })
+        |> Timeline.apply_result(%{
+          activity: %{kind: :status, state: "loop_detected", detail: nil, repeats: 3}
+        })
+        |> Timeline.apply_result(%{
+          activity: %{
+            kind: :status,
+            state: "subagent_start",
+            detail: nil,
+            role: "research-subagent"
+          }
+        })
+        |> Timeline.apply_result(%{
+          activity: %{
+            kind: :status,
+            state: "done",
+            detail: "Report delivered.",
+            reason: "report_delivered"
+          }
+        })
+        |> Timeline.apply_result(%{activity: %{kind: :status, state: "teleporting", detail: nil}})
+
+      assert [
+               %{
+                 kind: :compaction,
+                 state: "compacted",
+                 tokens_estimate: 120_000,
+                 messages_summarized: 40
+               },
+               %{kind: :status, state: "loop_detected", detail: nil, repeats: 3}
+             ] == t.timeline
+    end
+
+    test "compacting opens the compaction item and compacted closes it; a lone compacted still lands" do
+      compacting = %{
+        activity: %{kind: :status, state: "compacting", detail: nil, tokens_estimate: 120_000}
+      }
+
+      compacted = %{
+        activity: %{
+          kind: :status,
+          state: "compacted",
+          detail: nil,
+          tokens_estimate: 118_000,
+          messages_summarized: 40
+        }
+      }
+
+      open = Timeline.apply_result(turn(), compacting)
+
+      assert [%{kind: :compaction, state: "compacting", tokens_estimate: 120_000}] ==
+               open.timeline
+
+      closed = Timeline.apply_result(open, compacted)
+
+      assert [
+               %{
+                 kind: :compaction,
+                 state: "compacted",
+                 tokens_estimate: 118_000,
+                 messages_summarized: 40
+               }
+             ] == closed.timeline
+
+      assert length(Timeline.apply_result(closed, compacted).timeline) == 2
+    end
+
+    test "a new turn is queued until the run's metadata event says a worker took it" do
+      t = turn()
+      assert t.phase == :queued
+      assert Timeline.running_phase?(:queued)
+
+      t =
+        Timeline.apply_result(t, %{
+          run_id: "r1",
+          phase: :planning,
+          activity: %{kind: :status, state: "run_restarted", detail: nil, attempt: 2}
+        })
+
+      assert t.phase == :planning
+      assert [%{kind: :status, state: "run_restarted", detail: nil, attempt: 2}] == t.timeline
+    end
+
+    test "events stamp last_event_at; the live draft stays until real output replaces it" do
+      draft = %{kind: :tool_call_draft, name: "execute", chars: 12, preview: "{\"command\":"}
+
+      t = Timeline.apply_result(turn(), %{live: draft, at: 1_000})
+      assert t.last_event_at == 1_000
+      assert t.live == draft
+      assert t.timeline == []
+
+      # A bigger draft replaces the smaller one.
+      t = Timeline.apply_result(t, %{live: %{draft | chars: 40}, at: 2_000})
+      assert t.live.chars == 40
+
+      # An event with nothing to say about the model's output leaves the draft alone.
+      t = Timeline.apply_result(t, %{phase: :researching, at: 3_000})
+      assert t.live.chars == 40
+      assert t.last_event_at == 3_000
+
+      # The call landed: its tool event clears the draft.
+      t =
+        Timeline.apply_result(t, %{
+          activity: %{kind: :search_query, id: "s1", query: "q"},
+          at: 4_000
+        })
+
+      assert t.live == nil
+
+      # Prose after a draft clears it too; settling always does.
+      t = Timeline.apply_result(t, %{live: draft})
+      t = Timeline.apply_result(t, %{thinking: %{id: "m1", text: "Now"}})
+      assert t.live == nil
+      t = Timeline.apply_result(t, %{live: draft})
+      assert Timeline.cancel_turn(t, 5_000).live == nil
+    end
+
+    test "the usage ledger is kept once, replaced by a later one, and off the rendered flow" do
+      t =
+        turn()
+        |> Timeline.apply_result(%{activity: %{kind: :search_query, id: "s1", query: "q"}})
+        |> Timeline.apply_result(%{
+          activity: %{
+            kind: :usage,
+            elapsed_s: 10.0,
+            tool_calls: 1,
+            total_tokens: nil,
+            cost_usd: nil
+          }
+        })
+        |> Timeline.apply_result(%{
+          activity: %{
+            kind: :usage,
+            elapsed_s: 25.5,
+            tool_calls: 4,
+            total_tokens: 900,
+            cost_usd: 0.02
+          }
+        })
+
+      assert Timeline.usage(t) == %{
+               kind: :usage,
+               elapsed_s: 25.5,
+               tool_calls: 4,
+               total_tokens: 900,
+               cost_usd: 0.02
+             }
+
+      assert Enum.count(t.timeline, &(&1.kind == :usage)) == 1
+      assert [{:tools, [%{kind: :search}], true}] = Timeline.segment(t.timeline)
+      assert Timeline.usage(turn()) == nil
+    end
+
     test "thinking snapshots replace by id (cumulative, not appended)" do
       t =
         turn()
@@ -147,6 +336,17 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       refute Timeline.direct_answer?(search)
     end
 
+    test "false when a sub-agent read a web page but no report came back" do
+      t =
+        turn()
+        |> Timeline.apply_result(%{thinking: %{id: "m1", text: "Let me check that page."}})
+        |> Timeline.apply_result(%{
+          activity: %{kind: :fetch_call, id: "f1", url: "https://example.com/a"}
+        })
+
+      refute Timeline.direct_answer?(t)
+    end
+
     test "false when the turn carries no assistant text" do
       empty = turn()
       status = Timeline.apply_result(turn(), %{activity: %{kind: :status, state: "mcp_ready"}})
@@ -162,6 +362,8 @@ defmodule Sanbase.DeepResearch.TimelineTest do
     test "advances monotonically through in-progress order" do
       assert Timeline.merge_phase(:planning, :researching) == :researching
       assert Timeline.merge_phase(:researching, :planning) == :researching
+      assert Timeline.merge_phase(:queued, :planning) == :planning
+      assert Timeline.merge_phase(:planning, :queued) == :planning
     end
 
     test "terminal phases are sticky" do
@@ -187,7 +389,7 @@ defmodule Sanbase.DeepResearch.TimelineTest do
     end
 
     test "running phases are neither settled nor inactive" do
-      for phase <- [:planning, :researching, :writing] do
+      for phase <- [:queued, :planning, :researching, :writing] do
         refute Timeline.settled_phase?(phase)
         refute Timeline.inactive_phase?(phase)
       end
@@ -242,7 +444,7 @@ defmodule Sanbase.DeepResearch.TimelineTest do
     test "stamp_finished_at records the finish time without settling the phase" do
       stamped = Timeline.stamp_finished_at(turn(), 500)
 
-      assert stamped.phase == :planning
+      assert stamped.phase == :queued
       assert stamped.finished_at == 500
     end
 
@@ -282,6 +484,16 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       assert [{:tools, _, false}] = Timeline.segment(items)
     end
 
+    test "an unfinished page read keeps the tools block running" do
+      assert [{:tools, _, true}] =
+               Timeline.segment([%{kind: :fetch, id: "f1", url: "https://x.y"}])
+
+      assert [{:tools, _, false}] =
+               Timeline.segment([
+                 %{kind: :fetch, id: "f1", url: "https://x.y", done: true, ok: true}
+               ])
+    end
+
     test "charts form their own always-visible block after the tools run" do
       items = [
         %{kind: :mcp, id: "m1", tool: "show_chart", done: true},
@@ -309,6 +521,41 @@ defmodule Sanbase.DeepResearch.TimelineTest do
                {:mcp_group, [%{id: "m1"}, %{id: "m2"}]},
                %{kind: :status}
              ] = Timeline.coalesce(items)
+    end
+  end
+
+  describe "plan items" do
+    test "a plan is appended once and later versions replace it in place" do
+      t = Timeline.apply_result(turn(), %{thinking: %{id: "m1", text: "Planning"}})
+
+      t =
+        Timeline.apply_result(t, %{
+          activity: %{kind: :plan, todos: [%{content: "a", status: "pending"}]}
+        })
+
+      t = Timeline.apply_result(t, %{thinking: %{id: "m2", text: "Working"}})
+
+      t =
+        Timeline.apply_result(t, %{
+          activity: %{kind: :plan, todos: [%{content: "a", status: "completed"}]}
+        })
+
+      assert [
+               %{kind: :thinking},
+               %{kind: :plan, todos: [%{status: "completed"}]},
+               %{kind: :thinking}
+             ] =
+               t.timeline
+
+      assert [{:narration, _}, {:plan, [%{kind: :plan}]}, {:narration, _}] =
+               Timeline.segment(t.timeline)
+    end
+
+    test "a plan activity clears the live draft" do
+      draft = %{kind: :tool_call_draft, name: "write_todos", chars: 10, preview: "{"}
+      t = Timeline.apply_result(turn(), %{live: draft})
+      t = Timeline.apply_result(t, %{activity: %{kind: :plan, todos: []}})
+      assert t.live == nil
     end
   end
 end

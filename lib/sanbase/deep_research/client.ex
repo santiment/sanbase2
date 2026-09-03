@@ -91,9 +91,12 @@ defmodule Sanbase.DeepResearch.Client do
   end
 
   @doc """
-  Cancel every in-flight run on `thread_id`, for the early-cancel window: Stop
-  pressed before the stream reported a `run_id`, though the run already exists.
-  Best-effort — `cancel_run/2` logs the individual failures.
+  Cancel every in-flight run on `thread_id`. Two callers: the early-cancel window (Stop
+  pressed before the stream reported a `run_id`, though the run already exists), and
+  `Runner` before it starts a turn, since anything active on the thread by then is a
+  leftover — e.g. a run the agent server resumed from disk after a restart — that would
+  only queue the new run behind it. Best-effort — `cancel_run/2` logs the individual
+  failures.
   """
   @spec cancel_active_runs(String.t()) :: :ok
   def cancel_active_runs(thread_id) do
@@ -136,6 +139,24 @@ defmodule Sanbase.DeepResearch.Client do
 
       {:error, error} ->
         {:error, connection_failure("get_state", error)}
+    end
+  end
+
+  @doc """
+  The run's record — its `"status"` (`pending` / `running` / `success` / `error` /
+  `timeout` / `interrupted`) is what the silence watchdog needs.
+  """
+  @spec get_run(String.t(), String.t()) :: {:ok, map()} | {:error, Failure.t()}
+  def get_run(thread_id, run_id) do
+    case Req.get(url("/threads/#{thread_id}/runs/#{run_id}"), oneshot_opts([])) do
+      {:ok, %{status: status, body: body}} when status in 200..299 ->
+        {:ok, body}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, response_failure("get_run", status, body)}
+
+      {:error, error} ->
+        {:error, connection_failure("get_run", error)}
     end
   end
 

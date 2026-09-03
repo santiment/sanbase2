@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict k0Ia0sKSdIUkCcQfB44ncftyFrd0nmnEqOOuQiqjstZ5aXyBKeORFiaTOV5C3bJ
+\restrict IsQZ7WxxpjLYwzLi0tWtCbf3b4yPSPc87OlJua2tDGp6nxnGqzwv1oA9slIbEQ2
 
--- Dumped from database version 17.10 (Homebrew)
--- Dumped by pg_dump version 17.10 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1411,7 +1411,7 @@ CREATE TABLE public.deep_research_turns (
     finished_at timestamp without time zone,
     inserted_at timestamp(0) without time zone NOT NULL,
     updated_at timestamp(0) without time zone NOT NULL,
-    CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'paused'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
+    CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'queued'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'paused'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
 );
 
 
@@ -3074,7 +3074,7 @@ CREATE TABLE public.non_crypto_assets (
     metadata jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY (ARRAY[('stock'::character varying)::text, ('commodity'::character varying)::text, ('index'::character varying)::text, ('forex'::character varying)::text, ('fund'::character varying)::text, ('bond'::character varying)::text, ('other'::character varying)::text])))
+    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
 );
 
 
@@ -5290,7 +5290,7 @@ CREATE TABLE public.topic_batches (
     updated_at timestamp without time zone NOT NULL,
     publication_scope character varying(255),
     CONSTRAINT published_topic_batches_require_publication_scope CHECK ((((state)::text <> 'published'::text) OR (publication_scope IS NOT NULL))),
-    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY (ARRAY[('daily_only'::character varying)::text, ('weekly_only'::character varying)::text, ('daily_weekly'::character varying)::text]))))
+    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY ((ARRAY['daily_only'::character varying, 'weekly_only'::character varying, 'daily_weekly'::character varying])::text[]))))
 );
 
 
@@ -12314,7 +12314,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict k0Ia0sKSdIUkCcQfB44ncftyFrd0nmnEqOOuQiqjstZ5aXyBKeORFiaTOV5C3bJ
+\unrestrict IsQZ7WxxpjLYwzLi0tWtCbf3b4yPSPc87OlJua2tDGp6nxnGqzwv1oA9slIbEQ2
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12917,3 +12917,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260810121347);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121612);
 INSERT INTO public."schema_migrations" (version) VALUES (20260812120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260813090000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260902130000);

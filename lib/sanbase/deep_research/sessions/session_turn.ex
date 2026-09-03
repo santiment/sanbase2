@@ -43,7 +43,7 @@ defmodule Sanbase.DeepResearch.Sessions.SessionTurn do
     field(:report, :string)
     field(:error, :string)
     field(:clarification, {:array, :string}, default: [])
-    field(:phase, Ecto.Enum, values: @phases, default: :planning)
+    field(:phase, Ecto.Enum, values: @phases, default: :queued)
     field(:model_tier, :string)
     field(:timeline, {:array, :map}, default: [])
     field(:sources, {:array, :map}, default: [])

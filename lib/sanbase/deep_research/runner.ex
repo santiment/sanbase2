@@ -33,9 +33,17 @@ defmodule Sanbase.DeepResearch.Runner do
   @continue_message "Continue the interrupted research. Pick up where you left off, reuse the " <>
                       "work already done on this thread, and deliver the final report."
 
-  @no_report_error "The research run finished without producing a report — the agent stopped " <>
-                     "before delivering one (it may have hit a tool/iteration budget or been " <>
-                     "unable to complete the task). Try rephrasing or narrowing your question."
+  # The agent reports its own end states (budget, stall, error) as a `status` event, so a
+  # run that ends with neither report nor reason most likely lost its server mid-run.
+  @no_report_error "The research run ended without a report and without the agent saying why — " <>
+                     "most likely the agent server restarted or dropped the connection mid-run. " <>
+                     "Try again; if it keeps happening, narrow the question."
+
+  # Still `:queued` when the stream ended: no worker ever picked the run up, so no agent
+  # code ran and nothing about the question explains it.
+  @never_started_error "The agent server never started this run: it stayed queued until the " <>
+                         "connection ended. The server was probably restarting, or all of its " <>
+                         "worker slots were busy — try again in a moment."
 
   defstruct [
     :key,
@@ -47,6 +55,7 @@ defmodule Sanbase.DeepResearch.Runner do
     :current_turn,
     :task,
     :pause_timer,
+    :silence_timer,
     :checkpointed_at,
     running: false,
     mcp_warning: nil,
@@ -110,7 +119,7 @@ defmodule Sanbase.DeepResearch.Runner do
   Ask `text` — how every turn starts, first or follow-up.
 
   Settles the previous turn if a run left it unsettled (nothing else will, once
-  `:current_turn` moves on), opens turn `next_id` in `:planning`, inserts its row
+  `:current_turn` moves on), opens turn `next_id` as `:queued`, inserts its row
   when the session is persisted — so a tab closed mid-run still leaves the question
   behind — and starts the stream task. The rest is asynchronous: the task creates
   the thread if needed and streams `{:dra_event, turn_id, _}` back.
@@ -129,7 +138,7 @@ defmodule Sanbase.DeepResearch.Runner do
 
   @doc """
   Resume a `:paused` `turn` instead of asking a new one: a continue-run on the same
-  thread streams INTO it (same id, phase back to `:planning`, error cleared), so its
+  thread streams INTO it (same id, phase back to `:queued`, error cleared), so its
   partial timeline keeps growing.
 
   Any run still live server-side is cancelled first — the crashed runner never got
@@ -215,15 +224,18 @@ defmodule Sanbase.DeepResearch.Runner do
         do: settle_abandoned_turn(state),
         else: state
 
-    resumed = %{turn | phase: :planning, finished_at: nil, error: nil}
+    # `Map.merge` for the stream-only keys: a turn held since before a hot code reload
+    # may predate them.
+    resumed =
+      %{turn | phase: :queued, finished_at: nil, error: nil}
+      |> Map.merge(%{live: nil, last_event_at: nil})
 
     # No thread: nothing to resume, so re-ask the question.
     message = if state.thread_id, do: @continue_message, else: turn.question
 
-    # A crash never cancelled the old run — it may still be live server-side.
     state =
       %{state | next_id: max(state.next_id, turn.id + 1)}
-      |> start_run(resumed, message, opts, cancel_active_first: true)
+      |> start_run(resumed, message, opts)
 
     {:reply, {:ok, snapshot(state)}, broadcast(state)}
   end
@@ -268,10 +280,57 @@ defmodule Sanbase.DeepResearch.Runner do
     if Timeline.terminal_phase?(phase) do
       {:noreply, state}
     else
-      state = apply_run_level(state, result)
+      # Receipt time, so the UI can say how long the stream has been silent.
+      result = Map.put_new(result, :at, now_ms())
+      state = state |> apply_run_level(result) |> arm_silence_watchdog()
       {:noreply, update_current_turn(state, &Timeline.apply_result(&1, result))}
     end
   end
+
+  # No event for `Config.event_silence_ms/0` while the stream is open. Heartbeats keep the
+  # connection (and its idle timeout) alive after a run has died server-side, so ask the
+  # server. An unknown run id (no metadata event yet) or a failed request says nothing:
+  # keep waiting, re-armed.
+  def handle_info(:event_silence, %{running: true} = state) do
+    state = %{state | silence_timer: nil}
+
+    if is_binary(state.thread_id) and is_binary(state.run_id) do
+      check_run_status_async(state.thread_id, state.run_id, self(), state.current_turn.id)
+    end
+
+    {:noreply, arm_silence_watchdog(state)}
+  end
+
+  def handle_info(:event_silence, state), do: {:noreply, %{state | silence_timer: nil}}
+
+  def handle_info(
+        {:dra_run_status, ref, {:ok, run}},
+        %{current_turn: %{id: ref}, running: true} = state
+      ) do
+    case run["status"] do
+      status when status in ["pending", "running"] ->
+        {:noreply, state}
+
+      status ->
+        # A zombie stream: the run is over server-side and nothing more will arrive.
+        # `success` → the report is in the thread state; anything else → paused with the
+        # reason, since the thread survives and Continue can pick it up.
+        Logger.warning(
+          "Deep research run #{state.run_id} is #{status} server-side while its stream stayed silent — settling the turn"
+        )
+
+        state = stop_task(state)
+
+        state =
+          if status == "success",
+            do: finalize_run(state),
+            else: fail_run(state, Failure.zombie(status))
+
+        maybe_wind_down(state)
+    end
+  end
+
+  def handle_info({:dra_run_status, _ref, _result}, state), do: {:noreply, state}
 
   # The poll could not be made — that says nothing about the run, so settle from the
   # failure rather than blaming the turn for delivering no report.
@@ -342,18 +401,22 @@ defmodule Sanbase.DeepResearch.Runner do
 
   # -- run lifecycle ----------------------------------------------------------------
 
-  defp start_run(state, turn, message, opts, run_opts \\ []) do
+  # Anything still active on the thread when a turn starts is a leftover: this runner
+  # considers the previous turn over (settled, cancelled, or paused by a crash that never
+  # got to cancel), and the agent server resumes in-flight runs from disk after a restart
+  # with no client attached. Left alone it would only park the new run in `pending`
+  # behind it, so it is cancelled first.
+  defp start_run(state, turn, message, opts) do
     sink = self()
     thread_id = state.thread_id
     enabled_mcp = Keyword.get(opts, :enabled_mcp, [])
     user = state.user
     model_tier = Keyword.get(opts, :model_tier, state.model_tier)
     ref = turn.id
-    cancel_first? = Keyword.get(run_opts, :cancel_active_first, false)
 
     task =
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        if cancel_first? and is_binary(thread_id), do: Client.cancel_active_runs(thread_id)
+        if is_binary(thread_id), do: Client.cancel_active_runs(thread_id)
 
         # Inside the task: resolving MCP servers does a DB read.
         stream_opts = [
@@ -366,6 +429,16 @@ defmodule Sanbase.DeepResearch.Runner do
       end)
 
     %{state | current_turn: turn, running: true, run_id: nil, mcp_warning: nil, task: task}
+    |> arm_silence_watchdog()
+  end
+
+  defp arm_silence_watchdog(state) do
+    if state.silence_timer, do: Process.cancel_timer(state.silence_timer)
+
+    %{
+      state
+      | silence_timer: Process.send_after(self(), :event_silence, Config.event_silence_ms())
+    }
   end
 
   # First run of a session: the thread has to exist before anything can stream.
@@ -415,6 +488,9 @@ defmodule Sanbase.DeepResearch.Runner do
 
   defp settle_failure(turn, %Failure{} = failure, now_ms),
     do: Timeline.fail_turn(turn, failure.message, now_ms)
+
+  defp fail_no_report(%{phase: :queued} = turn),
+    do: Timeline.fail_turn(turn, @never_started_error, now_ms())
 
   defp fail_no_report(turn), do: Timeline.fail_turn(turn, @no_report_error, now_ms())
 
@@ -572,6 +648,12 @@ defmodule Sanbase.DeepResearch.Runner do
   end
 
   # -- side-call tasks (fire-and-forget) ----------------------------------------------
+
+  defp check_run_status_async(thread_id, run_id, sink, ref) do
+    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+      send(sink, {:dra_run_status, ref, Client.get_run(thread_id, run_id)})
+    end)
+  end
 
   defp poll_state_async(thread_id, sink, ref) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->

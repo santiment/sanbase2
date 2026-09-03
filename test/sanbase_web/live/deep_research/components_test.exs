@@ -9,7 +9,7 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
   import Phoenix.LiveViewTest
   import SanbaseWeb.DeepResearch.Components
 
-  alias Sanbase.DeepResearch.Timeline
+  alias Sanbase.DeepResearch.{EventParser, Timeline}
 
   @now 1_700_000_000_000
 
@@ -54,6 +54,159 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
       html = render_turn(turn([%{thinking: %{id: "m1", text: "Planning the research"}}]))
 
       assert html =~ "Planning the research"
+    end
+
+    test "a fresh turn says it is queued on the agent server, not planning" do
+      html = render_turn(turn([]), running: true, now_ms: @now + 3_000)
+
+      assert html =~ "Queued on the agent server"
+      refute html =~ "Planning research"
+      assert html =~ "loading-spinner"
+    end
+
+    test "the run's metadata event moves the turn to planning and leaves a started row" do
+      html =
+        render_turn(turn([EventParser.parse(%{"run_id" => "r1", "attempt" => 1})]),
+          running: true,
+          now_ms: @now + 3_000
+        )
+
+      assert html =~ "Planning research"
+      assert html =~ "Agent server picked up the run"
+    end
+
+    test "a re-run after a server restart shows the attempt" do
+      html = render_turn(turn([EventParser.parse(%{"run_id" => "r1", "attempt" => 3})]))
+
+      assert html =~ "Agent server restarted the run (attempt 3)"
+    end
+
+    test "a running turn says how long ago the stream last delivered anything" do
+      fresh =
+        render_turn(turn([], %{phase: :researching, last_event_at: @now + 9_000}),
+          running: true,
+          now_ms: @now + 10_000
+        )
+
+      assert fresh =~ "last event 1s ago"
+      assert fresh =~ "animate-pulse"
+
+      quiet =
+        render_turn(turn([], %{phase: :researching, last_event_at: @now}),
+          running: true,
+          now_ms: @now + 4 * 60_000
+        )
+
+      assert quiet =~ "quiet for 4m 00s"
+      assert quiet =~ "text-warning"
+
+      stalled =
+        render_turn(turn([], %{phase: :researching, last_event_at: @now}),
+          running: true,
+          now_ms: @now + 16 * 60_000
+        )
+
+      assert stalled =~ "no events for 16m 00s"
+      assert stalled =~ "looks stalled, Stop and retry"
+      assert stalled =~ "text-error"
+
+      # Nothing received yet: counted from the question, calm at first.
+      assert render_turn(turn([]), running: true, now_ms: @now + 5_000) =~ "no events yet"
+
+      # A finished turn has no stream to report on.
+      refute render_turn(
+               turn([], %{phase: :completed, finished_at: @now + 5_000, last_event_at: @now})
+             ) =~ "last event"
+    end
+
+    test "a model_call heartbeat says who is thinking and on what" do
+      live = %{
+        kind: :model_call,
+        role: "research-subagent",
+        model: "deepseek/deepseek-v4-flash",
+        step: 4
+      }
+
+      html =
+        render_turn(turn([], %{phase: :researching, live: live}),
+          running: true,
+          now_ms: @now + 1_000
+        )
+
+      assert html =~ "A research sub-agent is thinking"
+      assert html =~ "deepseek/deepseek-v4-flash"
+      assert html =~ "step 4"
+      refute html =~ "show the raw call"
+    end
+
+    test "a streaming write_todos shows as a checklist under an 'Updating the plan' label" do
+      live = %{
+        kind: :tool_call_draft,
+        name: "write_todos",
+        chars: 533,
+        preview: ~s({"todos":[...),
+        todos: [
+          %{content: "Fetch social volume", status: "completed"},
+          %{content: "Compute summary statistics", status: "in_progress"},
+          %{content: "Compile findings", status: "pending"}
+        ]
+      }
+
+      html =
+        render_turn(turn([], %{phase: :researching, live: live}),
+          running: true,
+          now_ms: @now + 1_000
+        )
+
+      assert html =~ "Updating the plan · 3 steps so far"
+      refute html =~ "Preparing a"
+      assert html =~ "Fetch social volume"
+      assert html =~ "line-through"
+      assert html =~ "hero-arrow-right-circle"
+      assert html =~ "Compile findings"
+    end
+
+    test "a finished plan renders as a checklist block" do
+      plan = %{
+        activity: %{
+          kind: :plan,
+          todos: [
+            %{content: "Fetch social volume", status: "completed"},
+            %{content: "Compute summary statistics", status: "in_progress"}
+          ]
+        }
+      }
+
+      html = render_turn(turn([plan], %{phase: :completed, report: "ok", finished_at: @now}))
+
+      assert html =~ ">Plan<" or html =~ "Plan\n"
+      assert html =~ "hero-list-bullet"
+      assert html =~ "Fetch social volume"
+      assert html =~ "Compute summary statistics"
+    end
+
+    test "the tool call the model is still writing shows as a live draft with its tail" do
+      live = %{
+        kind: :tool_call_draft,
+        name: "execute",
+        chars: 14_521,
+        preview: "'sensory', 'sensation', 'feeling'"
+      }
+
+      html =
+        render_turn(turn([], %{phase: :researching, live: live}),
+          running: true,
+          now_ms: @now + 1_000
+        )
+
+      assert html =~ "Preparing a"
+      assert html =~ "execute"
+      assert html =~ "14.2 KB so far"
+      assert html =~ "&#39;sensory&#39;, &#39;sensation&#39;, &#39;feeling&#39;"
+      assert html =~ ~s(id="live-draft-1")
+
+      refute render_turn(turn([], %{phase: :researching}), running: true, now_ms: @now) =~
+               "Model is writing"
     end
 
     test "a paused turn shows the pause footer even with an empty timeline" do
@@ -255,6 +408,204 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
 
       assert html =~ "Agent budget exhausted"
       assert html =~ "bg-error/5"
+    end
+
+    test "a failed turn says how long it ran, even with nothing else to show" do
+      turn = turn([], %{phase: :failed, error: "boom", finished_at: @now + 65_000})
+      html = render_turn(turn)
+
+      assert html =~ "Failed after 1m 05s"
+      assert html =~ "boom"
+    end
+
+    test "a settled turn quotes the agent's own run clock and ledger once reported" do
+      usage = %{
+        activity: %{
+          kind: :usage,
+          elapsed_s: 252.4,
+          tool_calls: 42,
+          model_calls: 17,
+          total_tokens: 380_000,
+          cost_usd: 0.1234,
+          subagent_runs: 3
+        }
+      }
+
+      turn =
+        turn([%{activity: %{kind: :search_query, id: "s1", query: "q"}}, usage], %{
+          phase: :completed,
+          report: "ok",
+          finished_at: @now + 300_000
+        })
+
+      html = render_turn(turn)
+
+      # The agent's 4m 12s, not the wall clock's 5m 00s — it matches the agent's own text.
+      assert html =~ "Researched in 4m 12s"
+      refute html =~ "5m 00s"
+      assert html =~ "42 tool calls"
+      assert html =~ "380k tokens"
+      assert html =~ "3 sub-agent runs"
+      assert html =~ "$0.12"
+    end
+
+    test "a failed turn uses the ledger too; a running one still counts the wall clock" do
+      usage = %{activity: %{kind: :usage, elapsed_s: 30.0, tool_calls: 2}}
+
+      failed = turn([usage], %{phase: :failed, error: "x", finished_at: @now + 90_000})
+      assert render_turn(failed) =~ "Failed after 30s"
+
+      running = turn([%{thinking: %{id: "m1", text: "working"}}, usage], %{phase: :researching})
+      assert render_turn(running, running: true, now_ms: @now + 7_000) =~ "7s"
+    end
+
+    test "a ledger without numbers adds nothing to the footer" do
+      usage = %{activity: %{kind: :usage, elapsed_s: nil, tool_calls: 0, cost_usd: 0.0}}
+
+      turn =
+        turn([%{activity: %{kind: :search_query, id: "s1", query: "q"}}, usage], %{
+          phase: :completed,
+          report: "ok",
+          finished_at: @now + 12_000
+        })
+
+      html = render_turn(turn)
+
+      assert html =~ "Researched in 12s"
+      refute html =~ "tool call"
+      refute html =~ "$"
+    end
+
+    test "a page read renders as its own row with a domain link and the output" do
+      turn =
+        turn(
+          [
+            %{activity: %{kind: :fetch_call, id: "f1", url: "https://example.com/report"}},
+            %{activity: %{kind: :fetch_result, id: "f1", ok: true, summary: "Fetched 12k chars"}}
+          ],
+          %{phase: :completed, finished_at: @now}
+        )
+
+      html = render_turn(turn)
+
+      assert html =~ "Read page"
+      assert html =~ ~s(href="https://example.com/report")
+      assert html =~ "example.com"
+      assert html =~ "Fetched 12k chars"
+      assert html =~ "1 page read"
+      refute html =~ "web_fetch"
+    end
+
+    test "agent status rows read as sentences" do
+      turn =
+        turn(
+          [
+            %{activity: %{kind: :status, state: "loop_detected", detail: nil, repeats: 3}},
+            %{
+              activity: %{kind: :status, state: "budget_soft", detail: nil, reason: "tool_calls"}
+            },
+            %{
+              activity: %{
+                kind: :status,
+                state: "revising",
+                detail: "2 uncited sources",
+                reason: "report_quality"
+              }
+            },
+            %{activity: %{kind: :status, state: "loop_halt", detail: nil, repeats: 4}},
+            %{
+              activity: %{
+                kind: :status,
+                state: "runaway_output",
+                detail: "the model kept repeating 'BTC#'"
+              }
+            },
+            %{activity: %{kind: :status, state: "runaway_halt", detail: nil}},
+            %{
+              activity: %{
+                kind: :status,
+                state: "sandbox_reset",
+                detail: "No such container: llmsbx_abc"
+              }
+            }
+          ],
+          %{phase: :completed, report: "ok", finished_at: @now}
+        )
+
+      html = render_turn(turn)
+
+      assert html =~ "Noticed the same tool call repeating (3×)"
+
+      assert html =~
+               "Cut off runaway output (the model kept repeating &#39;BTC#&#39;) — nudged the agent to continue"
+
+      assert html =~ "Stopped: runaway output again (the model repeated itself)"
+
+      assert html =~
+               "Sandbox session was lost mid-run (No such container: llmsbx_abc) — opened a fresh one; files written earlier are gone"
+
+      assert html =~ "Approaching the run budget for tool calls"
+      assert html =~ "Revising the report: 2 uncited sources"
+      assert html =~ "kept repeating the same tool call (4×)"
+      assert html =~ "text-warning"
+      assert html =~ "· status"
+    end
+
+    test "compaction is its own element: running, done, or interrupted when the turn died" do
+      compacting = %{
+        activity: %{kind: :status, state: "compacting", detail: nil, tokens_estimate: 120_000}
+      }
+
+      compacted = %{
+        activity: %{
+          kind: :status,
+          state: "compacted",
+          detail: nil,
+          tokens_estimate: 120_000,
+          messages_summarized: 40
+        }
+      }
+
+      running = render_turn(turn([compacting]), running: true, now_ms: @now)
+      assert running =~ "Compacting context"
+      assert running =~ "working context near 120k tokens"
+      assert running =~ "loading-spinner"
+      refute running =~ "· status"
+
+      done = render_turn(turn([compacting, compacted], %{phase: :completed, finished_at: @now}))
+      assert done =~ "Compacted context"
+
+      assert done =~
+               "summarized 40 earlier messages (~120k tokens) into a shorter working context"
+
+      refute done =~ "Compacting context"
+
+      died = render_turn(turn([compacting], %{phase: :failed, error: "boom", finished_at: @now}))
+      assert died =~ "Compaction interrupted"
+      refute died =~ "loading-spinner"
+    end
+
+    test "a finished call shows the shape of its arguments, never a long value" do
+      html =
+        render_turn(
+          turn([
+            %{
+              activity: %{
+                kind: :mcp_call,
+                id: "c1",
+                tool: "write_file",
+                args: %{
+                  "file_path" => "/notes/btc.md",
+                  "content" => String.duplicate("buy the dip ", 20)
+                }
+              }
+            }
+          ])
+        )
+
+      assert html =~ "file_path=/notes/btc.md"
+      assert html =~ "[240 chars]"
+      refute html =~ "buy the dip"
     end
 
     test "why a paused turn stopped reads as a warning — it is still resumable" do

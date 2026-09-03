@@ -12,6 +12,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
   """
   use SanbaseWeb, :html
 
+  alias Phoenix.LiveView.JS
   alias Sanbase.DeepResearch.{ReportMarkdown, Timeline}
   alias SanbaseWeb.DeepResearch.ChartRenderer
 
@@ -272,12 +273,17 @@ defmodule SanbaseWeb.DeepResearch.Components do
       assign(assigns,
         blocks: blocks,
         has_research: has_research,
+        usage: Timeline.usage(turn),
         empty?: proc_items == [] and is_nil(turn.report)
       )
 
     ~H"""
-    <%!-- A paused turn renders even when empty, to keep Continue reachable. --%>
-    <div :if={not (@empty? and not @running) or @turn.phase == :paused} class="space-y-3">
+    <%!-- A paused turn renders even when empty, to keep Continue reachable; a failed
+    one, to say how long it ran before it died. --%>
+    <div
+      :if={not (@empty? and not @running) or @turn.phase in [:paused, :failed]}
+      class="space-y-3"
+    >
       <%= for {block, index} <- Enum.with_index(@blocks) do %>
         <.timeline_block block={block} index={index} turn_id={@turn.id} />
       <% end %>
@@ -287,26 +293,39 @@ defmodule SanbaseWeb.DeepResearch.Components do
       <%!-- A running *phase* after the stream closed (@running false) is the
       no-report poll window — the turn is still being resolved, keep the
       spinner up rather than freezing the timeline footerless. --%>
-      <div
-        :if={@running or Timeline.running_phase?(@turn.phase)}
-        class="flex items-center gap-2 text-xs font-medium text-base-content/60"
-      >
-        <span class="loading loading-spinner loading-xs text-primary"></span>
-        {phase_label(@turn.phase)} · {format_duration(elapsed_seconds(@turn, @now_ms))}
+      <div :if={@running or Timeline.running_phase?(@turn.phase)} class="space-y-1.5 text-xs">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-base-content/60">
+          <span class="loading loading-spinner loading-xs text-primary"></span>
+          <span>{phase_label(@turn.phase)} · {format_duration(elapsed_seconds(@turn, @now_ms))}</span>
+          <.liveness turn={@turn} now_ms={@now_ms} />
+        </div>
+        <.live_draft :if={Map.get(@turn, :live)} live={@turn.live} turn_id={@turn.id} />
       </div>
       <div
         :if={((not @running and @turn.started_at) && @has_research) and @turn.phase == :completed}
         class="flex items-center gap-1.5 text-xs text-base-content/50"
       >
         <.icon name="hero-check-circle" class="size-3.5 text-success" />
-        Researched in {format_duration(elapsed_seconds(@turn, @now_ms))}
+        Researched in {format_duration(elapsed_seconds(@turn, @now_ms, @usage))}
+        <.run_stats usage={@usage} />
       </div>
       <div
         :if={@turn.phase == :cancelled and @has_research}
         class="flex items-center gap-1.5 text-xs text-base-content/40"
       >
         <.icon name="hero-no-symbol" class="size-3.5" />
-        Stopped after {format_duration(elapsed_seconds(@turn, @now_ms))}
+        Stopped after {format_duration(elapsed_seconds(@turn, @now_ms, @usage))}
+        <.run_stats usage={@usage} />
+      </div>
+      <%!-- Always for a failed turn, research or not: the run time is the one fact
+      the no-report fallback and a mid-run crash can still report. --%>
+      <div
+        :if={@turn.phase == :failed and not @running}
+        class="flex items-center gap-1.5 text-xs text-base-content/50"
+      >
+        <.icon name="hero-x-circle" class="size-3.5 text-error" />
+        Failed after {format_duration(elapsed_seconds(@turn, @now_ms, @usage))}
+        <.run_stats usage={@usage} />
       </div>
       <div
         :if={@turn.phase == :paused}
@@ -328,6 +347,208 @@ defmodule SanbaseWeb.DeepResearch.Components do
     """
   end
 
+  # Silence thresholds. The agent gives every model call a 3-minute timeout, so past that
+  # a quiet stream is abnormal; past 10 minutes nothing legitimate is still coming and the
+  # user should Stop. Under 20 seconds is the normal token-to-token rhythm.
+  @fresh_ms 20_000
+  @quiet_ms 180_000
+  @stalled_ms 600_000
+
+  attr :turn, :map, required: true
+  attr :now_ms, :integer, default: nil
+
+  # How long since the run last delivered anything (a token, a tool event), coloured by
+  # how abnormal the silence is. Before the first event it counts from the question.
+  defp liveness(%{now_ms: nil} = assigns), do: ~H""
+
+  defp liveness(assigns) do
+    turn = assigns.turn
+    # `Map.get`: a runner started before a hot code reload holds turns without this key.
+    last_event_at = Map.get(turn, :last_event_at)
+    since = last_event_at || turn.started_at
+    ago_ms = max(assigns.now_ms - since, 0)
+    ago = format_duration(div(ago_ms, 1000))
+
+    {tone, text} =
+      cond do
+        is_nil(last_event_at) and ago_ms < @quiet_ms ->
+          {:ok, "no events yet"}
+
+        is_nil(last_event_at) and ago_ms < @stalled_ms ->
+          {:warn, "no events yet, #{ago}"}
+
+        is_nil(last_event_at) ->
+          {:dead, "no events for #{ago} — looks stalled, Stop and retry"}
+
+        ago_ms < @fresh_ms ->
+          {:live, "last event #{ago} ago"}
+
+        ago_ms < @quiet_ms ->
+          {:ok, "last event #{ago} ago"}
+
+        ago_ms < @stalled_ms ->
+          {:warn, "quiet for #{ago}"}
+
+        true ->
+          {:dead, "no events for #{ago} — looks stalled, Stop and retry"}
+      end
+
+    assigns = assign(assigns, tone: tone, text: text)
+
+    ~H"""
+    <span class={["inline-flex items-center gap-1.5 font-normal", liveness_text_class(@tone)]}>
+      <span class={["size-1.5 rounded-full", liveness_dot_class(@tone)]}></span>
+      {@text}
+    </span>
+    """
+  end
+
+  defp liveness_text_class(:live), do: "text-success"
+  defp liveness_text_class(:ok), do: "text-base-content/50"
+  defp liveness_text_class(:warn), do: "text-warning"
+  defp liveness_text_class(:dead), do: "text-error"
+
+  defp liveness_dot_class(:live), do: "bg-success animate-pulse"
+  defp liveness_dot_class(:ok), do: "bg-base-content/30"
+  defp liveness_dot_class(:warn), do: "bg-warning"
+  defp liveness_dot_class(:dead), do: "bg-error"
+
+  attr :live, :map, required: true
+  attr :turn_id, :any, required: true
+
+  # What the model is producing right now: the tool call whose arguments are still
+  # streaming. Nothing else in the transcript moves during it, so this is the one place a
+  # user can see progress (the size grows) or a runaway loop (the tail repeats). The
+  # preview toggles client-side; JS commands survive LiveView patches, so it stays open.
+  # A model is generating and nothing streams yet (a non-streaming model shows its whole
+  # message at once when done). Says who and on what, so a long silence has a name.
+  defp live_draft(%{live: %{kind: :model_call}} = assigns) do
+    ~H"""
+    <div class="rounded-lg border border-base-300 bg-base-200/40 px-3 py-2 text-base-content/70">
+      <div class="flex items-center gap-2">
+        <.icon name="hero-cpu-chip" class="size-3.5 shrink-0 animate-pulse text-primary" />
+        <span class="font-medium">
+          {role_label(@live.role)} is thinking<span :if={@live.model}>
+            on <code class="font-mono">{@live.model}</code>
+          </span><span :if={@live.step}>
+            · step {@live.step}</span>…
+        </span>
+      </div>
+      <div :if={@live[:unit]} class="mt-1 truncate text-xs text-base-content/60" title={@live.unit}>
+        Working on: {@live.unit}
+      </div>
+      <div :if={@live[:after]} class="mt-0.5 text-xs text-base-content/60">
+        Reading what <code class="font-mono">{@live.after}</code>
+        returned<span :if={@live[:after_chars]}>
+          ({format_kb(@live.after_chars)})
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  defp live_draft(assigns) do
+    ~H"""
+    <div class="rounded-lg border border-base-300 bg-base-200/40 px-3 py-2 text-base-content/70">
+      <button
+        type="button"
+        phx-click={JS.toggle(to: "#live-draft-#{@turn_id}")}
+        class="flex w-full cursor-pointer items-center gap-2 text-left"
+      >
+        <.icon name="hero-pencil-square" class="size-3.5 shrink-0 text-primary" />
+        <span :if={@live.name == "write_todos"} class="font-medium">
+          Updating the plan · {length(@live[:todos] || [])} steps so far
+        </span>
+        <span :if={@live.name != "write_todos"} class="font-medium">
+          Preparing a <code class="font-mono">{@live.name}</code> call
+          · {format_kb(@live.chars)} so far
+        </span>
+        <span class="ml-auto text-[11px] text-base-content/40">show the raw call</span>
+      </button>
+      <.todo_list :if={@live[:todos]} todos={@live.todos} />
+      <pre
+        id={"live-draft-#{@turn_id}"}
+        class="mt-2 hidden max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-base-100 p-2 font-mono text-[11px] leading-snug"
+      >{@live.preview}</pre>
+    </div>
+    """
+  end
+
+  attr :todos, :list, required: true
+
+  # The agent's todo list as a checklist: done / in progress / pending.
+  defp todo_list(assigns) do
+    ~H"""
+    <ul class="mt-2 space-y-1 text-sm">
+      <li :for={todo <- @todos} class="flex items-start gap-2">
+        <.icon
+          name={todo_icon(todo.status)}
+          class={["mt-0.5 size-4 shrink-0", todo_icon_class(todo.status)]}
+        />
+        <span class={todo_text_class(todo.status)}>{todo.content}</span>
+      </li>
+    </ul>
+    """
+  end
+
+  defp todo_icon("completed"), do: "hero-check-circle"
+  defp todo_icon("in_progress"), do: "hero-arrow-right-circle"
+  defp todo_icon(_), do: "hero-minus-circle"
+
+  defp todo_icon_class("completed"), do: "text-success"
+  defp todo_icon_class("in_progress"), do: "text-primary"
+  defp todo_icon_class(_), do: "text-base-content/30"
+
+  defp todo_text_class("completed"), do: "text-base-content/50 line-through"
+  defp todo_text_class("in_progress"), do: "font-medium text-base-content"
+  defp todo_text_class(_), do: "text-base-content/70"
+
+  defp role_label("orchestrator"), do: "The orchestrator"
+  defp role_label("research-subagent"), do: "A research sub-agent"
+  defp role_label("extract-subagent"), do: "The extract sub-agent"
+  defp role_label("coding-subagent"), do: "The coding sub-agent"
+  defp role_label(role), do: "The #{role}"
+
+  defp format_kb(chars) when chars < 1024, do: "#{chars} B"
+  defp format_kb(chars), do: "#{:erlang.float_to_binary(chars / 1024, decimals: 1)} KB"
+
+  attr :usage, :map, default: nil, doc: "the turn's usage ledger (`Timeline.usage/1`), or nil"
+
+  # The agent's own ledger for the run — tool calls, fleet-wide tokens, sub-agent runs
+  # and cost — as trailing " · " facts. Nothing for turns from before the agent
+  # reported usage, or for a run that died before it could.
+  defp run_stats(assigns) do
+    assigns = assign(assigns, :parts, usage_parts(assigns.usage))
+
+    ~H"""
+    <span :for={part <- @parts} class="text-base-content/40">· {part}</span>
+    """
+  end
+
+  defp usage_parts(nil), do: []
+
+  defp usage_parts(usage) do
+    calls = usage[:tool_calls]
+    tokens = usage[:total_tokens]
+    runs = usage[:subagent_runs]
+    cost = usage[:cost_usd]
+
+    []
+    |> append_if(positive?(calls), "#{calls} tool #{pluralize(calls, "call", "calls")}")
+    |> append_if(positive?(tokens), "#{format_tokens(tokens || 0)} tokens")
+    |> append_if(positive?(runs), "#{runs} sub-agent #{pluralize(runs, "run", "runs")}")
+    |> append_if(positive?(cost), format_cost(cost || 0))
+  end
+
+  defp positive?(n), do: is_number(n) and n > 0
+
+  defp format_tokens(n) when n >= 1_000_000, do: "#{Float.round(n / 1_000_000, 1)}M"
+  defp format_tokens(n) when n >= 1_000, do: "#{div(n, 1_000)}k"
+  defp format_tokens(n), do: Integer.to_string(n)
+
+  defp format_cost(cost) when cost < 0.01, do: "<$0.01"
+  defp format_cost(cost), do: "$" <> :erlang.float_to_binary(cost / 1, decimals: 2)
+
   attr :block, :any, required: true
   attr :index, :integer, required: true
   attr :turn_id, :any, default: nil
@@ -340,6 +561,20 @@ defmodule SanbaseWeb.DeepResearch.Components do
       <div :for={item <- @items} class="prose prose-sm max-w-none">
         {markdown(item.text)}
       </div>
+    </div>
+    """
+  end
+
+  # The latest plan only — the reducer keeps one item and replaces it in place.
+  defp timeline_block(%{block: {:plan, items}} = assigns) do
+    assigns = assign(assigns, :plan, List.last(items))
+
+    ~H"""
+    <div class="rounded-lg border border-base-300 bg-base-200/40 px-3 py-2">
+      <div class="flex items-center gap-2 text-sm font-medium text-base-content/80">
+        <.icon name="hero-list-bullet" class="size-4 text-primary" /> Plan
+      </div>
+      <.todo_list todos={@plan.todos} />
     </div>
     """
   end
@@ -443,6 +678,27 @@ defmodule SanbaseWeb.DeepResearch.Components do
     """
   end
 
+  # Compaction gets its own element rather than a line inside the research fold: it is
+  # the one moment the agent rewrites its own memory, worth seeing at a glance.
+  defp timeline_block(%{block: {:compaction, items}} = assigns) do
+    assigns = assign(assigns, :items, items)
+
+    ~H"""
+    <div
+      :for={c <- @items}
+      class="flex items-center gap-2 rounded-xl border border-dashed border-base-300 bg-base-200/30 px-3.5 py-2.5 text-xs text-base-content/60"
+    >
+      <.status_icon
+        status={compaction_status(c)}
+        class={if(c.state == "compacting", do: "text-primary")}
+        interrupted_title="Interrupted — the summary never landed"
+      />
+      <span class="font-medium text-base-content/80">{compaction_title(c)}</span>
+      <span class="text-base-content/50">· {compaction_detail(c)}</span>
+    </div>
+    """
+  end
+
   defp timeline_block(%{block: {:tools, items, running}} = assigns) do
     assigns =
       assign(assigns,
@@ -536,20 +792,172 @@ defmodule SanbaseWeb.DeepResearch.Components do
     """
   end
 
-  defp tool_item(%{item: %{kind: :status}} = assigns) do
+  defp tool_item(%{item: %{kind: :fetch}} = assigns) do
+    url = assigns.item[:url] || ""
+
+    assigns =
+      assign(assigns,
+        status: call_status(assigns.item),
+        href: safe_http_url(url),
+        domain: url_domain(url),
+        output: assigns.item[:summary]
+      )
+
     ~H"""
-    <p class={[
-      "text-xs",
-      if(@item.state == "mcp_error", do: "text-error", else: "text-base-content/60")
-    ]}>
-      {if @item.state == "mcp_error",
-        do: "MCP error: #{@item[:detail] || "connection failed"}",
-        else: "Connected to data tools"}
-    </p>
+    <details class="text-sm">
+      <summary class="flex cursor-pointer list-none items-center gap-2 text-base-content/80">
+        <.icon name="hero-document-text" class="size-4 shrink-0 text-base-content/60" />
+        <span class="shrink-0">Read page</span>
+        <.link
+          :if={@href}
+          href={@href}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={@href}
+          class="flex items-center gap-1.5 overflow-hidden text-xs text-base-content/60 hover:text-base-content"
+        >
+          <.favicon domain={@domain} />
+          <span class="truncate">{@domain}</span>
+        </.link>
+        <span :if={!@href} class="truncate text-xs text-base-content/60">{@domain}</span>
+        <.status_icon
+          status={@status}
+          size="size-3.5"
+          class="ml-auto"
+          interrupted_title="Interrupted — did not return"
+        />
+      </summary>
+      <pre
+        :if={@output}
+        class="ml-6 mt-1 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-base-300/40 p-2 text-[11px] text-base-content/60"
+      >{@output}</pre>
+    </details>
+    """
+  end
+
+  defp tool_item(%{item: %{kind: :status}} = assigns) do
+    assigns = assign(assigns, :label, status_label(assigns.item))
+
+    ~H"""
+    <p class={["text-xs", status_class(@item.state)]}>{@label}</p>
     """
   end
 
   defp tool_item(assigns), do: ~H""
+
+  defp attempt_note(n) when is_integer(n), do: " (attempt #{n})"
+  defp attempt_note(_), do: ""
+
+  defp status_class("mcp_error"), do: "text-error"
+  defp status_class("run_restarted"), do: "text-warning"
+
+  defp status_class(state) when state in ["loop_halt", "runaway_halt", "budget_halt"],
+    do: "text-warning"
+
+  defp status_class(_state), do: "text-base-content/60"
+
+  # One line per agent status row. Only the states `Timeline` keeps reach here, but
+  # an older row's state is quoted rather than crashed on.
+  defp status_label(%{state: "mcp_error"} = s),
+    do: "MCP error: #{s[:detail] || "connection failed"}"
+
+  defp status_label(%{state: "mcp_ready"}), do: "Connected to data tools"
+
+  defp status_label(%{state: "run_started"}),
+    do: "Agent server picked up the run — the agent is now working"
+
+  defp status_label(%{state: "run_restarted"} = s),
+    do:
+      "Agent server restarted the run#{attempt_note(s[:attempt])} — resuming from its last checkpoint"
+
+  defp status_label(%{state: "loop_detected"} = s),
+    do:
+      "Noticed the same tool call repeating#{times(s[:repeats])} — nudged the agent to change approach"
+
+  defp status_label(%{state: "loop_halt"} = s),
+    do: "Stopped: the agent kept repeating the same tool call#{times(s[:repeats])}"
+
+  defp status_label(%{state: "runaway_output"} = s),
+    do:
+      "Cut off runaway output (#{s[:detail] || "the model repeated itself"}) — nudged the agent to continue"
+
+  defp status_label(%{state: "runaway_halt"} = s),
+    do: "Stopped: runaway output again (#{s[:detail] || "the model repeated itself"})"
+
+  defp status_label(%{state: "sandbox_reset"} = s),
+    do:
+      "Sandbox session was lost mid-run (#{s[:detail] || "timed out"}) — opened a fresh one; files written earlier are gone"
+
+  defp status_label(%{state: "budget_soft"} = s),
+    do: s[:detail] || "Approaching the run budget#{budget_kind(s[:reason])} — wrapping up"
+
+  defp status_label(%{state: "budget_halt"} = s),
+    do: s[:detail] || "Run budget exhausted#{budget_kind(s[:reason])} — stopping"
+
+  defp status_label(%{state: "revising"} = s) do
+    what =
+      case s[:reason] do
+        "report_quality" -> "the report"
+        "subagent_findings" -> "a sub-agent's findings"
+        _ -> "the output"
+      end
+
+    "Revising #{what}" <> if(s[:detail], do: ": #{s[:detail]}", else: "")
+  end
+
+  defp status_label(%{state: state} = s) when is_binary(state),
+    do: s[:detail] || String.replace(state, "_", " ")
+
+  defp status_label(s), do: s[:detail] || "status"
+
+  defp times(n) when is_integer(n) and n > 1, do: " (#{n}×)"
+  defp times(_), do: ""
+
+  defp compaction_status(%{state: "compacting"}), do: :running
+  defp compaction_status(%{state: "compacted"}), do: :ok
+  defp compaction_status(_), do: :interrupted
+
+  defp compaction_title(%{state: "compacting"}), do: "Compacting context"
+  defp compaction_title(%{state: "compacted"}), do: "Compacted context"
+  defp compaction_title(_), do: "Compaction interrupted"
+
+  defp compaction_detail(%{state: "compacting"} = c) do
+    case c[:tokens_estimate] do
+      n when is_integer(n) and n > 0 ->
+        "working context near #{format_tokens(n)} tokens — summarizing the earlier messages"
+
+      _ ->
+        "summarizing the earlier messages"
+    end
+  end
+
+  defp compaction_detail(%{state: "compacted"} = c) do
+    what =
+      case c[:messages_summarized] do
+        n when is_integer(n) -> "summarized #{n} earlier #{pluralize(n, "message", "messages")}"
+        _ -> "summarized the earlier messages"
+      end
+
+    "#{what}#{tokens_note(c[:tokens_estimate])} into a shorter working context"
+  end
+
+  defp compaction_detail(_), do: "the run stopped before the summary landed"
+
+  defp tokens_note(n) when is_integer(n) and n > 0, do: " (~#{format_tokens(n)} tokens)"
+  defp tokens_note(_), do: ""
+
+  defp budget_kind("tool_calls"), do: " for tool calls"
+  defp budget_kind("tokens"), do: " for tokens"
+  defp budget_kind(_), do: ""
+
+  defp url_domain(url) when is_binary(url) do
+    case URI.parse(url) do
+      %URI{host: host} when is_binary(host) and host != "" -> host
+      _ -> url
+    end
+  end
+
+  defp url_domain(_), do: ""
 
   attr :result, :map, required: true
 
@@ -678,9 +1086,14 @@ defmodule SanbaseWeb.DeepResearch.Components do
   # group cut short must not claim success.
   defp group_status(items) do
     cond do
-      Timeline.tools_running?(items) -> :running
-      Enum.any?(items, &(&1.kind == :mcp and is_nil(Map.get(&1, :ok)))) -> :interrupted
-      true -> :ok
+      Timeline.tools_running?(items) ->
+        :running
+
+      Enum.any?(items, &(&1.kind in [:mcp, :fetch] and is_nil(Map.get(&1, :ok)))) ->
+        :interrupted
+
+      true ->
+        :ok
     end
   end
 
@@ -737,14 +1150,20 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   # Settle an in-flight item (done, outcome unknown) so a terminal turn shows no
   # spinner. `ok` stays nil, so the row renders "interrupted", not a false check.
-  defp settle_item(%{kind: :mcp, done: true} = item), do: item
-  defp settle_item(%{kind: :mcp} = item), do: Map.put(item, :done, true)
+  defp settle_item(%{kind: kind, done: true} = item) when kind in [:mcp, :fetch], do: item
+
+  defp settle_item(%{kind: kind} = item) when kind in [:mcp, :fetch],
+    do: Map.put(item, :done, true)
 
   defp settle_item(%{kind: :search} = item) do
     if is_nil(Map.get(item, :count)),
       do: Map.put(item, :count, length(item[:results] || [])),
       else: item
   end
+
+  # A summary that never landed: the turn is over, so it is not going to.
+  defp settle_item(%{kind: :compaction, state: "compacting"} = item),
+    do: %{item | state: "interrupted"}
 
   defp settle_item(item), do: item
 
@@ -797,14 +1216,16 @@ defmodule SanbaseWeb.DeepResearch.Components do
   defp tool_summary(items) do
     n_search = Enum.count(items, &(&1.kind == :search))
     n_mcp = Enum.count(items, &(&1.kind == :mcp))
+    n_fetch = Enum.count(items, &(&1.kind == :fetch))
 
     parts =
       []
       |> append_if(n_search > 0, "#{n_search} web #{pluralize(n_search, "search", "searches")}")
       |> append_if(n_mcp > 0, "#{n_mcp} data #{pluralize(n_mcp, "call", "calls")}")
+      |> append_if(n_fetch > 0, "#{n_fetch} #{pluralize(n_fetch, "page", "pages")} read")
 
     case parts do
-      [] -> "reasoning"
+      [] -> if Enum.any?(items, &(&1.kind == :status)), do: "status", else: "reasoning"
       parts -> Enum.join(parts, " · ")
     end
   end
@@ -824,8 +1245,15 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   defp arg_summary(_), do: ""
 
-  defp stringify(v) when is_binary(v), do: v
-  defp stringify(v), do: inspect(v)
+  # Values are where content lives (a file body, a code snippet, a brief); the finished
+  # row shows the shape of the call, never the payload — the live draft's rule too.
+  @arg_value_max_chars 60
+
+  defp stringify(v) do
+    s = if is_binary(v), do: v, else: inspect(v)
+    n = String.length(s)
+    if n > @arg_value_max_chars, do: "[#{n} chars]", else: s
+  end
 
   defp safe_http_url(url) when is_binary(url) do
     case URI.parse(url) do
@@ -842,6 +1270,16 @@ defmodule SanbaseWeb.DeepResearch.Components do
     end_ms = turn.finished_at || now_ms || turn.started_at
     max(0, div(end_ms - turn.started_at, 1000))
   end
+
+  # Once the turn has settled, the agent's own run clock (its usage ledger) wins: it is
+  # the number the agent quotes in its end status ("Run time 4m 12s."), so the footer
+  # and the error box agree. Before that, and for a run that died before reporting
+  # usage, the wall clock stands in.
+  defp elapsed_seconds(turn, now_ms, %{elapsed_s: s}) when is_number(s) do
+    if turn.finished_at, do: max(0, round(s)), else: elapsed_seconds(turn, now_ms)
+  end
+
+  defp elapsed_seconds(turn, now_ms, _usage), do: elapsed_seconds(turn, now_ms)
 
   defp format_duration(seconds) when seconds < 60, do: "#{seconds}s"
 
@@ -865,6 +1303,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   defp markdown(_), do: ""
 
+  defp phase_label(:queued), do: "Queued on the agent server"
   defp phase_label(:planning), do: "Planning research"
   defp phase_label(:researching), do: "Researching"
   defp phase_label(:writing), do: "Writing report"

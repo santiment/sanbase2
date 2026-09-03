@@ -31,3 +31,17 @@ ExUnit.start()
 Faker.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(Sanbase.Repo, :manual)
+
+# Nothing listens on port 1. Without this the agent base URL falls back to the dev
+# default (127.0.0.1:2024) whenever a test has not set one, and a runner's request task
+# that outlives its test (it is unlinked) would create threads on a developer's LIVE
+# agent server. Tests that need a server point base_url at their own fake one.
+Application.put_env(
+  :sanbase,
+  Sanbase.DeepResearch,
+  Keyword.put(
+    Application.get_env(:sanbase, Sanbase.DeepResearch, []),
+    :base_url,
+    "http://127.0.0.1:1"
+  )
+)

@@ -1,30 +1,14 @@
 defmodule Sanbase.DeepResearch.EventParser do
   @moduledoc """
   Parses one decoded SSE `data:` payload from LangGraph `runs/stream` into a
-  normalized result map for the deep research stream.
+  `Sanbase.DeepResearch.Event` — that module documents what each field means.
 
-  The result map carries any of the following optional keys (a single line can
-  produce several, e.g. an `:activity` plus a `:phase`):
-
-    * `:run_id`   - the run id (for cancellation), string; comes with the `metadata`
-                    event a worker emits when it picks the run up, so it also carries
-                    a `:phase` (out of `:queued`) and a `run_started`/`run_restarted`
-                    status row (see `parse_run_metadata/1`)
-    * `:phase`    - phase hint, one of `:planning | :researching | :writing | :awaiting_user`
-    * `:report`   - final report markdown (string)
-    * `:thinking` - `%{id: String.t(), text: String.t()}` cumulative AI snapshot
-    * `:live`     - `%{kind: :tool_call_draft, name, chars, preview}`: a tool call the
-                    model is still writing (its streamed arguments so far). Not a
-                    timeline item — the UI shows it as "what the agent is doing now"
-                    and drops it once the call lands.
-    * `:activity` - `%{kind: atom(), ...}` one event from the custom protocol channel
-                    (search/mcp/fetch calls and results, status rows, the run's usage)
-    * `:error`    - terminal error detail (string): a `status: error`, a gateway
-                    `stream_error`, or LangGraph's own `error` payload when a run crashes
-    * `:meta`     - `%{mcp_tool_calls, mcp_configured, mcp_warning}` (subset, from the gateway)
-
-  An empty map means "nothing to apply" (heartbeat / noise / tool message).
+  One line can fill several fields (an `:activity` plus a `:phase`). An event with
+  none of them filled means "nothing to apply": a heartbeat, stream noise, or a tool
+  message. `Event.empty?/1` says so.
   """
+
+  alias Sanbase.DeepResearch.Event
 
   @activity_types ~w(search_query search_results mcp_call mcp_result tool_call tool_result source skill chart status report clarification subagent_findings usage)
 
@@ -42,7 +26,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   # opens with a citation marker (`[1] Source — …`) would be dropped as scaffolding.
   @json_object_re ~r/^\s*`{0,3}\s*(?:json)?\s*(?:\{|\[\s*[{"])|"findings"\s*:\s*\[/
 
-  @spec parse(term()) :: map()
+  @spec parse(term()) :: Event.t()
   def parse(value) when is_map(value) do
     cond do
       is_map(value["santiment_meta"]) -> parse_meta(value["santiment_meta"])
@@ -55,14 +39,14 @@ defmodule Sanbase.DeepResearch.EventParser do
   end
 
   def parse(value) when is_list(value), do: parse_messages(value)
-  def parse(_), do: %{}
+  def parse(_), do: %Event{}
 
-  @doc "Parse a thread `state` object (the poll fallback) into a result map."
-  @spec parse_thread_state(term()) :: map()
+  @doc "Parse a thread `state` object (the poll fallback)."
+  @spec parse_thread_state(term()) :: Event.t()
   def parse_thread_state(%{"values" => values}) when is_map(values),
     do: extract_from_values(values)
 
-  def parse_thread_state(_), do: %{}
+  def parse_thread_state(_), do: %Event{}
 
   # -- LangGraph `event: metadata` -------------------------------------------------
   #
@@ -76,7 +60,7 @@ defmodule Sanbase.DeepResearch.EventParser do
 
     state = if attempt > 1, do: "run_restarted", else: "run_started"
 
-    %{
+    %Event{
       run_id: value["run_id"],
       phase: :planning,
       activity: %{kind: :status, state: state, detail: nil, attempt: attempt}
@@ -92,14 +76,12 @@ defmodule Sanbase.DeepResearch.EventParser do
       |> put_if(:mcp_configured, meta["mcp_configured"] == true)
       |> put_if(:mcp_warning, non_blank(meta["mcp_warning"]))
 
-    result = if map_size(mcp) > 0, do: %{meta: mcp}, else: %{}
-
-    # A `stream_error` in the meta is a terminal failure — surface it at the top
-    # level so it flows through the same failed-run path as a `status: error`.
-    case non_blank(meta["stream_error"]) do
-      nil -> result
-      err -> Map.put(result, :error, err)
-    end
+    # A `stream_error` in the meta is a terminal failure — surface it in its own field
+    # so it flows through the same failed-run path as a `status: error`.
+    %Event{
+      meta: if(map_size(mcp) > 0, do: mcp),
+      error: non_blank(meta["stream_error"])
+    }
   end
 
   # -- LangGraph `event: error` payloads ----------------------------------------
@@ -121,20 +103,20 @@ defmodule Sanbase.DeepResearch.EventParser do
         do: "The research agent failed (#{kind}): ",
         else: "The research agent failed: "
 
-    %{error: prefix <> String.slice(message, 0, 600)}
+    %Event{error: prefix <> String.slice(message, 0, 600)}
   end
 
   # -- custom protocol channel events ------------------------------------------
 
   defp parse_activity_event(%{"type" => "report"} = obj) do
     case non_blank(obj["markdown"]) do
-      nil -> %{}
-      md -> %{report: md, phase: :writing}
+      nil -> %Event{}
+      md -> %Event{report: md, phase: :writing}
     end
   end
 
   defp parse_activity_event(%{"type" => "search_query"} = obj) do
-    %{
+    %Event{
       phase: :researching,
       activity: %{kind: :search_query, id: obj["id"], query: to_string(obj["query"] || "")}
     }
@@ -143,7 +125,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   defp parse_activity_event(%{"type" => "search_results"} = obj) do
     results = parse_results(obj["results"])
 
-    %{
+    %Event{
       phase: :researching,
       activity: %{
         kind: :search_results,
@@ -160,14 +142,14 @@ defmodule Sanbase.DeepResearch.EventParser do
   defp parse_activity_event(%{"type" => "tool_call", "tool" => "web_fetch"} = obj) do
     args = if is_map(obj["args"]), do: obj["args"], else: %{}
 
-    %{
+    %Event{
       phase: :researching,
       activity: %{kind: :fetch_call, id: obj["id"], url: to_string(args["url"] || "")}
     }
   end
 
   defp parse_activity_event(%{"type" => "tool_result", "tool" => "web_fetch"} = obj) do
-    %{
+    %Event{
       activity: %{
         kind: :fetch_result,
         id: obj["id"],
@@ -181,7 +163,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   # `social_messages`) are both data-tool calls — render them the same way so a
   # custom tool's activity is no longer silently dropped.
   defp parse_activity_event(%{"type" => type} = obj) when type in ["mcp_call", "tool_call"] do
-    %{
+    %Event{
       phase: :researching,
       activity: %{
         kind: :mcp_call,
@@ -193,7 +175,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   end
 
   defp parse_activity_event(%{"type" => type} = obj) when type in ["mcp_result", "tool_result"] do
-    %{
+    %Event{
       activity: %{
         kind: :mcp_result,
         id: obj["id"],
@@ -205,7 +187,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   end
 
   defp parse_activity_event(%{"type" => "source"} = obj) do
-    %{
+    %Event{
       activity: %{
         kind: :source,
         title: obj["title"],
@@ -216,7 +198,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   end
 
   defp parse_activity_event(%{"type" => "skill"} = obj) do
-    %{
+    %Event{
       phase: :researching,
       activity: %{kind: :skill, name: to_string(obj["name"] || ""), path: non_blank(obj["path"])}
     }
@@ -226,9 +208,9 @@ defmodule Sanbase.DeepResearch.EventParser do
     series = if is_list(obj["series"]), do: Enum.filter(obj["series"], &is_map/1), else: []
 
     if series == [] do
-      %{}
+      %Event{}
     else
-      %{
+      %Event{
         phase: :researching,
         activity: %{
           kind: :chart,
@@ -255,7 +237,7 @@ defmodule Sanbase.DeepResearch.EventParser do
         _ -> []
       end
 
-    %{
+    %Event{
       activity: %{
         kind: :subagent_findings,
         unit: non_blank(obj["unit"]),
@@ -273,14 +255,14 @@ defmodule Sanbase.DeepResearch.EventParser do
         _ -> []
       end
 
-    %{phase: :awaiting_user, activity: %{kind: :clarification, questions: questions}}
+    %Event{phase: :awaiting_user, activity: %{kind: :clarification, questions: questions}}
   end
 
   # The run's usage ledger, emitted once as the run ends (just before the end
   # `status`, in success and error runs alike). Tokens are the fleet-wide total
   # (orchestrator + sub-agents) when the agent reports one.
   defp parse_activity_event(%{"type" => "usage"} = obj) do
-    %{
+    %Event{
       activity: %{
         kind: :usage,
         elapsed_s: number_or_nil(obj["elapsed_s"]),
@@ -299,7 +281,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   # while a non-streaming model produces nothing visible — the answer to "quiet for 3m".
   # Lands in `turn.live` like a tool-call draft, and clears the same way.
   defp parse_activity_event(%{"type" => "status", "state" => "model_call"} = obj) do
-    %{
+    %Event{
       live: %{
         kind: :model_call,
         role: to_string(obj["role"] || "agent"),
@@ -316,33 +298,29 @@ defmodule Sanbase.DeepResearch.EventParser do
     state = to_string(obj["state"] || "")
     detail = non_blank(obj["detail"])
 
-    activity =
-      %{
-        kind: :status,
-        state: state,
-        detail: detail,
-        tools: if(is_list(obj["tools"]), do: obj["tools"], else: nil)
-      }
-      # Optional per-state facts the transcript rows quote (see `Timeline`).
-      |> put_if(:reason, non_blank(obj["reason"]))
-      |> put_if(:repeats, integer_or_nil(obj["repeats"]))
-      |> put_if(:tokens_estimate, integer_or_nil(obj["tokens_estimate"]))
-      |> put_if(:messages_summarized, integer_or_nil(obj["messages_summarized"]))
-
-    base = %{activity: activity}
-
-    # A terminal `error` status means the agent ended a turn WITHOUT a report.
-    # Route the reason through the failed-run path so the UI shows an error.
-    if state == "error" do
-      Map.put(
-        base,
-        :error,
-        detail || non_blank(obj["reason"]) || "Research ended without delivering a report."
-      )
-    else
-      base
-    end
+    %Event{activity: status_activity(obj, state, detail), error: status_error(obj, state, detail)}
   end
+
+  defp status_activity(obj, state, detail) do
+    %{
+      kind: :status,
+      state: state,
+      detail: detail,
+      tools: if(is_list(obj["tools"]), do: obj["tools"], else: nil)
+    }
+    # Optional per-state facts the transcript rows quote (see `Timeline`).
+    |> put_if(:reason, non_blank(obj["reason"]))
+    |> put_if(:repeats, integer_or_nil(obj["repeats"]))
+    |> put_if(:tokens_estimate, integer_or_nil(obj["tokens_estimate"]))
+    |> put_if(:messages_summarized, integer_or_nil(obj["messages_summarized"]))
+  end
+
+  # A terminal `error` status means the agent ended a turn WITHOUT a report. Route the
+  # reason through the failed-run path so the UI shows an error.
+  defp status_error(obj, "error", detail),
+    do: detail || non_blank(obj["reason"]) || "Research ended without delivering a report."
+
+  defp status_error(_obj, _state, _detail), do: nil
 
   defp parse_results(results) when is_list(results) do
     Enum.map(results, fn r ->
@@ -372,25 +350,25 @@ defmodule Sanbase.DeepResearch.EventParser do
   defp extract_from_values(values) when is_map(values) do
     cond do
       non_blank(values["final_report"]) ->
-        %{report: values["final_report"], phase: :writing}
+        %Event{report: values["final_report"], phase: :writing}
 
       non_blank(values["research_brief"]) ->
-        %{phase: :planning}
+        %Event{phase: :planning}
 
       not is_nil(values["notes"]) ->
-        %{phase: :researching}
+        %Event{phase: :researching}
 
       true ->
-        %{}
+        %Event{}
     end
   end
 
-  defp extract_from_values(_), do: %{}
+  defp extract_from_values(_), do: %Event{}
 
   # Some `updates` payloads nest the values under a node key:
   # `{"<node>": {"values": {...}}}` or `{"<node>": {"final_report": ...}}`.
   defp parse_node_updates(obj) do
-    Enum.find_value(obj, %{}, fn
+    Enum.find_value(obj, %Event{}, fn
       {key, val} when is_map(val) ->
         cond do
           is_map(val["values"]) -> merge_node_hint(key, extract_from_values(val["values"]))
@@ -408,83 +386,78 @@ defmodule Sanbase.DeepResearch.EventParser do
       Map.has_key?(map, "notes")
   end
 
-  defp merge_node_hint(node_key, result) do
-    if Map.has_key?(result, :phase) do
-      result
-    else
-      k = String.downcase(to_string(node_key))
+  defp merge_node_hint(_node_key, %Event{phase: phase} = event) when not is_nil(phase), do: event
 
-      cond do
-        String.contains?(k, "plan") or String.contains?(k, "brief") ->
-          Map.put(result, :phase, :planning)
+  defp merge_node_hint(node_key, event) do
+    k = String.downcase(to_string(node_key))
 
-        String.contains?(k, "research") or String.contains?(k, "search") ->
-          Map.put(result, :phase, :researching)
+    cond do
+      String.contains?(k, "plan") or String.contains?(k, "brief") ->
+        %{event | phase: :planning}
 
-        String.contains?(k, "report") or String.contains?(k, "writ") ->
-          Map.put(result, :phase, :writing)
+      String.contains?(k, "research") or String.contains?(k, "search") ->
+        %{event | phase: :researching}
 
-        true ->
-          result
-      end
+      String.contains?(k, "report") or String.contains?(k, "writ") ->
+        %{event | phase: :writing}
+
+      true ->
+        event
     end
   end
 
   # -- `messages` channel (streamed assistant "thinking" tokens) ---------------
 
+  # Not prose: internal structured-output fields, and the raw JSON the model emits while
+  # filling a schema.
+  @noise_res [@structured_field_re, @json_scaffolding_re, @json_object_re]
+
   defp parse_messages(payload) do
     # ONLY AI messages are thinking — tool/human/system messages must not appear.
     if message_type(payload) != "ai" do
-      %{}
+      %Event{}
     else
-      text = message_text(payload)
+      msg = Enum.find(payload, &(is_map(&1) and Map.has_key?(&1, "content")))
+      {thinking, phase} = thinking_in(payload)
+      {activity, live} = plan_or_draft(msg)
 
-      thinking =
-        cond do
-          String.trim(text) == "" ->
-            %{}
+      %Event{thinking: thinking, phase: phase, activity: activity, live: live}
+    end
+  end
 
-          Regex.match?(@structured_field_re, text) ->
-            %{}
+  # The prose in the message and the phase it implies — `{nil, nil}` when it is not
+  # prose at all.
+  defp thinking_in(payload) do
+    text = message_text(payload)
 
-          Regex.match?(@json_scaffolding_re, text) ->
-            %{}
+    if String.trim(text) == "" or Enum.any?(@noise_res, &Regex.match?(&1, text)),
+      do: {nil, nil},
+      else: {%{id: message_id(payload) || "msg", text: text}, :researching}
+  end
 
-          Regex.match?(@json_object_re, text) ->
-            %{}
-
-          true ->
-            %{thinking: %{id: message_id(payload) || "msg", text: text}, phase: :researching}
-        end
-
-      case plan_call(payload) do
-        nil ->
-          case tool_call_draft(payload) do
-            nil -> thinking
-            draft -> Map.put(thinking, :live, draft)
-          end
-
-        todos ->
-          # A finished `write_todos` is the plan itself — a timeline item that updates in
-          # place (see `Timeline.reduce_timeline/2`), not a tool call to peek at.
-          Map.put(thinking, :activity, %{kind: :plan, todos: todos})
-      end
+  # A finished `write_todos` is the plan itself — a timeline item that updates in place
+  # (see `Timeline.reduce_timeline/2`), not a tool call to peek at. Any other call the
+  # model is still writing is the live draft instead.
+  # Returns `{activity, live}` — a plan is one or the other, never both.
+  defp plan_or_draft(msg) do
+    case plan_call(msg) do
+      nil -> {nil, tool_call_draft(msg)}
+      todos -> {%{kind: :plan, todos: todos}, nil}
     end
   end
 
   # The todo list of a FINISHED `write_todos` call (parsed args), or nil.
-  defp plan_call(payload) do
-    with msg when is_map(msg) <- Enum.find(payload, &(is_map(&1) and Map.has_key?(&1, "content"))),
-         call when is_map(call) <-
-           Enum.find(
-             List.wrap(msg["tool_calls"]),
-             &(&1["name"] == "write_todos" and is_map(&1["args"]))
-           ) do
-      todo_list(call["args"]["todos"])
-    else
-      _ -> nil
+  defp plan_call(msg) when is_map(msg) do
+    msg["tool_calls"]
+    |> List.wrap()
+    |> Enum.find(&(&1["name"] == "write_todos" and is_map(&1["args"])))
+    |> case do
+      nil -> nil
+      call -> nil_if_empty(todo_list(call["args"]["todos"]))
     end
   end
+
+  defp plan_call(_), do: nil
 
   defp todo_list(list) when is_list(list) do
     list
@@ -497,32 +470,33 @@ defmodule Sanbase.DeepResearch.EventParser do
 
   defp todo_list(_), do: []
 
-  # Todos recovered from a `write_todos` call whose arguments are still streaming: whole
-  # JSON when it already parses, else every complete `{...}` object so far. The item the
-  # model is mid-way through writing has no closing brace yet and is left out.
+  # The plan recovered from a `write_todos` call whose arguments are still streaming:
+  # whole JSON when it already parses, else every complete `{...}` object so far. The
+  # item the model is mid-way through writing has no closing brace yet and is left out.
   @todo_object_re ~r/\{[^{}]*\}/
   @todo_content_re ~r/"content"\s*:\s*"((?:[^"\\]|\\.)*)"/
   @todo_status_re ~r/"status"\s*:\s*"(\w+)"/
 
   defp todos_in("write_todos", args) do
     case Jason.decode(args) do
-      {:ok, %{"todos" => list}} ->
-        todo_list(list)
-
-      _ ->
-        @todo_object_re
-        |> Regex.scan(args)
-        |> Enum.map(fn [obj] ->
-          %{
-            content: json_string(capture(@todo_content_re, obj)),
-            status: capture(@todo_status_re, obj) || "pending"
-          }
-        end)
-        |> Enum.reject(&(&1.content in [nil, ""]))
+      {:ok, %{"todos" => list}} -> todo_list(list)
+      _ -> partial_todo_list(args)
     end
   end
 
   defp todos_in(_name, _args), do: []
+
+  defp partial_todo_list(args) do
+    @todo_object_re
+    |> Regex.scan(args)
+    |> Enum.map(fn [obj] ->
+      %{
+        content: json_string(capture(@todo_content_re, obj)),
+        status: capture(@todo_status_re, obj) || "pending"
+      }
+    end)
+    |> Enum.reject(&(&1.content in [nil, ""]))
+  end
 
   defp capture(re, s) do
     case Regex.run(re, s) do
@@ -550,24 +524,32 @@ defmodule Sanbase.DeepResearch.EventParser do
   @draft_keys ~w(tool_calls invalid_tool_calls tool_call_chunks)
   @draft_preview_chars 600
 
-  defp tool_call_draft(payload) do
-    with msg when is_map(msg) <- Enum.find(payload, &(is_map(&1) and Map.has_key?(&1, "content"))),
-         [_ | _] = calls <- Enum.flat_map(@draft_keys, &List.wrap(msg[&1])),
+  defp tool_call_draft(msg) when is_map(msg) do
+    case streaming_call(msg) do
+      nil ->
+        nil
+
+      {name, args} ->
+        %{
+          kind: :tool_call_draft,
+          name: name,
+          chars: byte_size(args),
+          preview: args |> redact_long_strings() |> tail(@draft_preview_chars)
+        }
+        |> put_if(:todos, nil_if_empty(todos_in(name, args)))
+    end
+  end
+
+  defp tool_call_draft(_), do: nil
+
+  # The call the message is currently writing, as `{name, arguments so far}` — the last
+  # one, since earlier calls in the same message have already landed. Nil when there is
+  # none, or when nothing of its arguments has arrived yet.
+  defp streaming_call(msg) do
+    with [_ | _] = calls <- Enum.flat_map(@draft_keys, &List.wrap(msg[&1])),
          call when is_map(call) <- List.last(calls),
          args when args != "" <- draft_args(call["args"]) do
-      name = non_blank(call["name"]) || "tool"
-
-      draft = %{
-        kind: :tool_call_draft,
-        name: name,
-        chars: byte_size(args),
-        preview: args |> redact_long_strings() |> tail(@draft_preview_chars)
-      }
-
-      case todos_in(name, args) do
-        [] -> draft
-        todos -> Map.put(draft, :todos, todos)
-      end
+      {non_blank(call["name"]) || "tool", args}
     else
       _ -> nil
     end
@@ -660,6 +642,9 @@ defmodule Sanbase.DeepResearch.EventParser do
 
   defp number_or_nil(v) when is_number(v), do: v
   defp number_or_nil(_), do: nil
+
+  defp nil_if_empty([]), do: nil
+  defp nil_if_empty(list), do: list
 
   defp put_if(map, _key, falsy) when falsy in [nil, false], do: map
   defp put_if(map, key, value), do: Map.put(map, key, value)

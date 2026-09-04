@@ -14,7 +14,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
   import Phoenix.LiveViewTest
   import Sanbase.DeepResearch.Fixtures, only: [completed_session: 1, paused_session: 1]
 
-  alias Sanbase.DeepResearch.{Runner, Sessions}
+  alias Sanbase.DeepResearch.{Event, Runner, Sessions}
   alias Sanbase.DeepResearch.Sessions.SessionTurn
   alias Sanbase.Repo
 
@@ -122,21 +122,26 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
 
     send_sync(
       runner,
-      {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning on-chain data"}}}
+      {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "Scanning on-chain data"}}}
     )
 
     assert render(view) =~ "Scanning on-chain data"
 
     send_sync(
       runner,
-      {:dra_event, @ref, %{activity: %{kind: :search_query, id: "s1", query: "eth gas fees"}}}
+      {:dra_event, @ref,
+       %Event{activity: %{kind: :search_query, id: "s1", query: "eth gas fees"}}}
     )
 
     html = render(view)
     assert html =~ "Research"
     assert html =~ "eth gas fees"
 
-    send_sync(runner, {:dra_event, @ref, %{report: "## Findings\n\nFees fell.", phase: :writing}})
+    send_sync(
+      runner,
+      {:dra_event, @ref, %Event{report: "## Findings\n\nFees fell.", phase: :writing}}
+    )
+
     html = render(view)
     assert html =~ "Research report"
     assert html =~ "Fees fell."
@@ -147,7 +152,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     submit(view, "q")
     {_session, runner} = runner_of(user)
 
-    send_sync(runner, {:dra_event, @ref + 1, %{thinking: %{id: "m1", text: "stale text"}}})
+    send_sync(runner, {:dra_event, @ref + 1, %Event{thinking: %{id: "m1", text: "stale text"}}})
 
     refute render(view) =~ "stale text"
   end
@@ -184,7 +189,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     refute html =~ "phx-click=\"cancel\""
 
     # Events queued behind the cancel must not grow the cancelled turn.
-    send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "late event"}}})
+    send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "late event"}}})
     refute render(view) =~ "late event"
   end
 
@@ -226,7 +231,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       assert_patch(view, "#{@path}/#{session.id}")
 
       # The patch must not reset the conversation — still attached, same turn.
-      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "Scanning"}}})
       html = render(view)
       assert html =~ "Scanning"
       assert html =~ "dr-composer"
@@ -237,7 +242,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       submit(view, "q")
       {_session, runner} = runner_of(user)
 
-      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "Scanning"}}})
       send_sync(runner, {:dra_poll, @ref, %{report: "## Recovered report"}})
       render(view)
 
@@ -271,8 +276,8 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       submit(view, "q")
       {_session, runner} = runner_of(user)
 
-      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
-      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m2", text: "Reading"}}})
+      send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "Scanning"}}})
+      send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m2", text: "Reading"}}})
       render(view)
 
       assert [row] = Repo.all(SessionTurn)
@@ -292,7 +297,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       submit(view, "q")
       {_session, runner} = runner_of(user)
 
-      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "Scanning"}}})
       render(view)
 
       assert [%{timeline: []}] = Repo.all(SessionTurn)
@@ -328,7 +333,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       render_click(view, "open_session", %{"id" => session.id})
       assert_patch(view, "#{@path}/#{session.id}")
 
-      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Still going"}}})
+      send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "Still going"}}})
       html = render(view)
       assert html =~ "Still going"
       assert html =~ "phx-click=\"cancel\""
@@ -347,7 +352,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       {:ok, reconnected, html} = live(conn, "#{@path}/#{session.id}")
       assert html =~ "loading-spinner"
 
-      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m1", text: "Scanning"}}})
+      send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "Scanning"}}})
       assert render(reconnected) =~ "Scanning"
       assert render(view) =~ "Scanning"
     end
@@ -393,7 +398,11 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       assert is_pid(runner)
       assert :sys.get_state(runner).running
 
-      send_sync(runner, {:dra_event, @ref, %{thinking: %{id: "m2", text: "Resumed research"}}})
+      send_sync(
+        runner,
+        {:dra_event, @ref, %Event{thinking: %{id: "m2", text: "Resumed research"}}}
+      )
+
       assert render(view) =~ "Resumed research"
     end
 

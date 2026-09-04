@@ -98,18 +98,17 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
             %{"finding" => "Fees fell", "evidence" => "30% drop", "source" => "santiment"}
           ],
           gaps: ["no L2 data"]
-        },
-        %{
-          kind: :usage,
-          elapsed_s: 90.0,
-          tool_calls: 7,
-          model_calls: 5,
-          total_tokens: 380_000,
-          cost_usd: 0.1234,
-          subagent_runs: 2
         }
       ],
-      sources: [%{url: "https://example.com/gas", title: "Gas report", domain: "example.com"}]
+      sources: [%{url: "https://example.com/gas", title: "Gas report", domain: "example.com"}],
+      usage: %{
+        elapsed_s: 90.0,
+        tool_calls: 7,
+        model_calls: 5,
+        total_tokens: 380_000,
+        cost_usd: 0.1234,
+        subagent_runs: 2
+      }
     }
   end
 
@@ -129,6 +128,7 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
       phase: attrs.phase,
       timeline: jsonb_round_trip(attrs.timeline),
       sources: jsonb_round_trip(attrs.sources),
+      usage: jsonb_round_trip(attrs.usage),
       started_at: attrs.started_at,
       finished_at: attrs.finished_at
     }
@@ -136,7 +136,7 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
     TurnCodec.from_row(row)
   end
 
-  test "a turn with every timeline kind survives the round trip unchanged" do
+  test "a turn with every timeline kind, plus the usage ledger, survives the round trip" do
     turn = full_turn()
 
     assert store_and_load(turn) == turn
@@ -168,6 +168,22 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
                messages_summarized: 40
              }
            ] == TurnCodec.from_row(row).timeline
+  end
+
+  test "a row that stored the ledger as a timeline item drops it rather than rendering one" do
+    row = %SessionTurn{
+      position: 1,
+      question: "q",
+      phase: :completed,
+      clarification: [],
+      sources: [],
+      timeline: [%{"kind" => "usage", "tool_calls" => 7}]
+    }
+
+    decoded = TurnCodec.from_row(row)
+
+    assert decoded.timeline == []
+    assert decoded.usage == nil
   end
 
   test "the decoded turn renders through turn_view/1" do

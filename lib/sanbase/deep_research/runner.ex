@@ -19,6 +19,7 @@ defmodule Sanbase.DeepResearch.Runner do
   alias Sanbase.DeepResearch.{
     Client,
     Config,
+    Event,
     EventParser,
     Failure,
     McpServers,
@@ -281,9 +282,9 @@ defmodule Sanbase.DeepResearch.Runner do
       {:noreply, state}
     else
       # Receipt time, so the UI can say how long the stream has been silent.
-      result = Map.put_new(result, :at, now_ms())
-      state = state |> apply_run_level(result) |> arm_silence_watchdog()
-      {:noreply, update_current_turn(state, &Timeline.apply_result(&1, result))}
+      event = %{result | at: result.at || now_ms()}
+      state = state |> apply_run_level(event) |> arm_silence_watchdog()
+      {:noreply, update_current_turn(state, &Timeline.apply_result(&1, event))}
     end
   end
 
@@ -621,11 +622,11 @@ defmodule Sanbase.DeepResearch.Runner do
 
   defp persist_new_turn(_state, _turn), do: :ok
 
-  defp apply_run_level(state, result) do
+  defp apply_run_level(state, %Event{} = event) do
     %{
       state
-      | run_id: result[:run_id] || state.run_id,
-        mcp_warning: get_in(result, [:meta, :mcp_warning]) || state.mcp_warning
+      | run_id: event.run_id || state.run_id,
+        mcp_warning: (event.meta && event.meta[:mcp_warning]) || state.mcp_warning
     }
   end
 

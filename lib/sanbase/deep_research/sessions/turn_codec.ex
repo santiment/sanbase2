@@ -27,6 +27,7 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
       phase: turn.phase,
       timeline: turn.timeline,
       sources: turn.sources,
+      usage: Map.get(turn, :usage),
       started_at: ms_to_datetime(turn.started_at),
       finished_at: ms_to_datetime(turn.finished_at)
     }
@@ -45,9 +46,28 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
       error: row.error,
       phase: row.phase,
       timeline: row.timeline |> Enum.map(&decode_item/1) |> Enum.reject(&is_nil/1),
-      sources: Enum.map(row.sources, &decode_source/1)
+      sources: Enum.map(row.sources, &decode_source/1),
+      usage: decode_usage(row.usage)
     }
   end
+
+  # The run's usage ledger: every field is optional (the agent only reports what it
+  # measured), so absent ones stay absent.
+  defp decode_usage(m) when is_map(m) do
+    %{}
+    |> maybe_put(:elapsed_s, m["elapsed_s"])
+    |> maybe_put(:tool_calls, m["tool_calls"])
+    |> maybe_put(:model_calls, m["model_calls"])
+    |> maybe_put(:total_tokens, m["total_tokens"])
+    |> maybe_put(:cost_usd, m["cost_usd"])
+    |> maybe_put(:subagent_runs, m["subagent_runs"])
+    |> presence_map()
+  end
+
+  defp decode_usage(_), do: nil
+
+  defp presence_map(m) when map_size(m) == 0, do: nil
+  defp presence_map(m), do: m
 
   defp ms_to_datetime(nil), do: nil
   defp ms_to_datetime(ms) when is_integer(ms), do: DateTime.from_unix!(ms, :millisecond)
@@ -107,17 +127,9 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
     |> maybe_put(:messages_summarized, m["messages_summarized"])
   end
 
-  # The run's usage ledger: every field is optional (the agent only reports what it
-  # measured), so absent ones stay absent.
-  defp decode_item(%{"kind" => "usage"} = m) do
-    %{kind: :usage}
-    |> maybe_put(:elapsed_s, m["elapsed_s"])
-    |> maybe_put(:tool_calls, m["tool_calls"])
-    |> maybe_put(:model_calls, m["model_calls"])
-    |> maybe_put(:total_tokens, m["total_tokens"])
-    |> maybe_put(:cost_usd, m["cost_usd"])
-    |> maybe_put(:subagent_runs, m["subagent_runs"])
-  end
+  # The ledger is turn-level (its own column) and never an item in the flow. Only rows
+  # written while it briefly was carry this; drop them.
+  defp decode_item(%{"kind" => "usage"}), do: nil
 
   defp decode_item(%{"kind" => "skill"} = m),
     do: %{kind: :skill, name: m["name"], path: m["path"]}

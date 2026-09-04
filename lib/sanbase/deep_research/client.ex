@@ -30,7 +30,7 @@ defmodule Sanbase.DeepResearch.Client do
   number of seconds is the proxy, not this module.
   """
 
-  alias Sanbase.DeepResearch.{Config, EventParser, Failure, SSE}
+  alias Sanbase.DeepResearch.{Config, Event, EventParser, Failure, SSE}
 
   require Logger
 
@@ -222,8 +222,9 @@ defmodule Sanbase.DeepResearch.Client do
 
     if raw != "" and raw != "[DONE]" do
       with {:ok, value} <- Jason.decode(raw),
-           result when map_size(result) > 0 <- EventParser.parse(value) do
-        send(lv_pid, {:dra_event, ref, result})
+           event <- EventParser.parse(value),
+           false <- Event.empty?(event) do
+        send(lv_pid, {:dra_event, ref, event})
       else
         _ -> :ok
       end

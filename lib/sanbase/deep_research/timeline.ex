@@ -19,9 +19,9 @@ defmodule Sanbase.DeepResearch.Timeline do
                                                             (state: compacting → compacted)
     * `%{kind: :skill, name, path}`
     * `%{kind: :chart, id, slug, range, summary, series}`
-    * `%{kind: :usage, elapsed_s, tool_calls, model_calls, total_tokens, cost_usd, subagent_runs}`
-      — the run's ledger, one per turn; not rendered in the flow (`segment/1` skips it),
-      the footer reads it through `usage/1`.
+
+  The run's usage ledger is NOT one of these — it is one record per turn, not an event
+  in the flow, so it lands on `Turn.usage` (see `usage/1`).
   """
 
   # Status states worth a row in the transcript, with the optional facts each carries:
@@ -34,9 +34,6 @@ defmodule Sanbase.DeepResearch.Timeline do
   @status_rows ~w(run_started run_restarted mcp_error mcp_ready loop_detected loop_halt runaway_output runaway_halt sandbox_reset budget_soft budget_halt revising)
   @status_facts [:reason, :repeats, :attempt]
   @compaction_facts [:tokens_estimate, :messages_summarized]
-
-  # Kinds `segment/1` leaves out of the rendered flow.
-  @hidden_kinds [:usage]
 
   # `:queued` is where every turn starts: submitted to the agent server, no worker has
   # picked it up yet. The run's `metadata` event (its first data event) moves it on, so
@@ -57,7 +54,7 @@ defmodule Sanbase.DeepResearch.Timeline do
           | :failed
           | :cancelled
 
-  alias Sanbase.DeepResearch.Turn
+  alias Sanbase.DeepResearch.{Event, Turn}
 
   @type turn :: Turn.t()
 
@@ -159,59 +156,63 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   defp researched?(timeline), do: Enum.any?(timeline, &(&1.kind in [:search, :mcp, :fetch]))
 
-  @doc "The run's usage ledger (`%{kind: :usage, ...}`), or nil before the agent reports it."
-  @spec usage(turn()) :: map() | nil
-  def usage(turn), do: Enum.find(turn.timeline, &(&1.kind == :usage))
+  @doc """
+  The run's usage ledger, or nil before the agent reports it. `Map.get`: a runner
+  started before a hot code reload holds turns without this key.
+  """
+  @spec usage(turn()) :: Turn.usage() | nil
+  def usage(turn), do: Map.get(turn, :usage)
 
   defp answered_in_text?(timeline) do
     Enum.any?(timeline, &(&1.kind == :thinking and String.trim(&1.text || "") != ""))
   end
 
   @doc """
-  Apply one parsed `EventParser` result to `turn`; one result may carry several
-  effects (report + phase, activity + phase).
+  Apply one parsed `Event` to `turn`; one event may carry several effects (report +
+  phase, activity + phase).
 
-  `:at` (stamped by the runner on receipt) becomes `last_event_at`. `:live` — the
-  tool call the model is still writing — replaces the previous preview; any other
-  substantive event (text, a tool event, the report) means that draft is finished, so
-  it clears the preview instead.
+  `:at` (stamped by the runner on receipt) becomes `last_event_at`. `:live` — what the
+  model is producing right now — replaces the previous preview; any other substantive
+  event (text, a tool event, the report) means that draft is finished, so it clears
+  the preview instead.
   """
-  @spec apply_result(turn(), map()) :: turn()
-  def apply_result(turn, result) do
+  @spec apply_result(turn(), Event.t()) :: turn()
+  def apply_result(turn, %Event{} = event) do
     turn
-    |> maybe_report(result)
-    |> maybe_thinking(result)
-    |> maybe_activity(result)
-    |> maybe_phase(result)
-    |> maybe_error(result)
-    |> maybe_live(result)
-    |> stamp_event(result)
+    |> maybe_report(event)
+    |> maybe_thinking(event)
+    |> maybe_activity(event)
+    |> maybe_phase(event)
+    |> maybe_error(event)
+    |> maybe_live(event)
+    |> stamp_event(event)
   end
 
-  defp maybe_live(turn, %{live: live}) when is_map(live), do: Map.put(turn, :live, live)
+  defp maybe_live(turn, %Event{live: live}) when is_map(live), do: Map.put(turn, :live, live)
 
-  defp maybe_live(turn, result)
-       when is_map_key(result, :thinking) or is_map_key(result, :activity) or
-              is_map_key(result, :report),
+  defp maybe_live(turn, %Event{thinking: thinking, activity: activity, report: report})
+       when not is_nil(thinking) or not is_nil(activity) or not is_nil(report),
        do: Map.put(turn, :live, nil)
 
   defp maybe_live(turn, _), do: turn
 
-  defp stamp_event(turn, %{at: at}) when is_integer(at), do: Map.put(turn, :last_event_at, at)
+  defp stamp_event(turn, %Event{at: at}) when is_integer(at),
+    do: Map.put(turn, :last_event_at, at)
+
   defp stamp_event(turn, _), do: turn
 
-  defp maybe_report(turn, %{report: md}) when is_binary(md), do: %{turn | report: md}
+  defp maybe_report(turn, %Event{report: md}) when is_binary(md), do: %{turn | report: md}
   defp maybe_report(turn, _), do: turn
 
-  defp maybe_thinking(turn, %{thinking: %{id: id, text: text}}),
+  defp maybe_thinking(turn, %Event{thinking: %{id: id, text: text}}),
     do: %{turn | timeline: upsert_thinking(turn.timeline, id, text)}
 
   defp maybe_thinking(turn, _), do: turn
 
-  defp maybe_activity(turn, %{activity: %{kind: :clarification, questions: qs}}),
+  defp maybe_activity(turn, %Event{activity: %{kind: :clarification, questions: qs}}),
     do: %{turn | clarification: qs}
 
-  defp maybe_activity(turn, %{activity: %{kind: :source, url: url} = src}) when url != "" do
+  defp maybe_activity(turn, %Event{activity: %{kind: :source, url: url} = src}) when url != "" do
     if Enum.any?(turn.sources, &(&1.url == url)) do
       turn
     else
@@ -220,15 +221,21 @@ defmodule Sanbase.DeepResearch.Timeline do
     end
   end
 
-  defp maybe_activity(turn, %{activity: activity}),
+  # One ledger per run; a resumed run reports again and simply replaces it.
+  defp maybe_activity(turn, %Event{activity: %{kind: :usage} = ledger}),
+    do: Map.put(turn, :usage, drop_nils(Map.delete(ledger, :kind)))
+
+  defp maybe_activity(turn, %Event{activity: activity}) when is_map(activity),
     do: %{turn | timeline: reduce_timeline(turn.timeline, activity)}
 
   defp maybe_activity(turn, _), do: turn
 
-  defp maybe_phase(turn, %{phase: phase}), do: %{turn | phase: merge_phase(turn.phase, phase)}
+  defp maybe_phase(turn, %Event{phase: phase}) when not is_nil(phase),
+    do: %{turn | phase: merge_phase(turn.phase, phase)}
+
   defp maybe_phase(turn, _), do: turn
 
-  defp maybe_error(turn, %{error: err}) when is_binary(err),
+  defp maybe_error(turn, %Event{error: err}) when is_binary(err),
     do: %{turn | phase: :failed, error: err}
 
   defp maybe_error(turn, _), do: turn
@@ -237,8 +244,7 @@ defmodule Sanbase.DeepResearch.Timeline do
   Fold one activity into the timeline list.
 
   Search results merge into the matching `search_query` by id; mcp and fetch
-  results patch the matching call by id; skills dedupe by name; the usage ledger
-  replaces any earlier one (a resumed run reports again).
+  results patch the matching call by id; skills dedupe by name.
   """
   @spec reduce_timeline([map()], map()) :: [map()]
   def reduce_timeline(prev, %{kind: :search_query} = a) do
@@ -304,12 +310,6 @@ defmodule Sanbase.DeepResearch.Timeline do
   def reduce_timeline(prev, %{kind: :status, state: state} = a) when state in @status_rows do
     prev ++
       [Map.merge(%{kind: :status, state: state, detail: a[:detail]}, facts(a, @status_facts))]
-  end
-
-  def reduce_timeline(prev, %{kind: :usage} = a) do
-    ledger = a |> Enum.reject(fn {_k, v} -> is_nil(v) end) |> Map.new()
-
-    Enum.reject(prev, &(&1.kind == :usage)) ++ [ledger]
   end
 
   # The plan (a finished `write_todos`) is one item that updates in place: the model rewrites
@@ -378,8 +378,9 @@ defmodule Sanbase.DeepResearch.Timeline do
   end
 
   # The facts an event carries, minus the ones it left blank.
-  defp facts(a, keys),
-    do: a |> Map.take(keys) |> Enum.reject(fn {_k, v} -> is_nil(v) end) |> Map.new()
+  defp facts(a, keys), do: a |> Map.take(keys) |> drop_nils()
+
+  defp drop_nils(map), do: Map.reject(map, fn {_k, v} -> is_nil(v) end)
 
   defp blank_to(nil, fallback), do: fallback || ""
   defp blank_to("", fallback), do: fallback || ""
@@ -421,6 +422,81 @@ defmodule Sanbase.DeepResearch.Timeline do
 
   defp phase_index(phase), do: Enum.find_index(@phases, &(&1 == phase)) || -1
 
+  # A run of timestamped points pasted into prose: `2026-06-05,-0.2025; 2026-06-06,…` or
+  # one pair per line. Six is well past what a sentence quotes and well short of a series.
+  @series_point_re ~r/\d{4}-\d{2}-\d{2}[ T]?[\d:]*\s*[,:|]\s*-?[\d.]+(?:[eE][-+]?\d+)?/
+  @min_series_points 6
+
+  @doc """
+  Split `text` into prose strings and collapsed series runs.
+
+  A run of at least `#{@min_series_points}` timestamped points becomes
+  `%{label: "70 daily points, 2026-06-05 → 2026-08-13", text: <the run>}` so the UI can fold
+  it behind one line instead of printing a wall of numbers; everything else stays a string.
+  A model that summarizes properly never triggers this — it is the safety net for one that
+  pastes the series it was told to distill.
+  """
+  @spec split_series_runs(String.t() | nil) :: [String.t() | map()]
+  def split_series_runs(nil), do: []
+  def split_series_runs(""), do: []
+
+  def split_series_runs(text) when is_binary(text) do
+    case Regex.scan(@series_point_re, text, return: :index) do
+      [] -> [text]
+      matches -> matches |> Enum.map(fn [span] -> span end) |> group_runs() |> build_parts(text)
+    end
+  end
+
+  # Consecutive matches separated by at most a delimiter and whitespace belong to one run.
+  defp group_runs(spans) do
+    spans
+    |> Enum.reduce([], fn {start, len} = span, runs ->
+      case runs do
+        [[{p_start, p_len} | _] = run | rest] when start - (p_start + p_len) <= 3 ->
+          [[span | run] | rest]
+
+        _ ->
+          [[span] | runs]
+      end
+    end)
+    |> Enum.map(&Enum.reverse/1)
+    |> Enum.reverse()
+    |> Enum.filter(&(length(&1) >= @min_series_points))
+  end
+
+  defp build_parts([], text), do: [text]
+
+  defp build_parts(runs, text) do
+    {parts, last} =
+      Enum.reduce(runs, {[], 0}, fn run, {parts, cursor} ->
+        {first_start, _} = hd(run)
+        {last_start, last_len} = List.last(run)
+        run_end = last_start + last_len
+        prose = binary_part(text, cursor, first_start - cursor)
+        body = binary_part(text, first_start, run_end - first_start)
+        {[%{label: run_label(run, text), text: body}, prose | parts], run_end}
+      end)
+
+    [binary_part(text, last, byte_size(text) - last) | parts]
+    |> Enum.reverse()
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  defp run_label(run, text) do
+    {first_start, first_len} = hd(run)
+    {last_start, last_len} = List.last(run)
+    first = text |> binary_part(first_start, first_len) |> point_date()
+    last = text |> binary_part(last_start, last_len) |> point_date()
+    "#{length(run)} points, #{first} → #{last} (collapsed)"
+  end
+
+  defp point_date(point) do
+    case Regex.run(~r/\d{4}-\d{2}-\d{2}/, point) do
+      [d] -> d
+      _ -> "?"
+    end
+  end
+
   @doc """
   Split the timeline into ordered blocks for rendering:
 
@@ -446,9 +522,7 @@ defmodule Sanbase.DeepResearch.Timeline do
   @spec segment([map()]) :: [tuple()]
   def segment(items) do
     {blocks, tools} =
-      items
-      |> Enum.reject(&(&1.kind in @hidden_kinds))
-      |> Enum.reduce({[], []}, fn item, {blocks, tools} ->
+      Enum.reduce(items, {[], []}, fn item, {blocks, tools} ->
         case @block_tag[item.kind] do
           nil -> {blocks, tools ++ [item]}
           tag -> {push_block(flush_tools(blocks, tools), tag, item), []}

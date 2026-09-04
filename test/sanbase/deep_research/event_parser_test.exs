@@ -1,7 +1,7 @@
 defmodule Sanbase.DeepResearch.EventParserTest do
   use ExUnit.Case, async: true
 
-  alias Sanbase.DeepResearch.EventParser
+  alias Sanbase.DeepResearch.{Event, EventParser}
 
   describe "custom protocol events" do
     test "run metadata: a worker picked the run up, so it leaves the queue" do
@@ -31,7 +31,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "id" => "s1",
                "query" => "ETH staking yields"
              }) ==
-               %{
+               %Event{
                  phase: :researching,
                  activity: %{kind: :search_query, id: "s1", query: "ETH staking yields"}
                }
@@ -101,7 +101,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "tool" => "web_fetch",
                "args" => %{"url" => "https://example.com/report"}
              }) ==
-               %{
+               %Event{
                  phase: :researching,
                  activity: %{kind: :fetch_call, id: "f1", url: "https://example.com/report"}
                }
@@ -113,7 +113,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "ok" => true,
                "summary" => "Fetched 12k chars"
              }) ==
-               %{
+               %Event{
                  activity: %{
                    kind: :fetch_result,
                    id: "f1",
@@ -128,7 +128,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "type" => "clarification",
                "questions" => ["Which region?", "", "What timeframe?"]
              }) ==
-               %{
+               %Event{
                  phase: :awaiting_user,
                  activity: %{
                    kind: :clarification,
@@ -139,9 +139,9 @@ defmodule Sanbase.DeepResearch.EventParserTest do
 
     test "report event yields report markdown + writing phase" do
       assert EventParser.parse(%{"type" => "report", "markdown" => "# Title"}) ==
-               %{report: "# Title", phase: :writing}
+               %Event{report: "# Title", phase: :writing}
 
-      assert EventParser.parse(%{"type" => "report", "markdown" => "  "}) == %{}
+      assert EventParser.parse(%{"type" => "report", "markdown" => "  "}) == %Event{}
     end
 
     test "status error surfaces a top-level error" do
@@ -215,7 +215,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
         })
 
       assert %{activity: %{kind: :status, state: "teleporting", detail: "beam me up"}} = result
-      refute Map.has_key?(result, :error)
+      refute result.error
     end
 
     test "usage becomes the run's ledger, preferring the fleet-wide token total" do
@@ -231,7 +231,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "subagents" => %{"research-subagent" => %{"runs" => 3, "model_calls" => 9}},
                "limits" => %{"max_tool_calls" => 500}
              }) ==
-               %{
+               %Event{
                  activity: %{
                    kind: :usage,
                    elapsed_s: 252.4,
@@ -254,7 +254,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "protocol_version" => 1,
                "engine_version" => "0.4.0",
                "started_at" => "2026-09-02T10:00:00Z"
-             }) == %{}
+             }) == %Event{}
     end
 
     test "status mcp_ready carries tools list" do
@@ -268,7 +268,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
 
     test "skill event" do
       assert EventParser.parse(%{"type" => "skill", "name" => "defi", "path" => "/skills/defi"}) ==
-               %{
+               %Event{
                  phase: :researching,
                  activity: %{kind: :skill, name: "defi", path: "/skills/defi"}
                }
@@ -284,7 +284,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                  %{"style" => "candles", "pane" => 0, "data" => [%{"time" => 1, "close" => 2}]}
                ]
              }) ==
-               %{
+               %Event{
                  phase: :researching,
                  activity: %{
                    kind: :chart,
@@ -304,7 +304,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
     end
 
     test "chart event with no usable series is ignored" do
-      assert EventParser.parse(%{"type" => "chart", "id" => "c1", "series" => []}) == %{}
+      assert EventParser.parse(%{"type" => "chart", "id" => "c1", "series" => []}) == %Event{}
     end
 
     test "source event" do
@@ -314,7 +314,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "url" => "https://ethereum.org/staking",
                "domain" => "ethereum.org"
              }) ==
-               %{
+               %Event{
                  activity: %{
                    kind: :source,
                    title: "Ethereum Staking Guide",
@@ -331,7 +331,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "error" => "GraphRecursionError",
                "message" => "Recursion limit of 1000 reached without hitting a stop condition."
              }) ==
-               %{
+               %Event{
                  error:
                    "The research agent failed (GraphRecursionError): " <>
                      "Recursion limit of 1000 reached without hitting a stop condition."
@@ -340,7 +340,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
 
     test "an error class identical to its message is not repeated" do
       assert EventParser.parse(%{"error" => "timeout", "message" => "timeout"}) ==
-               %{error: "The research agent failed: timeout"}
+               %Event{error: "The research agent failed: timeout"}
     end
 
     test "a very long message is cut" do
@@ -366,30 +366,30 @@ defmodule Sanbase.DeepResearch.EventParserTest do
       assert EventParser.parse(%{
                "santiment_meta" => %{"mcp_tool_calls" => 3, "mcp_configured" => true}
              }) ==
-               %{meta: %{mcp_tool_calls: 3, mcp_configured: true}}
+               %Event{meta: %{mcp_tool_calls: 3, mcp_configured: true}}
     end
 
     test "stream_error is surfaced at the top level as :error" do
       assert EventParser.parse(%{"santiment_meta" => %{"stream_error" => "rate limited"}}) ==
-               %{error: "rate limited"}
+               %Event{error: "rate limited"}
     end
   end
 
   describe "values channel (updates)" do
     test "final_report" do
       assert EventParser.parse(%{"values" => %{"final_report" => "# Final"}}) ==
-               %{report: "# Final", phase: :writing}
+               %Event{report: "# Final", phase: :writing}
     end
 
     test "research_brief -> planning" do
-      assert EventParser.parse(%{"values" => %{"research_brief" => "plan"}}) == %{
+      assert EventParser.parse(%{"values" => %{"research_brief" => "plan"}}) == %Event{
                phase: :planning
              }
     end
 
     test "nested node update with hint" do
       assert EventParser.parse(%{"research_supervisor" => %{"notes" => ["x"]}}) ==
-               %{phase: :researching}
+               %Event{phase: :researching}
     end
   end
 
@@ -405,7 +405,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                "after" => "get_metric ×2",
                "after_chars" => 14_000
              }) ==
-               %{
+               %Event{
                  live: %{
                    kind: :model_call,
                    role: "research-subagent",
@@ -463,7 +463,7 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                }
              } = result
 
-      refute Map.has_key?(result, :live)
+      refute result.live
     end
 
     test "a write_todos still streaming carries the complete items so far" do
@@ -508,7 +508,10 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                %{"content" => "Let me analyze the network.", "type" => "ai", "id" => "m1"},
                %{"langgraph_node" => "research"}
              ]) ==
-               %{thinking: %{id: "m1", text: "Let me analyze the network."}, phase: :researching}
+               %Event{
+                 thinking: %{id: "m1", text: "Let me analyze the network."},
+                 phase: :researching
+               }
     end
 
     test "a tool call still being written becomes a live draft, not a thinking row" do
@@ -530,8 +533,8 @@ defmodule Sanbase.DeepResearch.EventParserTest do
 
       assert chars == byte_size(args)
       assert preview == args
-      refute Map.has_key?(result, :thinking)
-      refute Map.has_key?(result, :phase)
+      refute result.thinking
+      refute result.phase
     end
 
     test "a long draft previews only its tail; a finished call (parsed args) previews too" do
@@ -623,12 +626,12 @@ defmodule Sanbase.DeepResearch.EventParserTest do
 
     test "a message with neither text nor a draft is nothing" do
       assert EventParser.parse([%{"content" => "", "type" => "ai", "tool_calls" => []}, %{}]) ==
-               %{}
+               %Event{}
     end
 
     test "tool messages are dropped" do
       assert EventParser.parse([%{"content" => "[1] raw result", "type" => "tool", "id" => "t1"}]) ==
-               %{}
+               %Event{}
     end
 
     test "human messages (compaction summaries, loop nudges) are dropped" do
@@ -639,24 +642,24 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                  "id" => "h1",
                  "name" => "dra_compaction_summary"
                }
-             ]) == %{}
+             ]) == %Event{}
     end
 
     test "remove messages (compaction rewriting the state) are dropped" do
       assert EventParser.parse([%{"content" => "", "type" => "remove", "id" => "__remove_all__"}]) ==
-               %{}
+               %Event{}
     end
 
     test "structured-output noise is dropped" do
       assert EventParser.parse([
                %{"content" => "need_clarification: true", "type" => "ai", "id" => "m1"}
-             ]) == %{}
+             ]) == %Event{}
     end
   end
 
   test "unknown shapes are ignored" do
-    assert EventParser.parse(%{"unrelated" => 1}) == %{}
-    assert EventParser.parse("string") == %{}
+    assert EventParser.parse(%{"unrelated" => 1}) == %Event{}
+    assert EventParser.parse("string") == %Event{}
   end
 
   defp draft(name, args) do

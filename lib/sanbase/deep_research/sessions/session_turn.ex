@@ -4,8 +4,8 @@ defmodule Sanbase.DeepResearch.Sessions.SessionTurn do
   form of the in-memory `Sanbase.DeepResearch.Turn` struct (hence the distinct
   name). `Sanbase.DeepResearch.Sessions.TurnCodec` converts between the two.
 
-  `timeline` and `sources` are stored as jsonb and load back string-keyed; only
-  the codec knows how to rebuild the atom-keyed item maps the components render.
+  `timeline`, `sources` and `usage` are stored as jsonb and load back string-keyed;
+  only the codec knows how to rebuild the atom-keyed maps the components render.
   """
   use Ecto.Schema
   import Ecto.Changeset
@@ -27,6 +27,7 @@ defmodule Sanbase.DeepResearch.Sessions.SessionTurn do
           model_tier: String.t() | nil,
           timeline: [map()],
           sources: [map()],
+          usage: map() | nil,
           started_at: DateTime.t(),
           finished_at: DateTime.t() | nil,
           inserted_at: DateTime.t(),
@@ -47,6 +48,7 @@ defmodule Sanbase.DeepResearch.Sessions.SessionTurn do
     field(:model_tier, :string)
     field(:timeline, {:array, :map}, default: [])
     field(:sources, {:array, :map}, default: [])
+    field(:usage, :map)
     field(:started_at, :utc_datetime_usec)
     field(:finished_at, :utc_datetime_usec)
 
@@ -64,6 +66,7 @@ defmodule Sanbase.DeepResearch.Sessions.SessionTurn do
     :model_tier,
     :timeline,
     :sources,
+    :usage,
     :finished_at
   ]
 

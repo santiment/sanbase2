@@ -150,6 +150,49 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
       assert html =~ "<details"
     end
 
+    test "a script renders as a folded code tab, never as a file path" do
+      script = %{
+        activity: %{
+          kind: :script,
+          id: "sc1",
+          agent: "coding-subagent",
+          name: "mvrv_corr.py",
+          language: "python",
+          code: "import pandas as pd\nprint(df['mvrv'].corr(df['price']))",
+          truncated: false
+        }
+      }
+
+      html = render_turn(turn([script], %{phase: :completed, report: "ok", finished_at: @now}))
+
+      assert html =~ "View script"
+      assert html =~ "mvrv_corr.py"
+      assert html =~ "language-python"
+      assert html =~ "2 lines"
+      assert html =~ "<details"
+      # The tab holds the code; the sandbox path it lived at is never rendered.
+      assert html =~ "df[&#39;mvrv&#39;]" or html =~ "df['mvrv']"
+      refute html =~ "/workspace"
+    end
+
+    test "a script cut off at the size cap says so" do
+      script = %{
+        activity: %{
+          kind: :script,
+          id: "sc1",
+          agent: "coding-subagent",
+          name: "big.py",
+          language: "python",
+          code: "x = 1",
+          truncated: true
+        }
+      }
+
+      html = render_turn(turn([script], %{phase: :completed, report: "ok", finished_at: @now}))
+
+      assert html =~ "too long to send in full"
+    end
+
     test "a model_call heartbeat says who is thinking and on what" do
       live = %{
         kind: :model_call,

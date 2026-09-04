@@ -265,6 +265,46 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       assert [%{kind: :chart, id: "c1", range: "30d"}] = t.timeline
     end
 
+    test "a script becomes one folded tab, and an edited re-emit updates it in place" do
+      script = %{
+        kind: :script,
+        id: "sc1",
+        agent: "coding-subagent",
+        name: "corr.py",
+        language: "python",
+        code: "x = 1",
+        truncated: false
+      }
+
+      t =
+        turn()
+        |> apply_event(%{activity: script})
+        |> apply_event(%{activity: %{script | id: "sc2", code: "x = 2"}})
+
+      # One tab (draft + fix is one script), keeping the FIRST id so the open/closed
+      # DOM state survives the update.
+      assert [%{kind: :script, id: "sc1", name: "corr.py", code: "x = 2"}] = t.timeline
+    end
+
+    test "two workers writing the same file name keep their own tabs" do
+      script = %{
+        kind: :script,
+        id: "sc1",
+        agent: "coding-subagent",
+        name: "corr.py",
+        language: "python",
+        code: "x = 1",
+        truncated: false
+      }
+
+      t =
+        turn()
+        |> apply_event(%{activity: script})
+        |> apply_event(%{activity: %{script | agent: "research-subagent", code: "y = 2"}})
+
+      assert [%{agent: "coding-subagent"}, %{agent: "research-subagent"}] = t.timeline
+    end
+
     test "sources dedupe by url" do
       src = %{kind: :source, url: "https://a.com", title: "A", domain: "a.com"}
 
@@ -498,6 +538,18 @@ defmodule Sanbase.DeepResearch.TimelineTest do
                Timeline.segment([
                  %{kind: :fetch, id: "f1", url: "https://x.y", done: true, ok: true}
                ])
+    end
+
+    test "scripts form their own block, breaking a tools run" do
+      items = [
+        %{kind: :mcp, id: "m1", tool: "execute", done: true},
+        %{kind: :script, id: "sc1", agent: "coding-subagent", name: "a.py", code: "x = 1"}
+      ]
+
+      assert [
+               {:tools, [%{kind: :mcp}], false},
+               {:script, [%{kind: :script, id: "sc1"}]}
+             ] = Timeline.segment(items)
     end
 
     test "charts form their own always-visible block after the tools run" do

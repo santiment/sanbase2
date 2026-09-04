@@ -25,6 +25,39 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                EventParser.parse(%{"run_id" => "abc-123"})
     end
 
+    test "script carries the code a worker wrote, not a path" do
+      assert %{
+               phase: :researching,
+               activity: %{
+                 kind: :script,
+                 id: "a1b2",
+                 agent: "coding-subagent",
+                 name: "mvrv_corr.py",
+                 language: "python",
+                 code: "print('corr 0.62')",
+                 truncated: false
+               }
+             } =
+               EventParser.parse(%{
+                 "type" => "script",
+                 "id" => "a1b2",
+                 "agent" => "coding-subagent",
+                 "name" => "mvrv_corr.py",
+                 "language" => "python",
+                 "code" => "print('corr 0.62')",
+                 "truncated" => false
+               })
+    end
+
+    test "script without code is nothing to render" do
+      assert EventParser.parse(%{"type" => "script", "name" => "a.py", "code" => ""}) == %Event{}
+    end
+
+    test "script falls back to neutral labels when the agent sends none" do
+      assert %{activity: %{name: "script", language: "text", truncated: true}} =
+               EventParser.parse(%{"type" => "script", "code" => "x = 1", "truncated" => true})
+    end
+
     test "search_query carries phase + activity" do
       assert EventParser.parse(%{
                "type" => "search_query",

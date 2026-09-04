@@ -10,7 +10,7 @@ defmodule Sanbase.DeepResearch.EventParser do
 
   alias Sanbase.DeepResearch.Event
 
-  @activity_types ~w(search_query search_results mcp_call mcp_result tool_call tool_result source skill chart status report clarification subagent_findings usage)
+  @activity_types ~w(search_query search_results mcp_call mcp_result tool_call tool_result source skill chart script status report clarification subagent_findings usage)
 
   # Internal structured-output field names that can leak onto the messages channel.
   @structured_field_re ~r/need_clarification|allow_clarification|max_researcher|max_concurrent|search_api/i
@@ -221,6 +221,30 @@ defmodule Sanbase.DeepResearch.EventParser do
           series: series
         }
       }
+    end
+  end
+
+  # A script a worker wrote, delivered as CODE. The agent never names a script path in
+  # prose (see the engine's `script_artifacts.py`) — a sandbox path is a dead end for the
+  # reader — so this event is the ONLY place a script surfaces. No code, nothing to show.
+  defp parse_activity_event(%{"type" => "script"} = obj) do
+    case non_blank(obj["code"]) do
+      nil ->
+        %Event{}
+
+      code ->
+        %Event{
+          phase: :researching,
+          activity: %{
+            kind: :script,
+            id: non_blank(obj["id"]),
+            agent: non_blank(obj["agent"]),
+            name: non_blank(obj["name"]) || "script",
+            language: non_blank(obj["language"]) || "text",
+            code: code,
+            truncated: obj["truncated"] == true
+          }
+        }
     end
   end
 

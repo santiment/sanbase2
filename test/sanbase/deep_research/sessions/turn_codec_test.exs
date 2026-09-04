@@ -90,6 +90,15 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
           series: [%{"label" => "Gas used", "data" => [1, 2]}]
         },
         %{
+          kind: :script,
+          id: "sc1",
+          agent: "coding-subagent",
+          name: "corr.py",
+          language: "python",
+          code: "x = 1",
+          truncated: false
+        },
+        %{
           kind: :subagent_findings,
           id: "sf5",
           unit: "eth-onchain",

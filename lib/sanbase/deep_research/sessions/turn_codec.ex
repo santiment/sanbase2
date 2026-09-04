@@ -157,6 +157,18 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
     }
   end
 
+  defp decode_item(%{"kind" => "script"} = m) do
+    %{
+      kind: :script,
+      id: m["id"],
+      agent: m["agent"],
+      name: m["name"],
+      language: m["language"],
+      code: m["code"],
+      truncated: m["truncated"] == true
+    }
+  end
+
   defp decode_item(%{"kind" => "subagent_findings"} = m) do
     %{
       kind: :subagent_findings,

@@ -9,16 +9,22 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
   import Phoenix.LiveViewTest
   import SanbaseWeb.DeepResearch.Components
 
-  alias Sanbase.DeepResearch.{EventParser, Timeline}
+  alias Sanbase.DeepResearch.{Event, EventParser, Timeline}
 
   @now 1_700_000_000_000
 
   defp turn(results, overrides \\ %{}) do
     "What is driving ETH?"
     |> Timeline.new_turn(1, @now)
-    |> then(&Enum.reduce(results, &1, fn result, acc -> Timeline.apply_result(acc, result) end))
+    |> then(
+      &Enum.reduce(results, &1, fn result, acc -> Timeline.apply_result(acc, event(result)) end)
+    )
     |> Map.merge(overrides)
   end
+
+  # A test spells an event as the fields it fills; the parser already returns one.
+  defp event(%Event{} = event), do: event
+  defp event(attrs), do: struct!(Event, attrs)
 
   defp render_turn(turn, opts \\ []) do
     render_component(&turn_view/1,
@@ -117,6 +123,31 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
       refute render_turn(
                turn([], %{phase: :completed, finished_at: @now + 5_000, last_event_at: @now})
              ) =~ "last event"
+    end
+
+    test "a series pasted into a finding is folded behind one expandable line" do
+      series =
+        Enum.map_join(5..20, "; ", fn d ->
+          "2026-06-#{String.pad_leading("#{d}", 2, "0")},-0.20#{d}"
+        end)
+
+      findings = %{
+        activity: %{
+          kind: :subagent_findings,
+          unit: "BTC MVRV",
+          summary: "Fetched 16 daily MVRV points.",
+          findings: [%{"finding" => "Complete daily series: " <> series, "source" => "Santiment"}],
+          gaps: []
+        }
+      }
+
+      html = render_turn(turn([findings], %{phase: :completed, report: "ok", finished_at: @now}))
+
+      assert html =~ "16 points, 2026-06-05 → 2026-06-20 (collapsed)"
+      assert html =~ "Complete daily series:"
+      assert html =~ "hero-table-cells"
+      # The numbers are still there, but inside a <details> the reader opens.
+      assert html =~ "<details"
     end
 
     test "a model_call heartbeat says who is thinking and on what" do

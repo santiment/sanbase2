@@ -9,7 +9,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
 
   use ExUnit.Case, async: false
 
-  alias Sanbase.DeepResearch.{EventParser, Failure, Runner, Timeline, Turn}
+  alias Sanbase.DeepResearch.{Event, EventParser, Failure, Runner, Timeline, Turn}
 
   @supervisor Sanbase.DeepResearch.RunnerSupervisor
   @started_key :runner_test_started
@@ -93,7 +93,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       first = :sys.get_state(pid).silence_timer
       assert is_reference(first)
 
-      send(pid, {:dra_event, 1, %{run_id: "r1", phase: :researching}})
+      send(pid, {:dra_event, 1, %Event{run_id: "r1", phase: :researching}})
       assert :sys.get_state(pid).silence_timer != first
       assert :sys.get_state(pid).run_id == "r1"
     end
@@ -102,7 +102,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       {key, pid} = start_runner(thread_id: "t1")
       {:ok, _} = Runner.attach(pid, self())
       {:ok, _} = Runner.ask(pid, "q")
-      send(pid, {:dra_event, 1, %{run_id: "r1", phase: :researching}})
+      send(pid, {:dra_event, 1, %Event{run_id: "r1", phase: :researching}})
 
       send(pid, {:dra_run_status, 1, {:ok, %{"status" => "error"}}})
 
@@ -159,7 +159,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     assert %Turn{id: 1, question: "What is driving ETH?", phase: :queued} =
              snapshot.current_turn
 
-    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "Scanning"}}})
+    send(pid, {:dra_event, 1, %Event{thinking: %{id: "m1", text: "Scanning"}}})
 
     assert_receive {:dra_runner, ^key, %{current_turn: %Turn{timeline: [%{text: "Scanning"}]}}}
   end
@@ -169,7 +169,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     {:ok, _} = Runner.attach(pid, self())
     {:ok, %{current_turn: %Turn{last_event_at: nil}}} = Runner.ask(pid, "q")
 
-    send(pid, {:dra_event, 1, %{phase: :researching}})
+    send(pid, {:dra_event, 1, %Event{phase: :researching}})
 
     # The ask itself broadcasts a snapshot too (last_event_at nil) — wait for the stamped one.
     assert_receive {:dra_runner, ^key, %{current_turn: %Turn{last_event_at: at}}}
@@ -193,7 +193,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     assert snapshot.running == false
     assert snapshot.current_turn.phase == :cancelled
 
-    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "late event"}}})
+    send(pid, {:dra_event, 1, %Event{thinking: %{id: "m1", text: "late event"}}})
     :sys.get_state(pid)
 
     refute_receive {:dra_runner, ^key, %{current_turn: %Turn{timeline: [_ | _]}}}
@@ -353,7 +353,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     assert %Turn{id: 1, phase: :queued, finished_at: nil, error: nil} = snapshot.current_turn
 
     # The resume run streams into the SAME turn id.
-    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "Resumed"}}})
+    send(pid, {:dra_event, 1, %Event{thinking: %{id: "m1", text: "Resumed"}}})
     :sys.get_state(pid)
     assert_receive {:dra_runner, _key, %{current_turn: %Turn{timeline: [%{text: "Resumed"}]}}}
   end

@@ -365,33 +365,9 @@ defmodule SanbaseWeb.DeepResearch.Components do
     turn = assigns.turn
     # `Map.get`: a runner started before a hot code reload holds turns without this key.
     last_event_at = Map.get(turn, :last_event_at)
-    since = last_event_at || turn.started_at
-    ago_ms = max(assigns.now_ms - since, 0)
-    ago = format_duration(div(ago_ms, 1000))
-
-    {tone, text} =
-      cond do
-        is_nil(last_event_at) and ago_ms < @quiet_ms ->
-          {:ok, "no events yet"}
-
-        is_nil(last_event_at) and ago_ms < @stalled_ms ->
-          {:warn, "no events yet, #{ago}"}
-
-        is_nil(last_event_at) ->
-          {:dead, "no events for #{ago} — looks stalled, Stop and retry"}
-
-        ago_ms < @fresh_ms ->
-          {:live, "last event #{ago} ago"}
-
-        ago_ms < @quiet_ms ->
-          {:ok, "last event #{ago} ago"}
-
-        ago_ms < @stalled_ms ->
-          {:warn, "quiet for #{ago}"}
-
-        true ->
-          {:dead, "no events for #{ago} — looks stalled, Stop and retry"}
-      end
+    # Before the first event, count from the question.
+    ago_ms = max(assigns.now_ms - (last_event_at || turn.started_at), 0)
+    {tone, text} = liveness_state(last_event_at, ago_ms)
 
     assigns = assign(assigns, tone: tone, text: text)
 
@@ -401,6 +377,19 @@ defmodule SanbaseWeb.DeepResearch.Components do
       {@text}
     </span>
     """
+  end
+
+  defp liveness_state(last_event_at, ago_ms) do
+    ago = format_duration(div(ago_ms, 1000))
+
+    cond do
+      ago_ms >= @stalled_ms -> {:dead, "no events for #{ago} — looks stalled, Stop and retry"}
+      is_nil(last_event_at) and ago_ms < @quiet_ms -> {:ok, "no events yet"}
+      is_nil(last_event_at) -> {:warn, "no events yet, #{ago}"}
+      ago_ms < @fresh_ms -> {:live, "last event #{ago} ago"}
+      ago_ms < @quiet_ms -> {:ok, "last event #{ago} ago"}
+      true -> {:warn, "quiet for #{ago}"}
+    end
   end
 
   defp liveness_text_class(:live), do: "text-success"
@@ -483,7 +472,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
       <li :for={todo <- @todos} class="flex items-start gap-2">
         <.icon
           name={todo_icon(todo.status)}
-          class={["mt-0.5 size-4 shrink-0", todo_icon_class(todo.status)]}
+          class={"mt-0.5 size-4 shrink-0 #{todo_icon_class(todo.status)}"}
         />
         <span class={todo_text_class(todo.status)}>{todo.content}</span>
       </li>
@@ -650,7 +639,9 @@ defmodule SanbaseWeb.DeepResearch.Components do
           />
         </summary>
         <div class="space-y-2 border-t border-base-300 px-3 py-2.5">
-          <p :if={f[:summary]} class="text-sm text-base-content/80">{f[:summary]}</p>
+          <p :if={f[:summary]} class="text-sm text-base-content/80">
+            <.series_text text={f[:summary]} />
+          </p>
           <div :if={f.findings != []} class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead>
@@ -662,9 +653,11 @@ defmodule SanbaseWeb.DeepResearch.Components do
               </thead>
               <tbody>
                 <tr :for={row <- f.findings} class="border-t border-base-200 align-top">
-                  <td class="py-1 pr-3">{finding_field(row, ~w(finding observation claim))}</td>
+                  <td class="py-1 pr-3">
+                    <.series_text text={finding_field(row, ~w(finding observation claim))} />
+                  </td>
                   <td class="py-1 pr-3 text-base-content/70">
-                    {finding_field(row, ~w(evidence data value))}
+                    <.series_text text={finding_field(row, ~w(evidence data value))} />
                   </td>
                   <td class="py-1 text-base-content/60">{finding_field(row, ~w(source))}</td>
                 </tr>
@@ -1166,6 +1159,31 @@ defmodule SanbaseWeb.DeepResearch.Components do
     do: %{item | state: "interrupted"}
 
   defp settle_item(item), do: item
+
+  attr :text, :string, required: true
+
+  # A weak sub-agent sometimes pastes a whole series into one field ("2026-06-05,-0.2025;
+  # 2026-06-06,…" for 70 days) instead of summarizing it. Rendered raw that is a wall of
+  # numbers with nothing to collapse, so the run of points is folded into one line the
+  # reader can expand. Prose around the run is kept as it is.
+  defp series_text(assigns) do
+    assigns = assign(assigns, :parts, Timeline.split_series_runs(assigns.text))
+
+    ~H"""
+    <span :for={part <- @parts}>
+      <span :if={is_binary(part)}>{part}</span>
+      <details
+        :if={is_map(part)}
+        class="my-1 inline-block w-full rounded border border-base-300 bg-base-100/60"
+      >
+        <summary class="cursor-pointer list-none px-2 py-1 text-xs text-base-content/60 hover:text-base-content">
+          <.icon name="hero-table-cells" class="mr-1 inline size-3.5 text-base-content/40" />{part.label}
+        </summary>
+        <pre class="max-h-48 overflow-auto whitespace-pre-wrap break-all px-2 py-1 font-mono text-[11px] leading-snug">{part.text}</pre>
+      </details>
+    </span>
+    """
+  end
 
   # Cheap models drift the keys (finding/observation, evidence/data) — try each.
   defp finding_field(row, keys) when is_map(row) do

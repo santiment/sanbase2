@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict IsQZ7WxxpjLYwzLi0tWtCbf3b4yPSPc87OlJua2tDGp6nxnGqzwv1oA9slIbEQ2
+\restrict Ht0dgMfoCcp9ggpJRwljPSZbr703PZ8381AxQWntRtd925ASKDeq2Z40cFs96iN
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -1411,6 +1411,7 @@ CREATE TABLE public.deep_research_turns (
     finished_at timestamp without time zone,
     inserted_at timestamp(0) without time zone NOT NULL,
     updated_at timestamp(0) without time zone NOT NULL,
+    usage jsonb,
     CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'queued'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'paused'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
 );
 
@@ -12314,7 +12315,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict IsQZ7WxxpjLYwzLi0tWtCbf3b4yPSPc87OlJua2tDGp6nxnGqzwv1oA9slIbEQ2
+\unrestrict Ht0dgMfoCcp9ggpJRwljPSZbr703PZ8381AxQWntRtd925ASKDeq2Z40cFs96iN
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12918,3 +12919,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260810121612);
 INSERT INTO public."schema_migrations" (version) VALUES (20260812120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260813090000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260902130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260903120000);

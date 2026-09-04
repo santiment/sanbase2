@@ -19,6 +19,7 @@ defmodule Sanbase.DeepResearch.Timeline do
                                                             (state: compacting → compacted)
     * `%{kind: :skill, name, path}`
     * `%{kind: :chart, id, slug, range, summary, series}`
+    * `%{kind: :script, id, agent, name, language, code, truncated}`
 
   The run's usage ledger is NOT one of these — it is one record per turn, not an event
   in the flow, so it lands on `Turn.usage` (see `usage/1`).
@@ -346,6 +347,29 @@ defmodule Sanbase.DeepResearch.Timeline do
     upsert_by_id(prev, :chart, a.id, build)
   end
 
+  # One tab per script, updated in place. A worker re-emits a script it edited after a
+  # gate bounced its handoff, and two tabs for the same file (draft, then fix) would read
+  # as two different scripts. Keyed by agent + name because the event id is fresh on every
+  # emit; the FIRST id is kept so the renderer's open/closed DOM state survives the update.
+  def reduce_timeline(prev, %{kind: :script} = a) do
+    item = %{
+      kind: :script,
+      id: a[:id] || "sc#{length(prev)}",
+      agent: a[:agent],
+      name: a[:name],
+      language: a[:language],
+      code: a[:code],
+      truncated: a[:truncated] == true
+    }
+
+    same? = &(&1.kind == :script and &1.name == item.name and &1.agent == item.agent)
+
+    case Enum.find_index(prev, same?) do
+      nil -> prev ++ [item]
+      i -> List.replace_at(prev, i, %{item | id: Enum.at(prev, i).id})
+    end
+  end
+
   def reduce_timeline(prev, %{kind: :subagent_findings} = a) do
     prev ++
       [
@@ -505,6 +529,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `{:skill, [skill_item, ...]}`        - contiguous run of skills (always-visible chips)
     * `{:plan, [plan_item]}`                - the todo list, latest version (always visible)
     * `{:chart, [chart_item, ...]}`        - contiguous run of charts (always-visible widgets)
+    * `{:script, [script_item, ...]}`      - contiguous run of scripts (folded code tabs)
     * `{:findings, [finding_item, ...]}`   - contiguous run of sub-agent findings (folded tables)
     * `{:compaction, [compaction_item]}`   - the agent rewriting its own memory (always visible)
   """
@@ -515,6 +540,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     skill: :skill,
     plan: :plan,
     chart: :chart,
+    script: :script,
     subagent_findings: :findings,
     compaction: :compaction
   }

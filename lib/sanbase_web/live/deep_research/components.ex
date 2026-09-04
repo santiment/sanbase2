@@ -615,6 +615,43 @@ defmodule SanbaseWeb.DeepResearch.Components do
     """
   end
 
+  # The code a worker wrote, folded. This is the ONLY place a script surfaces: no role
+  # names a script path in prose (the path is a dead end — the sandbox dies with the run),
+  # so the tab is what the reader opens when they want to check how a number was produced.
+  defp timeline_block(%{block: {:script, items}} = assigns) do
+    assigns = assign(assigns, :items, items)
+
+    ~H"""
+    <div class="space-y-2">
+      <details
+        :for={{s, si} <- Enum.with_index(@items)}
+        id={stable_dom_id("dra-script", @turn_id, s, "#{@index}-#{si}")}
+        phx-hook="KeepDetailsOpen"
+        class="group rounded-lg border border-base-300 bg-emerald-500/5"
+      >
+        <summary class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm text-base-content/80 hover:text-base-content">
+          <.icon name="hero-code-bracket" class="size-4 shrink-0 text-emerald-500" />
+          <span class="font-medium">View script</span>
+          <span class="truncate text-xs text-base-content/50">· {s.name}</span>
+          <span class="ml-auto shrink-0 text-xs text-base-content/50">
+            {script_lines(s)} {pluralize(script_lines(s), "line", "lines")}
+          </span>
+          <.icon
+            name="hero-chevron-down"
+            class="size-4 shrink-0 text-base-content/40 transition-transform group-open:rotate-0 -rotate-90"
+          />
+        </summary>
+        <div class="border-t border-base-300">
+          <pre class="overflow-x-auto px-3 py-2.5 text-xs leading-relaxed"><code class={"language-#{s.language}"}>{s.code}</code></pre>
+          <p :if={s[:truncated]} class="px-3 pb-2 text-xs text-warning">
+            Cut off — the script was too long to send in full.
+          </p>
+        </div>
+      </details>
+    </div>
+    """
+  end
+
   defp timeline_block(%{block: {:findings, items}} = assigns) do
     assigns = assign(assigns, :items, items)
 
@@ -1250,6 +1287,12 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
   defp append_if(list, true, value), do: list ++ [value]
   defp append_if(list, false, _value), do: list
+
+  defp script_lines(%{code: code}) when is_binary(code) do
+    code |> String.trim_trailing("\n") |> String.split("\n") |> length()
+  end
+
+  defp script_lines(_), do: 0
 
   defp pluralize(1, singular, _plural), do: singular
   defp pluralize(_n, _singular, plural), do: plural

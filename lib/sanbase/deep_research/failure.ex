@@ -95,4 +95,18 @@ defmodule Sanbase.DeepResearch.Failure do
 
   defp describe(%{__exception__: true} = error), do: Exception.message(error)
   defp describe(reason), do: inspect(reason)
+
+  @doc """
+  The agent server reports the run over (`status`) while its stream stayed open and
+  silent — a zombie connection. Resumable: the thread survives and Continue re-asks.
+  """
+  @spec zombie(String.t()) :: t()
+  def zombie(status) do
+    %__MODULE__{
+      message:
+        "The agent server reports this run ended (#{status}) while the connection stayed " <>
+          "open without any event — nothing more will arrive. Continue retries the turn.",
+      resumable?: true
+    }
+  end
 end

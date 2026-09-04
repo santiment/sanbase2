@@ -29,6 +29,13 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
       timeline: [
         %{kind: :thinking, id: "m1", text: "Scanning on-chain data"},
         %{
+          kind: :plan,
+          todos: [
+            %{content: "Fetch volume", status: "completed"},
+            %{content: "Write", status: "pending"}
+          ]
+        },
+        %{
           kind: :search,
           id: "s1",
           query: "eth gas fees",
@@ -52,6 +59,27 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
           done: true
         },
         %{kind: :status, state: "mcp_ready", detail: nil},
+        %{kind: :status, state: "run_restarted", detail: nil, attempt: 2},
+        %{
+          kind: :fetch,
+          id: "f1",
+          url: "https://example.org/gas-report",
+          ok: true,
+          summary: "Fetched 12k chars",
+          done: true
+        },
+        %{
+          kind: :compaction,
+          state: "compacted",
+          tokens_estimate: 120_000,
+          messages_summarized: 40
+        },
+        %{
+          kind: :status,
+          state: "revising",
+          detail: "2 uncited sources",
+          reason: "report_quality"
+        },
         %{kind: :skill, name: "charting", path: "skills/charting"},
         %{
           kind: :chart,
@@ -60,6 +88,15 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
           range: "90d",
           summary: %{"last" => 12.5},
           series: [%{"label" => "Gas used", "data" => [1, 2]}]
+        },
+        %{
+          kind: :script,
+          id: "sc1",
+          agent: "coding-subagent",
+          name: "corr.py",
+          language: "python",
+          code: "x = 1",
+          truncated: false
         },
         %{
           kind: :subagent_findings,
@@ -72,7 +109,15 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
           gaps: ["no L2 data"]
         }
       ],
-      sources: [%{url: "https://example.com/gas", title: "Gas report", domain: "example.com"}]
+      sources: [%{url: "https://example.com/gas", title: "Gas report", domain: "example.com"}],
+      usage: %{
+        elapsed_s: 90.0,
+        tool_calls: 7,
+        model_calls: 5,
+        total_tokens: 380_000,
+        cost_usd: 0.1234,
+        subagent_runs: 2
+      }
     }
   end
 
@@ -92,6 +137,7 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
       phase: attrs.phase,
       timeline: jsonb_round_trip(attrs.timeline),
       sources: jsonb_round_trip(attrs.sources),
+      usage: jsonb_round_trip(attrs.usage),
       started_at: attrs.started_at,
       finished_at: attrs.finished_at
     }
@@ -99,10 +145,54 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
     TurnCodec.from_row(row)
   end
 
-  test "a turn with every timeline kind survives the round trip unchanged" do
+  test "a turn with every timeline kind, plus the usage ledger, survives the round trip" do
     turn = full_turn()
 
     assert store_and_load(turn) == turn
+  end
+
+  test "a row from before compaction had its own item decodes it as one" do
+    row = %SessionTurn{
+      position: 1,
+      question: "q",
+      phase: :completed,
+      clarification: [],
+      sources: [],
+      timeline: [
+        %{
+          "kind" => "status",
+          "state" => "compacted",
+          "detail" => nil,
+          "tokens_estimate" => 120_000,
+          "messages_summarized" => 40
+        }
+      ]
+    }
+
+    assert [
+             %{
+               kind: :compaction,
+               state: "compacted",
+               tokens_estimate: 120_000,
+               messages_summarized: 40
+             }
+           ] == TurnCodec.from_row(row).timeline
+  end
+
+  test "a row that stored the ledger as a timeline item drops it rather than rendering one" do
+    row = %SessionTurn{
+      position: 1,
+      question: "q",
+      phase: :completed,
+      clarification: [],
+      sources: [],
+      timeline: [%{"kind" => "usage", "tool_calls" => 7}]
+    }
+
+    decoded = TurnCodec.from_row(row)
+
+    assert decoded.timeline == []
+    assert decoded.usage == nil
   end
 
   test "the decoded turn renders through turn_view/1" do
@@ -121,6 +211,17 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
     assert html =~ "charting"
     assert html =~ "Gas used"
     assert html =~ "30% drop"
+    assert html =~ "Read page"
+    assert html =~ "example.org"
+    assert html =~ "Compacted context"
+    assert html =~ "Revising the report: 2 uncited sources"
+    # The footer quotes the persisted ledger, not the wall clock (which says 1m 30s too
+    # here, so pin the ledger-only facts).
+    assert html =~ "Researched in 1m 30s"
+    assert html =~ "7 tool calls"
+    assert html =~ "380k tokens"
+    assert html =~ "2 sub-agent runs"
+    assert html =~ "$0.12"
   end
 
   test "a clarification turn round-trips ([] loads back as nil-less list)" do

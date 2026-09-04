@@ -40,7 +40,7 @@ defmodule Sanbase.DeepResearch.SessionsTest do
 
       assert row.session_id == session.id
       assert row.position == 1
-      assert row.phase == :planning
+      assert row.phase == :queued
       assert row.model_tier == "mid"
     end
 
@@ -185,7 +185,7 @@ defmodule Sanbase.DeepResearch.SessionsTest do
       user = insert(:user)
       {:ok, %{session: session}} = Sessions.start_session(user.id, "mid", new_turn())
 
-      # The row is stuck in :planning — the runner died before the settling write.
+      # The row is stuck in :queued — the runner died before the settling write.
       assert {:ok, %{turns: [turn]}} = Sessions.get_session_for_user(session.id, user.id)
 
       assert turn.phase == :paused
@@ -194,7 +194,7 @@ defmodule Sanbase.DeepResearch.SessionsTest do
 
       # Not persisted: the row may belong to a runner on another node.
       row = Repo.one!(from(t in SessionTurn, where: t.session_id == ^session.id))
-      assert row.phase == :planning
+      assert row.phase == :queued
       assert row.finished_at == nil
     end
 
@@ -209,7 +209,7 @@ defmodule Sanbase.DeepResearch.SessionsTest do
       assert turn.finished_at
 
       row = Repo.one!(from(t in SessionTurn, where: t.session_id == ^session.id))
-      assert row.phase == :planning
+      assert row.phase == :queued
       assert row.finished_at == nil
     end
 

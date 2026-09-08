@@ -100,6 +100,59 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:status, :billing_status)
     field(:trial_end, :datetime)
     field(:payment_intent, :payment_intent)
+
+    @desc ~s"""
+    What a bundle subscription is made of. `null` for every other subscription -
+    that is how a client tells a bundle from a legacy plan, since the `plan` of a
+    bundle is only the `BUNDLE` marker and says nothing about what was bought.
+    """
+    field :bundle, :bundle_subscription_details do
+      resolve(&BillingResolver.bundle_subscription_details/3)
+    end
+  end
+
+  @desc ~s"""
+  The contents of a bundle subscription, as the customer has them right now.
+
+  An item scheduled for removal keeps working until `removeAt`, so it still counts
+  here: `packages` and `apiCallLimits` describe the current period. The `items` list
+  carries `removeAt` per item so a client can show what leaves at the next renewal.
+  """
+  object :bundle_subscription_details do
+    @desc "Package slugs the subscription grants access to in the current period."
+    field(:packages, non_null(list_of(non_null(:string))))
+
+    @desc "The extra-API-calls tier on the subscription, if any (an add-on SKU)."
+    field(:api_calls_addon, :string)
+
+    @desc "The monthly / hourly / minute call allowance the entitlement resolves to."
+    field(:api_call_limits, :plan_api_call_limits)
+
+    field(:historical_data_in_days, :integer)
+    field(:realtime_data_cut_off_in_days, :integer)
+
+    @desc "Every purchased line item, including those awaiting removal."
+    field(:items, non_null(list_of(non_null(:bundle_subscription_item))))
+  end
+
+  object :bundle_subscription_item do
+    field(:id, :id)
+    field(:sku, non_null(:string))
+    field(:type, non_null(:bundle_price_type))
+    field(:quantity, non_null(:integer))
+
+    @desc ~s"""
+    The current list price of this SKU on the subscription's billing interval, in
+    cents. This is the catalog's number, not the invoice's: a customer who bought
+    before a price change keeps paying the old amount in Stripe. `null` when the
+    SKU is no longer sold.
+    """
+    field(:amount, :integer)
+    field(:currency, :string)
+
+    @desc "When the item stops. `null` unless the customer asked to remove it."
+    field(:remove_at, :datetime)
+    field(:inserted_at, :datetime)
   end
 
   object :subscription_cancellation do

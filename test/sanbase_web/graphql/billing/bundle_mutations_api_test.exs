@@ -74,6 +74,61 @@ defmodule SanbaseWeb.Graphql.BundleMutationsApiTest do
     %{user: user, conn: setup_jwt_auth(build_conn(), user)}
   end
 
+  describe "currentUser.subscriptions.bundle" do
+    test "describes the bundle: packages, add-on, items and allowance", %{conn: conn} do
+      with_mocks stripe_mocks() do
+        subscription =
+          execute_mutation(
+            conn,
+            subscribe_mutation(["market", "social"], "MONTH"),
+            "subscribeBundle"
+          )
+
+        id = String.to_integer(subscription["id"])
+
+        _ =
+          execute_mutation(
+            conn,
+            item_mutation("removeBundleItem", id, "social"),
+            "removeBundleItem"
+          )
+
+        [sub] = execute_query(conn, subscriptions_query(), "currentUser")["subscriptions"]
+
+        assert sub["plan"]["name"] == "BUNDLE"
+        bundle = sub["bundle"]
+
+        # `social` is leaving at the period end but still works now, so it stays in
+        # the current-period package list and its item carries the removal date.
+        assert Enum.sort(bundle["packages"]) == ["market", "social"]
+        assert bundle["apiCallsAddon"] == nil
+        assert bundle["apiCallLimits"]["month"] == 100_000
+        assert is_integer(bundle["apiCallLimits"]["hour"])
+        assert bundle["realtimeDataCutOffInDays"] == 0
+
+        items = Enum.sort_by(bundle["items"], & &1["sku"])
+        assert Enum.map(items, & &1["sku"]) == ["market", "social"]
+        assert Enum.all?(items, &(&1["type"] == "PACKAGE" and &1["quantity"] == 1))
+        assert Enum.all?(items, &(&1["amount"] == 35_000 and &1["currency"] == "USD"))
+
+        [market, social] = items
+        assert market["removeAt"] == nil
+        assert social["removeAt"] != nil
+      end
+    end
+
+    test "is null for a subscription that is not a bundle", %{conn: conn, user: user} do
+      # The seeded SanAPI PRO row, which is what `:subscription_pro` points at.
+      plan = Repo.get!(Plan, 3)
+      insert(:subscription_pro, user: user, status: :active)
+
+      [sub] = execute_query(conn, subscriptions_query(), "currentUser")["subscriptions"]
+
+      assert sub["plan"]["name"] == plan.name
+      assert sub["bundle"] == nil
+    end
+  end
+
   describe "bundleCatalog" do
     test "is refused for an anonymous caller while the offering is private" do
       error = execute_query_with_error(build_conn(), catalog_query("MONTH"), "bundleCatalog")
@@ -252,6 +307,27 @@ defmodule SanbaseWeb.Graphql.BundleMutationsApiTest do
         amount
         currency
         stripePriceId
+      }
+    }
+    """
+  end
+
+  defp subscriptions_query do
+    """
+    {
+      currentUser {
+        subscriptions {
+          id
+          plan { name interval }
+          bundle {
+            packages
+            apiCallsAddon
+            apiCallLimits { month hour minute }
+            historicalDataInDays
+            realtimeDataCutOffInDays
+            items { id sku type quantity amount currency removeAt insertedAt }
+          }
+        }
       }
     }
     """

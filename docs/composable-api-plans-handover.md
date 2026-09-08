@@ -1291,6 +1291,12 @@ categories that *do* exist if a name is ever wrong.
 
 **What a bundle can do now:** be bought (staff preview in `:legacy` mode, or public after Go Live) via `subscribeBundle`, with add/remove/switch/cancel. Catalog browsing still works via `getAvailableMetrics(plan: BUNDLE, metricPackages: [...])` without a subscription.
 
+✅ **Read side for the account page (2026-09-08).** `currentUser.subscriptions[].bundle`
+(`null` for any non-bundle subscription) returns `packages`, `apiCallsAddon`, `apiCallLimits`,
+the data windows, and `items[]` with `sku`, `type`, `quantity`, catalog `amount`/`currency` and
+`removeAt`. Built by `Bundle.subscription_details/1` from local rows only, no Stripe call. This
+is what the frontend needs to render "your packages", "leaving at renewal" and "add / remove".
+
 ✅ **Stripe-initiated changes now land locally.** **WH** closed the last gap that
 needed a human: a bundle changed in the Stripe dashboard, or an item change whose
 `subscription.updated` events arrive after the mutation returned, is reconciled

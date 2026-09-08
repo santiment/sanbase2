@@ -425,7 +425,7 @@ defmodule Sanbase.AI.DescriptionJob do
   end
 
   defp do_build_user_message(%Configuration{} = config, :charts) do
-    metrics = Enum.join(config.metrics || [], ", ")
+    metrics = config |> chart_metrics() |> Enum.join(", ")
 
     """
     Type: Chart
@@ -435,6 +435,87 @@ defmodule Sanbase.AI.DescriptionJob do
     """
     |> String.trim()
   end
+
+  # A chart keeps its metrics in up to three places, depending on how old the
+  # saving frontend was: `metrics_json` (the richest - one entry per plotted
+  # metric, with the slug it is plotted for), `options["widgets"][]["wm"]`
+  # (per-pane metric lists for multi-widget layouts) and the legacy `metrics`
+  # array. Newer charts leave `metrics` empty, so fall back through all three
+  # and use the first one that yields anything.
+  defp chart_metrics(%Configuration{} = config) do
+    Enum.find_value(
+      [
+        metrics_from_json(config),
+        metrics_from_widgets(config),
+        config.metrics || []
+      ],
+      [],
+      fn source ->
+        case clean_metrics(source) do
+          [] -> nil
+          metrics -> metrics
+        end
+      end
+    )
+  end
+
+  defp clean_metrics(metrics) do
+    metrics
+    |> Enum.map(&decode_metric_key/1)
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.uniq()
+  end
+
+  defp metrics_from_json(%Configuration{metrics_json: metrics_json})
+       when is_map(metrics_json) do
+    metrics_json
+    |> Enum.sort_by(fn {key, _value} -> metrics_json_position(key) end)
+    |> Enum.map(fn
+      {_key, %{"metric" => metric} = entry} when is_binary(metric) ->
+        case entry["slug"] do
+          slug when is_binary(slug) and slug != "" -> "#{metric} (#{slug})"
+          _ -> metric
+        end
+
+      {_key, _value} ->
+        nil
+    end)
+  end
+
+  defp metrics_from_json(_config), do: []
+
+  # Keys are stringified pane indexes, so sort them numerically to keep the
+  # chart's own metric order ("10" must not sort before "2").
+  defp metrics_json_position(key) do
+    case Integer.parse(to_string(key)) do
+      {position, ""} -> {0, position, ""}
+      _ -> {1, 0, to_string(key)}
+    end
+  end
+
+  defp metrics_from_widgets(%Configuration{options: %{"widgets" => widgets}})
+       when is_list(widgets) do
+    Enum.flat_map(widgets, fn
+      %{"wm" => widget_metrics} when is_list(widget_metrics) -> widget_metrics
+      _ -> []
+    end)
+  end
+
+  defp metrics_from_widgets(_config), do: []
+
+  # Extended metric keys encode the metric together with its arguments, e.g.
+  # "[1;daily_active_addresses;tether;USDT]" or
+  # "[3;percent_of_holders_distribution_combined_balance;1_to_10;10_to_100]".
+  # Only the metric name is useful to the LLM.
+  defp decode_metric_key("[" <> rest = key) do
+    case rest |> String.trim_trailing("]") |> String.split(";") do
+      [_arity, metric | _rest] -> metric
+      _ -> key
+    end
+  end
+
+  defp decode_metric_key(key) when is_binary(key), do: key
+  defp decode_metric_key(_key), do: nil
 
   defp do_build_user_message(%UserList{} = ul, :screeners) do
     """

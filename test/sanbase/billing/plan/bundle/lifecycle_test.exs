@@ -163,8 +163,10 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
                    Lifecycle.subscribe(user, packages: ["market"], interval: "month")
 
           assert message == Subscription.PurchaseLock.busy_message()
-          assert_not_called(StripeApi.create_subscription(:_))
-          assert_not_called(StripeApi.update_customer_card(:_, :_))
+          # The two Stripe calls the bundle flow makes, neither may happen.
+          assert_not_called(StripeApi.create_bundle_subscription(:_))
+          assert_not_called(StripeApi.attach_payment_method_to_customer(:_, :_))
+          assert calls(:create_bundle_subscription) == []
         end)
 
         assert Subscription |> where([s], s.user_id == ^user.id) |> Repo.all() == []

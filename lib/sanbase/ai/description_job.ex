@@ -213,24 +213,53 @@ defmodule Sanbase.AI.DescriptionJob do
     user_message = do_build_user_message(entity, entity_type)
 
     with {:ok, base_description} <- OpenAIClient.chat_completion(@system_prompt, user_message) do
+      base_description = normalize_description(base_description)
+
       if refinement_prompt && String.trim(refinement_prompt) != "" do
-        refine(base_description, refinement_prompt)
+        with {:ok, refined} <- refine(base_description, refinement_prompt) do
+          {:ok, normalize_description(refined)}
+        end
       else
         {:ok, base_description}
       end
     end
   end
 
+  @doc """
+  Strips the padding models like to add - an indented lead sentence, trailing
+  spaces, a stray blank line at the end. The padding is visible wherever the
+  description is rendered and gets copied verbatim when an AI description is
+  promoted to the entity's real description.
+
+  ## Examples
+
+      iex> Sanbase.AI.DescriptionJob.normalize_description("   Lead sentence.\n\nTags: x  \n\n")
+      "Lead sentence.\n\nTags: x"
+  """
+  @spec normalize_description(String.t()) :: String.t()
+  def normalize_description(text) when is_binary(text) do
+    text
+    |> String.split("\n")
+    |> Enum.map(&String.trim_trailing/1)
+    |> Enum.join("\n")
+    |> String.trim()
+  end
+
+  def normalize_description(text), do: text
+
   @doc "Persist `ai_description` for a single entity."
   def save_ai_description(:insights, id, text) do
+    text = normalize_description(text)
     Repo.update_all(from(p in Post, where: p.id == ^id), set: [ai_description: text])
   end
 
   def save_ai_description(:charts, id, text) do
+    text = normalize_description(text)
     Repo.update_all(from(c in Configuration, where: c.id == ^id), set: [ai_description: text])
   end
 
   def save_ai_description(type, id, text) when type in [:screeners, :watchlists] do
+    text = normalize_description(text)
     Repo.update_all(from(ul in UserList, where: ul.id == ^id), set: [ai_description: text])
   end
 
@@ -436,6 +465,25 @@ defmodule Sanbase.AI.DescriptionJob do
     |> String.trim()
   end
 
+  defp do_build_user_message(%UserList{} = ul, :screeners) do
+    """
+    Type: Screener
+    Name: #{ul.name}
+    Current description: #{ul.description || "(none)"}
+    Filter function: #{inspect(ul.function)}
+    """
+    |> String.trim()
+  end
+
+  defp do_build_user_message(%UserList{} = ul, :watchlists) do
+    """
+    Type: Watchlist
+    Name: #{ul.name}
+    Current description: #{ul.description || "(none)"}
+    """
+    |> String.trim()
+  end
+
   # A chart keeps its metrics in up to three places, depending on how old the
   # saving frontend was: `metrics_json` (the richest - one entry per plotted
   # metric, with the slug it is plotted for), `options["widgets"][]["wm"]`
@@ -463,7 +511,16 @@ defmodule Sanbase.AI.DescriptionJob do
     metrics
     |> Enum.map(&decode_metric_key/1)
     |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.reject(&uuid?/1)
     |> Enum.uniq()
+  end
+
+  # A pane holding a user-defined formula (the frontend's "fx" metric) carries a
+  # client-generated UUID instead of a metric name - the expression itself lives
+  # only in the frontend's own part of `options`. Feeding the UUID to the LLM
+  # makes it invent a metric, so leave those panes out.
+  defp uuid?(metric) do
+    match?({:ok, _}, Ecto.UUID.cast(metric))
   end
 
   defp metrics_from_json(%Configuration{metrics_json: metrics_json})
@@ -516,23 +573,4 @@ defmodule Sanbase.AI.DescriptionJob do
 
   defp decode_metric_key(key) when is_binary(key), do: key
   defp decode_metric_key(_key), do: nil
-
-  defp do_build_user_message(%UserList{} = ul, :screeners) do
-    """
-    Type: Screener
-    Name: #{ul.name}
-    Current description: #{ul.description || "(none)"}
-    Filter function: #{inspect(ul.function)}
-    """
-    |> String.trim()
-  end
-
-  defp do_build_user_message(%UserList{} = ul, :watchlists) do
-    """
-    Type: Watchlist
-    Name: #{ul.name}
-    Current description: #{ul.description || "(none)"}
-    """
-    |> String.trim()
-  end
 end

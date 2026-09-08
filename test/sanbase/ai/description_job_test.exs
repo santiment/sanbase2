@@ -4,6 +4,26 @@ defmodule Sanbase.AI.DescriptionJobTest do
   alias Sanbase.AI.DescriptionJob
   alias Sanbase.Chart.Configuration
 
+  describe "normalize_description/1" do
+    test "strips the indented lead sentence, trailing spaces and outer blank lines" do
+      raw =
+        "\n        Zcash price trend in plain terms.\n\nMeasures: price_usd  \nTags: x   \n\n  "
+
+      assert DescriptionJob.normalize_description(raw) ==
+               "Zcash price trend in plain terms.\n\nMeasures: price_usd\nTags: x"
+    end
+
+    test "keeps blank lines inside the description" do
+      text = "Lead sentence.\n\nMeasures: price_usd\n\nTags: x"
+
+      assert DescriptionJob.normalize_description(text) == text
+    end
+
+    test "passes nil through" do
+      assert DescriptionJob.normalize_description(nil) == nil
+    end
+  end
+
   describe "build_user_message/2 for charts" do
     test "lists the metrics from metrics_json, with their slugs, in pane order" do
       config = %Configuration{
@@ -80,6 +100,23 @@ defmodule Sanbase.AI.DescriptionJobTest do
       assert String.ends_with?(
                DescriptionJob.build_user_message(config, :charts),
                "Metrics tracked: daily_active_addresses (tether), daily_active_addresses (bnb-tether)"
+             )
+    end
+
+    test "leaves out formula panes, which carry a client-generated UUID" do
+      config = %Configuration{
+        title: "ZEC 27.8",
+        options: %{
+          "widgets" => [
+            %{"wm" => ["price_usd", "volume_usd"]},
+            %{"wm" => ["social_volume_total", "01a01cf6-6c3f-7104-946e-472d88ad64b0"]}
+          ]
+        }
+      }
+
+      assert String.ends_with?(
+               DescriptionJob.build_user_message(config, :charts),
+               "Metrics tracked: price_usd, volume_usd, social_volume_total"
              )
     end
 

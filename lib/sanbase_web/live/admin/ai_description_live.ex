@@ -1135,7 +1135,10 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
                     if(entity.ai_description, do: "text-success", else: "text-base-content/40 italic")
                   ]}>
                     {if entity.ai_description,
-                      do: truncate(entity.ai_description, 100),
+                      do:
+                        entity.ai_description
+                        |> DescriptionJob.normalize_description()
+                        |> truncate(100),
                       else: "not generated"}
                   </p>
                 </td>
@@ -1244,13 +1247,15 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
             <div class={[
               "rounded-box p-3 text-sm whitespace-pre-wrap min-h-12 font-mono leading-relaxed border",
               if(@selected_entity.ai_description,
-                do: "bg-success/10 text-success-content border-success/30",
+                do: "bg-success/10 text-base-content border-success/30",
                 else: "bg-base-200 text-base-content/50 border-dashed border-base-300"
               )
             ]}>
               {if MapSet.member?(@loading_ids, @selected_entity.id),
                 do: "Generating…",
-                else: @selected_entity.ai_description || "(not yet generated)"}
+                else:
+                  DescriptionJob.normalize_description(@selected_entity.ai_description) ||
+                    "(not yet generated)"}
             </div>
           </div>
 

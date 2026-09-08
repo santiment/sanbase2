@@ -212,7 +212,8 @@ defmodule Sanbase.AI.DescriptionJob do
   def run_generation(entity, entity_type, refinement_prompt \\ "") do
     user_message = do_build_user_message(entity, entity_type)
 
-    with {:ok, base_description} <- OpenAIClient.chat_completion(@system_prompt, user_message) do
+    with {:ok, base_description} <-
+           openai_client().chat_completion(@system_prompt, user_message, []) do
       base_description = normalize_description(base_description)
 
       if refinement_prompt && String.trim(refinement_prompt) != "" do
@@ -239,13 +240,31 @@ defmodule Sanbase.AI.DescriptionJob do
   @spec normalize_description(String.t()) :: String.t()
   def normalize_description(text) when is_binary(text) do
     text
+    |> drop_echoed_original()
     |> String.split("\n")
-    |> Enum.map(&String.trim_trailing/1)
+    |> Enum.map(&(&1 |> strip_heading_marker() |> String.trim_trailing()))
     |> Enum.join("\n")
     |> String.trim()
   end
 
   def normalize_description(text), do: text
+
+  # When refining, models sometimes answer with both versions under headings
+  # ("## Original description" / "## Refined description") even when told not
+  # to. Only one version can be stored, so keep what follows the last marker.
+  @refined_marker ~r/^[ \t]*\#*[ \t]*(?:refined|rewritten|new|final)[ \t]+(?:description|version)[ \t]*:?[ \t]*$/im
+  defp drop_echoed_original(text) do
+    case Regex.split(@refined_marker, text, parts: 2) do
+      [_echoed_original, refined] -> refined
+      _ -> text
+    end
+  end
+
+  # The description format has no headings, so a markdown heading marker is the
+  # model decorating its answer - drop the marker, keep the sentence.
+  defp strip_heading_marker(line) do
+    String.replace(line, ~r/^\s*\#{1,6}\s+/, "")
+  end
 
   @doc "Persist `ai_description` for a single entity."
   def save_ai_description(:insights, id, text) do
@@ -268,21 +287,44 @@ defmodule Sanbase.AI.DescriptionJob do
   Rewrite the description below according to the user's refinement instructions.
   Preserve the structured format (lead sentence + labeled fields + tags) unless
   the instructions explicitly ask to change it.
-  Return ONLY the refined description.
+
+  Your entire reply is stored and shown to users as the description itself, so:
+  - Output ONLY the rewritten description.
+  - Do NOT repeat, quote or summarise the original description.
+  - Do NOT add headings, labels ("Refined description:"), preambles or notes.
+  - Start directly with the rewritten lead sentence.
   """
 
   defp refine(base_description, refinement_instructions) do
+    # The description to rewrite goes first and the instructions last, so the
+    # instructions are the model's most recent context and the reply is the
+    # rewrite alone. Sections are labelled with plain text rather than markdown
+    # headings, which models tend to mirror back into their answer.
     user_message = """
-    ## Original description
+    DESCRIPTION TO REWRITE:
 
     #{base_description}
 
-    ## Refinement instructions
+    REWRITE INSTRUCTIONS:
 
     #{refinement_instructions}
+
+    Reply with the rewritten description only.
     """
 
-    OpenAIClient.chat_completion(@refinement_system_prompt, user_message)
+    with {:ok, refined} <-
+           openai_client().chat_completion(@refinement_system_prompt, user_message, []) do
+      case normalize_description(refined) do
+        # Nothing but the echoed original - keep the base description rather
+        # than storing an empty field.
+        "" -> {:ok, base_description}
+        description -> {:ok, description}
+      end
+    end
+  end
+
+  defp openai_client do
+    Application.get_env(:sanbase, :openai_client, OpenAIClient)
   end
 
   # ─── GenServer callbacks ───────────────────────────────────────────────────

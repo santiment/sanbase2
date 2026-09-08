@@ -1356,6 +1356,53 @@ Ordered by what is blocking work right now.
 
 ### Blocking now
 
+**Q18. A customer who already has packages clicks "Buy Institutional" (or the other way round). What should happen?**
+
+Product said there is "no restriction" on buying Institutional or packages when the customer is on Sanbase Pro/Max or Business Pro/Max, and that is how it is built: those subscriptions are on another product or are replaced automatically. But a customer can never hold **two** live subscriptions from the new offering. Today, a package customer who buys Institutional is refused with "You already have an active SanAPI subscription on the new offering", and an Institutional customer who adds a package is refused the same way.
+
+Frontend asked what to do when the cart holds packages and the customer chooses Institutional instead. Three options:
+
+1. keep refusing, and the page must clear the cart / hide the other column once the customer owns one of the two (today's behavior, no code);
+2. Institutional **replaces** the package subscription, the way it replaces Business Pro/Max — the package subscription is canceled with a prorated credit;
+3. allow both to run in parallel (not recommended: the customer pays twice for overlapping access).
+
+Also needed for the design: buying "one more package" is **not** a new purchase. It is an addition to the existing package subscription, on the same billing interval, charged immediately with proration. The design should say "add to your plan", not "buy".
+
+*Answer:* pending
+
+---
+
+**Q19. Migrating Business Pro to Institutional and Business Max to all five packages "without additional payment" — what exactly does the customer keep?**
+
+Product plans to convert existing Business customers within 1–3 months of launch. Nothing is built for that yet, and the details decide how big the job is:
+
+* **Price.** Does a Business Pro customer keep paying their current amount for Institutional (list price is higher), or move to the Institutional price? Same for Business Max vs. five packages.
+* **Allowance.** Business plans carry a much larger monthly API-call allowance than Institutional (50,000) or a package subscription (100,000 flat). Do migrated customers keep their old allowance, or do they drop to the new plan's number? Dropping it will break integrations that rely on today's volume.
+* **Yearly customers.** A yearly Business customer paid for a full year. Convert at renewal, or immediately with credit?
+* **Notice.** Do they get an email before the switch, and who writes it?
+
+Until this is answered we cannot estimate the migration. It is not needed for launch, only for the migration itself.
+
+*Answer:* pending
+
+---
+
+**Q20. Do we take crypto (ETH) at checkout?**
+
+Frontend asked whether the first version supports paying in ETH. The backend takes cards through Stripe only; there is no crypto payment path anywhere in billing today, and the new offering did not add one. Supporting ETH is a separate project (a payment provider, webhook handling, refunds and proration for subscriptions). Recommended answer for v1: **no**, card only.
+
+*Answer:* pending — recommended "not in v1"
+
+---
+
+**Q21. Do we stop selling Business Pro/Max on the same day the new pricing page ships, or earlier?**
+
+Product said Business Pro/Max sales stop "when we do this release". Two things depend on the exact order: the api.santiment.net pricing page still crashes if the Business plans are withdrawn before it is fixed (§10.2), and if the plans are withdrawn before the package builder ships there is a window with no self-serve API purchase at all. Recommended: withdraw only after both pages are live, in the same release.
+
+*Answer:* pending
+
+---
+
 **Q4. Are there extra API-call tiers beyond the 500,000 one, and what do they cost?**
 
 Q1 established that the "sixth package" is the 500,000-call add-on. If Notion has other tiers, we need to know they exist — the prices themselves can come later.
@@ -1412,6 +1459,8 @@ Not blocking. It becomes visible with the first Institutional customer who alrea
 
 Applies to Enterprise identically — it also includes full Sanbase.
 
+*Update 2026-09-08:* product said a Sanbase Pro/Max customer who buys Institutional will have their Sanbase plan "replaced by Institutional" in the app. That covers what the customer **sees**; it does not say what happens to the money. Unless one of options 2 or 3 is chosen, that customer keeps paying for Sanbase as well. Please pick one.
+
 *Answer:* pending
 
 ---
@@ -1426,7 +1475,7 @@ This is not something the code decided; the list was written before these plans 
 
 Three things to confirm: whether the new plans go on the list at all, whether all three go on or only the two fixed tiers, and whether the existing onboarding email text still reads correctly for someone who bought packages rather than a Business plan.
 
-*Answer:* pending
+*Answer:* **partly answered 2026-09-08** — product told frontend that after a successful package or Institutional purchase "the user will get an email with onboarding details", so packages and Institutional go on the list. Still to confirm: Enterprise too, and whether the existing email text needs a variant for package customers. Backend work to add them is small and not started.
 
 ---
 

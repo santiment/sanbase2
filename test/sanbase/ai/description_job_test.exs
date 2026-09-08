@@ -1,8 +1,13 @@
 defmodule Sanbase.AI.DescriptionJobTest do
   use ExUnit.Case, async: true
 
+  import Mox
+
   alias Sanbase.AI.DescriptionJob
+  alias Sanbase.AI.MockOpenAIClient
   alias Sanbase.Chart.Configuration
+
+  setup :verify_on_exit!
 
   describe "normalize_description/1" do
     test "strips the indented lead sentence, trailing spaces and outer blank lines" do
@@ -17,6 +22,26 @@ defmodule Sanbase.AI.DescriptionJobTest do
       text = "Lead sentence.\n\nMeasures: price_usd\n\nTags: x"
 
       assert DescriptionJob.normalize_description(text) == text
+    end
+
+    test "drops markdown heading markers the model adds to its answer" do
+      raw = "## ZEC price movement tracking.\n\nMeasures: price_usd\n#### Tags: x"
+
+      assert DescriptionJob.normalize_description(raw) ==
+               "ZEC price movement tracking.\n\nMeasures: price_usd\nTags: x"
+    end
+
+    test "keeps a # that is not a heading marker" do
+      text = "Tracks the #1 exchange by volume.\n\nTags: x"
+
+      assert DescriptionJob.normalize_description(text) == text
+    end
+
+    test "drops an echoed original that a refinement reply kept above the rewrite" do
+      raw =
+        "## Original description\n\nFormal lead.\n\n## Refined description\n\nFriendly lead.\n\nTags: x"
+
+      assert DescriptionJob.normalize_description(raw) == "Friendly lead.\n\nTags: x"
     end
 
     test "passes nil through" do
@@ -124,6 +149,62 @@ defmodule Sanbase.AI.DescriptionJobTest do
       config = %Configuration{title: "Empty", metrics: [], metrics_json: %{}, options: %{}}
 
       assert DescriptionJob.build_user_message(config, :charts) =~ "Metrics tracked: (none)"
+    end
+  end
+
+  describe "run_generation/3 with a refinement prompt" do
+    test "keeps only the rewritten version when the model echoes both" do
+      expect(MockOpenAIClient, :chat_completion, fn _system, _user, _opts ->
+        {:ok, "Base lead sentence.\n\nMeasures: price_usd"}
+      end)
+
+      expect(MockOpenAIClient, :chat_completion, fn _system, _user, _opts ->
+        {:ok,
+         """
+         ## Original description
+
+         Base lead sentence.
+
+         Measures: price_usd
+
+         ## Refined description
+
+         Friendly lead sentence.
+
+         Measures: price_usd
+         """}
+      end)
+
+      config = %Configuration{title: "ZEC 27.8", metrics: ["price_usd"]}
+
+      assert {:ok, description} = DescriptionJob.run_generation(config, :charts, "Be friendly")
+      assert description == "Friendly lead sentence.\n\nMeasures: price_usd"
+    end
+
+    test "keeps the whole reply when the model returns only the rewrite" do
+      expect(MockOpenAIClient, :chat_completion, 2, fn _system, _user, _opts ->
+        {:ok, "  Friendly lead sentence.\n\nMeasures: price_usd\n"}
+      end)
+
+      config = %Configuration{title: "ZEC 27.8", metrics: ["price_usd"]}
+
+      assert {:ok, "Friendly lead sentence.\n\nMeasures: price_usd"} =
+               DescriptionJob.run_generation(config, :charts, "Be friendly")
+    end
+
+    test "falls back to the base description when the reply is only the echo" do
+      expect(MockOpenAIClient, :chat_completion, fn _system, _user, _opts ->
+        {:ok, "Base lead sentence.\n\nMeasures: price_usd"}
+      end)
+
+      expect(MockOpenAIClient, :chat_completion, fn _system, _user, _opts ->
+        {:ok, "## Refined description\n"}
+      end)
+
+      config = %Configuration{title: "ZEC 27.8", metrics: ["price_usd"]}
+
+      assert {:ok, "Base lead sentence.\n\nMeasures: price_usd"} =
+               DescriptionJob.run_generation(config, :charts, "Be friendly")
     end
   end
 end

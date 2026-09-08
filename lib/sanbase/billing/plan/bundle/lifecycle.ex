@@ -69,10 +69,22 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   paid and is refused every request is worse off than one who was not charged. A
   legacy SanAPI subscription that the bundle replaces is canceled with proration
   once the new one is actually live - see `cancel_replaceable_if_live/2`.
+
+  The whole check-and-create runs under `Sanbase.Billing.Subscription.PurchaseLock`,
+  the same per-user lock the Institutional and Enterprise purchases take. Without it
+  two overlapping calls for the same user both pass `classify_for_subscribe/1` and
+  both charge, leaving two bundles billing in parallel - a double-clicked Buy button
+  is enough. The loser is refused before it reaches Stripe. The lock is one
+  namespace across all three flows, so a bundle and an Institutional purchase for the
+  same user cannot slip past each other either.
   """
   @spec subscribe(User.t(), subscribe_opts()) ::
           {:ok, Subscription.t()} | {:error, term()}
   def subscribe(%User{} = user, opts) do
+    Subscription.PurchaseLock.with_lock(user.id, fn -> do_subscribe(user, opts) end)
+  end
+
+  defp do_subscribe(%User{} = user, opts) do
     packages = Keyword.fetch!(opts, :packages)
     interval = Keyword.fetch!(opts, :interval)
     api_calls_addon = Keyword.get(opts, :api_calls_addon)

@@ -946,7 +946,7 @@ Both now match `p.name == "ENTERPRISE"`. That is safe to reason about without kn
 - **Seats** — same as Institutional (Q6).
 - **The API-client onboarding email.** `Sanbase.Email.ApiBusinessOnboardingList` matches `BUSINESS_PRO`, `BUSINESS_MAX` and `CUSTOM%`. No new-offering plan is on that list — not Enterprise, not Institutional, not bundles. Pre-dates this task; see §15 Q16.
 
-⚠️ **Depends on `Subscription.PurchaseLock`, which is not merged.** The Enterprise purchase path has the same check-then-charge race Institutional has: `ensure_plan_is_for_sale/2` reads with no lock, so two overlapping requests both pass and both charge — $19,999 twice. The fix exists on branch **`institutional-plan-fixes`** (unmerged as of 2026-08-07) and adds `serialize_new_offering_purchase/3` around `subscribe/4` and `subscribe2/4`. **Whichever of the two branches merges second must add the `ENTERPRISE` clause to that function**, next to the `INSTITUTIONAL` one. See §10.1 item 10.
+✅ Serialized by `Subscription.PurchaseLock` (the `ENTERPRISE` clause of `serialize_new_offering_purchase/3`), so a double-clicked Buy cannot charge $19,999 twice. See §10.1 item 10.
 
 ### UI. Self-serve purchase surface
 **What:** Pricing page / checkout reflecting the three-column offering (§1.1): composable package builder (left), Institutional CTA (middle), Enterprise contact CTA (right). Package checkout needs SC + SL. Institutional can use existing single-plan subscribe once **IN** lands. Enterprise is contact/sales, not cart.
@@ -1153,13 +1153,13 @@ replacement job only cancels *legacy* plans. A double-clicked Buy button is enou
 exposure is now $1,050/month for a bundle, $799/month for Institutional and **$19,999/year for
 Enterprise**.
 
-Fixed by `Subscription.PurchaseLock` — a per-user Postgres session advisory lock held across the
-Stripe call via `Repo.checkout/2` — on branch **`institutional-plan-fixes`**, ⬜ **unmerged as of
-2026-08-07**. It wraps the Institutional branch of `subscribe/4` and `subscribe2/4` only.
-Outstanding work, in order: merge that branch; add the `ENTERPRISE` clause to
-`serialize_new_offering_purchase/3`; then apply the same wrapper to `Bundle.Lifecycle.subscribe/2`,
-which is one line at `lifecycle.ex:79`, deliberately deferred because it changes how a path already
-in production uses the connection pool.
+✅ **Fixed 2026-09-08** by `Subscription.PurchaseLock` — a per-user Postgres session advisory
+lock held across the Stripe call via `Repo.checkout/2`. It now wraps all three flows: the
+`INSTITUTIONAL` and `ENTERPRISE` clauses of `serialize_new_offering_purchase/3` around
+`subscribe/4` and `subscribe2/4`, and `Bundle.Lifecycle.subscribe/2`. One lock namespace, so a
+bundle and an Institutional purchase for the same user exclude each other too. The loser is
+refused with a "purchase already in progress" message before any Stripe call. Cost: one pool
+connection held per purchase for the duration of the Stripe round-trips (bounded at 60s).
 
 **Not an abuse surface, but found in the same run:** the `/admin/bundle_subscriptions` "make a
 real GraphQL call" card posts to `SanbaseWeb.Endpoint.url()`, i.e. the admin pod's own
@@ -1251,7 +1251,7 @@ release day.
 | **SL** — subscribe lifecycle | ✅ done | `Bundle.Lifecycle` + GraphQL mutations; SaleControls activate/deactivate; legacy auto-replace; `upgrade_downgrade` guard. |
 | **UI** | ⬜ not started | Three-column pricing / checkout (webapp). |
 | **IN** — Institutional | ✅ done (no seats) | `INSTITUTIONAL` month/year rows on SanAPI, `Plan.type/1` → `:standard`. 1095-day history, realtime, 50k calls/month, full Sanbase (MAX-equivalent), MCP `:max`; everything else answers as BUSINESS_MAX. Sold through the ordinary `subscribe`, behind the new-offering gate. Seats (Q6) deliberately out. |
-| **EP** — Enterprise | ✅ done (no seats) | `ENTERPRISE` yearly row (313, $19,999) on SanAPI, `Plan.type/1` → `:standard`. Unlimited history, 300k calls/month with BUSINESS_MAX bursts, 100k MB responses, full Sanbase, MCP `:max`; everything else answers as BUSINESS_MAX bar query executions, which are CUSTOM's. Self-serve through the ordinary `subscribe`, behind the new-offering gate. **Not** the `CUSTOM_*` path — the original spec had that wrong. Legacy `ENTERPRISE_BASIC`/`ENTERPRISE_PLUS` rows retired, and `"sanapi_enterprise"` removed from `@plans_without_limits`. Needs the `ENTERPRISE` clause added to `serialize_new_offering_purchase/3` when `institutional-plan-fixes` merges. |
+| **EP** — Enterprise | ✅ done (no seats) | `ENTERPRISE` yearly row (313, $19,999) on SanAPI, `Plan.type/1` → `:standard`. Unlimited history, 300k calls/month with BUSINESS_MAX bursts, 100k MB responses, full Sanbase, MCP `:max`; everything else answers as BUSINESS_MAX bar query executions, which are CUSTOM's. Self-serve through the ordinary `subscribe`, behind the new-offering gate. **Not** the `CUSTOM_*` path — the original spec had that wrong. Legacy `ENTERPRISE_BASIC`/`ENTERPRISE_PLUS` rows retired, and `"sanapi_enterprise"` removed from `@plans_without_limits`. Purchase serialized by `PurchaseLock` (the `ENTERPRISE` clause of `serialize_new_offering_purchase/3`). |
 
 **Admin pages.** `/admin/bundle_packages` shows what each package contains live vs
 published, the pending-changes diff, and publishes snapshots.
@@ -1306,7 +1306,7 @@ covers only the webhook write path; those two are tracked on their own.
 
 1. **`UI`** — three-column pricing / checkout. All three dependencies now exist: SL for the package builder, IN for the flagship CTA, EP for the Enterprise column. Use `bundleCatalog` + plan flags (`is_private` / `is_deprecated`). ⚠️ Also carries the §10.2 launch blocker, which gates withdrawal of the Business plans on its own. ⚠️ Enterprise has the same plan-id discovery gap Institutional has — id **313** is excluded from `productsWithPlans`, so it must be hardcoded or a query added.
 2. **`TR`** — trial & dunning. Sharpened by IN, EP and SL all shipping: `past_due` currently grants roughly three weeks of full access, and the exposure now scales to $1,050/month bundles, $799/month Institutional and **$19,999/year Enterprise** (§10.1 item 8).
-3. **Merge `institutional-plan-fixes`**, then add the `ENTERPRISE` clause to `serialize_new_offering_purchase/3`. Until that lands, both Institutional and Enterprise can be double-charged by a double-clicked Buy button.
+3. ~~Merge `institutional-plan-fixes` + `ENTERPRISE` clause + lock on bundle subscribe~~ ✅ done 2026-09-08, see §10.1 item 10.
 4. Verify on stage: run `Sanbase.Billing.sync_products_with_stripe()` once so the `INSTITUTIONAL` and `ENTERPRISE` rows get their Stripe plans, then activate the offering from `/admin/bundle_offering` and buy one of each. Before that, confirm on **production** that `ENTERPRISE_BASIC` / `ENTERPRISE_PLUS` have no active subscriptions and that no `api_call_limits` row uses `sanapi_enterprise` — both were verified empty on stage, and the retirement migration assumes it.
 5. When product prices `api_calls_500k`: set amounts + `Sanbase.Billing.sync_bundle_catalog_with_stripe()` (or wait for `@reboot`) — no code change.
 6. Use `/admin/bundle_offering` to activate bundle plans and/or deactivate Business Pro/Max when ready.

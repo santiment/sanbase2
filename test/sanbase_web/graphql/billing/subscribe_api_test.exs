@@ -152,6 +152,57 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     assert limits_by_name["CUSTOM"] == nil
   end
 
+  describe "#productsWithPlans and the new offering" do
+    setup context do
+      Sanbase.Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 9950")
+
+      institutional =
+        insert(:plan_pro,
+          id: 9951,
+          name: "INSTITUTIONAL",
+          product_id: context.product_api.id,
+          interval: "month",
+          amount: 79_900,
+          is_private: true,
+          is_deprecated: false,
+          stripe_id: "plan_institutional_" <> Ecto.UUID.generate()
+        )
+
+      %{institutional: institutional}
+    end
+
+    test "hides Institutional while the offering is off sale", context do
+      names = listed_plan_names(context.conn)
+
+      refute "INSTITUTIONAL" in names
+    end
+
+    test "lists Institutional with its id for a team member before go-live", context do
+      insert(:role_san_team)
+
+      {:ok, _} =
+        Sanbase.Accounts.UserRole.create(
+          context.user.id,
+          Sanbase.Accounts.Role.san_team_role_id()
+        )
+
+      plans =
+        context.conn
+        |> execute_query(products_with_plans_query(), "productsWithPlans")
+        |> Enum.flat_map(& &1["plans"])
+
+      institutional = Enum.find(plans, &(&1["name"] == "INSTITUTIONAL"))
+      assert institutional["id"] == to_string(context.institutional.id)
+    end
+
+    test "lists Institutional for everyone once the offering is activated", context do
+      insert(:role_san_team)
+      {:ok, _} = Sanbase.Billing.Plan.SaleControls.activate_bundle_plans()
+
+      assert "INSTITUTIONAL" in listed_plan_names(build_conn())
+    end
+  end
+
   describe "#currentUser[subscriptions]" do
     test "when there are subscriptions - currentUser return list of subscriptions", context do
       insert(:subscription_essential, user: context.user)
@@ -703,12 +754,19 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
   end
 
+  defp listed_plan_names(conn) do
+    conn
+    |> execute_query(products_with_plans_query(), "productsWithPlans")
+    |> Enum.flat_map(fn product -> Enum.map(product["plans"], & &1["name"]) end)
+  end
+
   defp products_with_plans_query() do
     """
     {
       productsWithPlans {
         name
         plans {
+          id
           name
           apiCallLimits {
             month

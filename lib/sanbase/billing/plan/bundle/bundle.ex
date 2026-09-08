@@ -46,6 +46,61 @@ defmodule Sanbase.Billing.Plan.Bundle do
   @spec equivalent_standard_plan() :: String.t()
   def equivalent_standard_plan, do: @equivalent_standard_plan
 
+  @doc ~s"""
+  What a bundle subscription is made of, for showing to its owner.
+
+  Built from local rows only - the items, the catalog prices for the
+  subscription's interval, and the entitlement stored on the subscription - so it
+  never calls Stripe. This is the read side of the lifecycle mutations: the account
+  page needs to list the packages a customer owns, which of them is leaving at the
+  next renewal, and what the resulting API allowance is, and none of that is
+  recoverable from the `BUNDLE` marker plan.
+
+  Items scheduled for removal are included, because they keep working until
+  `remove_at`; `packages` therefore describes the *current* period. When the
+  entitlement has not been resolved yet (a subscription written by hand, or a sync
+  that failed) the package list falls back to the items and the limits are `nil`,
+  rather than the whole field failing.
+  """
+  @spec subscription_details(Sanbase.Billing.Subscription.t()) :: map()
+  def subscription_details(%Sanbase.Billing.Subscription{} = subscription) do
+    alias Sanbase.Billing.Plan.Bundle.Entitlement
+    alias Sanbase.Billing.Plan.Bundle.Price
+    alias Sanbase.Billing.Subscription.Item
+
+    items = Item.by_subscription(subscription.id)
+    prices_by_sku = subscription.plan.interval |> Price.active() |> Map.new(&{&1.sku, &1})
+    entitlement = subscription.bundle_entitlement
+
+    package_skus = for %Item{type: :package, sku: sku} <- items, do: sku
+
+    addon =
+      Enum.find_value(items, fn %Item{type: type, sku: sku} -> type == :api_calls && sku end)
+
+    %{
+      packages: (entitlement && entitlement.packages) || package_skus,
+      api_calls_addon: addon,
+      api_call_limits: entitlement && Entitlement.api_call_limits(entitlement),
+      historical_data_in_days: entitlement && entitlement.historical_data_in_days,
+      realtime_data_cut_off_in_days: entitlement && entitlement.realtime_data_cut_off_in_days,
+      items:
+        Enum.map(items, fn %Item{} = item ->
+          price = Map.get(prices_by_sku, item.sku)
+
+          %{
+            id: item.id,
+            sku: item.sku,
+            type: item.type,
+            quantity: item.quantity,
+            amount: price && price.amount,
+            currency: price && price.currency,
+            remove_at: item.remove_at,
+            inserted_at: item.inserted_at
+          }
+        end)
+    }
+  end
+
   defmodule NotImplementedError do
     @moduledoc """
     Raised when a bundle plan reaches an access or quota function that has not

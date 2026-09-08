@@ -18,6 +18,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     {:ok, Plan.api_call_limits(plan)}
   end
 
+  @doc ~s"""
+  The `bundle` field of a subscription: its items and resolved entitlement, or
+  `nil` for any subscription that is not a bundle.
+
+  Reads only local rows - `subscription_items`, `bundle_prices` and the entitlement
+  stored on the subscription - so it never calls Stripe. A customer holds at most
+  one bundle subscription, so this is not a batching concern.
+  """
+  def bundle_subscription_details(%Subscription{} = subscription, _args, _resolution) do
+    subscription = Sanbase.Repo.preload(subscription, :plan)
+
+    case Plan.type(subscription.plan.name) do
+      :bundle -> {:ok, Sanbase.Billing.Plan.Bundle.subscription_details(subscription)}
+      _ -> {:ok, nil}
+    end
+  end
+
   def bundle_catalog(_root, %{interval: interval}, resolution) do
     user = current_user(resolution)
 

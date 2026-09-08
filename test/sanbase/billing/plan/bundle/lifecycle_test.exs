@@ -152,6 +152,38 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
       end
     end
 
+    test "refuses a concurrent purchase for the same user before any Stripe call",
+         %{user: user} do
+      # The competing holder is a raw Postgrex connection: the sandbox hands every
+      # process in this test the same session, and an advisory lock is re-entrant
+      # within its session, so a second `Task` here would acquire it regardless.
+      with_mocks stripe_mocks() do
+        with_foreign_purchase_lock(user.id, fn ->
+          assert {:error, message} =
+                   Lifecycle.subscribe(user, packages: ["market"], interval: "month")
+
+          assert message == Subscription.PurchaseLock.busy_message()
+          # The two Stripe calls the bundle flow makes, neither may happen.
+          assert_not_called(StripeApi.create_bundle_subscription(:_))
+          assert_not_called(StripeApi.attach_payment_method_to_customer(:_, :_))
+          assert calls(:create_bundle_subscription) == []
+        end)
+
+        assert Subscription |> where([s], s.user_id == ^user.id) |> Repo.all() == []
+      end
+    end
+
+    test "a lock held for another user does not block the purchase", %{user: user} do
+      other = insert(:user)
+
+      with_mocks stripe_mocks() do
+        with_foreign_purchase_lock(other.id, fn ->
+          assert {:ok, %Subscription{status: :active}} =
+                   Lifecycle.subscribe(user, packages: ["market"], interval: "month")
+        end)
+      end
+    end
+
     test "rejects CUSTOM auto-replace", %{user: user} = context do
       {:ok, custom} =
         %Plan{}
@@ -883,6 +915,34 @@ defmodule Sanbase.Billing.Plan.Bundle.LifecycleTest do
         updated_at: now
       }
     ])
+  end
+
+  # Mirrors `Subscription.PurchaseLock`'s namespace; see purchase_lock_test.exs for
+  # why the competing holder has to be a connection of its own.
+  @purchase_lock_namespace 8412
+
+  defp with_foreign_purchase_lock(user_id, fun) do
+    {:ok, conn} =
+      Repo.config()
+      |> Keyword.take([:username, :password, :hostname, :port, :database])
+      |> Postgrex.start_link()
+
+    %Postgrex.Result{rows: [[true]]} =
+      Postgrex.query!(conn, "SELECT pg_try_advisory_lock($1, $2)", [
+        @purchase_lock_namespace,
+        user_id
+      ])
+
+    try do
+      fun.()
+    after
+      Postgrex.query!(conn, "SELECT pg_advisory_unlock($1, $2)", [
+        @purchase_lock_namespace,
+        user_id
+      ])
+
+      GenServer.stop(conn)
+    end
   end
 
   defp categorize_metrics do

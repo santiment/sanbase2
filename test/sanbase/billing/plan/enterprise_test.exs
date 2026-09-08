@@ -418,6 +418,20 @@ defmodule Sanbase.Billing.Plan.EnterpriseTest do
              end)
     end
 
+    test "is listed when the new offering is included, and the legacy rows still are not" do
+      # Only the exact `ENTERPRISE` name is admitted. `ENTERPRISE_BASIC` and friends
+      # must stay out even then, or `subscribe(planId: 105)` becomes discoverable again.
+      enterprise = enterprise_plan()
+      legacy = legacy_enterprise_plan()
+
+      assert {:ok, products} = Plan.product_with_plans(include_new_offering: true)
+
+      listed = Enum.flat_map(products, fn product -> Enum.map(product.plans, & &1.name) end)
+
+      assert enterprise.name in listed
+      refute legacy.name in listed
+    end
+
     test "a retired legacy row is out of the listing too" do
       # `ENTERPRISE_BASIC` and `ENTERPRISE_PLUS` were on the pricing page for four
       # years with no access-checker clause behind them, so buying one raised

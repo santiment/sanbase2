@@ -297,17 +297,23 @@ defmodule Sanbase.Billing.Plan.InstitutionalTest do
   end
 
   describe "the plan rows" do
-    test "are kept out of the pricing page listing" do
-      # Same reason the BUNDLE markers are: the Institutional column is rendered
-      # from its own copy, and listing the row would offer subscribe(plan_id:) a
-      # plan the pricing page does not drive.
+    test "are kept out of the pricing page listing by default" do
       institutional_plan("month")
 
       assert {:ok, products} = Plan.product_with_plans()
 
-      refute @plan in Enum.flat_map(products, fn product ->
-               Enum.map(product.plans, & &1.name)
-             end)
+      refute @plan in listed_names(products)
+    end
+
+    test "are listed when the new offering is included" do
+      # This is how the frontend learns the plan id for subscribe(planId:) instead
+      # of hardcoding 311/312.
+      monthly = institutional_plan("month")
+
+      assert {:ok, products} = Plan.product_with_plans(include_new_offering: true)
+
+      assert @plan in listed_names(products)
+      assert monthly.id in Enum.flat_map(products, fn p -> Enum.map(p.plans, & &1.id) end)
     end
 
     test "are toggled by the same switch as the bundle rows" do
@@ -345,6 +351,10 @@ defmodule Sanbase.Billing.Plan.InstitutionalTest do
     SanbaseWeb.Graphql.Complexity.from_to_interval(args, 5, %{
       context: %{auth: %{subscription: subscription}}
     })
+  end
+
+  defp listed_names(products) do
+    Enum.flat_map(products, fn product -> Enum.map(product.plans, & &1.name) end)
   end
 
   defp activate_offering do

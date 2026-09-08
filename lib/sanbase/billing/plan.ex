@@ -383,10 +383,17 @@ defmodule Sanbase.Billing.Plan do
   plan that flow cannot correctly create. The bundle catalog is served by
   `bundleCatalog` instead.
 
-  `INSTITUTIONAL` and `ENTERPRISE` are real priced plans and both are self-serve,
-  but they are still excluded here: this query backs the legacy pricing grid,
-  which renders a column per row and knows nothing about the three-column
-  offering. The new purchase surface addresses them by plan id (§8 **UI**).
+  `INSTITUTIONAL` and `ENTERPRISE` are real priced plans and both are self-serve.
+  They are listed only when `include_new_offering: true` is passed - the GraphQL
+  resolver passes `SaleControls.bundle_plans_visible?/1` for the caller, so the
+  rows appear once the offering is activated (and earlier for staff). That is how
+  the frontend learns their plan ids for `subscribe(planId:)` and
+  `updateSubscription(planId:)` without hardcoding them, and it is the same
+  switch `bundleCatalog` answers to, so the pricing page has one signal for the
+  whole offering. Every known consumer filters this list by a name allow-list, so
+  the extra rows are dropped by clients that do not know them. Only the exact
+  `ENTERPRISE` row is admitted: the legacy `ENTERPRISE_BASIC` / `ENTERPRISE_PLUS`
+  names stay excluded by the `ENTERPRISE%` prefix.
 
   `RETIRED_*` rows are excluded as well - withdrawn plans kept only so the
   subscriptions that reference them still resolve. The exclusion has to be by name
@@ -407,11 +414,24 @@ defmodule Sanbase.Billing.Plan do
   exposed on the GraphQL plan type, so a caller that wants to hide such rows
   still can.
   """
-  def product_with_plans do
+  @spec product_with_plans(include_new_offering: boolean()) :: {:ok, [%Product{}]}
+  def product_with_plans(opts \\ []) do
+    include_new_offering = Keyword.get(opts, :include_new_offering, false)
+
     bundle_pattern = @bundle_prefix <> "%"
     institutional_pattern = @institutional_prefix <> "%"
     enterprise_pattern = @enterprise_prefix <> "%"
     retired_pattern = @retired_prefix <> "%"
+
+    new_offering_filter =
+      if include_new_offering do
+        dynamic([p, pl], not like(pl.name, ^enterprise_pattern) or pl.name == @enterprise_prefix)
+      else
+        dynamic(
+          [p, pl],
+          not like(pl.name, ^institutional_pattern) and not like(pl.name, ^enterprise_pattern)
+        )
+      end
 
     query =
       from(p in Product,
@@ -419,11 +439,10 @@ defmodule Sanbase.Billing.Plan do
         on: pl.product_id == p.id,
         where:
           not pl.is_ppp and not like(pl.name, ^bundle_pattern) and
-            not like(pl.name, ^institutional_pattern) and
-            not like(pl.name, ^enterprise_pattern) and
             not like(pl.name, ^retired_pattern) and
             (pl.name not in ^@business_plan_names or
                coalesce(pl.is_deprecated, false) == false),
+        where: ^new_offering_filter,
         order_by: [desc: pl.order, asc: pl.id],
         preload: [plans: pl]
       )

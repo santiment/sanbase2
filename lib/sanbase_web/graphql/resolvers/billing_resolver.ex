@@ -10,8 +10,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
   require Logger
 
-  def products_with_plans(_root, _args, _resolution) do
-    Plan.product_with_plans()
+  def products_with_plans(_root, _args, resolution) do
+    # Institutional and Enterprise are listed once the offering is on sale (staff
+    # see them earlier), the same gate `bundleCatalog` uses.
+    visible? = Sanbase.Billing.Plan.SaleControls.bundle_plans_visible?(current_user(resolution))
+
+    Plan.product_with_plans(include_new_offering: visible?)
   end
 
   def plan_api_call_limits(%Plan{} = plan, _args, _resolution) do

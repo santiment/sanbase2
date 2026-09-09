@@ -9,6 +9,14 @@ defmodule Sanbase.DiscordBot.AiContext do
   @server_limit_per_day 10
   @pro_user_limit_per_day 20
 
+  # Commands that count towards the daily limit.
+  #
+  # `command` is derived from the answer's route: "!ai" for twitter-routed
+  # answers, "!thread" for everything else. Counting only "!ai" meant academy,
+  # metric and dialogue questions - the large majority - were never counted, so
+  # the limit almost never applied.
+  @rate_limited_commands ["!ai", "!thread"]
+
   schema "ai_context" do
     field(:answer, :string)
     field(:discord_user, :string)
@@ -31,8 +39,35 @@ defmodule Sanbase.DiscordBot.AiContext do
     field(:votes, :map, default: %{})
     field(:route, :map, default: %{})
     field(:function_called, :string)
+
+    # Diagnostics for a turn. A row used to exist only when the AI server
+    # answered successfully, so failures were invisible here.
+    #
+    # status:            "ok" | "degraded" (a fallback produced the answer) |
+    #                    "error" (nothing usable came back)
+    # qa_engine:         which QA engine answered, "v1" or "v2"
+    # v2_fallback:       the v2 orchestrator raised and v1 answered instead
+    # rephrased_question the standalone question sent downstream, when rewritten
+    # tools_used:        tools the v2 orchestrator called
+    # langfuse_trace_id: links the row to its trace
+    field(:status, :string, default: "ok")
+    field(:qa_engine, :string)
+    field(:v2_fallback, :boolean, default: false)
+    field(:rephrased_question, :string)
+    field(:tools_used, {:array, :string}, default: [])
+    field(:langfuse_trace_id, :string)
+
     timestamps()
   end
+
+  @doc "A turn that produced a usable answer."
+  def ok_status(), do: "ok"
+
+  @doc "A turn answered by a fallback path rather than the intended one."
+  def degraded_status(), do: "degraded"
+
+  @doc "A turn that produced no usable answer."
+  def error_status(), do: "error"
 
   @doc false
   def changeset(ai_context, attrs) do
@@ -58,9 +93,16 @@ defmodule Sanbase.DiscordBot.AiContext do
       :thread_name,
       :votes,
       :route,
-      :function_called
+      :function_called,
+      :status,
+      :qa_engine,
+      :v2_fallback,
+      :rephrased_question,
+      :tools_used,
+      :langfuse_trace_id
     ])
     |> validate_required([:discord_user, :guild_id, :channel_id, :question])
+    |> validate_inclusion(:status, ["ok", "degraded", "error"])
   end
 
   def by_id(id) do
@@ -77,10 +119,20 @@ defmodule Sanbase.DiscordBot.AiContext do
     |> Repo.insert()
   end
 
+  @doc """
+  Recent turns of a conversation, newest first.
+
+  Errored turns are skipped: they carry no answer, and feeding a failure back
+  into the next prompt makes the model apologise for something the user never
+  saw. Degraded turns are kept, since the user did see those answers.
+  """
   def fetch_recent_history(thread_id, limit) do
     query =
       from(c in __MODULE__,
-        where: c.thread_id == ^thread_id,
+        where:
+          c.thread_id == ^thread_id and
+            (is_nil(c.status) or c.status != "error") and
+            not is_nil(c.answer),
         order_by: [desc: c.inserted_at],
         limit: ^limit
       )
@@ -136,11 +188,15 @@ defmodule Sanbase.DiscordBot.AiContext do
     end
   end
 
+  # A turn that errored cost the user nothing, so it must not eat their daily
+  # quota. Now that failures are recorded, an outage would otherwise lock a chat
+  # out for the rest of the day.
   defp query_for_server(args, start_of_day) do
     from(c in __MODULE__,
       where:
-        c.command == "!ai" and c.guild_id == ^args.guild_id and
-          c.user_is_pro != true and fragment("?::date = ?", c.inserted_at, ^start_of_day),
+        c.command in @rate_limited_commands and c.guild_id == ^args.guild_id and
+          c.user_is_pro != true and fragment("?::date = ?", c.inserted_at, ^start_of_day) and
+          (is_nil(c.status) or c.status != "error"),
       select: count(c.id)
     )
   end
@@ -148,8 +204,9 @@ defmodule Sanbase.DiscordBot.AiContext do
   defp query_for_pro_user(args, start_of_day) do
     from(c in __MODULE__,
       where:
-        c.command == "!ai" and c.guild_id == ^args.guild_id and
-          c.user_is_pro == true and fragment("?::date = ?", c.inserted_at, ^start_of_day),
+        c.command in @rate_limited_commands and c.guild_id == ^args.guild_id and
+          c.user_is_pro == true and fragment("?::date = ?", c.inserted_at, ^start_of_day) and
+          (is_nil(c.status) or c.status != "error"),
       select: count(c.id)
     )
   end

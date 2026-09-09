@@ -34,10 +34,37 @@ What this Telegram bot reuses **unchanged**:
 - `Sanbase.DiscordBot.Utils.split_message/2`
 - `Sanbase.TaskSupervisor` (from `Sanbase.Application.common_children/0`)
 
-`ai_context` needs **no schema change**: its columns are plain strings, so Telegram
-IDs are namespaced with a `tg_` prefix (no collision with Discord snowflakes).
-Required changeset fields (`discord_user, guild_id, channel_id, question`) are all
-provided; unknown keys are ignored by `cast`.
+`ai_context` needs no Telegram-specific schema change: its columns are plain
+strings, so Telegram IDs are namespaced with a `tg_` prefix (no collision with
+Discord snowflakes). Required changeset fields (`discord_user, guild_id,
+channel_id, question`) are all provided; unknown keys are ignored by `cast`.
+
+It does carry diagnostics for every turn, shared with the Discord bot. A row used
+to be written only when the AI server answered successfully, so a failed question
+left no record anywhere but the logs. Now the failure path writes one too:
+
+| Column | Meaning |
+|---|---|
+| `status` | `ok`, `degraded` (a fallback produced the answer) or `error` (nothing usable came back). |
+| `error_message` | Why it degraded or failed, e.g. `ai_server_http_500`, `ai_server_transport_:econnrefused`. |
+| `qa_engine` | Which engine answered, `v1` or `v2`. |
+| `v2_fallback` | The v2 orchestrator raised and v1 answered instead. |
+| `rephrased_question` | The standalone question actually sent downstream, when it was rewritten. |
+| `tools_used` | Tools the v2 orchestrator called. |
+| `langfuse_trace_id` | Links the row straight to its Langfuse trace. |
+
+Errored turns are excluded from conversation history and from the daily quota:
+they carry no answer, and a failure should neither be replayed into the next
+prompt nor charged to the user.
+
+```sql
+-- every bad turn today, newest first
+SELECT inserted_at, discord_user, status, error_message, qa_engine, v2_fallback,
+       langfuse_trace_id, left(question, 120) AS question
+FROM ai_context
+WHERE status <> 'ok' AND inserted_at > now() - interval '1 day'
+ORDER BY inserted_at DESC;
+```
 
 The **one DB addition** is `telegram_bot_messages` (chat_id, message_id,
 conversation_id): Telegram's `reply_to_message` is only one level deep, so reply
@@ -71,8 +98,17 @@ nor the Telegram bot started under `CONTAINER_TYPE=all` (the local default).
 
 ## UX / conversation model
 
-Group-only. DMs get a static redirect ("I only answer in the Santiment group");
-messages from other bots are ignored. In groups, two triggers:
+Group-only, and only in **allowlisted** groups. DMs get a static redirect;
+messages from other bots are ignored.
+
+Anyone can add a public Telegram bot to a group they own, and the daily question
+limit is keyed on the chat id, so an open bot hands every new group a fresh
+quota. A mention from a chat outside `TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS` gets one
+short "not available here" reply and is logged with its chat id, so a legitimate
+group is easy to add. To enable a new group, read the chat id from that log line
+and append it to the env var.
+
+In an allowlisted group, two triggers:
 
 1. **`@mention <question>`** → starts a **new conversation**, bot answers as a
    reply to the question message.
@@ -116,6 +152,7 @@ Replies:
 | Var | Purpose |
 |---|---|
 | `TELEGRAM_QA_BOT_TOKEN` | Token of the Q&A bot from BotFather. **Must NOT be the alerts bot token** (`TELEGRAM_SIGNALS_BOT_TOKEN`) — one Telegram token can only have one updates consumer. Unset = bot disabled. |
+| `TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS` | Comma-separated chat ids the bot answers in. Unset = the built-in list in `message_handler.ex` (Santiment + the test group). `*` allows every chat, for local development only. |
 | `AI_SERVER_URL` | Already used by the Discord bot. Point to local/staging AI server in dev. |
 
 ## Local testing guide

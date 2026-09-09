@@ -173,9 +173,11 @@ defmodule Sanbase.DeepResearch.Timeline do
   phase, activity + phase).
 
   `:at` (stamped by the runner on receipt) becomes `last_event_at`. `:live` — what the
-  model is producing right now — replaces the previous preview; any other substantive
-  event (text, a tool event, the report) means that draft is finished, so it clears
-  the preview instead.
+  model is producing right now — replaces the previous preview, and wins when the same
+  event also carries prose (an AI message can stream text and a tool call at once): the
+  draft is then the newer state. Any event with no `:live` that carries `thinking`, an
+  `activity` of any kind, or the report clears the preview: the run has moved on, so
+  whatever was being drafted is either finished output or no longer current.
   """
   @spec apply_result(turn(), Event.t()) :: turn()
   def apply_result(turn, %Event{} = event) do
@@ -474,7 +476,7 @@ defmodule Sanbase.DeepResearch.Timeline do
   # Consecutive matches separated by at most a delimiter and whitespace belong to one run.
   defp group_runs(spans) do
     spans
-    |> Enum.reduce([], fn {start, len} = span, runs ->
+    |> Enum.reduce([], fn {start, _len} = span, runs ->
       case runs do
         [[{p_start, p_len} | _] = run | rest] when start - (p_start + p_len) <= 3 ->
           [[span | run] | rest]

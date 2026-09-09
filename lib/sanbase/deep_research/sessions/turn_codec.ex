@@ -140,7 +140,7 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
       |> List.wrap()
       |> Enum.filter(&is_map/1)
       |> Enum.map(
-        &%{content: to_string(&1["content"] || ""), status: to_string(&1["status"] || "pending")}
+        &%{content: todo_string(&1["content"], ""), status: todo_string(&1["status"], "pending")}
       )
 
     %{kind: :plan, todos: todos}
@@ -188,6 +188,13 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
     do: %{title: r["title"], url: r["url"], domain: r["domain"], snippet: r["snippet"]}
 
   defp decode_source(s), do: %{url: s["url"], title: s["title"], domain: s["domain"]}
+
+  # jsonb hands back whatever was written. `to_string/1` raises for a map or a list, and
+  # the raise would escape `decode_item/1` and take the whole transcript down with it, so
+  # anything that is not a scalar reads as the default instead.
+  defp todo_string(value, _default) when is_binary(value), do: value
+  defp todo_string(value, _default) when is_number(value), do: to_string(value)
+  defp todo_string(_value, default), do: default
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)

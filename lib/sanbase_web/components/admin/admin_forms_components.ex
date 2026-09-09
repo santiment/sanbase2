@@ -25,13 +25,23 @@ defmodule SanbaseWeb.AdminFormsComponents do
     """
   end
 
+  @doc """
+  One card in a forms listing: a title, a description and the action buttons for it.
+
+  The card always renders a DOM id, so anything selecting a single card (a test, an
+  anchor link) has a stable handle: `:id` when the caller passes one, otherwise one
+  derived from the title.
+  """
+  attr(:id, :string, default: nil)
   attr(:title, :string, required: true)
   attr(:description, :string, required: true)
   attr(:buttons, :list, required: true)
 
   def form_info(assigns) do
+    assigns = assign(assigns, :id, assigns.id || "form-info-" <> slug(assigns.title))
+
     ~H"""
-    <div class="flex flex-col md:flex-row py-8 items-center justify-between">
+    <div id={@id} class="flex flex-col md:flex-row py-8 items-center justify-between">
       <!-- Title and description -->
       <div class="w-3/4">
         <span class="text-2xl mb-6 text-base-content">{@title}</span>
@@ -47,5 +57,14 @@ defmodule SanbaseWeb.AdminFormsComponents do
       </div>
     </div>
     """
+  end
+
+  # The card's DOM id comes from its title so tests (and anything else selecting one
+  # card) have a stable handle without every call site passing an id.
+  defp slug(title) do
+    title
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
   end
 end

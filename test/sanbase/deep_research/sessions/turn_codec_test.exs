@@ -296,4 +296,34 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
 
     assert [%{kind: :thinking, id: "m1", text: "hi"}] = decoded.timeline
   end
+
+  test "a plan todo whose content is not a scalar falls back instead of crashing" do
+    row = %SessionTurn{
+      position: 6,
+      question: "q",
+      phase: :completed,
+      clarification: [],
+      timeline: [
+        %{
+          "kind" => "plan",
+          "todos" => [
+            %{"content" => %{"text" => "a"}, "status" => ["in_progress"]},
+            %{"content" => 7, "status" => "completed"},
+            %{"content" => "Write the report"}
+          ]
+        }
+      ],
+      sources: [],
+      started_at: DateTime.from_unix!(1, :millisecond),
+      finished_at: DateTime.from_unix!(2, :millisecond)
+    }
+
+    assert [%{kind: :plan, todos: todos}] = TurnCodec.from_row(row).timeline
+
+    assert todos == [
+             %{content: "", status: "pending"},
+             %{content: "7", status: "completed"},
+             %{content: "Write the report", status: "pending"}
+           ]
+  end
 end

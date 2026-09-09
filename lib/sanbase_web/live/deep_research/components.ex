@@ -1300,7 +1300,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
   defp arg_summary(%{args: args}) when is_map(args) do
     args
     |> Enum.reject(fn {_k, v} -> v in [nil, "None", ""] end)
-    |> Enum.map_join(", ", fn {k, v} -> "#{k}=#{stringify(v)}" end)
+    |> Enum.map_join(", ", fn {k, v} -> "#{arg_key(k)}=#{stringify(v)}" end)
     |> String.slice(0, 140)
   end
 
@@ -1309,6 +1309,18 @@ defmodule SanbaseWeb.DeepResearch.Components do
   # Values are where content lives (a file body, a code snippet, a brief); the finished
   # row shows the shape of the call, never the payload — the live draft's rule too.
   @arg_value_max_chars 60
+
+  # A key is a field name, so normally short — clip the invented long one rather than
+  # let it eat the whole summary and hide the arguments after it.
+  @arg_key_max_chars 32
+
+  defp arg_key(k) do
+    s = to_string(k)
+
+    if String.length(s) > @arg_key_max_chars,
+      do: String.slice(s, 0, @arg_key_max_chars - 1) <> "…",
+      else: s
+  end
 
   defp stringify(v) do
     s = if is_binary(v), do: v, else: inspect(v)

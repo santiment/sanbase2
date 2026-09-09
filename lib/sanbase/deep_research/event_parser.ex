@@ -487,12 +487,19 @@ defmodule Sanbase.DeepResearch.EventParser do
     list
     |> Enum.filter(&is_map/1)
     |> Enum.map(
-      &%{content: to_string(&1["content"] || ""), status: to_string(&1["status"] || "pending")}
+      &%{content: todo_string(&1["content"], ""), status: todo_string(&1["status"], "pending")}
     )
     |> Enum.reject(&(&1.content == ""))
   end
 
   defp todo_list(_), do: []
+
+  # The agent's JSON, so a `content` can be any shape. `to_string/1` raises for a map or
+  # a list, and nothing rescues around `handle_line/3` — the raise would end the stream.
+  # A non-scalar reads as the default, and an empty `content` is rejected above.
+  defp todo_string(value, _default) when is_binary(value), do: value
+  defp todo_string(value, _default) when is_number(value), do: to_string(value)
+  defp todo_string(_value, default), do: default
 
   # The plan recovered from a `write_todos` call whose arguments are still streaming:
   # whole JSON when it already parses, else every complete `{...}` object so far. The

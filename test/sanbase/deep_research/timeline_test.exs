@@ -7,7 +7,6 @@ defmodule Sanbase.DeepResearch.TimelineTest do
 
   # Tests describe an event as the fields it fills; `struct!` rejects a key the parser
   # could never produce, so a typo here fails loudly instead of silently doing nothing.
-  defp apply_event(turn, %Event{} = event), do: Timeline.apply_result(turn, event)
   defp apply_event(turn, attrs), do: Timeline.apply_result(turn, struct!(Event, attrs))
 
   describe "apply_result + reduce_timeline" do

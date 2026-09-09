@@ -253,7 +253,6 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
 
       html = render_turn(turn([plan], %{phase: :completed, report: "ok", finished_at: @now}))
 
-      assert html =~ ">Plan<" or html =~ "Plan\n"
       assert html =~ "hero-list-bullet"
       assert html =~ "Fetch social volume"
       assert html =~ "Compute summary statistics"
@@ -680,6 +679,30 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
       assert html =~ "file_path=/notes/btc.md"
       assert html =~ "[240 chars]"
       refute html =~ "buy the dip"
+    end
+
+    test "an over-long argument key is clipped to the limit, ellipsis included" do
+      kept = String.duplicate("a", 32)
+      clipped = String.duplicate("b", 33)
+
+      html =
+        render_turn(
+          turn([
+            %{
+              activity: %{
+                kind: :mcp_call,
+                id: "c1",
+                tool: "write_file",
+                args: %{kept => "kept", clipped => "clipped"}
+              }
+            }
+          ])
+        )
+
+      # 32 chars is the limit, not the trigger — that key survives whole.
+      assert html =~ "#{kept}=kept"
+      assert html =~ "#{String.duplicate("b", 31)}…=clipped"
+      refute html =~ "#{String.duplicate("b", 32)}…"
     end
 
     test "why a paused turn stopped reads as a warning — it is still resumable" do

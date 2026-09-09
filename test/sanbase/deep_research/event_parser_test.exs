@@ -499,6 +499,36 @@ defmodule Sanbase.DeepResearch.EventParserTest do
       refute result.live
     end
 
+    test "a write_todos todo whose content is not a scalar is dropped, not raised on" do
+      result =
+        EventParser.parse([
+          %{
+            "content" => "",
+            "type" => "ai",
+            "tool_calls" => [
+              %{
+                "name" => "write_todos",
+                "args" => %{
+                  "todos" => [
+                    %{"content" => %{"text" => "nested"}, "status" => "pending"},
+                    %{"content" => ["a", "b"], "status" => "pending"},
+                    %{"content" => "Fetch social volume", "status" => ["in_progress"]}
+                  ]
+                }
+              }
+            ]
+          },
+          %{}
+        ])
+
+      assert %{
+               activity: %{
+                 kind: :plan,
+                 todos: [%{content: "Fetch social volume", status: "pending"}]
+               }
+             } = result
+    end
+
     test "a write_todos still streaming carries the complete items so far" do
       args =
         ~s({"todos":[{"content":"Fetch \\"social\\" volume","status":"completed"},{"content":"Compute st)

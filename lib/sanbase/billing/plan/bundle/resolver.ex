@@ -22,7 +22,7 @@ defmodule Sanbase.Billing.Plan.Bundle.Resolver do
     * **Queries and signals** - `"all"` for every bundle. They are effectively
       unrestricted today and packages do not change that (§6.4). It still has to
       be said explicitly, because the access map denies by default.
-    * **Monthly API calls** - a flat 100,000 regardless of how many packages were
+    * **Monthly API calls** - a flat 50,000 regardless of how many packages were
       bought, plus any add-on tiers. Deliberately not summed per package.
     * **Hourly and per-minute limits** - a single base value, never summed. Rate
       limits protect infrastructure; they are not a thing being sold, so buying
@@ -51,8 +51,9 @@ defmodule Sanbase.Billing.Plan.Bundle.Resolver do
   require Logger
 
   # Flat, not per package. Decided by product: choosing several packages still
-  # gives one 100,000-call allowance.
-  @base_calls_per_month 100_000
+  # gives one 50,000-call allowance - "50k API request default if you buy one or
+  # all bundles". Was 100,000 until 2026-09-10.
+  @base_calls_per_month 50_000
 
   # Reused from sanapi_pro (api_call_limit/restrictions.ex) so bundle burst
   # behavior matches the tier bundles are priced against.

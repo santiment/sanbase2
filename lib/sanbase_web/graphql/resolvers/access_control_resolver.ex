@@ -10,6 +10,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   end
 
   def get_access_restrictions(_root, args, %{context: context}) do
+    asked_for_another_plan? = Map.has_key?(args, :plan_name) or Map.has_key?(args, :plan)
+
     plan_name =
       Map.get(args, :plan_name) || Map.get(args, :plan) || context[:auth][:plan] || "FREE"
 
@@ -28,16 +30,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
 
         filter = Map.get(args, :filter)
 
+        # A grant belongs to one customer, so it is only applied when the caller is asking
+        # about their own plan - naming a plan explicitly asks what that plan gives, not
+        # what this customer happens to have been granted on top of it.
+        grant =
+          if asked_for_another_plan?,
+            do: nil,
+            else: Sanbase.Billing.Subscription.grant(context[:auth][:subscription])
+
         Cache.wrap(
           fn ->
             restrictions =
-              Sanbase.Billing.Plan.Restrictions.get_all(plan_name, product_code, filter)
+              Sanbase.Billing.Plan.Restrictions.get_all(
+                plan_name,
+                product_code,
+                filter,
+                nil,
+                grant
+              )
 
             {:ok, restrictions}
           end,
-          {:get_access_restrictions, plan_name, product_code, filter}
+          # The grant is part of the key. Without it one granted customer's wider windows
+          # would be cached under the plan name and served to everyone else on that plan.
+          {:get_access_restrictions, plan_name, product_code, filter, grant_cache_key(grant)}
         ).()
     end
+  end
+
+  # Only the parts a grant can change the answer with. `nil` for the overwhelming
+  # majority of callers, which keeps their cache key exactly what it was before.
+  defp grant_cache_key(nil), do: nil
+
+  defp grant_cache_key(%Sanbase.Billing.Subscription.Grant{} = grant) do
+    :erlang.phash2({grant.full_history_packages, grant.full_history_metrics})
   end
 
   defp valid_plan_name?("CUSTOM_" <> _), do: true

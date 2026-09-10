@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict Ht0dgMfoCcp9ggpJRwljPSZbr703PZ8381AxQWntRtd925ASKDeq2Z40cFs96iN
+\restrict IokZ7KwyDYQ63KrrEvsPeIcdhaj5ki4govFsKQyUkkhFvVJLxqOHMY4bIrnKUhs
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 17.10 (Homebrew)
+-- Dumped by pg_dump version 17.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -5009,7 +5009,8 @@ CREATE TABLE public.subscriptions (
     inserted_at timestamp without time zone,
     updated_at timestamp without time zone,
     type public.subscription_type DEFAULT 'fiat'::public.subscription_type NOT NULL,
-    bundle_entitlement jsonb
+    bundle_entitlement jsonb,
+    "grant" jsonb
 );
 
 
@@ -12315,7 +12316,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Ht0dgMfoCcp9ggpJRwljPSZbr703PZ8381AxQWntRtd925ASKDeq2Z40cFs96iN
+\unrestrict IokZ7KwyDYQ63KrrEvsPeIcdhaj5ki4govFsKQyUkkhFvVJLxqOHMY4bIrnKUhs
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12920,3 +12921,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260812120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260813090000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260902130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260903120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260910090000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260910091000);

@@ -102,7 +102,7 @@ defmodule SanbaseWeb.Graphql.BundleMutationsApiTest do
         # the current-period package list and its item carries the removal date.
         assert Enum.sort(bundle["packages"]) == ["market", "social"]
         assert bundle["apiCallsAddon"] == nil
-        assert bundle["apiCallLimits"]["month"] == 100_000
+        assert bundle["apiCallLimits"]["month"] == 50_000
         assert is_integer(bundle["apiCallLimits"]["hour"])
         assert bundle["realtimeDataCutOffInDays"] == 0
 

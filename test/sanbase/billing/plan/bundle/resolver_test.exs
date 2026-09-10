@@ -96,17 +96,17 @@ defmodule Sanbase.Billing.Plan.Bundle.ResolverTest do
     test "one package gets the flat monthly allowance" do
       {:ok, attrs} = Resolver.resolve([item("market", :package)], @snapshot)
 
-      assert attrs.api_call_limits["month"] == 100_000
+      assert attrs.api_call_limits["month"] == 50_000
     end
 
     test "five packages get the same flat allowance, not five times it" do
-      # Decided by product: choosing several packages still gives one 100,000
+      # Decided by product: choosing several packages still gives one 50,000
       # allowance. Summing per package is the thing this pins against.
       items = Enum.map(Bundle.Package.slugs(), &item(&1, :package))
 
       {:ok, attrs} = Resolver.resolve(items, @snapshot)
 
-      assert attrs.api_call_limits["month"] == 100_000
+      assert attrs.api_call_limits["month"] == 50_000
       assert length(attrs.packages) == 5
     end
 
@@ -117,7 +117,7 @@ defmodule Sanbase.Billing.Plan.Bundle.ResolverTest do
           @snapshot
         )
 
-      assert attrs.api_call_limits["month"] == 600_000
+      assert attrs.api_call_limits["month"] == 550_000
     end
 
     test "several units of an add-on multiply" do
@@ -127,7 +127,7 @@ defmodule Sanbase.Billing.Plan.Bundle.ResolverTest do
           @snapshot
         )
 
-      assert attrs.api_call_limits["month"] == 1_600_000
+      assert attrs.api_call_limits["month"] == 1_550_000
     end
 
     test "burst limits never grow with the number of packages" do
@@ -235,7 +235,7 @@ defmodule Sanbase.Billing.Plan.Bundle.ResolverTest do
       stored = Repo.get!(Subscription, subscription.id).bundle_entitlement
 
       assert stored.packages == ["market", "social"]
-      assert stored.api_call_limits["month"] == 100_000
+      assert stored.api_call_limits["month"] == 50_000
       assert stored.package_snapshot_version == PackageSnapshot.latest().version
     end
 
@@ -312,7 +312,7 @@ defmodule Sanbase.Billing.Plan.Bundle.ResolverTest do
       limits =
         Bundle.Access.api_call_limits(Repo.get!(Subscription, subscription.id).bundle_entitlement)
 
-      assert limits == %{month: 600_000, hour: 30_000, minute: 600}
+      assert limits == %{month: 550_000, hour: 30_000, minute: 600}
     end
 
     test "refuses when no snapshot has been published", %{subscription: subscription} do

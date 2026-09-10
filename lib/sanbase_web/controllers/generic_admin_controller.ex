@@ -143,6 +143,7 @@ defmodule SanbaseWeb.GenericAdminController do
       {"Invoice Archives", ~p"/admin/invoices"},
       {"Bundle Packages", ~p"/admin/bundle_packages"},
       {"Bundle Subscriptions", ~p"/admin/bundle_subscriptions"},
+      {"Subscription Grants", ~p"/admin/subscription_grants"},
       {"Broadcast Notifications Overview", ~p"/admin/notifications/broadcast/overview"}
     ]
   end

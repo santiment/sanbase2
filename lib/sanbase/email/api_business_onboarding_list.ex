@@ -1,16 +1,19 @@
 defmodule Sanbase.Email.ApiBusinessOnboardingList do
   @moduledoc """
   Keeps a Mailjet contact list populated with the email addresses of users who
-  buy an API "Business or higher" subscription - `BUSINESS_PRO`, `BUSINESS_MAX`
-  or a bespoke `CUSTOM*` contract. Product uses that list to trigger the
+  buy an API "Business or higher" subscription - `BUSINESS_PRO`, `BUSINESS_MAX`,
+  a bespoke `CUSTOM*` contract, or anything in the new offering (`BUNDLE*`,
+  `INSTITUTIONAL*`, `ENTERPRISE*`). Product uses that list to trigger the
   API-client onboarding email.
 
-  The new offering is deliberately absent: `BUNDLE`, `INSTITUTIONAL` and
-  `ENTERPRISE` customers do not land on this list. Whether they should is a
-  product question, not an oversight of this module - see §15 of
-  docs/composable-api-plans-handover.md. Note that `ENTERPRISE` here would *not*
-  be caught by the `CUSTOM*` pattern; it is a distinct fixed tier, despite the two
-  words having been used interchangeably before it existed.
+  The new offering was deliberately absent until product confirmed on 2026-09-10
+  that package and Institutional customers should get the same onboarding email -
+  see §15 Q16. `ENTERPRISE*` is matched explicitly rather than left to `CUSTOM*`:
+  negotiated Enterprise contracts are `CUSTOM_*` rows and covered either way, but
+  the fixed `ENTERPRISE` row is not, despite the two words having been used
+  interchangeably before that tier existed. The legacy `ENTERPRISE_BASIC` /
+  `ENTERPRISE_PLUS` plans were renamed out of the namespace, so the prefix is
+  unambiguous.
 
   Membership is add-only and driven purely by subscription state. There is no
   dedicated account setting - the onboarding email is part of the purchase and
@@ -39,6 +42,12 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
 
   @list_atom :api_business_onboarding
   @business_plan_names ["BUSINESS_PRO", "BUSINESS_MAX"]
+
+  # Name prefixes that qualify on top of `@business_plan_names`. The two queries
+  # spell the same prefixes out as `like/2` clauses - Ecto has no portable way to
+  # share a prefix list across a query and a plain function, and a wrong answer
+  # here sends real email, so the duplication is the safer trade.
+  @qualifying_prefixes ["CUSTOM", "BUNDLE", "INSTITUTIONAL", "ENTERPRISE"]
 
   @doc "The Mailjet list atom, as registered in `Sanbase.Email.MailjetApi`."
   @spec list_atom() :: atom()
@@ -103,7 +112,10 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
           where: s.status == :active,
           where: s.inserted_at >= ^since,
           where: p.product_id == ^Product.product_api(),
-          where: p.name in ^business_names or like(p.name, "CUSTOM%"),
+          where:
+            p.name in ^business_names or like(p.name, "CUSTOM%") or
+              like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or
+              like(p.name, "ENTERPRISE%"),
           where: not is_nil(u.email) and u.email != "",
           distinct: true,
           select: u.email
@@ -208,7 +220,10 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
           where: s.status == :active,
           where: s.inserted_at >= ^since,
           where: p.product_id == ^Product.product_api(),
-          where: p.name in ^@business_plan_names or like(p.name, "CUSTOM%"),
+          where:
+            p.name in ^@business_plan_names or like(p.name, "CUSTOM%") or
+              like(p.name, "BUNDLE%") or like(p.name, "INSTITUTIONAL%") or
+              like(p.name, "ENTERPRISE%"),
           select: s.id,
           limit: 1
         )
@@ -219,7 +234,7 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
   defp business_or_higher_api_plan?(%{product_id: product_id, name: name})
        when is_binary(name) do
     product_id == Product.product_api() and
-      (name in @business_plan_names or String.starts_with?(name, "CUSTOM"))
+      (name in @business_plan_names or String.starts_with?(name, @qualifying_prefixes))
   end
 
   defp business_or_higher_api_plan?(_), do: false

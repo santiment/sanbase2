@@ -84,6 +84,8 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
         %{
           kind: :chart,
           id: "ch1",
+          label: nil,
+          source: nil,
           slug: "ethereum",
           range: "90d",
           summary: %{"last" => 12.5},
@@ -149,6 +151,21 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
     turn = full_turn()
 
     assert store_and_load(turn) == turn
+  end
+
+  test "a stored chart with a non-map series entry decodes to the map entries only" do
+    row = %SessionTurn{
+      position: 1,
+      question: "q",
+      phase: :completed,
+      clarification: [],
+      sources: [],
+      timeline: [%{"kind" => "chart", "id" => "c1", "series" => ["junk", %{"data" => []}, nil]}],
+      usage: %{}
+    }
+
+    assert [%{kind: :chart, id: "c1", series: [%{"data" => []}]}] =
+             TurnCodec.from_row(row).timeline
   end
 
   test "a row from before compaction had its own item decodes it as one" do

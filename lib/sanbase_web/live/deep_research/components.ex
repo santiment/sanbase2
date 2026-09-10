@@ -260,6 +260,10 @@ defmodule SanbaseWeb.DeepResearch.Components do
   defp research_timeline(assigns) do
     turn = assigns.turn
     proc_items = visible_items(turn.timeline, turn.report, turn.clarification)
+
+    charts =
+      for %{kind: :chart, id: id} = c <- turn.timeline, is_binary(id), into: %{}, do: {id, c}
+
     # Nothing in flight: an item left marked running would spin forever.
     proc_items =
       if Timeline.inactive_phase?(turn.phase),
@@ -273,6 +277,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
       assign(assigns,
         blocks: blocks,
         has_research: has_research,
+        charts: charts,
         usage: Timeline.usage(turn),
         empty?: proc_items == [] and is_nil(turn.report)
       )
@@ -288,7 +293,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
         <.timeline_block block={block} index={index} turn_id={@turn.id} />
       <% end %>
 
-      <.report_card :if={@turn.report} id={@turn.id} report={@turn.report} />
+      <.report_card :if={@turn.report} id={@turn.id} report={@turn.report} charts={@charts} />
 
       <%!-- A running *phase* after the stream closed (@running false) is the
       no-report poll window — the turn is still being resolved, keep the
@@ -590,27 +595,11 @@ defmodule SanbaseWeb.DeepResearch.Components do
 
     ~H"""
     <div class="space-y-3">
-      <div
+      <.chart_widget
         :for={{chart, ci} <- Enum.with_index(@items)}
         id={stable_dom_id("dra-chart", @turn_id, chart, "#{@index}-#{ci}")}
-        phx-hook="LightweightChart"
-        phx-update="ignore"
-        data-chart={
-          Jason.encode!(%{
-            slug: chart[:slug],
-            range: chart[:range],
-            summary: chart[:summary],
-            series: chart.series
-          })
-        }
-        class="overflow-hidden rounded-xl border border-base-300 bg-base-100"
-      >
-        <div class="flex items-center gap-2 border-b border-base-300 px-3.5 py-2 text-xs font-medium text-base-content/60">
-          <.icon name="hero-chart-bar" class="size-4 text-primary" />
-          <span class="text-base-content/80">{chart_caption(chart)}</span>
-        </div>
-        <div class="dra-chart-canvas w-full" style="height: 18rem;"></div>
-      </div>
+        chart={chart}
+      />
     </div>
     """
   end
@@ -1138,8 +1127,53 @@ defmodule SanbaseWeb.DeepResearch.Components do
     end
   end
 
+  # One rendered chart — in the timeline where it was fetched, or in the report where the
+  # agent placed it. A series carrying a full-resolution `csv` gets a download link.
+  attr :id, :string, required: true
+  attr :chart, :map, required: true
+
+  defp chart_widget(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      phx-hook="LightweightChart"
+      phx-update="ignore"
+      data-chart={
+        Jason.encode!(%{
+          slug: @chart[:slug],
+          range: @chart[:range],
+          summary: @chart[:summary],
+          series: @chart.series
+        })
+      }
+      class="overflow-hidden rounded-xl border border-base-300 bg-base-100"
+    >
+      <div class="flex items-center gap-2 border-b border-base-300 px-3.5 py-2 text-xs font-medium text-base-content/60">
+        <.icon name="hero-chart-bar" class="size-4 text-primary" />
+        <span class="text-base-content/80">{chart_caption(@chart)}</span>
+        <span
+          class="ml-auto hidden whitespace-nowrap text-base-content/40 sm:inline"
+          title="Ctrl/⌘ + scroll to zoom · drag to pan · double-click to reset"
+        >
+          Ctrl/⌘ + scroll to zoom
+        </span>
+        <a
+          :for={{name, csv} <- csv_downloads(@chart)}
+          href={csv_data_url(csv)}
+          download={csv_filename(name)}
+          class="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs text-base-content/50 transition hover:bg-base-200 hover:text-base-content"
+        >
+          <.icon name="hero-arrow-down-tray" class="size-3.5" /> CSV
+        </a>
+      </div>
+      <div class="dra-chart-canvas w-full" style="height: 18rem;"></div>
+    </div>
+    """
+  end
+
   attr :id, :integer, required: true
   attr :report, :string, required: true
+  attr :charts, :map, default: %{}
 
   defp report_card(assigns) do
     ~H"""
@@ -1169,6 +1203,15 @@ defmodule SanbaseWeb.DeepResearch.Components do
               <div class="prose prose-sm max-w-none">{markdown(text)}</div>
             <% {:chart, spec} -> %>
               {ChartRenderer.render(spec)}
+            <% {:artifact, chart_id} -> %>
+              <%= if chart = @charts[chart_id] do %>
+                <.chart_widget
+                  id={stable_dom_id("dra-report-chart", @id, chart, chart_id)}
+                  chart={chart}
+                />
+              <% else %>
+                <p class="text-xs italic text-base-content/50">Chart unavailable.</p>
+              <% end %>
           <% end %>
         <% end %>
       </div>
@@ -1237,13 +1280,15 @@ defmodule SanbaseWeb.DeepResearch.Components do
   # Series come straight off the wire, so the keys are strings — see the "Not the only
   # chart path" note in `SanbaseWeb.DeepResearch.ChartRenderer`.
   defp chart_caption(chart) do
-    base = [chart[:slug], chart[:range]] |> Enum.reject(&is_nil/1) |> Enum.join(" · ")
+    base =
+      [chart[:source], chart[:slug], chart[:range]] |> Enum.reject(&is_nil/1) |> Enum.join(" · ")
 
     labels =
-      (chart.series || [])
-      |> Enum.map(&(&1["label"] || &1["name"]))
-      |> Enum.reject(&(&1 in [nil, ""]))
-      |> Enum.uniq()
+      for s when is_map(s) <- chart.series || [],
+          label = s["label"] || s["name"],
+          is_binary(label) and label != "",
+          uniq: true,
+          do: label
 
     case {base, labels} do
       {"", []} -> "Chart"
@@ -1254,19 +1299,41 @@ defmodule SanbaseWeb.DeepResearch.Components do
   end
 
   # The report and clarification cards render separately, so narration repeating them
-  # is noise.
+  # is noise; so is a chart the report already places.
   defp visible_items(timeline, report, clarification) do
-    Enum.reject(timeline, fn item ->
-      # Text may be nil on a turn decoded from an older row — as in
-      # Timeline.direct_answer?/1.
-      text = (item.kind == :thinking && item.text) || ""
+    placed = ReportMarkdown.chart_refs(report)
 
-      item.kind == :thinking and
-        ((is_binary(report) and String.trim(text) == String.trim(report)) or
-           (is_list(clarification) and clarification != [] and
-              Enum.all?(clarification, &String.contains?(text, &1))))
+    Enum.reject(timeline, fn
+      %{kind: :chart} = item -> item[:id] in placed
+      %{kind: :thinking} = item -> repeats_card?(item.text || "", report, clarification)
+      _ -> false
     end)
   end
+
+  # Text may be nil on a turn decoded from an older row — as in Timeline.direct_answer?/1.
+  defp repeats_card?(text, report, clarification) do
+    (is_binary(report) and String.trim(text) == String.trim(report)) or
+      (is_list(clarification) and clarification != [] and
+         Enum.all?(clarification, &String.contains?(text, &1)))
+  end
+
+  defp csv_downloads(chart) do
+    for %{"csv" => csv} = s when is_binary(csv) and csv != "" <- chart.series || [],
+        do: {s["name"] || s["label"] || "series", csv}
+  end
+
+  # Everything but unreserved characters is percent-encoded: `URI.encode/1` would leave a
+  # `#` raw, and in a `data:` URL that starts the fragment and truncates the download.
+  defp csv_data_url(csv),
+    do: "data:text/csv;charset=utf-8," <> URI.encode(csv, &URI.char_unreserved?/1)
+
+  defp csv_filename(name) when is_binary(name) do
+    base = name |> String.downcase() |> String.replace(~r/[^a-z0-9]+/, "_") |> String.trim("_")
+    base = if(base == "", do: "series", else: base) |> String.slice(0, 60) |> String.trim("_")
+    base <> ".csv"
+  end
+
+  defp csv_filename(_name), do: "series.csv"
 
   defp tool_summary(items) do
     n_search = Enum.count(items, &(&1.kind == :search))

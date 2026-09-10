@@ -18,7 +18,7 @@ defmodule Sanbase.DeepResearch.Timeline do
     * `%{kind: :compaction, state, tokens_estimate, messages_summarized}`
                                                             (state: compacting → compacted)
     * `%{kind: :skill, name, path}`
-    * `%{kind: :chart, id, slug, range, summary, series}`
+    * `%{kind: :chart, id, label, source, slug, range, summary, series}`
     * `%{kind: :script, id, agent, name, language, code, truncated}`
 
   The run's usage ledger is NOT one of these — it is one record per turn, not an event
@@ -339,6 +339,8 @@ defmodule Sanbase.DeepResearch.Timeline do
       %{
         kind: :chart,
         id: a.id,
+        label: a[:label],
+        source: a[:source],
         slug: a[:slug],
         range: a[:range],
         summary: a[:summary],

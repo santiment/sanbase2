@@ -1,7 +1,7 @@
 defmodule Sanbase.TelegramBot.MessageHandler do
   @moduledoc """
-  Handles Telegram updates for the Q&A bot. Group-only - private messages are
-  ignored.
+  Handles Telegram updates for the Q&A bot. Group-only, and only in allowlisted
+  groups - private messages and unknown groups are turned away.
 
   Reuses the Discord bot brains: `Sanbase.DiscordBot.AiServer` for answering and
   `Sanbase.DiscordBot.AiContext` for conversation history, votes and rate limits.
@@ -19,6 +19,8 @@ defmodule Sanbase.TelegramBot.MessageHandler do
     topic that triggers the bot continues that topic's context.
   """
 
+  require Logger
+
   alias Sanbase.DiscordBot.AiContext
   alias Sanbase.DiscordBot.AiServer
   alias Sanbase.DiscordBot.Utils
@@ -30,6 +32,19 @@ defmodule Sanbase.TelegramBot.MessageHandler do
   @typing_interval 5_000
   # Telegram topic name limit is 128
   @max_topic_name_length 90
+
+  # Chats the bot will answer in.
+  #
+  # Anyone can add a public Telegram bot to a group they own, and the daily
+  # question limit is keyed on the chat id, so an unrestricted bot hands every
+  # new group a fresh quota. Override with `TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS`
+  # (comma-separated chat ids); the single value `*` allows every chat.
+  @default_allowed_chat_ids [
+    # Santiment
+    "-1001140094437",
+    # Santiment AI Bot Test
+    "-1003992747479"
+  ]
 
   def handle_update(%{"message" => message}, bot), do: handle_message(message, bot)
 
@@ -49,7 +64,7 @@ defmodule Sanbase.TelegramBot.MessageHandler do
       "private" ->
         Api.send_message(
           message["chat"]["id"],
-          "👋 I only answer in the Santiment group. Mention me there to ask a question."
+          "👋 I only answer in Santiment's group chats. Mention me there to ask a question."
         )
 
       _ ->
@@ -69,11 +84,69 @@ defmodule Sanbase.TelegramBot.MessageHandler do
       |> String.trim()
 
     cond do
+      not allowed_chat?(message["chat"]) ->
+        reject_unallowed_chat(message, mentioned? or reply_to_bot?(message, bot))
+
       # Replying to a bot answer continues that conversation, mention not needed
-      reply_to_bot?(message, bot) -> continue_conversation(message, question)
-      mentioned? -> start_conversation(message, question)
-      true -> :ignore
+      reply_to_bot?(message, bot) ->
+        continue_conversation(message, question)
+
+      mentioned? ->
+        start_conversation(message, question)
+
+      true ->
+        :ignore
     end
+  end
+
+  @doc """
+  Whether the bot answers in this chat.
+
+  Public so the allowlist can be checked directly when a group reports that the
+  bot is silent.
+  """
+  def allowed_chat?(chat) do
+    case allowed_chat_ids() do
+      ["*"] -> true
+      ids -> to_string(chat["id"]) in ids
+    end
+  end
+
+  @doc "Chat ids the bot answers in, from the environment or the built-in default."
+  def allowed_chat_ids() do
+    case System.get_env("TELEGRAM_QA_BOT_ALLOWED_CHAT_IDS") do
+      raw when is_binary(raw) and raw != "" ->
+        raw
+        |> String.split(",")
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
+
+      _ ->
+        @default_allowed_chat_ids
+    end
+  end
+
+  # Only answers an explicit trigger, so a bot sitting quietly in someone's group
+  # stays quiet. Logged with the chat id so a legitimate group is easy to add.
+  defp reject_unallowed_chat(_message, false), do: :ignore
+
+  defp reject_unallowed_chat(message, true) do
+    chat = message["chat"]
+
+    Logger.info(
+      "Telegram QA bot triggered in a chat that is not allowed: " <>
+        inspect(%{chat_id: chat["id"], chat_title: chat["title"]})
+    )
+
+    Api.send_message(
+      chat["id"],
+      "This bot is only available in Santiment's own channels. " <>
+        "Ask in the Santiment group, or contact the Santiment team to enable it here.",
+      reply_to_message_id: message["message_id"],
+      message_thread_id: message["message_thread_id"]
+    )
+
+    :ignore
   end
 
   defp reply_to_bot?(message, bot) do

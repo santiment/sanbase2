@@ -150,10 +150,12 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
     %{
       kind: :chart,
       id: m["id"],
+      label: m["label"],
+      source: m["source"],
       slug: m["slug"],
       range: m["range"],
       summary: m["summary"],
-      series: m["series"] || []
+      series: if(is_list(m["series"]), do: Enum.filter(m["series"], &is_map/1), else: [])
     }
   end
 

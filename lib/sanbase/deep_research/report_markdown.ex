@@ -8,8 +8,11 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
       per line.
     * `split_charts/1` — lift fenced ` ```chart ` blocks out of the prose into
       normalized, renderer-agnostic chart specs (see
-      `SanbaseWeb.DeepResearch.ChartRenderer`), leaving the surrounding markdown
-      as ordinary segments.
+      `SanbaseWeb.DeepResearch.ChartRenderer`), and `[chart:<id>]` placeholder
+      lines out as references to charts the engine already streamed, leaving the
+      surrounding markdown as ordinary segments.
+    * `chart_refs/1` — the chart ids a report places, so the timeline does not
+      show them a second time.
 
   Separate from `Sanbase.DeepResearch.Timeline` on purpose: the timeline folds the live
   event stream, this shapes the finished document.
@@ -71,20 +74,66 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
   end
 
   @chart_fence ~r/```chart[ \t]*\n(.*?)\n?```/s
+  # `[chart:<id>]` alone on a line places a chart the engine already streamed; inside a
+  # code fence (backtick or tilde) it is text. One scan sees both, so a fenced ref is
+  # never mistaken.
+  @fence_or_ref ~r/```.*?```|~~~.*?~~~|^[ \t]*\[chart:([0-9a-f]{8})\][ \t]*\r?$/ms
 
   @doc """
   Split report markdown into ordered render segments, lifting fenced
-  ` ```chart ` blocks out as parsed chart specs:
+  ` ```chart ` blocks out as parsed chart specs and `[chart:<id>]` lines out as
+  references to streamed charts:
 
-    * `{:md, text}`    - a markdown run
-    * `{:chart, spec}` - `%{type: "pie", title: String.t() | nil, slices: [%{label, value}]}`
+    * `{:md, text}`      - a markdown run
+    * `{:chart, spec}`   - `%{type: "pie", title: String.t() | nil, slices: [%{label, value}]}`
+    * `{:artifact, id}`  - the `chart` timeline item with this id belongs here
 
   A fenced block whose body is not a valid chart spec is left as markdown, so a
   malformed block degrades to a visible code block rather than vanishing.
   """
-  @spec split_charts(String.t()) :: [{:md, String.t()} | {:chart, map()}]
-  def split_charts(md) when is_binary(md), do: md |> do_split_charts([]) |> Enum.reverse()
+  @spec split_charts(String.t()) :: [
+          {:md, String.t()} | {:chart, map()} | {:artifact, String.t()}
+        ]
+  def split_charts(md) when is_binary(md) do
+    md
+    |> do_split_charts([])
+    |> Enum.reverse()
+    |> Enum.flat_map(fn
+      {:md, text} -> split_refs(text)
+      other -> [other]
+    end)
+  end
+
   def split_charts(_), do: []
+
+  @doc "Chart ids a report places with `[chart:<id>]`, in order, without duplicates."
+  @spec chart_refs(String.t() | nil) :: [String.t()]
+  def chart_refs(md) when is_binary(md) do
+    for {:artifact, id} <- split_refs(md), uniq: true, do: id
+  end
+
+  def chart_refs(_), do: []
+
+  # With `include_captures` the parts alternate prose, match, prose, ... so a part's
+  # position says which it is. Re-matching a prose part on its own would let `^` fire at
+  # its start, placing a ref that only follows an inline fence on the same line.
+  defp split_refs(text) do
+    @fence_or_ref
+    |> Regex.split(text, include_captures: true)
+    |> Enum.with_index()
+    |> Enum.flat_map(fn
+      {"", _} -> []
+      {part, i} when rem(i, 2) == 1 -> [ref_or_fence(part)]
+      {part, _} -> [{:md, part}]
+    end)
+  end
+
+  defp ref_or_fence(match) do
+    case Regex.run(@fence_or_ref, match, capture: :all_but_first) do
+      [id] when id != "" -> {:artifact, id}
+      _ -> {:md, match}
+    end
+  end
 
   defp do_split_charts(md, acc) do
     case Regex.run(@chart_fence, md, return: :index) do

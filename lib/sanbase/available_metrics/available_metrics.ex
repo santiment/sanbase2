@@ -86,6 +86,7 @@ defmodule Sanbase.AvailableMetrics do
     metric_to_supported_assets_map = metric_to_available_slugs_maps()
     access_map = Sanbase.Metric.Helper.access_map()
     metric_to_categories = metric_to_categories_map()
+    hidden_metrics = Sanbase.Metric.hidden_metrics()
 
     metrics
     |> Enum.map(fn metric ->
@@ -99,6 +100,12 @@ defmodule Sanbase.AvailableMetrics do
         internal_name: m.internal_metric,
         status: m.status,
         docs: Map.get(m, :docs) || [],
+        # `is_deprecated` is the derived flag: the registry's own column, or a
+        # `hard_deprecate_after` that is set - including a date still in the
+        # future, which is a metric on its way out and not worth advertising.
+        is_deprecated: Map.get(m, :is_deprecated) == true,
+        hard_deprecate_after: Map.get(m, :hard_deprecate_after),
+        is_hidden: MapSet.member?(hidden_metrics, m.metric),
         available_assets: Map.get(metric_to_supported_assets_map, m.metric) || [],
         default_aggregation: m.default_aggregation,
         frequency: m.min_interval,
@@ -205,6 +212,7 @@ defmodule Sanbase.AvailableMetrics do
   def apply_filters(metrics_list, filters) when is_list(metrics_list) do
     metrics_list
     |> reject_hidden_group_metrics()
+    |> reject_hidden_and_deprecated_metrics()
     |> maybe_apply_filter(:docs, filters)
     |> maybe_apply_filter(:only_with_docs, filters)
     |> maybe_apply_filter(:only_intraday_metrics, filters)
@@ -224,6 +232,33 @@ defmodule Sanbase.AvailableMetrics do
         Enum.all?(categories, &(&1.group_name in @hidden_group_names))
     end)
   end
+
+  # The page lists what the API will actually serve.
+  #
+  # `is_hidden` means "keep out of metric lists", so it is dropped here. A
+  # `hard_deprecate_after` that has passed makes every request fail, so it is
+  # dropped too - `Sanbase.Metric.available_metrics/0` normally does that already,
+  # but it filters at refresh time into a cache with no TTL, so a date that passes
+  # between refreshes leaves the metric listed. Filtering again here is what keeps
+  # the page honest in that window, and it also catches a name that a code adapter
+  # keeps advertising while the registry deprecates it.
+  #
+  # A metric that is only `is_deprecated` is deliberately kept: it still returns
+  # data, with no end date, so it belongs in the inventory. Note that it is not in
+  # any package - `Bundle.PackageSnapshot.sellable?/1` rejects the flag - so the
+  # page shows it while nobody can buy it any more.
+  defp reject_hidden_and_deprecated_metrics(metrics) do
+    now = DateTime.utc_now()
+
+    Enum.reject(metrics, fn metric ->
+      metric[:is_hidden] == true or hard_deprecated?(metric[:hard_deprecate_after], now)
+    end)
+  end
+
+  defp hard_deprecated?(%DateTime{} = deprecate_after, now),
+    do: DateTime.before?(deprecate_after, now)
+
+  defp hard_deprecated?(_deprecate_after, _now), do: false
 
   # "with" | "without" | "all". `only_with_docs` is the older boolean form of the
   # same thing - the page sends `docs`, links and saved exports may still send the

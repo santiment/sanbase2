@@ -88,8 +88,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     with :ok <- Turnstile.validate(args[:token], remote_ip),
          true <- allowed_email_domain?(email),
          true <- allowed_origin?(origin_host_parts, origin_url),
+         # Check IP limits before creating/finding user
+         :ok <- EmailLoginAttempt.check_ip_attempt_limit(remote_ip),
          {:ok, %{first_login: first_login} = user} <-
            User.find_or_insert_by(:email, email, %{username: args[:username]}),
+         # Check user-specific limits after user creation
          :ok <- EmailLoginAttempt.check_attempt_limit(user, remote_ip),
          {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
          {:ok, _res} <- User.Email.send_login_email(user, first_login, origin_host_parts, args),
@@ -106,6 +109,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
         )
 
         {:error, message: message}
+
+      {:error, :too_many_burst_attempts} ->
+        Logger.info(
+          "Login failed: too many burst attempts. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
+        {:error, message: "Too many login attempts, try again after a few minutes"}
+
+      {:error, :too_many_daily_attempts} ->
+        Logger.info(
+          "Login failed: too many daily attempts. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
+        {:error, message: "Too many login attempts, try again tomorrow"}
 
       {:error, :too_many_attempts} ->
         Logger.info(

@@ -66,6 +66,41 @@ defmodule Sanbase.DeepResearch.ReportMarkdownTest do
                ReportMarkdown.split_charts(md)
     end
 
+    test "a [chart:<id>] line becomes an artifact reference between markdown runs" do
+      md = "Price rose 24%[1].\n\n[chart:1a2b3c4d]\n\nVolume peaked mid-August[1].\n"
+
+      assert [
+               {:md, "Price rose 24%[1].\n\n"},
+               {:artifact, "1a2b3c4d"},
+               {:md, "\n\nVolume peaked mid-August[1].\n"}
+             ] = ReportMarkdown.split_charts(md)
+    end
+
+    test "a placeholder that is not an 8-hex id, or not alone on its line, stays markdown" do
+      md = "see [chart:nope] and inline [chart:1a2b3c4d] text"
+      assert [{:md, ^md}] = ReportMarkdown.split_charts(md)
+    end
+
+    test "chart_refs lists placed ids once, in order" do
+      md = "[chart:1a2b3c4d]\nx\n[chart:ffffffff]\n[chart:1a2b3c4d]\n[chart:zz]"
+      assert ReportMarkdown.chart_refs(md) == ["1a2b3c4d", "ffffffff"]
+      assert ReportMarkdown.chart_refs(nil) == []
+    end
+
+    test "a CRLF report still places its chart" do
+      # The token's line ending is consumed with the token; the prose around it survives.
+      assert [{:md, "a\r\n"}, {:artifact, "1a2b3c4d"}, {:md, "\nb"}] =
+               ReportMarkdown.split_charts("a\r\n[chart:1a2b3c4d]\r\nb")
+
+      assert ReportMarkdown.chart_refs("a\r\n[chart:1a2b3c4d]\r\nb") == ["1a2b3c4d"]
+    end
+
+    test "a ref inside a code fence is text, not a placement" do
+      md = "```\n[chart:1a2b3c4d]\n```"
+      assert [{:md, ^md}] = ReportMarkdown.split_charts(md)
+      assert ReportMarkdown.chart_refs(md <> "\n") == []
+    end
+
     test "a malformed chart block stays as markdown (degrades to a code block)" do
       md = "```chart\n{not valid json}\n```"
       assert [{:md, ^md}] = ReportMarkdown.split_charts(md)

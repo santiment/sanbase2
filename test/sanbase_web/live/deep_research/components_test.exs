@@ -427,6 +427,49 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
       assert html =~ "price_usd"
     end
 
+    test "a [chart:<id>] line in the report places the streamed chart there, once, with a CSV" do
+      chart = %{
+        activity: %{
+          kind: :chart,
+          id: "33e6333f",
+          label: "price_usd — bitcoin",
+          source: "Santiment",
+          series: [
+            %{
+              "id" => "s0",
+              "name" => "price_usd — bitcoin",
+              "label" => "price_usd — bitcoin",
+              "style" => "line",
+              "pane" => 0,
+              "data" => [%{"time" => 1_780_272_000, "value" => 63912.92}],
+              "csv" => "time,value\n2026-06-01,63912.92\n"
+            }
+          ]
+        }
+      }
+
+      report = "## BTC\n\nPrice rose 24%[1].\n\n[chart:33e6333f]\n\n## Sources\n- [1] Santiment\n"
+
+      html =
+        render_turn(turn([chart], %{report: report, phase: :completed, finished_at: @now}))
+
+      # Rendered inside the report card, and not a second time in the timeline.
+      assert html =~ "dra-report-chart-1-33e6333f"
+      assert length(String.split(html, "LightweightChart")) == 2
+      assert html =~ "Santiment — price_usd — bitcoin"
+      # The placeholder itself never shows as text.
+      refute html =~ "[chart:33e6333f]</p>"
+      refute html =~ "Chart unavailable"
+    end
+
+    test "a placeholder for a chart that never streamed degrades to a note" do
+      report = "Price rose[1].\n\n[chart:deadbeef]\n\n## Sources\n- [1] Santiment\n"
+      html = render_turn(turn([], %{report: report, phase: :completed, finished_at: @now}))
+
+      assert html =~ "Chart unavailable"
+      refute html =~ "LightweightChart"
+    end
+
     test "renders a skill invocation" do
       html = render_turn(turn([%{activity: %{kind: :skill, name: "crypto-research"}}]))
 

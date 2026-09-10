@@ -215,6 +215,8 @@ defmodule Sanbase.DeepResearch.EventParser do
         activity: %{
           kind: :chart,
           id: obj["id"],
+          label: non_blank(obj["label"]),
+          source: non_blank(obj["source"]),
           slug: non_blank(obj["slug"]),
           range: non_blank(obj["range"]),
           summary: if(is_map(obj["summary"]), do: obj["summary"], else: nil),

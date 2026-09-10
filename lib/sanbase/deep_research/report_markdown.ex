@@ -53,20 +53,24 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
     end
   end
 
-  defp reflow_tail(md, head, sources_block, rest) do
-    markers = length(Regex.scan(~r/\[\d+\]/, sources_block))
+  @marker_group ~r/(?:\[\d+\])+/
+  @entry_start ~r/\s*(?<!\])(?=\[\d+\])/
+  @bullet ~r/^[ \t]*[-*+][ \t]+(?=\[\d+\])/m
 
-    lines_with_marker =
-      sources_block |> String.split("\n") |> Enum.count(&Regex.match?(~r/\[\d+\]/, &1))
+  defp reflow_tail(md, head, sources_block, rest) do
+    groups = length(Regex.scan(@marker_group, sources_block))
+
+    lines_with_group =
+      sources_block |> String.split("\n") |> Enum.count(&Regex.match?(@marker_group, &1))
 
     entries =
-      ~r/\s*(?=\[\d+\]\s)/
-      |> Regex.split(sources_block)
-      |> Enum.map(&(&1 |> String.replace(~r/^[-*]\s*/, "") |> String.trim()))
+      @entry_start
+      |> Regex.split(String.replace(sources_block, @bullet, ""))
+      |> Enum.map(&String.trim/1)
       |> Enum.reject(&(&1 == ""))
 
     # Leave untouched below two sources or when already one-per-line; else re-bullet.
-    if markers < 2 or lines_with_marker >= markers or length(entries) < 2 do
+    if groups < 2 or lines_with_group >= groups or length(entries) < 2 do
       md
     else
       head <> Enum.map_join(entries, "\n", &"- #{&1}") <> "\n" <> rest

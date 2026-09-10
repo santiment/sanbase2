@@ -40,6 +40,40 @@ defmodule Sanbase.DeepResearch.ReportMarkdownTest do
       md = "Intro text.\n\n## Sources\n## Conclusion\nText citing [1] and [2] again.\n"
       assert ReportMarkdown.reflow_sources(md) == md
     end
+
+    test "grouped markers on one line are one source, not a crammed section" do
+      # The agent lists an internal data source ONCE and groups every [n] it backs on that
+      # line. Counting single markers (8) against marker lines (3) called this crammed, split
+      # the line before "[8] " and left a bare "-" under each following entry, which Earmark
+      # renders as a setext <h2>: some Sources rows came out huge and bold, others not.
+      md =
+        "## Sources\n- [1][2][3][4][5][8] Santiment\n" <>
+          "- [6] [CoinDesk — ETF outflows](https://coindesk.com/a)\n" <>
+          "- [9] [TRM Labs — Liquid Network drain](https://trmlabs.com/c)\n"
+
+      assert ReportMarkdown.reflow_sources(md) == md
+    end
+
+    test "re-bulleting leaves no bare \"-\" line (a setext heading underline)" do
+      md = "## Sources\n- [1] A https://a.com [2] B https://b.com\n- [3] C https://c.com\n"
+
+      assert ReportMarkdown.reflow_sources(md) ==
+               "## Sources\n- [1] A https://a.com\n- [2] B https://b.com\n- [3] C https://c.com\n"
+    end
+
+    test "a crammed line keeps each grouped source together when it re-bullets" do
+      md = "## Sources\n[1][2] Santiment [3] [T](https://t.com) [4][5] Other\n"
+
+      assert ReportMarkdown.reflow_sources(md) ==
+               "## Sources\n- [1][2] Santiment\n- [3] [T](https://t.com)\n- [4][5] Other\n"
+    end
+
+    test "re-bulleting keeps a nested list under a source entry" do
+      md = "## Sources\n[1] A https://a.com [2] B https://b.com\n  - detail about B\n"
+
+      assert ReportMarkdown.reflow_sources(md) ==
+               "## Sources\n- [1] A https://a.com\n- [2] B https://b.com\n  - detail about B\n"
+    end
   end
 
   describe "split_charts" do

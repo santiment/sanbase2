@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Ht0dgMfoCcp9ggpJRwljPSZbr703PZ8381AxQWntRtd925ASKDeq2Z40cFs96iN
+\restrict 5N1tx6ZpxikDHSrD3cDUX8EWVZWqpVBSeN1rxGyH3iIndJhWcYwokzKnL2ObWmT
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -405,7 +405,13 @@ CREATE TABLE public.ai_context (
     thread_name character varying(255),
     votes jsonb DEFAULT '{}'::jsonb,
     route jsonb DEFAULT '{}'::jsonb,
-    function_called character varying(255)
+    function_called character varying(255),
+    status character varying(255) DEFAULT 'ok'::character varying,
+    qa_engine character varying(255),
+    v2_fallback boolean DEFAULT false,
+    rephrased_question text,
+    tools_used character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    langfuse_trace_id character varying(255)
 );
 
 
@@ -8882,6 +8888,13 @@ CREATE INDEX access_attempts_type_user_id_inserted_at_index ON public.access_att
 
 
 --
+-- Name: ai_context_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ai_context_status_index ON public.ai_context USING btree (status) WHERE ((status)::text <> 'ok'::text);
+
+
+--
 -- Name: alpha_naratives_emails_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12315,7 +12328,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Ht0dgMfoCcp9ggpJRwljPSZbr703PZ8381AxQWntRtd925ASKDeq2Z40cFs96iN
+\unrestrict 5N1tx6ZpxikDHSrD3cDUX8EWVZWqpVBSeN1rxGyH3iIndJhWcYwokzKnL2ObWmT
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12918,5 +12931,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260810121347);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121612);
 INSERT INTO public."schema_migrations" (version) VALUES (20260812120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260813090000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260909120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260902130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260903120000);

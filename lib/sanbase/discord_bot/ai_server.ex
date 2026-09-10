@@ -23,6 +23,8 @@ defmodule Sanbase.DiscordBot.AiServer do
       metadata: discord_metadata
     }
 
+    start_time = System.monotonic_time(:second)
+
     do_request_ai_server(url, ai_server_params)
     |> case do
       {:ok, result} ->
@@ -30,12 +32,51 @@ defmodule Sanbase.DiscordBot.AiServer do
         {:ok, ai_context, result}
 
       {:error, :elimit} ->
+        # The AI server rejected the call on its own limits. Nothing was spent
+        # and the user gets a limit message, so no row is written.
         AiContext.check_limits(discord_metadata)
 
       {:error, reason} ->
+        # Previously this returned without touching the database, so a failed
+        # question left no row at all and could only be found in the logs.
+        record_failed_question(
+          question,
+          discord_metadata,
+          reason,
+          System.monotonic_time(:second) - start_time
+        )
+
         {:error, reason}
     end
   end
+
+  defp record_failed_question(question, discord_metadata, reason, elapsed_time) do
+    params =
+      discord_metadata
+      |> Map.put(:question, question)
+      |> Map.put(:status, AiContext.error_status())
+      |> Map.put(:error_message, failure_reason(reason))
+      |> Map.put(:elapsed_time, elapsed_time / 1)
+
+    case AiContext.create(params) do
+      {:ok, ai_context} ->
+        {:ok, ai_context}
+
+      {:error, changeset} ->
+        Logger.error("Could not record failed AI question: #{inspect(changeset.errors)}")
+        :error
+    end
+  end
+
+  # `inspect/1` on an HTTPoison error is verbose and unstable; keep it short
+  # enough to read in a query result but specific enough to group by.
+  defp failure_reason({:ok, %HTTPoison.Response{status_code: status_code}}),
+    do: "ai_server_http_#{status_code}"
+
+  defp failure_reason({:error, %HTTPoison.Error{reason: reason}}),
+    do: "ai_server_transport_#{inspect(reason)}"
+
+  defp failure_reason(reason), do: String.slice(inspect(reason), 0, 500)
 
   # postgres indexing
   def manage_postgres_index() do
@@ -118,6 +159,15 @@ defmodule Sanbase.DiscordBot.AiServer do
       |> Map.put(:route, result["route"])
       |> Map.put(:function_called, result["function_called"])
       |> Map.put(:command, add_command(result["route"]["route"]))
+      # Diagnostics the AI server reports about how the answer was produced.
+      # A "degraded" row means the user got an answer, but from a fallback.
+      |> Map.put(:status, result["status"] || AiContext.ok_status())
+      |> Map.put(:qa_engine, result["qa_engine"])
+      |> Map.put(:v2_fallback, result["v2_fallback"] || false)
+      |> Map.put(:rephrased_question, result["rephrased_question"])
+      |> Map.put(:tools_used, result["tools_used"] || [])
+      |> Map.put(:langfuse_trace_id, result["trace_id"])
+      |> Map.put(:error_message, result["error_message"])
 
     params = maybe_add_prompt(params, answer["prompt"])
 

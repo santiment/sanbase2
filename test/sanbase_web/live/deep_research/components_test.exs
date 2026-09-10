@@ -12,6 +12,7 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
   alias Sanbase.DeepResearch.{Event, EventParser, Timeline}
 
   @now 1_700_000_000_000
+  @chart_hook ~s([phx-hook="LightweightChart"])
 
   defp turn(results, overrides \\ %{}) do
     "What is driving ETH?"
@@ -450,24 +451,116 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
 
       report = "## BTC\n\nPrice rose 24%[1].\n\n[chart:33e6333f]\n\n## Sources\n- [1] Santiment\n"
 
-      html =
-        render_turn(turn([chart], %{report: report, phase: :completed, finished_at: @now}))
+      doc =
+        turn([chart], %{report: report, phase: :completed, finished_at: @now})
+        |> render_turn()
+        |> LazyHTML.from_fragment()
 
       # Rendered inside the report card, and not a second time in the timeline.
-      assert html =~ "dra-report-chart-1-33e6333f"
-      assert length(String.split(html, "LightweightChart")) == 2
-      assert html =~ "Santiment — price_usd — bitcoin"
+      assert Enum.count(LazyHTML.query(doc, @chart_hook)) == 1
+      widget = LazyHTML.query(doc, "#dra-report-chart-1-33e6333f")
+      assert Enum.count(widget) == 1
+      assert LazyHTML.text(widget) =~ "Santiment — price_usd — bitcoin"
+      # The reader's data: a download of the full series, produced by no model.
+      link = LazyHTML.query(widget, "a[download]")
+      assert LazyHTML.attribute(link, "download") == ["price_usd_bitcoin.csv"]
+      assert [href] = LazyHTML.attribute(link, "href")
+      assert String.starts_with?(href, "data:text/csv;charset=utf-8,")
       # The placeholder itself never shows as text.
-      refute html =~ "[chart:33e6333f]</p>"
-      refute html =~ "Chart unavailable"
+      refute LazyHTML.text(doc) =~ "[chart:33e6333f]"
+      refute LazyHTML.text(doc) =~ "Chart unavailable"
+    end
+
+    test "the CSV download survives a '#' in the data and caps the filename" do
+      chart = %{
+        activity: %{
+          kind: :chart,
+          id: "33e6333f",
+          label: String.duplicate("very_long_series_name_", 10),
+          series: [
+            %{
+              "name" => String.duplicate("very_long_series_name_", 10),
+              "style" => "line",
+              "data" => [%{"time" => 1, "value" => 2.0}],
+              "csv" => "time,channel\n2026-06-01,#bitcoin & friends\n"
+            }
+          ]
+        }
+      }
+
+      report = "x\n\n[chart:33e6333f]\n\n## Sources\n- [1] S\n"
+
+      link =
+        turn([chart], %{report: report, phase: :completed, finished_at: @now})
+        |> render_turn()
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query("#dra-report-chart-1-33e6333f a[download]")
+
+      # `#` and `&` are percent-encoded: nothing after the hash is lost to a URL fragment.
+      assert [href] = LazyHTML.attribute(link, "href")
+      assert href =~ "%23bitcoin%20%26%20friends"
+      refute href =~ "#"
+      assert [fname] = LazyHTML.attribute(link, "download")
+      assert String.ends_with?(fname, ".csv") and String.length(fname) <= 64
+    end
+
+    test "a series whose name is not a string still gets a CSV download" do
+      chart = %{
+        activity: %{
+          kind: :chart,
+          id: "33e6333f",
+          series: [
+            %{
+              "name" => 42,
+              "style" => "line",
+              "data" => [%{"time" => 1, "value" => 2.0}],
+              "csv" => "time,value\n2026-06-01,2.0\n"
+            }
+          ]
+        }
+      }
+
+      link =
+        turn([chart], %{report: "x\n\n[chart:33e6333f]\n", phase: :completed, finished_at: @now})
+        |> render_turn()
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query("#dra-report-chart-1-33e6333f a[download]")
+
+      assert LazyHTML.attribute(link, "download") == ["series.csv"]
+    end
+
+    test "a chart whose series carry junk entries still renders" do
+      chart = %{
+        activity: %{
+          kind: :chart,
+          id: "33e6333f",
+          series: [
+            "junk",
+            %{"name" => "n", "style" => "line", "data" => [%{"time" => 1, "value" => 2}]}
+          ]
+        }
+      }
+
+      # Through the live parser the junk is filtered; through a decoded row it may not be —
+      # the renderer must survive either way, so build the turn with the entry left in.
+      turn =
+        turn([chart], %{report: "x\n\n[chart:33e6333f]\n", phase: :completed, finished_at: @now})
+        |> Map.update!(:timeline, fn [c] -> [%{c | series: ["junk" | c.series]}] end)
+
+      doc = turn |> render_turn() |> LazyHTML.from_fragment()
+      assert Enum.count(LazyHTML.query(doc, "#dra-report-chart-1-33e6333f#{@chart_hook}")) == 1
     end
 
     test "a placeholder for a chart that never streamed degrades to a note" do
       report = "Price rose[1].\n\n[chart:deadbeef]\n\n## Sources\n- [1] Santiment\n"
-      html = render_turn(turn([], %{report: report, phase: :completed, finished_at: @now}))
 
-      assert html =~ "Chart unavailable"
-      refute html =~ "LightweightChart"
+      doc =
+        turn([], %{report: report, phase: :completed, finished_at: @now})
+        |> render_turn()
+        |> LazyHTML.from_fragment()
+
+      assert LazyHTML.text(doc) =~ "Chart unavailable"
+      assert Enum.empty?(LazyHTML.query(doc, @chart_hook))
     end
 
     test "renders a skill invocation" do

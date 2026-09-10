@@ -75,8 +75,9 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
 
   @chart_fence ~r/```chart[ \t]*\n(.*?)\n?```/s
   # `[chart:<id>]` alone on a line places a chart the engine already streamed; inside a
-  # code fence it is text. One scan sees both, so a fenced ref is never mistaken.
-  @fence_or_ref ~r/```.*?```|^[ \t]*\[chart:([0-9a-f]{8})\][ \t]*\r?$/ms
+  # code fence (backtick or tilde) it is text. One scan sees both, so a fenced ref is
+  # never mistaken.
+  @fence_or_ref ~r/```.*?```|~~~.*?~~~|^[ \t]*\[chart:([0-9a-f]{8})\][ \t]*\r?$/ms
 
   @doc """
   Split report markdown into ordered render segments, lifting fenced
@@ -113,16 +114,25 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
 
   def chart_refs(_), do: []
 
+  # With `include_captures` the parts alternate prose, match, prose, ... so a part's
+  # position says which it is. Re-matching a prose part on its own would let `^` fire at
+  # its start, placing a ref that only follows an inline fence on the same line.
   defp split_refs(text) do
     @fence_or_ref
-    |> Regex.split(text, include_captures: true, trim: true)
-    |> Enum.map(fn part ->
-      case Regex.run(@fence_or_ref, part, capture: :all_but_first) do
-        [id] when id != "" -> {:artifact, id}
-        _ -> {:md, part}
-      end
+    |> Regex.split(text, include_captures: true)
+    |> Enum.with_index()
+    |> Enum.flat_map(fn
+      {"", _} -> []
+      {part, i} when rem(i, 2) == 1 -> [ref_or_fence(part)]
+      {part, _} -> [{:md, part}]
     end)
-    |> Enum.reject(&match?({:md, t} when t == "", &1))
+  end
+
+  defp ref_or_fence(match) do
+    case Regex.run(@fence_or_ref, match, capture: :all_but_first) do
+      [id] when id != "" -> {:artifact, id}
+      _ -> {:md, match}
+    end
   end
 
   defp do_split_charts(md, acc) do

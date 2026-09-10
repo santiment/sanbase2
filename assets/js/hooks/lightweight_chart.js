@@ -9,6 +9,13 @@
 //
 // The container is `phx-update="ignore"` so LiveView never patches the canvas the
 // chart builds; this hook owns it. Theme tracks the page's `data-theme`.
+//
+// Wheel handling: the library grabs every wheel event over the chart (vertical →
+// zoom, horizontal → scroll), which hijacks page scrolling whenever the cursor
+// happens to cross a chart. We turn that off and only let the wheel through while
+// Ctrl/⌘ is held. A macOS trackpad pinch arrives as a wheel event with `ctrlKey`
+// set, so pinch-to-zoom works without extra code. Drag still pans; on touch,
+// horizontal drag pans and pinch zooms, but vertical swipes scroll the page.
 import {
   createChart,
   CandlestickSeries,
@@ -47,10 +54,35 @@ export const LightweightChart = {
   },
   destroyed() {
     if (this.themeObserver) this.themeObserver.disconnect()
+    this.teardownChart()
+  },
+  teardownChart() {
     if (this.chart) {
       this.chart.remove()
       this.chart = null
     }
+    if (this.canvas && this.onWheel) {
+      this.canvas.removeEventListener("wheel", this.onWheel, { capture: true })
+      this.canvas.removeEventListener("dblclick", this.onDblClick)
+    }
+    this.onWheel = this.onDblClick = null
+  },
+  // Flip the library's wheel handling on/off per event, based on the modifier key.
+  // Registered in the capture phase on the canvas box so it runs before the
+  // library's own listener on the chart element; `applyOptions` is synchronous, so
+  // the flag is already right when the library reads it. Only applied on change so
+  // a plain scroll gesture costs nothing. Double-click resets the view.
+  gateWheel(chart, canvas) {
+    let enabled = false
+    this.onWheel = (e) => {
+      const want = e.ctrlKey || e.metaKey
+      if (want === enabled) return
+      enabled = want
+      chart.applyOptions({ handleScroll: { mouseWheel: want }, handleScale: { mouseWheel: want } })
+    }
+    this.onDblClick = () => chart.timeScale().fitContent()
+    canvas.addEventListener("wheel", this.onWheel, { capture: true, passive: true })
+    canvas.addEventListener("dblclick", this.onDblClick)
   },
   render() {
     this._raw = this.el.dataset.chart
@@ -65,10 +97,8 @@ export const LightweightChart = {
     const shape = series.map((s) => `${s.style}:${(s.data || []).length}pts`).join(", ")
 
     const canvas = this.el.querySelector(".dra-chart-canvas") || this.el
-    if (this.chart) {
-      this.chart.remove()
-      this.chart = null
-    }
+    this.teardownChart()
+    this.canvas = canvas
     canvas.innerHTML = ""
 
     // Self-describing states so a blank box is never ambiguous: no series / no
@@ -95,8 +125,17 @@ export const LightweightChart = {
         grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
         rightPriceScale: { borderColor: c.border },
         timeScale: { borderColor: c.border, timeVisible: true, secondsVisible: false },
+        // Wheel is opt-in (see header comment); mouse drag and touch pan/pinch stay on.
+        handleScroll: {
+          mouseWheel: false,
+          pressedMouseMove: true,
+          horzTouchDrag: true,
+          vertTouchDrag: false,
+        },
+        handleScale: { mouseWheel: false, pinch: true },
       })
       this.chart = chart
+      this.gateWheel(chart, canvas)
 
       for (const s of series) {
         const def = SERIES_TYPE[s.style] || LineSeries

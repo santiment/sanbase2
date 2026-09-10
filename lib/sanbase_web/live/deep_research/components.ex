@@ -1128,7 +1128,7 @@ defmodule SanbaseWeb.DeepResearch.Components do
   end
 
   # One rendered chart — in the timeline where it was fetched, or in the report where the
-  # agent placed it.
+  # agent placed it. A series carrying a full-resolution `csv` gets a download link.
   attr :id, :string, required: true
   attr :chart, :map, required: true
 
@@ -1151,6 +1151,20 @@ defmodule SanbaseWeb.DeepResearch.Components do
       <div class="flex items-center gap-2 border-b border-base-300 px-3.5 py-2 text-xs font-medium text-base-content/60">
         <.icon name="hero-chart-bar" class="size-4 text-primary" />
         <span class="text-base-content/80">{chart_caption(@chart)}</span>
+        <span
+          class="ml-auto hidden whitespace-nowrap text-base-content/40 sm:inline"
+          title="Ctrl/⌘ + scroll to zoom · drag to pan · double-click to reset"
+        >
+          Ctrl/⌘ + scroll to zoom
+        </span>
+        <a
+          :for={{name, csv} <- csv_downloads(@chart)}
+          href={csv_data_url(csv)}
+          download={csv_filename(name)}
+          class="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs text-base-content/50 transition hover:bg-base-200 hover:text-base-content"
+        >
+          <.icon name="hero-arrow-down-tray" class="size-3.5" /> CSV
+        </a>
       </div>
       <div class="dra-chart-canvas w-full" style="height: 18rem;"></div>
     </div>
@@ -1270,10 +1284,11 @@ defmodule SanbaseWeb.DeepResearch.Components do
       [chart[:source], chart[:slug], chart[:range]] |> Enum.reject(&is_nil/1) |> Enum.join(" · ")
 
     labels =
-      (chart.series || [])
-      |> Enum.map(&(&1["label"] || &1["name"]))
-      |> Enum.reject(&(&1 in [nil, ""]))
-      |> Enum.uniq()
+      for s when is_map(s) <- chart.series || [],
+          label = s["label"] || s["name"],
+          is_binary(label) and label != "",
+          uniq: true,
+          do: label
 
     case {base, labels} do
       {"", []} -> "Chart"
@@ -1288,18 +1303,37 @@ defmodule SanbaseWeb.DeepResearch.Components do
   defp visible_items(timeline, report, clarification) do
     placed = ReportMarkdown.chart_refs(report)
 
-    Enum.reject(timeline, fn item ->
-      # Text may be nil on a turn decoded from an older row — as in
-      # Timeline.direct_answer?/1.
-      text = (item.kind == :thinking && item.text) || ""
-
-      (item.kind == :chart and item[:id] in placed) or
-        (item.kind == :thinking and
-           ((is_binary(report) and String.trim(text) == String.trim(report)) or
-              (is_list(clarification) and clarification != [] and
-                 Enum.all?(clarification, &String.contains?(text, &1)))))
+    Enum.reject(timeline, fn
+      %{kind: :chart} = item -> item[:id] in placed
+      %{kind: :thinking} = item -> repeats_card?(item.text || "", report, clarification)
+      _ -> false
     end)
   end
+
+  # Text may be nil on a turn decoded from an older row — as in Timeline.direct_answer?/1.
+  defp repeats_card?(text, report, clarification) do
+    (is_binary(report) and String.trim(text) == String.trim(report)) or
+      (is_list(clarification) and clarification != [] and
+         Enum.all?(clarification, &String.contains?(text, &1)))
+  end
+
+  defp csv_downloads(chart) do
+    for %{"csv" => csv} = s when is_binary(csv) and csv != "" <- chart.series || [],
+        do: {s["name"] || s["label"] || "series", csv}
+  end
+
+  # Everything but unreserved characters is percent-encoded: `URI.encode/1` would leave a
+  # `#` raw, and in a `data:` URL that starts the fragment and truncates the download.
+  defp csv_data_url(csv),
+    do: "data:text/csv;charset=utf-8," <> URI.encode(csv, &URI.char_unreserved?/1)
+
+  defp csv_filename(name) when is_binary(name) do
+    base = name |> String.downcase() |> String.replace(~r/[^a-z0-9]+/, "_") |> String.trim("_")
+    base = if(base == "", do: "series", else: base) |> String.slice(0, 60) |> String.trim("_")
+    base <> ".csv"
+  end
+
+  defp csv_filename(_name), do: "series.csv"
 
   defp tool_summary(items) do
     n_search = Enum.count(items, &(&1.kind == :search))

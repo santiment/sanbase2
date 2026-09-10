@@ -101,6 +101,18 @@ defmodule Sanbase.DeepResearch.ReportMarkdownTest do
       assert ReportMarkdown.chart_refs(md <> "\n") == []
     end
 
+    test "a ref inside a tilde fence is text, not a placement" do
+      md = "~~~\n[chart:1a2b3c4d]\n~~~"
+      assert [{:md, ^md}] = ReportMarkdown.split_charts(md)
+      assert ReportMarkdown.chart_refs("intro\n" <> md <> "\n") == []
+    end
+
+    test "a ref that shares its line with an inline fence is not alone, so not a placement" do
+      md = "see ```x``` [chart:1a2b3c4d]\n"
+      refute Enum.any?(ReportMarkdown.split_charts(md), &match?({:artifact, _}, &1))
+      assert ReportMarkdown.chart_refs(md) == []
+    end
+
     test "a malformed chart block stays as markdown (degrades to a code block)" do
       md = "```chart\n{not valid json}\n```"
       assert [{:md, ^md}] = ReportMarkdown.split_charts(md)

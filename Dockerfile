@@ -78,6 +78,13 @@ COPY assets/package.json assets/package-lock.json assets/
 COPY assets/graphiql/patch-monaco.sh assets/graphiql/patch-monaco.sh
 RUN cd assets && npm install
 
+# MCP widgets use pnpm (not npm) — san-webkit-next declares ~30 peerDeps
+# that only pnpm's auto-install-peers resolves transitively.
+RUN corepack enable && corepack prepare pnpm@8.15.9 --activate
+COPY assets/mcp_widgets/package.json assets/mcp_widgets/pnpm-lock.yaml assets/mcp_widgets/
+COPY assets/mcp_widgets/.npmrc assets/mcp_widgets/.npmrc
+RUN cd assets/mcp_widgets && pnpm install --frozen-lockfile
+
 COPY assets assets
 
 # check that the code is formatted

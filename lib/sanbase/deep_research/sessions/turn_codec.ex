@@ -150,6 +150,8 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodec do
     %{
       kind: :chart,
       id: m["id"],
+      label: m["label"],
+      source: m["source"],
       slug: m["slug"],
       range: m["range"],
       summary: m["summary"],

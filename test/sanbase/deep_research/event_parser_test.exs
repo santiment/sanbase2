@@ -307,6 +307,20 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                }
     end
 
+    test "chart event keeps the engine's label and source for the caption" do
+      assert %{activity: %{kind: :chart, label: "price_usd — bitcoin", source: "Santiment"}} =
+               EventParser.parse(%{
+                 "type" => "chart",
+                 "id" => "33e6333f",
+                 "label" => "price_usd — bitcoin",
+                 "source" => "Santiment",
+                 "kind" => "series",
+                 "series" => [
+                   %{"style" => "line", "pane" => 0, "data" => [%{"time" => 1, "value" => 2}]}
+                 ]
+               })
+    end
+
     test "chart event carries phase + activity with series" do
       assert EventParser.parse(%{
                "type" => "chart",
@@ -322,6 +336,8 @@ defmodule Sanbase.DeepResearch.EventParserTest do
                  activity: %{
                    kind: :chart,
                    id: "c1",
+                   label: nil,
+                   source: nil,
                    slug: "bitcoin",
                    range: "90d",
                    summary: nil,

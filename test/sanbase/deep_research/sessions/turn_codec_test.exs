@@ -84,6 +84,8 @@ defmodule Sanbase.DeepResearch.Sessions.TurnCodecTest do
         %{
           kind: :chart,
           id: "ch1",
+          label: nil,
+          source: nil,
           slug: "ethereum",
           range: "90d",
           summary: %{"last" => 12.5},

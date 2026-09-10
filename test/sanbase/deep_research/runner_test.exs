@@ -9,7 +9,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
 
   use ExUnit.Case, async: false
 
-  alias Sanbase.DeepResearch.{Failure, Runner, Timeline, Turn}
+  alias Sanbase.DeepResearch.{Event, EventParser, Failure, Runner, Timeline, Turn}
 
   @supervisor Sanbase.DeepResearch.RunnerSupervisor
   @started_key :runner_test_started
@@ -59,7 +59,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     )
   end
 
-  defp start_runner() do
+  defp start_runner(overrides \\ []) do
     key = "runner-test-#{System.unique_integer([:positive])}"
 
     {:ok, pid} =
@@ -68,13 +68,72 @@ defmodule Sanbase.DeepResearch.RunnerTest do
         session_id: nil,
         user: nil,
         model_tier: "mid",
-        thread_id: nil,
+        thread_id: Keyword.get(overrides, :thread_id),
         next_id: 1
       })
 
     Agent.update(Process.get(@started_key), &[pid | &1])
 
     {key, pid}
+  end
+
+  describe "event-silence watchdog" do
+    test "each event re-arms the timer and the timer asks for the run status" do
+      env = Application.get_env(:sanbase, Sanbase.DeepResearch)
+
+      Application.put_env(
+        :sanbase,
+        Sanbase.DeepResearch,
+        Keyword.put(env, :event_silence_ms, 60_000)
+      )
+
+      {_key, pid} = start_runner(thread_id: "t1")
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+      first = :sys.get_state(pid).silence_timer
+      assert is_reference(first)
+
+      send(pid, {:dra_event, 1, %Event{run_id: "r1", phase: :researching}})
+      assert :sys.get_state(pid).silence_timer != first
+      assert :sys.get_state(pid).run_id == "r1"
+    end
+
+    test "a run the server reports as over settles the turn as paused and stops the stream" do
+      {key, pid} = start_runner(thread_id: "t1")
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+      send(pid, {:dra_event, 1, %Event{run_id: "r1", phase: :researching}})
+
+      send(pid, {:dra_run_status, 1, {:ok, %{"status" => "error"}}})
+
+      assert_receive {:dra_runner, ^key,
+                      %{running: false, current_turn: %Turn{phase: :paused, error: error}}}
+
+      assert error =~ "ended (error)"
+      assert :sys.get_state(pid).task == nil
+    end
+
+    test "a run still running server-side changes nothing" do
+      {_key, pid} = start_runner(thread_id: "t1")
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+
+      send(pid, {:dra_run_status, 1, {:ok, %{"status" => "running"}}})
+      :sys.get_state(pid)
+
+      assert :sys.get_state(pid).running == true
+    end
+
+    test "a status for a superseded turn is ignored" do
+      {_key, pid} = start_runner(thread_id: "t1")
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+
+      send(pid, {:dra_run_status, 99, {:ok, %{"status" => "error"}}})
+      :sys.get_state(pid)
+
+      assert :sys.get_state(pid).running == true
+    end
   end
 
   test "ensure_started is idempotent per key" do
@@ -97,12 +156,24 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     assert {:ok, snapshot} = Runner.ask(pid, "What is driving ETH?")
     assert snapshot.running == true
 
-    assert %Turn{id: 1, question: "What is driving ETH?", phase: :planning} =
+    assert %Turn{id: 1, question: "What is driving ETH?", phase: :queued} =
              snapshot.current_turn
 
-    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "Scanning"}}})
+    send(pid, {:dra_event, 1, %Event{thinking: %{id: "m1", text: "Scanning"}}})
 
     assert_receive {:dra_runner, ^key, %{current_turn: %Turn{timeline: [%{text: "Scanning"}]}}}
+  end
+
+  test "every event stamps the turn's last_event_at" do
+    {key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    {:ok, %{current_turn: %Turn{last_event_at: nil}}} = Runner.ask(pid, "q")
+
+    send(pid, {:dra_event, 1, %Event{phase: :researching}})
+
+    # The ask itself broadcasts a snapshot too (last_event_at nil) — wait for the stamped one.
+    assert_receive {:dra_runner, ^key, %{current_turn: %Turn{last_event_at: at}}}
+                   when is_integer(at)
   end
 
   test "ask while a run streams is busy" do
@@ -122,7 +193,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     assert snapshot.running == false
     assert snapshot.current_turn.phase == :cancelled
 
-    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "late event"}}})
+    send(pid, {:dra_event, 1, %Event{thinking: %{id: "m1", text: "late event"}}})
     :sys.get_state(pid)
 
     refute_receive {:dra_runner, ^key, %{current_turn: %Turn{timeline: [_ | _]}}}
@@ -228,6 +299,36 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       refute error =~ "without producing a report"
     end
 
+    test "a turn still :queued when the stream ends is failed as never started" do
+      {key, pid} = start_runner()
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+
+      # Only heartbeats came back: no worker ever emitted the run's metadata event.
+      send(pid, {:dra_thread, "th1"})
+      send(pid, {:sys.get_state(pid).task.ref, :ok})
+      send(pid, {:dra_poll, 1, %{}})
+
+      assert_receive {:dra_runner, ^key, %{current_turn: %Turn{phase: :failed, error: error}}}
+      assert error =~ "never started this run"
+      refute error =~ "without a report"
+    end
+
+    test "a turn the agent did pick up but never reported on gets the no-report verdict" do
+      {key, pid} = start_runner()
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+
+      send(pid, {:dra_thread, "th1"})
+      send(pid, {:dra_event, 1, EventParser.parse(%{"run_id" => "r1", "attempt" => 1})})
+      send(pid, {:sys.get_state(pid).task.ref, :ok})
+      send(pid, {:dra_poll, 1, %{}})
+
+      assert_receive {:dra_runner, ^key, %{current_turn: %Turn{phase: :failed, error: error}}}
+      assert error =~ "without a report"
+      refute error =~ "never started"
+    end
+
     test "parks the turn :paused when the stream task itself died" do
       {key, pid} = start_runner()
       {:ok, _} = Runner.attach(pid, self())
@@ -249,10 +350,10 @@ defmodule Sanbase.DeepResearch.RunnerTest do
 
     assert {:ok, snapshot} = Runner.continue(pid, paused)
     assert snapshot.running == true
-    assert %Turn{id: 1, phase: :planning, finished_at: nil, error: nil} = snapshot.current_turn
+    assert %Turn{id: 1, phase: :queued, finished_at: nil, error: nil} = snapshot.current_turn
 
     # The resume run streams into the SAME turn id.
-    send(pid, {:dra_event, 1, %{thinking: %{id: "m1", text: "Resumed"}}})
+    send(pid, {:dra_event, 1, %Event{thinking: %{id: "m1", text: "Resumed"}}})
     :sys.get_state(pid)
     assert_receive {:dra_runner, _key, %{current_turn: %Turn{timeline: [%{text: "Resumed"}]}}}
   end
@@ -295,5 +396,108 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     assert {:error, :not_alive} = Runner.ask(pid, "q")
     assert {:error, :not_alive} = Runner.attach(pid, self())
     assert {:error, :not_alive} = Runner.cancel(pid)
+  end
+
+  # -- leftover runs on the thread -----------------------------------------------------
+
+  # The agent server resumes in-flight runs from disk after a restart, with no client
+  # attached; a new turn on that thread would otherwise queue behind such a run for good.
+  test "starting a turn on an existing thread cancels whatever is still active there" do
+    port = start_fake_agent_server(self())
+    env = Application.get_env(:sanbase, Sanbase.DeepResearch)
+
+    Application.put_env(
+      :sanbase,
+      Sanbase.DeepResearch,
+      Keyword.put(env, :base_url, "http://127.0.0.1:#{port}")
+    )
+
+    {_key, pid} = start_runner(thread_id: "t-leftover")
+    assert {:ok, _snapshot} = Runner.ask(pid, "follow-up")
+
+    # Only this thread's traffic: a runner from an earlier test may still be finishing
+    # a request through whatever base_url is configured by the time it retries.
+    requests = for _ <- 1..3, do: next_fake_agent_request("/threads/t-leftover")
+
+    assert requests == [
+             {:GET, "/threads/t-leftover/runs"},
+             {:POST, "/threads/t-leftover/runs/zombie/cancel"},
+             {:POST, "/threads/t-leftover/runs/stream"}
+           ]
+  end
+
+  defp next_fake_agent_request(prefix) do
+    receive do
+      {:fake_agent_request, method, path} ->
+        if String.starts_with?(path, prefix),
+          do: {method, path},
+          else: next_fake_agent_request(prefix)
+    after
+      5_000 -> flunk("the runner made no further request to the agent server")
+    end
+  end
+
+  # A minimal HTTP/1.1 agent server: reports every request line to `test_pid`, lists one
+  # running run, accepts its cancel, and never answers the stream so the turn stays in
+  # flight. One connection at a time is enough — every answer closes its connection, and
+  # the stream request is the last one made.
+  defp start_fake_agent_server(test_pid) do
+    {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false, packet: :http_bin])
+    {:ok, port} = :inet.port(listen)
+    spawn_link(fn -> fake_agent_accept(listen, test_pid) end)
+    port
+  end
+
+  defp fake_agent_accept(listen, test_pid) do
+    {:ok, sock} = :gen_tcp.accept(listen)
+
+    {:ok, {:http_request, method, {:abs_path, path}, _version}} =
+      :gen_tcp.recv(sock, 0, 5_000)
+
+    body_length = drain_headers(sock, 0)
+    send(test_pid, {:fake_agent_request, method, path})
+
+    cond do
+      method == :GET ->
+        fake_agent_reply(sock, body_length, ~s([{"run_id":"zombie","status":"running"}]))
+
+      String.ends_with?(path, "/cancel") ->
+        fake_agent_reply(sock, body_length, "{}")
+
+      # The stream: never answered; the socket stays open as long as this process lives.
+      true ->
+        :ok
+    end
+
+    fake_agent_accept(listen, test_pid)
+  end
+
+  defp drain_headers(sock, body_length) do
+    case :gen_tcp.recv(sock, 0, 5_000) do
+      {:ok, :http_eoh} ->
+        body_length
+
+      {:ok, {:http_header, _, :"Content-Length", _, len}} ->
+        drain_headers(sock, String.to_integer(len))
+
+      {:ok, {:http_header, _, _, _, _}} ->
+        drain_headers(sock, body_length)
+    end
+  end
+
+  # Read the request body before answering: closing with unread input can reset the
+  # connection and drop the reply, which the client would then retry.
+  defp fake_agent_reply(sock, body_length, body) do
+    :ok = :inet.setopts(sock, packet: :raw)
+    if body_length > 0, do: {:ok, _} = :gen_tcp.recv(sock, body_length, 5_000)
+
+    :ok =
+      :gen_tcp.send(
+        sock,
+        "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n" <>
+          "content-length: #{byte_size(body)}\r\nconnection: close\r\n\r\n" <> body
+      )
+
+    :gen_tcp.close(sock)
   end
 end

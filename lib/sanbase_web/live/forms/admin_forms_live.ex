@@ -92,6 +92,17 @@ defmodule SanbaseWeb.AdminFormsLive do
         buttons: [
           %{url: ~p"/admin/notifications/broadcast", text: "Open"}
         ]
+      },
+      %{
+        title: "Deep Research Agent",
+        description: """
+        Ask the deep research agent a question about crypto assets and markets. It plans the
+        research, runs web searches and Santiment data tools, and writes a cited report.
+        Sessions are saved per user and can be shared with other admins.
+        """,
+        buttons: [
+          %{url: ~p"/admin/deep_research", text: "Open"}
+        ]
       }
     ]
   end

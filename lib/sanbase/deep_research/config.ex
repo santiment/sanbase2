@@ -18,6 +18,7 @@ defmodule Sanbase.DeepResearch.Config do
   @default_assistant_id "deep_research_agent"
   @default_pause_after_disconnect_ms 60_000
   @default_checkpoint_every_ms 10_000
+  @default_event_silence_ms :timer.minutes(10)
 
   @doc "Base URL of the LangGraph server (no trailing slash)."
   @spec base_url() :: String.t()
@@ -45,6 +46,15 @@ defmodule Sanbase.DeepResearch.Config do
   """
   @spec checkpoint_every_ms() :: non_neg_integer()
   def checkpoint_every_ms(), do: get(:checkpoint_every_ms, @default_checkpoint_every_ms)
+
+  @doc """
+  How long a streaming run may go without a single EVENT before the runner asks the
+  agent server whether the run is still alive. The stream's own idle timeout never
+  fires on a dead run: the server keeps the connection open with heartbeats after a
+  run has errored server-side, so without this a turn spins for ever.
+  """
+  @spec event_silence_ms() :: non_neg_integer()
+  def event_silence_ms(), do: get(:event_silence_ms, @default_event_silence_ms)
 
   @doc """
   Bearer token for every request to the LangGraph server (`DRA_AUTH_TOKEN`). `nil`

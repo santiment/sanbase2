@@ -51,8 +51,7 @@ defmodule Sanbase.Billing.Plan.Bundle.Resolver do
   require Logger
 
   # Flat, not per package. Decided by product: choosing several packages still
-  # gives one 50,000-call allowance - "50k API request default if you buy one or
-  # all bundles". Was 100,000 until 2026-09-10.
+  # gives one 50,000-call allowance.
   @base_calls_per_month 50_000
 
   # Reused from sanapi_pro (api_call_limit/restrictions.ex) so bundle burst

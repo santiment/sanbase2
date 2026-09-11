@@ -32,6 +32,11 @@ defmodule Sanbase.Billing.Subscription.Grants do
   never changes one, so a granted allowance that was not pushed here would sit
   unapplied until some unrelated subscription change happened to trigger a
   refresh.
+
+  Because nothing self-heals, a failed refresh is not swallowed: the write still
+  succeeded, so these return `{:ok, subscription, :api_call_limits_not_refreshed}`
+  rather than an error, and the caller is expected to say so. Re-applying the grant
+  retries it.
   """
 
   alias Sanbase.Accounts.User
@@ -59,7 +64,9 @@ defmodule Sanbase.Billing.Subscription.Grants do
   only record of that agreement is an invoice raised elsewhere.
   """
   @spec grant(Subscription.t(), attrs(), User.t()) ::
-          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | String.t()}
+          {:ok, Subscription.t()}
+          | {:ok, Subscription.t(), :api_call_limits_not_refreshed}
+          | {:error, Ecto.Changeset.t() | String.t()}
   def grant(%Subscription{} = subscription, attrs, %User{} = granted_by) do
     packages = attrs |> Map.get(:full_history_packages, []) |> Enum.uniq()
 
@@ -82,7 +89,10 @@ defmodule Sanbase.Billing.Subscription.Grants do
   @doc ~s"""
   Remove the grant, putting the customer back on exactly what their plan gives.
   """
-  @spec revoke(Subscription.t()) :: {:ok, Subscription.t()} | {:error, Ecto.Changeset.t()}
+  @spec revoke(Subscription.t()) ::
+          {:ok, Subscription.t()}
+          | {:ok, Subscription.t(), :api_call_limits_not_refreshed}
+          | {:error, Ecto.Changeset.t()}
   def revoke(%Subscription{} = subscription) do
     subscription
     |> Subscription.grant_changeset(nil)
@@ -101,7 +111,9 @@ defmodule Sanbase.Billing.Subscription.Grants do
   visibly.
   """
   @spec re_expand(Subscription.t()) ::
-          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | String.t()}
+          {:ok, Subscription.t()}
+          | {:ok, Subscription.t(), :api_call_limits_not_refreshed}
+          | {:error, Ecto.Changeset.t() | String.t()}
   def re_expand(%Subscription{grant: %Grant{} = grant} = subscription) do
     with {:ok, metrics, snapshot_version} <- expand(grant.full_history_packages) do
       attrs =
@@ -174,32 +186,63 @@ defmodule Sanbase.Billing.Subscription.Grants do
   defp version_of(%PackageSnapshot{version: version}), do: version
   defp version_of(_), do: nil
 
-  defp current_snapshot?(%Grant{full_history_packages: []}), do: true
+  # Only a grant with a frozen metric list can fall behind. An empty one expanded
+  # nothing, and "all packages" is stored as itself so it keeps covering packages added
+  # later - calling either stale would invite a pointless re-expand and make the warning
+  # mean less where it does matter.
+  defp current_snapshot?(%Grant{} = grant) do
+    packages = grant.full_history_packages || []
 
-  defp current_snapshot?(%Grant{package_snapshot_version: version}) do
-    case PackageSnapshot.latest() do
-      %PackageSnapshot{version: ^version} -> true
-      _ -> false
+    cond do
+      packages == [] ->
+        true
+
+      Grant.all_packages() in packages ->
+        true
+
+      true ->
+        case PackageSnapshot.latest() do
+          %PackageSnapshot{version: version} -> version == grant.package_snapshot_version
+          _ -> false
+        end
     end
   end
 
   # The subscription's user is what the api_call_limits row is keyed by. Preloaded
   # rather than assumed, because the callers here are admin screens holding a row
   # they queried for display.
+  #
+  # A failure here matters more than it looks: the grant row is already written, so the
+  # customer's entitlement says one thing while their quota says another, and nothing
+  # self-heals - the daily `ApiCallLimit.Sync` reconciles on plan name and a grant never
+  # changes one. So the error is reported rather than swallowed, and the caller is told
+  # the write landed but the allowance did not.
   defp refresh_api_call_limits({:ok, %Subscription{} = subscription}) do
     subscription = Repo.preload(subscription, [:user, :plan])
 
     case subscription.user do
       %User{} = user ->
-        Sanbase.ApiCallLimit.update_user_plan(user)
+        case Sanbase.ApiCallLimit.update_user_plan(user) do
+          {:ok, _} ->
+            {:ok, subscription}
+
+          error ->
+            Logger.error(
+              "[Grants] Wrote the grant on subscription #{subscription.id} but could not " <>
+                "refresh the API call limits for user #{user.id}: #{inspect(error)}. " <>
+                "Re-apply the grant to retry - nothing else will."
+            )
+
+            {:ok, subscription, :api_call_limits_not_refreshed}
+        end
 
       _ ->
         Logger.error(
           "[Grants] Subscription #{subscription.id} has no user; API call limits not refreshed."
         )
-    end
 
-    {:ok, subscription}
+        {:ok, subscription, :api_call_limits_not_refreshed}
+    end
   end
 
   defp refresh_api_call_limits(other), do: other

@@ -105,6 +105,81 @@ defmodule Sanbase.Billing do
     Catalog.sync_with_stripe()
   end
 
+  @doc ~s"""
+  Move Institutional yearly to its 2026-09-10 price of $9,588.
+
+  Run once, after the `Apply20260910PricingDecisions` migration:
+
+      Sanbase.Billing.switch_institutional_yearly_price()
+
+  ## Why this is not a migration
+
+  A Stripe Plan is immutable, so changing the amount means creating a new Plan and
+  pointing the row at it. A migration can only do half of that, and either half is a
+  broken state a deploy can stop in: the row priced at $9,588 while its `stripe_id`
+  still charges $9,500, or a purchasable row with no `stripe_id` at all.
+
+  So the order here is create-then-switch. The new Stripe Plan is created from an
+  in-memory copy carrying the new amount, and the row is only updated once that
+  succeeded - if Stripe fails, nothing local changed and the old price keeps working.
+
+  ## The old Stripe Plan is reported, not deleted
+
+  Deactivating it is a Stripe-side action with no wrapper here, and doing it before the
+  switch is confirmed would leave the live row pointing at a dead plan. The previous id
+  comes back in the result so it can be archived in the dashboard afterwards. Nothing is
+  subscribed to it - Institutional has never been on sale.
+
+  Idempotent: a row already at the new amount is left alone.
+  """
+  @spec switch_institutional_yearly_price() ::
+          {:ok, :already_applied}
+          | {:ok,
+             %{
+               plan_id: non_neg_integer(),
+               stripe_id: String.t(),
+               archive_in_stripe: String.t() | nil
+             }}
+          | {:error, term()}
+  def switch_institutional_yearly_price do
+    new_amount = 958_800
+
+    case Repo.get_by(Plan, name: "INSTITUTIONAL", interval: "year") do
+      nil ->
+        {:error, "No INSTITUTIONAL yearly plan row exists."}
+
+      %Plan{amount: ^new_amount} ->
+        {:ok, :already_applied}
+
+      %Plan{} = plan ->
+        %Plan{} = plan = Repo.preload(plan, :product)
+        previous_stripe_id = plan.stripe_id
+
+        case Sanbase.StripeApi.create_plan(%Plan{plan | amount: new_amount}) do
+          {:ok, stripe_plan} ->
+            case Plan.update_plan(plan, %{amount: new_amount, stripe_id: stripe_plan.id}) do
+              {:ok, updated} ->
+                {:ok,
+                 %{
+                   plan_id: updated.id,
+                   stripe_id: updated.stripe_id,
+                   archive_in_stripe: previous_stripe_id
+                 }}
+
+              {:error, error} ->
+                # The Stripe Plan exists and nothing points at it. Reported rather than
+                # cleaned up, because deleting it blind is the more dangerous of the two.
+                {:error,
+                 "Created Stripe plan #{stripe_plan.id} but could not update the local row: " <>
+                   "#{inspect(error)}. Archive #{stripe_plan.id} in Stripe before retrying."}
+            end
+
+          {:error, error} ->
+            {:error, "Could not create the replacement Stripe plan: #{inspect(error)}"}
+        end
+    end
+  end
+
   @doc """
   If user has enough SAN staked and has no active Sanbase subscription - create one
   """

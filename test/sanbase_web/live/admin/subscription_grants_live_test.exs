@@ -83,8 +83,11 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLiveTest do
     view |> element("button[phx-click=apply_grant]") |> render_click()
 
     # The grant form starts empty, so this is the refusal to store a grant that
-    # grants nothing rather than a silent no-op.
-    assert render(view) =~ "must add extra API calls"
+    # grants nothing rather than a silent no-op. The field path is asserted because a
+    # grant is an embed: its errors nest one level down, and a flat join would show the
+    # admin the raw inner map instead of a sentence.
+    html = render(view)
+    assert html =~ "grant.extra_api_calls_per_month: a grant must add extra API calls"
 
     view |> render_hook("set_extra_calls", %{"value" => "200000"})
     view |> render_hook("set_note", %{"value" => "INV-1"})

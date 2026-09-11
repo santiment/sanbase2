@@ -43,10 +43,7 @@ defmodule Sanbase.Email.ApiBusinessOnboardingList do
   @list_atom :api_business_onboarding
   @business_plan_names ["BUSINESS_PRO", "BUSINESS_MAX"]
 
-  # Name prefixes that qualify on top of `@business_plan_names`. The two queries
-  # spell the same prefixes out as `like/2` clauses - Ecto has no portable way to
-  # share a prefix list across a query and a plain function, and a wrong answer
-  # here sends real email, so the duplication is the safer trade.
+  # The two queries spell these out as `like/2` clauses; keep all three in step.
   @qualifying_prefixes ["CUSTOM", "BUNDLE", "INSTITUTIONAL", "ENTERPRISE"]
 
   @doc "The Mailjet list atom, as registered in `Sanbase.Email.MailjetApi`."

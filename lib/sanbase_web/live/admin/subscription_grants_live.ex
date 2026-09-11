@@ -146,56 +146,61 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
         note: String.trim(note)
       }
 
-      case Grants.grant(subscription, attrs, socket.assigns.current_user) do
-        {:ok, _subscription} ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Grant applied and API call limits refreshed.")
-           |> load_subscriptions()}
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, put_flash(socket, :error, changeset_message(changeset))}
-
-        {:error, message} ->
-          {:noreply, put_flash(socket, :error, to_string(message))}
-      end
+      subscription
+      |> Grants.grant(attrs, socket.assigns.current_user)
+      |> handle_write(socket, "Grant applied and API call limits refreshed.")
     end)
   end
 
   def handle_event("re_expand", %{"id" => id}, socket) do
     with_subscription(socket, id, fn socket, subscription ->
-      case Grants.re_expand(subscription) do
-        {:ok, _} ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Re-expanded against the current package snapshot.")
-           |> load_subscriptions()}
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, put_flash(socket, :error, changeset_message(changeset))}
-
-        {:error, message} ->
-          {:noreply, put_flash(socket, :error, to_string(message))}
-      end
+      subscription
+      |> Grants.re_expand()
+      |> handle_write(socket, "Re-expanded against the current package snapshot.")
     end)
   end
 
   def handle_event("revoke", %{"id" => id}, socket) do
     with_subscription(socket, id, fn socket, subscription ->
-      case Grants.revoke(subscription) do
-        {:ok, _} ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Grant removed. The customer is back on what their plan gives.")
-           |> assign(:form_extra_calls, 0)
-           |> assign(:form_packages, MapSet.new())
-           |> assign(:form_note, "")
-           |> load_subscriptions()}
+      socket =
+        socket
+        |> assign(:form_extra_calls, 0)
+        |> assign(:form_packages, MapSet.new())
+        |> assign(:form_note, "")
 
-        {:error, changeset} ->
-          {:noreply, put_flash(socket, :error, changeset_message(changeset))}
-      end
+      subscription
+      |> Grants.revoke()
+      |> handle_write(socket, "Grant removed. The customer is back on what their plan gives.")
     end)
+  end
+
+  # The three writes report the same four outcomes, so they say so in one place.
+  #
+  # `:api_call_limits_not_refreshed` is the interesting one: the grant is stored but the
+  # quota row was not updated, and nothing will retry on its own - the daily reconciler
+  # matches on plan name and a grant never changes one. So it is a warning rather than
+  # either a success or an error, and it says what to do about it.
+  defp handle_write(result, socket, success_message) do
+    case result do
+      {:ok, _subscription} ->
+        {:noreply, socket |> put_flash(:info, success_message) |> load_subscriptions()}
+
+      {:ok, _subscription, :api_call_limits_not_refreshed} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Saved, but the API call limits could not be refreshed - the customer's quota does " <>
+             "not reflect this yet. Apply it again to retry."
+         )
+         |> load_subscriptions()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, put_flash(socket, :error, changeset_message(changeset))}
+
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, to_string(message))}
+    end
   end
 
   # ── Data ────────────────────────────────────────────────────────────────
@@ -289,12 +294,39 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
     end
   end
 
+  # A grant is an embed, so `traverse_errors/2` nests its errors one level down and a
+  # flat join would print the raw inner map at the admin. Flattened recursively with the
+  # path kept, so a failure reads "grant.note: can't be blank" rather than a dump.
   defp changeset_message(changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(fn {message, _opts} -> message end)
-    |> Enum.map_join("; ", fn {field, messages} ->
-      "#{field}: #{Enum.join(List.wrap(messages), ", ")}"
+    |> flatten_errors()
+    |> Enum.map_join("; ", fn {path, messages} -> "#{path}: #{Enum.join(messages, ", ")}" end)
+  end
+
+  defp flatten_errors(errors, prefix \\ nil) do
+    Enum.flat_map(errors, fn {field, value} ->
+      path = if prefix, do: "#{prefix}.#{field}", else: to_string(field)
+
+      case value do
+        %{} = nested -> flatten_errors(nested, path)
+        messages when is_list(messages) -> flatten_message_list(messages, path)
+        message -> [{path, [to_string(message)]}]
+      end
     end)
+  end
+
+  # A list entry is itself a map when the embed is a collection, so the two shapes are
+  # separated rather than assumed.
+  defp flatten_message_list(messages, path) do
+    {maps, strings} = Enum.split_with(messages, &is_map/1)
+
+    nested = Enum.flat_map(maps, &flatten_errors(&1, path))
+
+    case strings do
+      [] -> nested
+      strings -> [{path, Enum.map(strings, &to_string/1)} | nested]
+    end
   end
 
   defp package_options do

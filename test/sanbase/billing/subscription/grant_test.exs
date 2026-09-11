@@ -359,6 +359,26 @@ defmodule Sanbase.Billing.Subscription.GrantTest do
     test "is nil without a grant", context do
       assert Grants.describe(context.subscription) == nil
     end
+
+    test "an \"all packages\" grant never reports as stale", context do
+      %{subscription: subscription, user: user} = context
+
+      {:ok, subscription} =
+        Grants.grant(
+          subscription,
+          %{full_history_packages: [Grant.all_packages()], note: "INV-1"},
+          user
+        )
+
+      categorize("grant_test_metric_after_all", category_for("Market"))
+      {:ok, _} = PackageSnapshot.publish()
+
+      # Nothing was frozen, so a newer snapshot leaves nothing behind and there is
+      # nothing to re-expand. Warning here would make the warning mean less where it
+      # does matter.
+      assert Grants.describe(Repo.reload(subscription)).snapshot_is_current?
+      assert Grant.full_history?(Subscription.grant(subscription), "grant_test_metric_after_all")
+    end
   end
 
   # ── Helpers ─────────────────────────────────────────────────────────────

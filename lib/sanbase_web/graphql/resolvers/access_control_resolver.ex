@@ -10,10 +10,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   end
 
   def get_access_restrictions(_root, args, %{context: context}) do
-    asked_for_another_plan? = Map.has_key?(args, :plan_name) or Map.has_key?(args, :plan)
+    # An explicit `null` still arrives as a present key, and it falls through to the
+    # caller's own plan - so "did they name another plan?" has to be about the value
+    # that was resolved, not about the key being there. Keyed on presence, a
+    # `plan: null` would silently drop the caller's own grant.
+    named_plan = Map.get(args, :plan_name) || Map.get(args, :plan)
+    asked_for_another_plan? = not is_nil(named_plan)
 
-    plan_name =
-      Map.get(args, :plan_name) || Map.get(args, :plan) || context[:auth][:plan] || "FREE"
+    plan_name = named_plan || context[:auth][:plan] || "FREE"
 
     plan_name = plan_name |> to_string() |> String.upcase()
 
@@ -60,10 +64,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
 
   # Only the parts a grant can change the answer with. `nil` for the overwhelming
   # majority of callers, which keeps their cache key exactly what it was before.
+  #
+  # The values go in whole rather than hashed here: `Cache.cache_key/3` already
+  # SHA-256s the finished key, so pre-hashing would only add a 32-bit collision
+  # surface in front of it - and a collision means one customer's wider windows
+  # served to another.
   defp grant_cache_key(nil), do: nil
 
   defp grant_cache_key(%Sanbase.Billing.Subscription.Grant{} = grant) do
-    :erlang.phash2({grant.full_history_packages, grant.full_history_metrics})
+    {grant.full_history_packages, grant.full_history_metrics}
   end
 
   defp valid_plan_name?("CUSTOM_" <> _), do: true

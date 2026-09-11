@@ -24,19 +24,22 @@ defmodule Sanbase.Billing.Plan.Bundle do
   """
 
   @equivalent_standard_plan "PRO"
+  @sanbase_equivalent_plan "FREE"
 
   @doc ~s"""
-  The standard plan a bundle behaves like for everything that is **not** metric,
-  query or signal access and **not** the API call quota.
+  The standard SanAPI plan a bundle behaves like for everything that is **not**
+  metric, query or signal access and **not** the API call quota.
 
   Those two things come from the entitlement, because they are what the customer
-  actually chose. Everything else - how many alerts they can create, how much
-  query credit they get, which ClickHouse repo their queries run against, and
-  their whole Sanbase experience - has no per-package answer and needs one
-  anyway.
+  actually chose. Everything else on the SanAPI side - how much query credit they
+  get, which ClickHouse repo their queries run against, how their query complexity
+  is divided, how large a monthly response volume they may pull - has no
+  per-package answer and needs one anyway. Bundles are priced against PRO, so PRO
+  is what they get.
 
-  Product's answer (§15 Q5): the same as a SanAPI PRO customer who has no
-  Sanbase subscription. Bundles are priced against PRO, so PRO is what they get.
+  **Not the Sanbase answer.** That is `sanbase_equivalent_plan/0`, and the two are
+  deliberately separate - see its docs for why collapsing them would be a quiet
+  downgrade of a paying customer.
 
   This mirrors what already happens for `CUSTOM_*` plans, which resolve to their
   `restricted_access_as_plan` for exactly the same reason - see
@@ -45,6 +48,34 @@ defmodule Sanbase.Billing.Plan.Bundle do
   """
   @spec equivalent_standard_plan() :: String.t()
   def equivalent_standard_plan, do: @equivalent_standard_plan
+
+  @doc ~s"""
+  The Sanbase plan a bundle customer gets when they have no Sanbase subscription
+  of their own: **FREE**.
+
+  A bundle is a SanAPI product. The packages say which *metrics* were bought,
+  which means nothing for Sanbase - so the question "what does a bundle customer
+  see in Sanbase?" has to be answered by a rule rather than by the entitlement,
+  and the rule is that they are not paying for Sanbase.
+
+  ## Why this is a separate function from `equivalent_standard_plan/0`
+
+  Because the two answers are genuinely different, and one constant serving both
+  would tie them together. Reading this one everywhere would put a paying API
+  customer on FREE's query-complexity divider and FREE's monthly response-size
+  cap - a 40x cut - with no error anywhere. Reading the other one everywhere is
+  what used to happen, and it gave away the full Sanbase PRO experience with it.
+
+  So there are two: this one is read at exactly the two Sanbase-facing sites
+  (`SanbaseWeb.Graphql.AuthPlug.effective_plan_name/2` and
+  `Sanbase.Billing.Plan.SanbaseAccessChecker`), and `equivalent_standard_plan/0`
+  at the SanAPI ones.
+
+  A bundle customer who also buys a Sanbase subscription is unaffected - their own
+  subscription is found first and this never comes up.
+  """
+  @spec sanbase_equivalent_plan() :: String.t()
+  def sanbase_equivalent_plan, do: @sanbase_equivalent_plan
 
   @doc ~s"""
   What a bundle subscription is made of, for showing to its owner.

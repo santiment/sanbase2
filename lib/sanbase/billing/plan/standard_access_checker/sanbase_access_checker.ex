@@ -78,9 +78,11 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   # itself rather than relying on the dispatcher.
   defp plan_stats(plan) do
     case Plan.type(plan) do
-      # Bundles are a SanAPI product; their Sanbase experience is PRO's.
+      # Bundles are a SanAPI product and Sanbase is not part of what was sold, so their
+      # Sanbase experience is FREE's. Institutional and Enterprise include Sanbase and
+      # are answered by name above.
       :bundle ->
-        standard_or_custom_plan_stats(Sanbase.Billing.Plan.Bundle.equivalent_standard_plan())
+        standard_or_custom_plan_stats(Sanbase.Billing.Plan.Bundle.sanbase_equivalent_plan())
 
       _ ->
         standard_or_custom_plan_stats(plan)

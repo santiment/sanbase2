@@ -259,24 +259,50 @@ defmodule Sanbase.Billing.BundleApiAccessTest do
       subscribe(context.bundle_plan, ["social"])
     end
 
-    test "is treated as the equivalent standard plan on Sanbase, not as a bundle", context do
-      # Product's answer to Q5: the same as a SanAPI PRO customer with no Sanbase
-      # subscription. So the bundle name must never reach a Sanbase access check -
-      # if it did, the package metric list would decide Sanbase access, and the
-      # Sanbase-specific limits have no per-package answer.
+    test "sees what a free Sanbase user sees, not what a PRO one does", context do
+      # The constants are pinned elsewhere; this is the customer-visible half of that
+      # decision, written out so changing it is a deliberate act rather than a diff in a
+      # module attribute nobody reads.
+      %{user: user} = context
+
+      subscription = Subscription.current_subscription(user.id, context.product_api.id)
+      assert Sanbase.Billing.Plan.plan_name(subscription.plan) == "BUNDLE"
+
+      checker = Sanbase.Billing.Plan.SanbaseAccessChecker
+
+      assert checker.alerts_limit("BUNDLE") == checker.alerts_limit("FREE")
+      refute checker.can_access_paywalled_insights?(subscription)
+
+      # Two years of history and a 30-day realtime lag, where a Sanbase PRO user has no
+      # limit and sees live data.
+      assert checker.historical_data_in_days("SANBASE", "BUNDLE") ==
+               checker.historical_data_in_days("SANBASE", "FREE")
+
+      assert checker.realtime_data_cut_off_in_days("SANBASE", "BUNDLE") ==
+               checker.realtime_data_cut_off_in_days("SANBASE", "FREE")
+    end
+
+    test "gets FREE on Sanbase and the equivalent standard plan on SanAPI", context do
+      # A bundle is a SanAPI product; Sanbase is not part of what was sold, so the
+      # Sanbase experience is FREE's. The bundle name must still never reach a Sanbase
+      # access check - if it did, the package metric list would decide Sanbase access,
+      # and the Sanbase-specific limits have no per-package answer.
       %{user: user} = context
 
       subscription = Subscription.current_subscription(user.id, context.product_api.id)
 
       assert Sanbase.Billing.Plan.plan_name(subscription.plan) == "BUNDLE"
 
-      # These four are the Sanbase-side limits. Before Q5 was answered every one
-      # of them raised for a bundle, so a bundle customer opening Sanbase got a
-      # 500.
-      equivalent = Bundle.equivalent_standard_plan()
-
+      # Before §15 Q5 was answered every one of these raised for a bundle, so a bundle
+      # customer opening Sanbase got a 500.
       assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("BUNDLE") ==
-               Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit(equivalent)
+               Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit(
+                 Bundle.sanbase_equivalent_plan()
+               )
+
+      # The SanAPI side is unchanged and still PRO's - the whole point of keeping the
+      # two answers apart.
+      equivalent = Bundle.equivalent_standard_plan()
 
       for product <- ["SANAPI", "SANBASE"] do
         assert Sanbase.Queries.Authorization.credits_limit(product, "BUNDLE") ==

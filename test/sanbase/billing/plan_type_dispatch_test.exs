@@ -236,15 +236,21 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
              ) == 0
     end
 
-    test "the Sanbase-side limits answer as the equivalent standard plan" do
-      # Product's answer to §15 Q5: a bundle customer gets what a SanAPI PRO
-      # customer with no Sanbase subscription gets. None of these four has a
-      # per-package answer, and before Q5 every one of them raised - so a bundle
-      # customer opening Sanbase got a 500.
-      equivalent = Bundle.equivalent_standard_plan()
-
+    test "the Sanbase side answers as FREE, the SanAPI side as the equivalent standard plan" do
+      # The two answers are deliberately different and a single constant serving both
+      # would tie them together. Collapsing them in either direction is a silent
+      # downgrade: towards FREE it puts a paying API customer on FREE's complexity
+      # divider and response-size cap, towards PRO it gives away Sanbase PRO.
+      #
+      # None of these has a per-package answer, and before §15 Q5 every one raised - so a
+      # bundle customer opening Sanbase got a 500.
       assert SanbaseAccessChecker.alerts_limit(@bundle_plan) ==
-               SanbaseAccessChecker.alerts_limit(equivalent)
+               SanbaseAccessChecker.alerts_limit(Bundle.sanbase_equivalent_plan())
+
+      refute SanbaseAccessChecker.alerts_limit(@bundle_plan) ==
+               SanbaseAccessChecker.alerts_limit(Bundle.equivalent_standard_plan())
+
+      equivalent = Bundle.equivalent_standard_plan()
 
       for product <- @products do
         assert Authorization.credits_limit(product, @bundle_plan) ==

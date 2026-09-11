@@ -329,8 +329,10 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   #
   # A bundle is the same case: its packages say which *metrics* were bought, which means
   # nothing for Sanbase, and letting the name through sends Sanbase access checks down the
-  # bundle path where the Sanbase limits have no per-package answer. Per product (§15 Q5)
-  # these customers get what a SanAPI PRO customer with no Sanbase subscription gets.
+  # bundle path where the Sanbase limits have no per-package answer. A bundle is a SanAPI
+  # product and Sanbase is not part of what was sold, so these customers get FREE - see
+  # `Bundle.sanbase_equivalent_plan/0`. Not `equivalent_standard_plan/0`: that one is the
+  # SanAPI-side answer and is still PRO.
   defp effective_plan_name(subscription, "SANBASE") do
     case subscription do
       %Subscription{plan: %{has_custom_restrictions: true, name: name}} ->
@@ -338,7 +340,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
       %Subscription{plan: %{name: name}} = subscription ->
         case Sanbase.Billing.Plan.type(name) do
-          :bundle -> Sanbase.Billing.Plan.Bundle.equivalent_standard_plan()
+          :bundle -> Sanbase.Billing.Plan.Bundle.sanbase_equivalent_plan()
           _ -> Subscription.plan_name(subscription)
         end
 

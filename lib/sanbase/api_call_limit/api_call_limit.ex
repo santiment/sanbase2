@@ -411,22 +411,55 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  # `nil` for every plan whose limits follow from its name, i.e. everything but a bundle.
+  # `nil` for every plan whose limits follow from its name and that has no add-on -
+  # storing them would freeze numbers the plan tables should keep owning.
+  #
+  # Two cases store something instead. A bundle always does, because every bundle is
+  # named `BUNDLE` while the numbers differ per customer. Anything else does only when
+  # a grant adds calls on top (§8 task GR); Institutional is what that is for, but
+  # nothing here is Institutional-specific and a granted bundle picks it up too.
+  #
   # A bundle with no entitlement yet stores `nil` rather than raising: this runs on every
   # plan change, and failing would leave a stale plan name behind. The read path is loud.
   defp subscription_to_resolved_api_call_limits(%Subscription{} = sub) do
     plan_name = subscription_to_plan_name(sub)
+    extra_calls = sub |> Subscription.grant() |> Subscription.Grant.extra_api_calls()
 
-    with :bundle <- Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan_name),
-         %{} = entitlement <- Subscription.bundle_entitlement(sub) do
-      limits = Sanbase.Billing.Plan.Bundle.Access.api_call_limits(entitlement)
+    case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan_name) do
+      :bundle ->
+        case Subscription.bundle_entitlement(sub) do
+          %{} = entitlement ->
+            entitlement
+            |> Sanbase.Billing.Plan.Bundle.Access.api_call_limits()
+            |> add_extra_calls(extra_calls)
 
-      # String keys, so what is written matches what jsonb reads back.
-      %{"month" => limits.month, "hour" => limits.hour, "minute" => limits.minute}
-    else
-      _ -> nil
+          _ ->
+            nil
+        end
+
+      _other when extra_calls > 0 ->
+        # `plan_has_limits?/1` first: an unlimited plan has no number to add to, and
+        # `plan_to_api_call_limits/1` would raise trying to read one.
+        if plan_has_limits?(plan_name) do
+          plan_name
+          |> plan_to_api_call_limits()
+          |> add_extra_calls(extra_calls)
+        end
+
+      _other ->
+        nil
     end
   end
+
+  # String keys, so what is written matches what jsonb reads back. Grants only ever add
+  # to the monthly allowance: hour and minute are burst protection for the
+  # infrastructure rather than something sold, so buying calls must not widen them.
+  defp add_extra_calls(%{month: month, hour: hour, minute: minute}, extra)
+       when is_integer(month) and is_integer(hour) and is_integer(minute) do
+    %{"month" => month + extra, "hour" => hour, "minute" => minute}
+  end
+
+  defp add_extra_calls(_limits, _extra), do: nil
 
   defp do_get_quota(%__MODULE__{has_limits_no_matter_plan: false}) do
     {:ok, %{quota: :infinity}}
@@ -571,7 +604,7 @@ defmodule Sanbase.ApiCallLimit do
       _ ->
         case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
           :bundle ->
-            # Every bundle has a monthly call limit - a flat 100k plus the add-ons bought
+            # Every bundle has a monthly call limit - a flat 50k plus the add-ons bought
             # (§9). There is no unlimited bundle, so no entitlement is needed here.
             true
 
@@ -607,7 +640,9 @@ defmodule Sanbase.ApiCallLimit do
   For a bundle these were resolved when the subscription synced and stored on the
   row, because every bundle is named `BUNDLE` while the numbers differ per
   customer (§5.8). For every other plan the name identifies the numbers, and this
-  falls through to `plan_to_api_call_limits/1` unchanged.
+  falls through to `plan_to_api_call_limits/1` unchanged - unless a sales-applied
+  grant added calls on top, in which case the resolved total was stored at the same
+  point and is read from here (§8 task GR).
   """
   @spec acl_to_api_call_limits(%__MODULE__{}) :: %{
           month: non_neg_integer(),
@@ -617,9 +652,31 @@ defmodule Sanbase.ApiCallLimit do
   def acl_to_api_call_limits(%__MODULE__{api_calls_limit_plan: plan} = acl) do
     case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan) do
       :bundle -> bundle_api_call_limits(acl)
-      _other -> plan_to_api_call_limits(plan)
+      _other -> granted_or_plan_api_call_limits(acl, plan)
     end
   end
+
+  # A non-bundle row only carries resolved limits when a grant added calls to it, and a
+  # grant can only ever *add* - so the stored monthly total is taken exactly when it beats
+  # what the plan gives. Anything at or below the plan's number is a leftover rather than a
+  # grant (a customer who moved off a bundle, a bad backfill), and the ladder still wins.
+  #
+  # Hour and minute always come from the plan. They are burst protection for the
+  # infrastructure rather than something sold, so buying calls must not widen them.
+  defp granted_or_plan_api_call_limits(%__MODULE__{resolved_api_call_limits: limits}, plan)
+       when is_map(limits) do
+    plan_limits = plan_to_api_call_limits(plan)
+
+    case {Map.get(limits, "month"), plan_limits} do
+      {granted, %{month: from_plan}} when is_integer(granted) and is_integer(from_plan) ->
+        %{plan_limits | month: max(granted, from_plan)}
+
+      _ ->
+        plan_limits
+    end
+  end
+
+  defp granted_or_plan_api_call_limits(%__MODULE__{}, plan), do: plan_to_api_call_limits(plan)
 
   # A bundle row with nothing stored means the subscription never synced. Raising is
   # deliberate: invented numbers either refuse a paying customer or give calls away, and

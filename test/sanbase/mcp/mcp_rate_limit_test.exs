@@ -173,6 +173,39 @@ defmodule Sanbase.MCP.RateLimitTest do
       user = insert(:user)
       assert :free == Restrictions.tier_for_user(user)
     end
+
+    test "a bundle customer gets the max tier, not the free one" do
+      # MCP is sold with the packages, and every bundle subscription is named `BUNDLE`.
+      # Without a clause for that name it falls to the SANAPI catch-all and a paying
+      # customer silently gets 15 calls a minute.
+      user = insert(:user)
+      product_api_id = Sanbase.Billing.Product.product_api()
+
+      plan =
+        Sanbase.Repo.get_by(Sanbase.Billing.Plan,
+          name: "BUNDLE",
+          interval: "month",
+          product_id: product_api_id
+        ) ||
+          insert(:plan_pro,
+            id: 9901,
+            name: "BUNDLE",
+            product_id: product_api_id,
+            interval: "month",
+            amount: 0,
+            is_private: true,
+            stripe_id: "plan_bundle_month_" <> Ecto.UUID.generate()
+          )
+
+      insert(:subscription_pro,
+        user_id: user.id,
+        plan_id: plan.id,
+        status: :active,
+        stripe_id: "sub_bundle_" <> Ecto.UUID.generate()
+      )
+
+      assert :max == Restrictions.tier_for_user(user)
+    end
   end
 
   defp insert_invocations(user_id, tool_name, count) do

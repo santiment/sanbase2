@@ -7,6 +7,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @type product_code :: String.t()
   @type plan_name :: String.t()
   @type entitlement :: Sanbase.Billing.Plan.Bundle.Entitlement.t() | nil
+  @type grant :: Sanbase.Billing.Subscription.Grant.t() | nil
 
   alias Sanbase.Billing.Plan
   alias Sanbase.Billing.Plan.{BundleAccessChecker, CustomAccessChecker, StandardAccessChecker}
@@ -113,13 +114,24 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @doc """
   If the result from this function is nil, then no restrictions are applied.
   Respectively the `restrictedFrom` field has a value of nil as well.
+
+  The last argument is a sales-applied grant (§8 task GR). It is applied *after*
+  the plan has answered and can only widen the window - a metric the customer
+  bought full history for returns `nil`, which is what "no limit" already means
+  everywhere else here. Every other metric keeps the plan's answer, so a caller
+  with no grant sees exactly what it saw before.
+
+  This is the one function that needs the grant, because it is the only place a
+  history window is decided. `realtime_data_cut_off_in_days/5` needs nothing:
+  Institutional is already realtime.
   """
   @spec historical_data_in_days(
           query_or_argument,
           requested_product,
           subscription_product,
           plan_name,
-          entitlement
+          entitlement,
+          grant
         ) ::
           non_neg_integer() | nil
   def historical_data_in_days(
@@ -127,8 +139,36 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
         requested_product,
         subscription_product,
         plan_name,
-        entitlement \\ nil
+        entitlement \\ nil,
+        grant \\ nil
       ) do
+    query_or_argument
+    |> plan_historical_data_in_days(
+      requested_product,
+      subscription_product,
+      plan_name,
+      entitlement
+    )
+    |> apply_history_grant(grant, query_or_argument)
+  end
+
+  # A grant names metrics, so only a metric can be upgraded by one. Queries and signals
+  # carry no history window of their own that a package could have bought.
+  defp apply_history_grant(days, nil, _query_or_argument), do: days
+
+  defp apply_history_grant(days, grant, {:metric, metric}) do
+    if Sanbase.Billing.Subscription.Grant.full_history?(grant, metric), do: nil, else: days
+  end
+
+  defp apply_history_grant(days, _grant, _query_or_argument), do: days
+
+  defp plan_historical_data_in_days(
+         query_or_argument,
+         requested_product,
+         subscription_product,
+         plan_name,
+         entitlement
+       ) do
     case Plan.type(plan_name) do
       :bundle ->
         BundleAccessChecker.historical_data_in_days(

@@ -492,7 +492,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       plan_name: plan_name,
       requested_product: requested_product,
       subscription_product: subscription_product,
-      entitlement: entitlement
+      entitlement: entitlement,
+      grant: grant
     } = context_to_plan_name_product_code(context)
 
     historical_data_in_days =
@@ -501,7 +502,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         requested_product,
         subscription_product,
         plan_name,
-        entitlement
+        entitlement,
+        grant
       )
 
     realtime_data_cut_off_in_days =
@@ -621,7 +623,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
           plan_name: plan_name,
           requested_product: requested_product,
           subscription_product: subscription_product,
-          entitlement: entitlement
+          entitlement: entitlement,
+          grant: grant
         } = context_to_plan_name_product_code(context)
 
         query_or_argument = context[:__query_argument_atom_name__]
@@ -632,7 +635,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
             requested_product,
             subscription_product,
             plan_name,
-            entitlement
+            entitlement,
+            grant
           )
 
         resolution
@@ -702,7 +706,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       plan_name: plan_name,
       requested_product: requested_product,
       subscription_product: subscription_product,
-      entitlement: bundle_entitlement(context)
+      entitlement: bundle_entitlement(context),
+      grant: grant(context)
     }
   end
 
@@ -712,4 +717,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # on the way to the access checker. See §5.8 of docs/composable-api-plans-handover.md.
   defp bundle_entitlement(context),
     do: Sanbase.Billing.Subscription.bundle_entitlement(context[:auth][:subscription])
+
+  # The sales-applied add-on, from the same subscription the plan name came from - so a
+  # grant can never be read against a different subscription than the one it was written
+  # against. `nil` for everyone who has no add-on, which is almost everyone. See §8 GR.
+  defp grant(context),
+    do: Sanbase.Billing.Subscription.grant(context[:auth][:subscription])
 end

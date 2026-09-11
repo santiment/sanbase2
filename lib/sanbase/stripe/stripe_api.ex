@@ -35,6 +35,21 @@ defmodule Sanbase.StripeApi do
   end
 
   @doc ~s"""
+  The amount a Stripe Plan actually charges, in cents.
+
+  Used to confirm that a local `plans` row and the Stripe Plan it points at agree on
+  price before treating a price change as already done - the local amount alone cannot
+  tell a completed switch from a row that was seeded at the new figure.
+  """
+  @spec plan_amount(String.t()) :: {:ok, non_neg_integer() | nil} | {:error, term()}
+  def plan_amount(stripe_plan_id) when is_binary(stripe_plan_id) do
+    case Stripe.Plan.retrieve(stripe_plan_id) do
+      {:ok, %{amount: amount}} -> {:ok, amount}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @doc ~s"""
   Create a Stripe Product for a bundle catalog SKU (package or API-call add-on).
 
   Metadata `sanbase_sku` lets `find_bundle_product/1` reuse the product on re-sync.

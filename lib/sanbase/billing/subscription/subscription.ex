@@ -73,6 +73,13 @@ defmodule Sanbase.Billing.Subscription do
     # dropped a package could keep part of what it gave them.
     embeds_one(:bundle_entitlement, Sanbase.Billing.Plan.Bundle.Entitlement, on_replace: :delete)
 
+    # An add-on granted by sales and applied from the admin panel - extra API calls,
+    # full history on individual packages. Deliberately a separate column from
+    # `bundle_entitlement`: that one is recomputed from the Stripe items on every
+    # `customer.subscription.updated`, so a grant stored inside it would be erased by
+    # the next webhook. NULL unless someone granted something; see §8 task GR.
+    embeds_one(:grant, Sanbase.Billing.Subscription.Grant, on_replace: :delete)
+
     # Only bundle subscriptions have items - that is how the two are told apart without
     # asking Stripe.
     has_many(:items, Sanbase.Billing.Subscription.Item, on_delete: :delete_all)
@@ -156,6 +163,51 @@ defmodule Sanbase.Billing.Subscription do
       do: entitlement
 
   def bundle_entitlement(_), do: nil
+
+  @doc ~s"""
+  Sets the sales-applied grant, replacing any previous one outright.
+
+  Separate from `changeset/2` for the same reason `bundle_entitlement_changeset/2`
+  is: a grant is an entitlement decision, written only by the admin path that
+  records who granted it, never carried in with ordinary subscription attributes.
+
+  Pass `nil` to remove the grant. The replacement is wholesale - a partial update
+  would let a package dropped from the new grant keep the metrics the old one
+  expanded for it.
+  """
+  @spec grant_changeset(%__MODULE__{}, map() | nil) :: Ecto.Changeset.t()
+  def grant_changeset(%__MODULE__{} = subscription, nil) do
+    subscription
+    |> change()
+    |> put_embed(:grant, nil)
+  end
+
+  def grant_changeset(%__MODULE__{} = subscription, attrs) when is_map(attrs) do
+    changeset = subscription |> change()
+
+    %__MODULE__.Grant{}
+    |> __MODULE__.Grant.changeset(attrs)
+    |> case do
+      %{valid?: true} = grant_changeset ->
+        put_embed(changeset, :grant, Ecto.Changeset.apply_changes(grant_changeset))
+
+      invalid ->
+        changeset
+        |> put_embed(:grant, invalid)
+        |> Map.put(:valid?, false)
+    end
+  end
+
+  @doc ~s"""
+  The stored grant, or `nil` when there is none.
+
+  Total for the same reason `bundle_entitlement/1` is: callers hold whatever the
+  request context gave them, and a missing subscription, an anonymous user and an
+  unloaded association all mean the same thing here.
+  """
+  @spec grant(%__MODULE__{} | nil | term()) :: __MODULE__.Grant.t() | nil
+  def grant(%__MODULE__{grant: %__MODULE__.Grant{} = grant}), do: grant
+  def grant(_), do: nil
 
   @doc ~s"""
   Bundle subscriptions, newest first, with their user, plan and items loaded.

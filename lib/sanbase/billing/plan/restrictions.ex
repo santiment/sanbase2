@@ -26,21 +26,30 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
   @type entitlement :: Sanbase.Billing.Plan.Bundle.Entitlement.t() | nil
+  @type grant :: Sanbase.Billing.Subscription.Grant.t() | nil
 
   @doc ~s"""
   Describe the time restrictions on one metric, query or signal for a plan.
 
-  The last argument is only read by bundle plans, whose name identifies nothing -
-  see `Sanbase.Billing.Plan.AccessChecker.plan_has_access?/4`. Every other plan
-  ignores it, so existing four-argument callers are unaffected.
+  `entitlement` is only read by bundle plans, whose name identifies nothing - see
+  `Sanbase.Billing.Plan.AccessChecker.plan_has_access?/4`. `grant` is a
+  sales-applied add-on and widens the history window for the metrics it covers
+  (§8 task GR). Every other plan ignores both, so existing four-argument callers
+  are unaffected.
+
+  Both have to be passed here and not only at the data layer. This is what
+  `getAccessRestrictions` answers with, so if it kept saying "three years" while
+  the data layer served full history, the API would be contradicting itself.
   """
-  @spec get(query_or_argument, String.t(), String.t(), String.t(), entitlement) :: restriction()
+  @spec get(query_or_argument, String.t(), String.t(), String.t(), entitlement, grant) ::
+          restriction()
   def get(
         {type, name} = query_or_argument,
         requested_product,
         subscription_product,
         plan_name,
-        entitlement \\ nil
+        entitlement \\ nil,
+        grant \\ nil
       )
       when type in [:metric, :signal, :query] do
     type_str = to_string(type)
@@ -68,7 +77,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
               requested_product,
               subscription_product,
               query_or_argument,
-              entitlement
+              entitlement,
+              grant
             )
         end
     end
@@ -79,9 +89,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   Return a list in which every element describes either a metric or a query.
   The elements are maps describing the time restrictions of the given metric/query.
   """
-  @spec get_all(String.t(), String.t(), :query | :metric | :signal | nil, entitlement) ::
+  @spec get_all(String.t(), String.t(), :query | :metric | :signal | nil, entitlement, grant) ::
           list(restriction)
-  def get_all(plan_name, product_code, filter \\ nil, entitlement \\ nil) do
+  def get_all(plan_name, product_code, filter \\ nil, entitlement \\ nil, grant \\ nil) do
     metrics = Sanbase.Metric.available_metrics() |> Enum.map(&{:metric, &1})
     signals = Sanbase.Signal.available_signals() |> Enum.map(&{:signal, &1})
     queries = Sanbase.Project.AvailableQueries.all_atom_names() |> Enum.map(&{:query, &1})
@@ -90,7 +100,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     result =
       (queries ++ metrics ++ signals)
       |> Enum.map(fn query_or_argument ->
-        get(query_or_argument, product_code, product_code, plan_name, entitlement)
+        get(query_or_argument, product_code, product_code, plan_name, entitlement, grant)
       end)
 
     (get_extra_queries(plan_name, product_code) ++ result)
@@ -150,7 +160,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
          requested_product,
          subscription_product,
          query_or_metric,
-         entitlement
+         entitlement,
+         grant
        ) do
     now = Timex.now()
 
@@ -160,7 +171,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
              requested_product,
              subscription_product,
              plan_name,
-             entitlement
+             entitlement,
+             grant
            ) do
         nil -> nil
         days -> Timex.shift(now, days: -days)

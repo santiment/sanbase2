@@ -54,7 +54,7 @@ defmodule Sanbase.MCP.Restrictions do
       | SANAPI  | BASIC, PRO, BUSINESS_PRO,          | max   |
       |         | BUSINESS_MAX, INSTITUTIONAL,       |       |
       |         | ENTERPRISE, CUSTOM, CUSTOM_*,      |       |
-      |         | PREMIUM                            |       |
+      |         | BUNDLE*, PREMIUM                   |       |
       +---------+------------------------------------+-------+
 
   Unauthenticated users are blocked at the server layer before reaching
@@ -157,6 +157,8 @@ defmodule Sanbase.MCP.Restrictions do
   defp classify("SANAPI", "CUSTOM"), do: :max
   defp classify("SANAPI", "PREMIUM"), do: :max
   defp classify("SANAPI", "CUSTOM_" <> _), do: :max
+  # Prefix-matched: every bundle plan is named `BUNDLE`, and MCP is sold with the packages.
+  defp classify("SANAPI", "BUNDLE" <> _), do: :max
   defp classify("SANAPI", _), do: :free
 
   defp classify(_, _), do: :free

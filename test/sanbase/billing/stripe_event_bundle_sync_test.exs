@@ -606,7 +606,7 @@ defmodule Sanbase.Billing.StripeEventBundleSyncTest do
       assert items["api_calls_500k"].quantity == 2
 
       entitlement = Subscription.by_stripe_id(sub.stripe_id).bundle_entitlement
-      assert entitlement.api_call_limits["month"] == 100_000 + 2 * 500_000
+      assert entitlement.api_call_limits["month"] == 50_000 + 2 * 500_000
     end
   end
 
@@ -622,7 +622,7 @@ defmodule Sanbase.Billing.StripeEventBundleSyncTest do
 
       acl = acl(user)
       assert acl.api_calls_limit_plan == "sanapi_bundle"
-      assert acl.resolved_api_call_limits["month"] == 100_000
+      assert acl.resolved_api_call_limits["month"] == 50_000
 
       canceled = %{stripe_sub | status: "canceled"}
 

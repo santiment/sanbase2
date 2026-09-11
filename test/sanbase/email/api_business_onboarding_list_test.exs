@@ -42,6 +42,20 @@ defmodule Sanbase.Email.ApiBusinessOnboardingListTest do
 
       assert :ok = ApiBusinessOnboardingList.maybe_add(subscription)
     end
+
+    test "the new offering is on the list too", %{user: user} do
+      # Product confirmed on 2026-09-10 that package and Institutional customers get the
+      # same onboarding email (§15 Q16). Before that a customer could pay for a year of
+      # Institutional and receive nothing while a Business Pro customer was onboarded.
+      for {name, id} <- [{"BUNDLE", 9911}, {"INSTITUTIONAL", 9913}, {"ENTERPRISE", 9915}] do
+        subscription = insert_new_offering_subscription(user, name, id) |> reload()
+
+        expect(MockMailjetApi, :subscribe, fn @list, "biz@example.com" -> :ok end)
+
+        assert :ok = ApiBusinessOnboardingList.maybe_add(subscription)
+        assert ApiBusinessOnboardingList.eligible?(subscription)
+      end
+    end
   end
 
   describe "maybe_add/1 ignores non-eligible subscribers" do
@@ -240,5 +254,34 @@ defmodule Sanbase.Email.ApiBusinessOnboardingListTest do
 
       assert ApiBusinessOnboardingList.eligible_user_emails() == []
     end
+  end
+
+  # The migrations seed these against products.id = 1, which does not exist in a freshly
+  # migrated test database, so the rows are created here with ids out of the factories' way.
+  defp insert_new_offering_subscription(user, plan_name, plan_id) do
+    product_api_id = Sanbase.Billing.Product.product_api()
+
+    plan =
+      Sanbase.Repo.get_by(Sanbase.Billing.Plan,
+        name: plan_name,
+        interval: "year",
+        product_id: product_api_id
+      ) ||
+        insert(:plan_pro,
+          id: plan_id,
+          name: plan_name,
+          product_id: product_api_id,
+          interval: "year",
+          amount: 958_800,
+          is_private: true,
+          stripe_id: "plan_#{String.downcase(plan_name)}_year_" <> Ecto.UUID.generate()
+        )
+
+    insert(:subscription_pro,
+      user_id: user.id,
+      plan_id: plan.id,
+      status: :active,
+      stripe_id: "sub_#{String.downcase(plan_name)}_" <> Ecto.UUID.generate()
+    )
   end
 end

@@ -222,7 +222,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
             requested_product,
             subcription_product,
             plan_name,
-            Sanbase.Billing.Subscription.bundle_entitlement(auth[:subscription])
+            Sanbase.Billing.Subscription.bundle_entitlement(auth[:subscription]),
+            Sanbase.Billing.Subscription.grant(auth[:subscription])
           )
 
         {:ok,

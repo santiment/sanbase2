@@ -131,19 +131,27 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
 
   # ── Writing ─────────────────────────────────────────────────────────────
 
-  def handle_event("apply_grant", _params, socket) do
-    %{
-      selected_id: id,
-      form_extra_calls: extra_calls,
-      form_packages: packages,
-      form_note: note
-    } = socket.assigns
+  # The submitted params win over the assigns: the inputs are debounced, so a value typed
+  # and submitted within the debounce window has not reached the socket yet. The assigns
+  # are the fallback for anything the form did not carry.
+  def handle_event("apply_grant", params, socket) do
+    %{selected_id: id, form_packages: packages} = socket.assigns
+
+    extra_calls =
+      parse_non_negative(Map.get(params, "extra_api_calls"), socket.assigns.form_extra_calls)
+
+    note = Map.get(params, "note", socket.assigns.form_note) |> to_string() |> String.trim()
+
+    socket =
+      socket
+      |> assign(:form_extra_calls, extra_calls)
+      |> assign(:form_note, note)
 
     with_subscription(socket, id, fn socket, subscription ->
       attrs = %{
         extra_api_calls_per_month: extra_calls,
         full_history_packages: MapSet.to_list(packages),
-        note: String.trim(note)
+        note: note
       }
 
       subscription
@@ -544,60 +552,72 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
             </span>
           </div>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Extra API calls a month</legend>
-            <input
-              type="number"
-              min="0"
-              step="10000"
-              value={@form_extra_calls}
-              phx-keyup="set_extra_calls"
-              phx-debounce="300"
-              class="input input-sm w-48"
-            />
-          </fieldset>
+          <%!-- A real submit, not a click handler reading assigns: the inputs are debounced,
+          so a value typed and submitted straight away would otherwise be granted at its
+          previous value. The submitted params are the source of truth. --%>
+          <form phx-submit="apply_grant" class="space-y-4">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Extra API calls a month</legend>
+              <input
+                type="number"
+                min="0"
+                step="10000"
+                name="extra_api_calls"
+                value={@form_extra_calls}
+                phx-keyup="set_extra_calls"
+                phx-debounce="300"
+                class="input input-sm w-48"
+              />
+            </fieldset>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Full history on</legend>
-            <div class="flex flex-wrap gap-2">
-              <button
-                :for={package <- @package_options}
-                phx-click="toggle_package"
-                phx-value-slug={package.slug}
-                class={[
-                  "btn btn-sm",
-                  if(MapSet.member?(@form_packages, package.slug),
-                    do: "btn-primary",
-                    else: "btn-soft"
-                  )
-                ]}
-              >
-                {package.name}
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Full history on</legend>
+              <div class="flex flex-wrap gap-2">
+                <%!-- type="button" because these live inside the form: a button without it
+                submits, so picking a package would apply the grant. --%>
+                <button
+                  :for={package <- @package_options}
+                  type="button"
+                  phx-click="toggle_package"
+                  phx-value-slug={package.slug}
+                  class={[
+                    "btn btn-sm",
+                    if(MapSet.member?(@form_packages, package.slug),
+                      do: "btn-primary",
+                      else: "btn-soft"
+                    )
+                  ]}
+                >
+                  {package.name}
+                </button>
+              </div>
+              <p class="text-xs text-base-content/50 mt-1">
+                "All packages" is not shorthand for ticking the five — it keeps covering a package
+                added later, while a list stays frozen as written.
+              </p>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">
+                Note (required — invoice or contract reference)
+              </legend>
+              <input
+                type="text"
+                name="note"
+                value={@form_note}
+                phx-keyup="set_note"
+                phx-debounce="300"
+                placeholder="e.g. INV-1234, Q3 contract"
+                class="input input-sm w-full"
+              />
+            </fieldset>
+
+            <div>
+              <button type="submit" class="btn btn-sm btn-primary">
+                Apply grant
               </button>
             </div>
-            <p class="text-xs text-base-content/50 mt-1">
-              "All packages" is not shorthand for ticking the five — it keeps covering a package
-              added later, while a list stays frozen as written.
-            </p>
-          </fieldset>
-
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Note (required — invoice or contract reference)</legend>
-            <input
-              type="text"
-              value={@form_note}
-              phx-keyup="set_note"
-              phx-debounce="300"
-              placeholder="e.g. INV-1234, Q3 contract"
-              class="input input-sm w-full"
-            />
-          </fieldset>
-
-          <div>
-            <button phx-click="apply_grant" class="btn btn-sm btn-primary">
-              Apply grant
-            </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>

@@ -130,7 +130,10 @@ defmodule Sanbase.Billing do
   comes back in the result so it can be archived in the dashboard afterwards. Nothing is
   subscribed to it - Institutional has never been on sale.
 
-  Idempotent: a row already at the new amount is left alone.
+  Idempotent, and it checks rather than assumes: a row already at the new amount is left
+  alone only once Stripe confirms its plan charges that amount too. A row seeded at
+  $9,588 with no Stripe plan behind it, or one edited by hand, goes down the
+  create-and-switch path like any other.
   """
   @spec switch_institutional_yearly_price() ::
           {:ok, :already_applied}
@@ -148,35 +151,53 @@ defmodule Sanbase.Billing do
       nil ->
         {:error, "No INSTITUTIONAL yearly plan row exists."}
 
-      %Plan{amount: ^new_amount} ->
-        {:ok, :already_applied}
+      %Plan{amount: ^new_amount, stripe_id: stripe_id} = plan when is_binary(stripe_id) ->
+        # The local amount alone cannot tell a finished switch from a row seeded at the
+        # new figure, or from one edited by hand - both would leave Stripe still charging
+        # the old price while this reported success. So the Stripe Plan is asked.
+        case Sanbase.StripeApi.plan_amount(stripe_id) do
+          {:ok, ^new_amount} ->
+            {:ok, :already_applied}
 
-      %Plan{} = plan ->
-        %Plan{} = plan = Repo.preload(plan, :product)
-        previous_stripe_id = plan.stripe_id
-
-        case Sanbase.StripeApi.create_plan(%Plan{plan | amount: new_amount}) do
-          {:ok, stripe_plan} ->
-            case Plan.update_plan(plan, %{amount: new_amount, stripe_id: stripe_plan.id}) do
-              {:ok, updated} ->
-                {:ok,
-                 %{
-                   plan_id: updated.id,
-                   stripe_id: updated.stripe_id,
-                   archive_in_stripe: previous_stripe_id
-                 }}
-
-              {:error, error} ->
-                # The Stripe Plan exists and nothing points at it. Reported rather than
-                # cleaned up, because deleting it blind is the more dangerous of the two.
-                {:error,
-                 "Created Stripe plan #{stripe_plan.id} but could not update the local row: " <>
-                   "#{inspect(error)}. Archive #{stripe_plan.id} in Stripe before retrying."}
-            end
+          {:ok, _other_amount} ->
+            replace_institutional_yearly_price(plan, new_amount)
 
           {:error, error} ->
-            {:error, "Could not create the replacement Stripe plan: #{inspect(error)}"}
+            {:error,
+             "The local row is already at #{new_amount} but its Stripe plan #{stripe_id} " <>
+               "could not be read, so it is not safe to call this done: #{inspect(error)}"}
         end
+
+      %Plan{} = plan ->
+        replace_institutional_yearly_price(plan, new_amount)
+    end
+  end
+
+  defp replace_institutional_yearly_price(%Plan{} = plan, new_amount) do
+    %Plan{} = plan = Repo.preload(plan, :product)
+    previous_stripe_id = plan.stripe_id
+
+    case Sanbase.StripeApi.create_plan(%Plan{plan | amount: new_amount}) do
+      {:ok, stripe_plan} ->
+        case Plan.update_plan(plan, %{amount: new_amount, stripe_id: stripe_plan.id}) do
+          {:ok, updated} ->
+            {:ok,
+             %{
+               plan_id: updated.id,
+               stripe_id: updated.stripe_id,
+               archive_in_stripe: previous_stripe_id
+             }}
+
+          {:error, error} ->
+            # The Stripe Plan exists and nothing points at it. Reported rather than
+            # cleaned up, because deleting it blind is the more dangerous of the two.
+            {:error,
+             "Created Stripe plan #{stripe_plan.id} but could not update the local row: " <>
+               "#{inspect(error)}. Archive #{stripe_plan.id} in Stripe before retrying."}
+        end
+
+      {:error, error} ->
+        {:error, "Could not create the replacement Stripe plan: #{inspect(error)}"}
     end
   end
 

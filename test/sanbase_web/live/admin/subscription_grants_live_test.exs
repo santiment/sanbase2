@@ -80,18 +80,15 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLiveTest do
 
     view = select_customer(conn, customer)
 
-    view |> element("button[phx-click=apply_grant]") |> render_click()
+    html = submit_grant(view, %{"extra_api_calls" => "0", "note" => ""})
 
-    # The grant form starts empty, so this is the refusal to store a grant that
-    # grants nothing rather than a silent no-op. The field path is asserted because a
-    # grant is an embed: its errors nest one level down, and a flat join would show the
-    # admin the raw inner map instead of a sentence.
-    html = render(view)
+    # An empty form is the refusal to store a grant that grants nothing rather than a
+    # silent no-op. The field path is asserted because a grant is an embed: its errors
+    # nest one level down, and a flat join would show the admin the raw inner map
+    # instead of a sentence.
     assert html =~ "grant.extra_api_calls_per_month: a grant must add extra API calls"
 
-    view |> render_hook("set_extra_calls", %{"value" => "200000"})
-    view |> render_hook("set_note", %{"value" => "INV-1"})
-    view |> element("button[phx-click=apply_grant]") |> render_click()
+    submit_grant(view, %{"extra_api_calls" => "200000", "note" => "INV-1"})
 
     grant = customer |> subscription_of() |> Subscription.grant()
     assert grant.extra_api_calls_per_month == 200_000
@@ -110,8 +107,7 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLiveTest do
     view = select_customer(conn, customer)
 
     view |> element("button[phx-value-slug=market]") |> render_click()
-    view |> render_hook("set_note", %{"value" => "INV-2"})
-    view |> element("button[phx-click=apply_grant]") |> render_click()
+    submit_grant(view, %{"extra_api_calls" => "0", "note" => "INV-2"})
 
     grant = customer |> subscription_of() |> Subscription.grant()
 
@@ -125,9 +121,7 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLiveTest do
 
     view = select_customer(conn, customer)
 
-    view |> render_hook("set_extra_calls", %{"value" => "200000"})
-    view |> render_hook("set_note", %{"value" => "INV-3"})
-    view |> element("button[phx-click=apply_grant]") |> render_click()
+    submit_grant(view, %{"extra_api_calls" => "200000", "note" => "INV-3"})
 
     view |> element("button[phx-click=revoke]") |> render_click()
 
@@ -137,7 +131,27 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLiveTest do
     assert acl.resolved_api_call_limits == nil
   end
 
+  test "a value typed and submitted before the debounce fires is the one granted", context do
+    %{conn: conn, customer: customer} = context
+
+    view = select_customer(conn, customer)
+
+    # No set_extra_calls / set_note hook first: the inputs are debounced, so this is a
+    # form submitted inside the debounce window. Read from the assigns instead of the
+    # submitted params, this would grant 0 calls and refuse for a missing note.
+    submit_grant(view, %{"extra_api_calls" => "125000", "note" => "INV-typed-fast"})
+
+    grant = customer |> subscription_of() |> Subscription.grant()
+
+    assert grant.extra_api_calls_per_month == 125_000
+    assert grant.note == "INV-typed-fast"
+  end
+
   # ── Helpers ─────────────────────────────────────────────────────────────
+
+  defp submit_grant(view, params) do
+    view |> form("form[phx-submit=apply_grant]", params) |> render_submit()
+  end
 
   defp select_customer(conn, customer) do
     {:ok, view, _html} = live(conn, "/admin/subscription_grants")

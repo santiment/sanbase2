@@ -1,0 +1,568 @@
+defmodule Sanbase.Billing.CreditPayments do
+  @moduledoc ~s"""
+  Invoices settled from the customer's Stripe credit balance instead of by a card
+  charge - the way crypto payments and wire transfers reach us.
+
+  The manual flow is: add credit to the customer's Stripe balance with the payment
+  reference (an etherscan link, a wire reference) in the adjustment's internal note,
+  then let the invoice be paid from that balance. Such an invoice produces no charge,
+  which is why `Sanbase.Billing.StripeSync` - it exports charges - never sees this
+  revenue.
+
+  Stripe has no global endpoint for customer balance transactions; they can only be
+  listed one customer at a time. The money is therefore found in two passes:
+
+  1. list the period's invoices (a global, paginated call) and keep the ones whose
+     customer balance moved in our favour or that were marked paid out of band;
+  2. read the balance ledger of every customer touched by those invoices, which is
+     where the internal note - the only record of *how* the money arrived - lives.
+
+  A grant made to a customer with no invoice at all in the period is not reachable
+  this way. `customer_ledger/1` reads one customer's full history for those cases.
+  """
+
+  import Ecto.Query
+
+  require Logger
+
+  alias Sanbase.Accounts.User
+  alias Sanbase.Billing.Subscription.SanBurnCreditTransaction
+  alias Sanbase.Repo
+
+  @invoice_page_size 100
+  @ledger_page_size 100
+  @ledger_concurrency 5
+  @ledger_timeout 30_000
+
+  # A transaction with a negative amount credits the customer - that is money that
+  # reached us. `adjustment` is the type Stripe gives a manually added credit, both
+  # from the dashboard and from `Sanbase.StripeApi.add_credit/3`.
+  @grant_type "adjustment"
+
+  @stripe_dashboard "https://dashboard.stripe.com"
+
+  @crypto_regex ~r/(etherscan\.io\/tx\/|blockchair|blockchain\.com|0x[0-9a-f]{40,})/i
+  @wire_regex ~r/\b(wire|bank|sepa|swift|iban|transfer|remittance)\b/i
+  @trx_hash_regex ~r/0x[0-9a-f]{40,}/i
+
+  @type invoice_row :: %{
+          id: String.t(),
+          number: String.t() | nil,
+          customer: String.t() | nil,
+          user_id: non_neg_integer() | nil,
+          email: String.t() | nil,
+          created: DateTime.t() | nil,
+          status: String.t() | nil,
+          total: integer(),
+          amount_paid: integer(),
+          credit_applied: integer(),
+          paid_out_of_band: boolean(),
+          hosted_invoice_url: String.t() | nil,
+          invoice_pdf: String.t() | nil,
+          source_note: String.t() | nil,
+          source: :san_burn | :crypto | :wire | :other | :unknown,
+          funding_transaction_id: String.t() | nil
+        }
+
+  @type grant_row :: %{
+          id: String.t(),
+          customer: String.t() | nil,
+          user_id: non_neg_integer() | nil,
+          email: String.t() | nil,
+          created: DateTime.t() | nil,
+          amount: integer(),
+          description: String.t() | nil,
+          type: String.t() | nil,
+          source: :san_burn | :crypto | :wire | :other,
+          invoice: String.t() | nil
+        }
+
+  @doc ~s"""
+  Everything settled outside the card rails between the two dates, inclusive.
+
+  Returns `%{invoices: [...], grants: [...], totals: %{...}, scanned_customers: n}`.
+  Amounts are in cents, as Stripe reports them. `credit_applied` is positive when
+  credit paid for the invoice; an invoice that only carried debt forward is dropped.
+
+  Every invoice row carries the internal note of the credit that funded it - the note
+  lives on the customer's balance ledger, not on the invoice, so it is matched back
+  onto the invoice by `attach_note/3`.
+  """
+  @spec range_report(Date.t(), Date.t()) :: map()
+  def range_report(%Date{} = from_date, %Date{} = to_date) do
+    from = from_date |> Timex.to_datetime() |> Timex.beginning_of_day() |> DateTime.to_unix()
+    to = to_date |> Timex.to_datetime() |> Timex.end_of_day() |> DateTime.to_unix()
+
+    do_report(from, to)
+  end
+
+  @doc ~s"""
+  `range_report/2` over a single calendar month.
+  """
+  @spec period_report(pos_integer(), pos_integer()) :: map()
+  def period_report(year, month) do
+    {from, to} = month_bounds(year, month)
+
+    do_report(from, to)
+  end
+
+  defp do_report(from, to) do
+    invoices = list_invoices(%{created: %{gte: from, lte: to}, limit: @invoice_page_size})
+    customer_ids = scan_customer_ids(invoices)
+    customer_map = customer_user_map(customer_ids)
+    burn_hashes = san_burn_hashes()
+
+    # The whole ledger of every scanned customer, not only the part inside the range:
+    # the credit that pays a February invoice is often added in January.
+    ledgers = customer_ids |> fetch_ledgers() |> Enum.group_by(&Map.get(&1, :customer))
+
+    invoice_rows = invoice_rows(invoices, customer_map, ledgers, burn_hashes)
+    grant_rows = grant_rows(ledgers, customer_map, burn_hashes, from, to)
+
+    %{
+      invoices: invoice_rows,
+      grants: grant_rows,
+      totals: totals(invoice_rows, grant_rows),
+      scanned_customers: length(customer_ids)
+    }
+  end
+
+  defp invoice_rows(invoices, customer_map, ledgers, burn_hashes) do
+    invoices
+    |> Enum.filter(&settled_outside_stripe?/1)
+    |> Enum.map(fn invoice ->
+      invoice
+      |> invoice_row(customer_map)
+      |> attach_note(Map.get(ledgers, invoice.customer, []), burn_hashes)
+    end)
+    |> Enum.sort_by(&sort_key/1, :desc)
+  end
+
+  defp grant_rows(ledgers, customer_map, burn_hashes, from, to) do
+    ledgers
+    |> Enum.flat_map(fn {_customer, transactions} -> transactions end)
+    |> Enum.filter(&grant_in_period?(&1, from, to))
+    |> Enum.map(&grant_row(&1, customer_map, burn_hashes))
+    |> Enum.sort_by(&sort_key/1, :desc)
+  end
+
+  @doc ~s"""
+  The invoice rows narrowed by source and by a free text query.
+
+  The query matches the customer email, the stripe customer id, the invoice number or
+  id, and the source note, case insensitively.
+  """
+  @spec filter_invoices([invoice_row()], keyword()) :: [invoice_row()]
+  def filter_invoices(rows, opts \\ []) do
+    source = Keyword.get(opts, :source, :all)
+    query = opts |> Keyword.get(:query, "") |> to_string() |> String.trim() |> String.downcase()
+
+    Enum.filter(rows, fn row ->
+      (source == :all or row.source == source) and matches_query?(row, query)
+    end)
+  end
+
+  defp matches_query?(_row, ""), do: true
+
+  defp matches_query?(row, query) do
+    [row.email, row.customer, row.number, row.id, row.source_note]
+    |> Enum.any?(fn field ->
+      is_binary(field) and String.contains?(String.downcase(field), query)
+    end)
+  end
+
+  @doc ~s"""
+  A source filter from a query string parameter, defaulting to `:all`.
+  """
+  @spec parse_source(String.t() | nil) :: :all | :san_burn | :crypto | :wire | :other | :unknown
+  def parse_source(source) when source in ~w(san_burn crypto wire other unknown),
+    do: String.to_existing_atom(source)
+
+  def parse_source(_source), do: :all
+
+  @doc ~s"""
+  A granularity from a query string parameter, defaulting to `:month`.
+  """
+  @spec parse_granularity(String.t() | nil) :: :day | :month | :year | :all
+  def parse_granularity(granularity) when granularity in ~w(day month year all),
+    do: String.to_existing_atom(granularity)
+
+  def parse_granularity(_granularity), do: :month
+
+  @doc ~s"""
+  The invoice rows grouped into buckets and summed.
+
+  `granularity` is `:day`, `:month`, `:year` or `:all` - the last one being a single
+  bucket for the whole range. Newest bucket first.
+  """
+  @spec aggregate([invoice_row()], :day | :month | :year | :all) :: [map()]
+  def aggregate(invoice_rows, granularity) do
+    invoice_rows
+    |> Enum.group_by(&bucket(&1, granularity))
+    |> Enum.map(fn {label, rows} -> bucket_totals(label, rows) end)
+    |> Enum.sort_by(& &1.label, :desc)
+  end
+
+  defp bucket_totals(label, rows) do
+    %{
+      label: label,
+      invoice_count: length(rows),
+      credit_applied: Enum.reduce(rows, 0, &(&1.credit_applied + &2)),
+      card_paid: Enum.reduce(rows, 0, &(&1.amount_paid + &2)),
+      total: Enum.reduce(rows, 0, &(&1.total + &2)),
+      by_source: sum_by_source(rows, & &1.credit_applied)
+    }
+  end
+
+  defp bucket(%{created: %DateTime{} = dt}, :day), do: Calendar.strftime(dt, "%Y-%m-%d")
+  defp bucket(%{created: %DateTime{} = dt}, :month), do: Calendar.strftime(dt, "%Y-%m")
+  defp bucket(%{created: %DateTime{} = dt}, :year), do: Calendar.strftime(dt, "%Y")
+  defp bucket(_row, :all), do: "Whole range"
+  defp bucket(_row, _granularity), do: "Unknown date"
+
+  @doc ~s"""
+  The Stripe dashboard page for an invoice.
+  """
+  @spec stripe_invoice_url(String.t()) :: String.t()
+  def stripe_invoice_url(invoice_id), do: "#{@stripe_dashboard}/invoices/#{invoice_id}"
+
+  @doc ~s"""
+  The Stripe dashboard page of a customer.
+
+  A balance transaction has no page of its own - its internal note is shown in the
+  "Customer invoice balance" section of the customer, which is where this points.
+  """
+  @spec stripe_customer_url(String.t()) :: String.t()
+  def stripe_customer_url(customer_id), do: "#{@stripe_dashboard}/customers/#{customer_id}"
+
+  @doc ~s"""
+  The full Stripe balance ledger of a single customer, newest first.
+
+  Unlike `period_report/2` this includes every transaction type, so a credit that has
+  not been applied to any invoice yet is visible too.
+  """
+  @spec customer_ledger(String.t()) :: [grant_row()]
+  def customer_ledger(stripe_customer_id) when is_binary(stripe_customer_id) do
+    customer_map = customer_user_map([stripe_customer_id])
+    burn_hashes = san_burn_hashes()
+
+    stripe_customer_id
+    |> list_balance_transactions()
+    |> Enum.map(&grant_row(&1, customer_map, burn_hashes))
+    |> Enum.sort_by(&sort_key/1, :desc)
+  end
+
+  @doc ~s"""
+  The stripe customer id of the user with that email, or `nil`.
+  """
+  @spec customer_id_by_email(String.t()) :: String.t() | nil
+  def customer_id_by_email(email) when is_binary(email) do
+    email = email |> String.trim() |> String.downcase()
+
+    from(u in User,
+      where: fragment("lower(?)", u.email) == ^email and not is_nil(u.stripe_customer_id),
+      select: u.stripe_customer_id,
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  @doc ~s"""
+  Where the money came from, read off the internal note of a balance adjustment.
+
+  A note naming a transaction hash we recorded ourselves is a SAN burn credit, not a
+  payment - those must not be counted as B2B revenue.
+  """
+  @spec classify_source(String.t() | nil, MapSet.t()) :: :san_burn | :crypto | :wire | :other
+  def classify_source(description, burn_hashes) do
+    cond do
+      is_nil(description) or description == "" ->
+        :other
+
+      san_burn_note?(description, burn_hashes) ->
+        :san_burn
+
+      Regex.match?(@crypto_regex, description) ->
+        :crypto
+
+      Regex.match?(@wire_regex, description) ->
+        :wire
+
+      true ->
+        :other
+    end
+  end
+
+  # ─── Invoices ────────────────────────────────────────────────────────────
+
+  # `ending_balance - starting_balance` is what the invoice took out of the customer's
+  # balance: positive when credit paid part of it, negative when the invoice merely
+  # carried the customer's debt forward. An unfinalized invoice has no ending balance.
+  @doc false
+  def credit_applied(%{starting_balance: starting, ending_balance: ending})
+      when is_integer(starting) and is_integer(ending),
+      do: ending - starting
+
+  def credit_applied(_), do: 0
+
+  defp settled_outside_stripe?(invoice) do
+    Map.get(invoice, :status) == "paid" and
+      (credit_applied(invoice) > 0 or Map.get(invoice, :paid_out_of_band) == true)
+  end
+
+  # A customer whose balance moved on any invoice this period may also have been
+  # granted credit this period, so their ledger is worth reading even when the
+  # invoice itself was paid by card.
+  defp scan_customer_ids(invoices) do
+    invoices
+    |> Enum.filter(fn invoice ->
+      Map.get(invoice, :starting_balance, 0) != 0 or
+        (Map.get(invoice, :ending_balance) || 0) != 0 or
+        Map.get(invoice, :paid_out_of_band) == true
+    end)
+    |> Enum.map(& &1.customer)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp invoice_row(invoice, customer_map) do
+    user = Map.get(customer_map, invoice.customer)
+
+    %{
+      id: invoice.id,
+      number: Map.get(invoice, :number),
+      customer: invoice.customer,
+      user_id: user && user.id,
+      email: user && user.email,
+      created: to_datetime(Map.get(invoice, :created)),
+      status: Map.get(invoice, :status),
+      total: Map.get(invoice, :total) || 0,
+      amount_paid: Map.get(invoice, :amount_paid) || 0,
+      credit_applied: max(credit_applied(invoice), 0),
+      paid_out_of_band: Map.get(invoice, :paid_out_of_band) == true,
+      hosted_invoice_url: Map.get(invoice, :hosted_invoice_url),
+      invoice_pdf: Map.get(invoice, :invoice_pdf),
+      source_note: nil,
+      source: :unknown,
+      funding_transaction_id: nil
+    }
+  end
+
+  # An invoice records how much credit it consumed but never where that credit came
+  # from - the note is on the adjustment that added it. Match the two by time: the
+  # last adjustment on or before the moment this invoice drew on the balance, and
+  # failing that the first one after it, since credit is sometimes added only once
+  # the invoice is already open.
+  defp attach_note(row, transactions, burn_hashes) do
+    drawn_at = applied_at(transactions, row.id) || sort_key(row)
+
+    case funding_transaction(transactions, drawn_at) do
+      nil ->
+        row
+
+      transaction ->
+        note = Map.get(transaction, :description)
+
+        %{
+          row
+          | source_note: note,
+            source: classify_source(note, burn_hashes),
+            funding_transaction_id: transaction.id
+        }
+    end
+  end
+
+  defp funding_transaction(transactions, drawn_at) do
+    adjustments = Enum.filter(transactions, &grant?/1)
+
+    last_before =
+      adjustments
+      |> Enum.filter(&(&1.created <= drawn_at))
+      |> Enum.max_by(& &1.created, fn -> nil end)
+
+    last_before ||
+      adjustments
+      |> Enum.filter(&(&1.created > drawn_at))
+      |> Enum.min_by(& &1.created, fn -> nil end)
+  end
+
+  defp applied_at(transactions, invoice_id) do
+    transactions
+    |> Enum.find(&(Map.get(&1, :invoice) == invoice_id))
+    |> case do
+      nil -> nil
+      transaction -> Map.get(transaction, :created)
+    end
+  end
+
+  defp grant?(transaction) do
+    Map.get(transaction, :type) == @grant_type and (Map.get(transaction, :amount) || 0) < 0
+  end
+
+  defp list_invoices(params, acc \\ []) do
+    case Sanbase.StripeApi.list_invoices(params) do
+      {:ok, %{data: []}} ->
+        acc
+
+      {:ok, %{data: data} = response} ->
+        acc = acc ++ data
+
+        if Map.get(response, :has_more, false) do
+          list_invoices(Map.put(params, :starting_after, List.last(data).id), acc)
+        else
+          acc
+        end
+
+      {:error, error} ->
+        Logger.warning("CreditPayments: failed to list invoices: #{inspect(error)}")
+        acc
+    end
+  end
+
+  # ─── Balance ledgers ─────────────────────────────────────────────────────
+
+  defp fetch_ledgers(customer_ids) do
+    customer_ids
+    |> Task.async_stream(&list_balance_transactions/1,
+      max_concurrency: @ledger_concurrency,
+      timeout: @ledger_timeout,
+      on_timeout: :kill_task
+    )
+    |> Enum.flat_map(fn
+      {:ok, transactions} -> transactions
+      {:exit, _reason} -> []
+    end)
+  end
+
+  defp list_balance_transactions(customer_id, params \\ %{limit: @ledger_page_size}, acc \\ []) do
+    case Sanbase.StripeApi.list_customer_balance_transactions(customer_id, params) do
+      {:ok, %{data: []}} ->
+        acc
+
+      {:ok, %{data: data} = response} ->
+        acc = acc ++ data
+
+        if Map.get(response, :has_more, false) do
+          params = Map.put(params, :starting_after, List.last(data).id)
+          list_balance_transactions(customer_id, params, acc)
+        else
+          acc
+        end
+
+      {:error, error} ->
+        Logger.warning(
+          "CreditPayments: failed to list balance transactions for #{customer_id}: #{inspect(error)}"
+        )
+
+        acc
+    end
+  end
+
+  defp grant_in_period?(transaction, from, to) do
+    created = Map.get(transaction, :created)
+
+    grant?(transaction) and is_integer(created) and created >= from and created <= to
+  end
+
+  defp grant_row(transaction, customer_map, burn_hashes) do
+    customer = Map.get(transaction, :customer)
+    user = Map.get(customer_map, customer)
+    description = Map.get(transaction, :description)
+
+    %{
+      id: transaction.id,
+      customer: customer,
+      user_id: user && user.id,
+      email: user && user.email,
+      created: to_datetime(Map.get(transaction, :created)),
+      # Stripe signs a credit negative; the dashboard shows money in, so flip it.
+      amount: -(Map.get(transaction, :amount) || 0),
+      description: description,
+      type: Map.get(transaction, :type),
+      source: classify_source(description, burn_hashes),
+      invoice: Map.get(transaction, :invoice)
+    }
+  end
+
+  # ─── Totals ──────────────────────────────────────────────────────────────
+
+  defp totals(invoice_rows, grant_rows) do
+    invoice_totals(invoice_rows)
+    |> Map.merge(grant_totals(grant_rows))
+  end
+
+  defp invoice_totals(invoice_rows) do
+    %{
+      invoice_count: length(invoice_rows),
+      credit_applied: Enum.reduce(invoice_rows, 0, &(&1.credit_applied + &2)),
+      card_paid: Enum.reduce(invoice_rows, 0, &(&1.amount_paid + &2)),
+      invoiced_total: Enum.reduce(invoice_rows, 0, &(&1.total + &2)),
+      out_of_band_count: Enum.count(invoice_rows, & &1.paid_out_of_band),
+      credit_applied_by_source: sum_by_source(invoice_rows, & &1.credit_applied),
+      unmatched_note_count: Enum.count(invoice_rows, &is_nil(&1.source_note))
+    }
+  end
+
+  defp grant_totals(grant_rows) do
+    %{
+      grant_count: length(grant_rows),
+      credit_granted: Enum.reduce(grant_rows, 0, &(&1.amount + &2)),
+      by_source: sum_by_source(grant_rows, & &1.amount)
+    }
+  end
+
+  defp sum_by_source(rows, amount_fun) do
+    Enum.reduce(rows, %{}, fn row, acc ->
+      Map.update(acc, row.source, amount_fun.(row), &(&1 + amount_fun.(row)))
+    end)
+  end
+
+  # ─── Lookups ─────────────────────────────────────────────────────────────
+
+  defp customer_user_map([]), do: %{}
+
+  defp customer_user_map(customer_ids) do
+    from(u in User,
+      where: u.stripe_customer_id in ^customer_ids,
+      select: %{id: u.id, email: u.email, stripe_customer_id: u.stripe_customer_id}
+    )
+    |> Repo.all()
+    |> Map.new(&{&1.stripe_customer_id, &1})
+  end
+
+  defp san_burn_hashes do
+    from(s in SanBurnCreditTransaction, select: s.trx_hash)
+    |> Repo.all()
+    |> Enum.reject(&is_nil/1)
+    |> MapSet.new(&String.downcase/1)
+  end
+
+  defp san_burn_note?(description, burn_hashes) do
+    case Regex.run(@trx_hash_regex, description) do
+      [hash | _] -> MapSet.member?(burn_hashes, String.downcase(hash))
+      _ -> false
+    end
+  end
+
+  # ─── Misc ────────────────────────────────────────────────────────────────
+
+  defp month_bounds(year, month) do
+    from = Timex.beginning_of_month(year, month) |> Timex.to_datetime() |> DateTime.to_unix()
+    # `end_of_month` gives the last day at midnight, which would drop everything
+    # invoiced during that day.
+    to =
+      Timex.end_of_month(year, month)
+      |> Timex.to_datetime()
+      |> Timex.end_of_day()
+      |> DateTime.to_unix()
+
+    {from, to}
+  end
+
+  defp sort_key(%{created: %DateTime{} = dt}), do: DateTime.to_unix(dt)
+  defp sort_key(_), do: 0
+
+  defp to_datetime(unix) when is_integer(unix), do: DateTime.from_unix!(unix)
+  defp to_datetime(%DateTime{} = dt), do: dt
+  defp to_datetime(_), do: nil
+end

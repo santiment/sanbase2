@@ -363,6 +363,10 @@ defmodule Sanbase.StripeApi do
     Stripe.Charge.list(params, kw_list)
   end
 
+  def list_customer_balance_transactions(customer_id, params \\ %{}) do
+    Stripe.CustomerBalanceTransaction.list(customer_id, params)
+  end
+
   def add_credit(customer_id, amount, trx_id) do
     Stripe.CustomerBalanceTransaction.create(customer_id, %{
       amount: amount,

@@ -360,6 +360,7 @@ defmodule SanbaseWeb.Router do
       live("/memory_stats", Admin.MemoryStatsLive)
       live("/user_stats", UserStatsLive)
       live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
+      live("/credit_payments", Admin.CreditPaymentsLive)
       live("/user_overview", Admin.UserOverviewLive)
       live("/user_rankings", Admin.UserRankingsLive)
     end
@@ -369,6 +370,7 @@ defmodule SanbaseWeb.Router do
     end
 
     get("/user_rankings/export", Admin.UserRankingsController, :export)
+    get("/credit_payments/export", Admin.CreditPaymentsController, :export)
     get("/download_inactive_users_csv", InactiveUsersController, :download_csv)
   end
 

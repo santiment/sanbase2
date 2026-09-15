@@ -233,6 +233,69 @@ defmodule Sanbase.Billing.CreditPaymentsTest do
     end
   end
 
+  describe "period_report/2 out of band" do
+    test "the invoice memo is the note when no credit adjustment funded the invoice" do
+      report =
+        report([
+          invoice(
+            starting_balance: 0,
+            ending_balance: 0,
+            total: 600_000,
+            paid_out_of_band: true,
+            description: "Paid by wire transfer, ref QUBE-2026-05"
+          )
+        ])
+
+      assert [row] = report.invoices
+      assert row.source_note == "Paid by wire transfer, ref QUBE-2026-05"
+      assert row.source == :wire
+    end
+
+    test "the credit adjustment still wins over the memo when there is one" do
+      report =
+        report(
+          [
+            invoice(
+              starting_balance: -10_000,
+              ending_balance: -4_000,
+              total: 6_000,
+              description: "some memo"
+            )
+          ],
+          [balance_transaction(amount: -10_000, description: "https://etherscan.io/tx/0xabc")]
+        )
+
+      assert [row] = report.invoices
+      assert row.source_note == "https://etherscan.io/tx/0xabc"
+    end
+
+    test "what an out of band invoice collected is totalled, not only counted" do
+      report =
+        report([
+          invoice(
+            id: "in_1",
+            starting_balance: 0,
+            ending_balance: 0,
+            total: 600_000,
+            paid_out_of_band: true
+          ),
+          invoice(
+            id: "in_2",
+            starting_balance: 0,
+            ending_balance: 0,
+            total: 270_000,
+            paid_out_of_band: true
+          )
+        ])
+
+      assert report.totals.out_of_band_count == 2
+      assert report.totals.out_of_band_total == 870_000
+      # Neither money column sees it, which is exactly why the total is needed.
+      assert report.totals.credit_applied == 0
+      assert report.totals.card_paid == 0
+    end
+  end
+
   describe "aggregate/2" do
     test "buckets the invoices by day, month, year or not at all" do
       rows = [
@@ -254,6 +317,17 @@ defmodule Sanbase.Billing.CreditPaymentsTest do
 
       assert [%{label: "Whole range", credit_applied: 97_800}] =
                CreditPayments.aggregate(rows, :all)
+    end
+
+    test "each bucket carries what was settled out of band" do
+      rows = [
+        row(created: ~U[2026-05-18 10:00:00Z], total: 600_000, paid_out_of_band: true),
+        row(created: ~U[2026-05-14 10:00:00Z], total: 24_900, credit_applied: 24_900)
+      ]
+
+      assert [bucket] = CreditPayments.aggregate(rows, :month)
+      assert bucket.out_of_band == 600_000
+      assert bucket.credit_applied == 24_900
     end
 
     test "each bucket is split by source" do
@@ -347,6 +421,15 @@ defmodule Sanbase.Billing.CreditPaymentsTest do
       assert grant.source == :san_burn
     end
 
+    test "a note that says it burned SAN is a burn even with no recorded hash" do
+      hashes = MapSet.new()
+
+      assert CreditPayments.classify_source(
+               "Burned 19289 SAN for 2700 credits. https://etherscan.io/tx/0x203eeb",
+               hashes
+             ) == :san_burn
+    end
+
     test "notes are classified by their wording" do
       hashes = MapSet.new()
 
@@ -382,6 +465,7 @@ defmodule Sanbase.Billing.CreditPaymentsTest do
       customer: Keyword.get(opts, :customer, "cus_test"),
       created: Keyword.get(opts, :created, @in_period),
       status: Keyword.get(opts, :status, "paid"),
+      description: Keyword.get(opts, :description, nil),
       total: Keyword.get(opts, :total, 0),
       amount_paid: Keyword.get(opts, :amount_paid, 0),
       starting_balance: Keyword.get(opts, :starting_balance, 0),
@@ -404,7 +488,7 @@ defmodule Sanbase.Billing.CreditPaymentsTest do
       total: Keyword.get(opts, :total, 0),
       amount_paid: Keyword.get(opts, :amount_paid, 0),
       credit_applied: Keyword.get(opts, :credit_applied, 0),
-      paid_out_of_band: false,
+      paid_out_of_band: Keyword.get(opts, :paid_out_of_band, false),
       hosted_invoice_url: nil,
       invoice_pdf: nil,
       source_note: Keyword.get(opts, :source_note, nil),

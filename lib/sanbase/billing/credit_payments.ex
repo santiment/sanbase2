@@ -44,6 +44,9 @@ defmodule Sanbase.Billing.CreditPayments do
   @crypto_regex ~r/(etherscan\.io\/tx\/|blockchair|blockchain\.com|0x[0-9a-f]{40,})/i
   @wire_regex ~r/\b(wire|bank|sepa|swift|iban|transfer|remittance)\b/i
   @trx_hash_regex ~r/0x[0-9a-f]{40,}/i
+  # "Burned 19289 SAN for 2700 credits" - a burn credit added by hand never reaches the
+  # `san_burn_credit_transactions` table, so the wording has to be enough on its own.
+  @san_burn_regex ~r/\bburn(ed|t|ing)?\b/i
 
   @type invoice_row :: %{
           id: String.t(),
@@ -52,6 +55,7 @@ defmodule Sanbase.Billing.CreditPayments do
           user_id: non_neg_integer() | nil,
           email: String.t() | nil,
           created: DateTime.t() | nil,
+          stripe_email: String.t() | nil,
           status: String.t() | nil,
           total: integer(),
           amount_paid: integer(),
@@ -158,7 +162,7 @@ defmodule Sanbase.Billing.CreditPayments do
   defp gather(from, to) do
     invoices = list_invoices(%{created: %{gte: from, lte: to}, limit: @invoice_page_size})
     customer_ids = scan_customer_ids(invoices)
-    customer_map = customer_user_map(customer_ids)
+    customer_map = customer_user_map(customer_ids, invoices)
     burn_hashes = san_burn_hashes()
 
     # The whole ledger of every scanned customer, not only the part inside the range:
@@ -180,7 +184,7 @@ defmodule Sanbase.Billing.CreditPayments do
     |> Enum.map(fn invoice ->
       invoice
       |> invoice_row(customer_map)
-      |> attach_note(Map.get(ledgers, invoice.customer, []), burn_hashes)
+      |> attach_note(invoice, Map.get(ledgers, invoice.customer, []), burn_hashes)
     end)
     |> Enum.sort_by(&sort_key/1, :desc)
   end
@@ -249,6 +253,7 @@ defmodule Sanbase.Billing.CreditPayments do
       credit_applied: Enum.reduce(rows, 0, &(&1.credit_applied + &2)),
       card_paid: Enum.reduce(rows, 0, &(&1.amount_paid + &2)),
       total: Enum.reduce(rows, 0, &(&1.total + &2)),
+      out_of_band: sum_out_of_band(rows),
       by_source: sum_by_source(rows, & &1.credit_applied)
     }
   end
@@ -292,6 +297,37 @@ defmodule Sanbase.Billing.CreditPayments do
   end
 
   @doc ~s"""
+  The stripe customer id behind whatever identifier is at hand.
+
+  Accepts a stripe customer id (returned as is), a Sanbase user id, or an email - the
+  three things someone chasing a payment is likely to have. Returns `nil` when nothing
+  matches or the matched user has never been a stripe customer.
+  """
+  @spec resolve_customer_id(String.t() | non_neg_integer()) :: String.t() | nil
+  def resolve_customer_id(identifier) when is_integer(identifier),
+    do: customer_id_by_user_id(identifier)
+
+  def resolve_customer_id(identifier) when is_binary(identifier) do
+    identifier = String.trim(identifier)
+
+    cond do
+      identifier == "" -> nil
+      String.starts_with?(identifier, "cus_") -> identifier
+      String.contains?(identifier, "@") -> customer_id_by_email(identifier)
+      true -> resolve_numeric(identifier)
+    end
+  end
+
+  def resolve_customer_id(_identifier), do: nil
+
+  defp resolve_numeric(identifier) do
+    case Integer.parse(identifier) do
+      {user_id, ""} -> customer_id_by_user_id(user_id)
+      _ -> nil
+    end
+  end
+
+  @doc ~s"""
   The stripe customer id of the user with that email, or `nil`.
   """
   @spec customer_id_by_email(String.t()) :: String.t() | nil
@@ -300,6 +336,19 @@ defmodule Sanbase.Billing.CreditPayments do
 
     from(u in User,
       where: fragment("lower(?)", u.email) == ^email and not is_nil(u.stripe_customer_id),
+      select: u.stripe_customer_id,
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  @doc ~s"""
+  The stripe customer id of that user, or `nil`.
+  """
+  @spec customer_id_by_user_id(non_neg_integer()) :: String.t() | nil
+  def customer_id_by_user_id(user_id) do
+    from(u in User,
+      where: u.id == ^user_id and not is_nil(u.stripe_customer_id),
       select: u.stripe_customer_id,
       limit: 1
     )
@@ -319,6 +368,9 @@ defmodule Sanbase.Billing.CreditPayments do
         :other
 
       san_burn_note?(description, burn_hashes) ->
+        :san_burn
+
+      Regex.match?(@san_burn_regex, description) and Regex.match?(~r/\bSAN\b/, description) ->
         :san_burn
 
       Regex.match?(@crypto_regex, description) ->
@@ -372,8 +424,9 @@ defmodule Sanbase.Billing.CreditPayments do
       number: Map.get(invoice, :number),
       customer: invoice.customer,
       user_id: user && user.id,
-      email: user && user.email,
+      email: (user && user.email) || Map.get(invoice, :customer_email),
       created: to_datetime(Map.get(invoice, :created)),
+      stripe_email: Map.get(invoice, :customer_email),
       status: Map.get(invoice, :status),
       total: Map.get(invoice, :total) || 0,
       amount_paid: Map.get(invoice, :amount_paid) || 0,
@@ -392,12 +445,12 @@ defmodule Sanbase.Billing.CreditPayments do
   # last adjustment on or before the moment this invoice drew on the balance, and
   # failing that the first one after it, since credit is sometimes added only once
   # the invoice is already open.
-  defp attach_note(row, transactions, burn_hashes) do
+  defp attach_note(row, invoice, transactions, burn_hashes) do
     drawn_at = applied_at(transactions, row.id) || sort_key(row)
 
     case funding_transaction(transactions, drawn_at) do
       nil ->
-        row
+        attach_memo(row, invoice, burn_hashes)
 
       transaction ->
         note = Map.get(transaction, :description)
@@ -408,6 +461,18 @@ defmodule Sanbase.Billing.CreditPayments do
             source: classify_source(note, burn_hashes),
             funding_transaction_id: transaction.id
         }
+    end
+  end
+
+  # An invoice marked paid out of band has no credit adjustment behind it at all - the
+  # wire reference, when there is one, was typed into the invoice memo instead.
+  defp attach_memo(row, invoice, burn_hashes) do
+    case Map.get(invoice, :description) do
+      memo when is_binary(memo) and memo != "" ->
+        %{row | source_note: memo, source: classify_source(memo, burn_hashes)}
+
+      _ ->
+        row
     end
   end
 
@@ -539,6 +604,7 @@ defmodule Sanbase.Billing.CreditPayments do
       card_paid: Enum.reduce(invoice_rows, 0, &(&1.amount_paid + &2)),
       invoiced_total: Enum.reduce(invoice_rows, 0, &(&1.total + &2)),
       out_of_band_count: Enum.count(invoice_rows, & &1.paid_out_of_band),
+      out_of_band_total: sum_out_of_band(invoice_rows),
       credit_applied_by_source: sum_by_source(invoice_rows, & &1.credit_applied),
       unmatched_note_count: Enum.count(invoice_rows, &is_nil(&1.source_note))
     }
@@ -552,6 +618,14 @@ defmodule Sanbase.Billing.CreditPayments do
     }
   end
 
+  # An invoice settled outside Stripe has nothing in either money column, so its total
+  # is the only record of what was actually collected.
+  defp sum_out_of_band(rows) do
+    rows
+    |> Enum.filter(& &1.paid_out_of_band)
+    |> Enum.reduce(0, &(&1.total + &2))
+  end
+
   defp sum_by_source(rows, amount_fun) do
     Enum.reduce(rows, %{}, fn row, acc ->
       Map.update(acc, row.source, amount_fun.(row), &(&1 + amount_fun.(row)))
@@ -560,15 +634,62 @@ defmodule Sanbase.Billing.CreditPayments do
 
   # ─── Lookups ─────────────────────────────────────────────────────────────
 
-  defp customer_user_map([]), do: %{}
+  defp customer_user_map(customer_ids, invoices \\ [])
 
-  defp customer_user_map(customer_ids) do
+  defp customer_user_map([], _invoices), do: %{}
+
+  defp customer_user_map(customer_ids, invoices) do
+    by_stripe_id =
+      from(u in User,
+        where: u.stripe_customer_id in ^customer_ids,
+        select: %{id: u.id, email: u.email, stripe_customer_id: u.stripe_customer_id}
+      )
+      |> Repo.all()
+      |> Map.new(&{&1.stripe_customer_id, &1})
+
+    # Not every paying customer has `stripe_customer_id` set on their user row - an
+    # invoice raised by hand in Stripe never sets it. Stripe still carries the email
+    # it was billed to, which is enough to point at the right user record.
+    by_email = users_by_invoice_email(customer_ids, invoices, by_stripe_id)
+
+    Map.merge(by_email, by_stripe_id)
+  end
+
+  defp users_by_invoice_email(customer_ids, invoices, by_stripe_id) do
+    emails_by_customer = emails_by_customer(customer_ids, invoices, by_stripe_id)
+    users = users_by_email(Map.values(emails_by_customer))
+
+    emails_by_customer
+    |> Enum.map(fn {customer, email} -> {customer, Map.get(users, String.downcase(email))} end)
+    |> Enum.reject(fn {_customer, user} -> is_nil(user) end)
+    |> Map.new()
+  end
+
+  defp emails_by_customer(customer_ids, invoices, by_stripe_id) do
+    matched = Map.keys(by_stripe_id)
+    wanted = MapSet.new(customer_ids)
+
+    invoices
+    |> Enum.filter(fn invoice ->
+      customer = Map.get(invoice, :customer)
+
+      customer not in [nil | matched] and MapSet.member?(wanted, customer) and
+        is_binary(Map.get(invoice, :customer_email))
+    end)
+    |> Enum.reduce(%{}, &Map.put_new(&2, &1.customer, &1.customer_email))
+  end
+
+  defp users_by_email([]), do: %{}
+
+  defp users_by_email(emails) do
+    emails = emails |> Enum.map(&String.downcase/1) |> Enum.uniq()
+
     from(u in User,
-      where: u.stripe_customer_id in ^customer_ids,
-      select: %{id: u.id, email: u.email, stripe_customer_id: u.stripe_customer_id}
+      where: fragment("lower(?)", u.email) in ^emails,
+      select: %{id: u.id, email: u.email}
     )
     |> Repo.all()
-    |> Map.new(&{&1.stripe_customer_id, &1})
+    |> Map.new(&{String.downcase(&1.email), &1})
   end
 
   defp san_burn_hashes do

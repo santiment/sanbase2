@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
 
       html =
         view
-        |> form("#lookup-form", %{"email" => user.email})
+        |> form("#lookup-form", %{"identifier" => user.email})
         |> render_submit()
 
       html = render_async(view) || html
@@ -101,10 +101,84 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     render_async(view)
 
     view
-    |> form("#lookup-form", %{"email" => user.email})
+    |> form("#lookup-form", %{"identifier" => user.email})
     |> render_submit()
 
-    assert render_async(view) =~ "No user with a stripe customer id"
+    assert render_async(view) =~ "No stripe customer found for"
+  end
+
+  test "links the customer to the user record, and to Stripe when unmatched", %{conn: conn} do
+    user = insert(:user, stripe_customer_id: "cus_known")
+
+    seed(
+      [
+        invoice(id: "in_known", number: "SAN-KNOWN", customer: "cus_known"),
+        invoice(id: "in_unknown", number: "SAN-UNKNOWN", customer: "cus_unknown")
+      ],
+      []
+    )
+
+    {:ok, view, _html} = live(conn, "/admin/credit_payments")
+    html = render_async(view)
+
+    assert html =~ "/admin/generic/#{user.id}?resource=users"
+    assert html =~ user.email
+    assert html =~ "https://dashboard.stripe.com/customers/cus_unknown"
+  end
+
+  test "matches the customer by the email Stripe billed when the user row has no customer id",
+       %{conn: conn} do
+    user = insert(:user, stripe_customer_id: nil)
+
+    seed([invoice(id: "in_by_email", customer: "cus_by_email", customer_email: user.email)], [])
+
+    {:ok, view, _html} = live(conn, "/admin/credit_payments")
+    html = render_async(view)
+
+    assert html =~ "/admin/generic/#{user.id}?resource=users"
+  end
+
+  test "the ledger lookup takes a user id and a stripe customer id too", %{conn: conn} do
+    user = insert(:user, stripe_customer_id: "cus_lookup")
+    transaction = adjustment(customer: "cus_lookup", description: "wire transfer ref 42")
+
+    with_mocks [stripe_mock([], [transaction])] do
+      {:ok, view, _html} = live(conn, "/admin/credit_payments")
+      render_async(view)
+
+      for identifier <- [to_string(user.id), "cus_lookup"] do
+        view
+        |> form("#lookup-form", %{"identifier" => identifier})
+        |> render_submit()
+
+        assert render_async(view) =~ "wire transfer ref 42"
+      end
+    end
+  end
+
+  test "shows what was settled out of band and where it came from", %{conn: conn} do
+    seed(
+      [
+        invoice(
+          id: "in_wire",
+          number: "SAN-WIRE",
+          total: 600_000,
+          starting_balance: 0,
+          ending_balance: 0,
+          paid_out_of_band: true,
+          description: "Paid by wire transfer, ref QUBE-2026-05"
+        )
+      ],
+      []
+    )
+
+    {:ok, view, _html} = live(conn, "/admin/credit_payments")
+    html = render_async(view)
+
+    assert html =~ "Settled out of band"
+    assert html =~ "$6,000.00"
+    assert html =~ "Paid by wire transfer, ref QUBE-2026-05"
+    assert html =~ "Wire / bank"
   end
 
   # The import runs in a supervised task, so the page catches up a moment later.
@@ -124,6 +198,8 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
         customer: "cus_test",
         created: DateTime.utc_now() |> DateTime.to_unix(),
         status: "paid",
+        description: nil,
+        customer_email: nil,
         total: 600_000,
         amount_paid: 0,
         starting_balance: -1_000_000,
@@ -278,7 +354,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
       assert response_content_type(conn, :csv)
       body = response(conn, 200)
 
-      assert body =~ "number,invoice_id,customer_email"
+      assert body =~ "number,invoice_id,user_id,customer_email"
       assert body =~ "SAN-0001"
       assert body =~ "6000.00"
       assert body =~ "https://dashboard.stripe.com/invoices/in_test"
@@ -300,7 +376,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
 
       body = response(conn, 200)
 
-      assert body =~ "date,customer_email"
+      assert body =~ "date,user_id,customer_email"
       assert body =~ "wire transfer ref 42"
       assert body =~ "10000.00"
     end

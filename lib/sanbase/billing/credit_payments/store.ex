@@ -11,6 +11,7 @@ defmodule Sanbase.Billing.CreditPayments.Store do
   import Ecto.Query
 
   alias Sanbase.Billing.CreditPayments
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.CreditPayments.{CreditBalanceTransaction, CreditInvoice, SyncRun}
   alias Sanbase.Repo
 
@@ -46,9 +47,13 @@ defmodule Sanbase.Billing.CreditPayments.Store do
 
     from(i in CreditInvoice,
       left_join: u in assoc(i, :user),
+      # Rows imported before the customer was matched to a user keep only the stripe
+      # customer id - this second join links them without a re-import.
+      left_join: c in User,
+      on: is_nil(i.user_id) and c.stripe_customer_id == i.stripe_customer_id,
       where: i.invoiced_at >= ^from and i.invoiced_at <= ^to,
       order_by: [desc: i.invoiced_at, desc: i.id],
-      select: {i, u.email}
+      select: {i, coalesce(u.email, c.email), coalesce(i.user_id, c.id)}
     )
     |> Repo.all()
     |> Enum.map(&invoice_row/1)
@@ -63,10 +68,12 @@ defmodule Sanbase.Billing.CreditPayments.Store do
 
     from(t in CreditBalanceTransaction,
       left_join: u in assoc(t, :user),
+      left_join: c in User,
+      on: is_nil(t.user_id) and c.stripe_customer_id == t.stripe_customer_id,
       where:
         t.granted_at >= ^from and t.granted_at <= ^to and t.type == ^@grant_type and t.amount < 0,
       order_by: [desc: t.granted_at, desc: t.id],
-      select: {t, u.email}
+      select: {t, coalesce(u.email, c.email), coalesce(t.user_id, c.id)}
     )
     |> Repo.all()
     |> Enum.map(&grant_row/1)
@@ -80,9 +87,11 @@ defmodule Sanbase.Billing.CreditPayments.Store do
   def customer_ledger(stripe_customer_id) when is_binary(stripe_customer_id) do
     from(t in CreditBalanceTransaction,
       left_join: u in assoc(t, :user),
+      left_join: c in User,
+      on: is_nil(t.user_id) and c.stripe_customer_id == t.stripe_customer_id,
       where: t.stripe_customer_id == ^stripe_customer_id,
       order_by: [desc: t.granted_at, desc: t.id],
-      select: {t, u.email}
+      select: {t, coalesce(u.email, c.email), coalesce(t.user_id, c.id)}
     )
     |> Repo.all()
     |> Enum.map(&grant_row/1)
@@ -101,12 +110,12 @@ defmodule Sanbase.Billing.CreditPayments.Store do
 
   # ─── Row shaping ─────────────────────────────────────────────────────────
 
-  defp invoice_row({invoice, user_email}) do
+  defp invoice_row({invoice, user_email, user_id}) do
     %{
       id: invoice.stripe_invoice_id,
       number: invoice.invoice_number,
       customer: invoice.stripe_customer_id,
-      user_id: invoice.user_id,
+      user_id: user_id,
       email: user_email || invoice.customer_email,
       created: invoice.invoiced_at,
       status: invoice.status,
@@ -122,11 +131,11 @@ defmodule Sanbase.Billing.CreditPayments.Store do
     }
   end
 
-  defp grant_row({transaction, user_email}) do
+  defp grant_row({transaction, user_email, user_id}) do
     %{
       id: transaction.stripe_transaction_id,
       customer: transaction.stripe_customer_id,
-      user_id: transaction.user_id,
+      user_id: user_id,
       email: user_email,
       created: transaction.granted_at,
       # The mirror keeps Stripe's sign; money in is the flipped one.
@@ -158,6 +167,7 @@ defmodule Sanbase.Billing.CreditPayments.Store do
       card_paid: sum(invoice_rows, & &1.amount_paid),
       invoiced_total: sum(invoice_rows, & &1.total),
       out_of_band_count: Enum.count(invoice_rows, & &1.paid_out_of_band),
+      out_of_band_total: out_of_band_total(invoice_rows),
       credit_applied_by_source: by_source(invoice_rows, & &1.credit_applied),
       unmatched_note_count: Enum.count(invoice_rows, &is_nil(&1.source_note)),
       grant_count: length(grant_rows),
@@ -167,6 +177,12 @@ defmodule Sanbase.Billing.CreditPayments.Store do
   end
 
   defp sum(rows, fun), do: Enum.reduce(rows, 0, &(fun.(&1) + &2))
+
+  # Nothing lands in either money column for an invoice settled outside Stripe, so its
+  # total is the only record of what was collected.
+  defp out_of_band_total(rows) do
+    rows |> Enum.filter(& &1.paid_out_of_band) |> sum(& &1.total)
+  end
 
   defp by_source(rows, fun) do
     Enum.reduce(rows, %{}, fn row, acc ->

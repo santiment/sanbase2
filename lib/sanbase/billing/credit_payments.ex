@@ -34,14 +34,22 @@ defmodule Sanbase.Billing.CreditPayments do
   @ledger_concurrency 5
   @ledger_timeout 30_000
 
-  # A transaction with a negative amount credits the customer - that is money that
-  # reached us. `adjustment` is the type Stripe gives a manually added credit, both
-  # from the dashboard and from `Sanbase.StripeApi.add_credit/3`.
-  @grant_type "adjustment"
+  # A transaction with a negative amount credits the customer. Only `adjustment` means
+  # money actually reached us - it is the type Stripe gives a manually added credit,
+  # both from the dashboard and from `Sanbase.StripeApi.add_credit/3`.
+  @payment_type "adjustment"
+
+  # Credit Stripe creates by itself: a downgrade proration or an invoice below the
+  # minimum chargeable amount lands on the customer balance instead of being charged,
+  # and later pays an invoice. It looks exactly like a payment on the invoice and is
+  # not one - the money was collected earlier, by card.
+  @stripe_credit_types ~w(invoice_too_small unapplied_from_invoice credit_note invoice_overpaid)
 
   @stripe_dashboard "https://dashboard.stripe.com"
 
-  @crypto_regex ~r/(etherscan\.io\/tx\/|blockchair|blockchain\.com|0x[0-9a-f]{40,})/i
+  # A block explorer link or a hash is the usual note, but a bare "paid in USDT" with no
+  # link has to classify too - the ticker is the only signal those carry.
+  @crypto_regex ~r/(etherscan\.io\/tx\/|blockchair|blockchain\.com|0x[0-9a-f]{40,}|\b(crypto|eth|btc|usdt|usdc|bnb|sol|matic|dai)\b)/i
   @wire_regex ~r/\b(wire|bank|sepa|swift|iban|transfer|remittance)\b/i
   @trx_hash_regex ~r/0x[0-9a-f]{40,}/i
   # "Burned 19289 SAN for 2700 credits" - a burn credit added by hand never reaches the
@@ -64,7 +72,7 @@ defmodule Sanbase.Billing.CreditPayments do
           hosted_invoice_url: String.t() | nil,
           invoice_pdf: String.t() | nil,
           source_note: String.t() | nil,
-          source: :san_burn | :crypto | :wire | :other | :unknown,
+          source: :san_burn | :crypto | :wire | :stripe_credit | :other | :unknown,
           funding_transaction_id: String.t() | nil
         }
 
@@ -78,7 +86,7 @@ defmodule Sanbase.Billing.CreditPayments do
           raw_amount: integer(),
           description: String.t() | nil,
           type: String.t() | nil,
-          source: :san_burn | :crypto | :wire | :other,
+          source: :san_burn | :crypto | :wire | :stripe_credit | :other,
           invoice: String.t() | nil
         }
 
@@ -218,7 +226,7 @@ defmodule Sanbase.Billing.CreditPayments do
   A source filter from a query string parameter, defaulting to `:all`.
   """
   @spec parse_source(String.t() | nil) :: :all | :san_burn | :crypto | :wire | :other | :unknown
-  def parse_source(source) when source in ~w(san_burn crypto wire other unknown),
+  def parse_source(source) when source in ~w(san_burn crypto wire stripe_credit other unknown),
     do: String.to_existing_atom(source)
 
   def parse_source(_source), do: :all
@@ -453,12 +461,10 @@ defmodule Sanbase.Billing.CreditPayments do
         attach_memo(row, invoice, burn_hashes)
 
       transaction ->
-        note = Map.get(transaction, :description)
-
         %{
           row
-          | source_note: note,
-            source: classify_source(note, burn_hashes),
+          | source_note: Map.get(transaction, :description),
+            source: transaction_source(transaction, burn_hashes),
             funding_transaction_id: transaction.id
         }
     end
@@ -477,7 +483,7 @@ defmodule Sanbase.Billing.CreditPayments do
   end
 
   defp funding_transaction(transactions, drawn_at) do
-    adjustments = Enum.filter(transactions, &grant?/1)
+    adjustments = Enum.filter(transactions, &money_in?/1)
 
     last_before =
       adjustments
@@ -499,8 +505,17 @@ defmodule Sanbase.Billing.CreditPayments do
     end
   end
 
-  defp grant?(transaction) do
-    Map.get(transaction, :type) == @grant_type and (Map.get(transaction, :amount) || 0) < 0
+  # Every ledger entry that put credit on the balance, whoever created it.
+  defp money_in?(transaction) do
+    (Map.get(transaction, :amount) || 0) < 0 and
+      Map.get(transaction, :type) in [@payment_type | @stripe_credit_types]
+  end
+
+  defp transaction_source(transaction, burn_hashes) do
+    case Map.get(transaction, :type) do
+      @payment_type -> classify_source(Map.get(transaction, :description), burn_hashes)
+      _other -> :stripe_credit
+    end
   end
 
   defp list_invoices(params, acc \\ []) do
@@ -565,7 +580,7 @@ defmodule Sanbase.Billing.CreditPayments do
   defp grant_in_period?(transaction, from, to) do
     created = Map.get(transaction, :created)
 
-    grant?(transaction) and is_integer(created) and created >= from and created <= to
+    money_in?(transaction) and is_integer(created) and created >= from and created <= to
   end
 
   defp grant_row(transaction, customer_map, burn_hashes) do
@@ -585,7 +600,7 @@ defmodule Sanbase.Billing.CreditPayments do
       raw_amount: Map.get(transaction, :amount) || 0,
       description: description,
       type: Map.get(transaction, :type),
-      source: classify_source(description, burn_hashes),
+      source: transaction_source(transaction, burn_hashes),
       invoice: Map.get(transaction, :invoice)
     }
   end
@@ -601,6 +616,8 @@ defmodule Sanbase.Billing.CreditPayments do
     %{
       invoice_count: length(invoice_rows),
       credit_applied: Enum.reduce(invoice_rows, 0, &(&1.credit_applied + &2)),
+      payment_credit_applied: sum_credit(invoice_rows, :payments),
+      stripe_credit_applied: sum_credit(invoice_rows, :stripe_credit),
       card_paid: Enum.reduce(invoice_rows, 0, &(&1.amount_paid + &2)),
       invoiced_total: Enum.reduce(invoice_rows, 0, &(&1.total + &2)),
       out_of_band_count: Enum.count(invoice_rows, & &1.paid_out_of_band),
@@ -612,8 +629,9 @@ defmodule Sanbase.Billing.CreditPayments do
 
   defp grant_totals(grant_rows) do
     %{
-      grant_count: length(grant_rows),
-      credit_granted: Enum.reduce(grant_rows, 0, &(&1.amount + &2)),
+      grant_count: Enum.count(grant_rows, &(&1.source != :stripe_credit)),
+      credit_granted: sum_grants(grant_rows, :payments),
+      stripe_credit_granted: sum_grants(grant_rows, :stripe_credit),
       by_source: sum_by_source(grant_rows, & &1.amount)
     }
   end
@@ -625,6 +643,23 @@ defmodule Sanbase.Billing.CreditPayments do
     |> Enum.filter(& &1.paid_out_of_band)
     |> Enum.reduce(0, &(&1.total + &2))
   end
+
+  # `credit_applied` counts every dollar of balance an invoice consumed. Only the part
+  # funded by an adjustment is money someone sent us; the rest Stripe created itself.
+  defp sum_credit(rows, which) do
+    rows
+    |> filter_by_kind(which)
+    |> Enum.reduce(0, &(&1.credit_applied + &2))
+  end
+
+  defp sum_grants(rows, which) do
+    rows
+    |> filter_by_kind(which)
+    |> Enum.reduce(0, &(&1.amount + &2))
+  end
+
+  defp filter_by_kind(rows, :stripe_credit), do: Enum.filter(rows, &(&1.source == :stripe_credit))
+  defp filter_by_kind(rows, :payments), do: Enum.reject(rows, &(&1.source == :stripe_credit))
 
   defp sum_by_source(rows, amount_fun) do
     Enum.reduce(rows, %{}, fn row, acc ->

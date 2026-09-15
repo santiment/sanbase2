@@ -213,6 +213,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
   defp source_label(:san_burn), do: "SAN burn"
   defp source_label(:crypto), do: "Crypto"
   defp source_label(:wire), do: "Wire / bank"
+  defp source_label(:stripe_credit), do: "Stripe credit"
   defp source_label(:other), do: "Unclassified"
   defp source_label(:unknown), do: "No note"
   defp source_label(other), do: to_string(other)
@@ -220,6 +221,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
   defp source_badge_class(:san_burn), do: "badge-warning"
   defp source_badge_class(:crypto), do: "badge-success"
   defp source_badge_class(:wire), do: "badge-info"
+  defp source_badge_class(:stripe_credit), do: "badge-neutral"
   defp source_badge_class(_), do: "badge-ghost"
 
   # The note is written by hand in Stripe and is most often a block explorer link, so
@@ -235,7 +237,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
   end
 
   defp sources_in_order(by_source) do
-    [:crypto, :wire, :other, :san_burn, :unknown]
+    [:crypto, :wire, :other, :san_burn, :stripe_credit, :unknown]
     |> Enum.map(&{&1, Map.get(by_source, &1, 0)})
     |> Enum.reject(fn {_source, amount} -> amount == 0 end)
   end
@@ -414,10 +416,12 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
         <%!-- ── Summary ───────────────────────────────────────────────── --%>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div class="card bg-base-100 border border-base-300 p-4">
-            <div class="text-xs uppercase text-base-content/60">Paid from credit</div>
-            <div class="text-2xl font-bold">{money(report.totals.credit_applied)}</div>
+            <div class="text-xs uppercase text-base-content/60">Paid from purchased credit</div>
+            <div class="text-2xl font-bold">{money(report.totals.payment_credit_applied)}</div>
             <div class="text-xs text-base-content/60">
-              {report.totals.invoice_count} invoice(s)
+              {report.totals.invoice_count} invoice(s), plus {money(
+                report.totals.stripe_credit_applied
+              )} from credit Stripe created itself
             </div>
           </div>
 
@@ -425,7 +429,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
             <div class="text-xs uppercase text-base-content/60">Credit added</div>
             <div class="text-2xl font-bold">{money(report.totals.credit_granted)}</div>
             <div class="text-xs text-base-content/60">
-              {report.totals.grant_count} adjustment(s)
+              {report.totals.grant_count} payment(s), plus {money(report.totals.stripe_credit_granted)} of prorations and rounding
             </div>
           </div>
 
@@ -441,7 +445,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
             <div class="text-xs uppercase text-base-content/60">Settled out of band</div>
             <div class="text-2xl font-bold">{money(report.totals.out_of_band_total)}</div>
             <div class="text-xs text-base-content/60">
-              {report.totals.out_of_band_count} invoice(s), {report.totals.unmatched_note_count} without a note
+              {report.totals.out_of_band_count} invoice(s) settled fully outside Stripe
             </div>
           </div>
         </div>
@@ -451,7 +455,9 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
             :if={sources_in_order(report.totals.credit_applied_by_source) != []}
             class="flex flex-wrap items-center gap-3"
           >
-            <span class="text-sm text-base-content/60">Invoices paid from credit, by source:</span>
+            <span class="text-sm text-base-content/60">
+              Invoices paid from credit, by source ({report.totals.unmatched_note_count} of {report.totals.invoice_count} without a note):
+            </span>
             <span
               :for={{source, amount} <- sources_in_order(report.totals.credit_applied_by_source)}
               class={["badge badge-sm", source_badge_class(source)]}
@@ -493,7 +499,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
               <legend class="fieldset-legend">Source</legend>
               <select name="source" class="select select-sm w-40">
                 <option
-                  :for={source <- [:all, :crypto, :wire, :san_burn, :other, :unknown]}
+                  :for={source <- [:all, :crypto, :wire, :san_burn, :stripe_credit, :other, :unknown]}
                   value={source}
                   selected={source == @source_filter}
                 >

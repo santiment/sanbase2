@@ -233,6 +233,90 @@ defmodule Sanbase.Billing.CreditPaymentsTest do
     end
   end
 
+  describe "period_report/2 stripe-created credit" do
+    test "credit Stripe created out of a proration is not counted as a payment" do
+      report =
+        report(
+          [invoice(starting_balance: -14_726, ending_balance: -9_826, total: 4_900)],
+          [
+            balance_transaction(
+              amount: -14_726,
+              type: "invoice_too_small",
+              description: nil,
+              created: @in_period - 3600
+            )
+          ]
+        )
+
+      assert [row] = report.invoices
+      assert row.source == :stripe_credit
+
+      # The invoice did consume credit...
+      assert report.totals.credit_applied == 4_900
+      # ...but nobody sent us money for it.
+      assert report.totals.payment_credit_applied == 0
+      assert report.totals.stripe_credit_applied == 4_900
+      assert report.totals.credit_granted == 0
+      assert report.totals.stripe_credit_granted == 14_726
+      assert report.totals.grant_count == 0
+    end
+
+    test "a manual adjustment is still counted as a payment" do
+      report =
+        report(
+          [invoice(starting_balance: -10_000, ending_balance: -4_000, total: 6_000)],
+          [balance_transaction(amount: -10_000, description: "paid in crypto")]
+        )
+
+      assert report.totals.payment_credit_applied == 6_000
+      assert report.totals.stripe_credit_applied == 0
+      assert report.totals.credit_granted == 10_000
+      assert report.totals.stripe_credit_granted == 0
+    end
+
+    test "the two kinds of credit are separated in the same range" do
+      report =
+        report(
+          [
+            invoice(
+              id: "in_paid",
+              customer: "cus_a",
+              starting_balance: -10_000,
+              ending_balance: -4_000,
+              total: 6_000
+            ),
+            invoice(
+              id: "in_proration",
+              customer: "cus_b",
+              starting_balance: -14_726,
+              ending_balance: -9_826,
+              total: 4_900
+            )
+          ],
+          [
+            balance_transaction(
+              id: "cbtxn_a",
+              customer: "cus_a",
+              amount: -10_000,
+              description: "paid in crypto"
+            ),
+            balance_transaction(
+              id: "cbtxn_b",
+              customer: "cus_b",
+              amount: -14_726,
+              type: "invoice_too_small",
+              description: nil
+            )
+          ]
+        )
+
+      assert report.totals.credit_applied == 10_900
+      assert report.totals.payment_credit_applied == 6_000
+      assert report.totals.stripe_credit_applied == 4_900
+      assert report.totals.credit_applied_by_source == %{crypto: 6_000, stripe_credit: 4_900}
+    end
+  end
+
   describe "period_report/2 out of band" do
     test "the invoice memo is the note when no credit adjustment funded the invoice" do
       report =
@@ -435,6 +519,7 @@ defmodule Sanbase.Billing.CreditPaymentsTest do
 
       assert CreditPayments.classify_source("wire transfer from ACME", hashes) == :wire
       assert CreditPayments.classify_source("https://etherscan.io/tx/0xabc", hashes) == :crypto
+      assert CreditPayments.classify_source("paid in USDT", hashes) == :crypto
       assert CreditPayments.classify_source("goodwill", hashes) == :other
       assert CreditPayments.classify_source(nil, hashes) == :other
     end

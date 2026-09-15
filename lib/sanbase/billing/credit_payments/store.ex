@@ -15,7 +15,11 @@ defmodule Sanbase.Billing.CreditPayments.Store do
   alias Sanbase.Billing.CreditPayments.{CreditBalanceTransaction, CreditInvoice, SyncRun}
   alias Sanbase.Repo
 
-  @grant_type "adjustment"
+  # Kept in step with `Sanbase.Billing.CreditPayments`: an adjustment is money someone
+  # sent us, the rest is credit Stripe created out of a proration or a too-small
+  # invoice and later spent on an invoice.
+  @payment_type "adjustment"
+  @money_in_types ~w(adjustment invoice_too_small unapplied_from_invoice credit_note invoice_overpaid)
 
   @doc ~s"""
   The mirrored report for a date range, shaped like `CreditPayments.range_report/2`.
@@ -71,7 +75,8 @@ defmodule Sanbase.Billing.CreditPayments.Store do
       left_join: c in User,
       on: is_nil(t.user_id) and c.stripe_customer_id == t.stripe_customer_id,
       where:
-        t.granted_at >= ^from and t.granted_at <= ^to and t.type == ^@grant_type and t.amount < 0,
+        t.granted_at >= ^from and t.granted_at <= ^to and t.type in ^@money_in_types and
+          t.amount < 0,
       order_by: [desc: t.granted_at, desc: t.id],
       select: {t, coalesce(u.email, c.email), coalesce(t.user_id, c.id)}
     )
@@ -143,10 +148,13 @@ defmodule Sanbase.Billing.CreditPayments.Store do
       raw_amount: transaction.amount,
       description: transaction.description,
       type: transaction.type,
-      source: to_source(transaction.source),
+      source: transaction_source(transaction),
       invoice: transaction.stripe_invoice_id
     }
   end
+
+  defp transaction_source(%{type: @payment_type} = transaction), do: to_source(transaction.source)
+  defp transaction_source(_transaction), do: :stripe_credit
 
   defp to_source(nil), do: :unknown
 
@@ -161,28 +169,51 @@ defmodule Sanbase.Billing.CreditPayments.Store do
   # ─── Totals ──────────────────────────────────────────────────────────────
 
   defp totals(invoice_rows, grant_rows) do
+    Map.merge(invoice_totals(invoice_rows), grant_totals(grant_rows))
+  end
+
+  defp invoice_totals(invoice_rows) do
     %{
       invoice_count: length(invoice_rows),
-      credit_applied: sum(invoice_rows, & &1.credit_applied),
       card_paid: sum(invoice_rows, & &1.amount_paid),
       invoiced_total: sum(invoice_rows, & &1.total),
-      out_of_band_count: Enum.count(invoice_rows, & &1.paid_out_of_band),
-      out_of_band_total: out_of_band_total(invoice_rows),
       credit_applied_by_source: by_source(invoice_rows, & &1.credit_applied),
-      unmatched_note_count: Enum.count(invoice_rows, &is_nil(&1.source_note)),
-      grant_count: length(grant_rows),
-      credit_granted: sum(grant_rows, & &1.amount),
+      unmatched_note_count: Enum.count(invoice_rows, &is_nil(&1.source_note))
+    }
+    |> Map.merge(credit_totals(invoice_rows))
+    |> Map.merge(out_of_band_totals(invoice_rows))
+  end
+
+  defp credit_totals(invoice_rows) do
+    %{
+      credit_applied: sum(invoice_rows, & &1.credit_applied),
+      payment_credit_applied: invoice_rows |> payments() |> sum(& &1.credit_applied),
+      stripe_credit_applied: invoice_rows |> stripe_credit() |> sum(& &1.credit_applied)
+    }
+  end
+
+  defp out_of_band_totals(invoice_rows) do
+    out_of_band = Enum.filter(invoice_rows, & &1.paid_out_of_band)
+
+    %{
+      out_of_band_count: length(out_of_band),
+      out_of_band_total: sum(out_of_band, & &1.total)
+    }
+  end
+
+  defp grant_totals(grant_rows) do
+    %{
+      grant_count: grant_rows |> payments() |> length(),
+      credit_granted: grant_rows |> payments() |> sum(& &1.amount),
+      stripe_credit_granted: grant_rows |> stripe_credit() |> sum(& &1.amount),
       by_source: by_source(grant_rows, & &1.amount)
     }
   end
 
   defp sum(rows, fun), do: Enum.reduce(rows, 0, &(fun.(&1) + &2))
 
-  # Nothing lands in either money column for an invoice settled outside Stripe, so its
-  # total is the only record of what was collected.
-  defp out_of_band_total(rows) do
-    rows |> Enum.filter(& &1.paid_out_of_band) |> sum(& &1.total)
-  end
+  defp payments(rows), do: Enum.reject(rows, &(&1.source == :stripe_credit))
+  defp stripe_credit(rows), do: Enum.filter(rows, &(&1.source == :stripe_credit))
 
   defp by_source(rows, fun) do
     Enum.reduce(rows, %{}, fn row, acc ->

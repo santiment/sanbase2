@@ -181,6 +181,41 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     assert html =~ "Wire / bank"
   end
 
+  test "separates credit Stripe created itself from credit someone paid for", %{conn: conn} do
+    seed(
+      [
+        invoice(id: "in_paid", number: "SAN-PAID", customer: "cus_a"),
+        invoice(
+          id: "in_proration",
+          number: "SAN-PRORATION",
+          customer: "cus_b",
+          total: 4_900,
+          starting_balance: -14_726,
+          ending_balance: -9_826
+        )
+      ],
+      [
+        adjustment(id: "cbtxn_a", customer: "cus_a", description: "paid in crypto"),
+        adjustment(
+          id: "cbtxn_b",
+          customer: "cus_b",
+          amount: -14_726,
+          type: "invoice_too_small",
+          description: nil
+        )
+      ]
+    )
+
+    {:ok, view, _html} = live(conn, "/admin/credit_payments")
+    html = render_async(view)
+
+    assert html =~ "Paid from purchased credit"
+    assert html =~ "Stripe credit"
+    # $6,000.00 paid for, $49.00 created by Stripe
+    assert html =~ "from credit Stripe created itself"
+    assert html =~ "$49.00"
+  end
+
   # The import runs in a supervised task, so the page catches up a moment later.
   defp eventually(fun, attempts \\ 50) do
     cond do

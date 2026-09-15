@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict IokZ7KwyDYQ63KrrEvsPeIcdhaj5ki4govFsKQyUkkhFvVJLxqOHMY4bIrnKUhs
+\restrict WnVF238Tff7o9WrhZPZw5CCluPmGUpJ1vL6tIWu8dIdOdBq7vNlKEPsQYoCx2Nd
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -4918,6 +4918,132 @@ ALTER SEQUENCE public.source_slug_mappings_id_seq OWNED BY public.source_slug_ma
 
 
 --
+-- Name: stripe_credit_balance_transactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stripe_credit_balance_transactions (
+    id bigint NOT NULL,
+    stripe_transaction_id character varying(255) NOT NULL,
+    stripe_customer_id character varying(255) NOT NULL,
+    user_id bigint,
+    granted_at timestamp(0) without time zone NOT NULL,
+    amount integer DEFAULT 0 NOT NULL,
+    type character varying(255),
+    description text,
+    stripe_invoice_id character varying(255),
+    source character varying(255),
+    synced_at timestamp(0) without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: stripe_credit_balance_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stripe_credit_balance_transactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stripe_credit_balance_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stripe_credit_balance_transactions_id_seq OWNED BY public.stripe_credit_balance_transactions.id;
+
+
+--
+-- Name: stripe_credit_invoices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stripe_credit_invoices (
+    id bigint NOT NULL,
+    stripe_invoice_id character varying(255) NOT NULL,
+    invoice_number character varying(255),
+    stripe_customer_id character varying(255),
+    user_id bigint,
+    customer_email character varying(255),
+    invoiced_at timestamp(0) without time zone NOT NULL,
+    status character varying(255),
+    total integer DEFAULT 0 NOT NULL,
+    amount_paid integer DEFAULT 0 NOT NULL,
+    credit_applied integer DEFAULT 0 NOT NULL,
+    paid_out_of_band boolean DEFAULT false NOT NULL,
+    hosted_invoice_url text,
+    invoice_pdf text,
+    source character varying(255),
+    source_note text,
+    funding_transaction_id character varying(255),
+    synced_at timestamp(0) without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: stripe_credit_invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stripe_credit_invoices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stripe_credit_invoices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stripe_credit_invoices_id_seq OWNED BY public.stripe_credit_invoices.id;
+
+
+--
+-- Name: stripe_credit_sync_runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stripe_credit_sync_runs (
+    id bigint NOT NULL,
+    from_date date NOT NULL,
+    to_date date NOT NULL,
+    status character varying(255) DEFAULT 'running'::character varying NOT NULL,
+    invoices_upserted integer DEFAULT 0 NOT NULL,
+    grants_upserted integer DEFAULT 0 NOT NULL,
+    customers_scanned integer DEFAULT 0 NOT NULL,
+    duration_ms integer,
+    error_message text,
+    triggered_by bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: stripe_credit_sync_runs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stripe_credit_sync_runs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stripe_credit_sync_runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stripe_credit_sync_runs_id_seq OWNED BY public.stripe_credit_sync_runs.id;
+
+
+--
 -- Name: stripe_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -7156,6 +7282,27 @@ ALTER TABLE ONLY public.source_slug_mappings ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: stripe_credit_balance_transactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_balance_transactions ALTER COLUMN id SET DEFAULT nextval('public.stripe_credit_balance_transactions_id_seq'::regclass);
+
+
+--
+-- Name: stripe_credit_invoices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_invoices ALTER COLUMN id SET DEFAULT nextval('public.stripe_credit_invoices_id_seq'::regclass);
+
+
+--
+-- Name: stripe_credit_sync_runs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_sync_runs ALTER COLUMN id SET DEFAULT nextval('public.stripe_credit_sync_runs_id_seq'::regclass);
+
+
+--
 -- Name: subscription_items id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8501,6 +8648,30 @@ ALTER TABLE ONLY public.signals_historical_activity
 
 ALTER TABLE ONLY public.source_slug_mappings
     ADD CONSTRAINT source_slug_mappings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stripe_credit_balance_transactions stripe_credit_balance_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_balance_transactions
+    ADD CONSTRAINT stripe_credit_balance_transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stripe_credit_invoices stripe_credit_invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_invoices
+    ADD CONSTRAINT stripe_credit_invoices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stripe_credit_sync_runs stripe_credit_sync_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_sync_runs
+    ADD CONSTRAINT stripe_credit_sync_runs_pkey PRIMARY KEY (id);
 
 
 --
@@ -10261,6 +10432,62 @@ CREATE INDEX signals_historical_activity_user_trigger_id_index ON public.signals
 
 
 --
+-- Name: stripe_credit_balance_transactions_granted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_credit_balance_transactions_granted_at_index ON public.stripe_credit_balance_transactions USING btree (granted_at);
+
+
+--
+-- Name: stripe_credit_balance_transactions_stripe_customer_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_credit_balance_transactions_stripe_customer_id_index ON public.stripe_credit_balance_transactions USING btree (stripe_customer_id);
+
+
+--
+-- Name: stripe_credit_balance_transactions_stripe_transaction_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX stripe_credit_balance_transactions_stripe_transaction_id_index ON public.stripe_credit_balance_transactions USING btree (stripe_transaction_id);
+
+
+--
+-- Name: stripe_credit_invoices_invoiced_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_credit_invoices_invoiced_at_index ON public.stripe_credit_invoices USING btree (invoiced_at);
+
+
+--
+-- Name: stripe_credit_invoices_source_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_credit_invoices_source_index ON public.stripe_credit_invoices USING btree (source);
+
+
+--
+-- Name: stripe_credit_invoices_stripe_customer_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_credit_invoices_stripe_customer_id_index ON public.stripe_credit_invoices USING btree (stripe_customer_id);
+
+
+--
+-- Name: stripe_credit_invoices_stripe_invoice_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX stripe_credit_invoices_stripe_invoice_id_index ON public.stripe_credit_invoices USING btree (stripe_invoice_id);
+
+
+--
+-- Name: stripe_credit_sync_runs_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_credit_sync_runs_inserted_at_index ON public.stripe_credit_sync_runs USING btree (inserted_at);
+
+
+--
 -- Name: subscription_items_remove_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11894,6 +12121,30 @@ ALTER TABLE ONLY public.source_slug_mappings
 
 
 --
+-- Name: stripe_credit_balance_transactions stripe_credit_balance_transactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_balance_transactions
+    ADD CONSTRAINT stripe_credit_balance_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: stripe_credit_invoices stripe_credit_invoices_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_invoices
+    ADD CONSTRAINT stripe_credit_invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: stripe_credit_sync_runs stripe_credit_sync_runs_triggered_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_credit_sync_runs
+    ADD CONSTRAINT stripe_credit_sync_runs_triggered_by_fkey FOREIGN KEY (triggered_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: subscription_items subscription_items_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12329,7 +12580,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict IokZ7KwyDYQ63KrrEvsPeIcdhaj5ki4govFsKQyUkkhFvVJLxqOHMY4bIrnKUhs
+\unrestrict WnVF238Tff7o9WrhZPZw5CCluPmGUpJ1vL6tIWu8dIdOdBq7vNlKEPsQYoCx2Nd
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12932,8 +13183,9 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260810121347);
 INSERT INTO public."schema_migrations" (version) VALUES (20260810121612);
 INSERT INTO public."schema_migrations" (version) VALUES (20260812120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260813090000);
-INSERT INTO public."schema_migrations" (version) VALUES (20260909120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260902130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260903120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260909120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260910090000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260910091000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260915090000);

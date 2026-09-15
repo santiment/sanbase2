@@ -4,11 +4,14 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
   import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
 
   alias Sanbase.Billing.CreditPayments
+  alias Sanbase.Billing.CreditPayments.{Store, SyncJob}
 
   @default_months_back 5
   @page_sizes [25, 50, 100, 250]
 
   def mount(_params, _session, socket) do
+    if connected?(socket), do: SyncJob.subscribe()
+
     today = Date.utc_today()
     from = today |> Timex.shift(months: -@default_months_back) |> Timex.beginning_of_month()
 
@@ -23,8 +26,9 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
       |> assign(:page, 1)
       |> assign(:page_size, 25)
       |> assign(:page_sizes, @page_sizes)
-      |> assign(:lookup_email, "")
+      |> assign(:lookup_identifier, "")
       |> assign(:ledger, nil)
+      |> assign(:sync_job, SyncJob.get_state())
       |> load_report()
 
     {:ok, socket}
@@ -81,19 +85,51 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
     {:noreply, load_report(socket)}
   end
 
-  def handle_event("lookup", %{"email" => email}, socket) do
-    email = String.trim(email)
+  def handle_event("resync", params, socket) do
+    from = parse_date(params["from"] || "", socket.assigns.from_date)
+    to = parse_date(params["to"] || "", socket.assigns.to_date)
+
+    case SyncJob.start_job(from, to, socket.assigns.current_user.id) do
+      :ok ->
+        {:noreply, assign(socket, :sync_job, SyncJob.get_state())}
+
+      {:error, :already_running} ->
+        {:noreply, put_flash(socket, :error, "An import is already running")}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Could not start the import: #{inspect(reason)}")}
+    end
+  end
+
+  def handle_event("cancel_sync", _params, socket) do
+    SyncJob.cancel()
+
+    {:noreply, assign(socket, :sync_job, SyncJob.get_state())}
+  end
+
+  def handle_event("lookup", %{"identifier" => identifier}, socket) do
+    identifier = String.trim(identifier)
 
     socket =
       socket
-      |> assign(:lookup_email, email)
-      |> load_ledger(email)
+      |> assign(:lookup_identifier, identifier)
+      |> load_ledger(identifier)
 
     {:noreply, socket}
   end
 
   def handle_event("clear_lookup", _params, socket) do
-    {:noreply, socket |> assign(:lookup_email, "") |> assign(:ledger, nil)}
+    {:noreply, socket |> assign(:lookup_identifier, "") |> assign(:ledger, nil)}
+  end
+
+  def handle_info({:sync_update, job_state}, socket) do
+    socket = assign(socket, :sync_job, job_state)
+
+    # The mirror only changes when the import finishes, so that is the one moment the
+    # page has to read it again.
+    socket = if job_state.status == :done, do: load_report(socket), else: socket
+
+    {:noreply, socket}
   end
 
   defp load_report(socket) do
@@ -101,7 +137,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
     to = socket.assigns.to_date
 
     assign_async(socket, :report, fn ->
-      {:ok, %{report: CreditPayments.range_report(from, to)}}
+      {:ok, %{report: Store.range_report(from, to)}}
     end)
   end
 
@@ -109,11 +145,14 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
     assign(socket, :ledger, nil)
   end
 
-  defp load_ledger(socket, email) do
+  defp load_ledger(socket, identifier) do
     assign_async(socket, :ledger, fn ->
-      case CreditPayments.customer_id_by_email(email) do
-        nil -> {:error, "No user with a stripe customer id for #{email}"}
-        customer_id -> {:ok, %{ledger: CreditPayments.customer_ledger(customer_id)}}
+      case CreditPayments.resolve_customer_id(identifier) do
+        nil ->
+          {:error, "No stripe customer found for #{identifier}"}
+
+        customer_id ->
+          {:ok, %{ledger: CreditPayments.customer_ledger(customer_id)}}
       end
     end)
   end
@@ -174,6 +213,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
   defp source_label(:san_burn), do: "SAN burn"
   defp source_label(:crypto), do: "Crypto"
   defp source_label(:wire), do: "Wire / bank"
+  defp source_label(:stripe_credit), do: "Stripe credit"
   defp source_label(:other), do: "Unclassified"
   defp source_label(:unknown), do: "No note"
   defp source_label(other), do: to_string(other)
@@ -181,6 +221,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
   defp source_badge_class(:san_burn), do: "badge-warning"
   defp source_badge_class(:crypto), do: "badge-success"
   defp source_badge_class(:wire), do: "badge-info"
+  defp source_badge_class(:stripe_credit), do: "badge-neutral"
   defp source_badge_class(_), do: "badge-ghost"
 
   # The note is written by hand in Stripe and is most often a block explorer link, so
@@ -196,9 +237,52 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
   end
 
   defp sources_in_order(by_source) do
-    [:crypto, :wire, :other, :san_burn, :unknown]
+    [:crypto, :wire, :other, :san_burn, :stripe_credit, :unknown]
     |> Enum.map(&{&1, Map.get(by_source, &1, 0)})
     |> Enum.reject(fn {_source, amount} -> amount == 0 end)
+  end
+
+  # The customer is worth a link in every case: to the user record when we could match
+  # one, and to Stripe when we could not - a bare `cus_...` string is a dead end.
+  attr(:row, :map, required: true)
+
+  defp customer_cell(assigns) do
+    ~H"""
+    <.link
+      :if={@row.user_id}
+      navigate={~p"/admin/generic/#{@row.user_id}?resource=users"}
+      class="link link-primary"
+      title={@row.customer}
+    >
+      {@row.email || @row.customer}
+    </.link>
+
+    <span :if={is_nil(@row.user_id)} class="flex flex-col">
+      <span :if={@row.email} class="text-base-content/70">{@row.email}</span>
+      <.link
+        :if={@row.customer}
+        href={CreditPayments.stripe_customer_url(@row.customer)}
+        target="_blank"
+        class="link text-xs font-mono"
+        title="No Sanbase user matches this stripe customer - open it in Stripe"
+      >
+        {@row.customer}
+      </.link>
+    </span>
+    """
+  end
+
+  defp sync_running?(job), do: job != nil and job.status == :running
+
+  defp sync_phase_text(%{phase: :fetching}), do: "Reading invoices and ledgers from Stripe..."
+  defp sync_phase_text(%{phase: :writing}), do: "Writing the imported rows..."
+  defp sync_phase_text(_job), do: "Working..."
+
+  defp coverage_text(gaps) do
+    Enum.map_join(gaps, ", ", fn
+      {from, from} -> Date.to_iso8601(from)
+      {from, to} -> "#{Date.to_iso8601(from)} to #{Date.to_iso8601(to)}"
+    end)
   end
 
   defp granularity_label(:day), do: "Day"
@@ -249,6 +333,59 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
         </form>
       </div>
 
+      <%!-- ── Import state ──────────────────────────────────────────── --%>
+      <div class="card bg-base-100 border border-base-300 p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="text-sm">
+            <span class="text-base-content/60">The table reads a local mirror of Stripe.</span>
+            <span :if={@sync_job.status != :running} class="text-base-content/60">
+              Re-import the selected range to pick up anything an earlier import skipped.
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              phx-click="resync"
+              disabled={sync_running?(@sync_job)}
+              class="btn btn-sm btn-primary"
+            >
+              Re-import from Stripe
+            </button>
+            <button
+              :if={sync_running?(@sync_job)}
+              phx-click="cancel_sync"
+              class="btn btn-sm btn-soft btn-error"
+            >
+              Stop watching
+            </button>
+          </div>
+        </div>
+
+        <div :if={sync_running?(@sync_job)} class="mt-3">
+          <div class="flex items-center gap-3">
+            <span class="loading loading-spinner loading-sm"></span>
+            <span class="text-sm">
+              {sync_phase_text(@sync_job)} ({@sync_job.from_date} to {@sync_job.to_date})
+            </span>
+          </div>
+          <progress class="progress progress-primary w-full mt-2"></progress>
+        </div>
+
+        <div
+          :if={@sync_job.status == :done && @sync_job.result}
+          role="alert"
+          class="alert alert-success mt-3"
+        >
+          <span>
+            Imported {@sync_job.result.invoices_upserted} invoice(s) and {@sync_job.result.grants_upserted} ledger entr(ies) from {@sync_job.result.customers_scanned} customer(s).
+          </span>
+        </div>
+
+        <div :if={@sync_job.status == :failed} role="alert" class="alert alert-error mt-3">
+          <span>The import failed: {@sync_job.error}</span>
+        </div>
+      </div>
+
       <.async_result :let={report} assign={@report}>
         <:loading>
           <div class="flex items-center gap-3 py-10">
@@ -265,13 +402,26 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
           </div>
         </:failed>
 
+        <div :if={report.coverage != []} role="alert" class="alert alert-warning mb-4">
+          <span>
+            Never imported: {coverage_text(report.coverage)}. The numbers below leave those
+            days out - re-import the range to fill them in.
+          </span>
+        </div>
+
+        <div class="text-xs text-base-content/60 mb-4">
+          Mirror last updated: {format_datetime(report.last_synced_at)}
+        </div>
+
         <%!-- ── Summary ───────────────────────────────────────────────── --%>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div class="card bg-base-100 border border-base-300 p-4">
-            <div class="text-xs uppercase text-base-content/60">Paid from credit</div>
-            <div class="text-2xl font-bold">{money(report.totals.credit_applied)}</div>
+            <div class="text-xs uppercase text-base-content/60">Paid from purchased credit</div>
+            <div class="text-2xl font-bold">{money(report.totals.payment_credit_applied)}</div>
             <div class="text-xs text-base-content/60">
-              {report.totals.invoice_count} invoice(s)
+              {report.totals.invoice_count} invoice(s), plus {money(
+                report.totals.stripe_credit_applied
+              )} from credit Stripe created itself
             </div>
           </div>
 
@@ -279,7 +429,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
             <div class="text-xs uppercase text-base-content/60">Credit added</div>
             <div class="text-2xl font-bold">{money(report.totals.credit_granted)}</div>
             <div class="text-xs text-base-content/60">
-              {report.totals.grant_count} adjustment(s)
+              {report.totals.grant_count} payment(s), plus {money(report.totals.stripe_credit_granted)} of prorations and rounding
             </div>
           </div>
 
@@ -292,10 +442,10 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
           </div>
 
           <div class="card bg-base-100 border border-base-300 p-4">
-            <div class="text-xs uppercase text-base-content/60">Notes not matched</div>
-            <div class="text-2xl font-bold">{report.totals.unmatched_note_count}</div>
+            <div class="text-xs uppercase text-base-content/60">Settled out of band</div>
+            <div class="text-2xl font-bold">{money(report.totals.out_of_band_total)}</div>
             <div class="text-xs text-base-content/60">
-              {report.totals.out_of_band_count} marked paid out of band
+              {report.totals.out_of_band_count} invoice(s) settled fully outside Stripe
             </div>
           </div>
         </div>
@@ -305,7 +455,9 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
             :if={sources_in_order(report.totals.credit_applied_by_source) != []}
             class="flex flex-wrap items-center gap-3"
           >
-            <span class="text-sm text-base-content/60">Invoices paid from credit, by source:</span>
+            <span class="text-sm text-base-content/60">
+              Invoices paid from credit, by source ({report.totals.unmatched_note_count} of {report.totals.invoice_count} without a note):
+            </span>
             <span
               :for={{source, amount} <- sources_in_order(report.totals.credit_applied_by_source)}
               class={["badge badge-sm", source_badge_class(source)]}
@@ -347,7 +499,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
               <legend class="fieldset-legend">Source</legend>
               <select name="source" class="select select-sm w-40">
                 <option
-                  :for={source <- [:all, :crypto, :wire, :san_burn, :other, :unknown]}
+                  :for={source <- [:all, :crypto, :wire, :san_burn, :stripe_credit, :other, :unknown]}
                   value={source}
                   selected={source == @source_filter}
                 >
@@ -403,12 +555,13 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
                 <th class="text-right">Invoiced</th>
                 <th class="text-right">Paid by credit</th>
                 <th class="text-right">Paid by card</th>
+                <th class="text-right">Out of band</th>
                 <th>By source</th>
               </tr>
             </thead>
             <tbody>
               <tr :if={filtered(report, assigns) == []}>
-                <td colspan="6" class="text-center text-base-content/60 py-6">
+                <td colspan="7" class="text-center text-base-content/60 py-6">
                   Nothing to aggregate for this range and filter.
                 </td>
               </tr>
@@ -418,6 +571,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
                 <td class="text-right text-base-content/70">{money(bucket.total)}</td>
                 <td class="text-right font-medium">{money(bucket.credit_applied)}</td>
                 <td class="text-right text-base-content/70">{money(bucket.card_paid)}</td>
+                <td class="text-right text-base-content/70">{money(bucket.out_of_band)}</td>
                 <td>
                   <div class="flex flex-wrap gap-1">
                     <span
@@ -480,16 +634,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
                   </.link>
                 </td>
                 <td>
-                  <.link
-                    :if={invoice.user_id}
-                    navigate={~p"/admin/generic/#{invoice.user_id}?resource=users"}
-                    class="link link-primary"
-                  >
-                    {invoice.email || invoice.customer}
-                  </.link>
-                  <span :if={is_nil(invoice.user_id)} class="text-base-content/70">
-                    {invoice.customer}
-                  </span>
+                  <.customer_cell row={invoice} />
                 </td>
                 <td class="whitespace-nowrap">{format_date(invoice.created)}</td>
                 <td class="text-right">{money(invoice.total)}</td>
@@ -590,16 +735,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
               <tr :for={grant <- report.grants}>
                 <td class="whitespace-nowrap">{format_date(grant.created)}</td>
                 <td>
-                  <.link
-                    :if={grant.user_id}
-                    navigate={~p"/admin/generic/#{grant.user_id}?resource=users"}
-                    class="link link-primary"
-                  >
-                    {grant.email || grant.customer}
-                  </.link>
-                  <span :if={is_nil(grant.user_id)} class="text-base-content/70">
-                    {grant.customer}
-                  </span>
+                  <.customer_cell row={grant} />
                 </td>
                 <td class="text-right font-medium">{money(grant.amount)}</td>
                 <td>
@@ -649,13 +785,13 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
 
       <form id="lookup-form" phx-submit="lookup" class="flex items-end gap-3 mb-4">
         <fieldset class="fieldset">
-          <legend class="fieldset-legend">User email</legend>
+          <legend class="fieldset-legend">Email, user id or stripe customer id</legend>
           <input
             type="text"
-            name="email"
-            value={@lookup_email}
-            placeholder="customer@example.com"
-            class="input input-sm w-80"
+            name="identifier"
+            value={@lookup_identifier}
+            placeholder="customer@example.com, 12345 or cus_..."
+            class="input input-sm w-96"
           />
         </fieldset>
         <button type="submit" class="btn btn-sm btn-primary">Look up</button>

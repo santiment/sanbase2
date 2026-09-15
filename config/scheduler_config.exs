@@ -131,6 +131,12 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "30 00 * * *",
       task: {Sanbase.Billing.StripeSync, :run, []}
     ],
+    # Mirrors the invoices settled from a Stripe credit balance - crypto and wire
+    # payments - which produce no charge and so never reach the charge export above.
+    sync_stripe_credit_payments: [
+      schedule: "45 00 * * *",
+      task: {Sanbase.Billing.CreditPayments.Sync, :run, []}
+    ],
     intercom_to_kafka: [
       schedule: "30 01 * * *",
       task: {Sanbase.Intercom, :intercom_to_kafka, []}

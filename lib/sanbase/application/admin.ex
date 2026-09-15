@@ -22,6 +22,8 @@ defmodule Sanbase.Application.Admin do
       Sanbase.AI.DescriptionJob,
       # Persistent GenServer for invoice archive generation jobs
       Sanbase.Billing.Invoices.GenerationJob,
+      # Persistent GenServer for manual credit payment imports from Stripe
+      Sanbase.Billing.CreditPayments.SyncJob,
       # Oban admin instance.
       # Wrapped in a dedicated supervisor with a relaxed restart policy so
       # transient `Oban.Sonar` crashes during dev recompiles don't cascade.

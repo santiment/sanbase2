@@ -4,11 +4,14 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
   import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
 
   alias Sanbase.Billing.CreditPayments
+  alias Sanbase.Billing.CreditPayments.{Store, SyncJob}
 
   @default_months_back 5
   @page_sizes [25, 50, 100, 250]
 
   def mount(_params, _session, socket) do
+    if connected?(socket), do: SyncJob.subscribe()
+
     today = Date.utc_today()
     from = today |> Timex.shift(months: -@default_months_back) |> Timex.beginning_of_month()
 
@@ -25,6 +28,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
       |> assign(:page_sizes, @page_sizes)
       |> assign(:lookup_email, "")
       |> assign(:ledger, nil)
+      |> assign(:sync_job, SyncJob.get_state())
       |> load_report()
 
     {:ok, socket}
@@ -81,6 +85,28 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
     {:noreply, load_report(socket)}
   end
 
+  def handle_event("resync", params, socket) do
+    from = parse_date(params["from"] || "", socket.assigns.from_date)
+    to = parse_date(params["to"] || "", socket.assigns.to_date)
+
+    case SyncJob.start_job(from, to, socket.assigns.current_user.id) do
+      :ok ->
+        {:noreply, assign(socket, :sync_job, SyncJob.get_state())}
+
+      {:error, :already_running} ->
+        {:noreply, put_flash(socket, :error, "An import is already running")}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Could not start the import: #{inspect(reason)}")}
+    end
+  end
+
+  def handle_event("cancel_sync", _params, socket) do
+    SyncJob.cancel()
+
+    {:noreply, assign(socket, :sync_job, SyncJob.get_state())}
+  end
+
   def handle_event("lookup", %{"email" => email}, socket) do
     email = String.trim(email)
 
@@ -96,12 +122,22 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
     {:noreply, socket |> assign(:lookup_email, "") |> assign(:ledger, nil)}
   end
 
+  def handle_info({:sync_update, job_state}, socket) do
+    socket = assign(socket, :sync_job, job_state)
+
+    # The mirror only changes when the import finishes, so that is the one moment the
+    # page has to read it again.
+    socket = if job_state.status == :done, do: load_report(socket), else: socket
+
+    {:noreply, socket}
+  end
+
   defp load_report(socket) do
     from = socket.assigns.from_date
     to = socket.assigns.to_date
 
     assign_async(socket, :report, fn ->
-      {:ok, %{report: CreditPayments.range_report(from, to)}}
+      {:ok, %{report: Store.range_report(from, to)}}
     end)
   end
 
@@ -201,6 +237,19 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
     |> Enum.reject(fn {_source, amount} -> amount == 0 end)
   end
 
+  defp sync_running?(job), do: job != nil and job.status == :running
+
+  defp sync_phase_text(%{phase: :fetching}), do: "Reading invoices and ledgers from Stripe..."
+  defp sync_phase_text(%{phase: :writing}), do: "Writing the imported rows..."
+  defp sync_phase_text(_job), do: "Working..."
+
+  defp coverage_text(gaps) do
+    Enum.map_join(gaps, ", ", fn
+      {from, from} -> Date.to_iso8601(from)
+      {from, to} -> "#{Date.to_iso8601(from)} to #{Date.to_iso8601(to)}"
+    end)
+  end
+
   defp granularity_label(:day), do: "Day"
   defp granularity_label(:month), do: "Month"
   defp granularity_label(:year), do: "Year"
@@ -249,6 +298,59 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
         </form>
       </div>
 
+      <%!-- ── Import state ──────────────────────────────────────────── --%>
+      <div class="card bg-base-100 border border-base-300 p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="text-sm">
+            <span class="text-base-content/60">The table reads a local mirror of Stripe.</span>
+            <span :if={@sync_job.status != :running} class="text-base-content/60">
+              Re-import the selected range to pick up anything an earlier import skipped.
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              phx-click="resync"
+              disabled={sync_running?(@sync_job)}
+              class="btn btn-sm btn-primary"
+            >
+              Re-import from Stripe
+            </button>
+            <button
+              :if={sync_running?(@sync_job)}
+              phx-click="cancel_sync"
+              class="btn btn-sm btn-soft btn-error"
+            >
+              Stop watching
+            </button>
+          </div>
+        </div>
+
+        <div :if={sync_running?(@sync_job)} class="mt-3">
+          <div class="flex items-center gap-3">
+            <span class="loading loading-spinner loading-sm"></span>
+            <span class="text-sm">
+              {sync_phase_text(@sync_job)} ({@sync_job.from_date} to {@sync_job.to_date})
+            </span>
+          </div>
+          <progress class="progress progress-primary w-full mt-2"></progress>
+        </div>
+
+        <div
+          :if={@sync_job.status == :done && @sync_job.result}
+          role="alert"
+          class="alert alert-success mt-3"
+        >
+          <span>
+            Imported {@sync_job.result.invoices_upserted} invoice(s) and {@sync_job.result.grants_upserted} ledger entr(ies) from {@sync_job.result.customers_scanned} customer(s).
+          </span>
+        </div>
+
+        <div :if={@sync_job.status == :failed} role="alert" class="alert alert-error mt-3">
+          <span>The import failed: {@sync_job.error}</span>
+        </div>
+      </div>
+
       <.async_result :let={report} assign={@report}>
         <:loading>
           <div class="flex items-center gap-3 py-10">
@@ -264,6 +366,17 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLive do
             <span>Failed to load the report: {inspect(reason)}</span>
           </div>
         </:failed>
+
+        <div :if={report.coverage != []} role="alert" class="alert alert-warning mb-4">
+          <span>
+            Never imported: {coverage_text(report.coverage)}. The numbers below leave those
+            days out - re-import the range to fill them in.
+          </span>
+        </div>
+
+        <div class="text-xs text-base-content/60 mb-4">
+          Mirror last updated: {format_datetime(report.last_synced_at)}
+        </div>
 
         <%!-- ── Summary ───────────────────────────────────────────────── --%>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">

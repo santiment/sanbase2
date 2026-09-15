@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsController do
   use SanbaseWeb, :controller
 
   alias Sanbase.Billing.CreditPayments
+  alias Sanbase.Billing.CreditPayments.Store
 
   @invoice_headers ~w(number invoice_id customer_email stripe_customer_id date total_usd
                       credit_paid_usd card_paid_usd source source_note paid_out_of_band
@@ -19,7 +20,9 @@ defmodule SanbaseWeb.Admin.CreditPaymentsController do
   def export(conn, params) do
     with {:ok, from} <- parse_date(params["from"]),
          {:ok, to} <- parse_date(params["to"]) do
-      report = CreditPayments.range_report(from, to)
+      # The mirror, not Stripe: an export has to be instant, and it must show exactly
+      # the rows the page showed.
+      report = Store.range_report(from, to)
       what = params["what"] || "invoices"
 
       {filename, csv} = build_export(what, report, params, from, to)

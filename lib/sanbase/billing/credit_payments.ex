@@ -71,6 +71,7 @@ defmodule Sanbase.Billing.CreditPayments do
           email: String.t() | nil,
           created: DateTime.t() | nil,
           amount: integer(),
+          raw_amount: integer(),
           description: String.t() | nil,
           type: String.t() | nil,
           source: :san_burn | :crypto | :wire | :other,
@@ -90,10 +91,16 @@ defmodule Sanbase.Billing.CreditPayments do
   """
   @spec range_report(Date.t(), Date.t()) :: map()
   def range_report(%Date{} = from_date, %Date{} = to_date) do
+    {from, to} = date_bounds(from_date, to_date)
+
+    do_report(from, to)
+  end
+
+  defp date_bounds(%Date{} = from_date, %Date{} = to_date) do
     from = from_date |> Timex.to_datetime() |> Timex.beginning_of_day() |> DateTime.to_unix()
     to = to_date |> Timex.to_datetime() |> Timex.end_of_day() |> DateTime.to_unix()
 
-    do_report(from, to)
+    {from, to}
   end
 
   @doc ~s"""
@@ -106,7 +113,49 @@ defmodule Sanbase.Billing.CreditPayments do
     do_report(from, to)
   end
 
+  @doc ~s"""
+  The same data as `range_report/2` before it is summarised, for the importer.
+
+  `transactions` is every ledger entry of every scanned customer, not only the credits
+  added inside the range, so the local mirror can re-derive which credit funded which
+  invoice without going back to Stripe.
+  """
+  @spec range_data(Date.t(), Date.t()) :: map()
+  def range_data(%Date{} = from_date, %Date{} = to_date) do
+    {from, to} = date_bounds(from_date, to_date)
+    gathered = gather(from, to)
+
+    %{
+      invoices: gathered.invoice_rows,
+      transactions:
+        Enum.map(
+          gathered.raw_transactions,
+          &grant_row(&1, gathered.customer_map, gathered.burn_hashes)
+        ),
+      customer_ids: gathered.customer_ids
+    }
+  end
+
   defp do_report(from, to) do
+    gathered = gather(from, to)
+
+    invoice_rows = gathered.invoice_rows
+
+    grant_rows =
+      gathered.raw_transactions
+      |> Enum.filter(&grant_in_period?(&1, from, to))
+      |> Enum.map(&grant_row(&1, gathered.customer_map, gathered.burn_hashes))
+      |> Enum.sort_by(&sort_key/1, :desc)
+
+    %{
+      invoices: invoice_rows,
+      grants: grant_rows,
+      totals: totals(invoice_rows, grant_rows),
+      scanned_customers: length(gathered.customer_ids)
+    }
+  end
+
+  defp gather(from, to) do
     invoices = list_invoices(%{created: %{gte: from, lte: to}, limit: @invoice_page_size})
     customer_ids = scan_customer_ids(invoices)
     customer_map = customer_user_map(customer_ids)
@@ -116,14 +165,12 @@ defmodule Sanbase.Billing.CreditPayments do
     # the credit that pays a February invoice is often added in January.
     ledgers = customer_ids |> fetch_ledgers() |> Enum.group_by(&Map.get(&1, :customer))
 
-    invoice_rows = invoice_rows(invoices, customer_map, ledgers, burn_hashes)
-    grant_rows = grant_rows(ledgers, customer_map, burn_hashes, from, to)
-
     %{
-      invoices: invoice_rows,
-      grants: grant_rows,
-      totals: totals(invoice_rows, grant_rows),
-      scanned_customers: length(customer_ids)
+      invoice_rows: invoice_rows(invoices, customer_map, ledgers, burn_hashes),
+      raw_transactions: Enum.flat_map(ledgers, fn {_customer, transactions} -> transactions end),
+      customer_map: customer_map,
+      burn_hashes: burn_hashes,
+      customer_ids: customer_ids
     }
   end
 
@@ -135,14 +182,6 @@ defmodule Sanbase.Billing.CreditPayments do
       |> invoice_row(customer_map)
       |> attach_note(Map.get(ledgers, invoice.customer, []), burn_hashes)
     end)
-    |> Enum.sort_by(&sort_key/1, :desc)
-  end
-
-  defp grant_rows(ledgers, customer_map, burn_hashes, from, to) do
-    ledgers
-    |> Enum.flat_map(fn {_customer, transactions} -> transactions end)
-    |> Enum.filter(&grant_in_period?(&1, from, to))
-    |> Enum.map(&grant_row(&1, customer_map, burn_hashes))
     |> Enum.sort_by(&sort_key/1, :desc)
   end
 
@@ -475,8 +514,10 @@ defmodule Sanbase.Billing.CreditPayments do
       user_id: user && user.id,
       email: user && user.email,
       created: to_datetime(Map.get(transaction, :created)),
-      # Stripe signs a credit negative; the dashboard shows money in, so flip it.
+      # Stripe signs a credit negative; the dashboard shows money in, so flip it. The
+      # raw amount is kept as well - the local mirror stores Stripe's own sign.
       amount: -(Map.get(transaction, :amount) || 0),
+      raw_amount: Map.get(transaction, :amount) || 0,
       description: description,
       type: Map.get(transaction, :type),
       source: classify_source(description, burn_hashes),

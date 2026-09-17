@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
   end
 
   test "a version name and its number reach the adapter as the same canonical version", ctx do
-    create_alias!(%{scope_type: "global", version_num: "7.1", version_name: "seven_pit:v1"})
+    create_alias!(%{version_num: "7.1", version_name: "seven_pit:v1"})
     test_pid = self()
 
     Sanbase.Mock.prepare_mock(
@@ -54,7 +54,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
 
   test "availableVersions returns the number, the name and the description", ctx do
     create_alias!(%{
-      scope_type: "global",
       version_num: "7.1",
       version_name: "seven_pit:v1",
       description: "Point-in-time seven"
@@ -90,14 +89,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert [%{"versionName" => "7.1"}] = available_version_names(ctx.conn)
 
-      create_alias!(%{scope_type: "global", version_num: "7.1", version_name: "seven_pit:v1"})
+      create_alias!(%{version_num: "7.1", version_name: "seven_pit:v1"})
 
       assert [%{"versionName" => "seven_pit:v1"}] = available_version_names(ctx.conn)
     end)
   end
 
   test "an unknown version name is rejected with the known names", ctx do
-    create_alias!(%{scope_type: "global", version_num: "7.1", version_name: "seven_pit:v1"})
+    create_alias!(%{version_num: "7.1", version_name: "seven_pit:v1"})
 
     error =
       execute_query_with_error(ctx.conn, available_versions_query("nope_pit:v9"), "getMetric")
@@ -108,7 +107,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
 
   test "the Experimental alias is normalized before the alpha-only access check", ctx do
     create_alias!(%{
-      scope_type: "global",
       version_num: "Experimental (Weighted Age)",
       version_name: "experimental_weighted_age"
     })

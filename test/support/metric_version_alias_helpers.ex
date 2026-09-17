@@ -4,21 +4,12 @@ defmodule Sanbase.MetricVersionAliasHelpers do
   """
 
   alias Sanbase.Metric.VersionAlias
-  alias Sanbase.Metric.Category.MetricCategory
 
   @doc "Insert an alias row through the changeset and drop the alias cache."
   def create_alias!(attrs) do
     {:ok, row} = %VersionAlias{} |> VersionAlias.changeset(attrs) |> Sanbase.Repo.insert()
     VersionAlias.clear_cache()
     row
-  end
-
-  @doc "Create a metric category with a unique display order."
-  def create_category!(name) do
-    {:ok, category} =
-      MetricCategory.create(%{name: name, display_order: System.unique_integer([:positive])})
-
-    category
   end
 
   @doc "A conn signed in as an admin panel owner, for the generic admin routes."

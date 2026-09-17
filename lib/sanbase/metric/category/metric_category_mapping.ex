@@ -88,7 +88,6 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
-    |> Sanbase.Metric.Category.Cache.clear_on_success()
   end
 
   @doc """
@@ -96,12 +95,9 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   """
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(%__MODULE__{} = mapping, attrs) do
-    changeset = changeset(mapping, attrs)
-
-    # Reordering (display_order only) cannot change which categories a metric is in.
-    if Map.keys(changeset.changes) -- [:display_order] == [],
-      do: Repo.update(changeset),
-      else: changeset |> Repo.update() |> Sanbase.Metric.Category.Cache.clear_on_success()
+    mapping
+    |> changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """
@@ -109,7 +105,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   """
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(%__MODULE__{} = mapping) do
-    mapping |> Repo.delete() |> Sanbase.Metric.Category.Cache.clear_on_success()
+    Repo.delete(mapping)
   end
 
   @doc """

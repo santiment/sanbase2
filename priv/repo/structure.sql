@@ -2921,16 +2921,11 @@ ALTER SEQUENCE public.metric_ui_metadata_id_seq OWNED BY public.metric_ui_metada
 
 CREATE TABLE public.metric_version_aliases (
     id bigint NOT NULL,
-    scope_type character varying(255) NOT NULL,
-    scope_value character varying(255) DEFAULT ''::character varying NOT NULL,
-    category_id bigint,
     version_num character varying(255) NOT NULL,
-    version_name character varying(255),
+    version_name character varying(255) NOT NULL,
     description text,
-    priority integer DEFAULT 0 NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT metric_version_aliases_scope_shape CHECK (((((scope_type)::text = 'global'::text) AND ((scope_value)::text = ''::text) AND (category_id IS NULL)) OR (((scope_type)::text = 'metric'::text) AND ((scope_value)::text <> ''::text) AND (category_id IS NULL)) OR (((scope_type)::text = 'category'::text) AND ((scope_value)::text = ''::text) AND (category_id IS NOT NULL))))
+    updated_at timestamp without time zone NOT NULL
 );
 
 
@@ -9946,31 +9941,17 @@ CREATE UNIQUE INDEX metric_ui_metadata_ui_key_index ON public.metric_ui_metadata
 
 
 --
--- Name: metric_version_aliases_category_version_name_index; Type: INDEX; Schema: public; Owner: -
+-- Name: metric_version_aliases_version_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_version_aliases_category_version_name_index ON public.metric_version_aliases USING btree (category_id, version_name) WHERE ((scope_type)::text = 'category'::text);
-
-
---
--- Name: metric_version_aliases_category_version_num_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX metric_version_aliases_category_version_num_index ON public.metric_version_aliases USING btree (category_id, version_num) WHERE ((scope_type)::text = 'category'::text);
+CREATE UNIQUE INDEX metric_version_aliases_version_name_index ON public.metric_version_aliases USING btree (version_name);
 
 
 --
--- Name: metric_version_aliases_scope_version_name_index; Type: INDEX; Schema: public; Owner: -
+-- Name: metric_version_aliases_version_num_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_version_aliases_scope_version_name_index ON public.metric_version_aliases USING btree (scope_type, scope_value, version_name) WHERE (category_id IS NULL);
-
-
---
--- Name: metric_version_aliases_scope_version_num_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX metric_version_aliases_scope_version_num_index ON public.metric_version_aliases USING btree (scope_type, scope_value, version_num) WHERE (category_id IS NULL);
+CREATE UNIQUE INDEX metric_version_aliases_version_num_index ON public.metric_version_aliases USING btree (version_num);
 
 
 --
@@ -11719,14 +11700,6 @@ ALTER TABLE ONLY public.metric_tag_mappings
 
 ALTER TABLE ONLY public.metric_ui_metadata
     ADD CONSTRAINT metric_ui_metadata_metric_category_mapping_id_fkey FOREIGN KEY (metric_category_mapping_id) REFERENCES public.metric_category_mappings(id) ON DELETE CASCADE;
-
-
---
--- Name: metric_version_aliases metric_version_aliases_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.metric_version_aliases
-    ADD CONSTRAINT metric_version_aliases_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.metric_categories(id) ON DELETE RESTRICT;
 
 
 --

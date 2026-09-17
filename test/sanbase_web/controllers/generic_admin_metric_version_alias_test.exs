@@ -26,13 +26,9 @@ defmodule SanbaseWeb.GenericAdminMetricVersionAliasTest do
       post(conn, ~p"/admin/generic?resource=#{@resource}", %{
         "resource" => @resource,
         @resource => %{
-          "scope_type" => "global",
-          "scope_value" => "",
-          "category_id" => "",
           "version_num" => "7.0",
           "version_name" => "seven:v1",
-          "description" => "",
-          "priority" => "0"
+          "description" => ""
         }
       })
 
@@ -41,7 +37,7 @@ defmodule SanbaseWeb.GenericAdminMetricVersionAliasTest do
   end
 
   test "deleting an alias through the admin stops the name resolving at once", %{conn: conn} do
-    row = create_alias!(%{scope_type: "global", version_num: "7.0", version_name: "seven:v1"})
+    row = create_alias!(%{version_num: "7.0", version_name: "seven:v1"})
 
     assert {:ok, "7.0"} == VersionAlias.to_version_num(@metric, "seven:v1")
 
@@ -57,15 +53,11 @@ defmodule SanbaseWeb.GenericAdminMetricVersionAliasTest do
       post(conn, ~p"/admin/generic?resource=#{@resource}", %{
         "resource" => @resource,
         @resource => %{
-          "scope_type" => "category",
-          "scope_value" => "",
-          "category_id" => "",
           "version_num" => "7.0",
-          "version_name" => "seven:v1",
-          "priority" => "0"
+          "version_name" => "Seven-PIT"
         }
       })
 
-    assert html_response(conn, 200) =~ "is required for category scope"
+    assert html_response(conn, 200) =~ "must look like"
   end
 end

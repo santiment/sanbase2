@@ -122,7 +122,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       versions_maps =
         versions
         |> maybe_remove_experimental_versions(user_metric_access_level)
-        |> then(&Sanbase.Metric.VersionAlias.to_maps(metric, &1))
+        |> Sanbase.Metric.VersionAlias.to_maps()
 
       {:ok, versions_maps}
     end

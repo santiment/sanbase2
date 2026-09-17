@@ -80,8 +80,7 @@ defmodule Sanbase.Metric.Category.MetricGroup do
   """
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(%__MODULE__{} = group) do
-    # Deleting a group cascades to its mappings, which changes category membership.
-    group |> Repo.delete() |> Sanbase.Metric.Category.Cache.clear_on_success()
+    Repo.delete(group)
   end
 
   @doc """

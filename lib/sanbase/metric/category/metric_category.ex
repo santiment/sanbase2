@@ -33,7 +33,6 @@ defmodule Sanbase.Metric.Category.MetricCategory do
 
     has_many(:groups, MetricGroup, foreign_key: :category_id)
     has_many(:mappings, MetricCategoryMapping, foreign_key: :category_id)
-    has_many(:version_aliases, Sanbase.Metric.VersionAlias, foreign_key: :category_id)
 
     timestamps()
   end
@@ -95,16 +94,7 @@ defmodule Sanbase.Metric.Category.MetricCategory do
   """
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(%__MODULE__{} = category) do
-    # metric_version_aliases.category_id is ON DELETE RESTRICT; report it as a
-    # changeset error instead of raising.
-    category
-    |> change()
-    |> no_assoc_constraint(:version_aliases,
-      message: "is used by metric version aliases; remove or reassign them first"
-    )
-    |> Repo.delete()
-    # Deleting a category cascades to its mappings.
-    |> Sanbase.Metric.Category.Cache.clear_on_success()
+    Repo.delete(category)
   end
 
   @doc """

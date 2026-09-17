@@ -215,29 +215,17 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
 
     case Category.get_category(id) do
       {:ok, category} ->
-        # Groups go first, in the same transaction: if the category itself is
-        # refused (metric version aliases still reference it), nothing is lost.
-        Sanbase.Repo.transaction(fn ->
-          id |> Category.list_groups_by_category() |> Enum.each(&Category.delete_group/1)
+        groups = Category.list_groups_by_category(id)
+        Enum.each(groups, &Category.delete_group/1)
 
-          case Category.delete_category(category) do
-            {:ok, category} -> category
-            {:error, changeset} -> Sanbase.Repo.rollback(changeset)
-          end
-        end)
-        |> case do
-          {:ok, _} ->
-            {:noreply,
-             socket
-             |> assign(categories: Category.list_categories_with_groups())
-             |> put_flash(:info, "Category deleted successfully.")}
+        {:ok, _} = Category.delete_category(category)
 
-          {:error, %Ecto.Changeset{errors: errors}} ->
-            reasons =
-              Enum.map_join(errors, "; ", fn {field, {message, _}} -> "#{field} #{message}" end)
+        categories = Category.list_categories_with_groups()
 
-            {:noreply, put_flash(socket, :error, "Category not deleted: #{reasons}")}
-        end
+        {:noreply,
+         socket
+         |> assign(categories: categories)
+         |> put_flash(:info, "Category deleted successfully.")}
 
       _ ->
         {:noreply,

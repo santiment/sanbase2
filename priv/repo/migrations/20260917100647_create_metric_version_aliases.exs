@@ -17,6 +17,9 @@ defmodule Sanbase.Repo.Migrations.CreateMetricVersionAliases do
 
   def up() do
     create table(:metric_version_aliases) do
+      # Only "global" exists today. The column is the seam for per-category or
+      # per-metric names later, without reshaping the table.
+      add(:scope, :string, null: false, default: "global")
       add(:version_num, :string, null: false)
       add(:version_name, :string, null: false)
       add(:description, :text)
@@ -24,8 +27,8 @@ defmodule Sanbase.Repo.Migrations.CreateMetricVersionAliases do
       timestamps()
     end
 
-    create(unique_index(:metric_version_aliases, [:version_num]))
-    create(unique_index(:metric_version_aliases, [:version_name]))
+    create(unique_index(:metric_version_aliases, [:scope, :version_num]))
+    create(unique_index(:metric_version_aliases, [:scope, :version_name]))
 
     flush()
     seed()
@@ -38,11 +41,11 @@ defmodule Sanbase.Repo.Migrations.CreateMetricVersionAliases do
   defp seed() do
     values =
       Enum.map_join(@seed, ",\n", fn {num, name, description} ->
-        "('#{num}', '#{name}', '#{description}', NOW(), NOW())"
+        "('global', '#{num}', '#{name}', '#{description}', NOW(), NOW())"
       end)
 
     execute("""
-    INSERT INTO metric_version_aliases (version_num, version_name, description, inserted_at, updated_at)
+    INSERT INTO metric_version_aliases (scope, version_num, version_name, description, inserted_at, updated_at)
     VALUES
     #{values}
     """)

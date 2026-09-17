@@ -28,6 +28,7 @@ defmodule Sanbase.DataCase do
 
     SanbaseWeb.Graphql.Cache.clear_all()
     Sanbase.Cache.clear_all()
+    Sanbase.Metric.VersionAlias.clear_cache()
     Sanbase.Price.Validator.clean_state()
 
     Sanbase.CaseHelpers.checkout_shared(tags)

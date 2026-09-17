@@ -30,6 +30,16 @@ defmodule Sanbase.Metric.VersionAliasTest do
       assert changeset(%{version_num: "Experimental (Weighted Age)", version_name: "exp"}).valid?
     end
 
+    test "only the global scope exists for now" do
+      assert changeset(%{version_num: "7.0", version_name: "seven:v1"}).valid?
+      assert changeset(%{scope: "global", version_num: "7.0", version_name: "seven:v1"}).valid?
+
+      assert %{scope: ["is invalid"]} =
+               errors_on(
+                 changeset(%{scope: "category", version_num: "7.0", version_name: "s:v1"})
+               )
+    end
+
     test "both fields are required, also when cleared in the edit form" do
       assert %{version_num: ["can't be blank"], version_name: ["can't be blank"]} =
                errors_on(changeset(%{}))

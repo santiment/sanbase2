@@ -4,7 +4,9 @@ defmodule Sanbase.Metric.VersionAlias do
 
   Metric versions are opaque strings like "2.1" that encode meaning the API does
   not expose. This table maps a version to a name ("modern_pit:v1"), the same
-  for every metric.
+  for every metric: every row has `scope` "global". The column is the seam for
+  per-category or per-metric names later; until then no other value is accepted
+  and only global rows are read.
 
   The mapping is applied only at the GraphQL boundary: `to_version_num/2`
   translates a name into the canonical version at the entrance of `getMetric`,
@@ -21,6 +23,7 @@ defmodule Sanbase.Metric.VersionAlias do
 
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   require Logger
 
@@ -28,14 +31,18 @@ defmodule Sanbase.Metric.VersionAlias do
 
   @type t :: %__MODULE__{}
 
+  @scopes ["global"]
   # A name never looks like a canonical version, so the reverse lookup is never
   # ambiguous. The only non-numeric version, "Experimental (Weighted Age)",
   # cannot match this either (spaces, parens).
   @name_regex ~r/^[a-z][a-z0-9_]*(:v\d+(\.\d+)*)?$/
-  @cache_key {__MODULE__, :aliases}
-  @cache_ttl_seconds 300
+  # A handful of rows read on every getMetric: persistent_term gives zero-copy
+  # reads. It has no expiry, so writers must clear it on every node (see
+  # `clear_cache/0`); the next read on each node reloads it lazily.
+  @term_key {__MODULE__, :aliases}
 
   schema "metric_version_aliases" do
+    field(:scope, :string, default: "global")
     field(:version_num, :string)
     field(:version_name, :string)
     field(:description, :string)
@@ -43,19 +50,28 @@ defmodule Sanbase.Metric.VersionAlias do
     timestamps()
   end
 
+  def scopes(), do: @scopes
+
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = version_alias, attrs) do
     version_alias
-    |> cast(attrs, [:version_num, :version_name, :description])
+    |> cast(attrs, [:scope, :version_num, :version_name, :description])
     |> update_change(:version_num, &trim/1)
     |> update_change(:version_name, &trim/1)
-    |> validate_required([:version_num, :version_name])
+    |> validate_required([:scope, :version_num, :version_name])
+    |> validate_inclusion(:scope, @scopes)
     |> validate_format(:version_name, @name_regex,
       message: "must look like modern_pit:v1 - lowercase, digits, underscores, optional :vN.N"
     )
     |> validate_version_num()
-    |> unique_constraint(:version_num, message: "already has a name")
-    |> unique_constraint(:version_name, message: "is already the name of another version")
+    |> unique_constraint([:scope, :version_num],
+      error_key: :version_num,
+      message: "already has a name"
+    )
+    |> unique_constraint([:scope, :version_name],
+      error_key: :version_name,
+      message: "is already the name of another version"
+    )
   end
 
   # Clearing a field in the edit form arrives as a change to nil.
@@ -72,10 +88,19 @@ defmodule Sanbase.Metric.VersionAlias do
 
   # Lookup
 
-  @doc "Drop the cached rows on this node. Other nodes pick the change up on expiry."
+  @doc ~s"""
+  Drop the cached rows on this node and on every other node in the cluster, the
+  way metric registry changes are propagated from the admin pod
+  (`Sanbase.Metric.Registry.ChangeSuggestion`). Each node reloads on its next read.
+  """
   @spec clear_cache() :: :ok
   def clear_cache() do
-    Sanbase.Cache.clear(@cache_key)
+    :persistent_term.erase(@term_key)
+
+    for node <- Node.list() do
+      Node.spawn(node, :persistent_term, :erase, [@term_key])
+    end
+
     :ok
   end
 
@@ -160,13 +185,23 @@ defmodule Sanbase.Metric.VersionAlias do
 
   defp looks_like_alias?(input), do: Regex.match?(@name_regex, input)
 
-  # `{:error, _}` is not cached, so a caller never silently sees an empty mapping.
+  # Nothing is stored on a load failure, so a caller never silently sees an empty
+  # mapping and the next read retries.
   defp aliases() do
-    Sanbase.Cache.get_or_store({@cache_key, @cache_ttl_seconds}, fn -> load_aliases() end)
+    case :persistent_term.get(@term_key, :undefined) do
+      :undefined ->
+        with {:ok, aliases} <- load_aliases() do
+          :persistent_term.put(@term_key, aliases)
+          {:ok, aliases}
+        end
+
+      aliases ->
+        {:ok, aliases}
+    end
   end
 
   defp load_aliases() do
-    rows = Repo.all(__MODULE__)
+    rows = Repo.all(from(a in __MODULE__, where: a.scope == "global"))
 
     {:ok,
      %{

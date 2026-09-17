@@ -2921,6 +2921,7 @@ ALTER SEQUENCE public.metric_ui_metadata_id_seq OWNED BY public.metric_ui_metada
 
 CREATE TABLE public.metric_version_aliases (
     id bigint NOT NULL,
+    scope character varying(255) DEFAULT 'global'::character varying NOT NULL,
     version_num character varying(255) NOT NULL,
     version_name character varying(255) NOT NULL,
     description text,
@@ -9941,17 +9942,17 @@ CREATE UNIQUE INDEX metric_ui_metadata_ui_key_index ON public.metric_ui_metadata
 
 
 --
--- Name: metric_version_aliases_version_name_index; Type: INDEX; Schema: public; Owner: -
+-- Name: metric_version_aliases_scope_version_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_version_aliases_version_name_index ON public.metric_version_aliases USING btree (version_name);
+CREATE UNIQUE INDEX metric_version_aliases_scope_version_name_index ON public.metric_version_aliases USING btree (scope, version_name);
 
 
 --
--- Name: metric_version_aliases_version_num_index; Type: INDEX; Schema: public; Owner: -
+-- Name: metric_version_aliases_scope_version_num_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_version_aliases_version_num_index ON public.metric_version_aliases USING btree (version_num);
+CREATE UNIQUE INDEX metric_version_aliases_scope_version_num_index ON public.metric_version_aliases USING btree (scope, version_num);
 
 
 --

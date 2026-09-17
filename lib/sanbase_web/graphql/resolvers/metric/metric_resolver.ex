@@ -115,11 +115,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_versions(_root, args, %{source: %{metric: metric}} = resolution) do
     user_metric_access_level = resolution_to_metric_access_level(resolution)
 
-    with {:ok, versions} <- Metric.available_versions(metric) do
+    # Only the numeric list from ClickHouse is cached. The per-user Experimental
+    # filter and the version names are applied afterwards - the names from the
+    # same local alias cache that normalizes the `version` argument.
+    with {:ok, versions} <- cached_available_versions(metric) do
       versions_maps =
         versions
         |> maybe_remove_experimental_versions(user_metric_access_level)
-        |> Enum.map(fn ver -> %{version: ver} end)
+        |> then(&Sanbase.Metric.VersionAlias.to_maps(metric, &1))
 
       {:ok, versions_maps}
     end
@@ -834,6 +837,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     metrics
     |> Enum.reject(&(&1 in hidden_metrics))
   end
+
+  defp cached_available_versions(metric),
+    do: Sanbase.Metric.VersionAlias.cached_available_versions(metric)
 
   defp maybe_remove_experimental_versions(versions, "alpha") do
     versions

@@ -164,6 +164,7 @@ classDiagram
         +resource() map [optional]
         +before_filter(record) record [optional]
         +after_filter(record, changeset, changes) [optional]
+        +after_delete(record) [optional]
         +has_many(record) list [optional]
         +belongs_to(record) list [optional]
     }

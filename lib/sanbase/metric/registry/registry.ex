@@ -425,6 +425,29 @@ defmodule Sanbase.Metric.Registry do
     end)
   end
 
+  @doc ~s"""
+  For rows that reference a metric either through a preloaded `metric_registry`
+  or through `module` + `metric` (category mappings, tag mappings), return a
+  function from such a row to the concrete public metric names it stands for.
+  Registry rows are expanded once for all mappings: templates to every
+  parameter combination, plus every public alias. Rows that fail to expand are
+  logged by `resolve_safe/1` and yield no names.
+  """
+  @spec mapping_names_resolver([map()]) :: (map() -> [String.t()])
+  def mapping_names_resolver(mappings) when is_list(mappings) do
+    registries =
+      for %{metric_registry: %__MODULE__{} = registry} <- mappings, uniq: true, do: registry
+
+    {resolved, _failed} = resolve_safe(registries)
+    names_by_id = Enum.group_by(resolved, & &1.id, & &1.metric)
+
+    fn
+      %{metric_registry: %__MODULE__{id: id}} -> Map.get(names_by_id, id, [])
+      %{module: module, metric: metric} when is_binary(module) and is_binary(metric) -> [metric]
+      _ -> []
+    end
+  end
+
   # Private
 
   def resolve_registry(%__MODULE__{} = registry) do

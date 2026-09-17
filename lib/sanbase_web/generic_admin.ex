@@ -30,6 +30,7 @@ defmodule SanbaseWeb.GenericAdmin do
   | `resource/0`           | no        | Map with `:actions`, `:index_fields`, `:new_fields`, `:edit_fields`, `:fields_override`, `:belongs_to_fields`, `:preloads`, `:custom_index_actions` |
   | `before_filter/1`      | no        | Transform a record before display (receives and returns struct) |
   | `after_filter/3`       | no        | Hook called after create/update (receives `record, changeset, changes`) |
+  | `after_delete/1`       | no        | Hook called after a successful delete (receives the deleted `record`); `{:error, reason}` is reported in the flash, the row stays deleted |
   | `has_many/1`           | no        | Return list of has_many table definitions for the show page |
   | `belongs_to/1`         | no        | Return list of belongs_to detail sections for the show page |
 

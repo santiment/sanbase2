@@ -2916,6 +2916,44 @@ ALTER SEQUENCE public.metric_ui_metadata_id_seq OWNED BY public.metric_ui_metada
 
 
 --
+-- Name: metric_version_aliases; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_version_aliases (
+    id bigint NOT NULL,
+    scope_type character varying(255) NOT NULL,
+    scope_value character varying(255) DEFAULT ''::character varying NOT NULL,
+    category_id bigint,
+    version_num character varying(255) NOT NULL,
+    version_name character varying(255),
+    description text,
+    priority integer DEFAULT 0 NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    CONSTRAINT metric_version_aliases_scope_shape CHECK (((((scope_type)::text = 'global'::text) AND ((scope_value)::text = ''::text) AND (category_id IS NULL)) OR (((scope_type)::text = 'metric'::text) AND ((scope_value)::text <> ''::text) AND (category_id IS NULL)) OR (((scope_type)::text = 'category'::text) AND ((scope_value)::text = ''::text) AND (category_id IS NOT NULL))))
+);
+
+
+--
+-- Name: metric_version_aliases_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_version_aliases_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_version_aliases_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_version_aliases_id_seq OWNED BY public.metric_version_aliases.id;
+
+
+--
 -- Name: metrics; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6925,6 +6963,13 @@ ALTER TABLE ONLY public.metric_ui_metadata ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: metric_version_aliases id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_version_aliases ALTER COLUMN id SET DEFAULT nextval('public.metric_version_aliases_id_seq'::regclass);
+
+
+--
 -- Name: metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8176,6 +8221,14 @@ ALTER TABLE ONLY public.metric_tags
 
 ALTER TABLE ONLY public.metric_ui_metadata
     ADD CONSTRAINT metric_ui_metadata_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_version_aliases metric_version_aliases_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_version_aliases
+    ADD CONSTRAINT metric_version_aliases_pkey PRIMARY KEY (id);
 
 
 --
@@ -9890,6 +9943,34 @@ CREATE UNIQUE INDEX metric_ui_metadata_metric_args_index ON public.metric_ui_met
 --
 
 CREATE UNIQUE INDEX metric_ui_metadata_ui_key_index ON public.metric_ui_metadata USING btree (ui_key);
+
+
+--
+-- Name: metric_version_aliases_category_version_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_version_aliases_category_version_name_index ON public.metric_version_aliases USING btree (category_id, version_name) WHERE ((scope_type)::text = 'category'::text);
+
+
+--
+-- Name: metric_version_aliases_category_version_num_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_version_aliases_category_version_num_index ON public.metric_version_aliases USING btree (category_id, version_num) WHERE ((scope_type)::text = 'category'::text);
+
+
+--
+-- Name: metric_version_aliases_scope_version_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_version_aliases_scope_version_name_index ON public.metric_version_aliases USING btree (scope_type, scope_value, version_name) WHERE (category_id IS NULL);
+
+
+--
+-- Name: metric_version_aliases_scope_version_num_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_version_aliases_scope_version_num_index ON public.metric_version_aliases USING btree (scope_type, scope_value, version_num) WHERE (category_id IS NULL);
 
 
 --
@@ -11641,6 +11722,14 @@ ALTER TABLE ONLY public.metric_ui_metadata
 
 
 --
+-- Name: metric_version_aliases metric_version_aliases_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_version_aliases
+    ADD CONSTRAINT metric_version_aliases_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.metric_categories(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: monitored_twitter_handles monitored_twitter_handles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13189,3 +13278,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260909120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260910090000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260910091000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260915090000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260917100647);

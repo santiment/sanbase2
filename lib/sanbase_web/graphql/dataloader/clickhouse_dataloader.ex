@@ -88,9 +88,19 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Map.new()
   end
 
-  def query(:available_metric_versions, _data, _ctx) do
-    {:ok, versions_map} = Metric.available_versions()
+  def query(:available_metric_versions, metrics, _ctx) do
+    # One ClickHouse query for every metric, shared across requests and users;
+    # the per-user Experimental filter is applied in the resolver, after it.
+    {:ok, versions_map} =
+      Sanbase.Cache.get_or_store({{__MODULE__, :available_metric_versions}, 120}, fn ->
+        Metric.available_versions()
+      end)
+
+    # Decorated in one go: the alias caches are read once per batch, not once
+    # per restriction.
     versions_map
+    |> Map.take(Enum.to_list(metrics))
+    |> Sanbase.Metric.VersionAlias.to_maps_batch()
   end
 
   defp average_daily_active_addresses(args, from, to) do

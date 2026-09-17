@@ -98,7 +98,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :available_metric_versions, restriction.name)
     |> on_load(fn loader ->
-      versions =
+      versions_maps =
         Dataloader.get(
           loader,
           SanbaseDataloader,
@@ -109,9 +109,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
       metric_access_level = resolution_to_metric_access_level(resolution)
 
       versions_maps =
-        versions
-        |> Enum.reject(fn ver -> ver =~ "Experimental" and metric_access_level != "alpha" end)
-        |> Enum.map(fn version -> %{version: version} end)
+        Enum.reject(versions_maps, fn %{version: ver} ->
+          ver =~ "Experimental" and metric_access_level != "alpha"
+        end)
 
       {:ok, versions_maps}
     end)

@@ -387,14 +387,26 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def delete(%Plug.Conn{} = conn, %{"id" => id, "resource" => resource}) do
-    module = module_from_resource(conn, resource)
+    resource_config = resource_module_map(conn)[resource]
 
-    Repo.get(module, id)
+    Repo.get(resource_config[:module], id)
     |> Repo.delete()
     |> case do
-      {:ok, _} ->
+      {:ok, record} ->
+        # The row is gone either way; a failing hook only changes the flash.
+        {kind, message} =
+          resource_config[:admin_module]
+          |> GenericAdmin.call_module_function_or_default(:after_delete, [record], :ok)
+          |> case do
+            {:error, error} ->
+              {:error, "#{resource} item deleted, but after_delete error: #{inspect(error)}"}
+
+            _ ->
+              {:info, "#{resource} item deleted successfully."}
+          end
+
         conn
-        |> put_flash(:info, "#{resource} item deleted successfully.")
+        |> put_flash(kind, message)
         |> redirect(to: ~p"/admin/generic?resource=#{resource}")
 
       {:error, changeset} ->

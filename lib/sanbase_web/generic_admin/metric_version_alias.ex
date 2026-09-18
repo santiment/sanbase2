@@ -17,27 +17,18 @@ defmodule SanbaseWeb.GenericAdmin.MetricVersionAlias do
   @impl SanbaseWeb.GenericAdmin
   def singular_resource_name(), do: "metric_version_alias"
 
-  @fields [:scope, :version_num, :version_name, :description]
+  @fields [:version_num, :version_name, :description]
 
   def resource() do
     %{
       actions: [:new, :edit, :delete],
-      index_fields: [:id | @fields] ++ [:updated_at],
+      index_fields: [:id, :scope | @fields] ++ [:updated_at],
       new_fields: @fields,
-      edit_fields: @fields,
-      fields_override: %{
-        scope: %{type: :select, collection: VersionAlias.list_scopes()}
-      }
+      edit_fields: @fields
     }
   end
 
-  def after_filter(_record, _changeset, _changes) do
-    VersionAlias.clear_cache()
-    :ok
-  end
+  def after_filter(_record, _changeset, _changes), do: VersionAlias.clear_cache()
 
-  def after_delete(_record) do
-    VersionAlias.clear_cache()
-    :ok
-  end
+  def after_delete(_record), do: VersionAlias.clear_cache()
 end

@@ -104,7 +104,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
   end
 
   test "the Experimental alias is normalized before the alpha-only access check", ctx do
-    :ok = VersionAlias.seed_defaults()
+    create_alias!(%{
+      version_num: "Experimental (Weighted Age)",
+      version_name: "experimental_weighted_age:v1"
+    })
 
     error =
       execute_query_with_error(

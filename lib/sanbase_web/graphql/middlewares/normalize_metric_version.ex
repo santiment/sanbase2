@@ -8,19 +8,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.NormalizeMetricVersion do
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
-  alias Sanbase.Metric.VersionAlias
 
   @impl Absinthe.Middleware
-  def call(%Resolution{state: :resolved} = resolution, _opts), do: resolution
-
   def call(%Resolution{arguments: %{version: version}} = resolution, _opts)
       when is_binary(version) do
-    case VersionAlias.to_version_num(version) do
-      {:ok, version_num} ->
-        %{resolution | arguments: Map.put(resolution.arguments, :version, version_num)}
-
-      {:error, error} ->
-        Resolution.put_result(resolution, {:error, error})
+    case Sanbase.Metric.VersionAlias.to_version_num(version) do
+      {:ok, version_num} -> put_in(resolution.arguments.version, version_num)
+      {:error, error} -> Resolution.put_result(resolution, {:error, error})
     end
   end
 

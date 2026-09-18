@@ -8,7 +8,7 @@ defmodule Sanbase.Accounts.AccessAttemptBehaviour do
   @callback type() :: String.t()
 
   @callback check_attempt_limit(user :: term(), remote_ip :: String.t()) ::
-              :ok | {:error, :too_many_attempts}
+              :ok | {:error, atom()}
 
   @callback create(user :: term(), remote_ip :: String.t()) ::
               {:ok, term()} | {:error, term()}

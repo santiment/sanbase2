@@ -1,8 +1,6 @@
 defmodule Sanbase.Repo.Migrations.CreateMetricVersionAliases do
   use Ecto.Migration
 
-  # Day-one rows. The names are data - rename them in the admin UI, not here.
-  # See docs/metric-version-aliases.md
   @seed [
     {"1.0", "original:v1", "The original computation. For most metrics the only version."},
     {"2.0", "modern:v1", "Modern computation, v1."},
@@ -11,14 +9,12 @@ defmodule Sanbase.Repo.Migrations.CreateMetricVersionAliases do
     {"2.1.2", "modern_pit:v1.2", "Point-in-time variant of the modern computation, v1.2."},
     {"3.0", "stock:v1", "Stock computation, v1."},
     {"3.1", "stock_pit:v1", "Point-in-time variant of the stock computation, v1."},
-    {"Experimental (Weighted Age)", "experimental_weighted_age",
+    {"Experimental (Weighted Age)", "experimental_weighted_age:v1",
      "Experimental weighted-age implementation. Visible to alpha users only."}
   ]
 
   def up() do
     create table(:metric_version_aliases) do
-      # Only "global" exists today. The column is the seam for per-category or
-      # per-metric names later, without reshaping the table.
       add(:scope, :string, null: false, default: "global")
       add(:version_num, :string, null: false)
       add(:version_name, :string, null: false)

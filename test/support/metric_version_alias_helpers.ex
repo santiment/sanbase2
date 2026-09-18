@@ -1,18 +1,16 @@
 defmodule Sanbase.MetricVersionAliasHelpers do
-  @moduledoc """
-  Fixtures shared by the metric version alias tests.
-  """
+  @moduledoc "Fixtures shared by the metric version alias tests."
 
   alias Sanbase.Metric.VersionAlias
 
-  @doc "Insert an alias row through the changeset and drop the alias cache."
+  @spec create_alias!(map()) :: VersionAlias.t()
   def create_alias!(attrs) do
     {:ok, row} = %VersionAlias{} |> VersionAlias.changeset(attrs) |> Sanbase.Repo.insert()
     VersionAlias.clear_cache()
     row
   end
 
-  @doc "A conn signed in as an admin panel owner, for the generic admin routes."
+  @spec admin_owner_conn() :: Plug.Conn.t()
   def admin_owner_conn() do
     user = Sanbase.Factory.insert(:user)
     role = Sanbase.Factory.insert(:role_admin_panel_owner)

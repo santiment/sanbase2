@@ -15,8 +15,6 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       meta(access: :free)
       arg(:metric, non_null(:string))
 
-      # The default mirrors Sanbase.Metric.default_version/0. Not interpolated:
-      # that would make the whole schema recompile on every Sanbase.Metric edit.
       @desc ~s"""
       Version of the metric - either the canonical version ("2.1") or its name
       ("modern_pit:v1"), as listed in metadata { availableVersions }.
@@ -25,8 +23,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       arg(:version, :string)
       arg(:store_executed_clickhouse_sql, :boolean, default_value: false)
 
-      # Must stay first: everything after it, TransformResolution included, has to
-      # see the canonical version.
+      # Must stay first so everything after it sees the canonical version.
       middleware(NormalizeMetricVersion)
       middleware(TransformResolution)
       resolve(&MetricResolver.get_metric/3)

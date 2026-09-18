@@ -1,15 +1,8 @@
 defmodule SanbaseWeb.Graphql.Middlewares.NormalizeMetricVersion do
   @moduledoc """
-  Translate the `version` argument of `getMetric` from a version name
-  ("modern_pit:v1") into the canonical version ("2.1").
-
-  Runs before every other middleware and the resolver, so API-call logging
-  (`TransformResolution`), the default/Experimental checks, `resolution.source`,
-  the GraphQL cache key and the SQL all see the canonical version. A name and
-  its number are one cache entry and one log line.
-
-  Input that does not look like a name passes through untouched - see
-  `Sanbase.Metric.VersionAlias.to_version_num/2`.
+  Rewrite the `version` argument of `getMetric` from a name ("modern_pit:v1") to
+  the canonical version ("2.1"). Runs first, so logging, access checks, cache
+  keys and SQL all see the canonical version.
   """
 
   @behaviour Absinthe.Middleware
@@ -17,11 +10,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.NormalizeMetricVersion do
   alias Absinthe.Resolution
   alias Sanbase.Metric.VersionAlias
 
+  @impl Absinthe.Middleware
   def call(%Resolution{state: :resolved} = resolution, _opts), do: resolution
 
-  def call(%Resolution{arguments: %{metric: metric, version: version}} = resolution, _opts)
-      when is_binary(metric) and is_binary(version) do
-    case VersionAlias.to_version_num(metric, version) do
+  def call(%Resolution{arguments: %{version: version}} = resolution, _opts)
+      when is_binary(version) do
+    case VersionAlias.to_version_num(version) do
       {:ok, version_num} ->
         %{resolution | arguments: Map.put(resolution.arguments, :version, version_num)}
 

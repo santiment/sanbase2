@@ -162,7 +162,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     @desc "Canonical version string, same as versionNum. Kept for existing clients."
     field(:version, :string)
 
-    @desc ~s(Canonical version string, e.g. "2.1.1". Always accepted by getMetric\(version:\).)
+    @desc "Canonical version string, e.g. \"2.1.1\". Always accepted by getMetric(version:)."
     field(:version_num, :string)
 
     @desc ~s"""
@@ -548,9 +548,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:required_selectors, list_of(list_of(:selector_name)))
 
-    # Not cache_resolve: the resolver caches only the numeric list from ClickHouse
-    # and applies the version names afterwards, so an alias edit is visible
-    # without waiting for the GraphQL cache.
+    # Not cache_resolve: names are applied after the cached numeric list.
     field :available_versions, list_of(:metric_version) do
       resolve(&MetricResolver.get_available_versions/3)
     end

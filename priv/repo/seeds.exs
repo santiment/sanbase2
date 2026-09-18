@@ -174,4 +174,28 @@ end
 
 InsertUser.run({"John Doe", "john.d@santiment.net", "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a"})
 
-:ok = Sanbase.Metric.VersionAlias.seed_defaults()
+# Metric version aliases. Production has them from the migration that created the table.
+now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+metric_version_aliases =
+  for {num, name, description} <- [
+        {"1.0", "original:v1", "The original computation. For most metrics the only version."},
+        {"2.0", "modern:v1", "Modern computation, v1."},
+        {"2.1", "modern_pit:v1", "Point-in-time variant of the modern computation, v1."},
+        {"2.1.1", "modern_pit:v1.1", "Point-in-time variant of the modern computation, v1.1."},
+        {"2.1.2", "modern_pit:v1.2", "Point-in-time variant of the modern computation, v1.2."},
+        {"3.0", "stock:v1", "Stock computation, v1."},
+        {"3.1", "stock_pit:v1", "Point-in-time variant of the stock computation, v1."},
+        {"Experimental (Weighted Age)", "experimental_weighted_age:v1",
+         "Experimental weighted-age implementation. Visible to alpha users only."}
+      ],
+      do: %{
+        version_num: num,
+        version_name: name,
+        description: description,
+        inserted_at: now,
+        updated_at: now
+      }
+
+Repo.insert_all(Sanbase.Metric.VersionAlias, metric_version_aliases, on_conflict: :nothing)
+Sanbase.Metric.VersionAlias.clear_cache()

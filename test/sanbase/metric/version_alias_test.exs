@@ -95,27 +95,6 @@ defmodule Sanbase.Metric.VersionAliasTest do
       assert error =~ "seven:v1"
     end
 
-    test "seed_defaults/0 inserts the default rows once" do
-      :ok = VersionAlias.seed_defaults()
-      count = Repo.aggregate(VersionAlias, :count)
-
-      :ok = VersionAlias.seed_defaults()
-      assert Repo.aggregate(VersionAlias, :count) == count
-
-      assert {:ok, "2.1"} == VersionAlias.to_version_num("modern_pit:v1")
-      assert [%{version_name: "original:v1"}] = VersionAlias.to_maps(["1.0"])
-    end
-
-    test "seed_defaults/0 skips a default whose name is already taken by another version" do
-      Repo.delete_all(from(a in VersionAlias, where: a.version_num == "2.0"))
-      create_alias!(%{version_num: "7.0", version_name: "modern:v1"})
-
-      :ok = VersionAlias.seed_defaults()
-
-      assert Repo.get_by(VersionAlias, version_num: "2.0") == nil
-      assert {:ok, "7.0"} == VersionAlias.to_version_num("modern:v1")
-    end
-
     test "rows are cached until clear_cache/0" do
       assert [%{version_name: "7.0"}] = VersionAlias.to_maps(["7.0"])
 

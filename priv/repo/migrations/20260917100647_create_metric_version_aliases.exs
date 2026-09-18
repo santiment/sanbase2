@@ -26,15 +26,6 @@ defmodule Sanbase.Repo.Migrations.CreateMetricVersionAliases do
     create(unique_index(:metric_version_aliases, [:scope, :version_num]))
     create(unique_index(:metric_version_aliases, [:scope, :version_name]))
 
-    flush()
-    seed()
-  end
-
-  def down() do
-    drop(table(:metric_version_aliases))
-  end
-
-  defp seed() do
     values =
       Enum.map_join(@seed, ",\n", fn {num, name, description} ->
         "('global', '#{num}', '#{name}', '#{description}', NOW(), NOW())"
@@ -45,5 +36,9 @@ defmodule Sanbase.Repo.Migrations.CreateMetricVersionAliases do
     VALUES
     #{values}
     """)
+  end
+
+  def down() do
+    drop(table(:metric_version_aliases))
   end
 end

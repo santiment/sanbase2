@@ -1,18 +1,20 @@
 defmodule SanbaseWeb.GenericAdmin.MetricVersionAlias do
   @moduledoc """
-  Admin CRUD for `Sanbase.Metric.VersionAlias` at
-  `/admin/generic?resource=metric_version_aliases`.
-
-  Renaming or deleting an alias breaks API clients that send that name (numeric
-  versions are unaffected). Every node drops its cached rows on save.
+  Admin CRUD for `Sanbase.Metric.VersionAlias`. Renaming or deleting a name
+  breaks API clients that send it; numeric versions are unaffected.
   """
 
   @behaviour SanbaseWeb.GenericAdmin
 
   alias Sanbase.Metric.VersionAlias
 
+  @impl SanbaseWeb.GenericAdmin
   def schema_module(), do: VersionAlias
+
+  @impl SanbaseWeb.GenericAdmin
   def resource_name(), do: "metric_version_aliases"
+
+  @impl SanbaseWeb.GenericAdmin
   def singular_resource_name(), do: "metric_version_alias"
 
   @fields [:scope, :version_num, :version_name, :description]
@@ -24,13 +26,11 @@ defmodule SanbaseWeb.GenericAdmin.MetricVersionAlias do
       new_fields: @fields,
       edit_fields: @fields,
       fields_override: %{
-        scope: %{type: :select, collection: VersionAlias.scopes()}
+        scope: %{type: :select, collection: VersionAlias.list_scopes()}
       }
     }
   end
 
-  # Both hooks drop the cached rows on every node, so the next request anywhere
-  # already sees the new mapping.
   def after_filter(_record, _changeset, _changes) do
     VersionAlias.clear_cache()
     :ok

@@ -393,7 +393,6 @@ defmodule SanbaseWeb.GenericAdminController do
     |> Repo.delete()
     |> case do
       {:ok, record} ->
-        # The row is gone either way; a failing hook only changes the flash.
         {kind, message} =
           resource_config[:admin_module]
           |> GenericAdmin.call_module_function_or_default(:after_delete, [record], :ok)

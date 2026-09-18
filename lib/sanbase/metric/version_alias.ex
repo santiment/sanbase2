@@ -1,24 +1,15 @@
 defmodule Sanbase.Metric.VersionAlias do
   @moduledoc ~s"""
-  Human-readable names for metric versions.
+  Human-readable names for metric versions: "2.1" is "modern_pit:v1".
 
-  Metric versions are opaque strings like "2.1" that encode meaning the API does
-  not expose. This table maps a version to a name ("modern_pit:v1"), the same
-  for every metric: every row has `scope` "global". The column is the seam for
-  per-category or per-metric names later; until then no other value is accepted
-  and only global rows are read.
+  Names always end in `:vN`, so they can never be mistaken for a version as
+  ClickHouse reports it ("2.1", "Experimental (Weighted Age)"). Versions without
+  a row pass through untouched - the table is a list of aliases, not an allowlist.
 
-  The mapping is applied only at the GraphQL boundary: `to_version_num/2`
-  translates a name into the canonical version at the entrance of `getMetric`,
-  `to_maps/1` decorates `availableVersions`. Everything in between (SQL, cache
-  keys, access control, API-call logging) keeps seeing the canonical version.
-
-  The table is a list of aliases, not an allowlist. Versions without a row pass
-  through untouched, so a version the data team ships tomorrow works before
-  anyone names it.
-
-  See docs/metric-version-aliases.md for the design and for the per-category /
-  per-metric scoping that was deliberately left out.
+  Applied only at the GraphQL boundary (`to_version_num/1` on the way in,
+  `to_maps/1` on the way out) from a single `:persistent_term`; everything in
+  between keeps seeing the canonical version. Every row has `scope` "global";
+  the column is the seam for per-category or per-metric names later.
   """
 
   use Ecto.Schema
@@ -32,13 +23,21 @@ defmodule Sanbase.Metric.VersionAlias do
   @type t :: %__MODULE__{}
 
   @scopes ["global"]
-  # A name never looks like a canonical version, so the reverse lookup is never
-  # ambiguous. The only non-numeric version, "Experimental (Weighted Age)",
-  # cannot match this either (spaces, parens).
-  @name_regex ~r/^[a-z][a-z0-9_]*(:v\d+(\.\d+)*)?$/
-  # A handful of rows read on every getMetric: persistent_term gives zero-copy
-  # reads. It has no expiry, so writers must clear it on every node (see
-  # `clear_cache/0`); the next read on each node reloads it lazily.
+
+  # Same list as the seed in the migration that created the table.
+  @default_aliases [
+    {"1.0", "original:v1", "The original computation. For most metrics the only version."},
+    {"2.0", "modern:v1", "Modern computation, v1."},
+    {"2.1", "modern_pit:v1", "Point-in-time variant of the modern computation, v1."},
+    {"2.1.1", "modern_pit:v1.1", "Point-in-time variant of the modern computation, v1.1."},
+    {"2.1.2", "modern_pit:v1.2", "Point-in-time variant of the modern computation, v1.2."},
+    {"3.0", "stock:v1", "Stock computation, v1."},
+    {"3.1", "stock_pit:v1", "Point-in-time variant of the stock computation, v1."},
+    {"Experimental (Weighted Age)", "experimental_weighted_age:v1",
+     "Experimental weighted-age implementation. Visible to alpha users only."}
+  ]
+
+  @name_regex ~r/^[a-z][a-z0-9_]*:v\d+(\.\d+)*$/
   @term_key {__MODULE__, :aliases}
 
   schema "metric_version_aliases" do
@@ -50,7 +49,30 @@ defmodule Sanbase.Metric.VersionAlias do
     timestamps()
   end
 
-  def scopes(), do: @scopes
+  @spec list_scopes() :: [String.t()]
+  def list_scopes(), do: @scopes
+
+  @doc "Insert the default rows, skipping any that collide with an existing one. Idempotent."
+  @spec seed_defaults() :: :ok
+  def seed_defaults() do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    entries =
+      for {num, name, description} <- @default_aliases do
+        %{
+          scope: "global",
+          version_num: num,
+          version_name: name,
+          description: description,
+          inserted_at: now,
+          updated_at: now
+        }
+      end
+
+    Repo.insert_all(__MODULE__, entries, on_conflict: :nothing)
+
+    clear_cache()
+  end
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = version_alias, attrs) do
@@ -61,7 +83,7 @@ defmodule Sanbase.Metric.VersionAlias do
     |> validate_required([:scope, :version_num, :version_name])
     |> validate_inclusion(:scope, @scopes)
     |> validate_format(:version_name, @name_regex,
-      message: "must look like modern_pit:v1 - lowercase, digits, underscores, optional :vN.N"
+      message: "must look like modern_pit:v1 - lowercase, digits, underscores, then :vN or :vN.N"
     )
     |> validate_version_num()
     |> unique_constraint([:scope, :version_num],
@@ -74,25 +96,19 @@ defmodule Sanbase.Metric.VersionAlias do
     )
   end
 
-  # Clearing a field in the edit form arrives as a change to nil.
+  # A cleared form field arrives as a change to nil.
   defp trim(nil), do: nil
   defp trim(string), do: String.trim(string)
 
   defp validate_version_num(changeset) do
     num = get_field(changeset, :version_num)
 
-    if is_binary(num) and looks_like_alias?(num),
-      do: add_error(changeset, :version_num, "looks like an alias name, not a version"),
+    if is_binary(num) and name?(num),
+      do: add_error(changeset, :version_num, "looks like a name, not a version"),
       else: changeset
   end
 
-  # Lookup
-
-  @doc ~s"""
-  Drop the cached rows on this node and on every other node in the cluster, the
-  way metric registry changes are propagated from the admin pod
-  (`Sanbase.Metric.Registry.ChangeSuggestion`). Each node reloads on its next read.
-  """
+  @doc "Drop the cached rows on every node; each reloads on its next read."
   @spec clear_cache() :: :ok
   def clear_cache() do
     :persistent_term.erase(@term_key)
@@ -104,61 +120,29 @@ defmodule Sanbase.Metric.VersionAlias do
     :ok
   end
 
-  @doc ~s"""
-  Translate the `version` argument of `getMetric` into the canonical version.
-
-  Input that does not look like an alias (numbers, the Experimental string) passes
-  through untouched without consulting the mapping. Alias-looking input must be a
-  known name - or one of the metric's real versions as ClickHouse reports them (a
-  version called "beta" is not an alias), in which case it passes through as well.
-  """
-  @spec to_version_num(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
-  def to_version_num(metric, input) when is_binary(metric) and is_binary(input) do
-    if looks_like_alias?(input), do: resolve_name(metric, input), else: {:ok, input}
+  @doc "Name to canonical version. Anything not shaped like a name passes through."
+  @spec to_version_num(String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def to_version_num(input) when is_binary(input) do
+    if name?(input), do: resolve_name(input), else: {:ok, input}
   end
 
-  defp resolve_name(metric, name) do
+  defp resolve_name(name) do
     case aliases() do
       {:ok, %{by_name: by_name}} ->
-        cond do
-          Map.has_key?(by_name, name) -> {:ok, by_name[name]}
-          known_version?(metric, name) -> {:ok, name}
-          true -> {:error, unknown_name_error(metric, name, by_name)}
+        case Map.fetch(by_name, name) do
+          {:ok, num} -> {:ok, num}
+          :error -> {:error, unknown_name_error(name, by_name)}
         end
 
       {:error, reason} ->
-        Logger.error(
-          "Cannot resolve metric version name #{inspect(name)} for #{metric}: #{inspect(reason)}"
-        )
+        Logger.error("Cannot resolve metric version name #{inspect(name)}: #{inspect(reason)}")
 
         {:error,
          "Version names cannot be resolved at the moment. Use the numeric version instead."}
     end
   end
 
-  @doc ~s"""
-  `Sanbase.Metric.available_versions/1` behind a short cache. Shared by the
-  `getMetric` middleware (to let a real version through) and the
-  `availableVersions` resolver, so both see the same list.
-  """
-  @spec cached_available_versions(String.t()) :: {:ok, [String.t()]} | {:error, String.t()}
-  def cached_available_versions(metric) when is_binary(metric) do
-    Sanbase.Cache.get_or_store({{__MODULE__, :available_versions, metric}, 120}, fn ->
-      Sanbase.Metric.available_versions(metric)
-    end)
-  end
-
-  defp known_version?(metric, version) do
-    case cached_available_versions(metric) do
-      {:ok, versions} -> version in versions
-      {:error, _} -> false
-    end
-  end
-
-  @doc ~s"""
-  Decorate versions for `availableVersions`. `version_name` is never nil: it
-  falls back to the version itself when no row exists.
-  """
+  @doc "Versions decorated for `availableVersions`. The name falls back to the version itself."
   @spec to_maps([String.t()]) :: [map()]
   def to_maps(versions) when is_list(versions) do
     by_num =
@@ -183,10 +167,8 @@ defmodule Sanbase.Metric.VersionAlias do
     end)
   end
 
-  defp looks_like_alias?(input), do: Regex.match?(@name_regex, input)
+  defp name?(input), do: Regex.match?(@name_regex, input)
 
-  # Nothing is stored on a load failure, so a caller never silently sees an empty
-  # mapping and the next read retries.
   defp aliases() do
     case :persistent_term.get(@term_key, :undefined) do
       :undefined ->
@@ -214,10 +196,10 @@ defmodule Sanbase.Metric.VersionAlias do
       {:error, :version_aliases_unavailable}
   end
 
-  defp unknown_name_error(metric, name, by_name) do
+  defp unknown_name_error(name, by_name) do
     known = by_name |> Map.keys() |> Enum.sort() |> Enum.join(", ")
 
-    "#{inspect(name)} is not a version name of #{metric}. Known names: #{known}. " <>
+    "#{inspect(name)} is not a known version name. Known names: #{known}. " <>
       "Numeric versions are always accepted."
   end
 end

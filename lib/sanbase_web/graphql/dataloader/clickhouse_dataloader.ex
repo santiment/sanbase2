@@ -89,8 +89,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   end
 
   def query(:available_metric_versions, _metrics, _ctx) do
-    # One ClickHouse query for every metric, shared across requests and users;
-    # the per-user Experimental filter is applied in the resolver, after it.
     {:ok, versions_map} =
       Sanbase.Cache.get_or_store({{__MODULE__, :available_metric_versions}, 120}, fn ->
         Metric.available_versions()

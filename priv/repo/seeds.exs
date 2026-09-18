@@ -173,3 +173,5 @@ defmodule InsertUser do
 end
 
 InsertUser.run({"John Doe", "john.d@santiment.net", "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a"})
+
+:ok = Sanbase.Metric.VersionAlias.seed_defaults()

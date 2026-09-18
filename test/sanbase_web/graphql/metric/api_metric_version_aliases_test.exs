@@ -41,8 +41,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
 
       assert_receive {:adapter_version, "7.1"}
 
-      # Same source version, so the same GraphQL cache entry; clear it to reach
-      # the adapter again and see the number arrive unchanged.
+      # Same canonical version, so the same GraphQL cache entry.
       SanbaseWeb.Graphql.Cache.clear_all()
 
       assert %{"aggregatedTimeseriesData" => 100.0} =
@@ -73,7 +72,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
                "description" => "Point-in-time seven"
              } in versions
 
-      # No row: the name falls back to the number and is never null.
       assert %{
                "version" => "7.0",
                "versionNum" => "7.0",
@@ -101,20 +99,17 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
     error =
       execute_query_with_error(ctx.conn, available_versions_query("nope_pit:v9"), "getMetric")
 
-    assert error =~ ~s("nope_pit:v9" is not a version name of #{@metric})
+    assert error =~ ~s("nope_pit:v9" is not a known version name)
     assert error =~ "seven_pit:v1"
   end
 
   test "the Experimental alias is normalized before the alpha-only access check", ctx do
-    create_alias!(%{
-      version_num: "Experimental (Weighted Age)",
-      version_name: "experimental_weighted_age"
-    })
+    :ok = VersionAlias.seed_defaults()
 
     error =
       execute_query_with_error(
         ctx.conn,
-        available_versions_query("experimental_weighted_age"),
+        available_versions_query("experimental_weighted_age:v1"),
         "getMetric"
       )
 

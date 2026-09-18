@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   @behaviour Absinthe.Middleware
   alias Absinthe.Resolution
 
-  # Rejected by an earlier middleware (e.g. an unknown version name): nothing to
-  # record, and the arguments are not canonical.
   def call(%Resolution{state: :resolved} = resolution, _opts), do: resolution
 
   def call(%Resolution{} = resolution, _opts) do

@@ -460,8 +460,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     # only metrics have default_aggregation, for queries and signals it is nil
     field(:default_aggregation, :aggregation)
 
-    # Not cache_resolve: the dataloader already caches the numeric versions and the
-    # names are applied afterwards from the alias cache.
     field :available_versions, list_of(:metric_version) do
       resolve(&SanbaseWeb.Graphql.Resolvers.AccessControlResolver.available_versions/3)
     end

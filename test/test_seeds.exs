@@ -11,3 +11,7 @@ IO.puts(
 IO.puts("Seeding metric vocabulary tags...")
 
 :ok = Sanbase.Metric.Tag.seed_vocabulary_tags()
+
+IO.puts("Seeding default metric version aliases...")
+
+:ok = Sanbase.Metric.VersionAlias.seed_defaults()

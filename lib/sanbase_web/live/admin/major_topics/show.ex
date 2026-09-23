@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
   use SanbaseWeb, :live_view
 
+  require Logger
+
   alias Sanbase.MajorTopics
   alias Sanbase.MajorTopics.TopicBatch
 
@@ -19,7 +21,27 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
      |> assign(:daily_only_scope, @daily_only_scope)
      |> assign(:daily_weekly_scope, @daily_weekly_scope)
      |> assign(:current_user, socket.assigns[:current_user])
-     |> assign_batch(batch)}
+     |> assign_batch(batch)
+     |> assign_newer_version(batch)}
+  end
+
+  defp assign_newer_version(socket, batch) do
+    assign_async(socket, :newer_version, fn ->
+      case MajorTopics.newer_version_available(batch) do
+        {:ok, version} ->
+          {:ok, %{newer_version: version}}
+
+        :none ->
+          {:ok, %{newer_version: nil}}
+
+        {:error, reason} ->
+          Logger.warning(
+            "[MajorTopics] Could not check for a newer version of batch #{batch.id}: #{inspect(reason)}"
+          )
+
+          {:ok, %{newer_version: nil}}
+      end
+    end)
   end
 
   @highlight_top_red 10
@@ -128,6 +150,25 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
     end
   end
 
+  def handle_event("refetch_new_version", _params, socket) do
+    case MajorTopics.refetch_newer_version(socket.assigns.batch, current_user_id(socket)) do
+      {:ok, batch} ->
+        batch = MajorTopics.get_batch!(batch.id)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Batch refetched with version #{batch.version} and moved to draft")
+         |> assign_batch(batch)
+         |> assign_newer_version(batch)}
+
+      {:error, :no_newer_version} ->
+        {:noreply, put_flash(socket, :error, "No newer version in ClickHouse")}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Refetch failed: #{inspect(reason)}")}
+    end
+  end
+
   def handle_event("publish", _params, socket) do
     {:noreply, put_flash(socket, :error, "Choose a publication scope")}
   end
@@ -176,6 +217,19 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
         </div>
 
         <div class="flex flex-col items-end gap-2">
+          <.async_result :let={newer_version} assign={@newer_version}>
+            <div :if={newer_version} id="newer-version" class="flex items-center gap-2">
+              <span class="badge badge-info">v{newer_version} available in ClickHouse</span>
+              <button
+                id="refetch-new-version"
+                phx-click="refetch_new_version"
+                data-confirm={refetch_confirmation(@batch, newer_version)}
+                class="btn btn-warning btn-sm"
+              >
+                Refetch new version
+              </button>
+            </div>
+          </.async_result>
           <div
             :if={@batch.state == "draft" and @active_count > 0}
             class="flex flex-wrap justify-end gap-2"
@@ -356,6 +410,24 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Show do
 
   defp daily_weekly_confirmation(_active_count) do
     "Publish this batch for both daily and weekly views?"
+  end
+
+  defp refetch_confirmation(batch, newer_version) do
+    relabeled = Enum.count(batch.topics, &(&1.label != &1.original_label))
+    removed = Enum.count(batch.topics, & &1.is_removed)
+
+    discarded =
+      if relabeled + removed > 0,
+        do: " This discards #{relabeled} label edits and #{removed} removals.",
+        else: ""
+
+    unpublished =
+      if batch.state == "published",
+        do: " The batch goes back to draft and is not live until you publish it again.",
+        else: ""
+
+    "Replace all #{length(batch.topics)} topics with version #{newer_version}?" <>
+      discarded <> unpublished
   end
 
   defp row_highlight_style(topic, red_ids, yellow_ids) do

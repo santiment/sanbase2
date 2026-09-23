@@ -93,6 +93,24 @@ defmodule Sanbase.MajorTopics.TopicBatch do
     |> unique_constraint([:source, :interval_text, :version])
   end
 
+  @doc """
+  Build a changeset that moves the batch to a newer ClickHouse version and back
+  to draft, clearing its publication.
+  """
+  @spec refetch_changeset(struct(), integer(), DateTime.t()) :: Ecto.Changeset.t()
+  def refetch_changeset(batch, version, fetched_at) do
+    batch
+    |> change(
+      version: version,
+      fetched_at: fetched_at,
+      state: @draft,
+      publication_scope: nil,
+      published_at: nil,
+      published_by_id: nil
+    )
+    |> unique_constraint([:source, :interval_text, :version])
+  end
+
   @doc "Build a changeset that publishes a batch with an explicit publication scope."
   @spec publish_changeset(struct(), integer() | nil, String.t() | nil, DateTime.t()) ::
           Ecto.Changeset.t()

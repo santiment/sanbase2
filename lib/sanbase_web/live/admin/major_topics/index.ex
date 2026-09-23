@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Admin.MajorTopicsLive.Index do
   use SanbaseWeb, :live_view
 
+  require Logger
+
   alias Sanbase.MajorTopics
 
   import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
@@ -32,6 +34,20 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Index do
     |> assign(:page_size, page_size)
     |> assign(:total_count, total_count)
     |> assign(:total_pages, total_pages)
+    |> assign_newer_versions(batches)
+  end
+
+  defp assign_newer_versions(socket, batches) do
+    assign_async(socket, :newer_versions, fn ->
+      case MajorTopics.newer_versions_available(batches) do
+        {:ok, newer_versions} ->
+          {:ok, %{newer_versions: newer_versions}}
+
+        {:error, reason} ->
+          Logger.warning("[MajorTopics] Could not check for newer versions: #{inspect(reason)}")
+          {:ok, %{newer_versions: %{}}}
+      end
+    end)
   end
 
   def render(assigns) do
@@ -72,7 +88,21 @@ defmodule SanbaseWeb.Admin.MajorTopicsLive.Index do
                 {Date.to_iso8601(batch.interval_start)} → {Date.to_iso8601(batch.interval_end)}
               </td>
               <td>{batch.source}</td>
-              <td>{batch.version}</td>
+              <td>
+                <div class="flex items-center gap-1">
+                  <span>{batch.version}</span>
+                  <.async_result :let={newer_versions} assign={@newer_versions}>
+                    <span
+                      :if={newer_versions[batch.id]}
+                      id={"newer-version-#{batch.id}"}
+                      class="badge badge-xs badge-info"
+                      title="A newer version exists in ClickHouse. Open the batch to refetch it."
+                    >
+                      v{newer_versions[batch.id]} available
+                    </span>
+                  </.async_result>
+                </div>
+              </td>
               <td>
                 <span class={["badge badge-sm", state_badge(batch.state)]}>{batch.state}</span>
               </td>

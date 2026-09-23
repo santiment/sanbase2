@@ -10,7 +10,6 @@ defmodule Sanbase.MajorTopics.ClickhouseFetcher do
   alias Sanbase.ClickhouseRepo
 
   @default_source "twitter_crypto"
-  @default_version 1
 
   @type topic :: %{
           ch_id: String.t(),
@@ -45,13 +44,31 @@ defmodule Sanbase.MajorTopics.ClickhouseFetcher do
     end
   end
 
+  @doc """
+  Fetch the most recent interval for `source`, at the highest version stored
+  for that interval. A higher version is a recalculation of the same interval
+  and always supersedes the lower ones.
+  """
   @spec fetch_latest_batch(keyword()) :: {:ok, payload()} | {:error, String.t()}
   def fetch_latest_batch(opts \\ []) do
     source = Keyword.get(opts, :source, @default_source)
-    version = Keyword.get(opts, :version, @default_version)
 
-    with {:ok, interval} <- fetch_latest_interval(source, version),
-         {:ok, metadata} <- fetch_metadata(source, version, interval),
+    with {:ok, interval} <- fetch_latest_interval(source),
+         {:ok, version} when is_integer(version) <- fetch_latest_version(source, interval) do
+      fetch_batch(source, version, interval)
+    else
+      {:ok, nil} -> {:error, "No major_topics_metadata rows for source=#{source}"}
+      {:error, _} = err -> err
+    end
+  end
+
+  @doc """
+  Fetch the full payload (metadata + values) for an exact
+  `(source, version, interval)`.
+  """
+  @spec fetch_batch(String.t(), integer(), String.t()) :: {:ok, payload()} | {:error, term()}
+  def fetch_batch(source, version, interval) do
+    with {:ok, [_ | _] = metadata} <- fetch_metadata(source, version, interval),
          {:ok, values_by_id} <- fetch_values(Enum.map(metadata, & &1.ch_id)) do
       topics =
         Enum.map(metadata, fn row ->
@@ -59,27 +76,66 @@ defmodule Sanbase.MajorTopics.ClickhouseFetcher do
         end)
 
       {:ok, %{source: source, version: version, interval: interval, topics: topics}}
+    else
+      {:ok, []} ->
+        {:error,
+         "No major_topics_metadata rows for source=#{source} version=#{version} interval=#{interval}"}
+
+      {:error, _} = err ->
+        err
     end
   end
 
-  defp fetch_latest_interval(source, version) do
+  @doc """
+  Highest version stored for `(source, interval)`, or `nil` when the interval
+  has no rows.
+  """
+  @spec fetch_latest_version(String.t(), String.t()) :: {:ok, integer() | nil} | {:error, term()}
+  def fetch_latest_version(source, interval) do
+    case fetch_latest_versions(source, [interval]) do
+      {:ok, versions} -> {:ok, Map.get(versions, interval)}
+      {:error, _} = err -> err
+    end
+  end
+
+  @doc """
+  Highest version stored for each of `intervals`, as `%{interval => version}`.
+  Intervals without rows are absent from the map.
+  """
+  @spec fetch_latest_versions(String.t(), [String.t()]) ::
+          {:ok, %{String.t() => integer()}} | {:error, term()}
+  def fetch_latest_versions(_source, []), do: {:ok, %{}}
+
+  def fetch_latest_versions(source, intervals) do
+    sql = """
+    SELECT interval, max(version)
+    FROM major_topics_metadata
+    WHERE source = {{source}} AND interval IN ({{intervals}})
+    GROUP BY interval
+    """
+
+    query = Query.new(sql, %{source: source, intervals: intervals})
+
+    ClickhouseRepo.query_reduce(query, %{}, fn [interval, version], acc ->
+      Map.put(acc, interval, version)
+    end)
+  end
+
+  defp fetch_latest_interval(source) do
     sql = """
     SELECT max(interval)
     FROM major_topics_metadata
-    WHERE source = {{source}} AND version = {{version}}
+    WHERE source = {{source}}
     """
 
-    query = Query.new(sql, %{source: source, version: version})
+    query = Query.new(sql, %{source: source})
 
     case ClickhouseRepo.query_reduce(query, nil, fn [interval], _acc -> interval end) do
-      {:ok, nil} ->
-        {:error, "No major_topics_metadata rows for source=#{source} version=#{version}"}
-
-      {:ok, ""} ->
-        {:error, "No major_topics_metadata rows for source=#{source} version=#{version}"}
-
-      {:ok, interval} when is_binary(interval) ->
+      {:ok, interval} when is_binary(interval) and interval != "" ->
         {:ok, interval}
+
+      {:ok, _} ->
+        {:error, "No major_topics_metadata rows for source=#{source}"}
 
       {:error, _} = err ->
         err

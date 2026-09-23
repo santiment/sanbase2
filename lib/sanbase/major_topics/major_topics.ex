@@ -144,49 +144,163 @@ defmodule Sanbase.MajorTopics do
 
   @doc """
   Insert a fresh batch (or replace topics on an existing draft batch) from a
-  ClickHouse payload. Idempotent across re-runs while the batch is in `draft`;
-  no-op if the batch is already `published`.
+  ClickHouse payload. A batch is identified by `(source, interval)`; the
+  payload's version is stored on it. Idempotent across re-runs while the batch
+  is in `draft`. No-op if the batch is already `published` (use
+  `refetch_newer_version/2` for that) or if the payload carries an older
+  version than the stored one.
   """
   @spec upsert_batch_from_payload(map()) :: {:ok, TopicBatch.t()} | {:error, term()}
   def upsert_batch_from_payload(%{source: source, version: version, interval: interval} = payload) do
-    with {:ok, {interval_start, interval_end}} <- parse_interval(interval) do
+    with {:ok, interval_bounds} <- parse_interval(interval) do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
 
       Repo.transaction(fn ->
-        batch =
-          case Repo.get_by(TopicBatch, source: source, interval_text: interval, version: version) do
-            nil ->
-              attrs = %{
-                source: source,
-                interval_text: interval,
-                interval_start: interval_start,
-                interval_end: interval_end,
-                version: version,
-                type: payload[:type] || derive_type(payload),
-                state: @draft,
-                fetched_at: now
-              }
+        case get_batch_by_interval(source, interval) do
+          nil ->
+            payload
+            |> insert_draft_batch(interval_bounds, now)
+            |> replace_topics_and_touch(payload.topics, %{fetched_at: now})
 
-              case %TopicBatch{} |> TopicBatch.changeset(attrs) |> Repo.insert() do
-                {:ok, batch} -> batch
-                {:error, changeset} -> Repo.rollback(changeset)
-              end
+          %TopicBatch{state: @published} = batch ->
+            batch
 
-            existing ->
-              existing
-          end
+          %TopicBatch{version: stored_version} = batch when version < stored_version ->
+            batch
 
-        if batch.state == @published do
-          batch
-        else
-          replace_topics(batch, payload.topics)
-
-          case batch |> Ecto.Changeset.change(fetched_at: now) |> Repo.update() do
-            {:ok, updated} -> updated
-            {:error, changeset} -> Repo.rollback(changeset)
-          end
+          batch ->
+            replace_topics_and_touch(batch, payload.topics, %{version: version, fetched_at: now})
         end
       end)
+    end
+  end
+
+  defp insert_draft_batch(payload, {interval_start, interval_end}, now) do
+    attrs = %{
+      source: payload.source,
+      interval_text: payload.interval,
+      interval_start: interval_start,
+      interval_end: interval_end,
+      version: payload.version,
+      type: payload[:type] || derive_type(payload),
+      state: @draft,
+      fetched_at: now
+    }
+
+    case %TopicBatch{} |> TopicBatch.changeset(attrs) |> Repo.insert() do
+      {:ok, batch} -> batch
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  @doc """
+  The highest version ClickHouse holds for the batch's interval, when it is
+  higher than the stored one. Returns `:none` otherwise.
+  """
+  @spec newer_version_available(TopicBatch.t()) :: {:ok, integer()} | :none | {:error, term()}
+  def newer_version_available(%TopicBatch{} = batch) do
+    case ClickhouseFetcher.fetch_latest_version(batch.source, batch.interval_text) do
+      {:ok, version} when is_integer(version) and version > batch.version -> {:ok, version}
+      {:ok, _} -> :none
+      {:error, _} = err -> err
+    end
+  end
+
+  @doc """
+  For a list of batches, return `%{batch_id => newer_version}` for the batches
+  whose interval has a higher version in ClickHouse. One ClickHouse query per
+  distinct source.
+  """
+  @spec newer_versions_available([TopicBatch.t()]) ::
+          {:ok, %{integer() => integer()}} | {:error, term()}
+  def newer_versions_available(batches) do
+    batches
+    |> Enum.group_by(& &1.source)
+    |> Enum.reduce_while({:ok, %{}}, fn {source, source_batches}, {:ok, acc} ->
+      case newer_versions_for_source(source, source_batches) do
+        {:ok, newer} -> {:cont, {:ok, Map.merge(acc, newer)}}
+        {:error, _} = err -> {:halt, err}
+      end
+    end)
+  end
+
+  defp newer_versions_for_source(source, batches) do
+    intervals = batches |> Enum.map(& &1.interval_text) |> Enum.uniq()
+
+    with {:ok, versions} <- ClickhouseFetcher.fetch_latest_versions(source, intervals) do
+      newer =
+        for batch <- batches,
+            version = Map.get(versions, batch.interval_text),
+            is_integer(version) and version > batch.version,
+            into: %{},
+            do: {batch.id, version}
+
+      {:ok, newer}
+    end
+  end
+
+  @doc """
+  Replace the batch's topics with the highest version ClickHouse holds for its
+  interval. All moderation (label edits, removals) is discarded, since topics
+  of different versions cannot be matched reliably. A published batch goes
+  back to `draft` and stops being served until it is published again.
+
+  Returns `{:error, :no_newer_version}` when ClickHouse has nothing newer than
+  the stored version.
+  """
+  @spec refetch_newer_version(TopicBatch.t(), integer() | nil) ::
+          {:ok, TopicBatch.t()} | {:error, :no_newer_version | term()}
+  def refetch_newer_version(%TopicBatch{} = batch, user_id) do
+    with {:ok, version} <- newer_version_or_error(batch),
+         {:ok, payload} <-
+           ClickhouseFetcher.fetch_batch(batch.source, version, batch.interval_text),
+         {:ok, updated} <- replace_with_newer_version(batch, payload) do
+      Logger.info(
+        "[MajorTopics] Refetched batch id=#{batch.id} interval=#{batch.interval_text} " <>
+          "version #{batch.version} -> #{updated.version}, previous state=#{batch.state}, " <>
+          "user_id=#{inspect(user_id)}"
+      )
+
+      {:ok, updated}
+    end
+  end
+
+  defp newer_version_or_error(batch) do
+    case newer_version_available(batch) do
+      {:ok, version} -> {:ok, version}
+      :none -> {:error, :no_newer_version}
+      {:error, _} = err -> err
+    end
+  end
+
+  defp replace_with_newer_version(batch, payload) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Repo.transaction(fn ->
+      replace_topics(batch, payload.topics)
+
+      case batch |> TopicBatch.refetch_changeset(payload.version, now) |> Repo.update() do
+        {:ok, updated} -> updated
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  defp get_batch_by_interval(source, interval) do
+    from(b in TopicBatch,
+      where: b.source == ^source and b.interval_text == ^interval,
+      order_by: [desc: b.version],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  defp replace_topics_and_touch(batch, topics, changes) do
+    replace_topics(batch, topics)
+
+    case batch |> Ecto.Changeset.change(changes) |> Repo.update() do
+      {:ok, updated} -> updated
+      {:error, changeset} -> Repo.rollback(changeset)
     end
   end
 

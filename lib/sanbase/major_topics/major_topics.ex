@@ -277,9 +277,15 @@ defmodule Sanbase.MajorTopics do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     Repo.transaction(fn ->
-      replace_topics(batch, payload.topics)
+      # Lock the row and re-check the version, so a concurrent refetch or cron
+      # upsert cannot interleave topic replacements on the same batch.
+      locked = from(b in TopicBatch, where: b.id == ^batch.id, lock: "FOR UPDATE") |> Repo.one!()
 
-      case batch |> TopicBatch.refetch_changeset(payload.version, now) |> Repo.update() do
+      if payload.version <= locked.version, do: Repo.rollback(:no_newer_version)
+
+      replace_topics(locked, payload.topics)
+
+      case locked |> TopicBatch.refetch_changeset(payload.version, now) |> Repo.update() do
         {:ok, updated} -> updated
         {:error, changeset} -> Repo.rollback(changeset)
       end
@@ -290,7 +296,8 @@ defmodule Sanbase.MajorTopics do
     from(b in TopicBatch,
       where: b.source == ^source and b.interval_text == ^interval,
       order_by: [desc: b.version],
-      limit: 1
+      limit: 1,
+      lock: "FOR UPDATE"
     )
     |> Repo.one()
   end

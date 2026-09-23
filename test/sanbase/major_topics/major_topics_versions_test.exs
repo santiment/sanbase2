@@ -91,6 +91,17 @@ defmodule Sanbase.MajorTopicsVersionsTest do
       assert MajorTopics.latest_published_batch("week") == nil
     end
 
+    test "returns :no_newer_version for a stale batch already refetched by someone else" do
+      stale = published_batch(payload(1))
+
+      with_clickhouse(%{@interval => 2}, fn ->
+        assert {:ok, _} = MajorTopics.refetch_newer_version(stale, nil)
+        assert MajorTopics.refetch_newer_version(stale, nil) == {:error, :no_newer_version}
+      end)
+
+      assert topic_titles(stale.id) == ["v2 topic 0", "v2 topic 1"]
+    end
+
     test "returns :no_newer_version when ClickHouse has the same version" do
       {:ok, batch} = MajorTopics.upsert_batch_from_payload(payload(2))
 

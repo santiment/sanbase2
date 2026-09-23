@@ -110,6 +110,34 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     end
   end
 
+  @doc ~s"""
+  The metric version buckets (see `Sanbase.Metric.Version`) a SanAPI request may use.
+
+  Only Business Pro and Business Max get anything above version 1.0, and only a paid
+  (not trialing) yearly Business Max gets the point-in-time versions. Sanbase
+  subscriptions used on the API, and every plan not named here, get `[:base]` - there
+  is a catch-all on purpose, so a new plan name falls back to the safe answer instead
+  of raising.
+  """
+  @spec metric_version_buckets(String.t() | nil, String.t(), String.t() | nil, boolean()) ::
+          [:base | :standard | :pit]
+  def metric_version_buckets(subscription_product, plan, interval, trialing?) do
+    case subscription_product do
+      nil -> metric_version_buckets_api(plan, interval, trialing?)
+      "SANAPI" -> metric_version_buckets_api(plan, interval, trialing?)
+      _ -> [:base]
+    end
+  end
+
+  defp metric_version_buckets_api(plan, interval, trialing?) do
+    case {plan, interval, trialing?} do
+      {"BUSINESS_PRO", _, _} -> [:base, :standard]
+      {"BUSINESS_MAX", "year", false} -> [:base, :standard, :pit]
+      {"BUSINESS_MAX", _, _} -> [:base, :standard]
+      _ -> [:base]
+    end
+  end
+
   def realtime_data_cut_off_in_days(subscription_product, plan) do
     case subscription_product do
       nil -> realtime_data_cut_off_in_days_api(plan)

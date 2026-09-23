@@ -186,6 +186,28 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     end
   end
 
+  @doc """
+  The metric version buckets the plan may request, or `:all` when versions are not
+  restricted for the requested product.
+  """
+  @spec metric_version_buckets(
+          requested_product,
+          subscription_product,
+          plan_name,
+          String.t() | nil,
+          boolean()
+        ) :: [:base | :standard | :pit] | :all
+  def metric_version_buckets(
+        requested_product,
+        subscription_product,
+        plan_name,
+        interval,
+        trialing?
+      ) do
+    module = @product_to_access_module[requested_product]
+    module.metric_version_buckets(subscription_product, plan_name, interval, trialing?)
+  end
+
   @functions [
     {:query_or_argument, [:free]},
     {:query_or_argument_mapset, [:free]},

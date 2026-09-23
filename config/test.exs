@@ -23,6 +23,8 @@ config :sanbase, Sanbase.EventBus,
 
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 
+config :sanbase, Sanbase.Billing.Plan.MetricVersionAccess, enforce: true
+
 config :sanbase, SanbaseWeb.Prometheus, disabled: true
 
 test_port =

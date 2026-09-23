@@ -112,6 +112,24 @@ defmodule Sanbase.Metric.VersionAlias do
     end)
   end
 
+  @doc "Canonical version to its name. Falls back to the version itself."
+  @spec to_version_name(String.t()) :: String.t()
+  def to_version_name(version_num) when is_binary(version_num) do
+    %{by_num: by_num} = aliases()
+
+    case Map.get(by_num, version_num) do
+      %{version_name: name} -> name
+      nil -> version_num
+    end
+  end
+
+  @doc "Every canonical version that has a name."
+  @spec version_nums() :: [String.t()]
+  def version_nums() do
+    %{by_num: by_num} = aliases()
+    Map.keys(by_num)
+  end
+
   defp name?(input), do: Regex.match?(@name_regex, input)
 
   defp aliases() do

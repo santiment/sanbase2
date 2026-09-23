@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
   """
   use SanbaseWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1]
@@ -178,15 +179,41 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
     end
   end
 
-  test "while enforcement is off, a request that would be denied is allowed" do
-    conn = apikey_conn(:subscription_max_sanbase)
-    config = Application.get_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess)
+  describe "logging" do
+    test "a denied request is logged as Denied with its plan and version" do
+      ensure_seeded_aliases()
+      conn = apikey_conn(:subscription_business_max_monthly)
 
-    try do
-      Application.put_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess, enforce: false)
-      assert allowed?(conn, "2.1")
-    after
-      Application.put_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess, config)
+      log = capture_log([level: :info], fn -> assert denied?(conn, "2.1") end)
+
+      assert log =~ "[MetricVersionAccess] Denied user_id="
+      assert log =~ "auth_method=apikey plan=BUSINESS_MAX interval=month trial=false"
+      assert log =~ "metric=#{@metric} version=2.1 version_name=modern_pit:v1 required=pit"
+    end
+
+    test "while enforcement is off, the request is allowed and logged as Would deny" do
+      conn = build_conn()
+      config = Application.get_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess)
+
+      try do
+        Application.put_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess, enforce: false)
+
+        log = capture_log([level: :info], fn -> assert allowed?(conn, "2.1") end)
+
+        assert log =~
+                 "[MetricVersionAccess] Would deny user_id= auth_method=none plan=anonymous " <>
+                   "interval= trial=false"
+      after
+        Application.put_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess, config)
+      end
+    end
+
+    test "allowed requests are not logged" do
+      conn = apikey_conn(:subscription_business_max_yearly)
+
+      log = capture_log([level: :info], fn -> assert allowed?(conn, "2.1") end)
+
+      refute log =~ "[MetricVersionAccess]"
     end
   end
 

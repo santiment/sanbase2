@@ -154,24 +154,56 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
   end
 
   defp deny(metric, version, bucket, buckets, caller, context) do
-    message =
-      "Metric version #{VersionAlias.to_version_name(version)} requires " <>
-        "#{@required_plan[bucket]}. #{caller_description(caller)} " <>
-        "#{allowed_version_names(buckets)}."
+    enforce? = enforce?()
 
-    if enforce?() do
-      {:error, message}
+    log_denial(
+      if(enforce?, do: "Denied", else: "Would deny"),
+      metric,
+      version,
+      bucket,
+      caller,
+      context
+    )
+
+    if enforce? do
+      {:error,
+       "Metric version #{VersionAlias.to_version_name(version)} requires " <>
+         "#{@required_plan[bucket]}. #{caller_description(caller)} " <>
+         "#{allowed_version_names(buckets)}."}
     else
-      user = context[:auth][:current_user]
-
-      Logger.info(
-        "[MetricVersionAccess] Would deny metric #{metric} version #{version} " <>
-          "for user_id=#{inspect(user && user.id)} " <>
-          "auth_method=#{inspect(context[:auth][:auth_method])} " <>
-          "caller=#{inspect(caller_description(caller))}"
-      )
-
       :ok
     end
+  end
+
+  # Blocked calls are not exported to api_call_data (error queries never are), so this
+  # line is the only record of them. key=value so Loki can aggregate with `| logfmt`.
+  defp log_denial(outcome, metric, version, bucket, caller, context) do
+    user = context[:auth][:current_user]
+
+    {plan, interval, trial?} =
+      case caller do
+        :anonymous ->
+          {"anonymous", nil, false}
+
+        %{plan_name: plan_name, subscription: subscription} ->
+          {plan_name, interval(subscription), trialing?(subscription)}
+      end
+
+    fields = [
+      user_id: user && user.id,
+      auth_method: context[:auth][:auth_method],
+      plan: plan,
+      interval: interval,
+      trial: trial?,
+      metric: metric,
+      version: version,
+      version_name: VersionAlias.to_version_name(version),
+      required: bucket
+    ]
+
+    Logger.info(
+      "[MetricVersionAccess] #{outcome} " <>
+        Enum.map_join(fields, " ", fn {key, value} -> "#{key}=#{value}" end)
+    )
   end
 end

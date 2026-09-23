@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
   @moduledoc ~s"""
-  Metric version access is restricted by plan for SanAPI requests only - apikey
-  calls and anonymous calls that do not come from a Santiment origin.
+  Metric version access: apikey calls get their plan's SanAPI rules, anonymous calls
+  get version 1.0 only, JWT and basic auth are not restricted. Headers the caller
+  controls (Origin, User-Agent) never change the answer.
   """
   use SanbaseWeb.ConnCase, async: false
 
@@ -111,9 +112,24 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
       assert error =~ "Metric version 9.1 requires a paid yearly SanAPI Business Max"
     end
 
-    test "Sansheets resolves to Sanbase and is not restricted" do
+    test "the user agent does not change the rules - Sansheets gets the plan's API rules" do
+      sansheets = &put_req_header(&1, "user-agent", @sansheets_user_agent)
+
+      # Sanbase MAX in Sansheets: same as its apikey anywhere else.
+      assert denied?(sansheets.(apikey_conn(:subscription_max_sanbase)), "2.0")
+
+      # A paying API customer keeps their access in Sansheets.
+      assert allowed?(sansheets.(apikey_conn(:subscription_business_max_yearly)), "2.1")
+    end
+
+    test "Sansheets judges the key by the SanAPI subscription when there are both" do
+      %{user: user} = insert(:subscription_business_max_yearly, user: insert(:user))
+      insert(:subscription_max_sanbase, user: user)
+      {:ok, apikey} = Apikey.generate_apikey(user)
+
       conn =
-        apikey_conn(:subscription_max_sanbase)
+        build_conn()
+        |> setup_apikey_auth(apikey)
         |> put_req_header("user-agent", @sansheets_user_agent)
 
       assert allowed?(conn, "2.1")
@@ -131,9 +147,19 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
       assert denied?(conn, "2.0")
     end
 
-    test "from a Santiment origin is not restricted" do
+    test "the origin does not change the rules - a Santiment origin gets version 1.0 only" do
       conn = put_req_header(build_conn(), "origin", "https://app.santiment.net")
-      assert allowed?(conn, "2.1")
+
+      assert allowed?(conn, "1.0")
+      assert denied?(conn, "2.0")
+    end
+
+    test "the error says anonymous requests have version 1.0 only" do
+      ensure_seeded_aliases()
+
+      assert execute_query_with_error(build_conn(), query("2.0"), "getMetric") ==
+               "Metric version modern:v1 requires a SanAPI Business Pro or Business Max " <>
+                 "subscription. Anonymous requests have access to original:v1."
     end
   end
 

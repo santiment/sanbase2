@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   alias Sanbase.Billing.Plan.Bundle.PackageSnapshot
   alias Sanbase.Billing.Plan.Restrictions
   alias Sanbase.Billing.Plan.AccessChecker
+  alias Sanbase.Billing.Plan.MetricVersionAccess
   alias SanbaseWeb.Graphql.Resolvers.MetricTransform
 
   @datapoints 300
@@ -34,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with false <- Metric.hard_deprecated?(metric),
          true <- Metric.has_metric?(metric),
-         true <- user_can_access_version?(version, resolution) do
+         true <- user_can_access_version?(metric, version, resolution) do
       maybe_enable_clickhouse_sql_storage(args)
 
       {:ok, %{metric: metric, version: version}}
@@ -880,14 +881,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     ])
   end
 
-  defp user_can_access_version?(version, resolution) do
+  defp user_can_access_version?(metric, version, resolution) do
     metric_access_level = resolution_to_metric_access_level(resolution)
 
-    if version =~ "Experimental" and metric_access_level != "alpha" do
-      {:error,
-       "The requested version is Experimental and only users with alpha access can access it."}
-    else
-      true
+    cond do
+      version =~ "Experimental" and metric_access_level != "alpha" ->
+        {:error,
+         "The requested version is Experimental and only users with alpha access can access it."}
+
+      version =~ "Experimental" ->
+        true
+
+      true ->
+        with :ok <- MetricVersionAccess.check(metric, version, resolution.context), do: true
     end
   end
 end

@@ -162,6 +162,48 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   defp apply_history_grant(days, _grant, _query_or_argument), do: days
 
+  @doc ~s"""
+  The metric version buckets (see `Sanbase.Metric.Version`) the plan may request,
+  or `:all` when versions are not restricted for the requested product.
+
+  Custom plans read the matrix as their declared `restricted_access_as_plan`, with
+  their own interval. Bundles read it as `Bundle.equivalent_standard_plan/0`.
+  """
+  @spec metric_version_buckets(
+          requested_product,
+          subscription_product,
+          plan_name,
+          String.t() | nil,
+          boolean()
+        ) :: [:base | :standard | :pit] | :all
+  def metric_version_buckets(
+        requested_product,
+        subscription_product,
+        plan_name,
+        interval,
+        trialing?
+      ) do
+    standard_plan_name =
+      case Plan.type(plan_name) do
+        :bundle ->
+          Plan.Bundle.equivalent_standard_plan()
+
+        :custom ->
+          Plan.CustomPlan.Access.restricted_access_as_plan(plan_name, requested_product)
+
+        :standard ->
+          plan_name
+      end
+
+    StandardAccessChecker.metric_version_buckets(
+      requested_product,
+      subscription_product,
+      standard_plan_name,
+      interval,
+      trialing?
+    )
+  end
+
   defp plan_historical_data_in_days(
          query_or_argument,
          requested_product,

@@ -104,10 +104,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
   end
 
   test "the Experimental alias is normalized before the alpha-only access check", ctx do
-    create_alias!(%{
-      version_num: "Experimental (Weighted Age)",
-      version_name: "experimental_weighted_age:v1"
-    })
+    # A migrated test database already has this row (the migration seeds it); one
+    # loaded from structure.sql does not.
+    unless Sanbase.Repo.get_by(VersionAlias, version_num: "Experimental (Weighted Age)") do
+      create_alias!(%{
+        version_num: "Experimental (Weighted Age)",
+        version_name: "experimental_weighted_age:v1"
+      })
+    end
 
     error =
       execute_query_with_error(

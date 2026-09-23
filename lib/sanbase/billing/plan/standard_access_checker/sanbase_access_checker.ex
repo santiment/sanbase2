@@ -58,6 +58,12 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     |> Map.get(:realtime_data_cut_off_in_days)
   end
 
+  @doc ~s"""
+  Sanbase requests are not restricted by metric version. The web app rules are a
+  separate piece of work and land here.
+  """
+  def metric_version_buckets(_subscription_product, _plan, _interval, _trialing?), do: :all
+
   def alerts_limit(plan) do
     plan_stats(plan)
     |> get_in([:alerts, :limit])

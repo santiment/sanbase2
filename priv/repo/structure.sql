@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict WnVF238Tff7o9WrhZPZw5CCluPmGUpJ1vL6tIWu8dIdOdBq7vNlKEPsQYoCx2Nd
+\restrict 6y5mY1lRZoEtfXE9zB0wIPDjtOOuGqIcReLVMFeCNeYHSaVG2p3fTODbv8qAlgc
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -1418,7 +1418,7 @@ CREATE TABLE public.deep_research_turns (
     inserted_at timestamp(0) without time zone NOT NULL,
     updated_at timestamp(0) without time zone NOT NULL,
     usage jsonb,
-    CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'queued'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'paused'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
+    CONSTRAINT valid_phase CHECK (((phase)::text = ANY (ARRAY[('idle'::character varying)::text, ('queued'::character varying)::text, ('planning'::character varying)::text, ('researching'::character varying)::text, ('writing'::character varying)::text, ('awaiting_user'::character varying)::text, ('paused'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text, ('cancelled'::character varying)::text])))
 );
 
 
@@ -3115,7 +3115,7 @@ CREATE TABLE public.non_crypto_assets (
     metadata jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
+    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY (ARRAY[('stock'::character varying)::text, ('commodity'::character varying)::text, ('index'::character varying)::text, ('forex'::character varying)::text, ('fund'::character varying)::text, ('bond'::character varying)::text, ('other'::character varying)::text])))
 );
 
 
@@ -5458,7 +5458,7 @@ CREATE TABLE public.topic_batches (
     updated_at timestamp without time zone NOT NULL,
     publication_scope character varying(255),
     CONSTRAINT published_topic_batches_require_publication_scope CHECK ((((state)::text <> 'published'::text) OR (publication_scope IS NOT NULL))),
-    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY ((ARRAY['daily_only'::character varying, 'weekly_only'::character varying, 'daily_weekly'::character varying])::text[]))))
+    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY (ARRAY[('daily_only'::character varying)::text, ('weekly_only'::character varying)::text, ('daily_weekly'::character varying)::text]))))
 );
 
 
@@ -12643,7 +12643,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WnVF238Tff7o9WrhZPZw5CCluPmGUpJ1vL6tIWu8dIdOdBq7vNlKEPsQYoCx2Nd
+\unrestrict 6y5mY1lRZoEtfXE9zB0wIPDjtOOuGqIcReLVMFeCNeYHSaVG2p3fTODbv8qAlgc
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

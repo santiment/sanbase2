@@ -50,17 +50,50 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
                 :ok
 
               buckets ->
-                if bucket in buckets,
-                  do: :ok,
-                  else: deny(metric, version, bucket, buckets, caller, context)
+                cond do
+                  bucket in buckets -> :ok
+                  exempt?(version, context) -> exempt(metric, version, bucket, caller, context)
+                  true -> deny(metric, version, bucket, buckets, caller, context)
+                end
             end
         end
     end
   end
 
+  # Users listed in `METRIC_VERSION_ACCESS_EXEMPT_USER_IDS` keep the 2.0 family
+  # (modern:v1 and its non point-in-time updates, 2.0.x) whatever their plan. It is a
+  # grandfathering exception for Sanbase MAX customers who already used it through the
+  # API before the restriction - nothing else about their plan changes.
+  @exempt_version_family "2.0"
+
   @doc false
   def enforce?() do
     Sanbase.Utils.Config.module_get_boolean(__MODULE__, :enforce) == true
+  end
+
+  defp exempt?(version, context) do
+    exempt_version?(version) and exempt_user?(context[:auth][:current_user])
+  end
+
+  defp exempt_version?(version) do
+    version == @exempt_version_family or
+      String.starts_with?(version, @exempt_version_family <> ".")
+  end
+
+  defp exempt_user?(%{id: user_id}), do: user_id in exempt_user_ids()
+  defp exempt_user?(_), do: false
+
+  # A comma-separated list of user ids. Anything that is not an integer is ignored.
+  defp exempt_user_ids() do
+    (Sanbase.Utils.Config.module_get(__MODULE__, :exempt_user_ids) || "")
+    |> to_string()
+    |> String.split(",", trim: true)
+    |> Enum.flat_map(fn id ->
+      case Integer.parse(String.trim(id)) do
+        {id, ""} -> [id]
+        _ -> []
+      end
+    end)
   end
 
   # A non-numeric version that is not Experimental (those have their own rule and
@@ -173,6 +206,11 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     else
       :ok
     end
+  end
+
+  defp exempt(metric, version, bucket, caller, context) do
+    log_denial("Exempt", metric, version, bucket, caller, context)
+    :ok
   end
 
   # Blocked calls are not exported to api_call_data (error queries never are), so this

@@ -179,6 +179,67 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
     end
   end
 
+  describe "exempt users" do
+    setup do
+      config = Application.get_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess)
+
+      on_exit(fn ->
+        Application.put_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess, config)
+      end)
+
+      %{config: config}
+    end
+
+    defp exempt!(config, user_ids) do
+      Application.put_env(
+        :sanbase,
+        Sanbase.Billing.Plan.MetricVersionAccess,
+        Keyword.put(config, :exempt_user_ids, user_ids)
+      )
+    end
+
+    test "keep the 2.0 family and nothing else", %{config: config} do
+      %{user: user} = insert(:subscription_max_sanbase, user: insert(:user))
+      {:ok, apikey} = Apikey.generate_apikey(user)
+      conn = setup_apikey_auth(build_conn(), apikey)
+
+      exempt!(config, "123, #{user.id}")
+
+      assert allowed?(conn, "2.0")
+      assert allowed?(conn, "2.0.1")
+      assert denied?(conn, "2.1")
+      assert denied?(conn, "2.1.1")
+      assert denied?(conn, "3.0")
+      assert denied?(conn, "3.1")
+    end
+
+    test "are logged as Exempt", %{config: config} do
+      %{user: user} = insert(:subscription_max_sanbase, user: insert(:user))
+      {:ok, apikey} = Apikey.generate_apikey(user)
+      conn = setup_apikey_auth(build_conn(), apikey)
+      exempt!(config, "#{user.id}")
+
+      log = capture_log([level: :info], fn -> assert allowed?(conn, "2.0") end)
+
+      assert log =~ "[MetricVersionAccess] Exempt user_id=#{user.id} auth_method=apikey plan=MAX"
+    end
+
+    test "other users are not affected by the list", %{config: config} do
+      exempt!(config, "123")
+      assert denied?(apikey_conn(:subscription_max_sanbase), "2.0")
+    end
+
+    test "a malformed list exempts nobody and does not crash", %{config: config} do
+      exempt!(config, "abc, , 12x")
+      assert denied?(apikey_conn(:subscription_max_sanbase), "2.0")
+    end
+
+    test "anonymous requests are never exempt", %{config: config} do
+      exempt!(config, "123")
+      assert denied?(build_conn(), "2.0")
+    end
+  end
+
   describe "logging" do
     test "a denied request is logged as Denied with its plan and version" do
       ensure_seeded_aliases()

@@ -86,9 +86,11 @@ config :sanbase, Sanbase.RepoReader,
 
 config :sanbase, Sanbase.Price.Validator, enabled: {:system, "PRICE_VALIDATOR_ENABLED", true}
 
-# Off: requests that would be denied a metric version are logged and allowed.
+# enforce off: requests that would be denied a metric version are logged and allowed.
 config :sanbase, Sanbase.Billing.Plan.MetricVersionAccess,
-  enforce: {:system, "METRIC_VERSION_ACCESS_ENFORCE", true}
+  enforce: {:system, "METRIC_VERSION_ACCESS_ENFORCE", true},
+  # Comma-separated user ids that keep the 2.0 family (modern:v1) whatever their plan.
+  exempt_user_ids: {:system, "METRIC_VERSION_ACCESS_EXEMPT_USER_IDS", ""}
 
 config :sanbase, Sanbase.Metric.AvailableMetricsCircuitBreaker,
   enabled: {:system, "AVAILABLE_METRICS_CIRCUIT_BREAKER_ENABLED", true}

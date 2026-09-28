@@ -75,6 +75,28 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   @doc ~s"""
+  Same as total_github_activity/3, but the [bot] actors are excluded and a single
+  actor contributes at most #{max_daily_actor_repo_events()} events per repository per day.
+  """
+  @spec total_github_activity_v2(list(String.t()), DateTime.t(), DateTime.t()) ::
+          {:ok, %{optional(String.t()) => float()}}
+          | {:error, String.t()}
+  def total_github_activity_v2(organizations, from, to) do
+    total_activity_v2(&total_github_activity_v2_query/3, organizations, from, to)
+  end
+
+  @doc ~s"""
+  Same as total_dev_activity/3, but the [bot] actors are excluded and a single
+  actor contributes at most #{max_daily_actor_repo_events()} events per repository per day.
+  """
+  @spec total_dev_activity_v2(list(String.t()), DateTime.t(), DateTime.t()) ::
+          {:ok, %{optional(String.t()) => float()}}
+          | {:error, String.t()}
+  def total_dev_activity_v2(organizations, from, to) do
+    total_activity_v2(&total_dev_activity_v2_query/3, organizations, from, to)
+  end
+
+  @doc ~s"""
   Return the number of total dev activity contributors, excluding those
   who only contributed to (#{non_dev_events()}) events for a given list
   of organizatinons and time period
@@ -220,6 +242,46 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   @doc ~s"""
+  Same as dev_activity/6, but the [bot] actors are excluded and a single
+  actor contributes at most #{max_daily_actor_repo_events()} events per repository per day.
+  """
+  @spec dev_activity_v2(
+          list(String.t()),
+          DateTime.t(),
+          DateTime.t(),
+          String.t(),
+          String.t(),
+          nil | non_neg_integer()
+        ) :: {:ok, list(t)} | {:error, String.t()}
+  def dev_activity_v2(organizations, from, to, interval, transform, ma_base) do
+    activity_v2(&dev_activity_v2_query/4, organizations, from, to, interval, transform, ma_base)
+  end
+
+  @doc ~s"""
+  Same as github_activity/6, but the [bot] actors are excluded and a single
+  actor contributes at most #{max_daily_actor_repo_events()} events per repository per day.
+  """
+  @spec github_activity_v2(
+          list(String.t()),
+          DateTime.t(),
+          DateTime.t(),
+          String.t(),
+          String.t(),
+          nil | non_neg_integer()
+        ) :: {:ok, list(t)} | {:error, String.t()}
+  def github_activity_v2(organizations, from, to, interval, transform, ma_base) do
+    activity_v2(
+      &github_activity_v2_query/4,
+      organizations,
+      from,
+      to,
+      interval,
+      transform,
+      ma_base
+    )
+  end
+
+  @doc ~s"""
   Return aggregated github activity stats per slug for a given time period.
 
   The stats include the total dev/github activity and contributors count, as
@@ -362,6 +424,56 @@ defmodule Sanbase.Clickhouse.Github do
     |> then(fn result -> {:ok, result} end)
   end
 
+  defp total_activity_v2(_query_fun, [], _from, _to), do: {:ok, %{}}
+
+  defp total_activity_v2(query_fun, organizations, from, to)
+       when length(organizations) > 20 do
+    chunked_parallel_merge(organizations, &total_activity_v2(query_fun, &1, from, to))
+  end
+
+  defp total_activity_v2(query_fun, organizations, from, to) do
+    query_struct = query_fun.(organizations, from, to)
+
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [organization, activity], acc ->
+      Map.put(acc, organization, activity |> Math.to_float(0.0))
+    end)
+  end
+
+  defp activity_v2(_query_fun, [], _, _, _, _, _), do: {:ok, []}
+
+  defp activity_v2(query_fun, organizations, from, to, interval, transform, ma_base)
+       when length(organizations) > 10 do
+    ctx = Sanbase.RequestContext.current()
+
+    Enum.chunk_every(organizations, 10)
+    |> Sanbase.Parallel.map(
+      &activity_v2(query_fun, &1, from, to, interval, transform, ma_base),
+      timeout: 25_000,
+      max_concurrency: 8,
+      ordered: false,
+      request_context: ctx
+    )
+    |> Enum.filter(&match?({:ok, _}, &1))
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.zip()
+    |> Enum.map(&combine_dev_activity/1)
+    |> then(fn result -> {:ok, result} end)
+  end
+
+  defp activity_v2(query_fun, organizations, from, to, interval, "None", _) do
+    query_fun.(organizations, from, to, interval)
+    |> datetime_activity_execute(&Math.to_float(&1, 0.0))
+  end
+
+  defp activity_v2(query_fun, organizations, from, to, interval, "movingAverage", ma_base) do
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
+    from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
+
+    query_fun.(organizations, from, to, interval)
+    |> datetime_activity_execute(&Math.to_float(&1, 0.0))
+    |> maybe_apply_function(&Math.simple_moving_average(&1, ma_base, value_key: :activity))
+  end
+
   defp combine_dev_activity(tuple) do
     [%{datetime: datetime} | _] = data = Tuple.to_list(tuple)
 
@@ -401,11 +513,11 @@ defmodule Sanbase.Clickhouse.Github do
     end)
   end
 
-  defp datetime_activity_execute(query_struct) do
+  defp datetime_activity_execute(query_struct, to_number \\ &Math.to_integer(&1, 0)) do
     ClickhouseRepo.query_transform(query_struct, fn [datetime, value] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),
-        activity: value |> Math.to_integer(0)
+        activity: to_number.(value)
       }
     end)
   end

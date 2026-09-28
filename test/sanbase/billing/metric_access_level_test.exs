@@ -581,6 +581,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "github_activity_contributors_count_7d",
         "30d_moving_avg_dev_activity_change_1d",
         "github_activity",
+        "dev_activity_v2",
+        "github_activity_v2",
         "historical_balance",
         "historical_balance_changes",
         "marketcap_usd",

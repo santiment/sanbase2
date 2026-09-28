@@ -13,6 +13,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @timeseries_metrics_function_mapping %{
     "dev_activity" => :dev_activity,
     "github_activity" => :github_activity,
+    "dev_activity_v2" => :dev_activity_v2,
+    "github_activity_v2" => :github_activity_v2,
     "dev_activity_contributors_count" => :dev_activity_contributors_count,
     "github_activity_contributors_count" => :github_activity_contributors_count
   }
@@ -20,6 +22,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @aggregated_metrics_function_mapping %{
     "dev_activity" => :total_dev_activity,
     "github_activity" => :total_github_activity,
+    "dev_activity_v2" => :total_dev_activity_v2,
+    "github_activity_v2" => :total_github_activity_v2,
     "dev_activity_contributors_count" => :total_dev_activity_contributors_count,
     "github_activity_contributors_count" => :total_github_activity_contributors_count
   }
@@ -261,6 +265,12 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
       "github_activity" ->
         {:ok, "Github Activity"}
 
+      "dev_activity_v2" ->
+        {:ok, "Development Activity V2 (without bots, capped per contributor)"}
+
+      "github_activity_v2" ->
+        {:ok, "Github Activity V2 (without bots, capped per contributor)"}
+
       "dev_activity_contributors_count" ->
         {:ok, "Number of Github contributors (related to dev activity events)"}
 
@@ -276,6 +286,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
       "dev_activity" -> [link.("development-activity")]
       "dev_activity_contributors_count" -> [link.("development-activity-contributors-count")]
       "github_activity" -> [link.("github-activity")]
+      "dev_activity_v2" -> [link.("development-activity")]
+      "github_activity_v2" -> [link.("github-activity")]
       "github_activity_contributors_count" -> [link.("github-activity-contributors-count")]
     end
   end

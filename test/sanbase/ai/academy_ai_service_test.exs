@@ -151,7 +151,139 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
     end
   end
 
+  describe "answer/2" do
+    setup do
+      article =
+        insert_article(
+          title: "MVRV",
+          academy_url: "https://academy.santiment.net/metrics/mvrv/",
+          github_path: "src/metrics/mvrv.md"
+        )
+
+      insert_chunk(article,
+        chunk_index: 0,
+        heading: "MVRV",
+        content: "MVRV compares market value to realized value.",
+        embedding: unit_vector(0)
+      )
+
+      :ok
+    end
+
+    test "searches the question as-is when there is no history" do
+      parent = self()
+
+      answer_mocks(parent, fn :rewrite -> flunk("no rewrite without history") end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, %{search_query: "What is MVRV?", sources: [%{"title" => "MVRV"}]}} =
+                 AcademyAIService.answer("What is MVRV?", include_suggestions: false)
+
+        assert_received {:embedded, ["What is MVRV?"]}
+      end)
+    end
+
+    test "rewrites a follow-up into a standalone search query using the history" do
+      parent = self()
+
+      history = [
+        %{role: "user", content: "What is MVRV?"},
+        %{role: "assistant", content: "A ratio [1]."}
+      ]
+
+      answer_mocks(parent, fn :rewrite -> {:ok, "How is MVRV calculated?"} end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, %{search_query: "How is MVRV calculated?"}} =
+                 AcademyAIService.answer("How is it calculated?",
+                   chat_history: history,
+                   include_suggestions: false
+                 )
+
+        assert_received {:embedded, ["How is MVRV calculated?"]}
+        assert_received {:prompt, :rewrite, rewrite_prompt}
+        assert rewrite_prompt =~ "User: What is MVRV?"
+        assert rewrite_prompt =~ "Latest question: How is it calculated?"
+
+        # The answer prompt keeps the user's own question.
+        assert_received {:prompt, :answer, answer_prompt}
+        assert answer_prompt =~ "Question: How is it calculated?"
+      end)
+    end
+
+    test "searches the raw question when the rewrite fails" do
+      history = [%{role: "user", content: "What is MVRV?"}]
+
+      answer_mocks(self(), fn :rewrite -> {:error, "timeout"} end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, %{search_query: "How is it calculated?"}} =
+                 AcademyAIService.answer("How is it calculated?",
+                   chat_history: history,
+                   include_suggestions: false
+                 )
+      end)
+    end
+  end
+
+  describe "generate_local_response/4 history" do
+    test "sends the latest messages, without the current question", %{chat: chat} do
+      # The setup chat has 2 messages; add 10 more turns, then the current question.
+      for i <- 1..10 do
+        add_message_at(chat.id, "question #{i}", :user, 2 * i)
+        add_message_at(chat.id, "answer #{i}", :assistant, 2 * i + 1)
+      end
+
+      add_message_at(chat.id, "How is it calculated?", :user, 100)
+
+      parent = self()
+
+      answer_mocks(parent, fn :rewrite -> {:ok, "rewritten"} end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, _} =
+          AcademyAIService.generate_local_response("How is it calculated?", chat.id, nil, false)
+
+        assert_received {:prompt, :answer, prompt}
+        [_, history] = String.split(prompt, "Recent conversation history:")
+        assert history =~ "answer 10"
+        assert history =~ "question 8"
+        refute history =~ "What is DeFi?"
+        refute history =~ "User: How is it calculated?"
+      end)
+    end
+  end
+
   # Helpers
+
+  # Messages inserted in one test share a timestamp (second precision), so each
+  # gets an explicit one, `seconds` after the setup messages.
+  defp add_message_at(chat_id, content, role, seconds) do
+    {:ok, message} = Chat.add_message_to_chat(chat_id, content, role, %{})
+
+    message
+    |> Ecto.Changeset.change(
+      inserted_at:
+        NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second) |> NaiveDateTime.add(seconds)
+    )
+    |> Repo.update!()
+  end
+
+  # Mocks the embedding (reporting the embedded texts) and `Question.ask/2`:
+  # the rewrite call is answered by `rewrite`, the answer call cites source [1].
+  defp answer_mocks(parent, rewrite) do
+    Sanbase.Mock.prepare_mock(Sanbase.AI.Embedding, :generate_embeddings, fn texts, _size ->
+      send(parent, {:embedded, texts})
+      {:ok, [unit_vector(0)]}
+    end)
+    |> Sanbase.Mock.prepare_mock(Sanbase.OpenAI.Question, :ask, fn prompt, opts ->
+      case opts[:generation_name] do
+        "academy.qa.rewrite" ->
+          send(parent, {:prompt, :rewrite, prompt})
+          rewrite.(:rewrite)
+
+        _ ->
+          send(parent, {:prompt, :answer, prompt})
+          {:ok, "MVRV is a ratio [1]."}
+      end
+    end)
+  end
 
   defp insert_article(attrs \\ []) do
     defaults = %{

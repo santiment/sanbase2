@@ -82,6 +82,8 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
       arg(:context, :chat_context_input)
       arg(:type, :chat_type, default_value: :dyor_dashboard)
 
+      # Every message costs several LLM calls (answer, follow-up rewrite, suggestions).
+      middleware(PublicRateLimit, bucket: :chat_message)
       resolve(&ChatResolver.send_chat_message/3)
     end
 

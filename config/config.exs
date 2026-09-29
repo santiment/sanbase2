@@ -378,6 +378,12 @@ config :sanbase, SanbaseWeb.Graphql.Middlewares.PublicRateLimit,
       {2_000, :timer.hours(1)},
       {10_000, :timer.hours(24)}
     ]
+  ],
+  # sendChatMessage (Academy Q&A and DYOR): the most expensive call, a person types
+  # a few messages a minute at most.
+  chat_message: [
+    anonymous: [{5, :timer.minutes(1)}, {30, :timer.hours(1)}, {100, :timer.hours(24)}],
+    authenticated: [{20, :timer.minutes(1)}, {200, :timer.hours(1)}, {1_000, :timer.hours(24)}]
   ]
 
 # Import environment specific config. This must remain at the bottom

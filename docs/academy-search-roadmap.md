@@ -88,36 +88,21 @@ Local before/after, with a full reindex each time and 32 questions × 3 runs:
 
 Ordered by expected user impact.
 
-### 1. "Not covered" signal
-**Why:** For questions the Academy does not answer, search still returns confident-looking
-results. For example, a refund question returns billing pages and a Google Trends question
-returns Social Trends pages. The LLM consumers (the Academy Q&A chat, MCP, the Telegram bot)
-then make up an answer.
+### 1. "Not covered" signal — partly done
+**Q&A chat:** handled. With `gpt-5.4-mini` the answer model replies "not in the Academy" for
+all 5 uncovered questions of the answer eval (`negative_dk_rate` 1.0), so no score cutoff is
+needed there.
 
-Cosine similarity cannot separate these cases. Uncovered questions score up to 0.573, while
-correct answers score as low as 0.409.
+**`academySearch`:** still returns confident-looking results for uncovered questions, and
+its API consumers (MCP) cannot tell. Cosine similarity cannot separate them (uncovered up to
+0.573, correct answers as low as 0.409) and the Cohere scores are not an option (below). An
+option: a cheap LLM relevance check of the top result, calibrated on the golden set's
+negative items.
 
-**What:**
-- Use a reranker that returns a relevance score (next item).
-- Calibrate a threshold on the golden set's negative items.
-- Return nothing, or flag results as `low_confidence`, below it.
-
-**Measure:** a new metric, the negatives' max rerank score vs the answerable items'
-rank-1 score. Add more negative questions to the golden set.
-
-### 2. Cohere reranker (scores + latency)
-**Why:**
-- The listwise `gpt-4o-mini` reranker returns only an order, with no scores.
-- It is the largest latency cost.
-- `Sanbase.Knowledge.Reranker.OpenRouterCohere` (`rerank-v3.5`) already exists: a
-  cross-encoder that returns scores and is likely faster.
-
-**What:**
-- A/B it with `E.run(search_opts: [reranker: Sanbase.Knowledge.Reranker.OpenRouterCohere])`
-  on the live index.
-- Switch the default if it is not worse.
-- Expose its score in the `academySearch` result. Today `similarity` is the pre-rerank
-  cosine, which does not follow the returned order.
+### 2. Cohere reranker — tested, not adopted
+A/B on the v4 index (`E.run(search_opts: [reranker: Sanbase.Knowledge.Reranker.OpenRouterCohere])`,
+3 runs): p50 latency 1046 → 550 ms, but hit@1 0.786 → 0.643 and MRR 0.838 → 0.769. The
+listwise `gpt-4o-mini` reranker stays.
 
 ### 3. Autocomplete returns nothing for most prefixes — done (branch `academy-autocomplete`)
 `academyAutocompleteQuestions` no longer calls aiserver. aiserver had 222 questions for 74 of
@@ -155,35 +140,20 @@ fallback (e.g. "google trends" suggests Sansheets in Google Sheets).
 
 `/academy/autocomplete-questions` in aiserver can be removed after the rollout.
 
-### 4. Rate limits and LLM cost across pods; rate-limit the Q&A chat
-**Why:** Every search costs an embedding plus an LLM rerank, and every Q&A chat answer costs
-an LLM completion. The current limits are node-local ETS counters: with N pods a caller gets
-up to N times the limit, and a deploy resets the day window.
+### 4. Rate limits and LLM cost across pods — Q&A chat part done
+`sendChatMessage` (Academy Q&A and DYOR) now has `PublicRateLimit` (`chat_message` bucket:
+anonymous 5/min, 30/h, 100/day per IP; users 20/min, 200/h, 1000/day).
 
-`sendChatMessage` (`ACADEMY_QA` and DYOR) has no per-caller limit at all, and it is the most
-expensive call.
+**Left:** the counters are node-local ETS: with N pods a caller gets up to N times the
+limit, and a deploy resets the day window. For real daily budgets, move them to a shared
+store (Postgres or Redis) or reuse the `ApiCallLimit` machinery. Check real traffic in the
+prod logs and set the limits just above it.
 
-**What:**
-- Add `PublicRateLimit` with minute, hour and day windows to `sendChatMessage` (anonymous
-  callers per IP, users per id).
-- For real daily budgets, move the counters to a shared store (Postgres or Redis), or reuse
-  the `ApiCallLimit` machinery.
-- Check real traffic in the prod logs (calls per minute per IP, p99) and set the limits
-  just above it.
-
-### 5. Sansheets function chunks: heading lands in the wrong chunk
-**Why:** On the Sansheets function pages each function is a `## SAN_X` heading followed by a
-`##### SAN_X(args)` body of about 700 characters. Merging sections up to 800 characters
-sometimes puts function B's `## SAN_B` heading at the end of function A's chunk. B's chunk
-then starts at the `#####` line, and its heading shows as `SAN_EXCHANGE_INFLOW(projectSlug,
-from, t…` instead of `SAN_EXCHANGE_INFLOW`.
-
-Ranking is fine: in the eval, the stub chunks no longer beat the metric pages. But the
-headings shown to users and to the reranker are messy, and one chunk mixes two functions.
-
-**What:** in `AcademyMarkdown.merge_small_sections/3`, stop merging when the next section
-starts a heading at the same or a higher level than the chunk's first heading, once the
-chunk has body text. Then reindex locally and re-run the eval.
+### 5. Sansheets function chunks — done (index v4)
+A heading-only section (`## SAN_B`) is no longer appended to the previous chunk; it starts a
+chunk and its content merges into it. The page intro chunk gets the article title as its
+heading (99 chunks had none). Local v4 reindex: 1134 chunks, 0 without a heading, ranking
+unchanged (hit@1 0.786, hit@5 0.929, relevant@3 1.0).
 
 ### 6. Grow the golden set with real user questions
 **Why:** 28 answerable questions can only show large changes. The questions were written by
@@ -194,14 +164,37 @@ us, not by users.
 - Label the expected pages and answer phrases.
 - Add more "not covered" questions.
 
-### 7. Answer-level eval for the Academy Q&A chat
-**Why:** The current eval measures retrieval only. What users see is the LLM answer: whether
-it is correct, whether it cites the right page, and whether it refuses when the Academy does
-not cover the question.
+### 7. Answer quality of the Academy Q&A chat — done (branch `academy-answer-quality`)
+`E.run_answers()` runs `AcademyAIService.answer/2` for the golden questions plus
+`priv/knowledge/eval/academy_followup_set.exs` (second turns of a chat) and scores the
+answers: an LLM judge (1-5, sees the expected page), cited sources, "not in the Academy"
+answers, latency. `fact_recall` is weak here: the answer phrases are verbatim source text and
+answers paraphrase them; use the judge.
 
-**What:** extend the eval to run `AcademyAIService.generate_local_response` without saving a
-chat, then score the answer against the answer phrases and the cited URLs. Use an LLM judge
-for correctness.
+Changes, measured locally (38 items):
+- **Chat history bug:** the history held the chat's *first* 20 messages, not the latest,
+  and repeated the current question. Now the latest 6, without the current one.
+- **Follow-up rewrite:** with history, `gpt-5.4-mini` (no reasoning) turns the question into
+  a standalone search query; the answer prompt keeps the original question.
+- **Answer model:** `gpt-5-nano` (default reasoning) → `gpt-5.4-mini`, `reasoning_effort: "low"`.
+  Suggestions use `gpt-5.4-mini` without reasoning.
+
+| | before | after (2 runs) |
+|---|---|---|
+| Judge mean (1-5) | 4.70 | 4.78 / 4.84 |
+| Answerable questions answered | 91% | 97% |
+| Cited an expected or acceptable page | 91% | 97% |
+| Follow-ups answered and correctly cited | 60% | 100% |
+| Uncovered questions answered "not in the Academy" | 100% | 100% |
+| Latency p50 / p95 | 9.0 / 20.2 s | 3.3 / 5.2 s |
+
+Rollout (remote shell, after the deploy):
+1. `a = E.run_answers()`, `E.print_answers(a)`: the model change is live immediately.
+2. `Academy.backup_index("pre_v4")`, then `Task.start(fn -> Academy.reindex_academy(force: true) end)`.
+   Stored autocomplete questions are kept.
+3. `E.index_stats()` (0 chunks without a heading), `E.run(runs: 3)` and `E.run_answers()`.
+4. If worse: `Academy.restore_index("pre_v4")`. Later: `drop_index_backup("pre_v4")` and
+   `drop_index_backup("pre_v3")`.
 
 ### 8. Caching
 **Why:** Every call pays for an embedding and a rerank, and repeated or popular queries are

@@ -176,6 +176,30 @@ defmodule Sanbase.Knowledge.AcademyMarkdownTest do
       assert hd(chunks).content =~ "Returns the active addresses"
     end
 
+    test "a heading-only section starts a chunk instead of ending the previous one" do
+      function = fn name ->
+        """
+        ## #{name}
+
+        ##### #{name}(projectSlug, from, to) ⇒ <code>Array</code>
+
+        #{String.duplicate("Returns #{name} for the specified asset. ", 15)}
+        """
+      end
+
+      markdown = Enum.map_join(["SAN_A", "SAN_B", "SAN_C", "SAN_D"], "\n", function)
+
+      chunks = AcademyMarkdown.chunk(markdown)
+
+      # SAN_D is a short tail and joins SAN_C, as short tails do.
+      assert Enum.map(chunks, & &1.heading) == ["SAN_A", "SAN_B", "SAN_C"]
+
+      for chunk <- chunks do
+        assert chunk.content =~ ~r/\A## #{chunk.heading}\n/
+        refute chunk.content =~ ~r/^## SAN_\w+\s*\z/m
+      end
+    end
+
     test "a page that is only frontmatter and components yields no chunks" do
       markdown = """
       ---
@@ -189,6 +213,19 @@ defmodule Sanbase.Knowledge.AcademyMarkdownTest do
 
       assert AcademyMarkdown.chunk(markdown) == []
       assert Sanbase.Knowledge.Academy.preview_chunks(markdown, "Assets changelog") == []
+    end
+
+    test "the indexer labels the intro chunk with the article title" do
+      markdown = """
+      #{String.duplicate("The Gini index measures how evenly coins are held. ", 20)}
+
+      ## Access
+
+      #{String.duplicate("Free access. ", 80)}
+      """
+
+      assert [%{heading: "Gini Index"}, %{heading: "Access"}] =
+               Sanbase.Knowledge.Academy.preview_chunks(markdown, "Gini Index")
     end
 
     test "strips link syntax from headings" do

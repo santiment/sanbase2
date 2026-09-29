@@ -206,7 +206,8 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
       distinct_pages_top5: top5 |> Enum.uniq_by(& &1.url) |> length(),
       markup_top5: Enum.count(top5, &AcademyMarkdown.markup_residue?(&1.chunk)),
       stubs_top5: Enum.count(top5, &(String.length(&1.chunk) < @stub_chars)),
-      bad_heading_top5: Enum.count(top5, &(is_nil(&1.heading) or bad_heading?(&1.heading))),
+      missing_heading_top5: Enum.count(top5, &is_nil(&1.heading)),
+      bad_heading_top5: Enum.count(top5, &bad_heading?(&1.heading)),
       top1_similarity: top1_similarity(hits),
       max_similarity: hits |> Enum.map(& &1.similarity) |> Enum.max(fn -> nil end),
       stability: stability(top5, other_runs),
@@ -269,6 +270,7 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
       distinct_pages_top5: mean(Enum.map(ok, & &1.distinct_pages_top5)),
       markup_chunks_top5: mean(Enum.map(ok, & &1.markup_top5)),
       stub_chunks_top5: mean(Enum.map(ok, & &1.stubs_top5)),
+      missing_heading_top5: mean(Enum.map(ok, & &1.missing_heading_top5)),
       bad_heading_top5: mean(Enum.map(ok, & &1.bad_heading_top5)),
       stability_top5: mean(for %{stability: s} <- ok, is_number(s), do: s),
       answerable_min_top1_similarity: Enum.min(rank1_sims, fn -> nil end),
@@ -280,6 +282,220 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
       latency_p50_ms: percentile(latencies, 0.5),
       latency_p95_ms: percentile(latencies, 0.95),
       latency_max_ms: List.last(latencies)
+    }
+  end
+
+  # Answers ------------------------------------------------------------
+
+  @judge_model "gpt-5.4-mini"
+  @judge_reference_chars 6_000
+
+  @doc "Default path of the bundled follow-up question set."
+  @spec default_followup_set_path() :: String.t()
+  def default_followup_set_path() do
+    Application.app_dir(:sanbase, "priv/knowledge/eval/academy_followup_set.exs")
+  end
+
+  @doc """
+  Eval of the Academy Q&A chat answers (`sendChatMessage` with `ACADEMY_QA`):
+  runs `AcademyAIService.answer/2` for the golden questions plus the follow-up
+  set (second turns of a chat) and scores what the user reads. Nothing is
+  saved to a chat. Costs one answer LLM call per item (plus a rewrite call per
+  follow-up and a judge call per answer).
+
+      a = E.run_answers()
+      E.print_answers(a)
+      E.compare(a_before, a)
+
+  Per item:
+    * whether the answer is the "not in the Academy" message (`dk`)
+    * `fact_recall` - share of the item's answer phrases found in the answer
+    * `cited_expected` / `cited_relevant` - a cited source is the expected page,
+      or an expected or acceptable page
+    * `judge` - 1..5 from an LLM that sees the question, the answer and the
+      expected page's content (`judge: false` skips it)
+
+  Options:
+    * `:file`, `:followup_file` - item sets (`followup_file: nil` skips follow-ups)
+    * `:ids` - only these item ids
+    * `:answer_opts` - passed to `AcademyAIService.answer/2`, e.g. `[model: "gpt-5.4-mini"]`
+    * `:judge` - run the LLM judge (default true)
+    * `:concurrency` - parallel items (default 4)
+  """
+  @spec run_answers(keyword()) :: map()
+  def run_answers(opts \\ []) do
+    judge? = Keyword.get(opts, :judge, true)
+    answer_opts = Keyword.get(opts, :answer_opts, [])
+
+    items =
+      [
+        Keyword.get(opts, :file, default_golden_set_path()),
+        Keyword.get(opts, :followup_file, default_followup_set_path())
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.flat_map(&load_items/1)
+      |> maybe_filter_ids(opts[:ids])
+
+    results =
+      items
+      |> Task.async_stream(&evaluate_answer(&1, answer_opts, judge?),
+        max_concurrency: Keyword.get(opts, :concurrency, 4),
+        timeout: :infinity,
+        ordered: true
+      )
+      |> Enum.map(fn {:ok, result} -> result end)
+
+    %{
+      ran_at: DateTime.utc_now() |> DateTime.to_iso8601(),
+      opts: %{answer_opts: inspect(answer_opts), judge: judge?},
+      summary: summarize_answers(results),
+      items: results
+    }
+  end
+
+  @doc "Print an answer eval result: summary, then one line per item."
+  @spec print_answers(map()) :: :ok
+  def print_answers(%{summary: summary, items: items}) do
+    IO.puts("== Academy answer eval ==")
+    Enum.each(summary, fn {k, v} -> IO.puts("  #{k}: #{format(v)}") end)
+    IO.puts("\n  id | dk | fact_recall | cited_expected | judge | search_query")
+
+    Enum.each(items, fn i ->
+      IO.puts(
+        "  #{i.id} | #{i.dk} | #{format(i.fact_recall)} | #{i.cited_expected} | " <>
+          "#{format(i.judge)} | #{i.search_query}"
+      )
+    end)
+  end
+
+  defp evaluate_answer(item, answer_opts, judge?) do
+    opts =
+      Keyword.merge(
+        [chat_history: Map.get(item, :history, []), include_suggestions: false],
+        answer_opts
+      )
+
+    started = System.monotonic_time(:millisecond)
+    result = AcademyAIService.answer(item.question, opts)
+    latency = System.monotonic_time(:millisecond) - started
+
+    case result do
+      {:ok, %{answer: answer, sources: sources, search_query: search_query}} ->
+        dk = answer == AcademyAIService.dont_know_message()
+        urls = Enum.map(sources, & &1["url"])
+        relevant = item.expected_urls ++ Map.get(item, :acceptable_urls, [])
+
+        fact_recall =
+          case Eval.context_recall(answer, item.answer_facts) do
+            nil -> nil
+            %{recall: recall} -> recall
+          end
+
+        %{
+          id: item.id,
+          type: item.type,
+          negative: item.negative,
+          followup: Map.has_key?(item, :history),
+          dk: dk,
+          fact_recall: if(dk, do: 0.0, else: fact_recall),
+          cited_expected: Enum.any?(urls, &(&1 in item.expected_urls)),
+          cited_relevant: Enum.any?(urls, &(&1 in relevant)),
+          judge: if(judge? and not item.negative and not dk, do: judge(item, answer)),
+          search_query: search_query,
+          sources: urls,
+          answer: String.slice(answer, 0, 600),
+          latency_ms: latency,
+          error: nil
+        }
+
+      {:error, reason} ->
+        %{
+          id: item.id,
+          type: item.type,
+          negative: item.negative,
+          error: inspect(reason),
+          latency_ms: latency
+        }
+    end
+  end
+
+  # 1..5: is the answer correct and complete for the question, judged against the
+  # expected page. nil when the judge call fails.
+  defp judge(item, answer) do
+    reference =
+      from(c in AcademyArticleChunk,
+        join: a in AcademyArticle,
+        on: a.id == c.article_id,
+        where: a.academy_url in ^item.expected_urls and c.is_stale == false,
+        order_by: [a.id, c.chunk_index],
+        select: c.content
+      )
+      |> Repo.all()
+      |> Enum.join("\n\n")
+      |> String.slice(0, @judge_reference_chars)
+
+    history =
+      item
+      |> Map.get(:history, [])
+      |> Enum.map_join("\n", &"#{&1.role}: #{&1.content}")
+
+    prompt = """
+    You grade answers of a documentation assistant for the Santiment Academy.
+    Score the answer from 1 to 5 against the reference documentation:
+    5 = correct and answers the question fully; 4 = correct, minor omissions;
+    3 = partly correct or vague; 2 = mostly misses the question; 1 = wrong or unsupported.
+    Do not reward length. Reply with JSON only: {"score": <1-5>, "reason": "<one sentence>"}.
+
+    #{if history != "", do: "Conversation before the question:\n#{history}\n", else: ""}
+    Question: #{item.question}
+
+    Key facts the answer should contain: #{Enum.join(item.answer_facts, "; ")}
+
+    Reference documentation:
+    #{reference}
+
+    Answer to grade:
+    #{answer}
+    """
+
+    with {:ok, content} <-
+           Sanbase.OpenAI.Question.ask(prompt, %{
+             model: @judge_model,
+             reasoning_effort: "low",
+             response_format: %{"type" => "json_object"},
+             trace_name: "academy.eval.judge"
+           }),
+         {:ok, %{"score" => score}} when is_integer(score) and score in 1..5 <-
+           Jason.decode(content) do
+      score
+    else
+      _ -> nil
+    end
+  end
+
+  defp summarize_answers(results) do
+    {errors, ok} = Enum.split_with(results, &(&1.error != nil))
+    {negatives, answerable} = Enum.split_with(ok, & &1.negative)
+    {followups, single} = Enum.split_with(answerable, & &1.followup)
+    latencies = ok |> Enum.map(& &1.latency_ms) |> Enum.sort()
+    judged = answerable |> Enum.map(& &1.judge) |> Enum.reject(&is_nil/1)
+
+    %{
+      items: length(results),
+      errors: length(errors),
+      answerable: length(answerable),
+      answered_rate: rate(answerable, &(not &1.dk)),
+      fact_recall: mean(answerable |> Enum.map(& &1.fact_recall) |> Enum.reject(&is_nil/1)),
+      cited_expected: rate(answerable, & &1.cited_expected),
+      cited_relevant: rate(answerable, & &1.cited_relevant),
+      judge_mean: mean(judged),
+      judge_good_rate: rate(judged, &(&1 >= 4)),
+      followup_answered_rate: rate(followups, &(not &1.dk)),
+      followup_cited_relevant: rate(followups, & &1.cited_relevant),
+      single_cited_relevant: rate(single, & &1.cited_relevant),
+      negative_dk_rate: rate(negatives, & &1.dk),
+      latency_p50_ms: percentile(latencies, 0.5),
+      latency_p95_ms: percentile(latencies, 0.95)
     }
   end
 

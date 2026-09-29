@@ -319,9 +319,20 @@ defmodule Sanbase.Knowledge.AcademyMarkdown do
   end
 
   # `small` is the section whose size decides; the merged text must fit `chunk_size`.
+  # A heading-only section is never appended to a chunk that has body text: it would
+  # end that chunk with a heading whose content lands in the next chunk (Sansheets
+  # pages: `## SAN_B` at the end of the `SAN_A` chunk). It starts a chunk instead,
+  # and its content merges into it.
   defp mergeable?(first, second, small, min_chars, chunk_size) do
     String.length(small.text) < min_chars and
-      String.length(first.text) + 2 + String.length(second.text) <= chunk_size
+      String.length(first.text) + 2 + String.length(second.text) <= chunk_size and
+      not (heading_only?(second) and not heading_only?(first))
+  end
+
+  defp heading_only?(%{text: text}) do
+    text
+    |> String.split("\n", trim: true)
+    |> Enum.all?(&(String.trim(&1) == "" or parse_heading(&1) != nil))
   end
 
   defp join_sections(first, second), do: %{first | text: first.text <> "\n\n" <> second.text}

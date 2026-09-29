@@ -333,6 +333,24 @@ defmodule Sanbase.Chat do
     |> Repo.all()
   end
 
+  @doc """
+  The latest `limit` messages of a chat, oldest first.
+  """
+  @spec get_latest_chat_messages(Ecto.UUID.t(), pos_integer()) :: [ChatMessage.t()]
+  def get_latest_chat_messages(chat_id, limit) when is_integer(limit) and limit > 0 do
+    ChatMessage
+    |> where([cm], cm.chat_id == ^chat_id)
+    # Newest first; on equal timestamps the assistant reply comes after the user message.
+    |> order_by(
+      [cm],
+      desc: cm.inserted_at,
+      desc: fragment("CASE WHEN ?::text = 'user' THEN 0 ELSE 1 END", cm.role)
+    )
+    |> limit(^limit)
+    |> Repo.all()
+    |> Enum.reverse()
+  end
+
   defp generate_title_from_content(content) do
     content
     |> String.trim()

@@ -10,25 +10,16 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @aggregations [:sum]
 
-  @timeseries_metrics_function_mapping %{
-    "dev_activity" => :dev_activity,
-    "github_activity" => :github_activity,
-    "dev_activity_v2" => :dev_activity_v2,
-    "github_activity_v2" => :github_activity_v2,
-    "dev_activity_contributors_count" => :dev_activity_contributors_count,
-    "github_activity_contributors_count" => :github_activity_contributors_count
+  # Version 2.0 of the activity metrics excludes the bots and caps the events of a
+  # single contributor. See Sanbase.Clickhouse.Github.SqlQuery
+  @available_versions %{
+    "dev_activity" => ["1.0", "2.0"],
+    "github_activity" => ["1.0", "2.0"],
+    "dev_activity_contributors_count" => ["1.0"],
+    "github_activity_contributors_count" => ["1.0"]
   }
 
-  @aggregated_metrics_function_mapping %{
-    "dev_activity" => :total_dev_activity,
-    "github_activity" => :total_github_activity,
-    "dev_activity_v2" => :total_dev_activity_v2,
-    "github_activity_v2" => :total_github_activity_v2,
-    "dev_activity_contributors_count" => :total_dev_activity_contributors_count,
-    "github_activity_contributors_count" => :total_github_activity_contributors_count
-  }
-
-  @timeseries_metrics Map.keys(@timeseries_metrics_function_mapping)
+  @timeseries_metrics Map.keys(@available_versions)
   @histogram_metrics []
   @table_metrics []
 
@@ -65,29 +56,18 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     timeseries_data(metric, %{organizations: [organization]}, from, to, interval, opts)
   end
 
-  def timeseries_data(metric, %{organizations: organizations}, from, to, interval, _opts) do
-    apply(
-      Github,
-      Map.get(@timeseries_metrics_function_mapping, metric),
-      [organizations, from, to, interval, "None", nil]
-    )
-    |> transform_to_value_pairs()
+  def timeseries_data(metric, %{organizations: organizations}, from, to, interval, opts) do
+    with {:ok, version} <- version(metric, opts) do
+      github_timeseries_data(metric, organizations, from, to, interval, version)
+      |> transform_to_value_pairs()
+    end
   end
 
-  def timeseries_data(metric, %{slug: slug_or_slugs}, from, to, interval, _opts) do
+  def timeseries_data(metric, %{slug: slug_or_slugs}, from, to, interval, opts) do
     case Project.List.github_organizations_by_slug(slug_or_slugs) do
-      %{} = empty_map when map_size(empty_map) == 0 ->
-        {:ok, []}
-
       %{} = organizations_map ->
         organizations = Map.values(organizations_map) |> List.flatten()
-
-        apply(
-          Github,
-          Map.get(@timeseries_metrics_function_mapping, metric),
-          [organizations, from, to, interval, "None", nil]
-        )
-        |> transform_to_value_pairs()
+        timeseries_data(metric, %{organizations: organizations}, from, to, interval, opts)
 
       {:error, error} ->
         {:error, error}
@@ -112,17 +92,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     aggregated_timeseries_data(metric, %{organizations: [organization]}, from, to, opts)
   end
 
-  def aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, _opts)
+  def aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, opts)
       when is_binary(organizations) or is_list(organizations) do
-    apply(
-      Github,
-      Map.get(@aggregated_metrics_function_mapping, metric),
-      [
-        List.wrap(organizations),
-        from,
-        to
-      ]
-    )
+    with {:ok, version} <- version(metric, opts) do
+      github_aggregated_timeseries_data(metric, List.wrap(organizations), from, to, version)
+    end
   end
 
   def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, opts) do
@@ -154,6 +128,53 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        selector,
        "The selector must have at least one of the following fields: slug, organization, organizations"
      )}
+  end
+
+  # The version is checked beforehand, so only the activity metrics get a version
+  # other than 1.0
+  defp github_timeseries_data(metric, organizations, from, to, interval, version) do
+    case metric do
+      "dev_activity" ->
+        Github.dev_activity(organizations, from, to, interval, "None", nil, version: version)
+
+      "github_activity" ->
+        Github.github_activity(organizations, from, to, interval, "None", nil, version: version)
+
+      "dev_activity_contributors_count" ->
+        Github.dev_activity_contributors_count(organizations, from, to, interval, "None", nil)
+
+      "github_activity_contributors_count" ->
+        Github.github_activity_contributors_count(organizations, from, to, interval, "None", nil)
+    end
+  end
+
+  defp github_aggregated_timeseries_data(metric, organizations, from, to, version) do
+    case metric do
+      "dev_activity" ->
+        Github.total_dev_activity(organizations, from, to, version: version)
+
+      "github_activity" ->
+        Github.total_github_activity(organizations, from, to, version: version)
+
+      "dev_activity_contributors_count" ->
+        Github.total_dev_activity_contributors_count(organizations, from, to)
+
+      "github_activity_contributors_count" ->
+        Github.total_github_activity_contributors_count(organizations, from, to)
+    end
+  end
+
+  defp version(metric, opts) do
+    version = Keyword.get(opts, :version) || Sanbase.Metric.default_version()
+    versions = Map.fetch!(@available_versions, metric)
+
+    if version in versions do
+      {:ok, version}
+    else
+      {:error,
+       "Version #{version} is not available for the #{metric} metric. " <>
+         "Available versions: #{Enum.join(versions, ", ")}"}
+    end
   end
 
   defp github_organizatoins_of_projects(projects) do
@@ -265,12 +286,6 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
       "github_activity" ->
         {:ok, "Github Activity"}
 
-      "dev_activity_v2" ->
-        {:ok, "Development Activity V2 (without bots, capped per contributor)"}
-
-      "github_activity_v2" ->
-        {:ok, "Github Activity V2 (without bots, capped per contributor)"}
-
       "dev_activity_contributors_count" ->
         {:ok, "Number of Github contributors (related to dev activity events)"}
 
@@ -286,11 +301,14 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
       "dev_activity" -> [link.("development-activity")]
       "dev_activity_contributors_count" -> [link.("development-activity-contributors-count")]
       "github_activity" -> [link.("github-activity")]
-      "dev_activity_v2" -> [link.("development-activity")]
-      "github_activity_v2" -> [link.("github-activity")]
       "github_activity_contributors_count" -> [link.("github-activity-contributors-count")]
     end
   end
+
+  @impl Sanbase.Metric.Behaviour
+  def available_versions(metric), do: {:ok, Map.fetch!(@available_versions, metric)}
+
+  def available_versions(), do: {:ok, @available_versions}
 
   @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: @aggregations

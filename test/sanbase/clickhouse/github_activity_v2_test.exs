@@ -50,7 +50,7 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       assert query.sql =~ "GROUP BY owner, repo, actor, event"
     end
 
-    test "only dev_activity_v2 excludes the non-dev events" do
+    test "only dev_activity excludes the non-dev events" do
       dev_query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, "1d")
       github_query = SqlQuery.github_activity_v2_query(["org"], @from, @to, "1d")
 
@@ -106,16 +106,20 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
   end
 
   describe "metrics" do
-    test "dev_activity_v2 and github_activity_v2 are available and free" do
-      metrics = Sanbase.Metric.available_metrics()
-
-      for metric <- ["dev_activity_v2", "github_activity_v2"] do
-        assert metric in metrics
-        assert Sanbase.Metric.free_metrics() |> Enum.member?(metric)
+    test "dev_activity and github_activity have version 2.0" do
+      for metric <- ["dev_activity", "github_activity"] do
+        assert {:ok, ["1.0", "2.0"]} = Sanbase.Metric.available_versions(metric)
       end
+
+      for metric <- ["dev_activity_contributors_count", "github_activity_contributors_count"] do
+        assert {:ok, ["1.0"]} = Sanbase.Metric.available_versions(metric)
+      end
+
+      {:ok, versions} = Sanbase.Metric.available_versions()
+      assert versions["dev_activity"] == ["1.0", "2.0"]
     end
 
-    test "dev_activity_v2 timeseries" do
+    test "dev_activity version 2.0 timeseries" do
       rows = [
         [DateTime.to_unix(~U[2026-06-08 00:00:00Z]), 230.4],
         [DateTime.to_unix(~U[2026-06-09 00:00:00Z]), 50.25]
@@ -125,11 +129,12 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert {:ok, result} =
                  Sanbase.Metric.timeseries_data(
-                   "dev_activity_v2",
+                   "dev_activity",
                    %{organization: "org"},
                    ~U[2026-06-08 00:00:00Z],
                    @to,
-                   "1d"
+                   "1d",
+                   version: "2.0"
                  )
 
         assert result == [
@@ -139,19 +144,71 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       end)
     end
 
-    test "github_activity_v2 aggregated timeseries" do
+    test "github_activity version 2.0 aggregated timeseries" do
       rows = [["org1", 385.5], ["org2", 100]]
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert {:ok, %{"org1" => 385.5, "org2" => 100.0}} =
                  Sanbase.Metric.aggregated_timeseries_data(
-                   "github_activity_v2",
+                   "github_activity",
                    %{organizations: ["org1", "org2"]},
                    @from,
-                   @to
+                   @to,
+                   version: "2.0"
                  )
       end)
+    end
+
+    test "the version selects the query" do
+      test_pid = self()
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, fn sql, _args, _opts ->
+        send(test_pid, {:sql, sql})
+        {:ok, %{rows: []}}
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for version <- ["1.0", "2.0"] do
+          assert {:ok, []} =
+                   Sanbase.Metric.timeseries_data(
+                     "dev_activity",
+                     %{organization: "org"},
+                     @from,
+                     @to,
+                     "1d",
+                     version: version
+                   )
+        end
+
+        assert_receive {:sql, v1_sql}
+        assert_receive {:sql, v2_sql}
+        refute v1_sql =~ "max_daily_events"
+        assert v2_sql =~ "max_daily_events"
+      end)
+    end
+
+    test "an unsupported version is an error" do
+      assert {:error, error} =
+               Sanbase.Metric.timeseries_data(
+                 "dev_activity_contributors_count",
+                 %{organization: "org"},
+                 @from,
+                 @to,
+                 "1d",
+                 version: "2.0"
+               )
+
+      assert error =~
+               "Version 2.0 is not available for the dev_activity_contributors_count metric"
+
+      assert {:error, _} =
+               Sanbase.Metric.aggregated_timeseries_data(
+                 "dev_activity",
+                 %{organization: "org"},
+                 @from,
+                 @to,
+                 version: "3.0"
+               )
     end
   end
 end

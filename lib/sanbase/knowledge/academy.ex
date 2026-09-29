@@ -5,15 +5,13 @@ defmodule Sanbase.Knowledge.Academy do
   Provides functionality for reentrant indexing, storing embeddings, and similarity search.
   """
 
-  alias Sanbase.Knowledge.{AcademyArticle, AcademyArticleChunk}
+  alias Sanbase.Knowledge.{AcademyArticle, AcademyArticleChunk, AcademyMarkdown}
   alias Sanbase.Repo
 
   import Ecto.Query
 
   require Logger
 
-  @chunk_size 2000
-  @chunk_overlap 200
   @embedding_size 1536
   @embedding_retry_attempts 3
   @embedding_retry_backoff_ms 2_000
@@ -32,7 +30,10 @@ defmodule Sanbase.Knowledge.Academy do
   # v2: `to_academy_url/1` strips the `ai-toolkit/` root section, fixing academy_url for
   # ai-toolkit articles that 404'd. Their markdown is unchanged, so without the bump the
   # SHA-cache would keep the stale URLs.
-  @index_version 2
+  # v3: chunking moved to `Sanbase.Knowledge.AcademyMarkdown` - frontmatter/MDX/media markup
+  # stripped, section-based chunks with small sections merged, clean headings, and a
+  # `Title > Breadcrumb` header prepended to the embedded text.
+  @index_version 3
 
   @excluded_paths MapSet.new([
                     "pull_request_template.md",
@@ -166,6 +167,9 @@ defmodule Sanbase.Knowledge.Academy do
          {:ok, %{to_index: to_index, unchanged: unchanged}} <-
            process_markdown_entries(tree_entries, branch, false, force?) do
       Repo.transaction(fn ->
+        # A manual reindex overlapping the daily job would otherwise interleave the
+        # stale/delete/insert steps. The loser rolls back and the index is untouched.
+        acquire_reindex_lock!()
         mark_all_articles_stale()
         clear_stale_for_unchanged(unchanged)
         # Prune stale rows first, or their academy_url/github_path block the new inserts
@@ -179,6 +183,92 @@ defmodule Sanbase.Knowledge.Academy do
       end
     end
   end
+
+  @reindex_lock_key 7_411_982_301
+
+  defp acquire_reindex_lock!() do
+    case Repo.query!("SELECT pg_try_advisory_xact_lock($1)", [@reindex_lock_key]) do
+      %{rows: [[true]]} -> :ok
+      _ -> Repo.rollback(:reindex_already_running)
+    end
+  end
+
+  @backup_tables ["academy_articles", "academy_article_chunks"]
+
+  @doc """
+  Copy the current index (`academy_articles` and `academy_article_chunks`,
+  embeddings included) into `<table>_backup_<suffix>` tables. Run it before a
+  reindex that changes chunking or embeddings, so `restore_index/1` can bring
+  the previous index back without re-embedding. `suffix` must match `[a-z0-9_]+`.
+  """
+  @spec backup_index(String.t()) :: :ok | {:error, term()}
+  def backup_index(suffix) do
+    with {:ok, suffix} <- validate_backup_suffix(suffix) do
+      Repo.transaction(fn ->
+        # Without the lock a reindex committing between the two copies would leave
+        # articles and chunks from different generations.
+        acquire_reindex_lock!()
+
+        @backup_tables
+        |> Enum.map(&"CREATE TABLE #{&1}_backup_#{suffix} AS TABLE #{&1}")
+        |> run_all_or_rollback()
+      end)
+      |> ok_or_error()
+    end
+  end
+
+  @doc """
+  Replace the live index with a backup made by `backup_index/1`, in one
+  transaction. Search keeps serving the current rows until it commits.
+  """
+  @spec restore_index(String.t()) :: :ok | {:error, term()}
+  def restore_index(suffix) do
+    with {:ok, suffix} <- validate_backup_suffix(suffix) do
+      Repo.transaction(fn ->
+        acquire_reindex_lock!()
+
+        run_all_or_rollback([
+          "DELETE FROM academy_article_chunks",
+          "DELETE FROM academy_articles",
+          "INSERT INTO academy_articles SELECT * FROM academy_articles_backup_#{suffix}",
+          "INSERT INTO academy_article_chunks SELECT * FROM academy_article_chunks_backup_#{suffix}"
+        ])
+      end)
+      |> ok_or_error()
+    end
+  end
+
+  @doc "Drop the backup tables made by `backup_index/1`."
+  @spec drop_index_backup(String.t()) :: :ok | {:error, term()}
+  def drop_index_backup(suffix) do
+    with {:ok, suffix} <- validate_backup_suffix(suffix) do
+      Enum.each(@backup_tables, fn table ->
+        Repo.query!("DROP TABLE IF EXISTS #{table}_backup_#{suffix}")
+      end)
+    end
+  end
+
+  # Runs inside a transaction. A failing statement (e.g. the backup table already
+  # exists) rolls back with the Postgres error instead of raising.
+  defp run_all_or_rollback(statements) do
+    Enum.each(statements, fn sql ->
+      case Repo.query(sql) do
+        {:ok, _} -> :ok
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp validate_backup_suffix(suffix) when is_binary(suffix) do
+    if Regex.match?(~r/\A[a-z0-9_]{1,40}\z/, suffix),
+      do: {:ok, suffix},
+      else: {:error, :invalid_backup_suffix}
+  end
+
+  defp validate_backup_suffix(_suffix), do: {:error, :invalid_backup_suffix}
+
+  defp ok_or_error({:ok, _}), do: :ok
+  defp ok_or_error({:error, reason}), do: {:error, reason}
 
   defp log_reindex_result(result, started_at, log_tags) do
     duration_sec = calculate_duration_seconds(started_at)
@@ -333,7 +423,7 @@ defmodule Sanbase.Knowledge.Academy do
           is_stale: false
         }
 
-        case build_chunks(markdown, dry_run?) do
+        case build_chunks(markdown, title, dry_run?) do
           {:ok, chunks_attrs} ->
             {:ok, article_attrs, chunks_attrs}
 
@@ -376,26 +466,23 @@ defmodule Sanbase.Knowledge.Academy do
     end
   end
 
-  defp build_chunks(markdown, dry_run?) do
+  defp build_chunks(markdown, title, dry_run?) do
     markdown
-    |> chunk_markdown()
+    |> chunk_markdown(title)
     |> maybe_embed_chunks(dry_run?)
   end
 
-  defp chunk_markdown(markdown) do
-    chunk_opts = [chunk_size: @chunk_size, chunk_overlap: @chunk_overlap, format: :markdown]
-
+  defp chunk_markdown(markdown, title) do
     chunks =
       markdown
-      |> TextChunker.split(chunk_opts)
+      |> AcademyMarkdown.chunk()
       |> Enum.with_index()
       |> Enum.map(fn {chunk, index} ->
-        chunk_text = chunk.text |> String.trim()
-
         %{
           chunk_index: index,
-          heading: extract_heading(chunk_text),
-          content: chunk_text,
+          heading: chunk.heading,
+          content: chunk.content,
+          embedding_text: AcademyMarkdown.embedding_text(title, chunk),
           is_stale: false
         }
       end)
@@ -403,8 +490,21 @@ defmodule Sanbase.Knowledge.Academy do
     {:ok, chunks}
   end
 
+  @doc """
+  Chunk `markdown` exactly as the indexer does, without embedding or writing
+  anything. Returns the chunks with their `heading` and the `embedding_text`
+  that would be sent to the embedder. Use it to preview chunking changes, e.g.
+  from a remote shell or against a local academy checkout.
+  """
+  @spec preview_chunks(String.t(), String.t() | nil) :: [map()]
+  def preview_chunks(markdown, title \\ nil) when is_binary(markdown) do
+    title = title || extract_heading_title(markdown)
+    {:ok, chunks} = chunk_markdown(markdown, title)
+    chunks
+  end
+
   defp maybe_embed_chunks({:ok, chunks}, true) do
-    {:ok, Enum.map(chunks, &Map.put(&1, :embedding, []))}
+    {:ok, Enum.map(chunks, &(&1 |> Map.delete(:embedding_text) |> Map.put(:embedding, [])))}
   end
 
   defp maybe_embed_chunks({:ok, chunks}, false) do
@@ -424,6 +524,10 @@ defmodule Sanbase.Knowledge.Academy do
     end
   end
 
+  # A page that is only markup (imports, images) cleans down to no chunks; the
+  # embeddings API rejects an empty input, and one such page would abort the reindex.
+  defp embed_chunks([]), do: {:ok, []}
+
   defp embed_chunks(chunks) do
     payload = Enum.map(chunks, &format_chunk_for_embedding/1)
 
@@ -431,7 +535,9 @@ defmodule Sanbase.Knowledge.Academy do
       {:ok, vectors} ->
         embedded_chunks =
           Enum.zip_with(chunks, vectors, fn chunk, embedding ->
-            Map.put(chunk, :embedding, embedding)
+            chunk
+            |> Map.delete(:embedding_text)
+            |> Map.put(:embedding, embedding)
           end)
 
         {:ok, embedded_chunks}
@@ -540,7 +646,7 @@ defmodule Sanbase.Knowledge.Academy do
     Repo.delete_all(from(article in AcademyArticle, where: article.is_stale))
   end
 
-  defp format_chunk_for_embedding(%{content: content}), do: content
+  defp format_chunk_for_embedding(%{embedding_text: text}), do: text
 
   defp extract_frontmatter(markdown) do
     markdown
@@ -617,19 +723,9 @@ defmodule Sanbase.Knowledge.Academy do
   defp extract_heading_title(markdown) do
     regex = ~r/^(#|##)\s+(?<title>.+)$/m
 
-    case Regex.run(regex, markdown, capture: :all_but_first) do
-      [title | _] -> String.trim(title)
+    case Regex.named_captures(regex, AcademyMarkdown.clean(markdown)) do
+      %{"title" => title} -> AcademyMarkdown.clean_heading(title)
       _ -> "Untitled Academy Article"
-    end
-  end
-
-  defp extract_heading(chunk_text) do
-    chunk_text
-    |> String.split("\n")
-    |> Enum.find(&String.starts_with?(&1, "#"))
-    |> case do
-      nil -> nil
-      heading -> String.trim_leading(heading, "#") |> String.trim()
     end
   end
 
@@ -649,7 +745,7 @@ defmodule Sanbase.Knowledge.Academy do
     |> String.trim_trailing("/index.md")
     |> String.replace_suffix(".md", "")
     |> String.replace_suffix(".mdx", "")
-    |> String.replace("/index", "")
+    |> String.replace(~r{/index(?=/|$)}, "")
     |> case do
       "" -> "https://academy.santiment.net/"
       sanitized -> "https://academy.santiment.net/#{sanitized}/"

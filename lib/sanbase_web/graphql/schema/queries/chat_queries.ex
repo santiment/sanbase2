@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.ChatResolver
-  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.{JWTAuth, PublicRateLimit}
 
   object :chat_queries do
     @desc "Get current user's chats ordered by most recent activity"
@@ -42,6 +42,7 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
 
       arg(:query, non_null(:string))
 
+      middleware(PublicRateLimit, bucket: :academy_autocomplete)
       resolve(&ChatResolver.academy_autocomplete_questions/3)
     end
 
@@ -49,6 +50,10 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
     Semantic search over Santiment Academy content. Embeds the query, runs a
     vector search over the Academy index and reranks the hits, returning the
     most relevant chunks WITHOUT any LLM synthesis.
+
+    Results are in relevance order after reranking, with at most 2 chunks per
+    article. `similarity` is the vector (cosine) similarity before reranking,
+    so it is not monotonic in the returned order. `topK` must be between 1 and 50.
     """
     field :academy_search, list_of(:academy_search_result) do
       meta(access: :free)
@@ -56,6 +61,7 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
       arg(:query, non_null(:string))
       arg(:top_k, :integer, default_value: 10)
 
+      middleware(PublicRateLimit, bucket: :academy_search)
       resolve(&ChatResolver.academy_search/3)
     end
   end

@@ -4,9 +4,11 @@ defmodule SanbaseWeb.Graphql.AcademySearchApiTest do
   @moduletag :capture_log
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
 
   alias Sanbase.Knowledge.{AcademyArticle, AcademyArticleChunk}
   alias Sanbase.Repo
+  alias SanbaseWeb.Graphql.Middlewares.PublicRateLimit
 
   @embedding_size 1536
 
@@ -88,7 +90,115 @@ defmodule SanbaseWeb.Graphql.AcademySearchApiTest do
     end
   end
 
+  describe "academySearch input validation" do
+    test "rejects a blank query" do
+      error = execute_query_with_error(build_conn(), search_query("   ", 5), "academySearch")
+      assert error =~ "must not be empty"
+    end
+
+    test "rejects a query longer than 1000 characters" do
+      long = String.duplicate("a", 1001)
+      error = execute_query_with_error(build_conn(), search_query(long, 5), "academySearch")
+      assert error =~ "at most 1000 characters"
+    end
+
+    test "rejects topK outside 1..50" do
+      for top_k <- [0, -1, 51, 100_000] do
+        error =
+          execute_query_with_error(build_conn(), search_query("mvrv", top_k), "academySearch")
+
+        assert error =~ "topK must be between 1 and 50"
+      end
+    end
+
+    test "does not leak upstream error details" do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.AI.Embedding.generate_embeddings/2,
+        {:error, "OpenAI API error: 400 - {\"secret\": \"body\"}"}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        error = execute_query_with_error(build_conn(), search_query("mvrv", 5), "academySearch")
+        assert error == "Academy search is temporarily unavailable"
+      end)
+    end
+  end
+
+  describe "academySearch rate limit" do
+    setup do
+      original = Application.get_env(:sanbase, PublicRateLimit)
+
+      Application.put_env(:sanbase, PublicRateLimit,
+        academy_search: [
+          anonymous: [{2, :timer.minutes(1)}, {3, :timer.hours(24)}],
+          authenticated: [{4, :timer.minutes(1)}]
+        ]
+      )
+
+      on_exit(fn -> Application.put_env(:sanbase, PublicRateLimit, original) end)
+    end
+
+    test "limits anonymous callers per remote IP" do
+      conn = fn ->
+        %{build_conn() | remote_ip: {10, 1, 2, System.unique_integer([:positive]) |> rem(250)}}
+      end
+
+      ip_conn = conn.()
+
+      with_query_embedding(unit_vector(0), fn ->
+        assert is_list(execute_query(ip_conn, search_query("mvrv", 5), "academySearch"))
+        assert is_list(execute_query(ip_conn, search_query("mvrv", 5), "academySearch"))
+
+        error = execute_query_with_error(ip_conn, search_query("mvrv", 5), "academySearch")
+        assert error =~ "Rate limit exceeded"
+      end)
+    end
+
+    test "a longer window limits a caller that stays under the per-minute limit" do
+      Application.put_env(:sanbase, PublicRateLimit,
+        academy_search: [anonymous: [{5, :timer.minutes(1)}, {3, :timer.hours(24)}]]
+      )
+
+      ip_conn = %{build_conn() | remote_ip: {10, 7, 7, 7}}
+
+      with_query_embedding(unit_vector(0), fn ->
+        for _ <- 1..3 do
+          assert is_list(execute_query(ip_conn, search_query("mvrv", 5), "academySearch"))
+        end
+
+        error = execute_query_with_error(ip_conn, search_query("mvrv", 5), "academySearch")
+        assert error =~ "Rate limit exceeded. Try again in"
+        assert error =~ "hours"
+      end)
+    end
+
+    test "authenticated callers get their own, higher limit" do
+      user = insert(:user)
+      {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+      conn = %{build_conn() | remote_ip: {10, 9, 9, 9}} |> setup_apikey_auth(apikey)
+
+      with_query_embedding(unit_vector(0), fn ->
+        for _ <- 1..4 do
+          assert is_list(execute_query(conn, search_query("mvrv", 5), "academySearch"))
+        end
+
+        error = execute_query_with_error(conn, search_query("mvrv", 5), "academySearch")
+        assert error =~ "Rate limit exceeded"
+      end)
+    end
+  end
+
   # Helpers
+
+  defp search_query(query, top_k) do
+    """
+    {
+      academySearch(query: #{inspect(query)}, topK: #{top_k}) {
+        title
+        content
+      }
+    }
+    """
+  end
 
   defp insert_article(attrs \\ []) do
     defaults = %{

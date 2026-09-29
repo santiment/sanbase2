@@ -361,6 +361,25 @@ import_config "scheduler_config.exs"
 # Sanbase.Knowledge.Reranker reads this and falls back to Noop if unset.
 config :sanbase, Sanbase.Knowledge.Reranker, default: Sanbase.Knowledge.Reranker.OpenAI
 
+# Abuse guard for public queries that trigger paid upstream calls (OpenAI embedding +
+# LLM rerank for the Academy search, aiserver for autocomplete). Each caller must fit
+# every `{limit, window_ms}` window: per minute against bursts, per hour/day to cap the
+# LLM spend of one caller. Anonymous callers are keyed by remote IP, authenticated ones
+# (API key / JWT) by user id. Node-local counters - see PublicRateLimit moduledoc.
+config :sanbase, SanbaseWeb.Graphql.Middlewares.PublicRateLimit,
+  academy_search: [
+    anonymous: [{10, :timer.minutes(1)}, {100, :timer.hours(1)}, {300, :timer.hours(24)}],
+    authenticated: [{60, :timer.minutes(1)}, {1_000, :timer.hours(1)}, {5_000, :timer.hours(24)}]
+  ],
+  academy_autocomplete: [
+    anonymous: [{60, :timer.minutes(1)}, {600, :timer.hours(1)}, {2_000, :timer.hours(24)}],
+    authenticated: [
+      {120, :timer.minutes(1)},
+      {2_000, :timer.hours(1)},
+      {10_000, :timer.hours(24)}
+    ]
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

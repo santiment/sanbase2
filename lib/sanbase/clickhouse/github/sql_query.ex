@@ -202,10 +202,20 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  # v2 ignores the [bot] actors and weights every event by
-  # min(1, cap / events of its (owner, repo, actor, day)), so automation running
-  # under a personal account cannot dominate the metric either.
+  # Version 2.0 of dev_activity and github_activity. Compared to version 1.0:
+  #   * the [bot] actors are ignored;
+  #   * the same event stored twice, a few seconds apart, is counted once;
+  #   * every event is weighted by min(1, cap / events of its (owner, repo, actor, day)),
+  #     so automation running under a personal account cannot dominate the metric.
   @max_daily_actor_repo_events 100
+
+  # GH Archive and the backfill store the same event 0-3 seconds apart. Events of
+  # an (owner, repo, actor, event) at most this far apart form a run, and a run of
+  # k events counts as ceil(k / 2).
+  @pair_window_seconds 3
+
+  # Runs can start before the first day of the time range.
+  @lookback_seconds 600
 
   def max_daily_actor_repo_events(), do: @max_daily_actor_repo_events
 
@@ -217,6 +227,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     activity_v2_query(organizations, from, to, interval, dev_only?: false)
   end
 
+  # The upper bounds match the version 1.0 queries
   def total_dev_activity_v2_query(organizations, from, to) do
     total_activity_v2_query(organizations, from, to, dev_only?: true, to_operator: "<=")
   end
@@ -306,6 +317,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
   defp total_activity_v2_query(organizations, from, to, opts) do
     to_operator = Keyword.fetch!(opts, :to_operator)
 
+    # The zeros of the organizations without activity must be floats like the sums
     sql =
       """
       SELECT owner, SUM(in_range_events * least(1, {{max_daily_events}} / day_events)) AS value
@@ -333,14 +345,6 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
-
-  # GH Archive and the backfill store the same event 0-3 seconds apart. Events of
-  # an (owner, repo, actor, event) at most this far apart form a run, and a run of
-  # k events counts as ceil(k / 2).
-  @pair_window_seconds 3
-
-  # Runs can start before the first day of the time range.
-  @lookback_seconds 600
 
   # Whole UTC days are selected, so an event's weight does not depend on the time
   # range. arrayFill carries each run's start position through the run and every

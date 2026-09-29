@@ -119,14 +119,41 @@ rank-1 score. Add more negative questions to the golden set.
 - Expose its score in the `academySearch` result. Today `similarity` is the pre-rerank
   cosine, which does not follow the returned order.
 
-### 3. Autocomplete returns nothing for most prefixes
-**Why:** 72% of short prefixes ("whale", "dead address", "mcp conn", "sql exchange") return
-`[]`. It is the first thing users see in the search box. The logic lives in aiserver
-(`/academy/autocomplete-questions`); sanbase only forwards the request.
+### 3. Autocomplete returns nothing for most prefixes — done (branch `academy-autocomplete`)
+`academyAutocompleteQuestions` no longer calls aiserver. aiserver had 222 questions for 74 of
+355 pages and matched the whole query as one substring.
 
-**What:**
-- In aiserver: generate questions for every article, with a fuzzy or title-match fallback.
-- In sanbase: add a cache and a shorter timeout (currently 10s).
+- Each article stores about 5 questions (`academy_articles.suggested_questions`), written by
+  `gpt-5.4-mini` from the indexed chunks. Generation is manual, never part of the reindex; the
+  reindex keeps stored questions (see `Sanbase.Knowledge.AcademyQuestions`).
+- Matching is in memory over the questions, article titles and section headings: every word
+  must match, the last word may be partial, and close misspellings match. When nothing
+  matches all words, all but one is enough. At most 2 questions per article. About 2ms per
+  lookup, with no API call.
+- The result also returns the article `url`.
+
+Measured with `E.run_autocomplete()` over `priv/knowledge/eval/academy_autocomplete_set.exs`
+(36 answerable prefixes, 4 not covered). The "before" is prod aiserver:
+
+| | aiserver | sanbase |
+|---|---|---|
+| Prefixes with no suggestion | 58% | 0% |
+| Expected page in suggestions (top 5) | 31% | 92% |
+| Expected page first | 28% | 78% |
+| Latency | ~140 ms (HTTP hop) | ~2 ms |
+
+"Not covered" prefixes now get a suggestion half of the time, from the all-but-one-word
+fallback (e.g. "google trends" suggests Sansheets in Google Sheets).
+
+**Rollout:**
+1. Deploy (runs the migration). Autocomplete returns `[]` until step 2.
+2. Remote shell: `Sanbase.Knowledge.AcademyQuestions.generate()`. About 1 minute, 355 LLM
+   calls. Other pods pick the questions up within 10 minutes.
+3. `E.run_autocomplete() |> E.print_autocomplete()` and `AcademyQuestions.stats()`.
+4. After new Academy content: `generate()` again (only articles without questions). After
+   big edits: `generate(stale: true)`.
+
+`/academy/autocomplete-questions` in aiserver can be removed after the rollout.
 
 ### 4. Rate limits and LLM cost across pods; rate-limit the Q&A chat
 **Why:** Every search costs an embedding plus an LLM rerank, and every Q&A chat answer costs

@@ -12,6 +12,9 @@ defmodule Sanbase.Knowledge.AcademyArticle do
     field(:content_sha, :string)
     field(:index_version, :integer, default: 0)
     field(:is_stale, :boolean, default: false)
+    # Set only by `Sanbase.Knowledge.AcademyQuestions.generate/1`, never by the reindex.
+    field(:suggested_questions, {:array, :string}, default: [])
+    field(:questions_content_sha, :string)
 
     has_many(:chunks, AcademyArticleChunk, foreign_key: :article_id)
 
@@ -26,6 +29,8 @@ defmodule Sanbase.Knowledge.AcademyArticle do
           content_sha: String.t() | nil,
           index_version: integer() | nil,
           is_stale: boolean() | nil,
+          suggested_questions: [String.t()],
+          questions_content_sha: String.t() | nil,
           inserted_at: NaiveDateTime.t() | nil,
           updated_at: NaiveDateTime.t() | nil
         }
@@ -41,5 +46,14 @@ defmodule Sanbase.Knowledge.AcademyArticle do
     |> validate_format(:academy_url, ~r/^https?:\/\//)
     |> unique_constraint(:github_path)
     |> unique_constraint(:academy_url)
+  end
+
+  @doc """
+  Changeset for the generated autocomplete questions. Kept apart from
+  `changeset/2` so a reindex never overwrites them.
+  """
+  @spec questions_changeset(t(), [String.t()]) :: Ecto.Changeset.t()
+  def questions_changeset(article, questions) do
+    change(article, suggested_questions: questions, questions_content_sha: article.content_sha)
   end
 end

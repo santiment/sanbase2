@@ -283,6 +283,101 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
     }
   end
 
+  # Autocomplete -------------------------------------------------------
+
+  @doc "Default path of the bundled autocomplete prefix set."
+  @spec default_autocomplete_set_path() :: String.t()
+  def default_autocomplete_set_path() do
+    Application.app_dir(:sanbase, "priv/knowledge/eval/academy_autocomplete_set.exs")
+  end
+
+  @doc """
+  Eval of `academyAutocompleteQuestions` over the bundled prefix set: how
+  often a prefix gets no suggestions, whether a suggestion points to the
+  expected page, and latency. No API calls.
+
+      r = E.run_autocomplete()
+      E.print_autocomplete(r)
+
+  Options:
+    * `:file` - prefix set path (default: bundled `academy_autocomplete_set.exs`)
+    * `:suggest_fun` - `fn prefix -> [%{url: _, question: _}] end`, to A/B another
+      matcher (default `Sanbase.Knowledge.AcademyQuestions.suggest/1`)
+  """
+  @spec run_autocomplete(keyword()) :: map()
+  def run_autocomplete(opts \\ []) do
+    file = Keyword.get(opts, :file, default_autocomplete_set_path())
+    suggest_fun = Keyword.get(opts, :suggest_fun, &Sanbase.Knowledge.AcademyQuestions.suggest/1)
+
+    items =
+      file
+      |> load_items()
+      |> Enum.map(fn item ->
+        {micros, suggestions} = :timer.tc(fn -> suggest_fun.(item.prefix) end)
+        urls = Enum.map(suggestions, & &1.url)
+        rank = Enum.find_index(urls, &(&1 in item.expected_urls))
+
+        %{
+          prefix: item.prefix,
+          type: item.type,
+          negative: Map.get(item, :negative, false),
+          count: length(suggestions),
+          hit_rank: rank && rank + 1,
+          latency_ms: micros / 1000,
+          suggestions: Enum.map(suggestions, & &1.question)
+        }
+      end)
+
+    %{
+      summary: summarize_autocomplete(items),
+      items: items,
+      ran_at: DateTime.utc_now() |> DateTime.to_iso8601()
+    }
+  end
+
+  @doc "Print an autocomplete eval result."
+  @spec print_autocomplete(map()) :: :ok
+  def print_autocomplete(%{summary: summary, items: items}) do
+    Enum.each(summary, fn {key, value} -> IO.puts("#{key}: #{format(value)}") end)
+    IO.puts("")
+
+    Enum.each(items, fn item ->
+      mark =
+        cond do
+          item.negative -> "neg"
+          item.hit_rank -> "@#{item.hit_rank}"
+          item.count == 0 -> "EMPTY"
+          true -> "miss"
+        end
+
+      IO.puts(
+        "#{String.pad_trailing(mark, 6)}#{item.prefix} -> #{List.first(item.suggestions) || ""}"
+      )
+    end)
+  end
+
+  defp summarize_autocomplete(items) do
+    {negatives, answerable} = Enum.split_with(items, & &1.negative)
+    latencies = items |> Enum.map(& &1.latency_ms) |> Enum.sort()
+
+    by_type =
+      answerable
+      |> Enum.group_by(& &1.type)
+      |> Map.new(fn {type, list} -> {type, rate(list, & &1.hit_rank)} end)
+
+    %{
+      prefixes: length(answerable),
+      empty_rate: rate(answerable, &(&1.count == 0)),
+      hit_at_1: rate(answerable, &(&1.hit_rank == 1)),
+      hit_at_5: rate(answerable, &(&1.hit_rank && &1.hit_rank <= 5)),
+      hit_at_5_by_type: by_type,
+      mean_suggestions: mean(Enum.map(answerable, & &1.count)),
+      negative_nonempty_rate: rate(negatives, &(&1.count > 0)),
+      latency_p50_ms: percentile(latencies, 0.5),
+      latency_p95_ms: percentile(latencies, 0.95)
+    }
+  end
+
   defp rate([], _fun), do: nil
   defp rate(list, fun), do: Enum.count(list, fun) / length(list)
 
@@ -296,6 +391,7 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
 
   defp format(v) when is_float(v), do: :erlang.float_to_binary(v, decimals: 3)
   defp format(v) when is_list(v), do: Enum.map_join(v, ",", &format/1)
+  defp format(v) when is_map(v), do: Enum.map_join(v, " ", fn {k, x} -> "#{k}=#{format(x)}" end)
   defp format(nil), do: "-"
   defp format(v), do: to_string(v)
 

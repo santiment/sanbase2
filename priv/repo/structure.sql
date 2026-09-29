@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6y5mY1lRZoEtfXE9zB0wIPDjtOOuGqIcReLVMFeCNeYHSaVG2p3fTODbv8qAlgc
+\restrict m5AtZGGFG5kFZfTgBvcUZBhcwBRjvviCL2A8PxNLP5UtaeQyRvtQh5xc6hxhRn3
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -286,7 +286,9 @@ CREATE TABLE public.academy_articles (
     is_stale boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    index_version integer DEFAULT 0 NOT NULL
+    index_version integer DEFAULT 0 NOT NULL,
+    suggested_questions character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    questions_content_sha character varying(255)
 );
 
 
@@ -12643,7 +12645,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6y5mY1lRZoEtfXE9zB0wIPDjtOOuGqIcReLVMFeCNeYHSaVG2p3fTODbv8qAlgc
+\unrestrict m5AtZGGFG5kFZfTgBvcUZBhcwBRjvviCL2A8PxNLP5UtaeQyRvtQh5xc6hxhRn3
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -13253,3 +13255,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260910090000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260910091000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260915090000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260917100647);
+INSERT INTO public."schema_migrations" (version) VALUES (20260929125810);

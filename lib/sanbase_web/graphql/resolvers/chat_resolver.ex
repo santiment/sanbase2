@@ -264,16 +264,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
   def academy_autocomplete_questions(_root, %{query: query}, _context) do
     with {:ok, query} <- validate_academy_query(query),
          {:ok, suggestions} <- AcademyAIService.autocomplete_questions(query) do
-      # Transform the string-keyed maps to atom-keyed maps for GraphQL
-      transformed_suggestions =
-        Enum.map(suggestions, fn suggestion ->
-          %{
-            title: Map.get(suggestion, "title"),
-            question: Map.get(suggestion, "question")
-          }
-        end)
-
-      {:ok, transformed_suggestions}
+      {:ok, suggestions}
     else
       {:error, {:invalid_argument, message}} ->
         {:error, message}

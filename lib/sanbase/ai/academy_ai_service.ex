@@ -201,31 +201,12 @@ defmodule Sanbase.AI.AcademyAIService do
   end
 
   @doc """
-  Get autocomplete question suggestions for Academy Q&A based on a query string.
-
-  Returns a list of suggested questions with their titles.
+  Question suggestions for the Academy search box, matched locally against
+  the stored per-article questions (see `Sanbase.Knowledge.AcademyQuestions`).
   """
-  @spec autocomplete_questions(String.t()) :: {:ok, list()} | {:error, String.t()}
+  @spec autocomplete_questions(String.t()) :: {:ok, [map()]}
   def autocomplete_questions(query) do
-    url = "#{ai_server_url()}/academy/autocomplete-questions"
-
-    case Req.post(url,
-           json: %{query: query},
-           headers: %{"Content-Type" => "application/json"},
-           receive_timeout: 10_000,
-           connect_options: [timeout: 10_000]
-         ) do
-      {:ok, %Req.Response{status: 200, body: suggestions}} when is_list(suggestions) ->
-        {:ok, suggestions}
-
-      {:ok, %Req.Response{status: status}} ->
-        Logger.error("Academy autocomplete API error: status #{status}")
-        {:error, "Autocomplete service unavailable"}
-
-      {:error, error} ->
-        Logger.error("Academy autocomplete request failed: #{inspect(error)}")
-        {:error, "Failed to get question suggestions"}
-    end
+    {:ok, Sanbase.Knowledge.AcademyQuestions.suggest(query)}
   end
 
   defp build_chat_history(chat_id) do
@@ -242,10 +223,6 @@ defmodule Sanbase.AI.AcademyAIService do
       _ ->
         []
     end
-  end
-
-  defp ai_server_url do
-    System.get_env("AI_SERVER_URL") || "http://aiserver.production.san:31080"
   end
 
   defp generate_answer(question, chunks, chat_history, user_id, session_id) do

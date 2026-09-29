@@ -36,7 +36,11 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
       resolve(&ChatResolver.get_chat_messages/3)
     end
 
-    @desc "Get Academy Q&A question suggestions based on a search query"
+    @desc """
+    Question suggestions for the Academy search box: up to 5 stored questions
+    whose words, article title or section headings match the typed text. The
+    last word may be partial and close misspellings match. No LLM call is made.
+    """
     field :academy_autocomplete_questions, list_of(:academy_question_suggestion) do
       meta(access: :free)
 

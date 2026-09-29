@@ -113,8 +113,11 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
   end
 
   object :academy_question_suggestion do
+    @desc "Title of the Academy article that answers the question"
     field(:title, non_null(:string))
     field(:question, non_null(:string))
+    @desc "Public Academy URL of that article"
+    field(:url, :string)
   end
 
   @desc """

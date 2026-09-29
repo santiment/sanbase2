@@ -170,12 +170,15 @@ defmodule Sanbase.Knowledge.Academy do
         # A manual reindex overlapping the daily job would otherwise interleave the
         # stale/delete/insert steps. The loser rolls back and the index is untouched.
         acquire_reindex_lock!()
+        # Changed articles are deleted and re-inserted below. Their generated questions
+        # are not derived from the reindex, so carry them over by github_path.
+        questions = saved_questions()
         mark_all_articles_stale()
         clear_stale_for_unchanged(unchanged)
         # Prune stale rows first, or their academy_url/github_path block the new inserts
         # via the unique constraints.
         delete_stale_records()
-        finalize_indexing(to_index)
+        finalize_indexing(to_index, questions)
       end)
       |> case do
         {:ok, :ok} -> :ok
@@ -580,12 +583,35 @@ defmodule Sanbase.Knowledge.Academy do
     trunc(:math.pow(2, multiplier - 1) * @embedding_retry_backoff_ms)
   end
 
-  defp finalize_indexing(articles) do
+  defp finalize_indexing(articles, questions) do
     Enum.each(articles, fn %{article: article_attrs, chunks: chunks_attrs} ->
-      upsert_article_with_chunks(article_attrs, chunks_attrs)
+      upsert_article_with_chunks(article_attrs, chunks_attrs, questions)
     end)
 
     :ok
+  end
+
+  defp saved_questions() do
+    from(a in AcademyArticle,
+      where: a.suggested_questions != ^[],
+      select: {a.github_path, {a.suggested_questions, a.questions_content_sha}}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  # `questions_content_sha` is kept as it was, so a changed article shows up as
+  # stale for `AcademyQuestions.generate(stale: true)`.
+  defp put_saved_questions(changeset, github_path, questions) do
+    case Map.get(questions, github_path) do
+      {suggested_questions, sha} ->
+        changeset
+        |> Ecto.Changeset.put_change(:suggested_questions, suggested_questions)
+        |> Ecto.Changeset.put_change(:questions_content_sha, sha)
+
+      nil ->
+        changeset
+    end
   end
 
   defp clear_stale_for_unchanged([]), do: :ok
@@ -604,7 +630,7 @@ defmodule Sanbase.Knowledge.Academy do
     :ok
   end
 
-  defp upsert_article_with_chunks(article_attrs, chunks_attrs) do
+  defp upsert_article_with_chunks(article_attrs, chunks_attrs, questions) do
     article =
       AcademyArticle
       |> Repo.get_by(github_path: article_attrs.github_path)
@@ -620,6 +646,7 @@ defmodule Sanbase.Knowledge.Academy do
       article
       |> AcademyArticle.changeset(article_attrs)
       |> Ecto.Changeset.put_change(:index_version, @index_version)
+      |> put_saved_questions(article_attrs.github_path, questions)
       |> Repo.insert_or_update()
 
     Repo.delete_all(from(chunk in AcademyArticleChunk, where: chunk.article_id == ^article.id))

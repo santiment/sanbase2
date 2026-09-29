@@ -123,6 +123,38 @@ defmodule SanbaseWeb.Graphql.AcademySearchApiTest do
     end
   end
 
+  describe "academyAutocompleteQuestions query" do
+    test "suggests stored questions matching a partial query, with the article url" do
+      insert_article(
+        title: "Santiment MCP Connector",
+        academy_url: "https://academy.santiment.net/mcp-connector/",
+        github_path: "src/mcp-connector.md"
+      )
+      |> AcademyArticle.questions_changeset(["How do I connect the MCP connector to Claude?"])
+      |> Repo.update!()
+
+      Sanbase.Knowledge.AcademyQuestions.refresh_index()
+
+      query = """
+      { academyAutocompleteQuestions(query: "mcp conn") { title question url } }
+      """
+
+      assert execute_query(build_conn(), query, "academyAutocompleteQuestions") == [
+               %{
+                 "title" => "Santiment MCP Connector",
+                 "question" => "How do I connect the MCP connector to Claude?",
+                 "url" => "https://academy.santiment.net/mcp-connector/"
+               }
+             ]
+
+      no_match = """
+      { academyAutocompleteQuestions(query: "zebra") { question } }
+      """
+
+      assert execute_query(build_conn(), no_match, "academyAutocompleteQuestions") == []
+    end
+  end
+
   describe "academySearch rate limit" do
     setup do
       original = Application.get_env(:sanbase, PublicRateLimit)

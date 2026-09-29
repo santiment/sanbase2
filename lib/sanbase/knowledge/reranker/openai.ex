@@ -104,13 +104,19 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
     %{
       "model" => model,
       "max_completion_tokens" => 256,
+      # Default sampling (temperature 1) made the same query return a different
+      # order on every call. Reasoning models (gpt-5*, o*) reject the parameter.
       "response_format" => %{"type" => "json_object"},
       "messages" => [
         %{"role" => "system", "content" => system_prompt()},
         %{"role" => "user", "content" => user_prompt(query, candidates)}
       ]
     }
+    |> maybe_put_temperature(model)
   end
+
+  defp maybe_put_temperature(body, "gpt-4" <> _), do: Map.put(body, "temperature", 0)
+  defp maybe_put_temperature(body, _model), do: body
 
   @doc """
   Reorder `candidates` by the 1-based indices in `order`. Any index that

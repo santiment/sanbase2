@@ -80,6 +80,13 @@ defmodule Sanbase.Knowledge.Reranker.CandidateFormatterTest do
       assert c.text =~ "MVRV measures the ratio"
     end
 
+    test "listwise includes the section heading when present" do
+      entry = Map.put(academy_entry(), :heading, "Usage Guide")
+      [c] = CandidateFormatter.to_candidates([entry], :academy, ListwiseReranker)
+
+      assert c.text =~ "Title: MVRV Ratio\nSection: Usage Guide\n\n"
+    end
+
     test "cross-encoder gets prose with title as the lead line" do
       [c] = CandidateFormatter.to_candidates([academy_entry()], :academy, CrossEncoderReranker)
 

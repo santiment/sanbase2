@@ -127,6 +127,17 @@ defmodule Sanbase.Knowledge.Reranker.OpenAITest do
       assert user["content"] =~ "…"
     end
 
+    test "uses temperature 0 on the default model so the order is deterministic" do
+      assert OpenAI.build_request_body("q", candidates())["temperature"] == 0
+    end
+
+    test "omits temperature for models that reject it" do
+      refute Map.has_key?(
+               OpenAI.build_request_body("q", candidates(), "gpt-5-nano"),
+               "temperature"
+             )
+    end
+
     test "uses overridden model" do
       body = OpenAI.build_request_body("q", candidates(), "some-other-model")
       assert body["model"] == "some-other-model"

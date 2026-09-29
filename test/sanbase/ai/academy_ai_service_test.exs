@@ -94,6 +94,56 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
       end)
     end
 
+    test "returns at most 2 chunks per article while other articles can fill the slots" do
+      long_page =
+        insert_article(
+          title: "Long",
+          academy_url: "https://academy.santiment.net/long/",
+          github_path: "long.md"
+        )
+
+      other =
+        insert_article(
+          title: "Other",
+          academy_url: "https://academy.santiment.net/other/",
+          github_path: "other.md"
+        )
+
+      # Four near-identical chunks of the long page all beat the other page's chunk.
+      for index <- 0..3 do
+        insert_chunk(long_page,
+          chunk_index: index,
+          content: "Long chunk #{index}",
+          embedding: near_vector(0, 1, 0.01 * index)
+        )
+      end
+
+      insert_chunk(other,
+        chunk_index: 0,
+        content: "Other chunk",
+        embedding: near_vector(0, 1, 0.5)
+      )
+
+      with_query_embedding(unit_vector(0), fn ->
+        assert {:ok, results} = AcademyAIService.semantic_search("query", top_k: 3)
+        assert Enum.map(results, & &1.title) == ["Long", "Long", "Other"]
+
+        assert {:ok, uncapped} =
+                 AcademyAIService.semantic_search("query", top_k: 3, max_chunks_per_article: nil)
+
+        assert Enum.map(uncapped, & &1.title) == ["Long", "Long", "Long"]
+      end)
+    end
+
+    test "clamps :top_k to 1..50" do
+      article = insert_article()
+      insert_chunk(article, chunk_index: 0, content: "Only chunk", embedding: unit_vector(0))
+
+      with_query_embedding(unit_vector(0), fn ->
+        assert {:ok, [_]} = AcademyAIService.semantic_search("query", top_k: -5)
+      end)
+    end
+
     test "returns an empty list when there are no academy chunks" do
       with_query_embedding(unit_vector(0), fn ->
         assert {:ok, []} = AcademyAIService.semantic_search("query")
@@ -135,6 +185,15 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
   # A unit vector with 1.0 at `index` and zeros elsewhere. Two unit vectors at
   # the same index are identical (cosine similarity 1); at different indices
   # they are orthogonal (cosine similarity 0).
+  # Unit vector mostly along `main` with a `weight` component along `other`.
+  defp near_vector(main, other, weight) do
+    norm = :math.sqrt(1 + weight * weight)
+
+    List.duplicate(0.0, @embedding_size)
+    |> List.replace_at(main, 1 / norm)
+    |> List.replace_at(other, weight / norm)
+  end
+
   defp unit_vector(index) do
     List.duplicate(0.0, @embedding_size) |> List.replace_at(index, 1.0)
   end

@@ -20,6 +20,11 @@ defmodule Sanbase.AI.AcademyAIService do
   @retrieval_top_k 20
   @prompt_top_k 10
 
+  # Hard cap on returned chunks; the GraphQL API rejects larger topK values.
+  @max_top_k 50
+  # Long pages (sansheets function lists, metric pages) otherwise fill every slot.
+  @max_chunks_per_article 2
+
   # Runs synchronously in the sendChatMessage mutation; don't retry a
   # best-effort rerank on the user's request path.
   @rerank_max_retries 0
@@ -85,22 +90,56 @@ defmodule Sanbase.AI.AcademyAIService do
     * `:top_k` - number of chunks to return after reranking (default: #{@prompt_top_k})
     * `:retrieval_top_k` - number of candidate chunks pulled from the vector
       store before reranking. Coerced up to at least `:top_k` (default: #{@retrieval_top_k})
+    * `:max_chunks_per_article` - at most this many chunks per article are
+      returned while other articles can fill the slots; `nil` disables the cap
+      (default: #{@max_chunks_per_article})
+    * `:reranker` - reranker module override (used by the eval)
+
+  `:top_k` is clamped to 1..#{@max_top_k}.
   """
   @spec semantic_search(String.t(), keyword()) :: {:ok, list(map())} | {:error, term()}
   def semantic_search(question, opts \\ []) when is_binary(question) do
-    top_k = Keyword.get(opts, :top_k, @prompt_top_k)
+    top_k = opts |> Keyword.get(:top_k, @prompt_top_k) |> clamp(1, @max_top_k)
     retrieval_top_k = max(Keyword.get(opts, :retrieval_top_k, @retrieval_top_k), top_k)
+    per_article = Keyword.get(opts, :max_chunks_per_article, @max_chunks_per_article)
+
+    rerank_opts =
+      [top_n: retrieval_top_k, max_retries: @rerank_max_retries]
+      |> Keyword.merge(Keyword.take(opts, [:reranker]))
 
     with {:ok, chunks} <- Academy.search_chunks(question, retrieval_top_k) do
       reranked_chunks =
-        Knowledge.rerank_entries(question, chunks, :academy,
-          top_n: top_k,
-          max_retries: @rerank_max_retries
-        )
+        question
+        |> Knowledge.rerank_entries(chunks, :academy, rerank_opts)
+        |> cap_per_article(per_article)
+        |> Enum.take(top_k)
 
       {:ok, reranked_chunks}
     end
   end
+
+  # Keep reranked order but let at most `limit` chunks of one article through
+  # before other articles; the overflow is appended so small result sets are
+  # still filled.
+  defp cap_per_article(chunks, nil), do: chunks
+
+  defp cap_per_article(chunks, limit) when is_integer(limit) and limit > 0 do
+    {kept, overflow, _counts} =
+      Enum.reduce(chunks, {[], [], %{}}, fn chunk, {kept, overflow, counts} ->
+        count = Map.get(counts, chunk.article_id, 0)
+
+        if count < limit do
+          {[chunk | kept], overflow, Map.put(counts, chunk.article_id, count + 1)}
+        else
+          {kept, [chunk | overflow], counts}
+        end
+      end)
+
+    Enum.reverse(kept) ++ Enum.reverse(overflow)
+  end
+
+  defp clamp(value, min, max) when is_integer(value), do: value |> max(min) |> min(max)
+  defp clamp(_value, min, _max), do: min
 
   @doc """
   Search across Academy and FAQ entries and return a combined list of

@@ -66,11 +66,12 @@ defmodule Sanbase.Knowledge.Reranker.CandidateFormatter do
 
   defp to_candidate(entry, :academy, style) do
     title = Map.get(entry, :title, "")
+    heading = Map.get(entry, :heading)
     body = Map.get(entry, :chunk) || Map.get(entry, :content_markdown) || ""
 
     %{
       id: Map.get(entry, :github_path) || Map.get(entry, :id) || Map.get(entry, :url),
-      text: academy_text(title, body, style),
+      text: academy_text(title, heading, body, style),
       similarity: entry.similarity,
       source: :academy,
       metadata: entry
@@ -103,10 +104,15 @@ defmodule Sanbase.Knowledge.Reranker.CandidateFormatter do
   defp faq_text(e, :cross_encoder),
     do: "#{e.question}\n\n#{e.answer_markdown}"
 
-  defp academy_text(title, body, :llm_listwise),
+  # The section heading tells the reranker what a chunk is about even when the
+  # chunk is a continuation piece that does not start with its heading line.
+  defp academy_text(title, heading, body, :llm_listwise) when heading in [nil, ""],
     do: "Title: #{title}\n\n#{body}"
 
-  defp academy_text(title, body, :cross_encoder),
+  defp academy_text(title, heading, body, :llm_listwise),
+    do: "Title: #{title}\nSection: #{heading}\n\n#{body}"
+
+  defp academy_text(title, _heading, body, :cross_encoder),
     do: prose_join(title, body)
 
   defp insight_text(title, body, :llm_listwise),

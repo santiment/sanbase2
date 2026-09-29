@@ -257,49 +257,83 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     end
   end
 
+  @academy_max_query_length 1000
+  @academy_max_top_k 50
+
   @doc "Get Academy Q&A question suggestions based on a search query"
   def academy_autocomplete_questions(_root, %{query: query}, _context) do
-    case AcademyAIService.autocomplete_questions(query) do
-      {:ok, suggestions} ->
-        # Transform the string-keyed maps to atom-keyed maps for GraphQL
-        transformed_suggestions =
-          Enum.map(suggestions, fn suggestion ->
-            %{
-              title: Map.get(suggestion, "title"),
-              question: Map.get(suggestion, "question")
-            }
-          end)
+    with {:ok, query} <- validate_academy_query(query),
+         {:ok, suggestions} <- AcademyAIService.autocomplete_questions(query) do
+      # Transform the string-keyed maps to atom-keyed maps for GraphQL
+      transformed_suggestions =
+        Enum.map(suggestions, fn suggestion ->
+          %{
+            title: Map.get(suggestion, "title"),
+            question: Map.get(suggestion, "question")
+          }
+        end)
 
-        {:ok, transformed_suggestions}
+      {:ok, transformed_suggestions}
+    else
+      {:error, {:invalid_argument, message}} ->
+        {:error, message}
 
       {:error, reason} ->
-        {:error, reason}
+        Logger.error("academyAutocompleteQuestions failed: #{inspect(reason)}")
+        {:error, "Academy question suggestions are temporarily unavailable"}
     end
   end
 
   @doc "Semantic search over Academy content (vector retrieval + rerank, no LLM synthesis)"
   def academy_search(_root, %{query: query} = args, _context) do
-    top_k = Map.get(args, :top_k, 10)
+    with {:ok, query} <- validate_academy_query(query),
+         {:ok, top_k} <- validate_academy_top_k(Map.get(args, :top_k, 10)),
+         {:ok, chunks} <- AcademyAIService.semantic_search(query, top_k: top_k) do
+      results =
+        Enum.map(chunks, fn chunk ->
+          %{
+            title: Map.get(chunk, :title),
+            url: Map.get(chunk, :url),
+            content: Map.get(chunk, :chunk),
+            heading: Map.get(chunk, :heading),
+            similarity: Map.get(chunk, :similarity)
+          }
+        end)
 
-    case AcademyAIService.semantic_search(query, top_k: top_k) do
-      {:ok, chunks} ->
-        results =
-          Enum.map(chunks, fn chunk ->
-            %{
-              title: Map.get(chunk, :title),
-              url: Map.get(chunk, :url),
-              content: Map.get(chunk, :chunk),
-              heading: Map.get(chunk, :heading),
-              similarity: Map.get(chunk, :similarity)
-            }
-          end)
+      {:ok, results}
+    else
+      {:error, {:invalid_argument, message}} ->
+        {:error, message}
 
-        {:ok, results}
-
+      # Upstream errors (OpenAI bodies, transport structs) are logged, not returned.
       {:error, reason} ->
-        {:error, reason}
+        Logger.error("academySearch failed: #{inspect(reason)}")
+        {:error, "Academy search is temporarily unavailable"}
     end
   end
+
+  defp validate_academy_query(query) do
+    query = String.trim(query)
+
+    cond do
+      query == "" ->
+        {:error, {:invalid_argument, "The query must not be empty"}}
+
+      String.length(query) > @academy_max_query_length ->
+        {:error,
+         {:invalid_argument,
+          "The query must be at most #{@academy_max_query_length} characters long"}}
+
+      true ->
+        {:ok, query}
+    end
+  end
+
+  defp validate_academy_top_k(top_k) when is_integer(top_k) and top_k in 1..@academy_max_top_k,
+    do: {:ok, top_k}
+
+  defp validate_academy_top_k(_top_k),
+    do: {:error, {:invalid_argument, "topK must be between 1 and #{@academy_max_top_k}"}}
 
   # Helper functions
   defp convert_enum_to_string(:dyor_dashboard), do: "dyor_dashboard"

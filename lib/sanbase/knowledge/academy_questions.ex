@@ -44,6 +44,7 @@ defmodule Sanbase.Knowledge.AcademyQuestions do
   @max_per_article 2
   @index_ttl_ms :timer.minutes(10)
   @index_key {__MODULE__, :index}
+  @index_lock {__MODULE__, :index_refresh}
   @fuzzy_threshold 0.9
 
   @stopwords ~w(a an the is are was were be do does did i my me we our you your it its
@@ -104,21 +105,49 @@ defmodule Sanbase.Knowledge.AcademyQuestions do
     :ok
   end
 
+  # An expired index is rebuilt by one caller, holding a node-local lock, while
+  # concurrent callers keep using the expired one. Without an index at all,
+  # callers wait for that single rebuild.
   defp index() do
     case :persistent_term.get(@index_key, nil) do
-      {loaded_at, index} when is_integer(loaded_at) ->
-        if now_ms() - loaded_at < @index_ttl_ms, do: index, else: rebuild_index()
+      {loaded_at, index} ->
+        if fresh?(loaded_at), do: index, else: rebuild_index(0) || index
 
       nil ->
-        rebuild_index()
+        rebuild_index(:infinity)
     end
   end
 
-  defp rebuild_index() do
+  # Returns the index, or nil when another process holds the lock and `retries` is 0.
+  defp rebuild_index(retries) do
+    :global.trans(
+      {@index_lock, self()},
+      fn ->
+        # Another process may have rebuilt it while this one waited for the lock.
+        case :persistent_term.get(@index_key, nil) do
+          {loaded_at, index} when is_integer(loaded_at) ->
+            if fresh?(loaded_at), do: index, else: do_rebuild_index()
+
+          nil ->
+            do_rebuild_index()
+        end
+      end,
+      [node()],
+      retries
+    )
+    |> case do
+      :aborted -> nil
+      index -> index
+    end
+  end
+
+  defp do_rebuild_index() do
     :ok = refresh_index()
     {_loaded_at, index} = :persistent_term.get(@index_key)
     index
   end
+
+  defp fresh?(loaded_at), do: now_ms() - loaded_at < @index_ttl_ms
 
   @doc false
   # Articles with their questions and the normalized words used for matching,

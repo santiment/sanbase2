@@ -92,6 +92,47 @@ defmodule Sanbase.Knowledge.AcademyQuestionsTest do
     end
   end
 
+  describe "index refresh" do
+    setup do
+      on_exit(fn -> :persistent_term.erase({AcademyQuestions, :index}) end)
+    end
+
+    test "an expired index is rebuilt once while concurrent callers use the expired one" do
+      insert_article("Gini Index", "/metrics/gini-index/", questions: ["What is the Gini index?"])
+
+      expired =
+        {System.monotonic_time(:millisecond) - :timer.hours(1), AcademyQuestions.build_index()}
+
+      :persistent_term.put({AcademyQuestions, :index}, expired)
+
+      handler = "count-academy-article-queries-#{System.unique_integer()}"
+      parent = self()
+
+      :telemetry.attach(
+        handler,
+        [:sanbase, :repo, :query],
+        fn _event, _measurements, %{source: source}, _ ->
+          if source == "academy_articles", do: send(parent, :articles_query)
+        end,
+        nil
+      )
+
+      results =
+        1..20
+        |> Task.async_stream(fn _ -> AcademyQuestions.suggest("gini") end, max_concurrency: 20)
+        |> Enum.map(fn {:ok, suggestions} -> suggestions end)
+
+      :telemetry.detach(handler)
+
+      assert Enum.all?(results, &match?([%{question: "What is the Gini index?"}], &1))
+      assert_received :articles_query
+      refute_received :articles_query
+
+      {loaded_at, _index} = :persistent_term.get({AcademyQuestions, :index})
+      assert System.monotonic_time(:millisecond) - loaded_at < :timer.minutes(1)
+    end
+  end
+
   describe "generate/1" do
     test "by default generates only for articles without questions" do
       new = insert_article("New Page", "/new/", headings: ["Intro"])

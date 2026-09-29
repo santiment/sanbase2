@@ -37,6 +37,8 @@ defmodule Sanbase.Knowledge.AcademyMarkdown do
   @max_link_url_length 200
 
   @fence_regex ~r/^\s{0,3}(`{3,}|~{3,})/
+  # A closing fence has no info string, so a "```python" line inside a block does not close it.
+  @closing_fence_regex ~r/^\s{0,3}(`{3,}|~{3,})\s*$/
   @heading_regex ~r/^\s{0,3}(\#{1,6})\s+(.+?)\s*#*\s*$/
   @inline_code_regex ~r/`[^`\n]*`/
 
@@ -165,9 +167,7 @@ defmodule Sanbase.Knowledge.AcademyMarkdown do
   end
 
   defp segment_step(line, {segments, current, open}) do
-    marker = fence_marker(line)
-
-    if marker && closes_fence?(open, marker),
+    if closes_fence?(open, line),
       do: {push_segment(segments, :code, [line | current]), [], nil},
       else: {segments, [line | current], open}
   end
@@ -179,9 +179,16 @@ defmodule Sanbase.Knowledge.AcademyMarkdown do
     end
   end
 
-  # A fence closes on the same character with at least the opening length.
-  defp closes_fence?(open, marker) do
-    String.first(open) == String.first(marker) and String.length(marker) >= String.length(open)
+  # A fence closes on a bare marker of the same character with at least the opening length.
+  defp closes_fence?(open, line) do
+    case Regex.run(@closing_fence_regex, line, capture: :all_but_first) do
+      [marker] ->
+        String.first(open) == String.first(marker) and
+          String.length(marker) >= String.length(open)
+
+      nil ->
+        false
+    end
   end
 
   defp push_segment(segments, _kind, []), do: segments
@@ -257,8 +264,7 @@ defmodule Sanbase.Knowledge.AcademyMarkdown do
 
   # State: {finished sections, current section, heading stack, open fence}.
   defp section_step(line, {sections, current, stack, fence}) when fence != nil do
-    marker = fence_marker(line)
-    fence = if marker && closes_fence?(fence, marker), do: nil, else: fence
+    fence = if closes_fence?(fence, line), do: nil, else: fence
     {sections, add_line(current, line), stack, fence}
   end
 

@@ -219,6 +219,24 @@ defmodule Sanbase.Knowledge.AcademyMarkdownTest do
       assert content =~ "import san"
     end
 
+    test "a fence line with an info string does not close an open fence" do
+      markdown = """
+      ## Example
+
+      ```text
+      ```python
+      # not a heading
+      ```
+
+      The example shows a fence line with an info string inside a block.
+      """
+
+      assert [%{heading: "Example", content: content}] =
+               AcademyMarkdown.chunk(markdown, min_chunk_chars: 1)
+
+      assert content =~ "# not a heading"
+    end
+
     test "splits oversized sections and keeps the heading on every piece" do
       paragraph = String.duplicate("word ", 150)
       markdown = "## Long Section\n\n" <> Enum.map_join(1..6, "\n\n", fn _ -> paragraph end)

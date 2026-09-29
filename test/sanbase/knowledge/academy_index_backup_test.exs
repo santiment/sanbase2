@@ -28,6 +28,12 @@ defmodule Sanbase.Knowledge.AcademyIndexBackupTest do
              Repo.all(AcademyArticleChunk)
   end
 
+  test "SQL errors are returned, not raised" do
+    assert :ok = Academy.backup_index("test_duplicate")
+    assert {:error, %Postgrex.Error{}} = Academy.backup_index("test_duplicate")
+    assert {:error, %Postgrex.Error{}} = Academy.restore_index("test_missing")
+  end
+
   test "rejects backup suffixes that are not plain identifiers" do
     assert {:error, :invalid_backup_suffix} = Academy.backup_index("x; DROP TABLE users")
     assert {:error, :invalid_backup_suffix} = Academy.restore_index("")

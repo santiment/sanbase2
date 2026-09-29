@@ -205,9 +205,13 @@ defmodule Sanbase.Knowledge.Academy do
   def backup_index(suffix) do
     with {:ok, suffix} <- validate_backup_suffix(suffix) do
       Repo.transaction(fn ->
-        Enum.each(@backup_tables, fn table ->
-          Repo.query!("CREATE TABLE #{table}_backup_#{suffix} AS TABLE #{table}")
-        end)
+        # Without the lock a reindex committing between the two copies would leave
+        # articles and chunks from different generations.
+        acquire_reindex_lock!()
+
+        @backup_tables
+        |> Enum.map(&"CREATE TABLE #{&1}_backup_#{suffix} AS TABLE #{&1}")
+        |> run_all_or_rollback()
       end)
       |> ok_or_error()
     end
@@ -222,16 +226,13 @@ defmodule Sanbase.Knowledge.Academy do
     with {:ok, suffix} <- validate_backup_suffix(suffix) do
       Repo.transaction(fn ->
         acquire_reindex_lock!()
-        Repo.query!("DELETE FROM academy_article_chunks")
-        Repo.query!("DELETE FROM academy_articles")
 
-        Repo.query!(
-          "INSERT INTO academy_articles SELECT * FROM academy_articles_backup_#{suffix}"
-        )
-
-        Repo.query!(
+        run_all_or_rollback([
+          "DELETE FROM academy_article_chunks",
+          "DELETE FROM academy_articles",
+          "INSERT INTO academy_articles SELECT * FROM academy_articles_backup_#{suffix}",
           "INSERT INTO academy_article_chunks SELECT * FROM academy_article_chunks_backup_#{suffix}"
-        )
+        ])
       end)
       |> ok_or_error()
     end
@@ -245,6 +246,17 @@ defmodule Sanbase.Knowledge.Academy do
         Repo.query!("DROP TABLE IF EXISTS #{table}_backup_#{suffix}")
       end)
     end
+  end
+
+  # Runs inside a transaction. A failing statement (e.g. the backup table already
+  # exists) rolls back with the Postgres error instead of raising.
+  defp run_all_or_rollback(statements) do
+    Enum.each(statements, fn sql ->
+      case Repo.query(sql) do
+        {:ok, _} -> :ok
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
   end
 
   defp validate_backup_suffix(suffix) when is_binary(suffix) do

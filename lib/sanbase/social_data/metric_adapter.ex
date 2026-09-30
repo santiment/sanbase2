@@ -378,7 +378,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, _selector), do: {:ok, Timex.now()}
+  def last_datetime_computed_at(_metric, _selector, _opts), do: {:ok, Timex.now()}
 
   # Private functions
   # total has the datetime of the earliest of all - bitcointalk

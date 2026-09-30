@@ -204,12 +204,12 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, %{organization: organization})
+  def last_datetime_computed_at(_metric, %{organization: organization}, _opts)
       when is_binary(organization) do
     last_datetime_computed_at_for_organizations([organization])
   end
 
-  def last_datetime_computed_at(_metric, %{slug: slug}) when is_binary(slug) do
+  def last_datetime_computed_at(_metric, %{slug: slug}, _opts) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, organizations} when is_list(organizations) ->
         last_datetime_computed_at_for_organizations(organizations)
@@ -219,7 +219,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     end
   end
 
-  def last_datetime_computed_at(_metric, selector) when is_map(selector) do
+  def last_datetime_computed_at(_metric, selector, _opts) when is_map(selector) do
     {:error,
      Sanbase.Metric.Utils.unsupported_selector_error(
        selector,

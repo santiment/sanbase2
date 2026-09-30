@@ -253,7 +253,8 @@ defmodule Sanbase.RunExamples do
       {:ok, _} =
         Sanbase.Clickhouse.TopHolders.MetricAdapter.last_datetime_computed_at(
           metric,
-          %{slug: "ethereum"}
+          %{slug: "ethereum"},
+          []
         )
     end
 

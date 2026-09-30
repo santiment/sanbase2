@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
       clickhouse_response
     )
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Twitter.MetricAdapter.last_datetime_computed_at/2,
+      &Sanbase.Twitter.MetricAdapter.last_datetime_computed_at/3,
       {:ok, datetime}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -33,6 +33,37 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
 
         last_dt = Sanbase.Utils.DateTime.from_iso8601!(last_dt)
         assert match?(%DateTime{}, last_dt)
+      end
+    end)
+  end
+
+  test "passes the requested version to the adapter", context do
+    %{project: project} = context
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    conn = setup_jwt_auth(build_conn(), user)
+    test_pid = self()
+
+    Sanbase.Mock.prepare_mock(
+      Sanbase.Clickhouse.MetricAdapter,
+      :last_datetime_computed_at,
+      fn _metric, _selector, opts ->
+        send(test_pid, {:adapter_version, Keyword.get(opts, :version)})
+        {:ok, ~U[2020-01-01 12:45:40Z]}
+      end
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      for {version, expected} <- [{nil, "1.0"}, {"2.1", "2.1"}] do
+        SanbaseWeb.Graphql.Cache.clear_all()
+
+        assert %{"data" => %{"getMetric" => %{"lastDatetimeComputedAt" => _}}} =
+                 get_last_datetime_computed_at(
+                   conn,
+                   "daily_active_addresses",
+                   %{slug: project.slug},
+                   version
+                 )
+
+        assert_receive {:adapter_version, ^expected}
       end
     end)
   end
@@ -55,12 +86,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
     end
   end
 
-  defp get_last_datetime_computed_at(conn, metric, selector) do
+  defp get_last_datetime_computed_at(conn, metric, selector, version \\ nil) do
     selector = extend_selector_with_required_fields(metric, selector)
+    version_arg = if version, do: ~s|, version: "#{version}"|, else: ""
 
     query = """
     {
-      getMetric(metric: "#{metric}"){
+      getMetric(metric: "#{metric}"#{version_arg}){
         lastDatetimeComputedAt(selector: #{map_to_input_object_str(selector)})
       }
     }

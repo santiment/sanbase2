@@ -99,13 +99,17 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(metric, %{slug: _slug, blockchain_address: %{address: _address}})
+  def last_datetime_computed_at(
+        metric,
+        %{slug: _slug, blockchain_address: %{address: _address}},
+        _opts
+      )
       when metric in @metrics do
     # There is no nice value we can put here
     {:ok, DateTime.utc_now()}
   end
 
-  def last_datetime_computed_at(_metric, selector) when is_map(selector) do
+  def last_datetime_computed_at(_metric, selector, _opts) when is_map(selector) do
     {:error, unsupported_selector_error(selector)}
   end
 

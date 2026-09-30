@@ -71,7 +71,7 @@ defmodule Sanbase.Price.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, %{slug: slug}) do
+  def last_datetime_computed_at(_metric, %{slug: slug}, _opts) do
     Price.last_datetime_computed_at(slug)
   end
 

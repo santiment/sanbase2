@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.AddGithubMetricVersionAliases do
   # Same names as the social scope, different computations.
   @seed [
     {"2.0", "modern:v1",
-     "Excludes the bot accounts, counts the same event stored twice once and caps the daily events of a contributor per repository."}
+     "Counts only the pushes, pull requests, reviews and releases, excludes the bot accounts and the automation running under personal accounts, counts the same event stored twice once and caps the daily events of a contributor per repository."}
   ]
 
   def up() do

@@ -21,7 +21,9 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       for interval <- ["1d", "7d", "toStartOfDay", "toStartOfWeek", "toStartOfMonth"] do
         query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, interval)
 
-        refute query.sql =~ "sum(events) OVER", "#{interval} should not use a window function"
+        refute query.sql =~ "sum(events) OVER (PARTITION BY group_key, day)",
+               "#{interval} should not use a window function for the day totals"
+
         assert query.sql =~ "GROUP BY group_key, day"
       end
     end
@@ -50,12 +52,24 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       assert query.sql =~ "GROUP BY owner, repo, actor, event"
     end
 
-    test "only dev_activity excludes the non-dev events" do
+    test "only dev_activity is limited to the dev events" do
       dev_query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, "1d")
       github_query = SqlQuery.github_activity_v2_query(["org"], @from, @to, "1d")
 
-      assert dev_query.sql =~ "event NOT IN ({{non_dev_events}})"
-      refute github_query.sql =~ "event NOT IN"
+      assert dev_query.parameters[:dev_events] == SqlQuery.dev_events_v2()
+      assert dev_query.sql =~ "AND event IN ({{dev_events}})"
+      refute github_query.sql =~ "AND event IN ({{dev_events}})"
+      refute dev_query.sql =~ "non_dev_events"
+    end
+
+    test "the dev events are the work on the code" do
+      assert SqlQuery.dev_events_v2() == [
+               "PushEvent",
+               "PullRequestEvent",
+               "PullRequestReviewEvent",
+               "PullRequestReviewCommentEvent",
+               "ReleaseEvent"
+             ]
     end
   end
 
@@ -64,7 +78,10 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       for query <- all_v2_queries() do
         assert query.sql =~ "arraySort(groupUniqArray(toUInt32(dt))) AS timestamps"
         assert query.sql =~ "GROUP BY owner, repo, actor, event"
-        assert query.sql =~ "AND NOT endsWith(actor, '[bot]')"
+
+        assert query.sql =~
+                 "AND NOT (endsWith(actor, '[bot]') OR endsWith(actor, '-bot') OR actor IN ('copilot'))"
+
         assert query.sql =~ "if(i = 1 OR gap > 3, i, 0)"
         # every run of k events counts as ceil(k / 2)
         assert query.sql =~
@@ -88,6 +105,43 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
     end
   end
 
+  describe "automation" do
+    test "the automation actor-days are excluded" do
+      for query <- all_v2_queries() do
+        assert query.parameters[:automation_active_hours] == 20
+        assert query.parameters[:automation_hourly_events] == 100
+
+        # only the dev events decide if an actor-day is automation, in both metrics
+        assert query.sql =~ "event IN ({{dev_events}}) AS is_dev"
+
+        assert query.sql =~
+                 "uniqExactIf(hour_of_day, is_dev) OVER (PARTITION BY owner, actor_key, day) AS active_hours"
+
+        assert query.sql =~
+                 "sumIf(events, is_dev) OVER (PARTITION BY owner, actor_key, day, hour_of_day) AS hour_events"
+
+        assert query.sql =~ "active_hours < {{automation_active_hours}}"
+        assert query.sql =~ "peak_hour_events < {{automation_hourly_events}}"
+      end
+    end
+
+    test "the actor is identified across the repos of an organization" do
+      query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, "1d")
+
+      assert query.sql =~ "cityHash64(actor) AS actor_key"
+
+      assert query.sql =~
+               "GROUP BY owner, group_key, actor_key, day, hour_of_day, in_range, is_dev"
+    end
+
+    test "intraday intervals keep the interval of the events" do
+      query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, "1h")
+
+      assert query.sql =~
+               "GROUP BY owner, group_key, actor_key, day, hour_of_day, time, in_range, is_dev"
+    end
+  end
+
   describe "aggregated queries" do
     test "the upper bound matches the v1 queries" do
       dev_query = SqlQuery.total_dev_activity_v2_query(["org"], @from, @to)
@@ -95,8 +149,8 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
 
       assert dev_query.sql =~ "dt <= toDateTime({{to}})"
       assert github_query.sql =~ "dt < toDateTime({{to}})"
-      assert dev_query.sql =~ "event NOT IN ({{non_dev_events}})"
-      refute github_query.sql =~ "event NOT IN"
+      assert dev_query.sql =~ "AND event IN ({{dev_events}})"
+      refute github_query.sql =~ "AND event IN ({{dev_events}})"
       # the zeros of the organizations without activity must be floats like the sums
       assert dev_query.sql =~ "toFloat64(0) AS value"
       assert github_query.sql =~ "toFloat64(0) AS value"

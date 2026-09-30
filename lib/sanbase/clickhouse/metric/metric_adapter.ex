@@ -393,11 +393,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(metric, selector) do
+  def last_datetime_computed_at(metric, selector, opts) do
     if metric in Registry.metrics_mapset_with_data_type(:histogram) do
-      HistogramMetric.last_datetime_computed_at(metric, selector)
+      HistogramMetric.last_datetime_computed_at(metric, selector, opts)
     else
-      last_datetime_computed_at_query(metric, selector)
+      last_datetime_computed_at_query(metric, selector, opts)
       |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
       |> maybe_unwrap_ok_value()
     end

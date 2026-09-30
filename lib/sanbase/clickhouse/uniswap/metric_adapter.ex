@@ -93,7 +93,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, _slug) do
+  def last_datetime_computed_at(_metric, _slug, _opts) do
     {:ok, Timex.now()}
   end
 

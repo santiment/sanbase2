@@ -79,7 +79,7 @@ defmodule Sanbase.Hyperliquid.Bbo.MetricAdapter do
   def first_datetime("price_usd", %{slug: slug}, _opts), do: BboPrices.first_datetime(slug)
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at("price_usd", %{slug: slug}) do
+  def last_datetime_computed_at("price_usd", %{slug: slug}, _opts) do
     BboPrices.last_datetime_computed_at(slug)
   end
 

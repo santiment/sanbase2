@@ -231,7 +231,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback first_datetime(metric, selector, opts) :: first_datetime_result
 
-  @callback last_datetime_computed_at(metric, selector) :: last_datetime_computed_at_result
+  @callback last_datetime_computed_at(metric, selector, opts) :: last_datetime_computed_at_result
 
   @callback human_readable_name(metric) :: human_readable_name_result
 

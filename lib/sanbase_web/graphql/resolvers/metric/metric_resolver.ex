@@ -277,10 +277,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}) do
+  def last_datetime_computed_at(_root, args, %{source: %{metric: metric, version: version}}) do
     with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          true <- all_required_selectors_present?(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
+         opts = Keyword.put(opts, :version, version),
          true <- valid_metric_selector_pair?(metric, selector) do
       Metric.last_datetime_computed_at(metric, selector, opts)
     end

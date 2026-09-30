@@ -627,7 +627,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module.last_datetime_computed_at(metric, selector)
+        module.last_datetime_computed_at(metric, selector, opts)
     end
   end
 

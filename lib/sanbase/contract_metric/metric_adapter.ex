@@ -96,7 +96,7 @@ defmodule Sanbase.Contract.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, %{contract_address: contract_address})
+  def last_datetime_computed_at(_metric, %{contract_address: contract_address}, _opts)
       when is_binary(contract_address) do
     query_struct = last_datetime_computed_at_query(contract_address)
 
@@ -104,7 +104,7 @@ defmodule Sanbase.Contract.MetricAdapter do
     |> maybe_unwrap_ok_value()
   end
 
-  def last_datetime_computed_at(_metric, selector) when is_map(selector) do
+  def last_datetime_computed_at(_metric, selector, _opts) when is_map(selector) do
     {:error, unsupported_selector_error(selector)}
   end
 

@@ -576,18 +576,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def last_datetime_computed_at_query(metric, selector) do
+  def last_datetime_computed_at_query(metric, selector, opts \\ []) do
+    version = Keyword.get(opts, :version) || @default_version
+
     sql = """
     SELECT toUnixTimestamp(argMax(computed_at, dt))
     FROM #{Map.get(Registry.table_map(), metric)} FINAL
     WHERE
-      #{metric_id_filter(metric, argument_name: "metric")} AND
+      #{versioned_metric_id_filter(metric, argument_name: "metric", version: version, version_arg_name: "version")} AND
       #{asset_id_filter(selector, argument_name: "selector")}
     """
 
     params = %{
       metric: Map.get(Registry.name_to_metric_map(), metric),
-      selector: asset_filter_value(selector)
+      selector: asset_filter_value(selector),
+      version: version
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)

@@ -98,14 +98,14 @@ defmodule Sanbase.Twitter.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at("twitter_followers", %{slug: slug}) do
+  def last_datetime_computed_at("twitter_followers", %{slug: slug}, _opts) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project) do
       Sanbase.Twitter.last_datetime(twitter_name)
     end
   end
 
-  def last_datetime_computed_at(_metric, selector) when is_map(selector) do
+  def last_datetime_computed_at(_metric, selector, _opts) when is_map(selector) do
     {:error, unsupported_selector_error(selector)}
   end
 

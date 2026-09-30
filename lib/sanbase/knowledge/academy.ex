@@ -33,7 +33,9 @@ defmodule Sanbase.Knowledge.Academy do
   # v3: chunking moved to `Sanbase.Knowledge.AcademyMarkdown` - frontmatter/MDX/media markup
   # stripped, section-based chunks with small sections merged, clean headings, and a
   # `Title > Breadcrumb` header prepended to the embedded text.
-  @index_version 3
+  # v4: the page intro chunk (before the first heading) gets the article title as its
+  # heading, and heading-only sections no longer end the previous chunk.
+  @index_version 4
 
   @excluded_paths MapSet.new([
                     "pull_request_template.md",
@@ -483,7 +485,8 @@ defmodule Sanbase.Knowledge.Academy do
       |> Enum.map(fn {chunk, index} ->
         %{
           chunk_index: index,
-          heading: chunk.heading,
+          # The intro before the first heading belongs to the page itself.
+          heading: chunk.heading || title,
           content: chunk.content,
           embedding_text: AcademyMarkdown.embedding_text(title, chunk),
           is_stale: false

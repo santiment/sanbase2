@@ -379,6 +379,40 @@ defmodule SanbaseWeb.Graphql.AnonymousChatApiTest do
   end
 
   # Helper functions
+  describe "sendChatMessage rate limit" do
+    setup do
+      original = Application.get_env(:sanbase, SanbaseWeb.Graphql.Middlewares.PublicRateLimit)
+
+      Application.put_env(:sanbase, SanbaseWeb.Graphql.Middlewares.PublicRateLimit,
+        chat_message: [anonymous: [{1, :timer.minutes(1)}], authenticated: []]
+      )
+
+      on_exit(fn ->
+        Application.put_env(:sanbase, SanbaseWeb.Graphql.Middlewares.PublicRateLimit, original)
+      end)
+    end
+
+    test "limits anonymous callers per remote IP" do
+      mutation = """
+      mutation { sendChatMessage(content: "What is DeFi?", type: ACADEMY_QA) { id } }
+      """
+
+      ip = {10, 9, 8, System.unique_integer([:positive]) |> rem(250)}
+      conn = fn -> %{build_conn() | remote_ip: ip} end
+
+      mock_academy_response()
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert %{"data" => %{"sendChatMessage" => %{"id" => _}}} =
+                 conn.() |> post("/graphql", %{"query" => mutation}) |> json_response(200)
+
+        assert %{"errors" => [%{"message" => message}]} =
+                 conn.() |> post("/graphql", %{"query" => mutation}) |> json_response(200)
+
+        assert message =~ "Rate limit exceeded"
+      end)
+    end
+  end
+
   defp mock_academy_response do
     mock_answer =
       "DeFi stands for Decentralized Finance, which refers to financial services built on blockchain technology. [1]"

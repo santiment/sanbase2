@@ -229,3 +229,7 @@ config :sanbase, Sanbase.Knowledge.Reranker, default: Sanbase.Knowledge.Reranker
 if(File.exists?("config/test.secret.exs")) do
   import_config "test.secret.exs"
 end
+
+# Chat tests send many messages from 127.0.0.1; the rate limit has its own tests.
+config :sanbase, SanbaseWeb.Graphql.Middlewares.PublicRateLimit,
+  chat_message: [anonymous: [], authenticated: []]

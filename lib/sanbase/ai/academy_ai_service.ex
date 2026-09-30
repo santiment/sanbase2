@@ -12,9 +12,22 @@ defmodule Sanbase.AI.AcademyAIService do
 
   @dont_know_answer "DK"
   @dont_know_message "Sorry, I can’t seem to find anything in the Academy on that right now.\n\nTry rephrasing your question — or head over to Discord for help from other users & the Santiment team!\n\n👉 https://discord.gg/EJrZR8GHZU"
-  @model "gpt-5-nano"
-  @suggestions_model "gpt-5-nano"
+  # Picked with `AcademySearchEval.run_answers/1` on 2026-09-29: against gpt-5-nano
+  # (default reasoning) the judge score went 4.71 -> 4.81 and p50 latency 9.0s -> 3.3s.
+  @model "gpt-5.4-mini"
+  @reasoning_effort "low"
+  # Follow-up suggestions run after the answer, on the user's request path.
+  @suggestions_model "gpt-5.4-mini"
+  @suggestions_reasoning_effort "none"
   @similarity_threshold 0.5
+
+  # Earlier chat messages sent with the answer prompt.
+  @history_messages 6
+  # Follow-up rewriting: a small fast model, only the last turns, long answers cut.
+  @rewrite_model "gpt-5.4-mini"
+  @rewrite_history_messages 4
+  @rewrite_message_chars 600
+  @max_search_query_chars 300
 
   # Retrieve wide, rerank, keep top_k for the prompt.
   @retrieval_top_k 20
@@ -30,10 +43,8 @@ defmodule Sanbase.AI.AcademyAIService do
   @rerank_max_retries 0
 
   @doc """
-  Generates an Academy Q&A response using local database and OpenAI.
-
-  This is the new implementation that uses local academy articles instead of the AI server.
-  Includes chat history, source tracking, and validated suggestions.
+  Generates an Academy Q&A response for a message in the chat `chat_id`,
+  using the chat's earlier messages as history. See `answer/2`.
 
   Returns both the answer text, sources, and suggestions.
   """
@@ -45,14 +56,58 @@ defmodule Sanbase.AI.AcademyAIService do
         user_id \\ nil,
         include_suggestions \\ true
       ) do
-    session_id = Tracing.generate_session_id(chat_id, user_id)
-    chat_history = if chat_id, do: build_chat_history(chat_id), else: []
+    chat_history = if chat_id, do: build_chat_history(chat_id, question), else: []
 
-    with {:ok, reranked_chunks} <- semantic_search(question),
+    answer(question,
+      chat_history: chat_history,
+      user_id: user_id,
+      session_id: Tracing.generate_session_id(chat_id, user_id),
+      include_suggestions: include_suggestions
+    )
+  end
+
+  @doc """
+  Answer `question` from the Academy: search, then an LLM answer with inline
+  citations, then optional follow-up suggestions.
+
+  A follow-up question ("how do I set it up?") is first rewritten into a
+  standalone search query using the history; the answer prompt still gets the
+  original question and the history.
+
+  Options:
+    * `:chat_history` - earlier messages, oldest first, as `%{role, content}`
+      maps, without the current question (default `[]`)
+    * `:include_suggestions` - generate follow-up suggestions (default true)
+    * `:rewrite_followups` - rewrite follow-ups into standalone search queries
+      (default true; false searches the raw question, for A/B evals)
+    * `:model` - answer model (default `#{@model}`)
+    * `:reasoning_effort` - reasoning effort of the answer model (default
+      `#{inspect(@reasoning_effort)}`; nil sends none, i.e. the model's default)
+    * `:search_opts` - passed to `semantic_search/2`
+    * `:user_id`, `:session_id` - Langfuse tracing
+
+  Returns `{:ok, %{answer, sources, suggestions, search_query}}`.
+  """
+  @spec answer(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
+  def answer(question, opts \\ []) do
+    chat_history = Keyword.get(opts, :chat_history, [])
+    user_id = Keyword.get(opts, :user_id)
+    session_id = Keyword.get(opts, :session_id)
+    model = Keyword.get(opts, :model, @model)
+
+    history_for_search =
+      if Keyword.get(opts, :rewrite_followups, true), do: chat_history, else: []
+
+    with {:ok, search_query} <- search_query(question, history_for_search, user_id, session_id),
+         {:ok, reranked_chunks} <-
+           semantic_search(search_query, Keyword.get(opts, :search_opts, [])),
          {:ok, answer, sources} <-
-           generate_answer(question, reranked_chunks, chat_history, user_id, session_id) do
+           generate_answer(question, reranked_chunks, chat_history, user_id, session_id,
+             model: model,
+             reasoning_effort: Keyword.get(opts, :reasoning_effort, @reasoning_effort)
+           ) do
       suggestions =
-        if include_suggestions and answer != @dont_know_message do
+        if Keyword.get(opts, :include_suggestions, true) and answer != @dont_know_message do
           case generate_suggestions(question, answer, sources, user_id, session_id) do
             {:ok, suggestions} ->
               # Filter out suggestions longer than 255 characters
@@ -65,12 +120,65 @@ defmodule Sanbase.AI.AcademyAIService do
           []
         end
 
-      {:ok, %{answer: answer, sources: sources, suggestions: suggestions}}
+      {:ok,
+       %{answer: answer, sources: sources, suggestions: suggestions, search_query: search_query}}
     else
       {:error, reason} ->
         Logger.error("Local Academy AI request failed: #{inspect(reason)}")
         {:error, "Failed to generate Academy response"}
     end
+  end
+
+  @doc "The message returned when the Academy does not cover a question."
+  @spec dont_know_message() :: String.t()
+  def dont_know_message(), do: @dont_know_message
+
+  # Without history the question is the search query. With history, a short LLM
+  # call resolves references to earlier turns. On failure the raw question is
+  # searched, as before.
+  defp search_query(question, [], _user_id, _session_id), do: {:ok, question}
+
+  defp search_query(question, chat_history, user_id, session_id) do
+    prompt = build_rewrite_prompt(question, chat_history)
+
+    tracing_opts =
+      question
+      |> Tracing.answer_tracing_opts(0, user_id, session_id, @rewrite_model)
+      |> Map.merge(%{generation_name: "academy.qa.rewrite", reasoning_effort: "none"})
+
+    case Question.ask(prompt, tracing_opts) do
+      {:ok, rewritten} ->
+        case rewritten |> String.trim() |> String.trim("\"") do
+          "" -> {:ok, question}
+          query -> {:ok, String.slice(query, 0, @max_search_query_chars)}
+        end
+
+      {:error, reason} ->
+        Logger.warning("Academy follow-up rewrite failed: #{inspect(reason)}")
+        {:ok, question}
+    end
+  end
+
+  defp build_rewrite_prompt(question, chat_history) do
+    history =
+      chat_history
+      |> Enum.take(-@rewrite_history_messages)
+      |> Enum.map_join("\n", fn msg ->
+        "#{String.capitalize(msg.role)}: #{String.slice(msg.content, 0, @rewrite_message_chars)}"
+      end)
+
+    """
+    Rewrite the user's latest question as one standalone search query for the Santiment \
+    Academy documentation. Use the conversation only to fill in what the latest question \
+    leaves implicit, such as what "it", "that metric" or "the plan" refers to. Keep the \
+    user's own terms. If the latest question is already standalone, return it unchanged. \
+    Reply with the query only, no quotes or explanation.
+
+    Conversation:
+    #{history}
+
+    Latest question: #{question}
+    """
   end
 
   @doc """
@@ -209,27 +317,31 @@ defmodule Sanbase.AI.AcademyAIService do
     {:ok, Sanbase.Knowledge.AcademyQuestions.suggest(query)}
   end
 
-  defp build_chat_history(chat_id) do
-    case Sanbase.Chat.get_chat_messages(chat_id, limit: 20) do
-      messages when is_list(messages) ->
-        messages
-        |> Enum.map(fn message ->
-          %{
-            role: Atom.to_string(message.role),
-            content: message.content
-          }
-        end)
+  # The latest messages of the chat, oldest first, without the current question
+  # (the resolver stores it before generating the answer).
+  defp build_chat_history(chat_id, question) do
+    chat_id
+    |> Sanbase.Chat.get_latest_chat_messages(@history_messages + 1)
+    |> Enum.map(&%{role: Atom.to_string(&1.role), content: &1.content})
+    |> drop_current_question(question)
+    |> Enum.take(-@history_messages)
+  end
 
-      _ ->
-        []
+  defp drop_current_question(messages, question) do
+    case List.last(messages) do
+      %{role: "user", content: ^question} -> Enum.drop(messages, -1)
+      _ -> messages
     end
   end
 
-  defp generate_answer(question, chunks, chat_history, user_id, session_id) do
+  defp generate_answer(question, chunks, chat_history, user_id, session_id, model_opts) do
     prompt = build_answer_prompt(question, chunks, chat_history)
+    model = Keyword.fetch!(model_opts, :model)
 
     tracing_opts =
-      Tracing.answer_tracing_opts(question, length(chunks), user_id, session_id, @model)
+      question
+      |> Tracing.answer_tracing_opts(length(chunks), user_id, session_id, model)
+      |> maybe_put_reasoning_effort(model_opts[:reasoning_effort])
 
     case Question.ask(prompt, tracing_opts) do
       {:ok, answer} ->
@@ -244,6 +356,11 @@ defmodule Sanbase.AI.AcademyAIService do
         {:error, reason}
     end
   end
+
+  defp maybe_put_reasoning_effort(tracing_opts, nil), do: tracing_opts
+
+  defp maybe_put_reasoning_effort(tracing_opts, effort),
+    do: Map.put(tracing_opts, :reasoning_effort, effort)
 
   defp build_answer_prompt(question, chunks, chat_history) do
     context = build_context_from_chunks(chunks)
@@ -303,7 +420,7 @@ defmodule Sanbase.AI.AcademyAIService do
   defp build_history_context(history) do
     history_text =
       history
-      |> Enum.take(-5)
+      |> Enum.take(-@history_messages)
       |> Enum.map(fn msg ->
         role = String.capitalize(msg.role)
         "#{role}: #{msg.content}"
@@ -365,7 +482,9 @@ defmodule Sanbase.AI.AcademyAIService do
 
   defp generate_suggestions(question, answer, sources, user_id, session_id) do
     tracing_opts =
-      Tracing.suggestions_tracing_opts(question, user_id, session_id, @suggestions_model)
+      question
+      |> Tracing.suggestions_tracing_opts(user_id, session_id, @suggestions_model)
+      |> Map.put(:reasoning_effort, @suggestions_reasoning_effort)
 
     with {:ok, trace_id} <- Tracing.create_suggestions_trace(question, answer, tracing_opts),
          {:ok, raw_suggestions} <-

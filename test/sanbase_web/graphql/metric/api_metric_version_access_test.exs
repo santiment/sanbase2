@@ -164,6 +164,59 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
     end
   end
 
+  describe "github metrics" do
+    test "every version is free, also for anonymous requests and plans without the newer versions" do
+      conns = [build_conn(), apikey_conn(:subscription_max_sanbase)]
+
+      for conn <- conns, metric <- ["dev_activity", "github_activity"] do
+        assert allowed?(conn, "1.0", metric)
+        assert allowed?(conn, "2.0", metric)
+      end
+    end
+
+    test "their versions have their own names" do
+      create_alias!(%{scope: "social", version_num: "2.0", version_name: "modern:v1"})
+
+      assert execute_query_with_error(
+               build_conn(),
+               query("modern:v1", "dev_activity"),
+               "getMetric"
+             ) =~
+               ~s("modern:v1" is not a known version name)
+
+      create_alias!(%{scope: "github", version_num: "2.0", version_name: "modern:v1"})
+
+      assert allowed?(build_conn(), "modern:v1", "dev_activity")
+    end
+  end
+
+  describe "social metrics" do
+    test "keep the paid rules and name the versions from the social scope" do
+      create_alias!(%{scope: "social", version_num: "1.0", version_name: "original:v1"})
+      create_alias!(%{scope: "social", version_num: "2.0", version_name: "modern:v1"})
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Clickhouse.MetricAdapter.Registry.version_scope_map/0,
+        %{"social_volume_total" => "social"}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert allowed?(build_conn(), "original:v1", "social_volume_total")
+
+        assert execute_query_with_error(
+                 build_conn(),
+                 query("modern:v1", "social_volume_total"),
+                 "getMetric"
+               ) ==
+                 "Metric version modern:v1 requires a SanAPI Business Pro or Business Max " <>
+                   "subscription. Anonymous requests have access to original:v1."
+
+        # The social names are not the names of the global metrics
+        assert execute_query_with_error(build_conn(), query("modern:v1"), "getMetric") =~
+                 ~s("modern:v1" is not a known version name)
+      end)
+    end
+  end
+
   describe "not restricted" do
     test "JWT (the Sanbase web app)" do
       %{user: user} = insert(:subscription_max_sanbase, user: insert(:user))
@@ -301,10 +354,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
     setup_apikey_auth(build_conn(), apikey)
   end
 
-  defp allowed?(conn, version) do
+  defp allowed?(conn, version, metric \\ @metric) do
     match?(
-      %{"data" => %{"getMetric" => %{"metadata" => %{"metric" => @metric}}}},
-      execute_query(conn, query(version))
+      %{"data" => %{"getMetric" => %{"metadata" => %{"metric" => ^metric}}}},
+      execute_query(conn, query(version, metric))
     )
   end
 
@@ -315,12 +368,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
     end
   end
 
-  defp query(version) do
+  defp query(version, metric \\ @metric) do
     version_arg = if version, do: ~s(, version: "#{version}"), else: ""
 
     """
     {
-      getMetric(metric: "#{@metric}"#{version_arg}) {
+      getMetric(metric: "#{metric}"#{version_arg}) {
         metadata { metric }
       }
     }

@@ -248,6 +248,12 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_versions(metric) :: available_versions_result()
 
+  @doc ~s"""
+  The scope of the metric's versions - it decides their names and their access.
+  Adapters that don't implement it are in the "global" scope.
+  """
+  @callback version_scope(metric) :: String.t()
+
   @callback available_metrics() :: list(metric)
 
   @callback available_metrics(selector, opts) :: available_metrics_result()
@@ -298,6 +304,8 @@ defmodule Sanbase.Metric.Behaviour do
     # implement this; the rest yield no non-crypto assets.
     available_non_crypto_asset_slugs: 3,
     # Non-ch metrics don't have versioning yet
-    available_versions: 1
+    available_versions: 1,
+    # Only adapters whose versions differ from the global ones (github, social)
+    version_scope: 1
   ]
 end

@@ -30,9 +30,11 @@ defmodule Sanbase.Metric.VersionAliasTest do
       assert changeset(%{version_num: "Experimental (Weighted Age)", version_name: "exp:v1"}).valid?
     end
 
-    test "only the global scope exists for now" do
+    test "the scope is global by default, and must be a known scope" do
       assert changeset(%{version_num: "7.0", version_name: "seven:v1"}).valid?
       assert changeset(%{scope: "global", version_num: "7.0", version_name: "seven:v1"}).valid?
+      assert changeset(%{scope: "github", version_num: "7.0", version_name: "seven:v1"}).valid?
+      assert changeset(%{scope: "social", version_num: "7.0", version_name: "seven:v1"}).valid?
 
       assert %{scope: ["is invalid"]} =
                errors_on(
@@ -93,6 +95,36 @@ defmodule Sanbase.Metric.VersionAliasTest do
       assert {:error, error} = VersionAlias.to_version_num("nope_pit:v9")
       assert error =~ ~s("nope_pit:v9" is not a known version name)
       assert error =~ "seven:v1"
+    end
+
+    test "a scope's own rows override the global ones" do
+      create_alias!(%{version_num: "2.0", version_name: "modern:v1"})
+      create_alias!(%{scope: "github", version_num: "2.0", version_name: "filtered:v1"})
+
+      assert [%{version_name: "modern:v1"}] = VersionAlias.to_maps(["2.0"])
+      assert [%{version_name: "filtered:v1"}] = VersionAlias.to_maps(["2.0"], "github")
+      assert VersionAlias.to_version_name("2.0", "github") == "filtered:v1"
+      assert VersionAlias.version_nums("github") == ["2.0"]
+
+      assert {:ok, "2.0"} == VersionAlias.to_version_num("filtered:v1", "github")
+      assert {:error, error} = VersionAlias.to_version_num("modern:v1", "github")
+      assert error =~ "filtered:v1"
+      refute error =~ "modern:v1."
+      assert {:error, _} = VersionAlias.to_version_num("filtered:v1")
+    end
+
+    test "every scope sees the global rows" do
+      create_alias!(%{version_num: "1.0", version_name: "original:v1"})
+      create_alias!(%{scope: "social", version_num: "2.0", version_name: "modern:v1"})
+
+      for scope <- ["github", "social"] do
+        assert VersionAlias.to_version_name("1.0", scope) == "original:v1"
+        assert {:ok, "1.0"} == VersionAlias.to_version_num("original:v1", scope)
+      end
+
+      assert Enum.sort(VersionAlias.version_nums("social")) == ["1.0", "2.0"]
+      assert VersionAlias.version_nums("github") == ["1.0"]
+      assert VersionAlias.version_nums() == ["1.0"]
     end
 
     test "rows are cached until clear_cache/0" do

@@ -111,7 +111,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
       versions_maps =
         versions
         |> Enum.reject(fn ver -> ver =~ "Experimental" and metric_access_level != "alpha" end)
-        |> Sanbase.Metric.VersionAlias.to_maps()
+        |> Sanbase.Metric.VersionAlias.to_maps(Sanbase.Metric.version_scope(restriction.name))
 
       {:ok, versions_maps}
     end)

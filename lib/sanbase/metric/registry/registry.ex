@@ -58,6 +58,7 @@ defmodule Sanbase.Metric.Registry do
           data_type: String.t(),
           docs: [%Doc{}],
           status: String.t(),
+          version_scope: String.t(),
           is_verified: boolean(),
           sync_status: String.t(),
           last_sync_datetime: DateTime.t(),
@@ -118,6 +119,9 @@ defmodule Sanbase.Metric.Registry do
     field(:data_type, :string, default: "timeseries")
 
     field(:status, :string, default: "released")
+    # The scope of the metric's versions - decides their names and their access.
+    # See Sanbase.Metric.version_scope/1
+    field(:version_scope, :string, default: "global")
     # Sync-related fields
     field(:is_verified, :boolean)
     field(:sync_status, :string)
@@ -164,6 +168,7 @@ defmodule Sanbase.Metric.Registry do
       :sanapi_min_plan,
       :parameters,
       :status,
+      :version_scope,
       :sync_status,
       :last_sync_datetime
     ])
@@ -222,6 +227,7 @@ defmodule Sanbase.Metric.Registry do
     |> validate_inclusion(:sanbase_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:sanapi_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:status, @allowed_statuses)
+    |> validate_inclusion(:version_scope, Sanbase.Metric.VersionAlias.scopes())
     |> Validation.validate_template_fields()
     |> unique_constraint([:metric, :data_type, :fixed_parameters],
       name: :metric_registry_composite_unique_index

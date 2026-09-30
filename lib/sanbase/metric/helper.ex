@@ -175,6 +175,7 @@ defmodule Sanbase.Metric.Helper do
       acc
       |> put_if_implemented(module, :available_versions, 0)
       |> put_if_implemented(module, :available_versions, 1)
+      |> put_if_implemented(module, :version_scope, 1)
       |> put_if_implemented(module, :available_label_fqns, 1)
       |> put_if_implemented(module, :available_label_fqns, 2)
       |> put_if_implemented(module, :available_non_crypto_asset_slugs, 3)

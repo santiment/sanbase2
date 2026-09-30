@@ -6,10 +6,12 @@ defmodule Sanbase.Metric.VersionAlias do
   "Experimental (Weighted Age)"). Versions without a row pass through untouched -
   the table is a list of aliases, not an allowlist.
 
-  Applied only at the GraphQL boundary (`to_version_num/1` on the way in,
-  `to_maps/1` on the way out) from a single `:persistent_term`; everything in
-  between keeps seeing the canonical version. Every row has `scope` "global";
-  the column is the seam for per-category or per-metric names later.
+  Applied only at the GraphQL boundary (`to_version_num/2` on the way in,
+  `to_maps/2` on the way out) from a single `:persistent_term`; everything in
+  between keeps seeing the canonical version.
+
+  Every row belongs to a scope (see `Sanbase.Metric.version_scope/1`). A scope sees
+  its own rows and the "global" ones; its own win for the same version.
   """
 
   use Ecto.Schema
@@ -24,6 +26,13 @@ defmodule Sanbase.Metric.VersionAlias do
 
   @name_regex ~r/^[a-z][a-z0-9_]*:v\d+(\.\d+)*$/
   @term_key {__MODULE__, :aliases}
+
+  @scopes ["global", "github", "social"]
+  @no_aliases %{by_num: %{}, by_name: %{}}
+
+  @doc "The scopes a row can belong to."
+  @spec scopes() :: [String.t()]
+  def scopes(), do: @scopes
 
   schema "metric_version_aliases" do
     field(:scope, :string, default: "global")
@@ -41,7 +50,7 @@ defmodule Sanbase.Metric.VersionAlias do
     |> update_change(:version_num, &trim/1)
     |> update_change(:version_name, &trim/1)
     |> validate_required([:scope, :version_num, :version_name])
-    |> validate_inclusion(:scope, ["global"])
+    |> validate_inclusion(:scope, @scopes)
     |> validate_format(:version_name, @name_regex,
       message: "must look like modern_pit:v1 - lowercase, digits, underscores, then :vN or :vN.N"
     )
@@ -75,9 +84,9 @@ defmodule Sanbase.Metric.VersionAlias do
   end
 
   @doc "Name to canonical version. Anything not shaped like a name passes through."
-  @spec to_version_num(String.t()) :: {:ok, String.t()} | {:error, String.t()}
-  def to_version_num(input) when is_binary(input) do
-    %{by_name: by_name} = aliases()
+  @spec to_version_num(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def to_version_num(input, scope \\ "global") when is_binary(input) do
+    %{by_name: by_name} = aliases(scope)
 
     cond do
       not name?(input) ->
@@ -96,9 +105,9 @@ defmodule Sanbase.Metric.VersionAlias do
   end
 
   @doc "Versions decorated for `availableVersions`. The name falls back to the version itself."
-  @spec to_maps([String.t()]) :: [map()]
-  def to_maps(versions) when is_list(versions) do
-    %{by_num: by_num} = aliases()
+  @spec to_maps([String.t()], String.t()) :: [map()]
+  def to_maps(versions, scope \\ "global") when is_list(versions) do
+    %{by_num: by_num} = aliases(scope)
 
     Enum.map(versions, fn version ->
       row = Map.get(by_num, version)
@@ -113,9 +122,9 @@ defmodule Sanbase.Metric.VersionAlias do
   end
 
   @doc "Canonical version to its name. Falls back to the version itself."
-  @spec to_version_name(String.t()) :: String.t()
-  def to_version_name(version_num) when is_binary(version_num) do
-    %{by_num: by_num} = aliases()
+  @spec to_version_name(String.t(), String.t()) :: String.t()
+  def to_version_name(version_num, scope \\ "global") when is_binary(version_num) do
+    %{by_num: by_num} = aliases(scope)
 
     case Map.get(by_num, version_num) do
       %{version_name: name} -> name
@@ -124,35 +133,55 @@ defmodule Sanbase.Metric.VersionAlias do
   end
 
   @doc "Every canonical version that has a name."
-  @spec version_nums() :: [String.t()]
-  def version_nums() do
-    %{by_num: by_num} = aliases()
+  @spec version_nums(String.t()) :: [String.t()]
+  def version_nums(scope \\ "global") do
+    %{by_num: by_num} = aliases(scope)
     Map.keys(by_num)
   end
 
   defp name?(input), do: Regex.match?(@name_regex, input)
 
-  defp aliases() do
-    case :persistent_term.get(@term_key, :undefined) do
-      :undefined -> load_aliases()
-      aliases -> aliases
-    end
+  defp aliases(scope) do
+    aliases_by_scope =
+      case :persistent_term.get(@term_key, :undefined) do
+        :undefined -> load_aliases()
+        aliases_by_scope -> aliases_by_scope
+      end
+
+    Map.get(aliases_by_scope, scope, @no_aliases)
   end
 
   # Nothing is stored on failure, so the next read retries.
   defp load_aliases() do
-    rows = Repo.all(from(a in __MODULE__, where: a.scope == "global"))
+    rows_by_scope =
+      Repo.all(from(a in __MODULE__, where: a.scope in ^@scopes))
+      |> Enum.group_by(& &1.scope)
 
-    aliases = %{
-      by_num: Map.new(rows, &{&1.version_num, &1}),
-      by_name: Map.new(rows, &{&1.version_name, &1.version_num})
-    }
+    global_rows = Map.get(rows_by_scope, "global", [])
 
-    :persistent_term.put(@term_key, aliases)
-    aliases
+    aliases_by_scope =
+      Map.new(@scopes, fn
+        "global" -> {"global", index(global_rows)}
+        scope -> {scope, index(global_rows ++ Map.get(rows_by_scope, scope, []))}
+      end)
+
+    :persistent_term.put(@term_key, aliases_by_scope)
+    aliases_by_scope
   rescue
     e ->
       Logger.error("Failed to load metric version aliases: #{Exception.message(e)}")
-      %{by_num: %{}, by_name: %{}}
+      %{}
+  end
+
+  # Later rows win, and the name of an overridden row is dropped with it.
+  defp index(rows) do
+    by_num = Map.new(rows, &{&1.version_num, &1})
+
+    by_name =
+      rows
+      |> Enum.filter(&(by_num[&1.version_num] == &1))
+      |> Map.new(&{&1.version_name, &1.version_num})
+
+    %{by_num: by_num, by_name: by_name}
   end
 end

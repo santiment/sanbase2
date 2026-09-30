@@ -227,6 +227,13 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
               label="Exposed on Environments"
               options={["all", "none", "stage", "prod"]}
             />
+            <.input
+              type="select"
+              id="input-version-scope"
+              field={@form[:version_scope]}
+              label="Version Scope"
+              options={Sanbase.Metric.VersionAlias.scopes()}
+            />
           </div>
         </div>
 

@@ -308,6 +308,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_versions(metric), do: {:ok, Map.fetch!(@available_versions, metric)}
 
+  # Own version rows, all free.
+  @impl Sanbase.Metric.Behaviour
+  def version_scope(_metric), do: "github"
+
   def available_versions(), do: {:ok, @available_versions}
 
   @impl Sanbase.Metric.Behaviour

@@ -33,6 +33,9 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def has_incomplete_data?(_), do: false
 
   @impl Sanbase.Metric.Behaviour
+  def version_scope(_metric), do: "social"
+
+  @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour

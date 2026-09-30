@@ -46,7 +46,8 @@ defmodule Sanbase.Metric.Registry.Populate do
       parameters: Map.get(map, "parameters", []),
       required_selectors: Map.get(map, "required_selectors", []) |> Enum.map(&%{type: &1}),
       selectors: Map.get(map, "selectors", []) |> Enum.map(&%{type: &1}),
-      tables: map["table"] |> List.wrap() |> Enum.map(&%{name: &1})
+      tables: map["table"] |> List.wrap() |> Enum.map(&%{name: &1}),
+      version_scope: Map.get(map, "version_scope", "global")
     }
   end
 

@@ -279,6 +279,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {:error, unsupported_selector_error(selector)}
   end
 
+  # Set per metric in the registry, so the dev metrics can be in the "github"
+  # scope while the rest stay in the "global" one.
+  @impl Sanbase.Metric.Behaviour
+  def version_scope(metric), do: Map.get(Registry.version_scope_map(), metric, "global")
+
   @impl Sanbase.Metric.Behaviour
   def available_versions(metric) do
     available_versions_query(metric)

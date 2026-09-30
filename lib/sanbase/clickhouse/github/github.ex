@@ -10,9 +10,13 @@ defmodule Sanbase.Clickhouse.Github do
   accept a `:version` option:
 
     * "1.0" (default) - the number of distinct (owner, repo, dt, event) events.
-    * "2.0" - excludes the [bot] actors, counts the same event stored twice a few
-      seconds apart once, and a single actor contributes at most
-      N (configurable) events per repository per day.
+    * "2.0" - dev_activity counts only the pushes, pull requests, reviews and
+      releases, excludes the bot actors (the [bot] and -bot ones and the known bot
+      accounts like copilot), counts the same event stored twice a few seconds apart once,
+      excludes the actor-days of automation running under a personal account (dev
+      events in almost every hour of the day or too many dev events in a single
+      hour), and a single actor contributes at most N (configurable) events per
+      repository per day.
       The values are floats.
 
   The queries of every version live in Sanbase.Clickhouse.Github.SqlQuery and are
@@ -175,7 +179,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   The stats include the total dev/github activity and contributors count, as
   well as the same numbers computed only for bot accounts (actors whose name
-  ends with `[bot]`).
+  ends with `[bot]` or `-bot` and the known bot accounts like `copilot`).
 
   The input is a list of `{github_organization, slug}` pairs, so a slug with
   multiple organizations appears in multiple pairs. All organizations are

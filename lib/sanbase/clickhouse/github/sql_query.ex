@@ -23,7 +23,11 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
   ]
 
   @table "github_v2"
-  @bot_actor "endsWith(actor, '[bot]')"
+  # The bots are the GitHub apps ([bot]), the machine accounts named by the -bot
+  # convention and the bot accounts that follow neither. The actors are stored
+  # lowercased.
+  @bot_accounts ["copilot"]
+  @bot_actor "(endsWith(actor, '[bot]') OR endsWith(actor, '-bot') OR actor IN (#{Enum.map_join(@bot_accounts, ", ", &"'#{&1}'")}))"
 
   def non_dev_events(), do: @non_dev_events
 
@@ -203,11 +207,34 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
   end
 
   # Version 2.0 of dev_activity and github_activity. Compared to version 1.0:
-  #   * the [bot] actors are ignored;
+  #   * dev_activity counts only the @dev_events_v2;
+  #   * the bot actors are ignored - the [bot] and -bot ones and the @bot_accounts;
   #   * the same event stored twice, a few seconds apart, is counted once;
+  #   * the actor-days of automation running under a personal account are ignored;
   #   * every event is weighted by min(1, cap / events of its (owner, repo, actor, day)),
   #     so automation running under a personal account cannot dominate the metric.
   @max_daily_actor_repo_events 100
+
+  # The work on the code. The branches and tags (CreateEvent, DeleteEvent) are left
+  # out, as their number depends on the workflow - a branch per pull request in the
+  # repository or in a fork - and not on the amount of work. The events not listed
+  # here, including the ones GitHub introduces in the future, are not dev activity.
+  @dev_events_v2 [
+    "PushEvent",
+    "PullRequestEvent",
+    "PullRequestReviewEvent",
+    "PullRequestReviewCommentEvent",
+    "ReleaseEvent"
+  ]
+
+  # An actor-day of an organization with dev events in at least this many hours of
+  # the day, or with at least this many dev events in a single hour, is automation -
+  # a human does not work around the clock or at this pace. The same actor-days are
+  # excluded from dev_activity and github_activity. Only the dev events are counted,
+  # so a burst of other events, like deleting many merged branches at once, is not
+  # automation.
+  @automation_active_hours 20
+  @automation_hourly_events 100
 
   # GH Archive and the backfill store the same event 0-3 seconds apart. Events of
   # an (owner, repo, actor, event) at most this far apart form a run, and a run of
@@ -218,6 +245,9 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
   @lookback_seconds 600
 
   def max_daily_actor_repo_events(), do: @max_daily_actor_repo_events
+  def automation_active_hours(), do: @automation_active_hours
+  def automation_hourly_events(), do: @automation_hourly_events
+  def dev_events_v2(), do: @dev_events_v2
 
   def dev_activity_v2_query(organizations, from, to, interval) do
     activity_v2_query(organizations, from, to, interval, dev_only?: true)
@@ -244,10 +274,10 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       organizations: organizations |> Enum.map(&String.downcase/1),
       from: from,
       to: to,
-      span: span,
-      non_dev_events: @non_dev_events,
-      max_daily_events: @max_daily_actor_repo_events
+      span: span
     }
+
+    params = Map.merge(params, v2_parameters())
 
     sql =
       activity_v2_timeseries_query(interval, opts)
@@ -256,8 +286,11 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  # A day never spans two day-aligned intervals, so they need no window function.
+  # A day never spans two day-aligned intervals, so they need no window function
+  # for the day totals.
   defp activity_v2_timeseries_query(interval, opts) do
+    in_range = "dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})"
+
     case day_aligned_interval?(interval) do
       true ->
         """
@@ -267,11 +300,11 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         FROM (
           SELECT
             group_key,
-            toDate(dt, 'UTC') AS day,
-            countIf(dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})) AS in_range_events,
-            count() AS day_events
+            day,
+            sumIf(events, in_range) AS in_range_events,
+            sum(events) AS day_events
           FROM (
-            #{deduplicated_events_query(opts)}
+            #{human_event_counts_query([in_range: in_range] ++ opts)}
           )
           GROUP BY group_key, day
           HAVING in_range_events > 0
@@ -280,6 +313,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         """
 
       false ->
+        time = to_unix_timestamp(interval, "dt", argument_name: "interval")
+
         """
         SELECT time, SUM(events * least(1, {{max_daily_events}} / day_events)) AS value
         FROM (
@@ -289,14 +324,9 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
             events,
             sum(events) OVER (PARTITION BY group_key, day) AS day_events
           FROM (
-            SELECT
-              group_key,
-              toDate(dt, 'UTC') AS day,
-              #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
-              dt >= toDateTime({{from}}) AND dt < toDateTime({{to}}) AS in_range,
-              count() AS events
+            SELECT group_key, day, time, in_range, sum(events) AS events
             FROM (
-              #{deduplicated_events_query(opts)}
+              #{human_event_counts_query([in_range: in_range, time: time] ++ opts)}
             )
             GROUP BY group_key, day, time, in_range
           )
@@ -316,6 +346,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
   defp total_activity_v2_query(organizations, from, to, opts) do
     to_operator = Keyword.fetch!(opts, :to_operator)
+    in_range = "dt >= toDateTime({{from}}) AND dt #{to_operator} toDateTime({{to}})"
 
     # The zeros of the organizations without activity must be floats like the sums
     sql =
@@ -324,26 +355,85 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       FROM (
         SELECT
           owner,
-          countIf(dt >= toDateTime({{from}}) AND dt #{to_operator} toDateTime({{to}})) AS in_range_events,
-          count() AS day_events
+          sumIf(events, in_range) AS in_range_events,
+          sum(events) AS day_events
         FROM (
-          #{deduplicated_events_query(opts)}
+          #{human_event_counts_query([in_range: in_range] ++ opts)}
         )
-        GROUP BY owner, group_key, toDate(dt, 'UTC')
+        GROUP BY owner, group_key, day
       )
       GROUP BY owner
       """
       |> wrap_aggregated_in_zero_filling_query("toFloat64(0)")
 
-    params = %{
-      organizations: organizations |> Enum.map(&String.downcase/1),
-      from: DateTime.to_unix(from),
-      to: DateTime.to_unix(to),
-      non_dev_events: @non_dev_events,
-      max_daily_events: @max_daily_actor_repo_events
-    }
+    params =
+      %{
+        organizations: organizations |> Enum.map(&String.downcase/1),
+        from: DateTime.to_unix(from),
+        to: DateTime.to_unix(to)
+      }
+      |> Map.merge(v2_parameters())
 
     Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  defp v2_parameters() do
+    %{
+      dev_events: @dev_events_v2,
+      max_daily_events: @max_daily_actor_repo_events,
+      automation_active_hours: @automation_active_hours,
+      automation_hourly_events: @automation_hourly_events
+    }
+  end
+
+  # The deduplicated events counted per (owner, group_key, day, time, in_range),
+  # without the automation actor-days. The `:in_range` option is the condition of
+  # the time range and the optional `:time` option is the expression of the
+  # interval the events are grouped by.
+  #
+  # The actor-days are per organization, so the value of an organization does not
+  # depend on the other organizations in the query.
+  defp human_event_counts_query(opts) do
+    in_range = Keyword.fetch!(opts, :in_range)
+
+    {time_select, time_key} =
+      case Keyword.get(opts, :time) do
+        nil -> {"", ""}
+        time -> {",\n        #{time} AS time", ", time"}
+      end
+
+    """
+    SELECT owner, group_key, day#{time_key}, in_range, events
+    FROM (
+      SELECT
+        owner, group_key, day#{time_key}, in_range, events,
+        uniqExactIf(hour_of_day, is_dev) OVER (PARTITION BY owner, actor_key, day) AS active_hours,
+        max(hour_events) OVER (PARTITION BY owner, actor_key, day) AS peak_hour_events
+      FROM (
+        SELECT
+          owner, group_key, actor_key, day, hour_of_day#{time_key}, in_range, is_dev, events,
+          sumIf(events, is_dev) OVER (PARTITION BY owner, actor_key, day, hour_of_day) AS hour_events
+        FROM (
+          SELECT
+            owner,
+            group_key,
+            actor_key,
+            toDate(dt, 'UTC') AS day,
+            toHour(dt, 'UTC') AS hour_of_day#{time_select},
+            #{in_range} AS in_range,
+            is_dev,
+            count() AS events
+          FROM (
+            #{deduplicated_events_query(opts)}
+          )
+          GROUP BY owner, group_key, actor_key, day, hour_of_day#{time_key}, in_range, is_dev
+        )
+      )
+    )
+    WHERE
+      active_hours < {{automation_active_hours}} AND
+      peak_hour_events < {{automation_hourly_events}}
+    """
   end
 
   # Whole UTC days are selected, so an event's weight does not depend on the time
@@ -352,15 +442,17 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
   defp deduplicated_events_query(opts) do
     dev_events_filter =
       if Keyword.fetch!(opts, :dev_only?),
-        do: "AND event NOT IN ({{non_dev_events}})",
+        do: "AND event IN ({{dev_events}})",
         else: ""
 
     """
-    SELECT owner, toDateTime(kept_timestamp, 'UTC') AS dt, group_key
+    SELECT owner, toDateTime(kept_timestamp, 'UTC') AS dt, group_key, actor_key, is_dev
     FROM (
       SELECT
         owner,
         cityHash64(owner, repo, cityHash64(actor)) AS group_key,
+        cityHash64(actor) AS actor_key,
+        event IN ({{dev_events}}) AS is_dev,
         arraySort(groupUniqArray(toUInt32(dt))) AS timestamps,
         arrayEnumerate(timestamps) AS positions,
         arrayFill(

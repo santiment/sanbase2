@@ -37,6 +37,28 @@ defmodule Sanbase.Metric.VersionScopeTest do
     end)
   end
 
+  test "populating from the JSON files keeps the version scope set in the DB" do
+    json_map = %{"name" => "some_metric_1d", "metric" => "some_metric", "table" => "t"}
+
+    refute Map.has_key?(Registry.Populate.json_map_to_registry_params(json_map), :version_scope)
+
+    assert %{version_scope: "social"} =
+             Registry.Populate.json_map_to_registry_params(
+               Map.put(json_map, "version_scope", "social")
+             )
+
+    changeset =
+      Registry.changeset(
+        %Registry{version_scope: "social"},
+        Registry.Populate.json_map_to_registry_params(json_map)
+      )
+
+    assert Ecto.Changeset.get_field(changeset, :version_scope) == "social"
+
+    changeset = Registry.Populate.json_map_to_registry_changeset(json_map)
+    assert Ecto.Changeset.get_field(changeset, :version_scope) == "global"
+  end
+
   test "the registry accepts only the known scopes" do
     assert %{version_scope: ["is invalid"]} =
              errors_on(Registry.changeset(%Registry{}, %{version_scope: "nope"}))

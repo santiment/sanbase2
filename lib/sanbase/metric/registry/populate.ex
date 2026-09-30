@@ -46,10 +46,18 @@ defmodule Sanbase.Metric.Registry.Populate do
       parameters: Map.get(map, "parameters", []),
       required_selectors: Map.get(map, "required_selectors", []) |> Enum.map(&%{type: &1}),
       selectors: Map.get(map, "selectors", []) |> Enum.map(&%{type: &1}),
-      tables: map["table"] |> List.wrap() |> Enum.map(&%{name: &1}),
-      version_scope: Map.get(map, "version_scope", "global")
+      tables: map["table"] |> List.wrap() |> Enum.map(&%{name: &1})
     }
+    |> maybe_put_version_scope(map)
   end
+
+  # The JSON files do not have the version scope, it is set in the DB (by a
+  # migration or an admin). Without the key the existing scope is kept and a new
+  # record gets the schema default.
+  defp maybe_put_version_scope(params, %{"version_scope" => scope}),
+    do: Map.put(params, :version_scope, scope)
+
+  defp maybe_put_version_scope(params, _map), do: params
 
   def json_map_to_registry_changeset(%{} = map) do
     params = json_map_to_registry_params(map)

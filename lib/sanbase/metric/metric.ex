@@ -740,6 +740,24 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  The scope of the metric's versions. The scope decides the names of the versions
+  (Sanbase.Metric.VersionAlias) and who can access them
+  (Sanbase.Billing.Plan.MetricVersionAccess). Unknown metrics are in the "global" scope.
+  """
+  @spec version_scope(metric) :: String.t()
+  def version_scope(metric) do
+    case get_module(metric) do
+      nil ->
+        "global"
+
+      module when is_atom(module) ->
+        if Map.fetch!(Helper.implemented_optional_functions(), {module, :version_scope, 1}),
+          do: module.version_scope(metric),
+          else: "global"
+    end
+  end
+
   def available_versions() do
     known_versions =
       Helper.metric_modules()

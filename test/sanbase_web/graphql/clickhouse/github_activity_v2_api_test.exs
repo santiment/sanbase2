@@ -3,13 +3,13 @@ defmodule SanbaseWeb.Graphql.GithubActivityV2ApiTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1]
 
   setup do
     project = insert(:random_project, %{github_organizations: [build(:github_organization)]})
-    # Version 2.0 is not available to anonymous requests
-    conn = setup_jwt_auth(build_conn(), insert(:user))
 
-    %{conn: conn, project: project}
+    # Every version of the github metrics is free, so an anonymous request is enough
+    %{conn: build_conn(), project: project}
   end
 
   for metric <- ["dev_activity", "github_activity"] do
@@ -71,6 +71,28 @@ defmodule SanbaseWeb.Graphql.GithubActivityV2ApiTest do
                "timeseriesDataJson" => [%{"datetime" => "2026-06-08T00:00:00Z", "value" => 230.4}]
              }
     end)
+  end
+
+  test "availableVersions of dev_activity have the github names", %{conn: conn} do
+    create_alias!(%{scope: "social", version_num: "2.0", version_name: "modern:v1"})
+    create_alias!(%{scope: "github", version_num: "2.0", version_name: "modern:v1"})
+
+    query = """
+    {
+      getMetric(metric: "dev_activity") {
+        metadata { availableVersions { versionNum versionName } }
+      }
+    }
+    """
+
+    assert execute_query(conn, query, "getMetric") == %{
+             "metadata" => %{
+               "availableVersions" => [
+                 %{"versionNum" => "1.0", "versionName" => "1.0"},
+                 %{"versionNum" => "2.0", "versionName" => "modern:v1"}
+               ]
+             }
+           }
   end
 
   test "availableVersions of dev_activity", %{conn: conn} do

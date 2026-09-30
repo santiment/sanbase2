@@ -12,7 +12,10 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     * anonymous - version 1.0 only, whatever the origin.
 
   The entitlement matrix lives in
-  `Sanbase.Billing.Plan.ApiAccessChecker.metric_version_buckets/4`.
+  `Sanbase.Billing.Plan.ApiAccessChecker.metric_version_buckets/4`. It describes the
+  global versions ("2.0" is modern:v1, "2.1" is modern_pit:v1, ...). Metrics with
+  their own version scope (`Sanbase.Metric.version_scope/1`) do not follow it - every
+  version of the scopes in `@free_scopes` is available to everyone.
 
   Enforcement is behind the `:enforce` flag (`METRIC_VERSION_ACCESS_ENFORCE`). While it
   is off, a request that would be denied is logged and then allowed, so the impact can
@@ -32,9 +35,12 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     pit: "a paid yearly SanAPI Business Max subscription"
   }
 
+  # Every version of the metrics in these version scopes is free.
+  @free_scopes ["github"]
+
   @spec check(String.t(), String.t(), map()) :: :ok | {:error, String.t()}
   def check(metric, version, context) do
-    case bucket(version) do
+    case bucket(metric, version) do
       # Every caller has version 1.0, so the common case needs no subscription lookup.
       :base ->
         :ok
@@ -51,9 +57,14 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
               buckets ->
                 cond do
-                  bucket in buckets -> :ok
-                  exempt?(version, context) -> exempt(metric, version, bucket, caller, context)
-                  true -> deny(metric, version, bucket, buckets, caller, context)
+                  bucket in buckets ->
+                    :ok
+
+                  exempt?(version, context) ->
+                    exempt(metric, version, bucket, caller, context)
+
+                  true ->
+                    deny(metric, version, bucket, buckets, caller, context)
                 end
             end
         end
@@ -98,10 +109,11 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
   # A non-numeric version that is not Experimental (those have their own rule and
   # never reach here) is treated as the most restricted bucket.
-  defp bucket(version) do
-    case Version.classify(version) do
-      :other -> :pit
-      bucket -> bucket
+  defp bucket(metric, version) do
+    cond do
+      Sanbase.Metric.version_scope(metric) in @free_scopes -> :base
+      Version.classify(version) == :other -> :pit
+      true -> Version.classify(version)
     end
   end
 
@@ -174,12 +186,12 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
   # Users see version names, the same ones `availableVersions` returns, so the list
   # comes from the alias table. The default version is always included, even when the
   # table cannot be read.
-  defp allowed_version_names(buckets) do
-    [Sanbase.Metric.default_version() | VersionAlias.version_nums()]
+  defp allowed_version_names(scope, buckets) do
+    [Sanbase.Metric.default_version() | VersionAlias.version_nums(scope)]
     |> Enum.uniq()
     |> Enum.filter(&(Version.classify(&1) in buckets))
     |> Enum.sort_by(&version_sort_key/1)
-    |> Enum.map_join(", ", &VersionAlias.to_version_name/1)
+    |> Enum.map_join(", ", &VersionAlias.to_version_name(&1, scope))
   end
 
   defp version_sort_key(version) do
@@ -188,6 +200,7 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
   defp deny(metric, version, bucket, buckets, caller, context) do
     enforce? = enforce?()
+    scope = Sanbase.Metric.version_scope(metric)
 
     log_denial(
       if(enforce?, do: "Denied", else: "Would deny"),
@@ -200,9 +213,9 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
     if enforce? do
       {:error,
-       "Metric version #{VersionAlias.to_version_name(version)} requires " <>
+       "Metric version #{VersionAlias.to_version_name(version, scope)} requires " <>
          "#{@required_plan[bucket]}. #{caller_description(caller)} " <>
-         "#{allowed_version_names(buckets)}."}
+         "#{allowed_version_names(scope, buckets)}."}
     else
       :ok
     end
@@ -235,7 +248,7 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
       trial: trial?,
       metric: metric,
       version: version,
-      version_name: VersionAlias.to_version_name(version),
+      version_name: VersionAlias.to_version_name(version, Sanbase.Metric.version_scope(metric)),
       required: bucket
     ]
 

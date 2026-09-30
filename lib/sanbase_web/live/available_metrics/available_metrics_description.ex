@@ -487,6 +487,18 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Version Scope"} = assigns) do
+    ~H"""
+    <pre>
+    One of: global, github, social.
+    Decides the names of the metric's versions and who can access them.
+    In the social scope "2.0" is modern:v1 and needs a paid SanAPI plan.
+    In the github scope the versions have their own names and all of them are free.
+    The global scope is for the rest of the metrics.
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Sync Status"} = assigns) do
     ~H"""
     <pre>

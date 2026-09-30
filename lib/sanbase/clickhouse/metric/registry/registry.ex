@@ -39,6 +39,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
   def table_map(), do: get(:table_map)
   def timebound_flag_map(), do: get(:timebound_flag_map)
+  def version_scope_map(), do: get(:version_scope_map)
 
   # Internals below. Some are public because other modules call them, for example when
   # refreshing the data stored in the persistent_term.
@@ -83,7 +84,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     {:selectors_map, []},
     {:soft_deprecated_metrics_map, []},
     {:table_map, []},
-    {:timebound_flag_map, []}
+    {:timebound_flag_map, []},
+    {:version_scope_map, []}
   ]
 
   def by_name(name) do
@@ -365,6 +367,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   defp compute(:stabilization_period_map, []) do
     get_metrics([]) |> Map.new(&{&1.metric, &1.stabilization_period})
+  end
+
+  defp compute(:version_scope_map, []) do
+    get_metrics([]) |> Map.new(&{&1.metric, &1.version_scope})
   end
 
   defp compute(:can_mutate_map, []) do

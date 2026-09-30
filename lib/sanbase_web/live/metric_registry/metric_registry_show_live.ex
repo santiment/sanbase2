@@ -254,6 +254,12 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         popover_target_text: get_popover_text(%{key: "Exposed Environments"})
       },
       %{
+        key: "Version Scope",
+        value: metric_registry.version_scope,
+        popover_target: "popover-version-scope",
+        popover_target_text: get_popover_text(%{key: "Version Scope"})
+      },
+      %{
         key: "Min Interval",
         value: metric_registry.min_interval,
         popover_target: "popover-frequency",

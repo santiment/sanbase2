@@ -21,7 +21,13 @@ defmodule Sanbase.Repo.Migrations.AddGithubMetricVersionAliases do
     """)
   end
 
+  # Only the seeded aliases, the ones added later by an admin are kept
   def down() do
-    execute("DELETE FROM metric_version_aliases WHERE scope = 'github'")
+    for {num, name, _description} <- @seed do
+      execute("""
+      DELETE FROM metric_version_aliases
+      WHERE scope = 'github' AND version_num = '#{num}' AND version_name = '#{name}'
+      """)
+    end
   end
 end

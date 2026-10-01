@@ -329,12 +329,13 @@ config :boruta, Boruta.Oauth,
 
 config :nostrum,
   token: {:system, "DISCORD_BOT_QUERY_TOKEN"},
+  # No privileged intents: the bot only reacts to messages that @mention it
+  # (Discord delivers their content without :message_content) and checks Pro
+  # roles via the single Get Guild Member REST call (no :guild_members needed).
   gateway_intents: [
     :guilds,
-    :guild_members,
     :direct_messages,
-    :guild_messages,
-    :message_content
+    :guild_messages
   ]
 
 config :ex_audit,

@@ -83,7 +83,10 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
       },
       %{
         name: "social_dominance_total",
-        description: "Share of total crypto social mentions attributed to the asset",
+        description:
+          "Social volume of the asset as a percentage of the combined social volume of the " <>
+            "100 largest assets by market cap. The newest buckets are preliminary and can spike " <>
+            "before all data arrives.",
         unit: "percent",
         supports_many_slugs: false
       },
@@ -128,7 +131,10 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
           },
           %{
             name: "social_dominance_#{source}",
-            description: "Share of crypto social mentions attributed to the asset in #{source}",
+            description:
+              "Social volume of the asset in #{source} as a percentage of the combined " <>
+                "#{source} social volume of the 100 largest assets by market cap. The newest " <>
+                "buckets are preliminary and can spike before all data arrives.",
             unit: "percent",
             supports_many_slugs: false
           }

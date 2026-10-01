@@ -28,6 +28,15 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
   @slugs_per_call_limit 10
   @max_total_datapoints 1000
+
+  # Social data keeps arriving after a bucket is first published, so the newest
+  # buckets are preliminary. Ratio metrics like social dominance are hit hardest:
+  # the denominator (the combined volume of the top 100 assets) fills in later
+  # than the asset's own volume, so a fresh bucket can read 100% and then settle.
+  @preliminary_window_hours 2
+  @revision_window_hours 12
+  @social_metric_prefixes ["social_volume_", "social_dominance_", "sentiment_"]
+
   schema do
     field(:metric, :string,
       required: true,
@@ -107,6 +116,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
          {:ok, {from, to}} <- Utils.parse_time_period(time_period),
          {:ok, data} <- fetch_metric_data(metric, slugs, from, to, interval) do
       {data, limited} = limit_datapoints(data)
+      preliminary_since = preliminary_since(metric, data, interval, to)
 
       response_data =
         %{
@@ -117,6 +127,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
           interval: interval
         }
         |> maybe_add_limit_notice(limited)
+        |> maybe_add_preliminary_notice(metric, preliminary_since)
         |> Utils.truncate_response()
 
       {:reply, Response.json(Response.tool(), response_data), frame}
@@ -149,6 +160,50 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
       :notice,
       "Datapoints limited to #{@max_total_datapoints} total (most recent kept). Use a coarser interval or shorter time_period for complete data."
     )
+  end
+
+  # Returns the datetime of the first datapoint whose bucket overlaps the
+  # preliminary window, or nil when the metric is not social or no such point exists.
+  defp preliminary_since(metric, data, interval, now) do
+    if String.starts_with?(metric, @social_metric_prefixes) do
+      cutoff =
+        now
+        |> DateTime.add(-@preliminary_window_hours * 3600, :second)
+        |> DateTime.add(-Sanbase.Utils.DateTime.str_to_sec(interval), :second)
+
+      data
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.map(&Sanbase.Utils.DateTime.from_iso8601!(&1.datetime))
+      |> Enum.filter(&(DateTime.compare(&1, cutoff) == :gt))
+      |> Enum.min(DateTime, fn -> nil end)
+    end
+  end
+
+  defp maybe_add_preliminary_notice(data, _metric, nil), do: data
+
+  defp maybe_add_preliminary_notice(data, metric, %DateTime{} = since) do
+    notice =
+      "Datapoints from #{DateTime.to_iso8601(since)} onward are preliminary: social data " <>
+        "for the last #{@preliminary_window_hours} hours is still arriving, and social " <>
+        "data can be revised for up to #{@revision_window_hours} hours. Do not treat a move " <>
+        "inside this window as a signal on its own. If a later fetch returns different " <>
+        "values for these datapoints, the data was revised."
+
+    notice =
+      if String.starts_with?(metric, "social_dominance_") do
+        notice <>
+          " Social dominance divides the asset's social volume by the combined social volume " <>
+          "of the 100 largest assets by market cap. While the other assets' volumes are still " <>
+          "arriving the denominator is too small, so recent dominance can spike sharply (even " <>
+          "to 100%) and settle later. Before reporting a dominance spike in this window, check " <>
+          "social_volume_total for the same asset: if its volume did not rise too, the spike " <>
+          "is most likely incomplete data."
+      else
+        notice
+      end
+
+    Map.put(data, :preliminary_data_notice, notice)
   end
 
   # Validation failures are tagged [permanent] (ToolError): the same arguments can

@@ -318,7 +318,10 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "supports_many_slugs" => false
                },
                %{
-                 "description" => "Share of total crypto social mentions attributed to the asset",
+                 "description" =>
+                   "Social volume of the asset as a percentage of the combined social volume of the " <>
+                     "100 largest assets by market cap. The newest buckets are preliminary and can spike " <>
+                     "before all data arrives.",
                  "documentation_urls" => [
                    %{"url" => "https://academy.santiment.net/metrics/social-dominance"}
                  ],
@@ -409,7 +412,9 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                %{
                  "default_aggregation" => "avg",
                  "description" =>
-                   "Share of crypto social mentions attributed to the asset in twitter",
+                   "Social volume of the asset in twitter as a percentage of the combined " <>
+                     "twitter social volume of the 100 largest assets by market cap. The newest " <>
+                     "buckets are preliminary and can spike before all data arrives.",
                  "documentation_urls" => [
                    %{"url" => "https://academy.santiment.net/metrics/deprecated-metrics"}
                  ],
@@ -439,7 +444,9 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                %{
                  "default_aggregation" => "avg",
                  "description" =>
-                   "Share of crypto social mentions attributed to the asset in telegram",
+                   "Social volume of the asset in telegram as a percentage of the combined " <>
+                     "telegram social volume of the 100 largest assets by market cap. The newest " <>
+                     "buckets are preliminary and can spike before all data arrives.",
                  "documentation_urls" => [
                    %{"url" => "https://academy.santiment.net/metrics/social-dominance"}
                  ],
@@ -469,7 +476,9 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                %{
                  "default_aggregation" => "avg",
                  "description" =>
-                   "Share of crypto social mentions attributed to the asset in reddit",
+                   "Social volume of the asset in reddit as a percentage of the combined " <>
+                     "reddit social volume of the 100 largest assets by market cap. The newest " <>
+                     "buckets are preliminary and can spike before all data arrives.",
                  "documentation_urls" => [
                    %{"url" => "https://academy.santiment.net/metrics/social-dominance"}
                  ],
@@ -976,5 +985,89 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
 
       assert {:ok, %DateTime{}, _} = DateTime.from_iso8601(iso8601_datetime)
     end)
+  end
+
+  describe "preliminary social data notice" do
+    test "is added for social dominance datapoints in the last hours", _context do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      recent = DateTime.add(now, -30 * 60, :second)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.timeseries_data/5,
+        {:ok,
+         [
+           %{datetime: DateTime.add(now, -5 * 3600, :second), value: 1.2},
+           %{datetime: recent, value: 100.0}
+         ]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        response = fetch_metric_json("social_dominance_total", "5m", "6h")
+
+        assert notice = response["preliminary_data_notice"]
+        assert notice =~ "Datapoints from #{DateTime.to_iso8601(recent)} onward are preliminary"
+        assert notice =~ "social_volume_total"
+      end)
+    end
+
+    test "omits the dominance explanation for social volume", _context do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.timeseries_data/5,
+        {:ok, [%{datetime: DateTime.add(now, -10 * 60, :second), value: 5}]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        response = fetch_metric_json("social_volume_total", "5m", "1h")
+
+        assert notice = response["preliminary_data_notice"]
+        refute notice =~ "100 largest assets"
+      end)
+    end
+
+    test "is not added when all social datapoints are older than the window", _context do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.timeseries_data/5,
+        {:ok, [%{datetime: DateTime.add(now, -5 * 3600, :second), value: 1.2}]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        response = fetch_metric_json("social_dominance_total", "5m", "6h")
+
+        refute Map.has_key?(response, "preliminary_data_notice")
+      end)
+    end
+
+    test "is not added for non-social metrics", _context do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.timeseries_data/5,
+        {:ok, [%{datetime: DateTime.add(now, -10 * 60, :second), value: 100}]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        response = fetch_metric_json("daily_active_addresses", "5m", "1h")
+
+        refute Map.has_key?(response, "preliminary_data_notice")
+      end)
+    end
+  end
+
+  defp fetch_metric_json(metric, interval, time_period) do
+    {:ok, %Anubis.MCP.Response{result: %{"content" => [%{"text" => json_text}]}}} =
+      try_few_times(
+        fn ->
+          Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+            slugs: ["bitcoin"],
+            metric: metric,
+            interval: interval,
+            time_period: time_period
+          })
+        end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    Jason.decode!(json_text)
   end
 end

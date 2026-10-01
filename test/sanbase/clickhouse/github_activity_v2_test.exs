@@ -241,6 +241,62 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       end)
     end
 
+    test "the chunks of more than 10 organizations are summed" do
+      organizations = Enum.map(1..11, &"org#{&1}")
+      rows = [[DateTime.to_unix(~U[2026-06-08 00:00:00Z]), 1.5]]
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for fun <- [:dev_activity, :github_activity] do
+          assert {:ok, [%{datetime: ~U[2026-06-08 00:00:00Z], activity: 3.0}]} =
+                   apply(Sanbase.Clickhouse.Github, fun, [
+                     organizations,
+                     @from,
+                     @to,
+                     "1d",
+                     "None",
+                     nil,
+                     [version: "2.0"]
+                   ])
+        end
+      end)
+    end
+
+    test "a failed chunk of organizations is an error" do
+      organizations = Enum.map(1..11, &"org#{&1}")
+      rows = [[DateTime.to_unix(~U[2026-06-08 00:00:00Z]), 1.5]]
+
+      test_pid = self()
+
+      # Only the second chunk, ["org11"], fails
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, fn _sql, args, _opts ->
+        if inspect(args) =~ ~s("org11") do
+          send(test_pid, :failed_chunk)
+          {:error, "chunk failed"}
+        else
+          send(test_pid, :ok_chunk)
+          {:ok, %{rows: rows}}
+        end
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for fun <- [:dev_activity, :github_activity] do
+          assert {:error, _} =
+                   apply(Sanbase.Clickhouse.Github, fun, [
+                     organizations,
+                     @from,
+                     @to,
+                     "1d",
+                     "None",
+                     nil,
+                     [version: "2.0"]
+                   ])
+
+          assert_received :ok_chunk
+          assert_received :failed_chunk
+        end
+      end)
+    end
+
     test "an unsupported version is an error" do
       assert {:error, error} =
                Sanbase.Metric.timeseries_data(

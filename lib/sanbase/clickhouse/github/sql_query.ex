@@ -439,6 +439,14 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
   # Whole UTC days are selected, so an event's weight does not depend on the time
   # range. arrayFill carries each run's start position through the run and every
   # second event of the run is kept.
+  #
+  # The later stages group by the 64-bit group_key and actor_key instead of the
+  # owner, repo and actor strings, which uses less memory and CPU. A collision
+  # would merge two groups. cityHash64 was checked on every github_v2 event of 2022
+  # and of 2025-10..2026-10 (2.7B events): 293.8M (owner, repo, event) and 423.1M
+  # (owner, repo, actor, event) keys, no collision. Those keys are close to, not the
+  # same as, group_key - (owner, repo, cityHash64(actor)). A NULL actor hashes to
+  # NULL, but those rows are already dropped by the bot filter.
   defp deduplicated_events_query(opts) do
     dev_events_filter =
       if Keyword.fetch!(opts, :dev_only?),

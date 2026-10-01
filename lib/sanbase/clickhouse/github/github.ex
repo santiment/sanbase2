@@ -350,6 +350,8 @@ defmodule Sanbase.Clickhouse.Github do
 
   defp activity_timeseries(_query, _to_number, [], _, _, _, _, _), do: {:ok, []}
 
+  # A failed chunk fails the whole request - a sum without some of the
+  # organizations would be silently lower.
   defp activity_timeseries(
          query,
          to_number,
@@ -371,11 +373,14 @@ defmodule Sanbase.Clickhouse.Github do
       ordered: false,
       request_context: ctx
     )
-    |> Enum.filter(&match?({:ok, _}, &1))
-    |> Enum.map(&elem(&1, 1))
-    |> Enum.zip()
-    |> Enum.map(&combine_dev_activity/1)
-    |> then(fn result -> {:ok, result} end)
+    |> Enum.reduce_while({:ok, []}, fn
+      {:ok, data}, {:ok, acc} -> {:cont, {:ok, [data | acc]}}
+      {:error, _} = error, _acc -> {:halt, error}
+    end)
+    |> case do
+      {:ok, chunks} -> {:ok, chunks |> Enum.zip() |> Enum.map(&combine_dev_activity/1)}
+      {:error, _} = error -> error
+    end
   end
 
   defp activity_timeseries(query, to_number, organizations, from, to, interval, "None", _) do

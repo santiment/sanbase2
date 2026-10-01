@@ -13,7 +13,7 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
   The entitlement matrix lives in
   `Sanbase.Billing.Plan.ApiAccessChecker.metric_version_buckets/4`. It describes the
-  global versions ("2.0" is modern:v1, "2.1" is modern_pit:v1, ...). Metrics with
+  versions by number ("2.0", "2.1", ...), whatever their name in a scope. Metrics with
   their own version scope (`Sanbase.Metric.version_scope/1`) do not follow it - every
   version of the scopes in `@free_scopes` is available to everyone.
 

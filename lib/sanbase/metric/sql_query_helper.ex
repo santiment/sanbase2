@@ -212,6 +212,42 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     end
   end
 
+  @doc ~s"""
+  Generate a SQL filter that excludes labels present in the
+  `publicly_disabled_labeled_metrics` ClickHouse table.
+
+  The `filter_by` option controls which column to filter on:
+    - `:label_id` — used for tables that have a `label_id` column (e.g. labeled_intraday_metrics_v2)
+    - `:fqn` — used for tables that have a `fqn` column (e.g. labeled_balances_filtered);
+      converts the disabled label_ids to fqns via the `labels_dict` dictionary.
+  """
+  def not_publicly_disabled_label_filter(opts) do
+    arg_name = Keyword.fetch!(opts, :argument_name)
+    filter_by = Keyword.fetch!(opts, :filter_by)
+
+    {column, select_expr} =
+      case filter_by do
+        :label_id ->
+          {"label_id", "label_id"}
+
+        :fqn ->
+          {"fqn", "dictGet('labels_dict', 'fqn', label_id)"}
+      end
+
+    """
+    #{column} NOT IN (
+      SELECT #{select_expr}
+      FROM publicly_disabled_labeled_metrics
+      WHERE metric_id = (
+        SELECT metric_id
+        FROM metric_metadata_external FINAL
+        WHERE name = {{#{arg_name}}} AND version = '1.0'
+        LIMIT 1
+      )
+    )
+    """
+  end
+
   def metric_id_filter(metric, opts) when is_binary(metric) do
     # In the spikes table the column is called calculated_on_metric_id
     metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")

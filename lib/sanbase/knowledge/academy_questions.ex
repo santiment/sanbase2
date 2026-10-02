@@ -33,7 +33,7 @@ defmodule Sanbase.Knowledge.AcademyQuestions do
   alias Sanbase.Knowledge.{AcademyArticle, AcademyArticleChunk}
   alias Sanbase.Repo
 
-  @model "gpt-5.4-mini"
+  @model "gpt-6-luna"
   @openai_url "https://api.openai.com/v1/chat/completions"
   @questions_per_article 5
   @max_question_chars 160
@@ -466,6 +466,9 @@ defmodule Sanbase.Knowledge.AcademyQuestions do
   defp llm_questions(input, opts) do
     body = %{
       "model" => Keyword.get(opts, :model, @model),
+      # gpt-6-luna accepts temperature 0 only with reasoning off; its default
+      # effort is "medium".
+      "reasoning_effort" => "none",
       "temperature" => 0,
       "response_format" => %{"type" => "json_object"},
       "messages" => [

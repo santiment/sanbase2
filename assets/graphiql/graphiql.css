@@ -75,8 +75,9 @@
 }
 
 #graphiql .graphiql-tab {
+  --san-tab-font-size: 13px;
   padding: 4px 10px;
-  font-size: 13px;
+  font-size: var(--san-tab-font-size);
 }
 
 #graphiql .graphiql-tab-add {
@@ -197,14 +198,30 @@
   overflow: hidden;
 }
 
-/* --- Tab rename input --- */
-#graphiql .graphiql-tab-button input {
-  all: unset;
-  font: inherit;
-  cursor: text;
-  min-width: 50px;
-  text-align: center;
-  border-bottom: 1px solid var(--san-border);
+/* --- Tab names (graphiql-tab-names.js) --- */
+/* GraphiQL's own title text stays in the DOM (React owns it); when a tab has
+   a Santiment name it is hidden and the name is shown instead. */
+#graphiql .graphiql-tab-button[data-san-name] {
+  font-size: 0;
+}
+
+#graphiql .graphiql-tab-button[data-san-name]::after {
+  content: attr(data-san-name);
+  font-size: var(--san-tab-font-size);
+}
+
+/* Rename input floats over the tab button, outside the React tree */
+.san-tab-rename {
+  position: fixed;
+  z-index: 10000;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 1px solid var(--san-table-sort);
+  border-radius: 4px;
+  background: var(--san-bg-panel);
+  color: var(--san-text);
+  outline: none;
+  box-shadow: 0 2px 8px var(--san-overlay-shadow);
 }
 
 /* --- Loading state --- */
@@ -428,6 +445,10 @@
 .san-hist-status--success { background: var(--san-hist-success); }
 .san-hist-status--partial { background: var(--san-hist-partial); }
 .san-hist-status--error { background: var(--san-hist-error); }
+.san-hist-status--cancelled {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--san-text-muted);
+}
 .san-hist-status--running {
   background: var(--san-hist-running);
   animation: san-hist-pulse 1s ease-in-out infinite;
@@ -543,6 +564,7 @@
 .san-hist-bar--success { background: var(--san-hist-success); }
 .san-hist-bar--partial { background: var(--san-hist-partial); }
 .san-hist-bar--error { background: var(--san-hist-error); }
+.san-hist-bar--cancelled { background: var(--san-text-muted); opacity: 0.5; }
 
 .san-hist-runs {
   list-style: none;

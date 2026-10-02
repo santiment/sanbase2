@@ -1,0 +1,195 @@
+/**
+ * Tab naming: untitled tabs get "Query N"; double-click a tab, or focus it
+ * and press F2, to rename it.
+ *
+ * Rendered as an invisible child of <GraphiQL> so it can read the tab list
+ * from GraphiQL state. GraphiQL recomputes tab.title from the query on every
+ * edit, so names cannot live in its state; instead each tab button gets a
+ * data-san-name attribute that CSS shows in place of GraphiQL's own text
+ * (graphiql.css). React's text node is never touched, so GraphiQL can keep
+ * re-rendering the tab bar normally.
+ */
+import { useEffect, useLayoutEffect, useRef } from "react";
+import { useGraphiQL } from "@graphiql/react";
+import {
+  UNTITLED,
+  emptyTabNames,
+  isValidTabNames,
+  migrateLegacyTabNames,
+  resolveTabNames,
+  setCustomTabName,
+} from "./graphiql-tab-names-utils.js";
+import { defaultStorage, readJson, writeJson } from "./graphiql-storage.js";
+
+var STORAGE_KEY = "san-graphiql-tab-names-v2";
+var LEGACY_NAMES_KEY = "san-graphiql-tab-names";
+var LEGACY_COUNTER_KEY = "san-graphiql-tab-counter";
+var MAX_APPLY_RETRIES = 10;
+
+// Names still work for the page session when storage is unavailable.
+function save(state) {
+  writeJson(defaultStorage(), STORAGE_KEY, state);
+}
+
+function load(tabs) {
+  var storage = defaultStorage();
+  var state = readJson(storage, STORAGE_KEY);
+  if (isValidTabNames(state)) return state;
+  var legacy = readJson(storage, LEGACY_NAMES_KEY);
+  if (legacy && typeof legacy === "object") {
+    // Saved right away: legacy names are keyed by position, so migrating
+    // again after a reorder would put them on the wrong tabs.
+    var migrated = migrateLegacyTabNames(legacy, parseInt(readJson(storage, LEGACY_COUNTER_KEY), 10), tabs);
+    save(migrated);
+    return migrated;
+  }
+  return emptyTabNames();
+}
+
+function tabButtons() {
+  var root = document.getElementById("graphiql");
+  return root ? Array.from(root.querySelectorAll(".graphiql-session-header .graphiql-tab-button")) : [];
+}
+
+// Floating input over the tab button, appended to <body> so the tab's
+// React-managed children are left alone. Returns a function that closes it
+// without committing; onClose runs however it closes.
+function openRenameInput(btn, initial, onCommit, onClose) {
+  var rect = btn.getBoundingClientRect();
+  var style = getComputedStyle(btn);
+  var input = document.createElement("input");
+  input.type = "text";
+  input.className = "san-tab-rename";
+  input.value = initial;
+  input.setAttribute("aria-label", "Tab name");
+  input.placeholder = "Default name";
+  input.style.left = rect.left + "px";
+  input.style.top = rect.top + "px";
+  input.style.width = Math.max(rect.width, 80) + "px";
+  input.style.height = rect.height + "px";
+  input.style.font = style.font;
+  document.body.appendChild(input);
+  input.focus();
+  input.select();
+
+  var finished = false;
+  // refocus: only for Enter/Escape; on blur the user clicked elsewhere and
+  // focus must stay there.
+  function finish(commit, refocus) {
+    if (finished) return;
+    finished = true;
+    window.removeEventListener("resize", cancel);
+    if (commit) onCommit(input.value);
+    input.remove();
+    onClose();
+    if (refocus) btn.focus();
+  }
+  function cancel() { finish(false, false); }
+
+  input.addEventListener("blur", function () { finish(true, false); });
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); finish(true, true); }
+    if (e.key === "Escape") { e.preventDefault(); finish(false, true); }
+  });
+  window.addEventListener("resize", cancel);
+  return cancel;
+}
+
+export function SanTabNames() {
+  var tabs = useGraphiQL(function (state) { return state.tabs; });
+  var tabsRef = useRef(tabs);
+  var stateRef = useRef(null);
+  var namesRef = useRef({});
+  var retryRef = useRef(0);
+
+  tabsRef.current = tabs;
+  if (stateRef.current === null) stateRef.current = load(tabs);
+
+  function apply() {
+    var current = tabsRef.current;
+    var buttons = tabButtons();
+    // Buttons and tabs are rendered in the same order. If the DOM is not in
+    // sync yet, try again on the next frame instead of mislabeling tabs.
+    if (buttons.length !== current.length) {
+      if (retryRef.current++ < MAX_APPLY_RETRIES) requestAnimationFrame(apply);
+      return;
+    }
+    retryRef.current = 0;
+    buttons.forEach(function (btn, i) {
+      var tab = current[i];
+      var name = namesRef.current[tab.id];
+      btn.dataset.sanTabId = tab.id;
+      btn.setAttribute("aria-keyshortcuts", "F2"); // rename
+      // GraphiQL sets title={tab.title}; re-applied here after each tabs change.
+      btn.title = name || tab.title;
+      if (name) {
+        btn.dataset.sanName = name;
+        btn.setAttribute("aria-label", name);
+      } else {
+        delete btn.dataset.sanName;
+        btn.removeAttribute("aria-label");
+      }
+    });
+  }
+
+  function refresh() {
+    retryRef.current = 0;
+    var resolved = resolveTabNames(tabsRef.current, stateRef.current);
+    stateRef.current = resolved.state;
+    namesRef.current = resolved.names;
+    if (resolved.changed) save(resolved.state);
+    apply();
+  }
+
+  // Layout effect: label tabs before paint, so "<untitled>" never flashes.
+  useLayoutEffect(refresh, [tabs]);
+
+  useEffect(function () {
+    var root = document.getElementById("graphiql");
+    if (!root) return undefined;
+    var closeRename = null; // set while a rename input is open
+
+    function tabButton(e) {
+      var btn = e.target.closest(".graphiql-tab-button");
+      return btn && btn.dataset.sanTabId ? btn : null;
+    }
+
+    function startRename(btn) {
+      if (closeRename) return;
+      var id = btn.dataset.sanTabId;
+      var tab = tabsRef.current.find(function (t) { return t.id === id; });
+      var initial = namesRef.current[id] || (tab && tab.title !== UNTITLED ? tab.title : "");
+      closeRename = openRenameInput(btn, initial, function (value) {
+        stateRef.current = setCustomTabName(stateRef.current, id, value);
+        refresh();
+        save(stateRef.current);
+      }, function () { closeRename = null; });
+    }
+
+    function onDblClick(e) {
+      var btn = tabButton(e);
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      startRename(btn);
+    }
+
+    // Keyboard equivalent of the double-click.
+    function onKeyDown(e) {
+      var btn = e.key === "F2" && tabButton(e);
+      if (!btn) return;
+      e.preventDefault();
+      startRename(btn);
+    }
+
+    root.addEventListener("dblclick", onDblClick);
+    root.addEventListener("keydown", onKeyDown);
+    return function () {
+      root.removeEventListener("dblclick", onDblClick);
+      root.removeEventListener("keydown", onKeyDown);
+      if (closeRename) closeRename(); // don't leave the body-mounted input behind
+    };
+  }, []);
+
+  return null;
+}

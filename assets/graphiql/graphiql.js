@@ -15,13 +15,20 @@ globalThis.MonacoEnvironment = {
 
 import React, { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { GraphiQL, HISTORY_PLUGIN } from "graphiql";
+import { GraphiQL } from "graphiql";
 import { useMonaco } from "@graphiql/react";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
-import { SanHistory } from "./graphiql-history-plugin.js";
+import { historyPlugin } from "./graphiql-history-plugin.js";
+import { createHistoryStore, withHistory } from "./graphiql-history-store.js";
+import { createFetcher } from "./graphiql-fetcher.js";
+import { localStorageBackend } from "./graphiql-storage.js";
 import { ChartButton } from "./graphiql-chart-modal.js";
 import { TableButton } from "./graphiql-table-modal.js";
+import { SanTabNames } from "./graphiql-tab-names.js";
+import { SanAutocomplete } from "./graphiql-autocomplete.js";
+import { SanPanelClose } from "./graphiql-panel-close.js";
+import { FontSizeButtons } from "./graphiql-font-size.js";
 import { isEffectivelyDark } from "./graphiql-theme.js";
 
 // CSS: base GraphiQL styles, explorer plugin styles, then our customizations
@@ -104,167 +111,70 @@ function onEditVariables(variables) {
   });
 }
 
+// --- Storage ---
+// Where history and the autocomplete cache are kept. To use another browser
+// storage, swap this line for another backend (see graphiql-storage.js).
+const storage = localStorageBackend();
+
 // --- HTTP Fetcher ---
+// Cancellable (Stop aborts the request), turns non-JSON error pages into
+// readable errors, and records executions in the query history.
+const historyStore = createHistoryStore({
+  storage: storage,
+  onError: function(e) {
+    console.error("[graphiql-history] failed to save history", e);
+  },
+});
+
 const graphqlEndpoint = window.location.origin + "/graphql";
 
-function fetcher(graphQLParams, fetcherOpts) {
-  const headers = Object.create(null);
-  headers["Accept"] = "application/json";
-  headers["Content-Type"] = "application/json";
-
-  // Merge headers from the headers editor
-  if (fetcherOpts && fetcherOpts.headers) {
-    try {
-      const editorHeaders = typeof fetcherOpts.headers === "string"
-        ? JSON.parse(fetcherOpts.headers)
-        : fetcherOpts.headers;
-      for (const key of Object.keys(editorHeaders)) {
-        headers[key] = editorHeaders[key];
-      }
-    } catch (e) {
-      // Invalid JSON in headers editor — ignore
-    }
+const fetcher = withHistory(
+  createFetcher({ endpoint: graphqlEndpoint }),
+  historyStore,
+  function(e) {
+    console.error("[graphiql-history] failed to record run", e);
   }
+);
 
-  return fetch(graphqlEndpoint, {
-    method: "POST",
-    headers: headers,
-    body: JSON.stringify(graphQLParams),
-    credentials: "same-origin",
-  }).then(function(response) {
-    return response.json();
-  }).catch(function(error) {
-    return { errors: [{ message: error.message }] };
-  });
-}
-
-// --- Tab naming: auto-name untitled tabs + double-click to rename ---
-const tabNames = JSON.parse(localStorage.getItem("san-graphiql-tab-names") || "{}");
-let tabCounter = parseInt(localStorage.getItem("san-graphiql-tab-counter") || "0", 10);
-
-function saveTabNames() {
-  localStorage.setItem("san-graphiql-tab-names", JSON.stringify(tabNames));
-  localStorage.setItem("san-graphiql-tab-counter", String(tabCounter));
-}
-
-function getTabIndex(btn) {
-  const allTabs = Array.from(document.querySelectorAll(".graphiql-tab-button"));
-  return allTabs.indexOf(btn);
-}
-
-function renameUntitledTabs() {
-  const tabs = document.querySelectorAll(".graphiql-tab-button");
-  tabs.forEach(function(tab) {
-    if (tab.dataset.sanRenamed) return;
-    const idx = getTabIndex(tab);
-    const key = "tab-" + idx;
-
-    if (tabNames[key] && tab.textContent.trim() === "<untitled>") {
-      tab.textContent = tabNames[key];
-      tab.dataset.sanRenamed = "1";
-    } else if (tab.textContent.trim() === "<untitled>") {
-      tabCounter++;
-      const name = "Query " + tabCounter;
-      tab.textContent = name;
-      tabNames[key] = name;
-      tab.dataset.sanRenamed = "1";
-      saveTabNames();
-    }
-  });
-}
-
-function startEditing(btn) {
-  if (btn.querySelector("input")) return; // already editing
-
-  const currentName = btn.textContent.trim();
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = currentName;
-  input.style.cssText =
-    "all:unset; font:inherit; width:100%; min-width:50px; " +
-    "border-bottom:1px solid var(--san-border); cursor:text; text-align:center;";
-
-  btn.textContent = "";
-  btn.appendChild(input);
-  input.focus();
-  input.select();
-
-  function commit() {
-    const newName = input.value.trim() || currentName;
-    btn.textContent = newName;
-    const idx = getTabIndex(btn);
-    tabNames["tab-" + idx] = newName;
-    saveTabNames();
-  }
-
-  input.addEventListener("blur", commit);
-  input.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") { e.preventDefault(); input.blur(); }
-    if (e.key === "Escape") { input.value = currentName; input.blur(); }
-  });
-
-  // Prevent the click from propagating to the tab button (which would switch tabs)
-  input.addEventListener("mousedown", function(e) { e.stopPropagation(); });
-  input.addEventListener("click", function(e) { e.stopPropagation(); });
-}
-
-// Attach double-click handler via event delegation
 const graphiqlRoot = document.getElementById("graphiql");
 if (!graphiqlRoot) {
   throw new Error("GraphiQL mount point #graphiql not found");
 }
-graphiqlRoot.addEventListener("dblclick", function(e) {
-  const btn = e.target.closest(".graphiql-tab-button");
-  if (btn) {
-    e.preventDefault();
-    e.stopPropagation();
-    startEditing(btn);
-  }
-});
-
-// Observe only the session header (tab bar) rather than the entire GraphiQL tree,
-// to avoid firing renameUntitledTabs on every Monaco keystroke or result render.
-const tabObserver = new MutationObserver(renameUntitledTabs);
-function observeTabBar() {
-  const header = graphiqlRoot.querySelector(".graphiql-session-header");
-  if (header) {
-    tabObserver.observe(header, { childList: true, subtree: true, characterData: true });
-    // Handle tabs already rendered before observer connected
-    renameUntitledTabs();
-  } else {
-    setTimeout(observeTabBar, 200);
-  }
-}
-observeTabBar();
 
 // --- Plugins ---
 const explorer = explorerPlugin();
 const examples = examplesPlugin();
 
-// GraphiQL enables history recording only when the plugins array contains the
-// HISTORY_PLUGIN object itself (identity check in GraphiQL.js), so the custom
-// content component is swapped in place instead of passing a new plugin object.
-HISTORY_PLUGIN.content = SanHistory;
+// GraphiQL mounts the stock HistoryStore only when the plugins array contains
+// the HISTORY_PLUGIN object itself (identity check in GraphiQL.js). Passing our
+// own plugin object keeps the stock per-keystroke recording switched off.
+const sanHistory = historyPlugin(historyStore);
 
 // --- Render ---
-const root = createRoot(document.getElementById("graphiql"));
+const root = createRoot(graphiqlRoot);
 root.render(
   React.createElement(
     GraphiQL,
     {
       fetcher: fetcher,
-      plugins: [explorer, examples, HISTORY_PLUGIN],
+      plugins: [explorer, examples, sanHistory],
       initialQuery: initialQuery || undefined,
       initialVariables: initialVariables || undefined,
       shouldPersistHeaders: false,
       defaultEditorToolsVisibility: true,
-      maxHistoryLength: 50,
       onEditQuery: onEditQuery,
       onEditVariables: onEditVariables,
     },
     // Custom Monaco theme — must be inside GraphiQL to access useMonaco hook
     React.createElement(SantimentTheme),
-    // Toolbar: render prop receives default buttons, we append the chart button
+    // Tab names keyed by tab id ("Query N", double-click or F2 to rename)
+    React.createElement(SanTabNames),
+    // Collapse button at the top right of the open side panel
+    React.createElement(SanPanelClose),
+    // Suggestions inside metric/slug/version strings
+    React.createElement(SanAutocomplete, { endpoint: graphqlEndpoint, storage: storage }),
+    // Toolbar: render prop receives default buttons, we append the chart and
+    // table buttons and the editor text size buttons
     React.createElement(
       GraphiQL.Toolbar,
       null,
@@ -276,7 +186,8 @@ root.render(
           props.merge,
           props.copy,
           React.createElement(ChartButton),
-          React.createElement(TableButton)
+          React.createElement(TableButton),
+          React.createElement(FontSizeButtons)
         );
       }
     )

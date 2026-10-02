@@ -3,9 +3,8 @@ defmodule Sanbase.MCP.SocialTrendsUI do
   MCP App UI resource for the Social Trends tool.
 
   Serves the self-contained, single-file social-trends widget bundled into this
-  app at `priv/mcp_widgets/social-trends.html` (built by the
-  `santiment/san-mcp-apps` repo via `pnpm build:single`). See
-  `Sanbase.MCP.WidgetAsset`.
+  app at `priv/mcp_widgets/social-trends.html` (built from `assets/mcp_widgets/`
+  via `mix mcp.widgets.build`). See `Sanbase.MCP.WidgetAsset`.
   """
 
   use Anubis.Server.Component,

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Santiment Chart</title>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script>
+      // webkit-next constructs a cross-origin SharedWorker at module load
+      // (metrics-api-worker/host.js) which throws SecurityError inside the
+      // MCP sandbox iframe. Provide its built-in escape hatch BEFORE the
+      // module bundle evaluates.
+      window.DEV_SHAREDWORKER_SUBSTITUTE = {
+        port: {
+          onmessage: null,
+          postMessage: function () {},
+          start: function () {},
+        },
+      };
+    </script>
+    <script type="module" src="./widgets/chart/main.ts"></script>
+  </body>
+</html>

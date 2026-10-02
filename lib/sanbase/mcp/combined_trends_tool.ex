@@ -17,7 +17,13 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
   ## Parameters
 
   - `time_period` - Time period for trending data (e.g., '1h', '6h', '1d', '7d'). Defaults to '1h' (last hour).
-  - `size` - Number of items per category to return (max 30). Defaults to 10.
+  - `size` - Number of items per category to return (max 10). Defaults to 10.
+
+  Only the 2 most recent trend periods are returned, whatever
+  `time_period` is. A period is 1 hour for time_period up to 1d, 6 hours up to 7d,
+  and 1 day beyond that, so e.g. '2d' returns only the last 12 hours. When
+  older periods are dropped, `metadata.notice` says so and
+  `metadata.returned_since` gives the start of the oldest period returned.
   - `include_stories` - Include trending stories in response. Defaults to true.
   - `include_words` - Include trending words in response. Defaults to true.
 
@@ -82,6 +88,8 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
       description: """
       Time period for trending data (e.g., '1h', '6h', '1d', '7d').
       This parameter defines how far back to look for trending data.
+      Only the 2 most recent trend periods are returned
+      (1h periods up to '1d', 6h periods up to '7d', 1d periods beyond).
 
       Defaults to '1h' (last hour).
       """
@@ -90,7 +98,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     field(:size, :integer,
       required: false,
       description: """
-      Number of items per category to return (max 30).
+      Number of items per category to return (max 10).
 
       Defaults to 10.
       """
@@ -138,18 +146,20 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
           include_words
         )
 
-      trends_data = limit_trend_periods(trends_data)
+      {trends_data, dropped?} = limit_trend_periods(trends_data)
 
       response_data =
         %{
           trends: trends_data,
-          metadata: %{
-            time_period: time_period,
-            size: validated_size,
-            period_start: DateTime.to_iso8601(from_datetime),
-            period_end: DateTime.to_iso8601(to_datetime),
-            included_data_types: build_included_types(include_stories, include_words)
-          },
+          metadata:
+            %{
+              time_period: time_period,
+              size: validated_size,
+              period_start: DateTime.to_iso8601(from_datetime),
+              period_end: DateTime.to_iso8601(to_datetime),
+              included_data_types: build_included_types(include_stories, include_words)
+            }
+            |> maybe_add_dropped_periods_notice(trends_data, dropped?, from_datetime, to_datetime),
           errors: errors
         }
         |> Utils.truncate_response()
@@ -597,20 +607,46 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     types
   end
 
+  # Returns the limited data and whether any older periods were dropped.
   defp limit_trend_periods(trends_data) do
-    trends_data
-    |> maybe_take_recent(:trending_stories, @max_trend_periods)
-    |> maybe_take_recent(:trending_words, @max_trend_periods)
+    {trends_data, stories_dropped?} =
+      maybe_take_recent(trends_data, :trending_stories, @max_trend_periods)
+
+    {trends_data, words_dropped?} =
+      maybe_take_recent(trends_data, :trending_words, @max_trend_periods)
+
+    {trends_data, stories_dropped? or words_dropped?}
   end
 
   defp maybe_take_recent(data, key, max) do
     case Map.get(data, key) do
       list when is_list(list) and length(list) > max ->
-        Map.put(data, key, Enum.take(list, -max))
+        {Map.put(data, key, Enum.take(list, -max)), true}
 
       _ ->
-        data
+        {data, false}
     end
+  end
+
+  defp maybe_add_dropped_periods_notice(metadata, _trends_data, false, _from, _to), do: metadata
+
+  defp maybe_add_dropped_periods_notice(metadata, trends_data, true, from, to) do
+    returned_since =
+      [:trending_stories, :trending_words]
+      |> Enum.flat_map(&List.wrap(Map.get(trends_data, &1)))
+      |> Enum.map(&Sanbase.Utils.DateTime.from_iso8601!(&1.datetime))
+      |> Enum.min(DateTime, fn -> nil end)
+
+    period_str = if returned_since, do: DateTime.to_iso8601(returned_since), else: "unknown"
+
+    metadata
+    |> Map.put(:returned_since, period_str)
+    |> Map.put(
+      :notice,
+      "Only the #{@max_trend_periods} most recent #{determine_interval(from, to)} trend " <>
+        "periods are returned, starting at #{period_str}. Trends earlier in the requested " <>
+        "time_period are not included."
+    )
   end
 
   defp openai_client do

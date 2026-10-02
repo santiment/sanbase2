@@ -1,8 +1,12 @@
 defmodule Sanbase.MCP.FetchMetricDataTool do
   @moduledoc """
-  Fetch metric timeseries for one metric and one or many slugs.
+  Fetch metric timeseries for one metric and one or many slugs, or for a text
+  search term.
 
   Defaults: last 30 days (time_period="30d"), interval="1d".
+
+  Pass `text` instead of `slugs` to get a social metric for any word or phrase
+  (e.g. how often "sold" was mentioned), not just for an asset.
 
   Use this when the assets are already known and the values over time matter.
   For the opposite direction — "which assets satisfy X" / "top N by X", one
@@ -50,8 +54,10 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     )
 
     field(:slugs, {:list, :string},
-      required: true,
+      required: false,
       description: """
+      Pass either `slugs` or `text`, not both.
+
       List of slug identifiers (e.g., ["bitcoin"], ["bitcoin", "ethereum"], etc.).
 
       Accepts at most #{@slugs_per_call_limit} slugs at a time.
@@ -62,6 +68,18 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
       slugs; social, sentiment, and derivatives metrics generally do not.
 
       The tool returns data for one metric and one or many slugs.
+      """
+    )
+
+    field(:text, :string,
+      required: false,
+      description: """
+      Pass either `slugs` or `text`, not both.
+
+      A search term (word or phrase, e.g. "sold" or "etf approval") to compute
+      the metric for, instead of an asset. Supported only by social metrics such
+      as social_volume_total and social_dominance_total. For text, social
+      dominance is the share of all social documents that match the term.
       """
     )
 
@@ -106,28 +124,27 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     do_execute(params, frame)
   end
 
-  defp do_execute(%{metric: metric, slugs: slugs} = params, frame) do
+  defp do_execute(%{metric: metric} = params, frame) do
     time_period = Map.get(params, :time_period, "30d")
     interval = Map.get(params, :interval, "1d")
 
     with :ok <- validate_metric(metric),
-         :ok <- validate_slugs(slugs),
-         :ok <- validate_many_slugs_supported(metric, slugs),
+         {:ok, target} <- validate_target(metric, params),
          {:ok, {from, to}} <- Utils.parse_time_period(time_period),
-         {:ok, data} <- fetch_metric_data(metric, slugs, from, to, interval) do
+         {:ok, data} <- fetch_metric_data(metric, target, from, to, interval) do
       {data, limited} = limit_datapoints(data)
       preliminary_since = preliminary_since(metric, data, interval, to)
 
       response_data =
         %{
           metric: metric,
-          slugs: slugs,
           data: data,
           period: "Since #{DateTime.to_iso8601(from)}",
           interval: interval
         }
+        |> put_target(target)
         |> maybe_add_limit_notice(limited)
-        |> maybe_add_preliminary_notice(metric, preliminary_since)
+        |> maybe_add_preliminary_notice(metric, target, preliminary_since)
         |> Utils.truncate_response()
 
       {:reply, Response.json(Response.tool(), response_data), frame}
@@ -136,6 +153,59 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
         {:reply, Response.error(Response.tool(), reason), frame}
     end
   end
+
+  # The metric is computed either for a list of slugs or for a text search term.
+  defp validate_target(metric, params) do
+    case {Map.get(params, :slugs), Map.get(params, :text)} do
+      {slugs, nil} when is_list(slugs) ->
+        with :ok <- validate_slugs(slugs),
+             :ok <- validate_many_slugs_supported(metric, slugs),
+             do: {:ok, {:slugs, slugs}}
+
+      {nil, text} when is_binary(text) ->
+        with {:ok, text} <- validate_text(text),
+             :ok <- validate_text_supported(metric),
+             do: {:ok, {:text, text}}
+
+      {nil, nil} ->
+        {:error,
+         ToolError.permanent(
+           "Provide either `slugs` (a list of asset slugs) or `text` (a search term)."
+         )}
+
+      _ ->
+        {:error, ToolError.permanent("Provide either `slugs` or `text`, not both.")}
+    end
+  end
+
+  defp validate_text(text) do
+    case String.trim(text) do
+      "" -> {:error, ToolError.permanent("The `text` search term must not be empty.")}
+      text -> {:ok, text}
+    end
+  end
+
+  defp validate_text_supported(metric) do
+    case Sanbase.Metric.available_selectors(metric) do
+      {:ok, selectors} when is_list(selectors) ->
+        if :text in selectors,
+          do: :ok,
+          else: {:error, text_not_supported_error(metric)}
+
+      _ ->
+        {:error, text_not_supported_error(metric)}
+    end
+  end
+
+  defp text_not_supported_error(metric) do
+    ToolError.permanent(
+      "Metric '#{metric}' does not support `text`. Only social metrics such as " <>
+        "social_volume_total and social_dominance_total accept a search term; pass `slugs` instead."
+    )
+  end
+
+  defp put_target(data, {:slugs, slugs}), do: Map.put(data, :slugs, slugs)
+  defp put_target(data, {:text, text}), do: Map.put(data, :text, text)
 
   defp limit_datapoints(data) do
     total = data |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
@@ -180,9 +250,9 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     end
   end
 
-  defp maybe_add_preliminary_notice(data, _metric, nil), do: data
+  defp maybe_add_preliminary_notice(data, _metric, _target, nil), do: data
 
-  defp maybe_add_preliminary_notice(data, metric, %DateTime{} = since) do
+  defp maybe_add_preliminary_notice(data, metric, target, %DateTime{} = since) do
     notice =
       "Datapoints from #{DateTime.to_iso8601(since)} onward are preliminary: social data " <>
         "for the last #{@preliminary_window_hours} hours is still arriving, and social " <>
@@ -191,16 +261,24 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
         "values for these datapoints, the data was revised."
 
     notice =
-      if String.starts_with?(metric, "social_dominance_") do
-        notice <>
-          " Social dominance divides the asset's social volume by the combined social volume " <>
-          "of the 100 largest assets by market cap. While the other assets' volumes are still " <>
-          "arriving the denominator is too small, so recent dominance can spike sharply (even " <>
-          "to 100%) and settle later. Before reporting a dominance spike in this window, check " <>
-          "social_volume_total for the same asset: if its volume did not rise too, the spike " <>
-          "is most likely incomplete data."
-      else
-        notice
+      case {String.starts_with?(metric, "social_dominance_"), target} do
+        {true, {:text, _}} ->
+          notice <>
+            " Social dominance for a search term is its share of all social documents. While " <>
+            "documents for the latest buckets are still arriving, this share can swing sharply " <>
+            "and settle later."
+
+        {true, {:slugs, _}} ->
+          notice <>
+            " Social dominance divides the asset's social volume by the combined social volume " <>
+            "of the 100 largest assets by market cap. While the other assets' volumes are still " <>
+            "arriving the denominator is too small, so recent dominance can spike sharply (even " <>
+            "to 100%) and settle later. Before reporting a dominance spike in this window, check " <>
+            "social_volume_total for the same asset: if its volume did not rise too, the spike " <>
+            "is most likely incomplete data."
+
+        _ ->
+          notice
       end
 
     Map.put(data, :preliminary_data_notice, notice)
@@ -256,6 +334,24 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
           )}}
       end
     end)
+  end
+
+  defp fetch_metric_data(metric, {:slugs, slugs}, from, to, interval),
+    do: fetch_metric_data(metric, slugs, from, to, interval)
+
+  defp fetch_metric_data(metric, {:text, text}, from, to, interval) do
+    case Sanbase.Metric.timeseries_data(metric, %{text: text}, from, to, interval) do
+      {:ok, data} ->
+        formatted_data =
+          Enum.map(data, fn %{datetime: datetime, value: value} ->
+            %{datetime: DateTime.to_iso8601(datetime), value: value}
+          end)
+
+        {:ok, %{text => formatted_data}}
+
+      {:error, reason} ->
+        {:error, "Failed to fetch #{metric} for text #{inspect(text)}. Reason: #{reason}"}
+    end
   end
 
   # Handle the case of single slug

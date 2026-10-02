@@ -52,17 +52,15 @@ export function createAutocompleteData(options) {
   var lists = null; // { metrics, projects, fetchedAt }
   var fetchLists = memo(function () {
     return request(LISTS_QUERY, null).then(function (data) {
+      var packed = packProjects(data.allProjects || []);
       var value = {
         metrics: (data.getAvailableMetrics || []).filter(Boolean).sort(),
-        projects: unpackProjects(packProjects(data.allProjects || [])),
+        projects: unpackProjects(packed),
         fetchedAt: now(),
       };
       lists = value;
-      storage.set(CACHE_KEY, {
-        fetchedAt: value.fetchedAt,
-        metrics: value.metrics,
-        projects: packProjects(value.projects),
-      }).catch(function () {}); // not cached: fetched again next page load
+      storage.set(CACHE_KEY, { fetchedAt: value.fetchedAt, metrics: value.metrics, projects: packed })
+        .catch(function () {}); // not cached: fetched again next page load
       return value;
     });
   });
@@ -71,10 +69,14 @@ export function createAutocompleteData(options) {
   var cacheRead = null;
   function readCache() {
     if (!cacheRead) {
-      cacheRead = storage.get(CACHE_KEY).catch(function () { return null; }).then(function (data) {
+      cacheRead = storage.get(CACHE_KEY).then(function (data) {
         if (lists || !data || !Array.isArray(data.metrics) || !Array.isArray(data.projects)) return;
-        lists = { metrics: data.metrics, projects: unpackProjects(data.projects), fetchedAt: data.fetchedAt || 0 };
-      });
+        lists = {
+          metrics: data.metrics.filter(function (m) { return typeof m === "string"; }),
+          projects: unpackProjects(data.projects),
+          fetchedAt: data.fetchedAt || 0,
+        };
+      }).catch(function () {}); // unreadable or corrupt cache: a miss, fetched again
     }
     return cacheRead;
   }
@@ -96,15 +98,21 @@ export function createAutocompleteData(options) {
     });
   }
 
+  function metadataOf(data, metric) {
+    var meta = data.getMetric && data.getMetric.metadata;
+    if (!meta) throw new Error("no metadata for " + metric);
+    return meta;
+  }
+
   var getMetricSlugs = memo(function (metric) {
     return request(METRIC_SLUGS_QUERY, { metric: metric }).then(function (data) {
-      return new Set(data.getMetric.metadata.availableSlugs || []);
+      return new Set(metadataOf(data, metric).availableSlugs || []);
     });
   });
 
   var getMetricMeta = memo(function (metric) {
     return request(METRIC_META_QUERY, { metric: metric }).then(function (data) {
-      return data.getMetric.metadata;
+      return metadataOf(data, metric);
     });
   });
 

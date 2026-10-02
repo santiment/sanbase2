@@ -1,19 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { localStorageBackend, memoryBackend } from "./graphiql-storage.js";
-
-function fakeLocalStorage() {
-  var data = {};
-  return {
-    data: data,
-    full: false,
-    getItem: function (k) { return k in data ? data[k] : null; },
-    setItem: function (k, v) {
-      if (this.full) throw new Error("QuotaExceededError");
-      data[k] = String(v);
-    },
-    removeItem: function (k) { delete data[k]; },
-  };
-}
+import { fakeLocalStorage } from "./graphiql-test-support.js";
 
 // Every backend must behave the same; run the contract against each.
 var backends = {
@@ -46,7 +33,7 @@ Object.keys(backends).forEach(function (name) {
 describe("localStorage backend", function () {
   it("rejects writes the browser refuses (quota)", async function () {
     var ls = fakeLocalStorage();
-    ls.full = true;
+    ls.failures = Infinity;
     await expect(localStorageBackend(ls).set("k", { a: 1 })).rejects.toThrow();
   });
 
@@ -56,5 +43,27 @@ describe("localStorage backend", function () {
     expect(await localStorageBackend(ls).get("k")).toBeNull();
     expect(await localStorageBackend(null).get("k")).toBeNull();
     await expect(localStorageBackend(null).set("k", 1)).rejects.toThrow();
+  });
+});
+
+describe("localStorage backend onChange (other browser tabs)", function () {
+  afterEach(function () { vi.unstubAllGlobals(); });
+
+  function storageEvent(key, newValue) {
+    return Object.assign(new Event("storage"), { key: key, newValue: newValue });
+  }
+
+  it("delivers parsed values for its key only, null on clear(), nothing after unsubscribe", function () {
+    var win = new EventTarget();
+    vi.stubGlobal("window", win);
+    var seen = [];
+    var off = localStorageBackend(fakeLocalStorage()).onChange("k", function (v) { seen.push(v); });
+    win.dispatchEvent(storageEvent("k", JSON.stringify({ a: 1 })));
+    win.dispatchEvent(storageEvent("other", JSON.stringify({ b: 2 })));
+    win.dispatchEvent(storageEvent(null, null)); // localStorage.clear() in another tab
+    win.dispatchEvent(storageEvent("k", "{corrupt"));
+    off();
+    win.dispatchEvent(storageEvent("k", JSON.stringify({ c: 3 })));
+    expect(seen).toEqual([{ a: 1 }, null, null]);
   });
 });

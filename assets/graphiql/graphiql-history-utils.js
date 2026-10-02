@@ -27,7 +27,7 @@ function sortKeys(value) {
 
 // Whitespace/comment-insensitive form of a query. Falls back to collapsing
 // whitespace when the query does not parse (it can still be executed).
-export function normalizeQuery(query) {
+function normalizeQuery(query) {
   var q = query || "";
   try {
     return stripIgnoredCharacters(q);

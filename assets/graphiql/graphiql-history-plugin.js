@@ -59,6 +59,7 @@ var STATUS_LABELS = {
   success: "Succeeded",
   partial: "Partial data with errors",
   error: "Failed",
+  cancelled: "Cancelled",
   running: "Running",
 };
 
@@ -178,6 +179,7 @@ function HistoryRow(props) {
   // Imported entries have no real timestamp, so do not show a fake "just now".
   var meta = [neverRun ? "imported" : formatRelativeTime(entry.lastRunAt, props.now)];
   if (props.running) meta.push("running…");
+  else if (entry.lastStatus === "cancelled") meta.push("cancelled");
   else if (entry.lastDurationMs != null) meta.push(formatDuration(entry.lastDurationMs));
   if (entry.runCount > 0) meta.push(formatRunCount(entry.runCount));
 

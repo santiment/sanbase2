@@ -146,8 +146,10 @@ export function matchesSearch(entry, search) {
   return terms.every(function (t) { return hay.indexOf(t) !== -1; });
 }
 
+// Cancelled runs are left out: their duration is time-until-Stop.
 export function durationStats(runs) {
   var ds = (runs || [])
+    .filter(function (r) { return r.status !== "cancelled"; })
     .map(function (r) { return r.durationMs; })
     .filter(function (d) { return typeof d === "number"; });
   if (ds.length === 0) return null;

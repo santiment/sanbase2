@@ -1,6 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { fetcherReturnToPromise, isObservable } from "@graphiql/toolkit";
 import { createFetcher, parseResponse, bodySnippet } from "./graphiql-fetcher.js";
+import { withHistory } from "./graphiql-history-store.js";
+
+// The production composition: HTTP fetcher wrapped with history recording.
+function recording(fetchImpl, history, onError) {
+  return withHistory(createFetcher({ endpoint: "/graphql", fetchImpl: fetchImpl }), history, onError);
+}
 
 function response(status, text, statusText) {
   return { status: status, statusText: statusText || "", text: function () { return Promise.resolve(text); } };
@@ -72,7 +78,7 @@ describe("createFetcher", function () {
   it("aborts the HTTP request on unsubscribe and records it as cancelled", async function () {
     var f = controllableFetch();
     var history = fakeHistory();
-    var fetcher = createFetcher({ endpoint: "/graphql", fetchImpl: f, historyStore: history });
+    var fetcher = recording(f, history);
     var next = vi.fn();
     var sub = fetcher({ query: "{ slow }" }, EXEC_OPTS).subscribe({ next: next });
     await flush();
@@ -86,7 +92,7 @@ describe("createFetcher", function () {
   it("unsubscribe after completion does not abort or re-record", async function () {
     var f = controllableFetch();
     var history = fakeHistory();
-    var fetcher = createFetcher({ endpoint: "/graphql", fetchImpl: f, historyStore: history });
+    var fetcher = recording(f, history);
     var p = run(fetcher, { query: "{ a }" }, EXEC_OPTS);
     await flush();
     f.calls[0].resolve(response(200, '{"data":{"a":1}}'));
@@ -97,10 +103,21 @@ describe("createFetcher", function () {
     expect(history.finished[0][1].status).toBe("success");
   });
 
+  it("records an error outcome when the wrapped fetcher errors", function () {
+    var history = fakeHistory();
+    var failing = function () {
+      return { subscribe: function (o) { o.error(new Error("boom")); return { unsubscribe: function () {} }; } };
+    };
+    var error = vi.fn();
+    withHistory(failing, history)({ query: "{ a }" }, EXEC_OPTS).subscribe({ error: error });
+    expect(error).toHaveBeenCalled();
+    expect(history.finished).toEqual([["t1", { status: "error", error: "boom" }]]);
+  });
+
   it("works with fetcherReturnToPromise (used for introspection)", async function () {
     var f = controllableFetch();
     var history = fakeHistory();
-    var fetcher = createFetcher({ endpoint: "/graphql", fetchImpl: f, historyStore: history });
+    var fetcher = recording(f, history);
     var p = fetcherReturnToPromise(fetcher({ query: "query IntrospectionQuery { __schema { types { name } } }", operationName: "IntrospectionQuery" }, {}));
     await flush();
     f.calls[0].resolve(response(200, '{"data":{"__schema":{}}}'));
@@ -112,7 +129,7 @@ describe("createFetcher", function () {
   it("turns an HTML error page into a readable error", async function () {
     var f = controllableFetch();
     var history = fakeHistory();
-    var fetcher = createFetcher({ endpoint: "/graphql", fetchImpl: f, historyStore: history });
+    var fetcher = recording(f, history);
     var p = run(fetcher, { query: "{ a }" }, EXEC_OPTS);
     await flush();
     f.calls[0].resolve(response(502, "<html><head><title>502</title><style>b{}</style></head><body><h1>502 Bad Gateway</h1><hr>nginx</body></html>", "Bad Gateway"));
@@ -155,12 +172,12 @@ describe("createFetcher", function () {
     expect(JSON.parse(init.body)).toEqual({ query: "{ a }" });
   });
 
-  it("ignores invalid header JSON", async function () {
+  it("works without editor headers (introspection passes none)", async function () {
     var f = controllableFetch();
     var fetcher = createFetcher({ endpoint: "/graphql", fetchImpl: f });
-    fetcher({ query: "{ a }" }, { headers: "{not json", documentAST: undefined }).subscribe({});
+    fetcher({ query: "{ a }" }, {}).subscribe({});
     await flush();
-    expect(f.calls[0].init.headers.Accept).toBe("application/json");
+    expect(f.calls[0].init.headers).toEqual({ Accept: "application/json", "Content-Type": "application/json" });
   });
 
   it("keeps executing when the history store throws", async function () {
@@ -170,7 +187,7 @@ describe("createFetcher", function () {
       startRun: function () { throw new Error("quota"); },
       finishRun: function () { throw new Error("quota"); },
     };
-    var fetcher = createFetcher({ endpoint: "/graphql", fetchImpl: f, historyStore: broken, onHistoryError: onHistoryError });
+    var fetcher = recording(f, broken, onHistoryError);
     var p = run(fetcher, { query: "{ a }" }, EXEC_OPTS);
     await flush();
     f.calls[0].resolve(response(200, '{"data":{"a":1}}'));

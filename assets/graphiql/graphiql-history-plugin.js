@@ -12,6 +12,7 @@
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   Dialog,
+  pick,
   useGraphiQL,
   HistoryIcon,
   StarIcon,
@@ -22,37 +23,28 @@ import {
   MagnifyingGlassIcon,
 } from "@graphiql/react";
 import {
-  itemsToClear,
   matchesSearch,
   formatDuration,
   formatRelativeTime,
   durationStats,
-  distinguishingHints,
+  queryDetails,
   sortHistory,
-  formatRunCount,
-  SORT_MODES,
 } from "./graphiql-history-utils.js";
+import { defaultStorage, readRaw, writeRaw } from "./graphiql-storage.js";
+import { loadIntoEditors } from "./graphiql-editors.js";
 
 var h = React.createElement;
 
+// Sort choice is a per-browser convenience.
 var SORT_STORAGE_KEY = "san-graphiql-history-sort";
+var SORT_OPTIONS = [
+  { id: "recent", label: "Recent", title: "Most recently run first" },
+  { id: "runs", label: "Most run", title: "Most executed first" },
+];
 
-// Sort choice is a per-browser convenience; storage access can throw.
 function readSortMode() {
-  try {
-    var v = localStorage.getItem(SORT_STORAGE_KEY);
-    return SORT_MODES.indexOf(v) !== -1 ? v : "recent";
-  } catch (e) {
-    return "recent";
-  }
-}
-
-function writeSortMode(mode) {
-  try {
-    localStorage.setItem(SORT_STORAGE_KEY, mode);
-  } catch (e) {
-    // ignore
-  }
+  var v = readRaw(defaultStorage(), SORT_STORAGE_KEY);
+  return SORT_OPTIONS.some(function (o) { return o.id === v; }) ? v : "recent";
 }
 
 var STATUS_LABELS = {
@@ -121,14 +113,15 @@ function RenameInput(props) {
 function RunLog(props) {
   var entry = props.entry;
   var runs = entry.runs || [];
+  var lastError = runs.length ? runs[0].error : null;
   var stats = durationStats(runs);
-  var maxMs = stats ? stats.max : 0;
+  // Over all runs (stats leave out cancelled ones), so no bar exceeds 100%.
+  var maxMs = Math.max.apply(null, runs.map(function (r) { return r.durationMs || 0; }).concat([0]));
 
   return h(
     "div",
     { className: "san-hist-details" },
-    entry.lastError &&
-      h("div", { className: "san-hist-error", title: entry.lastError }, entry.lastError),
+    lastError && h("div", { className: "san-hist-error", title: lastError }, lastError),
     stats &&
       h(
         "div",
@@ -172,16 +165,34 @@ function RunLog(props) {
   );
 }
 
+function ActionButton(props) {
+  return h(
+    "button",
+    Object.assign({
+      type: "button",
+      className: "san-hist-action" + (props.className ? " " + props.className : ""),
+      "aria-label": props.label,
+      title: props.title || props.label,
+      onClick: props.onClick,
+    }, props.extra),
+    h(props.icon, { "aria-hidden": "true" })
+  );
+}
+
 function HistoryRow(props) {
   var entry = props.entry;
+  var last = entry.runs && entry.runs[0];
   var title = entry.label || entry.title;
   var neverRun = !entry.runCount && !props.running;
   // Imported entries have no real timestamp, so do not show a fake "just now".
   var meta = [neverRun ? "imported" : formatRelativeTime(entry.lastRunAt, props.now)];
-  if (props.running) meta.push("running…");
-  else if (entry.lastStatus === "cancelled") meta.push("cancelled");
-  else if (entry.lastDurationMs != null) meta.push(formatDuration(entry.lastDurationMs));
-  if (entry.runCount > 0) meta.push(formatRunCount(entry.runCount));
+  if (props.running) meta.push("running\u2026");
+  else if (last && last.status === "cancelled") meta.push("cancelled");
+  else if (last) meta.push(formatDuration(last.durationMs));
+  if (entry.runCount > 0) meta.push(entry.runCount === 1 ? "1 run" : entry.runCount + " runs");
+
+  var dot = h(StatusDot, { status: last && last.status, running: props.running });
+  var favLabel = entry.favorite ? "Remove favorite" : "Add favorite";
 
   return h(
     "li",
@@ -193,7 +204,7 @@ function HistoryRow(props) {
         ? h(
             "div",
             { className: "san-hist-main" },
-            h(StatusDot, { status: entry.lastStatus, running: props.running }),
+            dot,
             h(RenameInput, {
               initial: entry.label || "",
               placeholder: entry.title,
@@ -210,64 +221,35 @@ function HistoryRow(props) {
               "aria-label": "Load query: " + title,
               onClick: props.onLoad,
             },
-            h(StatusDot, { status: entry.lastStatus, running: props.running }),
+            dot,
             h(
               "span",
               { className: "san-hist-text" },
               h("span", { className: "san-hist-title" }, title),
-              props.hint &&
-                h("span", { className: "san-hist-hint", title: props.hint }, props.hint),
-              h("span", { className: "san-hist-meta" }, meta.join(" · "))
+              props.details &&
+                h("span", { className: "san-hist-subtitle", title: props.details }, props.details),
+              h("span", { className: "san-hist-meta" }, meta.join(" \u00b7 "))
             )
           ),
       h(
         "div",
         { className: "san-hist-actions" + (entry.favorite ? " has-favorite" : "") },
-        h(
-          "button",
-          {
-            type: "button",
-            className: "san-hist-action san-hist-fav",
-            "aria-label": entry.favorite ? "Remove favorite" : "Add favorite",
-            title: entry.favorite ? "Remove favorite" : "Add favorite",
-            onClick: props.onToggleFavorite,
-          },
-          h(entry.favorite ? StarFilledIcon : StarIcon, { "aria-hidden": "true" })
-        ),
-        h(
-          "button",
-          {
-            type: "button",
-            className: "san-hist-action",
-            "aria-label": "Rename",
-            title: "Rename",
-            onClick: props.onStartRename,
-          },
-          h(PenIcon, { "aria-hidden": "true" })
-        ),
-        h(
-          "button",
-          {
-            type: "button",
-            className: "san-hist-action",
-            "aria-label": "Delete from history",
-            title: "Delete",
-            onClick: props.onDelete,
-          },
-          h(TrashIcon, { "aria-hidden": "true" })
-        ),
-        h(
-          "button",
-          {
-            type: "button",
-            className: "san-hist-action san-hist-expand",
-            "aria-label": props.expanded ? "Hide run details" : "Show run details",
-            "aria-expanded": String(!!props.expanded),
-            title: "Run details",
-            onClick: props.onToggleExpand,
-          },
-          h(ChevronDownIcon, { "aria-hidden": "true" })
-        )
+        h(ActionButton, {
+          className: "san-hist-fav",
+          label: favLabel,
+          icon: entry.favorite ? StarFilledIcon : StarIcon,
+          onClick: props.onToggleFavorite,
+        }),
+        h(ActionButton, { label: "Rename", icon: PenIcon, onClick: props.onStartRename }),
+        h(ActionButton, { label: "Delete from history", title: "Delete", icon: TrashIcon, onClick: props.onDelete }),
+        h(ActionButton, {
+          className: "san-hist-expand",
+          label: props.expanded ? "Hide run details" : "Show run details",
+          title: "Run details",
+          icon: ChevronDownIcon,
+          onClick: props.onToggleExpand,
+          extra: { "aria-expanded": String(!!props.expanded) },
+        })
       )
     ),
     props.expanded && h(RunLog, { entry: entry })
@@ -313,9 +295,7 @@ function ClearDialog(props) {
 function makeHistoryContent(store) {
   return function SanHistory() {
     var state = useSyncExternalStore(store.subscribe, store.getSnapshot);
-    var editors = useGraphiQL(function (s) {
-      return { queryEditor: s.queryEditor, variableEditor: s.variableEditor };
-    });
+    var editors = useGraphiQL(pick("queryEditor", "variableEditor"));
     var now = useNow(30000);
 
     var _search = useState("");
@@ -338,39 +318,36 @@ function makeHistoryContent(store) {
     var editingId = _editing[0];
     var setEditingId = _editing[1];
 
-    // Pick up changes made in other browser tabs.
-    useEffect(function () {
-      function onStorage(e) {
-        if (e.key === null || e.key === store.storageKey) store.reload();
-      }
-      window.addEventListener("storage", onStorage);
-      return function () { window.removeEventListener("storage", onStorage); };
-    }, []);
-
-    function load(entry) {
-      if (editors.queryEditor) editors.queryEditor.setValue(entry.query);
-      if (editors.variableEditor) editors.variableEditor.setValue(entry.variables || "");
-    }
-
     var visible = sortHistory(
       state.entries.filter(function (e) { return matchesSearch(e, search); }),
       sortMode
     );
     var favorites = visible.filter(function (e) { return e.favorite; });
     var recent = visible.filter(function (e) { return !e.favorite; });
-    var clearable = itemsToClear(state.entries);
-    var hints = useMemo(function () { return distinguishingHints(state.entries); }, [state.entries]);
+    var clearable = state.entries.some(function (e) { return !e.favorite; });
+    // Parsed once per distinct query; entries are rebuilt on every store
+    // change, so cache by query text and keep only live queries.
+    var detailsCache = useRef(new Map());
+    var details = useMemo(function () {
+      var prev = detailsCache.current;
+      var next = new Map();
+      state.entries.forEach(function (e) {
+        next.set(e.query, prev.has(e.query) ? prev.get(e.query) : queryDetails(e.query));
+      });
+      detailsCache.current = next;
+      return next;
+    }, [state.entries]);
 
     function renderRow(entry) {
       return h(HistoryRow, {
         key: entry.id,
         entry: entry,
-        hint: hints[entry.id],
+        details: details.get(entry.query),
         now: now,
         running: !!state.running[entry.id],
         expanded: expandedId === entry.id,
         editing: editingId === entry.id,
-        onLoad: function () { load(entry); },
+        onLoad: function () { loadIntoEditors(editors, entry.query, entry.variables); },
         onToggleFavorite: function () { store.toggleFavorite(entry.id); },
         onStartRename: function () { setEditingId(entry.id); },
         onRename: function (label) { store.rename(entry.id, label); setEditingId(null); },
@@ -422,7 +399,7 @@ function makeHistoryContent(store) {
           {
             type: "button",
             className: "san-history-clear-btn",
-            disabled: clearable.length === 0,
+            disabled: !clearable,
             onClick: function () { setOpen(true); },
           },
           "Clear"
@@ -447,18 +424,21 @@ function makeHistoryContent(store) {
           h(
             "div",
             { className: "san-hist-sort", role: "group", "aria-label": "Sort history" },
-            [["recent", "Recent", "Most recently run first"], ["runs", "Most run", "Most executed first"]].map(function (opt) {
+            SORT_OPTIONS.map(function (opt) {
               return h(
                 "button",
                 {
-                  key: opt[0],
+                  key: opt.id,
                   type: "button",
-                  className: "san-hist-sort-btn" + (sortMode === opt[0] ? " is-active" : ""),
-                  "aria-pressed": String(sortMode === opt[0]),
-                  title: opt[2],
-                  onClick: function () { setSortMode(opt[0]); writeSortMode(opt[0]); },
+                  className: "san-hist-sort-btn" + (sortMode === opt.id ? " is-active" : ""),
+                  "aria-pressed": String(sortMode === opt.id),
+                  title: opt.title,
+                  onClick: function () {
+                    setSortMode(opt.id);
+                    writeRaw(defaultStorage(), SORT_STORAGE_KEY, opt.id);
+                  },
                 },
-                opt[1]
+                opt.label
               );
             })
           )

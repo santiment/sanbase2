@@ -66,6 +66,42 @@ defmodule SanbaseWeb.Graphql.MCPSocialToolsTest do
       end)
     end
 
+    test "treats an empty slugs list next to text as not passed" do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.timeseries_data/5,
+        {:ok, [%{datetime: ~U[2020-01-01 00:00:00Z], value: 10}]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, response} =
+                 call_tool("fetch_metric_data_tool", %{
+                   metric: "social_volume_total",
+                   slugs: [],
+                   text: "sold"
+                 })
+
+        refute response.is_error
+        assert %{"text" => "sold", "data" => %{"sold" => [_]}} = decode(response)
+      end)
+    end
+
+    test "treats blank text next to slugs as not passed" do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.timeseries_data/5,
+        {:ok, [%{datetime: ~U[2020-01-01 00:00:00Z], value: 10}]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, response} =
+                 call_tool("fetch_metric_data_tool", %{
+                   metric: "social_volume_total",
+                   slugs: ["bitcoin"],
+                   text: ""
+                 })
+
+        refute response.is_error
+        assert %{"slugs" => ["bitcoin"], "data" => %{"bitcoin" => [_]}} = decode(response)
+      end)
+    end
+
     test "rejects text for a metric without a text selector" do
       assert {:ok, response} =
                call_tool("fetch_metric_data_tool", %{

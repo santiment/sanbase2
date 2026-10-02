@@ -13,18 +13,20 @@ defmodule Sanbase.AI.AcademyAIService do
   @dont_know_answer "DK"
   @dont_know_message "Sorry, I can’t seem to find anything in the Academy on that right now.\n\nTry rephrasing your question — or head over to Discord for help from other users & the Santiment team!\n\n👉 https://discord.gg/EJrZR8GHZU"
   # Picked with `AcademySearchEval.run_answers/1` on 2026-09-29: against gpt-5-nano
-  # (default reasoning) the judge score went 4.71 -> 4.81 and p50 latency 9.0s -> 3.3s.
-  @model "gpt-5.4-mini"
+  # (default reasoning) the judge score went 4.71 -> 4.81 and p50 latency 9.0s -> 3.3s
+  # with gpt-5.4-mini. Moved to gpt-6-luna on 2026-10-02: ~7x cheaper input and ~9x
+  # cheaper output than gpt-5.4-mini, and stronger on general benchmarks.
+  @model "gpt-6-luna"
   @reasoning_effort "low"
   # Follow-up suggestions run after the answer, on the user's request path.
-  @suggestions_model "gpt-5.4-mini"
+  @suggestions_model "gpt-6-luna"
   @suggestions_reasoning_effort "none"
   @similarity_threshold 0.5
 
   # Earlier chat messages sent with the answer prompt.
   @history_messages 6
   # Follow-up rewriting: a small fast model, only the last turns, long answers cut.
-  @rewrite_model "gpt-5.4-mini"
+  @rewrite_model "gpt-6-luna"
   @rewrite_history_messages 4
   @rewrite_message_chars 600
   @max_search_query_chars 300

@@ -287,7 +287,7 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
 
   # Answers ------------------------------------------------------------
 
-  @judge_model "gpt-5.4-mini"
+  @judge_model "gpt-6-luna"
   @judge_reference_chars 6_000
 
   @doc "Default path of the bundled follow-up question set."
@@ -318,7 +318,7 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
   Options:
     * `:file`, `:followup_file` - item sets (`followup_file: nil` skips follow-ups)
     * `:ids` - only these item ids
-    * `:answer_opts` - passed to `AcademyAIService.answer/2`, e.g. `[model: "gpt-5.4-mini"]`
+    * `:answer_opts` - passed to `AcademyAIService.answer/2`, e.g. `[model: "gpt-6-luna"]`
     * `:judge` - run the LLM judge (default true)
     * `:concurrency` - parallel items (default 4)
   """

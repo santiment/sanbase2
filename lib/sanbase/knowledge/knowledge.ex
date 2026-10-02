@@ -354,6 +354,7 @@ defmodule Sanbase.Knowledge do
     ask_opts =
       %{response_format: Citations.response_format()}
       |> maybe_put(:model, Keyword.get(options, :answer_model))
+      |> maybe_put(:reasoning_effort, Keyword.get(options, :answer_reasoning_effort))
 
     case AnswerModel.client(options).ask(prompt, ask_opts) do
       {:ok, content} -> {:ok, Citations.render(content, registry)}

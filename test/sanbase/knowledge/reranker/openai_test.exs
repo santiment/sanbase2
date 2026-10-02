@@ -107,6 +107,15 @@ defmodule Sanbase.Knowledge.Reranker.OpenAITest do
     test "caps max_completion_tokens for latency" do
       body = OpenAI.build_request_body("q", candidates())
       assert is_integer(body["max_completion_tokens"]) and body["max_completion_tokens"] > 0
+    end
+
+    test "turns reasoning off on the default model so it does not eat the token budget" do
+      assert OpenAI.build_request_body("q", candidates())["reasoning_effort"] == "none"
+    end
+
+    test "sends temperature 0 without reasoning_effort on gpt-4 models" do
+      body = OpenAI.build_request_body("q", candidates(), "gpt-4o-mini")
+      assert body["temperature"] == 0
       refute Map.has_key?(body, "reasoning_effort")
     end
 
@@ -135,6 +144,11 @@ defmodule Sanbase.Knowledge.Reranker.OpenAITest do
       refute Map.has_key?(
                OpenAI.build_request_body("q", candidates(), "gpt-5-nano"),
                "temperature"
+             )
+
+      refute Map.has_key?(
+               OpenAI.build_request_body("q", candidates(), "gpt-5-nano"),
+               "reasoning_effort"
              )
     end
 

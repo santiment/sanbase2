@@ -5,7 +5,8 @@ defmodule Sanbase.Knowledge.AnswerModel do
 
   Each entry pairs a UI `label` (and stable `key`) with the `client` module
   (`Sanbase.OpenAI.Question` or `Sanbase.OpenRouter.Question`) and the provider
-  `model` name. `requires_env` (optional) gates an entry on an env var being set
+  `model` name. `reasoning_effort` (optional) is sent with the answer request;
+  without it a reasoning model runs at its own default effort. `requires_env` (optional) gates an entry on an env var being set
   and non-empty, so a model only appears when it can actually be called (e.g.
   the OpenRouter-backed model needs `OPENROUTER_API_KEY`).
 
@@ -22,11 +23,15 @@ defmodule Sanbase.Knowledge.AnswerModel do
   @default_client Sanbase.OpenAI.Question
 
   @models [
+    # Replaced gpt-5-nano on 2026-10-02. gpt-5-nano ran at its default (medium)
+    # effort, spending ~2k reasoning tokens per answer; gpt-6-luna at "low" costs
+    # about a fifth as much per answer and answers in under 2s instead of ~15s.
     %{
-      key: "gpt-5-nano",
-      label: "GPT-5 Nano",
+      key: "gpt-6-luna",
+      label: "GPT-6 Luna",
       client: Sanbase.OpenAI.Question,
-      model: "gpt-5-nano"
+      model: "gpt-6-luna",
+      reasoning_effort: "low"
     },
     %{
       key: "gpt-5-mini",
@@ -62,14 +67,19 @@ defmodule Sanbase.Knowledge.AnswerModel do
 
   @doc """
   Translate a selectable model `key` into the `:answer_client` / `:answer_model`
-  options the answer pipeline reads. An unknown or unavailable key returns `[]`
+  (and `:answer_reasoning_effort`, when the entry sets one) options the answer
+  pipeline reads. An unknown or unavailable key returns `[]`
   so the configured default client/model is used.
   """
   @spec options_for(String.t() | nil) :: keyword()
   def options_for(key) do
     case Enum.find(selectable(), &(&1.key == key)) do
-      nil -> []
-      choice -> [answer_client: choice.client, answer_model: choice.model]
+      nil ->
+        []
+
+      choice ->
+        [answer_client: choice.client, answer_model: choice.model]
+        |> maybe_put_reasoning_effort(choice[:reasoning_effort])
     end
   end
 
@@ -92,6 +102,11 @@ defmodule Sanbase.Knowledge.AnswerModel do
   def resolve(options \\ []) do
     Keyword.get(options, :answer_model) || client(options).default_model()
   end
+
+  defp maybe_put_reasoning_effort(options, nil), do: options
+
+  defp maybe_put_reasoning_effort(options, effort),
+    do: options ++ [answer_reasoning_effort: effort]
 
   defp available?(%{requires_env: var}) when is_binary(var) do
     case System.get_env(var) do

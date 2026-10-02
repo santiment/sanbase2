@@ -1,6 +1,6 @@
 defmodule Sanbase.Insight.Categorizer do
   @moduledoc """
-  Categorizes insights using LLM (gpt-5-nano) into predefined categories.
+  Categorizes insights using LLM (gpt-6-luna) into predefined categories.
   """
 
   require Logger
@@ -12,7 +12,9 @@ defmodule Sanbase.Insight.Categorizer do
   alias Sanbase.OpenAI.Question
 
   @base_url "https://api.openai.com/v1/chat/completions"
-  @model "gpt-5-nano"
+  # gpt-6-luna with reasoning off replaced gpt-5-nano at its default (medium)
+  # effort on 2026-10-02: ~5x cheaper per insight and ~4x faster.
+  @model "gpt-6-luna"
   @receive_timeout_ms 60_000
 
   require Logger
@@ -139,6 +141,7 @@ defmodule Sanbase.Insight.Categorizer do
 
     %{
       "model" => @model,
+      "reasoning_effort" => "none",
       "messages" => messages
     }
   end

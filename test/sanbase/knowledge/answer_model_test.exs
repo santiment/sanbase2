@@ -13,7 +13,7 @@ defmodule Sanbase.Knowledge.AnswerModelTest do
   describe "selectable/0" do
     test "always offers the OpenAI gpt models" do
       keys = Enum.map(AnswerModel.selectable(), & &1.key)
-      assert "gpt-5-nano" in keys
+      assert "gpt-6-luna" in keys
       assert "gpt-5-mini" in keys
     end
 
@@ -24,8 +24,8 @@ defmodule Sanbase.Knowledge.AnswerModelTest do
   end
 
   describe "default_key/0" do
-    test "is the first available entry (always present gpt-5-nano)" do
-      assert AnswerModel.default_key() == "gpt-5-nano"
+    test "is the first available entry (always present gpt-6-luna)" do
+      assert AnswerModel.default_key() == "gpt-6-luna"
     end
   end
 
@@ -34,6 +34,14 @@ defmodule Sanbase.Knowledge.AnswerModelTest do
       assert AnswerModel.options_for("gpt-5-mini") == [
                answer_client: Sanbase.OpenAI.Question,
                answer_model: "gpt-5-mini"
+             ]
+    end
+
+    test "carries the entry's reasoning effort when it sets one" do
+      assert AnswerModel.options_for("gpt-6-luna") == [
+               answer_client: Sanbase.OpenAI.Question,
+               answer_model: "gpt-6-luna",
+               answer_reasoning_effort: "low"
              ]
     end
 

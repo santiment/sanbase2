@@ -27,6 +27,8 @@ import { ChartButton } from "./graphiql-chart-modal.js";
 import { TableButton } from "./graphiql-table-modal.js";
 import { SanTabNames } from "./graphiql-tab-names.js";
 import { SanAutocomplete } from "./graphiql-autocomplete.js";
+import { SanPanelClose } from "./graphiql-panel-close.js";
+import { FontSizeButtons } from "./graphiql-font-size.js";
 import { isEffectivelyDark } from "./graphiql-theme.js";
 
 // CSS: base GraphiQL styles, explorer plugin styles, then our customizations
@@ -167,9 +169,12 @@ root.render(
     React.createElement(SantimentTheme),
     // Tab names keyed by tab id ("Query N", double-click or F2 to rename)
     React.createElement(SanTabNames),
+    // Collapse button at the top right of the open side panel
+    React.createElement(SanPanelClose),
     // Suggestions inside metric/slug/version strings
     React.createElement(SanAutocomplete, { endpoint: graphqlEndpoint, storage: storage }),
-    // Toolbar: render prop receives default buttons, we append the chart and table buttons
+    // Toolbar: render prop receives default buttons, we append the chart and
+    // table buttons and the editor text size buttons
     React.createElement(
       GraphiQL.Toolbar,
       null,
@@ -181,7 +186,8 @@ root.render(
           props.merge,
           props.copy,
           React.createElement(ChartButton),
-          React.createElement(TableButton)
+          React.createElement(TableButton),
+          React.createElement(FontSizeButtons)
         );
       }
     )

@@ -249,6 +249,72 @@
   border-color: var(--san-border);
 }
 
+/* --- Editor text size buttons (graphiql-font-size.js) --- */
+/* Color comes from the toolbar button styles, like the chart/table icons */
+#graphiql .san-font-size-btn {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+#graphiql .san-font-size-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+#graphiql .san-font-size-btn sub {
+  font-size: 10px;
+  vertical-align: baseline;
+  margin-left: 1px;
+}
+
+/* --- Side panel collapse button (graphiql-panel-close.js) --- */
+#graphiql .graphiql-plugin {
+  position: relative;
+}
+
+.san-panel-close {
+  all: unset;
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--san-text-muted);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.san-panel-close:hover {
+  color: var(--san-text);
+  background: hsla(var(--color-neutral), var(--alpha-background-medium, 0.1));
+}
+
+.san-panel-close:focus-visible {
+  outline: 2px solid var(--san-table-sort);
+  outline-offset: -2px;
+}
+
+.san-panel-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Room for the button in panel headers that reach the right edge */
+#graphiql .san-history-header {
+  padding-right: 24px;
+}
+
+#graphiql .graphiql-doc-explorer-search {
+  right: 24px; /* GraphiQL positions it absolutely at the header's right edge */
+}
+
 /* --- History plugin --- */
 /* Custom history list (graphiql-history-plugin.js). Status colors are shared
    by the row dot, the run log dots and the duration bars. */

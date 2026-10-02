@@ -156,7 +156,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
   # The metric is computed either for a list of slugs or for a text search term.
   defp validate_target(metric, params) do
-    case {Map.get(params, :slugs), Map.get(params, :text)} do
+    case normalize_target(Map.get(params, :slugs), Map.get(params, :text)) do
       {slugs, nil} when is_list(slugs) ->
         with :ok <- validate_slugs(slugs),
              :ok <- validate_many_slugs_supported(metric, slugs),
@@ -174,9 +174,27 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
          )}
 
       _ ->
-        {:error, ToolError.permanent("Provide either `slugs` or `text`, not both.")}
+        {:error,
+         ToolError.permanent(
+           "Provide either `slugs` or `text`, not both. For a word or phrase pass only " <>
+             "`text`; for assets pass only `slugs`."
+         )}
     end
   end
+
+  # Models often fill optional arguments with empty values (`slugs: []`,
+  # `text: ""`), so an empty value next to a real one counts as not passed.
+  defp normalize_target([], text) when is_binary(text) do
+    if blank?(text), do: {[], text}, else: {nil, text}
+  end
+
+  defp normalize_target([_ | _] = slugs, text) when is_binary(text) do
+    if blank?(text), do: {slugs, nil}, else: {slugs, text}
+  end
+
+  defp normalize_target(slugs, text), do: {slugs, text}
+
+  defp blank?(text), do: String.trim(text) == ""
 
   defp validate_text(text) do
     case String.trim(text) do

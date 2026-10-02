@@ -15,11 +15,13 @@ globalThis.MonacoEnvironment = {
 
 import React, { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { GraphiQL, HISTORY_PLUGIN } from "graphiql";
+import { GraphiQL } from "graphiql";
 import { useMonaco } from "@graphiql/react";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
-import { SanHistory } from "./graphiql-history-plugin.js";
+import { historyPlugin } from "./graphiql-history-plugin.js";
+import { createHistoryStore } from "./graphiql-history-store.js";
+import { classifyResult, isIntrospectionCall } from "./graphiql-history-utils.js";
 import { ChartButton } from "./graphiql-chart-modal.js";
 import { TableButton } from "./graphiql-table-modal.js";
 import { isEffectivelyDark } from "./graphiql-theme.js";
@@ -138,6 +140,34 @@ function fetcher(graphQLParams, fetcherOpts) {
   });
 }
 
+// --- History recording ---
+// GraphiQL calls the fetcher exactly once per execution, so history is
+// recorded here (with status and duration) instead of by the stock history
+// plugin, which saved an entry on every keystroke while a query was running.
+const historyStore = createHistoryStore();
+
+function recordingFetcher(graphQLParams, fetcherOpts) {
+  if (isIntrospectionCall(graphQLParams, fetcherOpts)) {
+    return fetcher(graphQLParams, fetcherOpts);
+  }
+
+  let token = null;
+  try {
+    token = historyStore.startRun(graphQLParams);
+  } catch (e) {
+    console.error("[graphiql-history] failed to record run", e);
+  }
+
+  return fetcher(graphQLParams, fetcherOpts).then(function(result) {
+    try {
+      historyStore.finishRun(token, classifyResult(result));
+    } catch (e) {
+      console.error("[graphiql-history] failed to record result", e);
+    }
+    return result;
+  });
+}
+
 // --- Tab naming: auto-name untitled tabs + double-click to rename ---
 const tabNames = JSON.parse(localStorage.getItem("san-graphiql-tab-names") || "{}");
 let tabCounter = parseInt(localStorage.getItem("san-graphiql-tab-counter") || "0", 10);
@@ -241,10 +271,10 @@ observeTabBar();
 const explorer = explorerPlugin();
 const examples = examplesPlugin();
 
-// GraphiQL enables history recording only when the plugins array contains the
-// HISTORY_PLUGIN object itself (identity check in GraphiQL.js), so the custom
-// content component is swapped in place instead of passing a new plugin object.
-HISTORY_PLUGIN.content = SanHistory;
+// GraphiQL mounts the stock HistoryStore only when the plugins array contains
+// the HISTORY_PLUGIN object itself (identity check in GraphiQL.js). Passing our
+// own plugin object keeps the stock per-keystroke recording switched off.
+const sanHistory = historyPlugin(historyStore);
 
 // --- Render ---
 const root = createRoot(document.getElementById("graphiql"));
@@ -252,13 +282,12 @@ root.render(
   React.createElement(
     GraphiQL,
     {
-      fetcher: fetcher,
-      plugins: [explorer, examples, HISTORY_PLUGIN],
+      fetcher: recordingFetcher,
+      plugins: [explorer, examples, sanHistory],
       initialQuery: initialQuery || undefined,
       initialVariables: initialVariables || undefined,
       shouldPersistHeaders: false,
       defaultEditorToolsVisibility: true,
-      maxHistoryLength: 50,
       onEditQuery: onEditQuery,
       onEditVariables: onEditVariables,
     },

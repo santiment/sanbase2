@@ -233,44 +233,363 @@
 }
 
 /* --- History plugin --- */
-/* The built-in header contains a one-click Clear button; it is replaced by
-   .san-history-header + a confirm dialog in graphiql-history-plugin.js */
-#graphiql .graphiql-history-header {
-  display: none;
+/* Custom history list (graphiql-history-plugin.js). Status colors are shared
+   by the row dot, the run log dots and the duration bars. */
+#graphiql .san-history {
+  --san-hist-success: #2e9e5b;
+  --san-hist-partial: #d98e04;
+  --san-hist-error: #c0392b;
+  --san-hist-running: #1565c0;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
-#graphiql .graphiql-history-items {
-  margin-top: 4px;
+.san-hist-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
-#graphiql .graphiql-history-item {
-  height: 26px;
+.san-hist-sort {
+  display: flex;
+  align-self: flex-start;
+  border: 1px solid var(--san-border);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-#graphiql button.graphiql-history-item-label {
+.san-hist-sort-btn {
+  all: unset;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--san-text-muted);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.san-hist-sort-btn + .san-hist-sort-btn {
+  border-left: 1px solid var(--san-border);
+}
+
+.san-hist-sort-btn:hover {
+  color: var(--san-text);
+}
+
+.san-hist-sort-btn.is-active {
+  color: var(--san-text);
+  background: hsla(var(--color-neutral), var(--alpha-background-medium, 0.1));
+}
+
+.san-hist-sort-btn:focus-visible {
+  outline: 2px solid var(--san-hist-running);
+  outline-offset: -2px;
+}
+
+.san-hist-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 8px;
-  font-size: 12px;
+  border: 1px solid var(--san-border);
+  border-radius: 4px;
+  color: var(--san-text-muted);
+  transition: border-color 0.15s ease;
 }
 
-/* Actions hidden until row hover / keyboard focus */
-#graphiql button.graphiql-history-item-action {
-  display: none;
-  padding: 4px;
+.san-hist-search:focus-within {
+  border-color: var(--san-hist-running);
 }
 
-#graphiql .graphiql-history-item:hover button.graphiql-history-item-action,
-#graphiql .graphiql-history-item:focus-within button.graphiql-history-item-action {
-  display: flex;
-}
-
-/* Favorited star stays visible without hover */
-#graphiql button.graphiql-history-item-action[aria-label="Remove favorite"] {
-  display: flex;
-}
-
-#graphiql button.graphiql-history-item-action svg {
+.san-hist-search svg {
   width: 12px;
   height: 12px;
+  flex: none;
+}
+
+.san-hist-search input {
+  all: unset;
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--san-text);
+}
+
+.san-hist-section + .san-hist-section {
+  margin-top: 12px;
+}
+
+.san-hist-section-title {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 4px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--san-text-muted);
+}
+
+.san-hist-section-title span {
+  font-weight: 400;
+}
+
+.san-hist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.san-hist-item {
+  border-radius: 4px;
+  transition: background-color 0.12s ease;
+}
+
+.san-hist-item:hover,
+.san-hist-item:focus-within,
+.san-hist-item.is-expanded {
+  background: hsla(var(--color-neutral), var(--alpha-background-light));
+}
+
+.san-hist-row {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+}
+
+.san-hist-main {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.san-hist-main:focus-visible {
+  outline: 2px solid var(--san-hist-running);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.san-hist-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.san-hist-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--san-text);
+}
+
+/* Argument values that tell apart entries sharing a title */
+.san-hist-hint {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--san-hist-success);
+}
+
+.san-hist-meta {
+  font-size: 10.5px;
+  color: var(--san-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.san-hist-rename {
+  all: unset;
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--san-text);
+  border-bottom: 1px solid var(--san-hist-running);
+}
+
+/* Status dot */
+.san-hist-status {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--san-border);
+}
+
+.san-hist-status--success { background: var(--san-hist-success); }
+.san-hist-status--partial { background: var(--san-hist-partial); }
+.san-hist-status--error { background: var(--san-hist-error); }
+.san-hist-status--running {
+  background: var(--san-hist-running);
+  animation: san-hist-pulse 1s ease-in-out infinite;
+}
+
+@keyframes san-hist-pulse {
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .san-hist-status--running { animation: none; }
+}
+
+/* Row actions: hidden until hover / keyboard focus; a set favorite star stays visible */
+.san-hist-actions {
+  display: flex;
+  flex: none;
+  padding-right: 2px;
+}
+
+.san-hist-action {
+  all: unset;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  color: var(--san-text-muted);
+  cursor: pointer;
+}
+
+.san-hist-action:hover {
+  color: var(--san-text);
+  background: hsla(var(--color-neutral), var(--alpha-background-medium, 0.1));
+}
+
+.san-hist-action:focus-visible {
+  outline: 2px solid var(--san-hist-running);
+}
+
+.san-hist-action svg {
+  width: 12px;
+  height: 12px;
+}
+
+.san-hist-item:hover .san-hist-action,
+.san-hist-item:focus-within .san-hist-action,
+.san-hist-item.is-expanded .san-hist-action,
+.san-hist-actions.has-favorite .san-hist-fav {
+  display: flex;
+}
+
+.san-hist-actions.has-favorite .san-hist-fav {
+  color: var(--san-hist-partial);
+}
+
+.san-hist-expand svg {
+  transition: transform 0.15s ease;
+}
+
+.san-hist-item.is-expanded .san-hist-expand svg {
+  transform: rotate(180deg);
+}
+
+/* Expanded run details */
+.san-hist-details {
+  padding: 2px 8px 8px 21px;
+  font-size: 11px;
+  color: var(--san-text-muted);
+}
+
+.san-hist-error {
+  margin-bottom: 6px;
+  padding: 4px 6px;
+  border-left: 2px solid var(--san-hist-error);
+  color: var(--san-text);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.san-hist-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.san-hist-stats b {
+  font-weight: 600;
+  color: var(--san-text);
+}
+
+.san-hist-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 28px;
+  margin-bottom: 6px;
+}
+
+.san-hist-bar {
+  flex: 1;
+  max-width: 10px;
+  min-height: 2px;
+  border-radius: 1px 1px 0 0;
+  background: var(--san-border);
+}
+
+.san-hist-bar--success { background: var(--san-hist-success); }
+.san-hist-bar--partial { background: var(--san-hist-partial); }
+.san-hist-bar--error { background: var(--san-hist-error); }
+
+.san-hist-runs {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.san-hist-runs li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.san-hist-run-time {
+  flex: 1;
+}
+
+.san-hist-run-dur {
+  color: var(--san-text);
+}
+
+.san-hist-empty-runs {
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
+.san-hist-vars {
+  margin: 0;
+  padding: 4px 6px;
+  max-height: 120px;
+  overflow: auto;
+  border-radius: 3px;
+  background: var(--san-bg-surface);
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--san-text);
+}
+
+.san-hist-empty {
+  padding: 12px 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--san-text-muted);
 }
 
 .san-history-header {

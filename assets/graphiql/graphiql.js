@@ -25,6 +25,7 @@ import { createFetcher } from "./graphiql-fetcher.js";
 import { ChartButton } from "./graphiql-chart-modal.js";
 import { TableButton } from "./graphiql-table-modal.js";
 import { SanTabNames } from "./graphiql-tab-names.js";
+import { SanAutocomplete } from "./graphiql-autocomplete.js";
 import { isEffectivelyDark } from "./graphiql-theme.js";
 
 // CSS: base GraphiQL styles, explorer plugin styles, then our customizations
@@ -112,8 +113,10 @@ function onEditVariables(variables) {
 // readable errors, and records executions in the query history.
 const historyStore = createHistoryStore();
 
+const graphqlEndpoint = window.location.origin + "/graphql";
+
 const fetcher = createFetcher({
-  endpoint: window.location.origin + "/graphql",
+  endpoint: graphqlEndpoint,
   historyStore: historyStore,
   onHistoryError: function(e) {
     console.error("[graphiql-history] failed to record run", e);
@@ -153,6 +156,8 @@ root.render(
     React.createElement(SantimentTheme),
     // Tab names keyed by tab id ("Query N", double-click to rename)
     React.createElement(SanTabNames),
+    // Suggestions inside metric/slug/version strings
+    React.createElement(SanAutocomplete, { endpoint: graphqlEndpoint }),
     // Toolbar: render prop receives default buttons, we append the chart button
     React.createElement(
       GraphiQL.Toolbar,

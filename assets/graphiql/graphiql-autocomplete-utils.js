@@ -19,6 +19,9 @@ var KEY_KINDS = {
   version: "version",
 };
 
+// Fields whose `slug` argument is not a project slug.
+var NON_PROJECT_SLUG_FIELDS = { watchlistBySlug: true, nonCryptoAssetBySlug: true };
+
 var MAX_RESULTS = 100;
 
 function isNameStart(c) {
@@ -33,7 +36,6 @@ function isNameChar(c) {
  * If `offset` is inside a string value, describe it:
  *   {
  *     kind: "metric" | "slug" | "version" | null,
- *     key, inList,
  *     prefix,          // string contents before the cursor
  *     start, end,      // offsets of the string contents (end excludes the closing quote)
  *     closed,          // whether the string has a closing quote on this line
@@ -98,7 +100,6 @@ export function getStringContext(text, offset) {
       if (!snapshot && offset >= start && offset <= j) {
         snapshot = {
           key: keyInfo ? keyInfo.key : null,
-          inList: keyInfo ? keyInfo.inList : false,
           prefix: text.slice(start, offset),
           start: start,
           end: Math.min(j, n),
@@ -133,10 +134,9 @@ export function getStringContext(text, offset) {
           // Object or list value: `selector: {` / `slugs: [`
           frame.key = k.key;
           if (c === "{") frame.args = {};
-        } else if (c === "{") {
-          // Selection set: belongs to the call just closed, or to a bare field.
-          if (p1 && p1.t === "punct" && p1.v === ")" && lastCall) frame.selectionOf = lastCall;
-          else if (p1 && p1.t === "name") frame.selectionOf = { field: p1.v, args: {} };
+        } else if (c === "{" && p1 && p1.t === "punct" && p1.v === ")" && lastCall) {
+          // Selection set of the call just closed.
+          frame.selectionOf = lastCall;
         }
       }
       frames.push(frame);
@@ -170,6 +170,11 @@ export function getStringContext(text, offset) {
 
   if (!snapshot) return null;
 
+  var call = null; // innermost enclosing "(...)"
+  for (var ci = snapshot.frames.length - 1; ci >= 0 && !call; ci--) {
+    if (snapshot.frames[ci].type === "(") call = snapshot.frames[ci];
+  }
+
   // Innermost enclosing getMetric(...): its own args when the cursor is in
   // them, or the args of the call a selection set belongs to. Frames are
   // shared objects, so args written after the cursor are visible here too
@@ -182,6 +187,7 @@ export function getStringContext(text, offset) {
   }
 
   var kind = snapshot.key ? KEY_KINDS[snapshot.key] || null : null;
+  if (kind === "slug" && call && NON_PROJECT_SLUG_FIELDS[call.field]) kind = null;
   // Versions only make sense directly in getMetric(...) with a known metric.
   if (kind === "version") {
     var own = snapshot.frames[snapshot.frames.length - 1];
@@ -190,8 +196,6 @@ export function getStringContext(text, offset) {
 
   return {
     kind: kind,
-    key: snapshot.key,
-    inList: snapshot.inList,
     prefix: snapshot.prefix,
     start: snapshot.start,
     end: snapshot.end,
@@ -205,10 +209,9 @@ function byLengthThenAlpha(a, b) {
 }
 
 // Metric names: exact, prefix, start of an "_"-separated segment, substring.
-export function rankMetrics(metrics, query, limit) {
+export function rankMetrics(metrics, query) {
   var q = (query || "").toLowerCase();
-  var max = limit || MAX_RESULTS;
-  if (!q) return metrics.slice().sort().slice(0, max);
+  if (!q) return metrics.slice(0, MAX_RESULTS); // already sorted by the data module
 
   var scored = [];
   metrics.forEach(function (m) {
@@ -222,26 +225,25 @@ export function rankMetrics(metrics, query, limit) {
     scored.push({ m: m, tier: tier });
   });
   scored.sort(function (a, b) { return a.tier - b.tier || byLengthThenAlpha(a.m, b.m); });
-  return scored.slice(0, max).map(function (x) { return x.m; });
+  return scored.slice(0, MAX_RESULTS).map(function (x) { return x.m; });
 }
 
 /**
- * projects: [{ slug, name, ticker }]. Matches slug, name and ticker, so
+ * projects: as returned by unpackProjects. Matches slug, name and ticker, so
  * "ETH" finds ethereum. `preferred` (a Set of slugs, e.g. the slugs the
  * enclosing metric is available for) ranks first within each tier, and on
  * an empty query only preferred slugs are listed when there are any.
  * Returns [{ project, preferred }].
  */
-export function rankSlugs(projects, query, preferred, limit) {
+export function rankSlugs(projects, query, preferred) {
   var q = (query || "").toLowerCase();
-  var max = limit || MAX_RESULTS;
   var pref = preferred || null;
   var scored = [];
 
   projects.forEach(function (p) {
-    var slug = p.slug.toLowerCase();
-    var name = (p.name || "").toLowerCase();
-    var ticker = (p.ticker || "").toLowerCase();
+    var slug = p.lower[0];
+    var name = p.lower[1];
+    var ticker = p.lower[2];
     var isPref = !!pref && pref.has(p.slug);
     var tier;
     if (!q) tier = 0;
@@ -265,7 +267,7 @@ export function rankSlugs(projects, query, preferred, limit) {
       (a.preferred === b.preferred ? 0 : a.preferred ? -1 : 1) ||
       byLengthThenAlpha(a.project.slug, b.project.slug);
   });
-  return scored.slice(0, max).map(function (x) { return { project: x.project, preferred: x.preferred }; });
+  return scored.slice(0, MAX_RESULTS).map(function (x) { return { project: x.project, preferred: x.preferred }; });
 }
 
 // versions: [{ versionNum, versionName, description }] from metadata.
@@ -290,8 +292,11 @@ export function packProjects(projects) {
     .map(function (p) { return [p.slug, p.name || "", p.ticker || ""]; });
 }
 
+// `lower` holds lower-cased slug/name/ticker, computed once for ranking.
 export function unpackProjects(rows) {
-  return (rows || []).map(function (r) { return { slug: r[0], name: r[1], ticker: r[2] }; });
+  return (rows || []).map(function (r) {
+    return { slug: r[0], name: r[1], ticker: r[2], lower: [r[0].toLowerCase(), r[1].toLowerCase(), r[2].toLowerCase()] };
+  });
 }
 
 // Markdown shown in the suggestion details panel for a metric. The human

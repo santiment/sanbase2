@@ -9,17 +9,20 @@
  * instance and editors from GraphiQL state.
  *
  * Monaco does not open suggestions inside strings by default
- * (quickSuggestions.strings is off). Instead of turning that on for every
- * string, the suggest widget is opened here only when typing inside one of
- * the strings above. There is deliberately no '"' trigger character: it would
- * open suggestions in every string (from:, to:, interval:, ...).
+ * (quickSuggestions.strings is off), and turning that on would ask every
+ * provider in every string (from:, to:, interval:, ...), falling back to
+ * word suggestions there. Instead the suggest widget is (re)opened here on
+ * every edit inside one of the strings above. Re-triggering even while it is
+ * open is deliberate: an edit during "Loading..." cancels the pending
+ * request, and with quick suggestions off Monaco would not restart it.
  *
- * Monaco's word-based fallback (words copied from the document, shown when
- * no provider returns anything) is switched off for the query editor; when a
- * lookup fails or finds nothing, a single explanatory row is shown instead.
+ * Monaco's word-based suggestions (words copied from the document) are
+ * switched off. This is a page-wide Monaco setting, so it also applies to
+ * the variables and headers editors. When a lookup fails or finds nothing,
+ * a single explanatory row is shown instead.
  */
 import { useEffect, useRef } from "react";
-import { useGraphiQL, useMonaco } from "@graphiql/react";
+import { pick, tryParseJSONC, useGraphiQL, useMonaco } from "@graphiql/react";
 import {
   getStringContext,
   rankMetrics,
@@ -35,11 +38,11 @@ import { createRequest } from "./graphiql-fetcher.js";
 // the next keystroke picks up the result.
 var PREFERRED_WAIT_MS = 400;
 
+// `promise`'s value, or null if it takes longer than `ms`.
 function within(promise, ms) {
-  return Promise.race([
-    promise,
-    new Promise(function (resolve) { setTimeout(function () { resolve(null); }, ms); }),
-  ]);
+  var timer;
+  var timeout = new Promise(function (resolve) { timer = setTimeout(function () { resolve(null); }, ms); });
+  return Promise.race([promise, timeout]).finally(function () { clearTimeout(timer); });
 }
 
 function sortText(i) {
@@ -166,22 +169,26 @@ function createProvider(monaco, data) {
 
 export function SanAutocomplete(props) {
   var monaco = useMonaco(function (state) { return state.monaco; });
-  var editors = useGraphiQL(function (state) {
-    return { queryEditor: state.queryEditor, headerEditor: state.headerEditor };
-  });
+  var editors = useGraphiQL(pick("queryEditor", "headerEditor"));
   var headerEditorRef = useRef(null);
   var dataRef = useRef(null);
   headerEditorRef.current = editors.headerEditor;
 
   if (!dataRef.current) {
     dataRef.current = createAutocompleteData({
-      // Uses the headers editor (e.g. an API key) so the lists match what
-      // the query would see. Headers are only sent, never cached.
+      storage: props.storage,
+      // Sends the headers editor contents (e.g. an API key), parsed the way
+      // GraphiQL parses them for queries. Headers are never stored; the
+      // cached lists are whatever the first lookup returned.
       request: createRequest({
         endpoint: props.endpoint,
         getHeaders: function () {
           var editor = headerEditorRef.current;
-          return editor ? editor.getValue() : null;
+          try {
+            return editor ? tryParseJSONC(editor.getValue()) : null;
+          } catch (e) {
+            return null; // invalid headers: GraphiQL reports that on execution
+          }
         },
       }),
     });

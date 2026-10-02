@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  itemsToClear,
   canonicalJson,
+  hashString,
   entryKey,
   isIntrospectionCall,
   classifyResult,
@@ -10,39 +10,9 @@ import {
   formatRelativeTime,
   matchesSearch,
   durationStats,
-  distinguishingHints,
+  queryDetails,
   sortHistory,
-  formatRunCount,
 } from "./graphiql-history-utils.js";
-
-describe("itemsToClear", function () {
-  it("keeps favorites", function () {
-    var items = [
-      { query: "{ a }", favorite: true },
-      { query: "{ b }" },
-      { query: "{ c }", favorite: false },
-    ];
-    var result = itemsToClear(items);
-    expect(result.length).toBe(2);
-    result.forEach(function (item) {
-      expect(item.favorite).toBeFalsy();
-    });
-  });
-
-  it("returns all items when none are favorites", function () {
-    var items = [{ query: "{ a }" }, { query: "{ b }" }];
-    expect(itemsToClear(items)).toEqual(items);
-  });
-
-  it("returns empty for empty input", function () {
-    expect(itemsToClear([])).toEqual([]);
-  });
-
-  it("returns empty when everything is a favorite", function () {
-    var items = [{ query: "{ a }", favorite: true }];
-    expect(itemsToClear(items)).toEqual([]);
-  });
-});
 
 describe("entryKey", function () {
   it("ignores formatting and comments", function () {
@@ -60,6 +30,20 @@ describe("entryKey", function () {
 
   it("handles unparsable queries", function () {
     expect(entryKey("{ a ")).toBe(entryKey("{   a   "));
+  });
+
+  it("treats {} variables like no variables", function () {
+    // GraphiQL sends {} for an editor holding "{}" and undefined for an empty one.
+    expect(entryKey("{ a }", {})).toBe(entryKey("{ a }", undefined));
+    expect(entryKey("{ a }", null)).toBe(entryKey("{ a }"));
+    expect(entryKey("{ a }", { x: 1 })).not.toBe(entryKey("{ a }"));
+  });
+
+  it("is a short hash, not a copy of the query", function () {
+    var long = "{ " + "a ".repeat(5000) + "}";
+    expect(entryKey(long).length).toBe(14);
+    expect(hashString("x")).toBe(hashString("x"));
+    expect(hashString("x")).not.toBe(hashString("y"));
   });
 });
 
@@ -153,35 +137,41 @@ describe("matchesSearch", function () {
 
 describe("durationStats", function () {
   it("computes min/max/avg", function () {
-    expect(durationStats([{ durationMs: 100 }, { durationMs: 300 }])).toEqual({ min: 100, max: 300, avg: 200, count: 2 });
+    expect(durationStats([{ durationMs: 100 }, { durationMs: 300 }])).toEqual({ min: 100, max: 300, avg: 200 });
     expect(durationStats([])).toBeNull();
   });
 });
 
-describe("distinguishingHints", function () {
-  function e(id, query, title) {
-    return { id: id, query: query, title: title || "getMetric(dev_activity)" };
+describe("queryDetails", function () {
+  function metric(alias, version, selector, from) {
+    return alias + ': getMetric(metric: "dev_activity", version: "' + version + '") {' +
+      ' timeseriesDataJson(from: "' + (from || "utc_now-3000d") + '", to: "utc_now", selector: ' + selector +
+      ', interval: "toStartOfMonth") } ';
   }
 
-  it("shows only the values that differ within a same-title group", function () {
-    var q = function (org) {
-      return '{ getMetric(metric: "dev_activity") { timeseriesDataJson(from: "utc_now-30d", selector: {organization: "' + org + '"}) } }';
-    };
-    var hints = distinguishingHints([e(1, q("ethereum")), e(2, q("bitcoin")), e(3, "{ other }", "other")]);
-    expect(hints).toEqual({ 1: "ethereum", 2: "bitcoin" });
+  it("shows targets, versions and range, deduplicated across aliases", function () {
+    var q = "{ " + metric("v1", "original:v1", '{organization: "ethereum"}') +
+      metric("v2", "modern:v1", '{organization: "ethereum"}') + "}";
+    expect(queryDetails(q)).toBe("ethereum \u00b7 original:v1, modern:v1 \u00b7 utc_now-3000d \u2192 utc_now");
   });
 
-  it("gives no hint for unique titles or identical literals", function () {
-    expect(distinguishingHints([e(1, '{ a(x: "1") }', "a")])).toEqual({});
-    expect(distinguishingHints([e(1, '{ a(x: "1") }'), e(2, '{ a(x: "1") { b } }')])).toEqual({});
+  it("lists every selector field and distinct ranges", function () {
+    var q = "{ " + metric("a", "1.0", '{address: "0xabc", infrastructure: ETH}') +
+      metric("b", "1.0", '{slugs: ["bitcoin", "ethereum"]}', "utc_now-7d") + "}";
+    expect(queryDetails(q)).toBe(
+      "0xabc, ETH, bitcoin, ethereum \u00b7 1.0 \u00b7 utc_now-3000d \u2192 utc_now, utc_now-7d \u2192 utc_now"
+    );
   });
 
-  it("groups by label when set", function () {
-    var hints = distinguishingHints([
-      { id: 1, query: '{ a(x: "1") }', title: "a", label: "Mine" },
-      { id: 2, query: '{ a(x: "2") }', title: "a" },
-    ]);
-    expect(hints).toEqual({});
+  it("includes slug arguments outside selectors and skips missing parts", function () {
+    expect(queryDetails('{ projectBySlug(slug: "santiment") { name } }')).toBe("santiment");
+    expect(queryDetails('{ getMetric(metric: "nvt") { timeseriesDataJson(from: "utc_now-1d", slug: "bitcoin") } }'))
+      .toBe("bitcoin \u00b7 utc_now-1d \u2192 ");
+    expect(queryDetails("{ allProjects(page: 1) { slug } }")).toBe("");
+  });
+
+  it("returns empty for unparsable queries", function () {
+    expect(queryDetails("{ broken")).toBe("");
   });
 });
 
@@ -205,10 +195,5 @@ describe("sortHistory", function () {
   it("does not mutate the input", function () {
     sortHistory(entries, "runs");
     expect(ids(entries)).toEqual(["a", "b", "c", "d"]);
-  });
-
-  it("formats run counts", function () {
-    expect(formatRunCount(1)).toBe("1 run");
-    expect(formatRunCount(7)).toBe("7 runs");
   });
 });

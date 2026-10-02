@@ -6,7 +6,8 @@
  * implementation keyed by position, so closing or dragging a tab moved
  * names onto the wrong tabs.
  *
- * State shape: { version: 2, counter, auto: { id: "Query 3" }, custom: { id: "My name" } }
+ * State shape: { counter, auto: { id: "Query 3" }, custom: { id: "My name" } }
+ * (versioned through the storage key).
  *   auto   - "Query N" given to a tab while it has no operation name
  *   custom - name set by double-clicking the tab; wins over everything
  */
@@ -14,11 +15,11 @@ export var UNTITLED = "<untitled>";
 var AUTO_NAME = /^Query \d+$/;
 
 export function emptyTabNames() {
-  return { version: 2, counter: 0, auto: {}, custom: {} };
+  return { counter: 0, auto: {}, custom: {} };
 }
 
 export function isValidTabNames(state) {
-  return !!state && state.version === 2 && typeof state.counter === "number" &&
+  return !!state && typeof state.counter === "number" &&
     !!state.auto && typeof state.auto === "object" &&
     !!state.custom && typeof state.custom === "object";
 }
@@ -42,7 +43,7 @@ export function migrateLegacyTabNames(legacyNames, legacyCounter, tabs) {
 // Returns { state, names, changed }. names maps tab id to the name to show,
 // or null to keep GraphiQL's own title (the operation name).
 export function resolveTabNames(tabs, state) {
-  var next = { version: 2, counter: state.counter, auto: {}, custom: {} };
+  var next = { counter: state.counter, auto: {}, custom: {} };
   var names = {};
 
   tabs.forEach(function (tab) {

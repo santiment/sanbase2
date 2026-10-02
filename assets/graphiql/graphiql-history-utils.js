@@ -4,16 +4,12 @@
  */
 import { parse, stripIgnoredCharacters, visit, Kind } from "graphql";
 
-// Favorites survive a Clear, everything else goes.
-export function itemsToClear(items) {
-  return items.filter(function (item) {
-    return !item.favorite;
-  });
-}
-
-// JSON with object keys sorted at every level, so {a,b} and {b,a} compare equal.
+// JSON with object keys sorted at every level, so {a,b} and {b,a} compare
+// equal. No variables, null and {} are all "" (GraphiQL sends {} or
+// undefined depending on whether the variables editor holds "{}" or nothing).
 export function canonicalJson(value) {
   if (value === undefined || value === null) return "";
+  if (typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0) return "";
   return JSON.stringify(sortKeys(value));
 }
 
@@ -40,10 +36,25 @@ export function normalizeQuery(query) {
   }
 }
 
+// 53-bit string hash (cyrb53), as 14 hex chars.
+export function hashString(str) {
+  var h1 = 0xdeadbeef;
+  var h2 = 0x41c6ce57;
+  for (var i = 0; i < str.length; i++) {
+    var ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, "0");
+}
+
 // Identity of a history entry: re-running the same query with the same
 // variables (ignoring formatting and key order) maps onto the same entry.
+// Hashed so entries don't store a second copy of the query.
 export function entryKey(query, variables, operationName) {
-  return [normalizeQuery(query), canonicalJson(variables), operationName || ""].join("\u0000");
+  return hashString([normalizeQuery(query), canonicalJson(variables), operationName || ""].join("\u0000"));
 }
 
 // "Is this fetcher call a user execution?" Introspection calls the same
@@ -77,7 +88,7 @@ export function classifyResult(result) {
   return { status: hasData ? "partial" : "error", error: message };
 }
 
-function truncate(s, n) {
+export function truncate(s, n) {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
 }
 
@@ -154,73 +165,61 @@ export function durationStats(runs) {
     .filter(function (d) { return typeof d === "number"; });
   if (ds.length === 0) return null;
   var sum = ds.reduce(function (a, b) { return a + b; }, 0);
-  return { min: Math.min.apply(null, ds), max: Math.max.apply(null, ds), avg: sum / ds.length, count: ds.length };
+  return { min: Math.min.apply(null, ds), max: Math.max.apply(null, ds), avg: sum / ds.length };
 }
 
-// Literal argument values in a query (strings, numbers, enums, booleans),
-// in document order, deduplicated.
-export function queryLiterals(query) {
+// Short description of what a query asks for, shown under each history
+// title: targets (values inside `selector: {...}` plus `slug`/`slugs`
+// arguments), metric versions and from → to ranges, each deduplicated across
+// aliases and joined with " · ". E.g. for two aliased getMetric calls:
+//   "ethereum · original:v1, modern:v1 · utc_now-3000d → utc_now"
+var TARGET_ARGS = { slug: true, slugs: true };
+
+function stringArg(field, name) {
+  var arg = (field.arguments || []).find(function (a) { return a.name.value === name; });
+  return arg && arg.value.kind === Kind.STRING ? arg.value.value : null;
+}
+
+export function queryDetails(query) {
   var doc;
   try {
     doc = parse(query || "");
   } catch (e) {
-    return [];
+    return "";
   }
-  var seen = {};
-  var out = [];
+  var targets = [];
+  var versions = [];
+  var ranges = [];
+  function add(list, value) {
+    if (value && list.indexOf(value) === -1) list.push(value);
+  }
+
   visit(doc, {
-    enter: function (node) {
-      var v;
-      switch (node.kind) {
-        case Kind.STRING:
-        case Kind.INT:
-        case Kind.FLOAT:
-        case Kind.ENUM:
-          v = node.value;
-          break;
-        case Kind.BOOLEAN:
-          v = String(node.value);
-          break;
-        default:
-          return;
-      }
-      if (!seen[v]) {
-        seen[v] = true;
-        out.push(v);
-      }
+    Field: function (field) {
+      add(versions, stringArg(field, "version"));
+      var from = stringArg(field, "from");
+      var to = stringArg(field, "to");
+      if (from || to) add(ranges, (from || "") + " \u2192 " + (to || ""));
+    },
+    enter: function (node, _key, parent, _path, ancestors) {
+      if (node.kind !== Kind.STRING && node.kind !== Kind.ENUM) return;
+      // `ancestors` excludes the direct parent (an Argument / ObjectField / list).
+      var named = ancestors.concat([parent]).filter(function (a) {
+        return a && (a.kind === Kind.ARGUMENT || a.kind === Kind.OBJECT_FIELD);
+      });
+      var inSelector = named.some(function (a) {
+        return a.kind === Kind.ARGUMENT && a.name.value === "selector";
+      });
+      var nearest = named[named.length - 1];
+      if (inSelector || (nearest && TARGET_ARGS[nearest.name.value])) add(targets, node.value);
     },
   });
-  return out;
+
+  return [targets, versions, ranges]
+    .filter(function (list) { return list.length; })
+    .map(function (list) { return list.join(", "); })
+    .join(" \u00b7 ");
 }
-
-// For entries that share a title (e.g. several "getMetric(dev_activity)"),
-// the literal values that set each one apart from the others in its group,
-// e.g. "ethereum" vs "bitcoin". Returns { [id]: "hint" }; entries with a
-// unique title get no hint.
-export function distinguishingHints(entries) {
-  var groups = {};
-  entries.forEach(function (e) {
-    var t = e.label || e.title;
-    (groups[t] = groups[t] || []).push(e);
-  });
-
-  var hints = {};
-  Object.keys(groups).forEach(function (t) {
-    var group = groups[t];
-    if (group.length < 2) return;
-    var lits = group.map(function (e) { return queryLiterals(e.query); });
-    var common = lits[0].filter(function (v) {
-      return lits.every(function (l) { return l.indexOf(v) !== -1; });
-    });
-    group.forEach(function (e, i) {
-      var diff = lits[i].filter(function (v) { return common.indexOf(v) === -1; });
-      if (diff.length) hints[e.id] = diff.join(", ");
-    });
-  });
-  return hints;
-}
-
-export var SORT_MODES = ["recent", "runs"];
 
 // "recent": last run first. "runs": most executed first, ties by recency.
 export function sortHistory(entries, mode) {
@@ -229,8 +228,4 @@ export function sortHistory(entries, mode) {
     ? function (a, b) { return (b.runCount || 0) - (a.runCount || 0) || byRecent(a, b); }
     : byRecent;
   return entries.slice().sort(cmp);
-}
-
-export function formatRunCount(n) {
-  return n === 1 ? "1 run" : n + " runs";
 }

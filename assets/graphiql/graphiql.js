@@ -20,8 +20,9 @@ import { useMonaco } from "@graphiql/react";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
 import { historyPlugin } from "./graphiql-history-plugin.js";
-import { createHistoryStore } from "./graphiql-history-store.js";
+import { createHistoryStore, withHistory } from "./graphiql-history-store.js";
 import { createFetcher } from "./graphiql-fetcher.js";
+import { localStorageBackend } from "./graphiql-storage.js";
 import { ChartButton } from "./graphiql-chart-modal.js";
 import { TableButton } from "./graphiql-table-modal.js";
 import { SanTabNames } from "./graphiql-tab-names.js";
@@ -108,20 +109,25 @@ function onEditVariables(variables) {
   });
 }
 
+// --- Storage ---
+// Where history and the autocomplete cache are kept. To use another browser
+// storage, swap this line for another backend (see graphiql-storage.js).
+const storage = localStorageBackend();
+
 // --- HTTP Fetcher ---
 // Cancellable (Stop aborts the request), turns non-JSON error pages into
 // readable errors, and records executions in the query history.
-const historyStore = createHistoryStore();
+const historyStore = createHistoryStore({ storage: storage });
 
 const graphqlEndpoint = window.location.origin + "/graphql";
 
-const fetcher = createFetcher({
-  endpoint: graphqlEndpoint,
-  historyStore: historyStore,
-  onHistoryError: function(e) {
+const fetcher = withHistory(
+  createFetcher({ endpoint: graphqlEndpoint }),
+  historyStore,
+  function(e) {
     console.error("[graphiql-history] failed to record run", e);
-  },
-});
+  }
+);
 
 const graphiqlRoot = document.getElementById("graphiql");
 if (!graphiqlRoot) {
@@ -157,7 +163,7 @@ root.render(
     // Tab names keyed by tab id ("Query N", double-click to rename)
     React.createElement(SanTabNames),
     // Suggestions inside metric/slug/version strings
-    React.createElement(SanAutocomplete, { endpoint: graphqlEndpoint }),
+    React.createElement(SanAutocomplete, { endpoint: graphqlEndpoint, storage: storage }),
     // Toolbar: render prop receives default buttons, we append the chart button
     React.createElement(
       GraphiQL.Toolbar,

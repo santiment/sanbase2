@@ -18,36 +18,29 @@ import {
   resolveTabNames,
   setCustomTabName,
 } from "./graphiql-tab-names-utils.js";
+import { defaultStorage, readJson, writeJson } from "./graphiql-storage.js";
 
 var STORAGE_KEY = "san-graphiql-tab-names-v2";
 var LEGACY_NAMES_KEY = "san-graphiql-tab-names";
 var LEGACY_COUNTER_KEY = "san-graphiql-tab-counter";
 var MAX_APPLY_RETRIES = 10;
 
-function readJson(key) {
-  try {
-    var raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
-}
-
+// Names still work for the page session when storage is unavailable.
 function save(state) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {
-    // Names still work for this page session.
-  }
+  writeJson(defaultStorage(), STORAGE_KEY, state);
 }
 
 function load(tabs) {
-  var state = readJson(STORAGE_KEY);
+  var storage = defaultStorage();
+  var state = readJson(storage, STORAGE_KEY);
   if (isValidTabNames(state)) return state;
-  var legacy = readJson(LEGACY_NAMES_KEY);
+  var legacy = readJson(storage, LEGACY_NAMES_KEY);
   if (legacy && typeof legacy === "object") {
-    var counter = parseInt(readJson(LEGACY_COUNTER_KEY), 10);
-    return migrateLegacyTabNames(legacy, counter, tabs);
+    // Saved right away: legacy names are keyed by position, so migrating
+    // again after a reorder would put them on the wrong tabs.
+    var migrated = migrateLegacyTabNames(legacy, parseInt(readJson(storage, LEGACY_COUNTER_KEY), 10), tabs);
+    save(migrated);
+    return migrated;
   }
   return emptyTabNames();
 }
@@ -79,20 +72,22 @@ function openRenameInput(btn, initial, onCommit) {
   input.select();
 
   var finished = false;
-  function finish(commit) {
+  // refocus: only for Enter/Escape; on blur the user clicked elsewhere and
+  // focus must stay there.
+  function finish(commit, refocus) {
     if (finished) return;
     finished = true;
     window.removeEventListener("resize", cancel);
     if (commit) onCommit(input.value);
     input.remove();
-    btn.focus();
+    if (refocus) btn.focus();
   }
-  function cancel() { finish(false); }
+  function cancel() { finish(false, false); }
 
-  input.addEventListener("blur", function () { finish(true); });
+  input.addEventListener("blur", function () { finish(true, false); });
   input.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") { e.preventDefault(); finish(true); }
-    if (e.key === "Escape") { e.preventDefault(); finish(false); }
+    if (e.key === "Enter") { e.preventDefault(); finish(true, true); }
+    if (e.key === "Escape") { e.preventDefault(); finish(false, true); }
   });
   window.addEventListener("resize", cancel);
 }
@@ -118,9 +113,11 @@ export function SanTabNames() {
     }
     retryRef.current = 0;
     buttons.forEach(function (btn, i) {
-      var id = current[i].id;
-      var name = namesRef.current[id];
-      btn.dataset.sanTabId = id;
+      var tab = current[i];
+      var name = namesRef.current[tab.id];
+      btn.dataset.sanTabId = tab.id;
+      // GraphiQL sets title={tab.title}; re-applied here after each tabs change.
+      btn.title = name || tab.title;
       if (name) {
         btn.dataset.sanName = name;
         btn.setAttribute("aria-label", name);
@@ -132,6 +129,7 @@ export function SanTabNames() {
   }
 
   function refresh() {
+    retryRef.current = 0;
     var resolved = resolveTabNames(tabsRef.current, stateRef.current);
     stateRef.current = resolved.state;
     namesRef.current = resolved.names;

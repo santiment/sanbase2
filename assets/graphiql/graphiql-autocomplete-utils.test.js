@@ -53,7 +53,6 @@ describe("getStringContext", function () {
   it("detects list elements", function () {
     var c = ctxAt('{ getMetric(metric: "price_usd") { timeseriesPerSlugDataJson(selector: {slugs: ["bitcoin", "eth|"]}) } }');
     expect(c.kind).toBe("slug");
-    expect(c.inList).toBe(true);
     expect(c.metric).toBe("price_usd");
     var m = ctxAt('{ getAvailableSlugs(metrics: ["|"]) }');
     expect(m.kind).toBe("metric");
@@ -90,6 +89,12 @@ describe("getStringContext", function () {
     expect(c.prefix).toBe("d");
   });
 
+  it("does not suggest project slugs for watchlist / non-crypto asset slugs", function () {
+    expect(ctxAt('{ watchlistBySlug(slug: "my-|") { id } }').kind).toBeNull();
+    expect(ctxAt('{ nonCryptoAssetBySlug(slug: "|") { name } }').kind).toBeNull();
+    expect(ctxAt('{ projectBySlug(slug: "|") { name } }').kind).toBe("slug");
+  });
+
   it("supports variables-free bare field selection sets", function () {
     var c = ctxAt('{ getMetric(metric: "nvt") { metadata { availableSlugs } timeseriesDataJson(slug: "|") } }');
     expect(c.kind).toBe("slug");
@@ -98,7 +103,8 @@ describe("getStringContext", function () {
 });
 
 describe("rankMetrics", function () {
-  var metrics = ["daily_active_addresses", "dev_activity", "dev_activity_1d", "github_activity", "price_usd", "active_addresses_24h"];
+  // Sorted, as the data module provides them.
+  var metrics = ["active_addresses_24h", "daily_active_addresses", "dev_activity", "dev_activity_1d", "github_activity", "price_usd"];
 
   it("ranks exact, prefix, segment, substring", function () {
     expect(rankMetrics(metrics, "dev_activity")).toEqual(["dev_activity", "dev_activity_1d"]);
@@ -109,18 +115,17 @@ describe("rankMetrics", function () {
   it("is case-insensitive and lists everything on an empty query", function () {
     expect(rankMetrics(metrics, "PRICE")).toEqual(["price_usd"]);
     expect(rankMetrics(metrics, "").length).toBe(metrics.length);
-    expect(rankMetrics(metrics, "", 2)).toEqual(["active_addresses_24h", "daily_active_addresses"]);
   });
 });
 
 describe("rankSlugs", function () {
-  var projects = [
-    { slug: "ethereum-classic", name: "Ethereum Classic", ticker: "ETC" },
-    { slug: "ethereum", name: "Ethereum", ticker: "ETH" },
-    { slug: "ethena", name: "Ethena", ticker: "ENA" },
-    { slug: "bitcoin", name: "Bitcoin", ticker: "BTC" },
-    { slug: "wrapped-bitcoin", name: "Wrapped Bitcoin", ticker: "WBTC" },
-  ];
+  var projects = unpackProjects([
+    ["ethereum-classic", "Ethereum Classic", "ETC"],
+    ["ethereum", "Ethereum", "ETH"],
+    ["ethena", "Ethena", "ENA"],
+    ["bitcoin", "Bitcoin", "BTC"],
+    ["wrapped-bitcoin", "Wrapped Bitcoin", "WBTC"],
+  ]);
   var slugs = function (r) { return r.map(function (x) { return x.project.slug; }); };
 
   it("matches slug, name and ticker", function () {
@@ -163,8 +168,8 @@ describe("pack/unpack projects", function () {
   it("round-trips", function () {
     var p = [{ slug: "bitcoin", name: "Bitcoin", ticker: "BTC" }, { slug: "x", name: null, ticker: undefined }, null];
     expect(unpackProjects(packProjects(p))).toEqual([
-      { slug: "bitcoin", name: "Bitcoin", ticker: "BTC" },
-      { slug: "x", name: "", ticker: "" },
+      { slug: "bitcoin", name: "Bitcoin", ticker: "BTC", lower: ["bitcoin", "bitcoin", "btc"] },
+      { slug: "x", name: "", ticker: "", lower: ["x", "", ""] },
     ]);
   });
 });

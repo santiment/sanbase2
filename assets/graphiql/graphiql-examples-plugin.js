@@ -6,6 +6,7 @@
 import React, { useCallback, useState } from "react";
 import { useGraphiQL } from "@graphiql/react";
 import sections from "./graphiql-examples.js";
+import { loadIntoEditors } from "./graphiql-editors.js";
 
 // --- Icon: a book/guide icon ---
 var BookIcon = function () {
@@ -144,12 +145,7 @@ function ExamplesContent() {
 
   var handleClick = useCallback(
     function (example) {
-      if (editors.queryEditor) {
-        editors.queryEditor.setValue(example.query);
-      }
-      if (editors.variableEditor) {
-        editors.variableEditor.setValue(example.variables || "");
-      }
+      loadIntoEditors(editors, example.query, example.variables);
     },
     [editors]
   );

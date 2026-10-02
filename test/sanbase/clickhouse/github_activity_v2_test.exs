@@ -13,18 +13,18 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       assert query.parameters[:organizations] == ["org1", "org2"]
       assert query.parameters[:max_daily_events] == SqlQuery.max_daily_actor_repo_events()
 
-      assert query.sql =~ "cityHash64(owner, repo, cityHash64(actor)) AS group_key"
-      assert query.sql =~ "least(1, {{max_daily_events}} / day_events)"
+      assert query.sql =~ "GROUP BY owner, repo, actor, day"
+      assert query.sql =~ "least(1, {{max_daily_events}} / greatest(day_dev_events, 1))"
     end
 
     test "day-aligned intervals compute the day totals without a window function" do
       for interval <- ["1d", "7d", "toStartOfDay", "toStartOfWeek", "toStartOfMonth"] do
         query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, interval)
 
-        refute query.sql =~ "sum(events) OVER (PARTITION BY group_key, day)",
+        refute query.sql =~ "sum(dev_events) OVER (PARTITION BY owner, repo, actor, day)",
                "#{interval} should not use a window function for the day totals"
 
-        assert query.sql =~ "GROUP BY group_key, day"
+        assert query.sql =~ "GROUP BY owner, repo, actor, day"
       end
     end
 
@@ -32,7 +32,8 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
       for interval <- ["1h", "5h", "12h", "toStartOfHour"] do
         query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, interval)
 
-        assert query.sql =~ "sum(events) OVER (PARTITION BY group_key, day) AS day_events",
+        assert query.sql =~
+                 "sum(dev_events) OVER (PARTITION BY owner, repo, actor, day) AS day_dev_events",
                "#{interval} should use a window function"
       end
     end
@@ -115,10 +116,10 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
         assert query.sql =~ "event IN ({{dev_events}}) AS is_dev"
 
         assert query.sql =~
-                 "uniqExactIf(hour_of_day, is_dev) OVER (PARTITION BY owner, actor_key, day) AS active_hours"
+                 "uniqExactIf(hour_of_day, is_dev) OVER (PARTITION BY owner, actor, day) AS active_hours"
 
         assert query.sql =~
-                 "sumIf(events, is_dev) OVER (PARTITION BY owner, actor_key, day, hour_of_day) AS hour_events"
+                 "sumIf(events, is_dev) OVER (PARTITION BY owner, actor, day, hour_of_day) AS hour_events"
 
         assert query.sql =~ "active_hours < {{automation_active_hours}}"
         assert query.sql =~ "peak_hour_events < {{automation_hourly_events}}"
@@ -128,17 +129,15 @@ defmodule Sanbase.Clickhouse.GithubActivityV2Test do
     test "the actor is identified across the repos of an organization" do
       query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, "1d")
 
-      assert query.sql =~ "cityHash64(actor) AS actor_key"
-
       assert query.sql =~
-               "GROUP BY owner, group_key, actor_key, day, hour_of_day, in_range, is_dev"
+               "GROUP BY owner, repo, actor, day, hour_of_day, in_range, is_dev"
     end
 
     test "intraday intervals keep the interval of the events" do
       query = SqlQuery.dev_activity_v2_query(["org"], @from, @to, "1h")
 
       assert query.sql =~
-               "GROUP BY owner, group_key, actor_key, day, hour_of_day, time, in_range, is_dev"
+               "GROUP BY owner, repo, actor, day, hour_of_day, time, in_range, is_dev"
     end
   end
 

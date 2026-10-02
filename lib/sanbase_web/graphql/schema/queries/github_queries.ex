@@ -13,8 +13,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
     Aggregated github activity stats for a list of projects in a given time
     period. Returns one entry per project with the total dev/github activity
     and contributors count, as well as the same numbers computed only for bot
-    accounts - actors whose name ends with `[bot]` or `-bot` and known bot
-    accounts like `copilot`. The bot numbers are a
+    accounts - actors whose name ends with `[bot]`. The bot numbers are a
     subset of the totals, they are not subtracted from them.
 
     The projects are selected either explicitly, by providing a list of slugs,

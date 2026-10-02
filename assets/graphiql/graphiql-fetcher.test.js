@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { fetcherReturnToPromise, isObservable } from "@graphiql/toolkit";
 import { createFetcher, parseResponse, bodySnippet } from "./graphiql-fetcher.js";
-import { withHistory } from "./graphiql-history-store.js";
+import { withHistory, createHistoryStore, STORAGE_KEY } from "./graphiql-history-store.js";
+import { memoryBackend } from "./graphiql-storage.js";
 
 // The production composition: HTTP fetcher wrapped with history recording.
 function recording(fetchImpl, history, onError) {
@@ -101,6 +102,21 @@ describe("createFetcher", function () {
     expect(f.calls[0].aborted).toBe(false);
     expect(history.finished.length).toBe(1);
     expect(history.finished[0][1].status).toBe("success");
+  });
+
+  it("never stores the request headers (API keys) in history", async function () {
+    var f = controllableFetch();
+    var backend = memoryBackend();
+    var store = createHistoryStore({ storage: backend, legacyStorage: null });
+    await store.ready;
+    var p = run(recording(f, store), { query: "{ a }" }, { headers: { Authorization: "Apikey secret" }, documentAST: undefined });
+    await flush();
+    expect(f.calls[0].init.headers.Authorization).toBe("Apikey secret"); // sent...
+    f.calls[0].resolve(response(200, '{"data":{"a":1}}'));
+    await p;
+    await store.flush();
+    expect(JSON.stringify(await backend.get(STORAGE_KEY))).not.toContain("secret"); // ...never stored
+    expect(store.getSnapshot().entries.length).toBe(1);
   });
 
   it("records an error outcome when the wrapped fetcher errors", function () {

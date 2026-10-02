@@ -117,7 +117,12 @@ const storage = localStorageBackend();
 // --- HTTP Fetcher ---
 // Cancellable (Stop aborts the request), turns non-JSON error pages into
 // readable errors, and records executions in the query history.
-const historyStore = createHistoryStore({ storage: storage });
+const historyStore = createHistoryStore({
+  storage: storage,
+  onError: function(e) {
+    console.error("[graphiql-history] failed to save history", e);
+  },
+});
 
 const graphqlEndpoint = window.location.origin + "/graphql";
 
@@ -160,11 +165,11 @@ root.render(
     },
     // Custom Monaco theme — must be inside GraphiQL to access useMonaco hook
     React.createElement(SantimentTheme),
-    // Tab names keyed by tab id ("Query N", double-click to rename)
+    // Tab names keyed by tab id ("Query N", double-click or F2 to rename)
     React.createElement(SanTabNames),
     // Suggestions inside metric/slug/version strings
     React.createElement(SanAutocomplete, { endpoint: graphqlEndpoint, storage: storage }),
-    // Toolbar: render prop receives default buttons, we append the chart button
+    // Toolbar: render prop receives default buttons, we append the chart and table buttons
     React.createElement(
       GraphiQL.Toolbar,
       null,

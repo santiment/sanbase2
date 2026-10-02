@@ -1,5 +1,6 @@
 /**
- * Tab naming: untitled tabs get "Query N", double-click a tab to rename it.
+ * Tab naming: untitled tabs get "Query N"; double-click a tab, or focus it
+ * and press F2, to rename it.
  *
  * Rendered as an invisible child of <GraphiQL> so it can read the tab list
  * from GraphiQL state. GraphiQL recomputes tab.title from the query on every
@@ -51,9 +52,9 @@ function tabButtons() {
 }
 
 // Floating input over the tab button, appended to <body> so the tab's
-// React-managed children are left alone.
-function openRenameInput(btn, initial, onCommit) {
-  if (document.querySelector(".san-tab-rename")) return;
+// React-managed children are left alone. Returns a function that closes it
+// without committing; onClose runs however it closes.
+function openRenameInput(btn, initial, onCommit, onClose) {
   var rect = btn.getBoundingClientRect();
   var style = getComputedStyle(btn);
   var input = document.createElement("input");
@@ -80,6 +81,7 @@ function openRenameInput(btn, initial, onCommit) {
     window.removeEventListener("resize", cancel);
     if (commit) onCommit(input.value);
     input.remove();
+    onClose();
     if (refocus) btn.focus();
   }
   function cancel() { finish(false, false); }
@@ -90,6 +92,7 @@ function openRenameInput(btn, initial, onCommit) {
     if (e.key === "Escape") { e.preventDefault(); finish(false, true); }
   });
   window.addEventListener("resize", cancel);
+  return cancel;
 }
 
 export function SanTabNames() {
@@ -116,6 +119,7 @@ export function SanTabNames() {
       var tab = current[i];
       var name = namesRef.current[tab.id];
       btn.dataset.sanTabId = tab.id;
+      btn.setAttribute("aria-keyshortcuts", "F2"); // rename
       // GraphiQL sets title={tab.title}; re-applied here after each tabs change.
       btn.title = name || tab.title;
       if (name) {
@@ -143,24 +147,48 @@ export function SanTabNames() {
   useEffect(function () {
     var root = document.getElementById("graphiql");
     if (!root) return undefined;
+    var closeRename = null; // set while a rename input is open
 
-    function onDblClick(e) {
+    function tabButton(e) {
       var btn = e.target.closest(".graphiql-tab-button");
-      if (!btn || !btn.dataset.sanTabId) return;
-      e.preventDefault();
-      e.stopPropagation();
+      return btn && btn.dataset.sanTabId ? btn : null;
+    }
+
+    function startRename(btn) {
+      if (closeRename) return;
       var id = btn.dataset.sanTabId;
       var tab = tabsRef.current.find(function (t) { return t.id === id; });
       var initial = namesRef.current[id] || (tab && tab.title !== UNTITLED ? tab.title : "");
-      openRenameInput(btn, initial, function (value) {
+      closeRename = openRenameInput(btn, initial, function (value) {
         stateRef.current = setCustomTabName(stateRef.current, id, value);
         refresh();
         save(stateRef.current);
-      });
+      }, function () { closeRename = null; });
+    }
+
+    function onDblClick(e) {
+      var btn = tabButton(e);
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      startRename(btn);
+    }
+
+    // Keyboard equivalent of the double-click.
+    function onKeyDown(e) {
+      var btn = e.key === "F2" && tabButton(e);
+      if (!btn) return;
+      e.preventDefault();
+      startRename(btn);
     }
 
     root.addEventListener("dblclick", onDblClick);
-    return function () { root.removeEventListener("dblclick", onDblClick); };
+    root.addEventListener("keydown", onKeyDown);
+    return function () {
+      root.removeEventListener("dblclick", onDblClick);
+      root.removeEventListener("keydown", onKeyDown);
+      if (closeRename) closeRename(); // don't leave the body-mounted input behind
+    };
   }, []);
 
   return null;

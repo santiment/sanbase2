@@ -9,10 +9,10 @@
  * State shape: { counter, auto: { id: "Query 3" }, custom: { id: "My name" } }
  * (versioned through the storage key).
  *   auto   - "Query N" given to a tab while it has no operation name
- *   custom - name set by double-clicking the tab; wins over everything
+ *   custom - name set by double-clicking the tab (or F2); wins over everything
  */
 export var UNTITLED = "<untitled>";
-var AUTO_NAME = /^Query \d+$/;
+var AUTO_NAME = /^Query (\d+)$/;
 
 export function emptyTabNames() {
   return { counter: 0, auto: {}, custom: {} };
@@ -26,15 +26,20 @@ export function isValidTabNames(state) {
 
 // Old format: { "tab-0": "Query 1", "tab-1": "My name" } keyed by position,
 // plus a separate counter. Mapped onto the current tabs by position, once.
+// The counter never goes below a migrated "Query N" (even for tabs that are
+// gone), so new tabs never repeat a number.
 export function migrateLegacyTabNames(legacyNames, legacyCounter, tabs) {
   var state = emptyTabNames();
   state.counter = Number.isFinite(legacyCounter) ? legacyCounter : 0;
   Object.keys(legacyNames || {}).forEach(function (key) {
+    var name = legacyNames[key];
+    if (typeof name !== "string" || !name.trim()) return;
+    var auto = AUTO_NAME.exec(name);
+    if (auto) state.counter = Math.max(state.counter, Number(auto[1]));
     var m = /^tab-(\d+)$/.exec(key);
     var tab = m && tabs[Number(m[1])];
-    var name = legacyNames[key];
-    if (!tab || typeof name !== "string" || !name.trim()) return;
-    if (AUTO_NAME.test(name)) state.auto[tab.id] = name;
+    if (!tab) return;
+    if (auto) state.auto[tab.id] = name;
     else state.custom[tab.id] = name;
   });
   return state;

@@ -2,16 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { createAutocompleteData, CACHE_KEY } from "./graphiql-autocomplete-data.js";
 import { createRequest } from "./graphiql-fetcher.js";
 import { localStorageBackend } from "./graphiql-storage.js";
-
-function memoryStorage() {
-  var data = {};
-  return {
-    data: data,
-    getItem: function (k) { return k in data ? data[k] : null; },
-    setItem: function (k, v) { data[k] = String(v); },
-    removeItem: function (k) { delete data[k]; },
-  };
-}
+import { fakeLocalStorage } from "./graphiql-test-support.js";
 
 var LISTS = {
   getAvailableMetrics: ["price_usd", "dev_activity"],
@@ -34,7 +25,7 @@ function fakeRequest() {
 describe("autocomplete data", function () {
   it("loads lists once, sorted and cleaned, and caches them in storage", async function () {
     var request = fakeRequest();
-    var storage = memoryStorage();
+    var storage = fakeLocalStorage();
     var data = createAutocompleteData({ request: request, storage: localStorageBackend(storage), now: function () { return 1000; } });
     var lists = await data.getLists();
     await data.getLists();
@@ -47,7 +38,7 @@ describe("autocomplete data", function () {
   });
 
   it("uses the storage cache on the next page load without a request", async function () {
-    var storage = memoryStorage();
+    var storage = fakeLocalStorage();
     await createAutocompleteData({ request: fakeRequest(), storage: localStorageBackend(storage), now: function () { return 1000; } }).getLists();
     var request = fakeRequest();
     var data = createAutocompleteData({ request: request, storage: localStorageBackend(storage), now: function () { return 2000; } });
@@ -57,7 +48,7 @@ describe("autocomplete data", function () {
   });
 
   it("answers from a stale cache and refreshes in the background", async function () {
-    var storage = memoryStorage();
+    var storage = fakeLocalStorage();
     await createAutocompleteData({ request: fakeRequest(), storage: localStorageBackend(storage), now: function () { return 0; } }).getLists();
     var request = fakeRequest();
     var data = createAutocompleteData({ request: request, storage: localStorageBackend(storage), now: function () { return 25 * 3600 * 1000; } });
@@ -84,7 +75,7 @@ describe("autocomplete data", function () {
   });
 
   it("refreshes a stale cache only once even when the refresh keeps failing", async function () {
-    var storage = memoryStorage();
+    var storage = fakeLocalStorage();
     await createAutocompleteData({ request: fakeRequest(), storage: localStorageBackend(storage), now: function () { return 0; } }).getLists();
     var request = vi.fn(function () { return Promise.reject(new Error("down")); });
     var t = 25 * 3600 * 1000;
@@ -93,11 +84,11 @@ describe("autocomplete data", function () {
     expect(request).toHaveBeenCalledTimes(1);
   });
 
-  it("does not cache a lookup whose result has no metadata", async function () {
+  it("rejects (and retries after the back-off) when metadata is missing", async function () {
     var t = 0;
     var request = vi.fn(function () { return Promise.resolve({ getMetric: null }); });
     var data = createAutocompleteData({ request: request, storage: null, now: function () { return t; } });
-    await expect(data.getMetricMeta("nope")).rejects.toThrow();
+    await expect(data.getMetricMeta("nope")).rejects.toThrow("no metadata for nope");
     t = 31 * 1000;
     await expect(data.getMetricMeta("nope")).rejects.toThrow();
     expect(request).toHaveBeenCalledTimes(2);
@@ -105,7 +96,7 @@ describe("autocomplete data", function () {
 
   it("memoizes per-metric lookups in memory only", async function () {
     var request = fakeRequest();
-    var storage = memoryStorage();
+    var storage = fakeLocalStorage();
     var data = createAutocompleteData({ request: request, storage: localStorageBackend(storage) });
     var s1 = await data.getMetricSlugs("price_usd");
     await data.getMetricSlugs("price_usd");
@@ -113,6 +104,20 @@ describe("autocomplete data", function () {
     expect((await data.getMetricMeta("nvt")).humanReadableName).toBe("NVT");
     expect(request).toHaveBeenCalledTimes(2);
     expect(Object.keys(storage.data)).toEqual([]);
+  });
+
+  it("treats a corrupt cache as a miss and fetches", async function () {
+    var storage = fakeLocalStorage();
+    storage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: 1, metrics: ["a", 5], projects: [["bitcoin", null, "BTC"], 7] }));
+    var request = fakeRequest();
+    var data = createAutocompleteData({ request: request, storage: localStorageBackend(storage), now: function () { return 2; } });
+    var lists = await data.getLists();
+    expect(lists.metrics).toEqual(["a"]);
+    expect(lists.projects.map(function (p) { return p.slug; })).toEqual(["bitcoin"]);
+    expect(request).not.toHaveBeenCalled();
+    var broken = { getItem: function () { return "{"; }, setItem: function () {} };
+    var data2 = createAutocompleteData({ request: fakeRequest(), storage: localStorageBackend(broken) });
+    expect((await data2.getLists()).metrics.length).toBe(2);
   });
 
   it("works when storage throws", async function () {

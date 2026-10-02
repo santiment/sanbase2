@@ -161,3 +161,39 @@ export function createFetcher(options) {
     };
   };
 }
+
+// Plain request for internal lookups (e.g. autocomplete data). Not recorded
+// in history. Resolves to `data`, rejects when the response has errors.
+// options: { endpoint, fetchImpl, getHeaders }
+export function createRequest(options) {
+  var endpoint = options.endpoint;
+  var fetchImpl = options.fetchImpl || function (url, init) { return fetch(url, init); };
+  var getHeaders = options.getHeaders || function () { return null; };
+
+  return function request(query, variables) {
+    var params = { query: query };
+    var op = /^\s*(?:query|mutation)\s+([_A-Za-z][_0-9A-Za-z]*)/.exec(query);
+    if (op) params.operationName = op[1];
+    if (variables) params.variables = variables;
+    return Promise.resolve()
+      .then(function () {
+        return fetchImpl(endpoint, {
+          method: "POST",
+          headers: mergeHeaders({ headers: getHeaders() }),
+          body: JSON.stringify(params),
+          credentials: "same-origin",
+        });
+      })
+      .then(function (response) {
+        return response.text().then(function (text) {
+          return parseResponse(response.status, response.statusText, text);
+        });
+      })
+      .then(function (result) {
+        if (result.errors && result.errors.length && !result.data) {
+          throw new Error(result.errors[0].message);
+        }
+        return result.data || {};
+      });
+  };
+}

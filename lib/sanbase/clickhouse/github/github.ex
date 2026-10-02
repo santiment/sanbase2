@@ -10,13 +10,15 @@ defmodule Sanbase.Clickhouse.Github do
   accept a `:version` option:
 
     * "1.0" (default) - the number of distinct (owner, repo, dt, event) events.
-    * "2.0" - dev_activity counts only the pushes, pull requests, reviews and
-      releases, excludes the bot actors (the [bot] and -bot ones and the known bot
-      accounts like copilot), counts the same event stored twice a few seconds apart once,
-      excludes the actor-days of automation running under a personal account (dev
-      events in almost every hour of the day or too many dev events in a single
-      hour), and a single actor contributes at most N (configurable) events per
-      repository per day.
+    * "2.0" - both metrics exclude the bot actors (the [bot] and -bot ones and the
+      known bot accounts like copilot), count the same event stored twice a few
+      seconds apart once and exclude the actor-days of automation running under a
+      personal account (dev events in almost every hour of the day or too many dev
+      events in a single hour) and weight the events of an actor in a repository on
+      a day, so that the actor's dev events there count as at most N (configurable).
+      dev_activity also counts only the pushes, pull requests, reviews and releases.
+      Only the dev events decide the automation actor-days and the weights, so
+      github_activity is never lower than dev_activity.
       The values are floats.
 
   The queries of every version live in Sanbase.Clickhouse.Github.SqlQuery and are
@@ -179,7 +181,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   The stats include the total dev/github activity and contributors count, as
   well as the same numbers computed only for bot accounts (actors whose name
-  ends with `[bot]` or `-bot` and the known bot accounts like `copilot`).
+  ends with `[bot]`).
 
   The input is a list of `{github_organization, slug}` pairs, so a slug with
   multiple organizations appears in multiple pairs. All organizations are
@@ -348,10 +350,13 @@ defmodule Sanbase.Clickhouse.Github do
     end)
   end
 
+  # Version 1.0 keeps its behavior from before version 2.0: github_activity runs a
+  # single query for all organizations and dev_activity ignores the failed chunks.
+  @v1_unchunked_queries [:github_activity_query]
+  @v1_partial_chunks_queries [:dev_activity_query]
+
   defp activity_timeseries(_query, _to_number, [], _, _, _, _, _), do: {:ok, []}
 
-  # A failed chunk fails the whole request - a sum without some of the
-  # organizations would be silently lower.
   defp activity_timeseries(
          query,
          to_number,
@@ -362,7 +367,7 @@ defmodule Sanbase.Clickhouse.Github do
          transform,
          ma_base
        )
-       when length(organizations) > 10 do
+       when length(organizations) > 10 and query not in @v1_unchunked_queries do
     ctx = Sanbase.RequestContext.current()
 
     Enum.chunk_every(organizations, 10)
@@ -373,14 +378,7 @@ defmodule Sanbase.Clickhouse.Github do
       ordered: false,
       request_context: ctx
     )
-    |> Enum.reduce_while({:ok, []}, fn
-      {:ok, data}, {:ok, acc} -> {:cont, {:ok, [data | acc]}}
-      {:error, _} = error, _acc -> {:halt, error}
-    end)
-    |> case do
-      {:ok, chunks} -> {:ok, chunks |> Enum.zip() |> Enum.map(&combine_dev_activity/1)}
-      {:error, _} = error -> error
-    end
+    |> combine_chunks(query)
   end
 
   defp activity_timeseries(query, to_number, organizations, from, to, interval, "None", _) do
@@ -404,6 +402,29 @@ defmodule Sanbase.Clickhouse.Github do
     apply(SqlQuery, query, [organizations, from, to, interval])
     |> datetime_activity_execute(to_number)
     |> maybe_apply_function(&Math.simple_moving_average(&1, ma_base, value_key: :activity))
+  end
+
+  defp combine_chunks(results, query) when query in @v1_partial_chunks_queries do
+    results
+    |> Enum.filter(&match?({:ok, _}, &1))
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.zip()
+    |> Enum.map(&combine_dev_activity/1)
+    |> then(fn result -> {:ok, result} end)
+  end
+
+  # A failed chunk fails the whole request - a sum without some of the
+  # organizations would be silently lower.
+  defp combine_chunks(results, _query) do
+    results
+    |> Enum.reduce_while({:ok, []}, fn
+      {:ok, data}, {:ok, acc} -> {:cont, {:ok, [data | acc]}}
+      {:error, _} = error, _acc -> {:halt, error}
+    end)
+    |> case do
+      {:ok, chunks} -> {:ok, chunks |> Enum.zip() |> Enum.map(&combine_dev_activity/1)}
+      {:error, _} = error -> error
+    end
   end
 
   defp combine_dev_activity(tuple) do

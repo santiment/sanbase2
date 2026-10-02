@@ -30,10 +30,9 @@ defmodule Sanbase.Clickhouse.GithubActivityStatsQueryTest do
     end
   end
 
-  test "bots are identified by the [bot] and -bot suffixes and the known bot accounts" do
+  test "bots are identified by the [bot] suffix" do
     query = github_activity_stats_query([{"org1", "slug-a"}], @from, @to)
 
-    assert query.sql =~
-             "(endsWith(actor, '[bot]') OR endsWith(actor, '-bot') OR actor IN ('copilot'))"
+    assert query.sql =~ "endsWith(actor, '[bot]')"
   end
 end

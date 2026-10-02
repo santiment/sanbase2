@@ -104,7 +104,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     with_mocks([
       {Sanbase.Accounts.CouponAttempt, [],
        [
-         check_attempt_limit: fn _, _ -> {:error, :too_many_attempts} end
+         check_attempt_limit: fn _, _ -> {:error, :too_many_burst_attempts} end
        ]}
     ]) do
       query = check_coupon(@coupon_code)

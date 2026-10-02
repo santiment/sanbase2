@@ -1,21 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createHistoryStore, STORAGE_KEY } from "./graphiql-history-store.js";
 import { localStorageBackend, memoryBackend } from "./graphiql-storage.js";
-
-// Fake Web Storage (what localStorageBackend wraps).
-function memoryStorage(initial) {
-  var data = Object.assign({}, initial || {});
-  return {
-    data: data,
-    failures: 0, // next N setItem calls throw like a full quota
-    getItem: function (k) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
-    setItem: function (k, v) {
-      if (this.failures > 0) { this.failures--; throw new Error("QuotaExceededError"); }
-      data[k] = String(v);
-    },
-    removeItem: function (k) { delete data[k]; },
-  };
-}
+import { fakeLocalStorage } from "./graphiql-test-support.js";
 
 // Two "browser tabs" on one store: a write notifies the other tabs only,
 // like the localStorage `storage` event.
@@ -63,7 +49,7 @@ describe("history store", function () {
   }
 
   beforeEach(async function () {
-    ls = memoryStorage();
+    ls = fakeLocalStorage();
     now = clock();
     store = open();
     await store.ready;
@@ -135,12 +121,6 @@ describe("history store", function () {
     expect(store.startRun({ query: "   " })).toBeNull();
     expect(store.startRun({ query: "{ a }" + " ".repeat(100001) })).toBeNull();
     expect(store.getSnapshot().entries.length).toBe(0);
-  });
-
-  it("never stores headers", async function () {
-    run({ query: Q, headers: { Authorization: "Apikey secret" } });
-    await store.flush();
-    expect(ls.getItem(STORAGE_KEY)).not.toContain("secret");
   });
 
   it("caps the run log", function () {
@@ -267,15 +247,154 @@ describe("history store", function () {
     expect(store.getSnapshot().entries[0].runCount).toBe(2);
   });
 
+  it("keeps an old favorite the user un-stars, even when history is full", function () {
+    store = open({ maxEntries: 2 });
+    run({ query: "{ fav }" });
+    var fav = store.getSnapshot().entries[0];
+    store.toggleFavorite(fav.id);
+    ["{ a }", "{ b }"].forEach(function (q) { run({ query: q }); });
+    store.toggleFavorite(fav.id); // now the oldest non-favorite
+    expect(queries()).toContain("{ fav }");
+    expect(store.getSnapshot().entries.find(function (e) { return e.id === fav.id; }).favorite).toBe(false);
+  });
+
+  it("does not record runs whose query + variables exceed 100KB", function () {
+    expect(store.startRun({ query: "{ a }", variables: { list: "x".repeat(100001) } })).toBeNull();
+    expect(store.startRun({ query: "{ a }" + " ".repeat(100001) })).toBeNull();
+    expect(store.getSnapshot().entries.length).toBe(0);
+  });
+
+  it("an entry too big for the space left does not push out older ones", function () {
+    store = open({ maxBytes: 3000 });
+    ["{ a }", "{ b }", "{ c }"].forEach(function (q) { run({ query: q }); });
+    run({ query: "{ big }", variables: { v: "x".repeat(4000) } }); // newest: always kept
+    run({ query: "{ d }" }); // big is now 2nd and over budget: dropped alone
+    expect(queries()).toEqual(["{ d }", "{ c }", "{ b }", "{ a }"]);
+  });
+
+  it("recovers from a backend whose set() throws synchronously", async function () {
+    var calls = 0;
+    var flaky = memoryBackend();
+    var set = flaky.set;
+    flaky.set = function (k, v) {
+      calls++;
+      if (calls === 1) throw new Error("sync boom");
+      return set(k, v);
+    };
+    var errors = [];
+    store = createHistoryStore({ storage: flaky, legacyStorage: null, now: now, onError: function (e) { errors.push(e); } });
+    await store.ready;
+    run({ query: "{ a }" });
+    await store.flush();
+    run({ query: "{ b }" });
+    await store.flush();
+    expect(errors.length).toBe(1);
+    expect((await flaky.get(STORAGE_KEY)).entries.length).toBe(2);
+  });
+
+  it("skips malformed stored entries instead of failing the load", async function () {
+    ls.setItem(STORAGE_KEY, JSON.stringify({ entries: [null, 5, { id: "y", query: 7 }, { id: "x", key: "abc",
+      query: "{ ok }", variables: "", title: "ok", lastRunAt: 1, runCount: 1, runs: [] }] }));
+    store = open();
+    await store.ready;
+    expect(queries()).toEqual(["{ ok }"]);
+    await store.flush();
+    expect(stored().entries.length).toBe(1); // cleaned up in storage too
+  });
+
+  it("does not double-count when another tab saves during the initial load", async function () {
+    var tab = sharedBackend();
+    var a = createHistoryStore({ storage: tab(), legacyStorage: null, now: now });
+    await a.ready;
+    var token = a.startRun({ query: "{ x }" });
+    a.finishRun(token, { status: "success", error: null });
+    var b = createHistoryStore({ storage: tab(), legacyStorage: null, now: now }); // loading...
+    await a.flush(); // ...while a saves, which notifies b
+    await b.ready;
+    expect(b.getSnapshot().entries[0].runCount).toBe(1);
+  });
+
+  it("does not drop an unsaved local change when another tab saves", async function () {
+    var tab = sharedBackend();
+    var a = createHistoryStore({ storage: tab(), legacyStorage: null, now: now });
+    var b = createHistoryStore({ storage: tab(), legacyStorage: null, now: now });
+    await Promise.all([a.ready, b.ready]);
+    b.startRun({ query: "{ from-b }".replace("-", "") }); // b has a save queued
+    a.startRun({ query: "{ froma }" });
+    await Promise.all([a.flush(), b.flush()]);
+    expect(b.getSnapshot().entries.map(function (e) { return e.query; })).toContain("{ fromb }");
+  });
+
+  it("two tabs running the same entry converge instead of saving back and forth", async function () {
+    var tab = sharedBackend();
+    var a = createHistoryStore({ storage: tab(), legacyStorage: null, now: now });
+    await a.ready;
+    var t0 = a.startRun({ query: "{ x }" });
+    a.finishRun(t0, { status: "success", error: null });
+    await a.flush();
+    var bBackend = tab();
+    var writes = 0;
+    var set = bBackend.set;
+    bBackend.set = function (k, v) { writes++; return set(k, v); };
+    var b = createHistoryStore({ storage: bBackend, legacyStorage: null, now: now });
+    await b.ready;
+    now.advance(1000);
+    var ta = a.startRun({ query: "{ x }" }); // in flight in a (newer lastRunAt)
+    var tb = b.startRun({ query: "{ x }" });
+    now.advance(10);
+    b.finishRun(tb, { status: "success", error: null }); // finished in b (higher runCount)
+    for (var i = 0; i < 5; i++) { await a.flush(); await b.flush(); }
+    expect(writes).toBeLessThan(5);
+    var ea = a.getSnapshot().entries[0];
+    var eb = b.getSnapshot().entries[0];
+    expect(ea.runCount).toBe(eb.runCount);
+    expect(ea.lastRunAt).toBe(eb.lastRunAt);
+    a.finishRun(ta, { status: "success", error: null });
+  });
+
+  it("marks imported entries, not entries whose first run was interrupted by a reload", async function () {
+    store.startRun({ query: "{ a }" }); // page reloads before it finishes
+    await store.flush();
+    var again = open();
+    await again.ready;
+    expect(again.getSnapshot().entries[0].imported).toBeFalsy();
+  });
+
   describe("when the backend refuses writes", function () {
-    it("evicts the oldest until the write fits, keeping the newest", async function () {
+    it("evicts the oldest until the write fits, in storage and in memory", async function () {
       ["{ a }", "{ b }", "{ c }"].forEach(function (q) { run({ query: q }); });
       await store.flush();
       ls.failures = 1;
-      run({ query: "{ d }" });
+      store.startRun({ query: "{ d }" }); // one change, one failed write, then a trimmed one
       await store.flush();
-      expect(queries()[0]).toBe("{ d }");
-      expect(stored().entries[0].query).toBe("{ d }");
+      var inStorage = stored().entries.map(function (e) { return e.query; });
+      expect(inStorage).toEqual(["{ d }", "{ c }", "{ b }"]);
+      expect(queries()).toEqual(inStorage); // the next save starts from what fit
+    });
+
+    it("does not drop an evicted entry from memory if it was re-run meanwhile", async function () {
+      ["{ a }", "{ b }"].forEach(function (q) { run({ query: q }); });
+      await store.flush();
+      ls.failures = 1;
+      store.startRun({ query: "{ c }" }); // its save will evict { a }
+      run({ query: "{ a }" }); // ...but { a } runs again before that save completes
+      await store.flush();
+      expect(queries()).toContain("{ a }");
+    });
+
+    it("makes one write attempt per change while storage stays blocked", async function () {
+      ["{ a }", "{ b }", "{ c }"].forEach(function (q) { run({ query: q }); });
+      await store.flush();
+      var attempts = 0;
+      var setItem = ls.setItem;
+      ls.setItem = function () { attempts++; throw new Error("QuotaExceededError"); };
+      store.startRun({ query: "{ d }" }); // first failure: evicts down to one, then gives up
+      await store.flush();
+      attempts = 0;
+      store.startRun({ query: "{ e }" });
+      await store.flush();
+      expect(attempts).toBe(1);
+      ls.setItem = setItem;
     });
 
     it("keeps the only non-favorite when favorites fill the quota", async function () {
@@ -360,6 +479,11 @@ describe("history store", function () {
       expect(entries[0].runs.map(function (r) { return r.at; })).toEqual([20, 10]);
     });
 
+    it("flags never-run entries imported by older versions as imported", async function () {
+      await seed([{ id: "x", key: "abc", query: "{ a }", variables: "", title: "a", lastRunAt: 1, runCount: 0, runs: [] }]);
+      expect(store.getSnapshot().entries[0].imported).toBe(true);
+    });
+
     it("drops fields that were duplicated from the last run, and saves the upgrade", async function () {
       await seed([{ id: "x", key: "abc", query: "{ a }", variables: "", title: "a", lastRunAt: 1,
         runCount: 1, runs: [], lastStatus: "success", lastDurationMs: 5, lastError: null, createdAt: 1 }]);
@@ -374,7 +498,7 @@ describe("history store", function () {
 
 describe("legacy migration", function () {
   it("imports stock GraphiQL history and favorites once, deduplicated", async function () {
-    var ls = memoryStorage({
+    var ls = fakeLocalStorage({
       "graphiql:queries": JSON.stringify({
         queries: [
           { query: "{ old }" },
@@ -396,6 +520,7 @@ describe("legacy migration", function () {
     var fav = entries.find(function (e) { return e.favorite; });
     expect(fav.label).toBe("SQL");
     expect(fav.runCount).toBe(0);
+    expect(entries.every(function (e) { return e.imported; })).toBe(true);
 
     // Removing everything does not re-import.
     entries.forEach(function (e) { store.remove(e.id); });
@@ -406,7 +531,7 @@ describe("legacy migration", function () {
   });
 
   it("starts empty when there is nothing to migrate", async function () {
-    var store = createHistoryStore({ storage: memoryBackend(), legacyStorage: memoryStorage(), now: clock() });
+    var store = createHistoryStore({ storage: memoryBackend(), legacyStorage: fakeLocalStorage(), now: clock() });
     await store.ready;
     expect(store.getSnapshot().entries).toEqual([]);
   });

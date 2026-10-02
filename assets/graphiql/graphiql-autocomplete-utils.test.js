@@ -75,6 +75,23 @@ describe("getStringContext", function () {
     expect(c.prefix).toBe("dev");
   });
 
+  it("replaces only the value under the cursor when the closing quote was deleted", function () {
+    // `metric: "price_usd` lost its closing quote; the string now runs into the
+    // following text up to the next quote.
+    var text = '{ getMetric(metric: "price_usd) { timeseriesData(slug: "bitcoin") { value } } }';
+    var offset = text.indexOf("price_usd") + "price_usd".length;
+    var c = getStringContext(text, offset);
+    expect(c.kind).toBe("metric");
+    expect(text.slice(c.start, c.end)).toBe("price_usd");
+    expect(c.closed).toBe(false); // the suggestion adds the closing quote
+  });
+
+  it("keeps the slug's metric context across directives", function () {
+    var c = ctxAt('{ getMetric(metric: "mvrv") @include(if: true) { timeseriesData(slug: "|") } }');
+    expect(c.kind).toBe("slug");
+    expect(c.metric).toBe("mvrv");
+  });
+
   it("ignores other strings, comments, block strings and positions outside strings", function () {
     expect(ctxAt('{ getMetric(metric: "x") { timeseriesDataJson(from: "utc_|") } }').kind).toBeNull();
     expect(ctxAt('# metric: "dev|"\n{ a }')).toBeNull();
@@ -95,7 +112,7 @@ describe("getStringContext", function () {
     expect(ctxAt('{ projectBySlug(slug: "|") { name } }').kind).toBe("slug");
   });
 
-  it("supports variables-free bare field selection sets", function () {
+  it("finds the enclosing getMetric metric past sibling selection sets", function () {
     var c = ctxAt('{ getMetric(metric: "nvt") { metadata { availableSlugs } timeseriesDataJson(slug: "|") } }');
     expect(c.kind).toBe("slug");
     expect(c.metric).toBe("nvt");
@@ -167,6 +184,9 @@ describe("rankVersions", function () {
 describe("pack/unpack projects", function () {
   it("round-trips", function () {
     var p = [{ slug: "bitcoin", name: "Bitcoin", ticker: "BTC" }, { slug: "x", name: null, ticker: undefined }, null];
+    expect(unpackProjects([["bitcoin", null, "BTC"], [null, "x", "y"], "junk"])).toEqual([
+      { slug: "bitcoin", name: "", ticker: "BTC", lower: ["bitcoin", "", "btc"] },
+    ]);
     expect(unpackProjects(packProjects(p))).toEqual([
       { slug: "bitcoin", name: "Bitcoin", ticker: "BTC", lower: ["bitcoin", "bitcoin", "btc"] },
       { slug: "x", name: "", ticker: "", lower: ["x", "", ""] },

@@ -11,15 +11,18 @@
  *   existing entry and moves it to the top instead of adding a new one.
  * - Each entry keeps a short log of recent runs (newest first: status,
  *   duration, error) and a total run count.
- * - History stays within a size budget (default 1MB, localStorage allows
- *   ~5MB per origin) and at most 100 entries: the entries run longest ago are
- *   evicted first. Favorites are never evicted, and the most recently run
- *   entry is always kept.
+ * - History stays within a size budget (default 1MB of serialized JSON, well
+ *   under browser storage quotas) and at most 100 entries: the entries run
+ *   longest ago are evicted first. Favorites are never evicted, the most
+ *   recently run entry is always kept, and so is an entry the user just
+ *   un-favorited or renamed. Runs whose query + variables exceed 100KB are
+ *   not recorded.
  * - Headers are never stored: they usually carry API keys.
  * - Memory is the source of truth: changes show immediately and are
  *   persisted in order through a swappable storage backend (see
- *   graphiql-storage.js). Changes from another browser tab replace the
- *   in-memory list (last write wins).
+ *   graphiql-storage.js). A save from another browser tab is merged in:
+ *   its list wins, except for entries this tab added since it last synced
+ *   (kept) and runs this tab has that the other lacks (combined).
  *
  * No React/GraphiQL imports, so it can be unit-tested in node.
  */
@@ -33,7 +36,7 @@ import {
 import { defaultStorage, memoryBackend, readJson } from "./graphiql-storage.js";
 
 export var STORAGE_KEY = "san-graphiql-history";
-var MAX_QUERY_SIZE = 100000; // same limit as the stock history
+var MAX_ENTRY_SIZE = 100000; // query + variables; the stock history limited the query alone
 var HASHED_KEY = /^[0-9a-f]{14}$/; // entryKey() output; normalized queries contain braces
 
 // Stock @graphiql/toolkit keys, imported once so existing favorites survive.
@@ -69,9 +72,13 @@ var DROPPED_FIELDS = ["lastStatus", "lastDurationMs", "lastError", "createdAt"];
 function upgradeEntry(entry) {
   var stale = DROPPED_FIELDS.some(function (f) { return f in entry; });
   var oldKey = !HASHED_KEY.test(entry.key || "");
-  if (!stale && !oldKey) return entry;
+  // Before the `imported` flag, entries imported from the stock history were
+  // the only ones saved without any run.
+  var unflagged = entry.imported === undefined && !entry.runCount && !(entry.runs && entry.runs.length);
+  if (!stale && !oldKey && !unflagged) return entry;
   var copy = Object.assign({}, entry);
   DROPPED_FIELDS.forEach(function (f) { delete copy[f]; });
+  if (unflagged) copy.imported = true;
   // Recomputed from the entry, not hashed from the old key, so it matches
   // what a re-run produces today.
   if (oldKey) copy.key = entryKey(entry.query, variablesToObject(entry.variables), entry.operationName);
@@ -108,13 +115,15 @@ function mergeDuplicates(list, maxRuns) {
 //   storage        - storage backend (graphiql-storage.js); default in-memory
 //   legacyStorage  - Web Storage holding the stock GraphiQL history to import
 //                    once (default: localStorage)
+//   onError        - called with unexpected persistence errors
 //   maxEntries, maxBytes, maxRuns, now - limits and clock (tests)
 export function createHistoryStore(options) {
   var opts = options || {};
   var storage = opts.storage || memoryBackend();
   var legacyStorage = opts.legacyStorage !== undefined ? opts.legacyStorage : defaultStorage();
+  var onError = opts.onError || function () {};
   var maxEntries = opts.maxEntries || 100;
-  var maxBytes = opts.maxBytes || 1000000; // characters of JSON, ~bytes as localStorage counts them
+  var maxBytes = opts.maxBytes || 1000000; // characters of serialized JSON
   var maxRuns = opts.maxRuns || 20;
   var now = opts.now || Date.now;
 
@@ -122,7 +131,6 @@ export function createHistoryStore(options) {
   var running = {}; // entry id -> number of in-flight runs (memory only)
   var listeners = new Set();
   var snapshot = { entries: entries, running: running };
-  var saving = Promise.resolve();
 
   function emit() {
     snapshot = { entries: entries, running: running };
@@ -133,21 +141,25 @@ export function createHistoryStore(options) {
     return JSON.stringify(entry).length;
   }
 
-  // Least recently run first out. `list` is sorted newest first; keeps all
-  // favorites, then non-favorites from the newest while they fit the count
-  // and size budget. The newest non-favorite is always kept.
-  function evict(list) {
-    var used = list.reduce(function (sum, x) { return x.favorite ? sum + size(x) : sum; }, 0);
+  // Least recently run first out. `list` is sorted newest first. Keeps
+  // favorites and `keepId` (an entry the user is acting on), then the other
+  // entries from the newest while they fit the count and size budget. The
+  // newest is always kept (counted only if it fits, so a large newest entry
+  // cannot evict everything older); any other entry too big for the space
+  // left is dropped on its own.
+  function evict(list, keepId) {
+    function pinned(x) { return x.favorite || x.id === keepId; }
+    var used = list.reduce(function (sum, x) { return pinned(x) ? sum + size(x) : sum; }, 0);
     var kept = 0;
-    var full = false;
     return list.filter(function (x) {
-      if (x.favorite) return true;
-      if (full) return false;
+      if (pinned(x)) return true;
       var s = size(x);
-      if (kept > 0 && (kept >= maxEntries || used + s > maxBytes)) {
-        full = true;
-        return false;
+      if (kept === 0) {
+        kept++;
+        if (used + s <= maxBytes) used += s;
+        return true;
       }
+      if (kept >= maxEntries || used + s > maxBytes) return false;
       kept++;
       used += s;
       return true;
@@ -165,21 +177,100 @@ export function createHistoryStore(options) {
     return list.filter(function (x) { return !x.favorite; }).length > 1;
   }
 
-  // Write `list`; if the backend refuses (e.g. other data on the origin
-  // used up the quota), evict one more entry at a time until it fits. If
-  // nothing fits, history keeps working in memory and the next change
-  // retries.
+  // Set when not even the smallest list could be written (storage blocked,
+  // or the origin's quota used up by other data). While set, each change
+  // makes a single attempt instead of running the eviction loop again.
+  var blocked = false;
+
+  // Write `list`; if the backend refuses (quota), evict one more entry at a
+  // time until it fits. The evicted entries are then dropped from memory
+  // too, so the next save starts from what fits instead of repeating the
+  // loop. If nothing fits, history keeps working in memory.
   function write(list) {
-    return storage.set(STORAGE_KEY, { entries: list }).catch(function (e) {
-      if (!evictable(list)) return undefined;
-      return write(dropOldest(list));
+    function attempt(candidate) {
+      return storage.set(STORAGE_KEY, { entries: candidate }).then(function () {
+        blocked = false;
+        markSynced(candidate);
+        if (candidate.length < list.length) forget(list, candidate);
+      }, function () {
+        if (blocked || !evictable(candidate)) {
+          blocked = true;
+          return undefined;
+        }
+        return attempt(dropOldest(candidate));
+      });
+    }
+    return attempt(list);
+  }
+
+  // Remove from memory the entries of `list` that did not fit in `kept`,
+  // unless they changed since (e.g. were re-run while saving).
+  function forget(list, kept) {
+    var dropped = new Set(list.filter(function (e) { return kept.indexOf(e) === -1; }));
+    entries = entries.filter(function (e) { return !dropped.has(e); });
+    emit();
+  }
+
+  // Ids of the entries this tab last loaded, wrote or adopted: an entry
+  // missing from another tab's save was deleted there if it is in this set,
+  // and is new in this tab otherwise.
+  var synced = new Set();
+  function markSynced(list) {
+    synced = new Set(list.map(function (e) { return e.id; }));
+  }
+
+  // Same entry in both tabs: the other tab's version (its label/favorite are
+  // the latest edit) plus this tab's runs and timestamps. Symmetric, so two
+  // tabs agree after one exchange instead of saving back and forth.
+  function combine(l, r) {
+    var ats = new Set((r.runs || []).map(function (x) { return x.at; }));
+    var extraRuns = (l.runs || []).filter(function (x) { return !ats.has(x.at); });
+    var runCount = Math.max(l.runCount || 0, r.runCount || 0);
+    var lastRunAt = Math.max(l.lastRunAt || 0, r.lastRunAt || 0);
+    if (!extraRuns.length && runCount === (r.runCount || 0) && lastRunAt === (r.lastRunAt || 0)) return r;
+    return Object.assign({}, r, {
+      runCount: runCount,
+      lastRunAt: lastRunAt,
+      runs: (r.runs || []).concat(extraRuns)
+        .sort(function (a, b) { return b.at - a.at; })
+        .slice(0, maxRuns),
     });
   }
 
-  // Saves are chained so they reach the backend in order.
+  // Merge another tab's saved list with this tab's entries.
+  function mergeRemote(remote) {
+    var local = new Map(entries.map(function (e) { return [e.id, e]; }));
+    var remoteIds = new Set();
+    var keptLocal = false;
+    var merged = remote.map(function (r) {
+      remoteIds.add(r.id);
+      var l = local.get(r.id);
+      var c = l ? combine(l, r) : r;
+      if (c !== r) keptLocal = true;
+      return c;
+    });
+    entries.forEach(function (e) {
+      if (!remoteIds.has(e.id) && !synced.has(e.id)) {
+        merged.push(e);
+        keptLocal = true;
+      }
+    });
+    return { list: merged, keptLocal: keptLocal };
+  }
+
+  // Saves are chained so they reach the backend in order, start only after
+  // the initial load, and always write the latest list (several changes in
+  // a row become one write). A failed save never blocks later ones.
+  var saveQueued = false;
+  var saving; // set once `ready` exists
+
   function persist() {
-    var list = entries;
-    saving = saving.then(function () { return write(list); });
+    if (saveQueued) return saving;
+    saveQueued = true;
+    saving = saving.then(function () {
+      saveQueued = false;
+      return write(entries);
+    }).catch(onError);
     return saving;
   }
 
@@ -187,17 +278,29 @@ export function createHistoryStore(options) {
     return evict(mergeDuplicates(sortHistory(list, "recent"), maxRuns));
   }
 
-  function mutate(fn) {
+  function mutate(fn, keepId) {
     var list = entries.slice();
     var result = fn(list);
-    entries = evict(sortHistory(list, "recent"));
+    entries = evict(sortHistory(list, "recent"), keepId);
     emit();
     persist();
     return result;
   }
 
+  // Stored entries, upgraded; malformed ones are skipped instead of failing
+  // the whole load.
   function fromStored(data) {
-    return data && Array.isArray(data.entries) ? data.entries.map(upgradeEntry) : null;
+    if (!data || !Array.isArray(data.entries)) return null;
+    var out = [];
+    data.entries.forEach(function (e) {
+      if (!e || typeof e !== "object" || typeof e.query !== "string" || !e.id) return;
+      try {
+        out.push(upgradeEntry(e));
+      } catch (err) {
+        onError(err);
+      }
+    });
+    return out;
   }
 
   function migrateLegacy() {
@@ -209,45 +312,55 @@ export function createHistoryStore(options) {
       .concat((legacyQueries && legacyQueries.queries) || [])
       .reverse();
 
+    // Duplicates (same key) are merged by normalize().
     var t = now();
-    var byKey = {};
-    var list = [];
-    items.forEach(function (item, i) {
-      if (!item || !item.query) return;
+    return items.filter(function (item) {
+      return item && typeof item.query === "string" && item.query;
+    }).map(function (item, i) {
       var k = entryKey(item.query, variablesToObject(item.variables), item.operationName);
-      var existing = byKey[k];
-      if (existing) {
-        existing.favorite = existing.favorite || !!item.favorite;
-        existing.label = existing.label || item.label || null;
-        return;
-      }
       var entry = newEntry(k, item.query, variablesToString(item.variables), item.operationName, t - i);
       entry.favorite = !!item.favorite;
       entry.label = item.label || null;
-      byKey[k] = entry;
-      list.push(entry);
+      entry.imported = true; // no real run time or runs
+      return entry;
     });
-    return list;
   }
 
   // Initial load. Runs recorded before it finishes are merged in (they are
   // the newest). The result is written back when it differs from what was
-  // stored: first use (legacy import), upgraded or merged entries.
+  // stored: first use (legacy import), upgraded, skipped or merged entries.
+  var loaded = false;
+  var remoteBeforeLoad; // another tab's save that arrived during the load
   var ready = storage.get(STORAGE_KEY)
     .catch(function () { return null; })
     .then(function (data) {
+      loaded = true;
+      if (remoteBeforeLoad !== undefined) data = remoteBeforeLoad;
       var stored = fromStored(data);
       var hadLocal = entries.length > 0;
-      var upgraded = stored && stored.some(function (e, i) { return e !== data.entries[i]; });
+      var upgraded = stored && (stored.length !== data.entries.length ||
+        stored.some(function (e, i) { return e !== data.entries[i]; }));
       entries = normalize(entries.concat(stored || migrateLegacy()));
+      markSynced(stored || []);
       emit();
-      if (!stored || hadLocal || upgraded || entries.length !== stored.length) persist();
+      var changed = stored ? hadLocal || upgraded || entries.length !== stored.length : entries.length > 0;
+      if (changed) persist();
     });
+  saving = ready.catch(onError);
 
-  // Another browser tab saved history: adopt its list.
+  // Another browser tab saved history: merge it in, and save the result if
+  // this tab contributed entries the other tab did not have.
   storage.onChange(STORAGE_KEY, function (data) {
-    entries = normalize(fromStored(data) || []);
+    if (!loaded) {
+      remoteBeforeLoad = data;
+      return;
+    }
+    var remote = fromStored(data) || [];
+    var result = mergeRemote(remote);
+    entries = normalize(result.list);
+    markSynced(remote);
     emit();
+    if (result.keptLocal) persist();
   });
 
   function newEntry(k, query, variables, operationName, at) {
@@ -263,14 +376,15 @@ export function createHistoryStore(options) {
       lastRunAt: at,
       runCount: 0,
       runs: [],
+      imported: false,
     };
   }
 
-  function update(id, fn) {
+  function update(id, fn, keepId) {
     mutate(function (list) {
       var idx = list.findIndex(function (x) { return x.id === id; });
       if (idx !== -1) list[idx] = fn(Object.assign({}, list[idx]));
-    });
+    }, keepId);
   }
 
   function setRunning(id, delta) {
@@ -300,8 +414,9 @@ export function createHistoryStore(options) {
     // null when the query is not recordable.
     startRun: function (params) {
       var query = params && params.query;
-      if (!query || !query.trim() || query.length > MAX_QUERY_SIZE) return null;
+      if (!query || !query.trim()) return null;
       var variables = params.variables;
+      if (query.length + variablesToString(variables).length > MAX_ENTRY_SIZE) return null;
       var operationName = params.operationName || null;
       var k = entryKey(query, variablesToObject(variables), operationName);
       var startedAt = now();
@@ -345,11 +460,13 @@ export function createHistoryStore(options) {
       });
     },
 
+    // Both keep the entry even if it would now be evicted: un-favoriting an
+    // old entry must not make it disappear under the user's cursor.
     toggleFavorite: function (id) {
       update(id, function (entry) {
         entry.favorite = !entry.favorite;
         return entry;
-      });
+      }, id);
     },
 
     rename: function (id, label) {
@@ -357,7 +474,7 @@ export function createHistoryStore(options) {
       update(id, function (entry) {
         entry.label = trimmed || null;
         return entry;
-      });
+      }, id);
     },
 
     remove: function (id) {
@@ -420,6 +537,7 @@ export function withHistory(fetcher, store, onError) {
             if (observer.error) observer.error(error);
           },
           complete: function () {
+            finish({ status: "error", error: "No response" }); // no-op after next()
             if (observer.complete) observer.complete();
           },
         });

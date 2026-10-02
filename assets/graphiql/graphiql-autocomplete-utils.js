@@ -24,6 +24,11 @@ var NON_PROJECT_SLUG_FIELDS = { watchlistBySlug: true, nonCryptoAssetBySlug: tru
 
 var MAX_RESULTS = 100;
 
+// Characters a metric / slug / version value can contain. A suggestion
+// replaces only these after the cursor, so if the closing quote was deleted
+// (and the string now runs into the following text) nothing else is lost.
+var VALUE_CHARS = /^[A-Za-z0-9_.:\-]*/;
+
 function isNameStart(c) {
   return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
 }
@@ -37,8 +42,9 @@ function isNameChar(c) {
  *   {
  *     kind: "metric" | "slug" | "version" | null,
  *     prefix,          // string contents before the cursor
- *     start, end,      // offsets of the string contents (end excludes the closing quote)
- *     closed,          // whether the string has a closing quote on this line
+ *     start, end,      // range a suggestion replaces: from the opening quote to the
+ *                      // end of the value under the cursor
+ *     closed,          // whether a closing quote follows that value
  *     metric,          // metric of the enclosing getMetric(...), if any
  *   }
  * Returns null when the cursor is not inside a (single-line) string.
@@ -98,12 +104,13 @@ export function getStringContext(text, offset) {
       var value = text.slice(start, Math.min(j, n));
 
       if (!snapshot && offset >= start && offset <= j) {
+        var valueEnd = offset + VALUE_CHARS.exec(text.slice(offset))[0].length;
         snapshot = {
           key: keyInfo ? keyInfo.key : null,
           prefix: text.slice(start, offset),
           start: start,
-          end: Math.min(j, n),
-          closed: closed,
+          end: valueEnd,
+          closed: text.charAt(valueEnd) === '"',
           frames: frames.slice(),
         };
       }
@@ -124,10 +131,12 @@ export function getStringContext(text, offset) {
 
     if (c === "(" || c === "{" || c === "[") {
       var p1 = prev(1);
-      var frame = { type: c, field: null, key: null, args: null, selectionOf: null };
+      var frame = { type: c, field: null, key: null, args: null, selectionOf: null, directive: false };
       if (c === "(") {
         frame.field = p1 && p1.t === "name" ? p1.v : null;
         frame.args = {};
+        var p2 = prev(2);
+        frame.directive = !!(p2 && p2.t === "punct" && p2.v === "@"); // @include(if: ...)
       } else {
         var k = currentKey();
         if (k) {
@@ -147,7 +156,9 @@ export function getStringContext(text, offset) {
 
     if (c === ")" || c === "}" || c === "]") {
       var closing = frames.pop();
-      if (c === ")" && closing && closing.type === "(") {
+      // A directive's arguments sit between a field's call and its selection
+      // set; they must not replace the field as the selection set's owner.
+      if (c === ")" && closing && closing.type === "(" && !closing.directive) {
         lastCall = { field: closing.field, args: closing.args };
       }
       tokens.push({ t: "punct", v: c });
@@ -293,9 +304,13 @@ export function packProjects(projects) {
 }
 
 // `lower` holds lower-cased slug/name/ticker, computed once for ranking.
+// Rows without a slug are skipped; other missing values become "".
 export function unpackProjects(rows) {
-  return (rows || []).map(function (r) {
-    return { slug: r[0], name: r[1], ticker: r[2], lower: [r[0].toLowerCase(), r[1].toLowerCase(), r[2].toLowerCase()] };
+  return (rows || []).filter(function (r) { return Array.isArray(r) && r[0]; }).map(function (r) {
+    var slug = String(r[0]);
+    var name = r[1] ? String(r[1]) : "";
+    var ticker = r[2] ? String(r[2]) : "";
+    return { slug: slug, name: name, ticker: ticker, lower: [slug.toLowerCase(), name.toLowerCase(), ticker.toLowerCase()] };
   });
 }
 

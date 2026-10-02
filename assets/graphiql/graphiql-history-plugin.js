@@ -159,7 +159,11 @@ function RunLog(props) {
             );
           })
         )
-      : h("div", { className: "san-hist-empty-runs" }, "No recorded runs (imported from the previous history)."),
+      : h(
+          "div",
+          { className: "san-hist-empty-runs" },
+          entry.imported ? "No recorded runs (imported from the previous history)." : "No finished runs yet."
+        ),
     entry.variables &&
       h("pre", { className: "san-hist-vars", title: "Variables" }, entry.variables)
   );
@@ -183,9 +187,9 @@ function HistoryRow(props) {
   var entry = props.entry;
   var last = entry.runs && entry.runs[0];
   var title = entry.label || entry.title;
-  var neverRun = !entry.runCount && !props.running;
-  // Imported entries have no real timestamp, so do not show a fake "just now".
-  var meta = [neverRun ? "imported" : formatRelativeTime(entry.lastRunAt, props.now)];
+  // Imported entries that never ran have no real timestamp: no fake "just now".
+  var importedOnly = entry.imported && !entry.runCount;
+  var meta = [importedOnly ? "imported" : formatRelativeTime(entry.lastRunAt, props.now)];
   if (props.running) meta.push("running\u2026");
   else if (last && last.status === "cancelled") meta.push("cancelled");
   else if (last) meta.push(formatDuration(last.durationMs));

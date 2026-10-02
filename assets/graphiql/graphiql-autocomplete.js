@@ -80,17 +80,10 @@ function createProvider(monaco, data) {
         return { suggestions: suggestions, incomplete: true };
       }
 
-      // Single row explaining an empty list. Inserting it leaves the string as is.
+      // Single row explaining an empty list. Inserting it leaves the value as is.
       function notice(text) {
         var current = model.getValue().slice(ctx.start, ctx.end);
-        return done([{
-          label: text,
-          insertText: current + suffix,
-          range: range,
-          filterText: ctx.prefix,
-          kind: Kind.Issue,
-          sortText: "9999",
-        }]);
+        return done([item(current, 9999, { label: text, kind: Kind.Issue })]);
       }
 
       if (ctx.kind === "metric") {

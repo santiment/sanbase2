@@ -1,6 +1,9 @@
 /**
- * Guarded localStorage access. Every call can throw (private mode, blocked
- * site data, quota), so reads fall back to null and writes report success.
+ * Browser storage helpers:
+ * - guarded synchronous Web Storage access, for small UI prefs (tab names,
+ *   sort order). Every call can throw (private mode, blocked site data,
+ *   quota), so reads fall back to null and writes report success;
+ * - the swappable async backends history and the autocomplete cache use.
  */
 
 export function defaultStorage() {
@@ -21,7 +24,7 @@ export function readRaw(storage, key) {
   }
 }
 
-export function parseJson(raw) {
+function parseJson(raw) {
   if (!raw) return null;
   try {
     return JSON.parse(raw);

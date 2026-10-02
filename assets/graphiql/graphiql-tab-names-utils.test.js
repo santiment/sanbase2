@@ -78,6 +78,13 @@ describe("migrateLegacyTabNames", function () {
     expect(isValidTabNames(s)).toBe(true);
   });
 
+  it("keeps the counter above migrated Query N names when the counter is missing", function () {
+    var s = migrateLegacyTabNames({ "tab-0": "Query 1", "tab-3": "Query 6" }, NaN, [tab("a")]);
+    expect(s.counter).toBe(6);
+    var r = resolveTabNames([tab("a"), tab("b")], s);
+    expect(r.names).toEqual({ a: "Query 1", b: "Query 7" });
+  });
+
   it("tolerates junk", function () {
     var s = migrateLegacyTabNames({ x: "y", "tab-0": 5 }, NaN, [tab("a")]);
     expect(s).toEqual(emptyTabNames());

@@ -8,7 +8,7 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
   format constrains output so even a candidate that contains adversarial
   text cannot derail the reranker into emitting prose.
 
-  Defaults to `gpt-4o-mini`. Candidate text is truncated to
+  Defaults to `gpt-6-luna`. Candidate text is truncated to
   `@max_candidate_chars` to keep prompt size bounded regardless of how
   long an Academy article or Insight chunk happens to be.
 
@@ -23,7 +23,9 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
   require Logger
 
   @base_url "https://api.openai.com/v1/chat/completions"
-  @model "gpt-4o-mini"
+  # gpt-6-luna replaced gpt-4o-mini on 2026-10-02: a third cheaper per token
+  # ($0.10/$0.50 vs $0.15/$0.60 per 1M) and stronger on general benchmarks.
+  @model "gpt-6-luna"
   @default_timeout_ms 10_000
   @default_max_retries 2
   @max_candidate_chars 600
@@ -105,18 +107,26 @@ defmodule Sanbase.Knowledge.Reranker.OpenAI do
       "model" => model,
       "max_completion_tokens" => 256,
       # Default sampling (temperature 1) made the same query return a different
-      # order on every call. Reasoning models (gpt-5*, o*) reject the parameter.
+      # order on every call. See `put_sampling/2` for which models accept it.
       "response_format" => %{"type" => "json_object"},
       "messages" => [
         %{"role" => "system", "content" => system_prompt()},
         %{"role" => "user", "content" => user_prompt(query, candidates)}
       ]
     }
-    |> maybe_put_temperature(model)
+    |> put_sampling(model)
   end
 
-  defp maybe_put_temperature(body, "gpt-4" <> _), do: Map.put(body, "temperature", 0)
-  defp maybe_put_temperature(body, _model), do: body
+  defp put_sampling(body, "gpt-4" <> _), do: Map.put(body, "temperature", 0)
+
+  # gpt-6 models default to "medium" reasoning, which would eat the
+  # `max_completion_tokens` budget, and accept temperature 0 only with
+  # reasoning off.
+  defp put_sampling(body, "gpt-6" <> _),
+    do: Map.merge(body, %{"reasoning_effort" => "none", "temperature" => 0})
+
+  # gpt-5* and o* reject temperature.
+  defp put_sampling(body, _model), do: body
 
   @doc """
   Reorder `candidates` by the 1-based indices in `order`. Any index that

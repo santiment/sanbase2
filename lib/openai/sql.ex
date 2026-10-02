@@ -2,7 +2,7 @@ defmodule Sanbase.OpenAI.SQL do
   require Logger
 
   @doc """
-  Generates a title and description based on a given SQL query using GPT-4.
+  Generates a title and description based on a given SQL query using gpt-6-luna.
   """
   @spec generate_title_and_description_from_sql(String.t()) :: {:ok, map()} | {:error, String.t()}
   def generate_title_and_description_from_sql(sql) do
@@ -36,10 +36,14 @@ defmodule Sanbase.OpenAI.SQL do
         system_prompt -> [%{"role" => "system", "content" => system_prompt}] ++ messages
       end
 
+    # gpt-6-luna replaced gpt-4 on 2026-10-02 (120-300x cheaper per token). It takes
+    # `max_completion_tokens` instead of `max_tokens`, and a temperature other
+    # than 1 only with reasoning off; its default effort is "medium".
     payload = %{
-      "model" => Keyword.get(opts, :model, "gpt-4"),
+      "model" => Keyword.get(opts, :model, "gpt-6-luna"),
       "messages" => messages,
-      "max_tokens" => Keyword.get(opts, :max_tokens, 1000),
+      "max_completion_tokens" => Keyword.get(opts, :max_tokens, 1000),
+      "reasoning_effort" => "none",
       "temperature" => Keyword.get(opts, :temperature, 0.0)
     }
 

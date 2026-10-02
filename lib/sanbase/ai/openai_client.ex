@@ -19,7 +19,9 @@ defmodule Sanbase.AI.OpenAIClient do
   require Logger
 
   @base_url "https://api.openai.com/v1"
-  @model "gpt-5-nano"
+  # gpt-6-luna replaced gpt-5-nano at "minimal" effort on 2026-10-02: a much
+  # stronger model for these user-facing answers at ~25-40% more per call.
+  @model "gpt-6-luna"
 
   @doc """
   Creates a chat completion using the OpenAI API.
@@ -35,14 +37,16 @@ defmodule Sanbase.AI.OpenAIClient do
       %{"role" => "user", "content" => user_message}
     ]
 
-    # gpt-5 family: uses `max_completion_tokens` (not `max_tokens`) and only the
-    # default temperature (1.0). `reasoning_effort: "minimal"` keeps latency/cost
-    # low and prevents reasoning tokens from eating the output budget.
+    # gpt-5/gpt-6 models take `max_completion_tokens` (not `max_tokens`).
+    # Reasoning off keeps latency/cost low and stops reasoning tokens from
+    # eating the output budget. `:temperature` is not sent: gpt-5 models reject
+    # anything but the default (1.0). Pass `reasoning_effort: "minimal"` when
+    # overriding `:model` with an original gpt-5 model, which has no "none".
     payload = %{
       model: model,
       messages: messages,
       max_completion_tokens: max_tokens,
-      reasoning_effort: "minimal"
+      reasoning_effort: Keyword.get(opts, :reasoning_effort, "none")
     }
 
     headers = [

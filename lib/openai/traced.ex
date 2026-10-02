@@ -26,7 +26,7 @@ defmodule Sanbase.OpenAI.Traced do
       MyModule.ask("What is Elixir?")
 
       # With custom tracing options
-      MyModule.ask("What is Elixir?", %{model: "gpt-4", user_id: "user123"})
+      MyModule.ask("What is Elixir?", %{model: "gpt-6-luna", user_id: "user123"})
 
   ## How It Works
 

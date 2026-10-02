@@ -1,7 +1,7 @@
 defmodule Sanbase.OpenAI.Question do
   @moduledoc """
-  OpenAI question client. Defaults to the `gpt-5-nano` model; override per call
-  via `tracing_opts.model`.
+  OpenAI question client. Defaults to the `gpt-6-luna` model with reasoning
+  off; override per call via `tracing_opts.model` / `tracing_opts.reasoning_effort`.
   """
 
   require Logger
@@ -9,7 +9,10 @@ defmodule Sanbase.OpenAI.Question do
   use Sanbase.OpenAI.Traced
 
   @base_url "https://api.openai.com/v1/chat/completions"
-  @model "gpt-5-nano"
+  @model "gpt-6-luna"
+  # Sent only when the caller relies on the default model: gpt-6-luna otherwise
+  # runs at its own default, "medium".
+  @default_reasoning_effort "none"
   @max_retries 3
   @initial_backoff_ms 1_000
   @receive_timeout_ms 60_000
@@ -24,13 +27,15 @@ defmodule Sanbase.OpenAI.Question do
   ## Parameters
   - question: The question text to send to GPT
   - tracing_opts: Optional map with:
-    - `:model` - OpenAI model to use (defaults to @model)
+    - `:model` - OpenAI model to use (defaults to @model, with reasoning effort
+      @default_reasoning_effort unless `:reasoning_effort` is given)
     - `:response_format` - OpenAI `response_format` payload (e.g. a JSON-schema
       map) to request structured output; omitted from the request when absent
-    - `:reasoning_effort` - reasoning effort for GPT-5-family models
-      ("minimal" | "low" | "medium" | "high"); omitted from the request when
-      absent. Use "minimal" for simple extraction calls where reasoning
-      latency dominates
+    - `:reasoning_effort` - reasoning effort for reasoning models. gpt-6 takes
+      "none" | "low" | "medium" | "high" | "xhigh"; the original gpt-5 models
+      take "minimal" instead of "none". Omitted from the request when absent
+      and `:model` is given. Use "none" (or "minimal") for simple extraction
+      calls where reasoning latency dominates
     - `:user_id` - User ID for Langfuse trace
     - `:session_id` - Session ID for grouping traces
     - `:trace_metadata` - Additional metadata for the trace
@@ -46,13 +51,13 @@ defmodule Sanbase.OpenAI.Question do
       Question.ask("What is Elixir?")
 
       # With tracing
-      Question.ask("What is Elixir?", %{model: "gpt-4", user_id: "user123"})
+      Question.ask("What is Elixir?", %{model: "gpt-6-luna", user_id: "user123"})
   """
   deftraced ask(question) do
     request_opts =
       tracing_opts
       |> Map.take([:model, :response_format, :reasoning_effort])
-      |> Map.put_new(:model, @model)
+      |> put_default_model()
 
     case request_with_retry(question, request_opts, 0) do
       {:ok, %{content: content}} ->
@@ -169,6 +174,14 @@ defmodule Sanbase.OpenAI.Question do
     }
     |> maybe_put_body("response_format", Map.get(opts, :response_format))
     |> maybe_put_body("reasoning_effort", Map.get(opts, :reasoning_effort))
+  end
+
+  defp put_default_model(%{model: model} = opts) when is_binary(model), do: opts
+
+  defp put_default_model(opts) do
+    opts
+    |> Map.put(:model, @model)
+    |> Map.put_new(:reasoning_effort, @default_reasoning_effort)
   end
 
   defp maybe_put_body(body, _key, nil), do: body

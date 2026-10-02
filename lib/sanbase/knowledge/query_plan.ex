@@ -65,20 +65,21 @@ defmodule Sanbase.Knowledge.QueryPlan do
   # Cheap, fast model for the self-query step — independent of the (possibly
   # larger) model that writes the final answer.
   @llm_client Sanbase.OpenAI.Question
-  @llm_model "gpt-5-nano"
+  @llm_model "gpt-6-luna"
 
   # Hard budget for the planning LLM call. The underlying client retries with
   # backoff and a 60s receive timeout — fine for the *answer* call, too long for
   # a pre-retrieval step. Past this budget the pass-through plan is used instead.
   # Deliberately generous: a good plan is worth waiting a few extra seconds for
-  # (the call is typically ~1-3s with `reasoning_effort: "minimal"`), so the
+  # (the call is typically ~1-3s with reasoning off), so the
   # budget only exists to catch genuine API trouble, not to race the model.
   @plan_timeout_ms 20_000
 
   # Plan extraction is trivial classification — reasoning tokens only add
-  # latency (a default-effort nano call regularly blows multi-second budgets
-  # just thinking). Minimal effort keeps the call fast AND cheap.
-  @reasoning_effort "minimal"
+  # latency (a default-effort call regularly blows multi-second budgets just
+  # thinking). Reasoning off keeps the call fast AND cheap. gpt-6-luna replaced
+  # gpt-5-nano at "minimal" on 2026-10-02: same cost per plan, better plans.
+  @reasoning_effort "none"
 
   @doc """
   Build the retrieval plan for `user_input`.

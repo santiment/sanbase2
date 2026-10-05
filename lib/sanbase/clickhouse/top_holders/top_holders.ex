@@ -155,14 +155,31 @@ defmodule Sanbase.Clickhouse.TopHolders do
   defp realtime_top_holders_query("ethereum" = slug, opts) do
     {limit, offset} = opts_to_limit_offset(opts)
 
+    # Grouping the whole eth_balances_realtime table by address is too expensive, so
+    # the candidates are the holders from the latest daily snapshot plus every address
+    # that has reached at least the smallest snapshot holder's balance since then.
+    # Every non-candidate address has a current balance below snapshot_min_value, so only
+    # the holders at or above it are guaranteed to be complete and correctly ranked. The
+    # ones below it are dropped, as an unchanged address outside of the snapshot could
+    # belong in between them.
     sql = """
     WITH
-      ( SELECT argMax(balance, dt) FROM eth_balances_realtime total_balance,
+      (
+        SELECT argMax(balance, dt)
+        FROM eth_balances_realtime
+        WHERE address = 'TOTAL' AND addressType = 'total'
+      ) AS total_balance,
       ( SELECT pow(10, decimals) FROM asset_metadata FINAL where name = {{slug}} LIMIT 1 ) AS decimals,
       ( SELECT argMax(value, dt)
         FROM intraday_metrics
         WHERE #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND #{metric_id_filter("price_usd", argument_name: "metric")}
-      ) AS price_usd
+      ) AS price_usd,
+      ( SELECT max(dt) FROM eth_top_holders_daily WHERE contract = 'ETH' ) AS snapshot_dt,
+      (
+        SELECT min(value)
+        FROM eth_top_holders_daily FINAL
+        WHERE contract = 'ETH' AND dt = snapshot_dt AND rank > 0
+      ) AS snapshot_min_value
 
     SELECT
       toUnixTimestamp(max(dt)),
@@ -172,8 +189,21 @@ defmodule Sanbase.Clickhouse.TopHolders do
       (balance2 / (total_balance / decimals)) AS partOfTotal
     FROM eth_balances_realtime
     WHERE
+      address GLOBAL IN (
+        SELECT address
+        FROM eth_top_holders_daily FINAL
+        WHERE contract = 'ETH' AND dt = snapshot_dt AND rank > 0
+
+        UNION ALL
+
+        SELECT address
+        FROM eth_balances_realtime
+        WHERE dt >= snapshot_dt AND addressType = 'normal' AND balance >= snapshot_min_value
+      ) AND
+      address NOT IN ({{excluded_addresses}}) AND
       addressType = 'normal'
     GROUP BY address
+    HAVING argMax(balance, dt) >= snapshot_min_value
     ORDER BY balance2 DESC
     LIMIT {{limit}} OFFSET {{offset}}
     """
@@ -182,7 +212,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
       slug: slug,
       metric: "price_usd",
       limit: limit,
-      offset: offset
+      offset: offset,
+      excluded_addresses: @excluded_holder_addresses
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -192,7 +223,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
     asset_ref_id_filter = fn column, opts ->
       arg_name = Keyword.fetch!(opts, :argument_name)
 
-      "asset_ref_id = ( SELECT #{column} FROM asset_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
+      "assetRefId = ( SELECT #{column} FROM asset_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
     end
 
     sql = """

@@ -14,6 +14,10 @@ defmodule Sanbase.Clickhouse.TopHolders do
   @eth_table "eth_top_holders_daily"
   @erc20_table "erc20_top_holders_daily"
 
+  # Addresses that should never be returned as top holders.
+  # 0x00000000219ab540356cbb839cbe05303d7705fa is the ETH2 Beacon Deposit Contract
+  @excluded_holder_addresses ["0x00000000219ab540356cbb839cbe05303d7705fa"]
+
   @type percent_of_total_supply :: %{
           datetime: DateTime.t(),
           in_exchanges: number(),
@@ -246,7 +250,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
       to: DateTime.to_unix(to),
       limit: limit,
       offset: offset,
-      price_usd_metric: "price_usd"
+      price_usd_metric: "price_usd",
+      excluded_addresses: @excluded_holder_addresses
     }
 
     {labels_owners_filter, params} = maybe_add_labels_owners_filter(opts, params)
@@ -272,10 +277,16 @@ defmodule Sanbase.Clickhouse.TopHolders do
     SELECT
       data.dt, data.contract, data.address, data.rank,
       data.value / pow(10, {{decimals}}) AS value,
-      multiIf(totals.valueTotal > 0, data.value / (totals.valueTotal / pow(10, {{decimals}})), 0) AS partOfTotal
+      -- Both data.value and totals.valueTotal are raw (not divided by decimals), so their ratio
+      -- is already the part of total. The qualified data.value refers to the raw column, not to
+      -- the `value` alias above.
+      multiIf(totals.valueTotal > 0, data.value / totals.valueTotal, 0) AS partOfTotal
     FROM data
     LEFT JOIN totals ON data.dt = totals.dt
-    WHERE data.rank > 0 AND data.address NOT IN ('TOTAL', 'freeze')
+    WHERE
+      data.rank > 0
+      AND data.address NOT IN ('TOTAL', 'freeze')
+      AND data.address NOT IN ({{excluded_addresses}})
     """
 
     # Order the data by value in descending order and select one row per address

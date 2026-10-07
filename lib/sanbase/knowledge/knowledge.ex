@@ -352,7 +352,11 @@ defmodule Sanbase.Knowledge do
   # another model without touching embeddings or rerank.
   defp ask_answer(prompt, registry, options) do
     ask_opts =
-      %{response_format: Citations.response_format()}
+      %{
+        response_format: Citations.response_format(),
+        trace_name: "knowledge.answer",
+        generation_name: "knowledge.answer"
+      }
       |> maybe_put(:model, Keyword.get(options, :answer_model))
       |> maybe_put(:reasoning_effort, Keyword.get(options, :answer_reasoning_effort))
 

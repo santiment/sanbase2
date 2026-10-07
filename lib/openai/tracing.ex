@@ -1,28 +1,37 @@
 defmodule Sanbase.OpenAI.Tracing do
   @moduledoc """
   Langfuse tracing helpers for OpenAI interactions.
+
+  Each traced LLM call sends two ingestion batches: one on start (the trace,
+  unless the caller passes an existing `:trace_id`, and the generation) and
+  one on finish (the generation's output and token usage, plus the trace
+  output when this call created the trace).
+
+  Every event carries the Langfuse `environment`, taken from `:environment`
+  in the opts or `environment/0`.
   """
 
-  alias LangfuseSdk
   alias LangfuseSdk.Ingestor
-  alias LangfuseSdk.Tracing.{Generation, Trace}
 
   require Logger
 
   @default_trace_name "openai.question"
   @default_generation_name "openai.question.ask"
 
-  @spec start(term(), map()) ::
-          {:ok, %{trace: Trace.t(), generation: Generation.t()}} | {:error, term()}
+  @type context :: %{
+          trace_id: String.t(),
+          generation_id: String.t(),
+          environment: String.t(),
+          owns_trace?: boolean()
+        }
+
+  @spec start(term(), map()) :: {:ok, context()} | {:error, term()}
   def start(input, opts \\ %{}) do
     opts = Map.new(opts)
 
     if enabled?() do
       try do
-        with {:ok, trace} <- ensure_trace(opts, input),
-             {:ok, generation} <- create_generation(trace, input, opts) do
-          {:ok, %{trace: trace, generation: generation}}
-        end
+        do_start(input, opts)
       rescue
         error ->
           Logger.warning("Langfuse tracing start crashed: #{inspect(error)}")
@@ -45,270 +54,262 @@ defmodule Sanbase.OpenAI.Tracing do
       is_binary(cfg[:public_key]) and cfg[:public_key] != ""
   end
 
-  @spec finalize(
-          %{optional(:trace) => Trace.t(), generation: Generation.t()},
-          {:ok, map()} | {:error, term()}
-        ) :: :ok
-  def finalize(%{trace: trace, generation: generation}, result) do
-    do_finalize(trace, generation, result)
+  @doc """
+  The Langfuse environment traces are filed under: `LANGFUSE_TRACING_ENVIRONMENT`
+  when set, otherwise the deployment environment (`DEPLOYMENT_ENVIRONMENT`,
+  "dev" by default).
+  """
+  @spec environment() :: String.t()
+  def environment() do
+    case System.get_env("LANGFUSE_TRACING_ENVIRONMENT") do
+      env when env in [nil, ""] ->
+        Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) || "dev"
+
+      env ->
+        env
+    end
+  end
+
+  @doc """
+  Creates (or updates, when `attrs` has an existing `:id`) a trace. `attrs`
+  takes `:id`, `:name`, `:user_id`, `:session_id`, `:input`, `:output`,
+  `:metadata`, `:tags` and `:environment`. Returns `{:ok, trace_id}`.
+  """
+  @spec upsert_trace(map()) :: {:ok, String.t()} | {:error, term()}
+  def upsert_trace(attrs) do
+    attrs = Map.put_new_lazy(attrs, :id, &UUID.uuid4/0)
+
+    case ingest([trace_event(attrs)]) do
+      :ok ->
+        {:ok, attrs.id}
+
+      {:error, reason} ->
+        Logger.warning("Langfuse trace upsert failed: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Records an event observation on an existing trace. `attrs` takes `:name`,
+  `:input`, `:output`, `:metadata` and `:environment`.
+  """
+  @spec log_event(String.t(), map()) :: :ok
+  def log_event(trace_id, attrs) do
+    body =
+      compact(%{
+        "id" => UUID.uuid4(),
+        "traceId" => trace_id,
+        "name" => attrs[:name],
+        "startTime" => DateTime.utc_now(),
+        "input" => attrs[:input],
+        "output" => attrs[:output],
+        "metadata" => attrs[:metadata],
+        "level" => "DEFAULT",
+        "environment" => attrs[:environment] || environment()
+      })
+
+    case ingest([envelope("event-create", body)]) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("Langfuse event create failed: #{inspect(reason)}")
+        :ok
+    end
+  end
+
+  @spec finalize(context() | term(), {:ok, map()} | {:error, term()}) :: :ok
+  def finalize(%{generation_id: _} = ctx, result) do
+    events =
+      case result do
+        {:ok, %{content: answer} = completion} ->
+          [
+            generation_update(ctx, %{
+              "output" => %{"role" => "assistant", "content" => answer},
+              "model" => completion[:model],
+              "usageDetails" => usage_details(completion[:usage]),
+              "costDetails" => cost_details(completion[:usage])
+            })
+            | trace_output(ctx, answer)
+          ]
+
+        # No answer text (e.g. a usage-only map): record what there is.
+        {:ok, completion} when is_map(completion) ->
+          [
+            generation_update(ctx, %{
+              "output" => Map.drop(completion, [:model, :usage]),
+              "model" => completion[:model],
+              "usageDetails" => usage_details(completion[:usage]),
+              "costDetails" => cost_details(completion[:usage])
+            })
+          ]
+
+        {:error, reason} ->
+          [
+            generation_update(ctx, %{
+              "level" => "ERROR",
+              "statusMessage" => format_error(reason)
+            })
+          ]
+      end
+
+    case ingest(events) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("Langfuse tracing finalize failed: #{inspect(reason)}")
+        :ok
+    end
   end
 
   def finalize(_ctx, _result), do: :ok
 
-  defp do_finalize(trace, generation, {:ok, %{content: answer} = completion}) do
-    Logger.debug("Finalizing trace #{trace.id} with answer")
-
-    metadata = merge_metadata(generation.metadata, %{"status" => "ok"})
-
-    updated_generation = %{
-      generation
-      | end_time: DateTime.utc_now(),
-        output: %{"role" => "assistant", "content" => answer},
-        metadata: metadata,
-        usage: build_usage(completion),
-        model: completion.model || generation.model
-    }
-
-    update_generation(updated_generation)
-    update_trace_output(trace, answer)
-  end
-
-  defp do_finalize(_trace, generation, {:error, reason}) do
-    metadata =
-      merge_metadata(generation.metadata, %{
-        "status" => "error",
-        "error" => format_error(reason)
-      })
-
-    updated_generation = %{
-      generation
-      | end_time: DateTime.utc_now(),
-        status_message: format_error(reason),
-        metadata: metadata
-    }
-
-    update_generation(updated_generation)
-  end
-
-  defp ensure_trace(%{trace_id: trace_id}, _input) when is_binary(trace_id) do
-    {:ok, %Trace{id: trace_id}}
-  end
-
-  defp ensure_trace(opts, input) do
-    # If environment is provided in opts, we need to create the trace via ingestion API
-    # to support the environment field (not available in Trace struct)
-    environment =
-      Map.get(opts, :environment) || Map.get(opts, :trace_metadata, %{})["environment"]
-
-    if environment do
-      create_trace_with_environment(opts, input, environment)
-    else
-      create_trace_without_environment(opts, input)
-    end
-  end
-
-  defp create_trace_without_environment(opts, input) do
-    trace_attrs =
-      opts
-      |> Map.get(:trace, %{})
-      |> Map.put_new(:name, Map.get(opts, :trace_name, @default_trace_name))
-      |> maybe_put(:user_id, opts[:user_id])
-      |> maybe_put(:input, Map.get(opts, :trace_input, input))
-      |> maybe_put(:metadata, Map.get(opts, :trace_metadata))
-      |> maybe_put(:tags, Map.get(opts, :trace_tags))
-      |> maybe_put(:session_id, Map.get(opts, :session_id))
-
-    trace = Trace.new(compact(trace_attrs))
-
-    case LangfuseSdk.create(trace) do
-      {:ok, _} ->
-        updated_trace = trace |> maybe_add_trace_metadata(opts) |> maybe_add_trace_input(input)
-        audit_trace(updated_trace)
-        maybe_update_trace(updated_trace, trace)
-        {:ok, updated_trace}
-
-      {:error, reason} ->
-        Logger.warning("Langfuse trace create failed: #{inspect(reason)}")
-        {:error, {:trace_create_failed, reason}}
-    end
-  end
-
-  defp create_trace_with_environment(opts, input, environment) do
-    trace_id = Map.get(opts, :trace_id) || UUID.uuid4()
-
-    trace_event = %{
-      "type" => "trace-create",
-      "id" => UUID.uuid4(),
-      "timestamp" => DateTime.utc_now(),
-      "body" => %{
-        "id" => trace_id,
-        "name" => Map.get(opts, :trace_name, @default_trace_name),
-        "sessionId" => Map.get(opts, :session_id),
-        "userId" => opts[:user_id],
-        "input" => Map.get(opts, :trace_input, input),
-        "metadata" => Map.get(opts, :trace_metadata),
-        "tags" => Map.get(opts, :trace_tags),
-        "environment" => environment,
-        "timestamp" => DateTime.utc_now()
-      }
-    }
-
-    case Ingestor.ingest_payload(trace_event) do
-      {:ok, _} ->
-        # Return a minimal Trace struct for compatibility
-        trace = %Trace{
-          id: trace_id,
-          name: Map.get(opts, :trace_name, @default_trace_name),
-          user_id: opts[:user_id],
-          session_id: Map.get(opts, :session_id),
-          input: Map.get(opts, :trace_input, input),
-          metadata: Map.get(opts, :trace_metadata),
-          tags: Map.get(opts, :trace_tags)
-        }
-
-        audit_trace(trace)
-        {:ok, trace}
-
-      {:error, reason} ->
-        Logger.warning("Langfuse trace create failed: #{inspect(reason)}")
-        {:error, {:trace_create_failed, reason}}
-    end
-  end
-
-  defp create_generation(trace, input, opts) do
+  defp do_start(input, opts) do
+    environment = opts[:environment] || environment()
     now = DateTime.utc_now()
 
-    generation_attrs =
-      opts
-      |> Map.get(:generation, %{})
-      |> Map.put(:trace_id, trace.id)
-      |> Map.put_new(:name, Map.get(opts, :generation_name, @default_generation_name))
-      |> Map.put_new(:metadata, Map.get(opts, :generation_metadata))
-      |> Map.put(:input, Map.get(opts, :generation_input, input))
-      |> Map.put(:model, opts[:model])
-      |> Map.put(:model_parameters, Map.get(opts, :model_parameters))
-      |> Map.put_new(:start_time, now)
-      |> Map.put_new(:completion_start_time, now)
+    {trace_id, trace_events} =
+      case opts[:trace_id] do
+        trace_id when is_binary(trace_id) ->
+          {trace_id, []}
 
-    generation = Generation.new(compact(generation_attrs))
+        _ ->
+          trace_id = UUID.uuid4()
 
-    case LangfuseSdk.create(generation) do
-      {:ok, _} ->
-        {:ok, generation}
+          event =
+            trace_event(%{
+              id: trace_id,
+              name: Map.get(opts, :trace_name, @default_trace_name),
+              user_id: opts[:user_id],
+              session_id: opts[:session_id],
+              input: Map.get(opts, :trace_input, input),
+              metadata: opts[:trace_metadata],
+              tags: opts[:trace_tags],
+              environment: environment,
+              timestamp: now
+            })
 
-      {:error, reason} ->
-        Logger.warning("Langfuse generation create failed: #{inspect(reason)}")
-        {:error, {:generation_create_failed, reason}}
-    end
-  end
-
-  defp update_generation(generation) do
-    case LangfuseSdk.update(generation) do
-      {:ok, _} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.warning("Langfuse generation update failed: #{inspect(reason)}")
-        :ok
-    end
-  end
-
-  defp update_trace_output(%Trace{} = trace, answer) do
-    Logger.debug("Updating trace #{trace.id} with output")
-
-    trace_event = %{
-      "type" => "trace-create",
-      "id" => UUID.uuid4(),
-      "timestamp" => DateTime.utc_now(),
-      "body" => %{
-        "id" => trace.id,
-        "output" => answer
-      }
-    }
-
-    case Ingestor.ingest_payload(trace_event) do
-      {:ok, _} ->
-        Logger.debug("Successfully updated trace #{trace.id} output")
-        :ok
-
-      {:error, reason} ->
-        Logger.warning("Langfuse trace output update failed: #{inspect(reason)}")
-        :ok
-    end
-  end
-
-  defp audit_trace(_trace), do: :ok
-
-  defp maybe_add_trace_metadata(trace, opts) do
-    metadata = sanitize_metadata(Map.get(opts, :trace_metadata))
-
-    if metadata in [%{}, nil] do
-      trace
-    else
-      %{trace | metadata: merge_metadata(trace.metadata, metadata)}
-    end
-  end
-
-  defp maybe_add_trace_input(trace, input) do
-    if input in [nil, []] do
-      trace
-    else
-      %{trace | input: input}
-    end
-  end
-
-  defp maybe_update_trace(updated_trace, original_trace) do
-    if trace_changes?(updated_trace, original_trace) do
-      changes = %{}
-
-      changes =
-        if updated_trace.metadata != original_trace.metadata,
-          do: Map.put(changes, "metadata", updated_trace.metadata),
-          else: changes
-
-      changes =
-        if updated_trace.input != original_trace.input,
-          do: Map.put(changes, "input", updated_trace.input),
-          else: changes
-
-      trace_event = %{
-        "type" => "trace-create",
-        "id" => UUID.uuid4(),
-        "timestamp" => DateTime.utc_now(),
-        "body" => Map.put(changes, "id", updated_trace.id)
-      }
-
-      case Ingestor.ingest_payload(trace_event) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Logger.warning("Langfuse trace update failed: #{inspect(reason)}")
-          :ok
+          {trace_id, [event]}
       end
-    else
-      :ok
+
+    generation_id = UUID.uuid4()
+
+    generation_event =
+      envelope(
+        "generation-create",
+        compact(%{
+          "id" => generation_id,
+          "traceId" => trace_id,
+          "name" => Map.get(opts, :generation_name, @default_generation_name),
+          "startTime" => now,
+          "input" => Map.get(opts, :generation_input, input),
+          "metadata" => opts[:generation_metadata],
+          "model" => opts[:model],
+          "modelParameters" => opts[:model_parameters],
+          "environment" => environment
+        })
+      )
+
+    case ingest(trace_events ++ [generation_event]) do
+      :ok ->
+        {:ok,
+         %{
+           trace_id: trace_id,
+           generation_id: generation_id,
+           environment: environment,
+           owns_trace?: trace_events != []
+         }}
+
+      {:error, reason} ->
+        Logger.warning("Langfuse tracing start failed: #{inspect(reason)}")
+        {:error, {:tracing_start_failed, reason}}
     end
   end
 
-  defp trace_changes?(%Trace{} = updated, %Trace{} = original) do
-    Map.take(updated, [:metadata, :input]) != Map.take(original, [:metadata, :input])
+  defp trace_event(attrs) do
+    body =
+      compact(%{
+        "id" => attrs.id,
+        "timestamp" => attrs[:timestamp],
+        "name" => attrs[:name],
+        "userId" => attrs[:user_id],
+        "sessionId" => attrs[:session_id],
+        "input" => attrs[:input],
+        "output" => attrs[:output],
+        "metadata" => attrs[:metadata],
+        "tags" => attrs[:tags],
+        "environment" => attrs[:environment] || environment()
+      })
+
+    envelope("trace-create", body)
   end
 
-  defp build_usage(%{usage: usage}) when is_map(usage), do: usage
-  defp build_usage(_), do: nil
+  defp generation_update(ctx, fields) do
+    body =
+      %{
+        "id" => ctx.generation_id,
+        "traceId" => ctx.trace_id,
+        "endTime" => DateTime.utc_now(),
+        "environment" => ctx.environment
+      }
+      |> Map.merge(compact(fields))
 
-  defp sanitize_metadata(nil), do: %{}
-  defp sanitize_metadata(%{} = metadata), do: metadata
-  defp sanitize_metadata(_), do: %{}
-
-  defp merge_metadata(nil, additions), do: additions
-
-  defp merge_metadata(metadata, additions) when is_map(metadata) do
-    Map.merge(metadata, additions)
+    envelope("generation-update", body)
   end
 
-  defp merge_metadata(_metadata, additions), do: additions
+  # A trace passed in by the caller is owned by the caller, which sets its
+  # output itself.
+  defp trace_output(%{owns_trace?: true} = ctx, answer) do
+    [
+      trace_event(%{
+        id: ctx.trace_id,
+        output: answer,
+        environment: ctx.environment
+      })
+    ]
+  end
+
+  defp trace_output(_ctx, _answer), do: []
+
+  # `Ingestor.ingest_payload/1` raises when a batch partially fails; tracing
+  # must never break the traced call.
+  defp ingest(events) do
+    case Ingestor.ingest_payload(events) do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    error -> {:error, error}
+  end
+
+  defp envelope(type, body) do
+    %{"id" => UUID.uuid4(), "type" => type, "timestamp" => DateTime.utc_now(), "body" => body}
+  end
+
+  # Converts an OpenAI-style `usage` object to Langfuse usage details. Langfuse
+  # prices each key separately, so cached input and reasoning output are split
+  # out of `input` and `output` rather than counted twice.
+  @doc false
+  def usage_details(%{"prompt_tokens" => prompt, "completion_tokens" => completion} = usage)
+      when is_integer(prompt) and is_integer(completion) do
+    cached = get_in(usage, ["prompt_tokens_details", "cached_tokens"]) || 0
+    reasoning = get_in(usage, ["completion_tokens_details", "reasoning_tokens"]) || 0
+
+    %{
+      "input" => prompt - cached,
+      "input_cached_tokens" => cached,
+      "output" => completion - reasoning,
+      "output_reasoning_tokens" => reasoning,
+      "total" => usage["total_tokens"] || prompt + completion
+    }
+  end
+
+  def usage_details(_usage), do: nil
+
+  # OpenRouter reports the request's USD cost in `usage.cost`.
+  defp cost_details(%{"cost" => cost}) when is_number(cost), do: %{"total" => cost}
+  defp cost_details(_usage), do: nil
 
   defp format_error(reason) when is_binary(reason), do: reason
   defp format_error(reason), do: inspect(reason)
@@ -316,9 +317,6 @@ defmodule Sanbase.OpenAI.Tracing do
   defp compact(map) do
     map
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-    |> Enum.into(%{})
+    |> Map.new()
   end
-
-  defp maybe_put(map, _key, nil), do: map
-  defp maybe_put(map, key, value), do: Map.put_new(map, key, value)
 end

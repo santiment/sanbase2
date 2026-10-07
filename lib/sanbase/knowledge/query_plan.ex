@@ -291,7 +291,9 @@ defmodule Sanbase.Knowledge.QueryPlan do
     opts = %{
       model: @llm_model,
       response_format: response_format(),
-      reasoning_effort: @reasoning_effort
+      reasoning_effort: @reasoning_effort,
+      trace_name: "knowledge.query_plan",
+      generation_name: "knowledge.query_plan"
     }
 
     with {:ok, content} <- client.ask(prompt(user_input), opts),

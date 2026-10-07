@@ -106,6 +106,7 @@ defmodule Sanbase.OpenAI.Traced do
           |> Map.put(:generation_input, input)
           |> Map.put(:trace_input, input)
           |> unquote(__MODULE__).maybe_add_model_metadata(model)
+          |> unquote(__MODULE__).maybe_add_model_parameters()
 
         case Tracing.start(input, instrumentation_opts) do
           {:ok, ctx} ->
@@ -119,11 +120,15 @@ defmodule Sanbase.OpenAI.Traced do
                 Logger.warning("Failed to finalize Langfuse trace: #{inspect(error)}")
             end
 
-            result
+            unquote(__MODULE__).unwrap_result(normalized)
 
           {:error, reason} ->
-            Logger.warning("Langfuse tracing disabled: #{inspect(reason)}")
-            unquote(impl_name)(unquote_splicing(arg_names), %{})
+            if reason != :langfuse_not_configured,
+              do: Logger.warning("Langfuse tracing disabled: #{inspect(reason)}")
+
+            unquote(impl_name)(unquote_splicing(arg_names), tracing_opts)
+            |> unquote(__MODULE__).normalize_result()
+            |> unquote(__MODULE__).unwrap_result()
         end
       end
 
@@ -149,12 +154,30 @@ defmodule Sanbase.OpenAI.Traced do
     Map.update(opts, :trace_metadata, %{"model" => model}, &Map.put(&1, "model", model))
   end
 
+  # Parameters that change the model's output, shown on the generation.
+  def maybe_add_model_parameters(opts) do
+    case Map.take(opts, [:reasoning_effort]) do
+      params when params == %{} -> opts
+      params -> Map.update(opts, :model_parameters, params, &Map.merge(&1, params))
+    end
+  end
+
+  # The traced block returns either `{:ok, content}` or `{:ok, %{content:,
+  # model:, usage:}}`; the latter lets the trace record the served model and
+  # token usage.
   def normalize_result({:ok, content}) when is_binary(content) do
     {:ok, %{content: content, model: nil, usage: nil}}
   end
 
-  def normalize_result({:ok, %{content: _}} = result), do: result
+  def normalize_result({:ok, %{content: _} = completion}) do
+    {:ok, Map.merge(%{model: nil, usage: nil}, completion)}
+  end
+
   def normalize_result(result), do: result
+
+  # Callers always get `{:ok, content}` back.
+  def unwrap_result({:ok, %{content: content}}), do: {:ok, content}
+  def unwrap_result(result), do: result
 
   defp extract_arg_names(nil), do: []
 

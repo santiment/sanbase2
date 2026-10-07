@@ -87,30 +87,37 @@ defmodule Sanbase.AI.AcademyAIService do
       `#{inspect(@reasoning_effort)}`; nil sends none, i.e. the model's default)
     * `:search_opts` - passed to `semantic_search/2`
     * `:user_id`, `:session_id` - Langfuse tracing
+    * `:tracing_environment` - Langfuse environment of the trace (default
+      `Sanbase.OpenAI.Tracing.environment/0`; evals pass "eval")
 
   Returns `{:ok, %{answer, sources, suggestions, search_query}}`.
   """
   @spec answer(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
   def answer(question, opts \\ []) do
     chat_history = Keyword.get(opts, :chat_history, [])
-    user_id = Keyword.get(opts, :user_id)
-    session_id = Keyword.get(opts, :session_id)
     model = Keyword.get(opts, :model, @model)
+
+    trace =
+      Tracing.start_trace(question,
+        user_id: Keyword.get(opts, :user_id),
+        session_id: Keyword.get(opts, :session_id),
+        environment: Keyword.get(opts, :tracing_environment)
+      )
 
     history_for_search =
       if Keyword.get(opts, :rewrite_followups, true), do: chat_history, else: []
 
-    with {:ok, search_query} <- search_query(question, history_for_search, user_id, session_id),
+    with {:ok, search_query} <- search_query(question, history_for_search, trace),
          {:ok, reranked_chunks} <-
            semantic_search(search_query, Keyword.get(opts, :search_opts, [])),
          {:ok, answer, sources} <-
-           generate_answer(question, reranked_chunks, chat_history, user_id, session_id,
+           generate_answer(question, reranked_chunks, chat_history, trace,
              model: model,
              reasoning_effort: Keyword.get(opts, :reasoning_effort, @reasoning_effort)
            ) do
       suggestions =
         if Keyword.get(opts, :include_suggestions, true) and answer != @dont_know_message do
-          case generate_suggestions(question, answer, sources, user_id, session_id) do
+          case generate_suggestions(question, answer, sources, trace) do
             {:ok, suggestions} ->
               # Filter out suggestions longer than 255 characters
               Enum.filter(suggestions, fn s -> String.length(s) <= 255 end)
@@ -122,11 +129,23 @@ defmodule Sanbase.AI.AcademyAIService do
           []
         end
 
+      Tracing.finish_trace(trace, answer, %{
+        "search_query" => search_query,
+        "chunks_count" => length(reranked_chunks),
+        "sources_count" => length(sources),
+        "suggestions" => suggestions,
+        "dont_know" => answer == @dont_know_message,
+        "status" => "ok"
+      })
+
       {:ok,
        %{answer: answer, sources: sources, suggestions: suggestions, search_query: search_query}}
     else
       {:error, reason} ->
         Logger.error("Local Academy AI request failed: #{inspect(reason)}")
+
+        Tracing.finish_trace(trace, nil, %{"status" => "error", "error" => inspect(reason)})
+
         {:error, "Failed to generate Academy response"}
     end
   end
@@ -138,15 +157,15 @@ defmodule Sanbase.AI.AcademyAIService do
   # Without history the question is the search query. With history, a short LLM
   # call resolves references to earlier turns. On failure the raw question is
   # searched, as before.
-  defp search_query(question, [], _user_id, _session_id), do: {:ok, question}
+  defp search_query(question, [], _trace), do: {:ok, question}
 
-  defp search_query(question, chat_history, user_id, session_id) do
+  defp search_query(question, chat_history, trace) do
     prompt = build_rewrite_prompt(question, chat_history)
 
     tracing_opts =
-      question
-      |> Tracing.answer_tracing_opts(0, user_id, session_id, @rewrite_model)
-      |> Map.merge(%{generation_name: "academy.qa.rewrite", reasoning_effort: "none"})
+      trace
+      |> Tracing.generation_opts("academy.qa.rewrite", @rewrite_model)
+      |> Map.put(:reasoning_effort, "none")
 
     case Question.ask(prompt, tracing_opts) do
       {:ok, rewritten} ->
@@ -336,13 +355,13 @@ defmodule Sanbase.AI.AcademyAIService do
     end
   end
 
-  defp generate_answer(question, chunks, chat_history, user_id, session_id, model_opts) do
+  defp generate_answer(question, chunks, chat_history, trace, model_opts) do
     prompt = build_answer_prompt(question, chunks, chat_history)
     model = Keyword.fetch!(model_opts, :model)
 
     tracing_opts =
-      question
-      |> Tracing.answer_tracing_opts(length(chunks), user_id, session_id, model)
+      trace
+      |> Tracing.generation_opts("academy.qa.answer", model, %{"chunks_count" => length(chunks)})
       |> maybe_put_reasoning_effort(model_opts[:reasoning_effort])
 
     case Question.ask(prompt, tracing_opts) do
@@ -482,21 +501,17 @@ defmodule Sanbase.AI.AcademyAIService do
     end)
   end
 
-  defp generate_suggestions(question, answer, sources, user_id, session_id) do
+  defp generate_suggestions(question, answer, sources, trace) do
     tracing_opts =
-      question
-      |> Tracing.suggestions_tracing_opts(user_id, session_id, @suggestions_model)
+      trace
+      |> Tracing.generation_opts("academy.qa.suggestions.generate", @suggestions_model)
       |> Map.put(:reasoning_effort, @suggestions_reasoning_effort)
 
-    with {:ok, trace_id} <- Tracing.create_suggestions_trace(question, answer, tracing_opts),
-         {:ok, raw_suggestions} <-
-           call_suggestions_llm(question, answer, sources, trace_id, tracing_opts),
+    with {:ok, raw_suggestions} <-
+           call_suggestions_llm(question, answer, sources, tracing_opts),
          {validated, validation_details} <- validate_suggestions(raw_suggestions) do
       Tracing.log_validation_event(
-        trace_id,
-        session_id,
-        user_id,
-        question,
+        trace,
         raw_suggestions,
         validated,
         validation_details,
@@ -507,13 +522,12 @@ defmodule Sanbase.AI.AcademyAIService do
     end
   end
 
-  defp call_suggestions_llm(question, answer, sources, trace_id, tracing_opts) do
+  defp call_suggestions_llm(question, answer, sources, tracing_opts) do
     {:ok, broader_chunks} = Academy.search_chunks(question, 5)
 
     prompt = build_suggestions_prompt(question, answer, sources, broader_chunks)
-    tracing_opts_with_trace_id = Map.put(tracing_opts, :trace_id, trace_id)
 
-    case Question.ask(prompt, tracing_opts_with_trace_id) do
+    case Question.ask(prompt, tracing_opts) do
       {:ok, response} ->
         case Jason.decode(response) do
           {:ok, suggestions} when is_list(suggestions) ->

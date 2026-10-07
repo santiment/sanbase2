@@ -158,7 +158,7 @@ defmodule Sanbase.OpenAI.Traced do
   def maybe_add_model_parameters(opts) do
     case Map.take(opts, [:reasoning_effort]) do
       params when params == %{} -> opts
-      params -> Map.put_new(opts, :model_parameters, params)
+      params -> Map.update(opts, :model_parameters, params, &Map.merge(&1, params))
     end
   end
 

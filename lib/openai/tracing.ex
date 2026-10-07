@@ -133,6 +133,17 @@ defmodule Sanbase.OpenAI.Tracing do
             | trace_output(ctx, answer)
           ]
 
+        # No answer text (e.g. a usage-only map): record what there is.
+        {:ok, completion} when is_map(completion) ->
+          [
+            generation_update(ctx, %{
+              "output" => Map.drop(completion, [:model, :usage]),
+              "model" => completion[:model],
+              "usageDetails" => usage_details(completion[:usage]),
+              "costDetails" => cost_details(completion[:usage])
+            })
+          ]
+
         {:error, reason} ->
           [
             generation_update(ctx, %{

@@ -1,5 +1,5 @@
 defmodule Sanbase.AI.OpenAITracingTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Sanbase.OpenAI.Traced
   alias Sanbase.OpenAI.Tracing
@@ -58,5 +58,52 @@ defmodule Sanbase.AI.OpenAITracingTest do
              Traced.maybe_add_model_parameters(%{reasoning_effort: "low"})
 
     assert Traced.maybe_add_model_parameters(%{model: "m"}) == %{model: "m"}
+  end
+
+  test "reasoning effort is merged into existing model parameters and wins on conflict" do
+    opts = %{
+      reasoning_effort: "high",
+      model_parameters: %{temperature: 0, reasoning_effort: "low"}
+    }
+
+    assert %{model_parameters: %{temperature: 0, reasoning_effort: "high"}} =
+             Traced.maybe_add_model_parameters(opts)
+  end
+
+  describe "finalize/2" do
+    @ctx %{trace_id: "t", generation_id: "g", environment: "test", owns_trace?: true}
+
+    test "records a usage-only result instead of raising" do
+      usage = %{"prompt_tokens" => 10, "completion_tokens" => 5, "total_tokens" => 15}
+
+      Sanbase.Mock.prepare_mock(LangfuseSdk.Ingestor, :ingest_payload, fn events ->
+        send(self(), {:ingested, events})
+        {:ok, "id"}
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert Tracing.finalize(@ctx, {:ok, %{usage: usage, model: "m"}}) == :ok
+      end)
+
+      assert_received {:ingested, [%{"type" => "generation-update", "body" => body}]}
+      assert %{"model" => "m", "usageDetails" => %{"input" => 10, "output" => 5}} = body
+      assert body["output"] == %{}
+    end
+
+    test "a result with content also sets the trace output" do
+      Sanbase.Mock.prepare_mock(LangfuseSdk.Ingestor, :ingest_payload, fn events ->
+        send(self(), {:ingested, events})
+        {:ok, "id"}
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert Tracing.finalize(@ctx, {:ok, %{content: "answer", model: nil, usage: nil}}) ==
+                 :ok
+      end)
+
+      assert_received {:ingested,
+                       [
+                         %{"type" => "generation-update"},
+                         %{"type" => "trace-create", "body" => %{"output" => "answer"}}
+                       ]}
+    end
   end
 end

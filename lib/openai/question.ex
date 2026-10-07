@@ -60,11 +60,8 @@ defmodule Sanbase.OpenAI.Question do
       |> put_default_model()
 
     case request_with_retry(question, request_opts, 0) do
-      {:ok, %{content: content}} ->
-        {:ok, content}
-
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, completion} -> {:ok, Map.take(completion, [:content, :model, :usage])}
+      {:error, reason} -> {:error, reason}
     end
   end
 

@@ -371,7 +371,11 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
   defp evaluate_answer(item, answer_opts, judge?) do
     opts =
       Keyword.merge(
-        [chat_history: Map.get(item, :history, []), include_suggestions: false],
+        [
+          chat_history: Map.get(item, :history, []),
+          include_suggestions: false,
+          tracing_environment: "eval"
+        ],
         answer_opts
       )
 
@@ -463,7 +467,8 @@ defmodule Sanbase.Knowledge.AcademySearchEval do
              model: @judge_model,
              reasoning_effort: "low",
              response_format: %{"type" => "json_object"},
-             trace_name: "academy.eval.judge"
+             trace_name: "academy.eval.judge",
+             environment: "eval"
            }),
          {:ok, %{"score" => score}} when is_integer(score) and score in 1..5 <-
            Jason.decode(content) do

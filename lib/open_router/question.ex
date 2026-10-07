@@ -43,7 +43,7 @@ defmodule Sanbase.OpenRouter.Question do
     response_format = Map.get(tracing_opts, :response_format)
 
     case request_with_retry(question, model, response_format, 0) do
-      {:ok, %{content: content}} -> {:ok, content}
+      {:ok, completion} -> {:ok, Map.take(completion, [:content, :model, :usage])}
       {:error, reason} -> {:error, reason}
     end
   end

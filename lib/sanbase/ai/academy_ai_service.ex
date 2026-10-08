@@ -73,8 +73,8 @@ defmodule Sanbase.AI.AcademyAIService do
   citations, then optional follow-up suggestions.
 
   A follow-up question ("how do I set it up?") is first rewritten into a
-  standalone search query using the history; the answer prompt still gets the
-  original question and the history.
+  standalone search query using the history; the answer prompt gets the
+  original question, the rewritten query as its interpretation, and the history.
 
   Options:
     * `:chat_history` - earlier messages, oldest first, as `%{role, content}`
@@ -111,7 +111,7 @@ defmodule Sanbase.AI.AcademyAIService do
          {:ok, reranked_chunks} <-
            semantic_search(search_query, Keyword.get(opts, :search_opts, [])),
          {:ok, answer, sources} <-
-           generate_answer(question, reranked_chunks, chat_history, trace,
+           generate_answer(question, search_query, reranked_chunks, chat_history, trace,
              model: model,
              reasoning_effort: Keyword.get(opts, :reasoning_effort, @reasoning_effort)
            ) do
@@ -355,8 +355,8 @@ defmodule Sanbase.AI.AcademyAIService do
     end
   end
 
-  defp generate_answer(question, chunks, chat_history, trace, model_opts) do
-    prompt = build_answer_prompt(question, chunks, chat_history)
+  defp generate_answer(question, search_query, chunks, chat_history, trace, model_opts) do
+    prompt = build_answer_prompt(question, search_query, chunks, chat_history)
     model = Keyword.fetch!(model_opts, :model)
 
     tracing_opts =
@@ -383,13 +383,18 @@ defmodule Sanbase.AI.AcademyAIService do
   defp maybe_put_reasoning_effort(tracing_opts, effort),
     do: Map.put(tracing_opts, :reasoning_effort, effort)
 
-  defp build_answer_prompt(question, chunks, chat_history) do
+  defp build_answer_prompt(question, search_query, chunks, chat_history) do
     context = build_context_from_chunks(chunks)
     history_context = build_history_context(chat_history)
     system_prompt = build_academy_system_prompt(context, history_context)
 
-    "#{system_prompt}\n\nQuestion: #{question}"
+    "#{system_prompt}\n\nQuestion: #{question}#{interpretation(question, search_query)}"
   end
+
+  # A terse follow-up ("which metrics") alone makes the answer model reply "DK"
+  # even with relevant sources, so spell out what the rewrite resolved it to.
+  defp interpretation(question, search_query) when search_query == question, do: ""
+  defp interpretation(_question, search_query), do: "\n(Interpreted as: #{search_query})"
 
   defp build_academy_system_prompt(context, history_context) do
     """

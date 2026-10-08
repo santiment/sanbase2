@@ -179,6 +179,8 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
                  AcademyAIService.answer("What is MVRV?", include_suggestions: false)
 
         assert_received {:embedded, ["What is MVRV?"]}
+        assert_received {:prompt, :answer, answer_prompt}
+        refute answer_prompt =~ "Interpreted as"
       end)
     end
 
@@ -203,9 +205,10 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
         assert rewrite_prompt =~ "User: What is MVRV?"
         assert rewrite_prompt =~ "Latest question: How is it calculated?"
 
-        # The answer prompt keeps the user's own question.
+        # The answer prompt keeps the user's own question plus the rewrite.
         assert_received {:prompt, :answer, answer_prompt}
         assert answer_prompt =~ "Question: How is it calculated?"
+        assert answer_prompt =~ "(Interpreted as: How is MVRV calculated?)"
       end)
     end
 

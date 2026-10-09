@@ -72,9 +72,11 @@ defmodule Sanbase.Questionnaire.Question do
   """
   @spec by_uuid(question_uuid, Keyword.t()) :: {:ok, t()} | {:error, String.t()}
   def by_uuid(id, _opts \\ []) do
-    case Sanbase.Repo.get(__MODULE__, id) do
-      nil -> {:error, "No questionnaire question with id #{id} exists"}
-      %__MODULE__{} = question -> {:ok, question}
+    with {:ok, uuid} <- Ecto.UUID.cast(id),
+         %__MODULE__{} = question <- Sanbase.Repo.get(__MODULE__, uuid) do
+      {:ok, question}
+    else
+      _ -> {:error, "No questionnaire question with id #{id} exists"}
     end
   end
 

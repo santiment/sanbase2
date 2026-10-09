@@ -96,6 +96,11 @@ defmodule Sanbase.Alert.UserTrigger do
     iso = DateTime.to_iso8601(datetime)
 
     for identifier <- List.wrap(identifier_or_list) do
+      # Identifiers can be atoms (e.g. `:value` for social metric alerts on a
+      # text target); stamp them as strings, the way Jason encodes the keys
+      # in the end-of-round write.
+      identifier = to_string(identifier)
+
       # The inner jsonb_set initializes a missing/null 'last_triggered' parent
       # (possible on legacy rows) - without it the outer jsonb_set would
       # silently leave the row unchanged.

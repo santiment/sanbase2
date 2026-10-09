@@ -74,29 +74,27 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
         filtered_target: %{list: target_list},
         selector: selector
       }) do
-    data =
-      target_list
-      |> Enum.map(fn address ->
-        address = Sanbase.BlockchainAddress.to_internal_format(address)
+    # Fail the whole evaluation if any address errors - skipping it would
+    # store an empty state and report all its assets as new on the next run.
+    target_list
+    |> Enum.reduce_while({:ok, []}, fn address, {:ok, acc} ->
+      address = Sanbase.BlockchainAddress.to_internal_format(address)
 
-        selector = %{address: address, infrastructure: selector.infrastructure}
+      selector = %{address: address, infrastructure: selector.infrastructure}
 
-        with {:ok, result} when is_list(result) <- assets_held(selector) do
+      case assets_held(selector) do
+        {:ok, result} when is_list(result) ->
           slugs_list = Enum.map(result, & &1.slug)
+          {:cont, {:ok, [{address, slugs_list} | acc]}}
 
-          {address, slugs_list}
-        else
-          result ->
-            raise("""
-            The result returned from assets_held in WalletAssetsHeldTriggerSettings has \
-            different format than the expected one.
-            Got: #{inspect(result)}
-            """)
-        end
-      end)
-      |> Enum.reject(&(match?({:error, _}, &1) or match?({:ok, []}, &1)))
-
-    {:ok, data}
+        {:error, _} = error ->
+          {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, data} -> {:ok, Enum.reverse(data)}
+      {:error, _} = error -> error
+    end
   end
 
   defp assets_held(%{} = selector) do
@@ -105,7 +103,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
       |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store(cache_key, fn ->
-      {:ok, _} = HistoricalBalance.assets_held_by_address(selector)
+      HistoricalBalance.assets_held_by_address(selector)
     end)
   end
 

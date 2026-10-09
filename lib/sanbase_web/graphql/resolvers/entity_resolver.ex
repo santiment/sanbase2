@@ -373,6 +373,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   end
 
   defp validate_arguments(args) do
+    with :ok <- validate_types(args) do
+      do_validate_arguments(args)
+    end
+  end
+
+  # `types: []`, `types: [null]` or no `type`/`types` at all pass the GraphQL
+  # validation, but Sanbase.Entity requires a non-empty list of entity types
+  defp validate_types(args) do
+    case get_types(args) do
+      [_ | _] = types ->
+        if nil in types,
+          do: {:error, "The `types` argument must not contain null values"},
+          else: :ok
+
+      _ ->
+        {:error, "At least one entity type must be provided with the `type` or `types` argument"}
+    end
+  end
+
+  defp do_validate_arguments(args) do
     current_user_data_only = Map.get(args, :current_user_data_only)
 
     case args do

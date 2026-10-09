@@ -76,6 +76,9 @@ defmodule Sanbase.Dashboards.DashboardCache do
   @doc ~s"""
   Fetch the latest cache values for the given dashboard.
 
+  The cache is returned only if the dashboard is public or the querying user
+  is its owner. If there is no cache yet, a new empty one is created.
+
   The second `opts` argument can contain the following options:
   - lock_for_update - Set to true, if the record is fetched for an update
   - transform_loaded_queries - If set to true, the loaded query caches are
@@ -98,9 +101,14 @@ defmodule Sanbase.Dashboards.DashboardCache do
         true -> query |> lock("FOR UPDATE")
       end
 
-    case Repo.one(query) do
-      nil -> new(dashboard_id, parameters_override, querying_user_id)
-      %__MODULE__{} = cache -> {:ok, cache}
+    # The visibility must be checked on every read, not only when a new
+    # cache is created, otherwise the cache of a private dashboard can be
+    # read by anyone once the owner has loaded it.
+    with :ok <- check_read_access(dashboard_id, querying_user_id) do
+      case Repo.one(query) do
+        nil -> insert_new(dashboard_id, hash)
+        %__MODULE__{} = cache -> {:ok, cache}
+      end
     end
     |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
   end
@@ -148,20 +156,8 @@ defmodule Sanbase.Dashboards.DashboardCache do
   def new(dashboard_id, parameters_override, querying_user_id) do
     hash = hash_parameters(parameters_override)
 
-    case Sanbase.Dashboards.get_visibility_data(dashboard_id) do
-      {:ok, %{user_id: user_id, is_public: is_public}}
-      when user_id == querying_user_id or is_public == true ->
-        %__MODULE__{}
-        |> change(%{
-          dashboard_id: dashboard_id,
-          parameters_override_hash: hash
-        })
-        |> Repo.insert()
-        |> maybe_transform_error()
-
-      _ ->
-        {:error,
-         "Dashboard with id #{dashboard_id} does not exist or the dashboard is private and the user with id #{querying_user_id} is not the owner of it."}
+    with :ok <- check_read_access(dashboard_id, querying_user_id) do
+      insert_new(dashboard_id, hash)
     end
   end
 
@@ -226,6 +222,28 @@ defmodule Sanbase.Dashboards.DashboardCache do
   end
 
   # Private functions
+
+  defp check_read_access(dashboard_id, querying_user_id) do
+    case Sanbase.Dashboards.get_visibility_data(dashboard_id) do
+      {:ok, %{user_id: user_id, is_public: is_public}}
+      when user_id == querying_user_id or is_public == true ->
+        :ok
+
+      _ ->
+        {:error,
+         "Dashboard with id #{dashboard_id} does not exist or the dashboard is private and the user with id #{querying_user_id} is not the owner of it."}
+    end
+  end
+
+  defp insert_new(dashboard_id, hash) do
+    %__MODULE__{}
+    |> change(%{
+      dashboard_id: dashboard_id,
+      parameters_override_hash: hash
+    })
+    |> Repo.insert()
+    |> maybe_transform_error()
+  end
 
   defp transform_loaded_dashboard_cache(%__MODULE__{} = cache, opts) do
     flag = Keyword.get(opts, :transform_loaded_queries, true)

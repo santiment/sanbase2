@@ -16,8 +16,13 @@ defmodule SanbaseWeb.AuthController do
     "google" => Application.compile_env(:ueberauth, [Ueberauth, :providers, :google]),
     "twitter" => Application.compile_env(:ueberauth, [Ueberauth, :providers, :twitter])
   }
+  @provider_names Map.keys(@providers)
 
-  def request(conn, %{"provider" => provider} = params) do
+  # The redirect and origin URLs are kept in the cookie session, which must stay under
+  # 4096 bytes after signing and Base64 encoding. Longer URLs fall back to the website URL.
+  @max_session_url_length 1024
+
+  def request(conn, %{"provider" => provider} = params) when provider in @provider_names do
     # Instead of `use Ueberauth`, a custom `request/2` puts a few parameters in the session
     # before `callback/2` runs - sharing state between the two phases is what lets the
     # redirect URLs and the real origin URL be set dynamically.
@@ -34,19 +39,34 @@ defmodule SanbaseWeb.AuthController do
         "success_redirect_url_stored=#{success_redirect_url}"
     )
 
-    origin_url =
-      referer_url |> URI.parse() |> Map.merge(%{fragment: nil, path: nil}) |> URI.to_string()
+    origin_url = get_origin_url(referer_url)
 
     include_jwt_in_redirect_url =
       Map.get(params, "include_jwt_in_redirect_url", "false") == "true"
 
-    conn
-    |> put_session(:__san_include_jwt_in_redirect_url, include_jwt_in_redirect_url)
-    |> put_session(:__san_success_redirect_url, success_redirect_url)
-    |> put_session(:__san_fail_redirect_url, fail_redirect_url)
-    |> put_session(:__san_origin_url, origin_url)
-    |> Ueberauth.run_request(provider, @providers[provider])
+    conn =
+      conn
+      |> put_session(:__san_include_jwt_in_redirect_url, include_jwt_in_redirect_url)
+      |> put_session(:__san_success_redirect_url, success_redirect_url)
+      |> put_fail_redirect_url(fail_redirect_url, success_redirect_url)
+      |> put_session(:__san_origin_url, origin_url)
+
+    # The strategy sets a failure instead of redirecting when the provider cannot be
+    # reached (e.g. Twitter's request token endpoint is down), so the conn is not sent yet.
+    case Ueberauth.run_request(conn, provider, @providers[provider]) do
+      %{assigns: %{ueberauth_failure: failure}} = conn ->
+        Logger.warning(
+          "OAuth request failed: provider=#{provider}, errors=#{inspect(failure.errors)}"
+        )
+
+        conn |> redirect(external: fail_redirect_url)
+
+      conn ->
+        conn
+    end
   end
+
+  def request(conn, _params), do: send_resp(conn, 404, "Not Found")
 
   def delete(conn, _params) do
     conn
@@ -100,7 +120,7 @@ defmodule SanbaseWeb.AuthController do
         else
           _ ->
             conn
-            |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+            |> redirect(external: get_fail_redirect_url(conn))
         end
     end
   end
@@ -144,12 +164,42 @@ defmodule SanbaseWeb.AuthController do
         else
           _ ->
             conn
-            |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+            |> redirect(external: get_fail_redirect_url(conn))
         end
     end
   end
 
+  def callback(conn, _params), do: send_resp(conn, 404, "Not Found")
+
   # Private functions
+
+  # The fail redirect URL is stored only when it differs from the success one, so the
+  # same long URL does not take up the cookie session twice.
+  defp put_fail_redirect_url(conn, fail_redirect_url, fail_redirect_url),
+    do: delete_session(conn, :__san_fail_redirect_url)
+
+  defp put_fail_redirect_url(conn, fail_redirect_url, _success_redirect_url),
+    do: put_session(conn, :__san_fail_redirect_url, fail_redirect_url)
+
+  defp get_fail_redirect_url(conn) do
+    get_session(conn, :__san_fail_redirect_url) ||
+      get_session(conn, :__san_success_redirect_url) ||
+      SanbaseWeb.Endpoint.website_url()
+  end
+
+  # Only the scheme, host and port of the referer are kept - the path, query and
+  # fragment are not needed and can be arbitrarily long.
+  defp get_origin_url(referer_url) do
+    origin_url =
+      referer_url
+      |> URI.parse()
+      |> Map.merge(%{fragment: nil, path: nil, query: nil})
+      |> URI.to_string()
+
+    if byte_size(origin_url) <= @max_session_url_length,
+      do: origin_url,
+      else: SanbaseWeb.Endpoint.website_url()
+  end
 
   defp extend_if_first_login(redirect_url, first_login) do
     case first_login do
@@ -229,8 +279,19 @@ defmodule SanbaseWeb.AuthController do
 
     # In case the provided redirect URL is not valid, simply redirect to sanbase
     case validate_redirect_url(processed_url) do
-      true -> processed_url
-      _ -> SanbaseWeb.Endpoint.website_url()
+      true when byte_size(processed_url) <= @max_session_url_length ->
+        processed_url
+
+      true ->
+        Logger.warning(
+          "Redirect URL too long to keep in the session (#{byte_size(processed_url)} bytes), " <>
+            "falling back to the website URL"
+        )
+
+        SanbaseWeb.Endpoint.website_url()
+
+      _ ->
+        SanbaseWeb.Endpoint.website_url()
     end
   end
 

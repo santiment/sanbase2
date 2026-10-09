@@ -37,8 +37,9 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   Fetch all users with conncted wallets, fetch their total staked
   SAN tokens and update.
 
-  If fetching the staked tokens fails, the update is aborted and the
-  currently stored records are left untouched.
+  Transient RPC failures are retried a couple of times. If fetching the
+  staked tokens still fails, the update is aborted and the currently
+  stored records are left untouched.
 
   ## Examples
 
@@ -56,7 +57,7 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
 
     users = User.fetch_all_users_with_eth_account()
 
-    case fetch_uniswap_san_staked(users) do
+    case fetch_uniswap_san_staked_with_retries(users, retry_delays_ms()) do
       {:ok, users_staked_map} ->
         users_san_staked =
           users
@@ -140,6 +141,47 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   end
 
   # Helpers
+
+  # The RPC node is behind Cloudflare, which now and then answers a request with
+  # a 502 HTML page. Retry transient failures a few times before giving up, so a
+  # single bad response does not abort (and report) the whole update.
+  @retry_delays_ms [1_000, 5_000]
+
+  defp retry_delays_ms() do
+    if Sanbase.Utils.Config.module_get(Sanbase, :env) == :test,
+      do: [0, 0],
+      else: @retry_delays_ms
+  end
+
+  defp fetch_uniswap_san_staked_with_retries(users, retry_delays_ms) do
+    result = fetch_uniswap_san_staked(users)
+
+    case {result, retry_delays_ms} do
+      {{:error, reason}, [delay_ms | rest]} ->
+        if transient_error?(reason) do
+          Logger.warning(
+            "Transient error fetching Uniswap SAN staked balances, retrying in #{delay_ms}ms: " <>
+              inspect(reason)
+          )
+
+          Process.sleep(delay_ms)
+          fetch_uniswap_san_staked_with_retries(users, rest)
+        else
+          result
+        end
+
+      _ ->
+        result
+    end
+  end
+
+  # Transport errors and non-JSON bodies (e.g. a 5xx HTML error page) are transient
+  defp transient_error?(%Mint.TransportError{}), do: true
+  defp transient_error?(%Mint.HTTPError{}), do: true
+  defp transient_error?(%Finch.Error{}), do: true
+  defp transient_error?({:invalid_json, _}), do: true
+  defp transient_error?(_), do: false
+
   defp fetch_uniswap_san_staked(users) when is_list(users) do
     addresses =
       Enum.flat_map(users, fn user -> Enum.map(user.eth_accounts, fn acc -> acc.address end) end)

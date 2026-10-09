@@ -120,10 +120,8 @@ defmodule Sanbase.Telegram do
         {:ok, body}
 
       {:ok, %Tesla.Env{status: 400, body: json_body}} ->
-        body = Jason.decode!(json_body)
-
         error_msg =
-          "Telegram message not sent (#{recipient}). Error status 400. Reason: #{Map.get(body, "description", "Bad request")}"
+          "Telegram message not sent (#{recipient}). Error status 400. Reason: #{error_description(json_body, "Bad request")}"
 
         Logger.info(error_msg)
         {:error, error_msg}
@@ -136,10 +134,8 @@ defmodule Sanbase.Telegram do
         {:error, error_msg}
 
       {:ok, %Tesla.Env{status: 404, body: json_body}} ->
-        body = Jason.decode!(json_body)
-
         error_msg =
-          "Telegram message not sent (#{recipient}). Error status 404. Reason: #{Map.get(body, "description", "Chat ID not found")}"
+          "Telegram message not sent (#{recipient}). Error status 404. Reason: #{error_description(json_body, "Chat ID not found")}"
 
         Logger.info(error_msg)
         {:error, error_msg}
@@ -267,4 +263,14 @@ defmodule Sanbase.Telegram do
     do: "chat_id=#{chat_id} user_id=#{user_id}"
 
   defp describe_recipient(chat_id, _user), do: "chat_id=#{chat_id}"
+
+  # The body of an error response is not guaranteed to be JSON (e.g. a proxy error page)
+  defp error_description(json_body, default) when is_binary(json_body) do
+    case Jason.decode(json_body) do
+      {:ok, %{"description" => description}} when is_binary(description) -> description
+      _ -> default
+    end
+  end
+
+  defp error_description(_body, default), do: default
 end

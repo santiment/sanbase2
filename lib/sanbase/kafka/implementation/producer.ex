@@ -4,7 +4,7 @@ defmodule Sanbase.Kafka.Implementation.Producer do
   require Logger
 
   def start_producer(topic) do
-    :brod.start_producer(@client_name, topic, _producer_config = [])
+    :brod.start_producer(@client_name, topic, producer_config())
   end
 
   def produce_sync(topic, list) when is_list(list) do
@@ -93,5 +93,13 @@ defmodule Sanbase.Kafka.Implementation.Producer do
     |> :erlang.binary_to_list()
     |> Enum.sum()
     |> rem(partitions_count)
+  end
+
+  # brod applies the client's `default_producer_config` only to auto-started
+  # producers, so pass it explicitly to the ones started here
+  defp producer_config() do
+    Application.get_env(:brod, :clients, [])
+    |> Keyword.get(@client_name, [])
+    |> Keyword.get(:default_producer_config, [])
   end
 end

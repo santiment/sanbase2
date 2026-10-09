@@ -659,8 +659,10 @@ defmodule Sanbase.Insight.Post do
             :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
             {:ok, post}
 
-          {:error, error} ->
-            {:error, error}
+          {:error, changeset} ->
+            {:error,
+             message: "Cannot update insight with id #{post_id}",
+             details: changeset_errors(changeset)}
         end
 
       {:ok, %__MODULE__{user_id: another_user_id}} when user_id != another_user_id ->

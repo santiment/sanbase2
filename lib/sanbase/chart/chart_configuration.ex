@@ -5,6 +5,7 @@ defmodule Sanbase.Chart.Configuration do
 
   import Ecto.{Query, Changeset}
   import Sanbase.Utils.Transform, only: [to_bang: 1]
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.Repo
 
@@ -168,6 +169,7 @@ defmodule Sanbase.Chart.Configuration do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
+    |> maybe_transform_changeset_error("Cannot create chart configuration")
   end
 
   def update(config_id, user_id, attrs) do
@@ -176,6 +178,7 @@ defmodule Sanbase.Chart.Configuration do
         conf
         |> changeset(attrs)
         |> Repo.update()
+        |> maybe_transform_changeset_error("Cannot update chart configuration")
 
       {:error, error} ->
         {:error, "Cannot update chart configuration. Reason: #{inspect(error)}"}
@@ -194,6 +197,12 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   # Private functions
+
+  defp maybe_transform_changeset_error({:error, %Ecto.Changeset{} = changeset}, message) do
+    {:error, message: message, details: changeset_errors(changeset)}
+  end
+
+  defp maybe_transform_changeset_error(result, _message), do: result
 
   defp base_query(_opts \\ []) do
     from(conf in __MODULE__, where: conf.is_deleted != true)

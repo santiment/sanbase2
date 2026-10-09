@@ -4,23 +4,42 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1, changeset_errors_string: 1]
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [requested_fields: 1]
+  import Ecto.Query, only: [from: 2]
 
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserRole
   alias Sanbase.Accounts.UserFollower
   alias Sanbase.Accounts.UserSettings
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  def moderator?(%User{roles: roles}, _args, _resolution) do
-    flag = Enum.any?(roles, fn user_role -> user_role.role.name == "Santiment Moderator" end)
+  def moderator?(%User{} = user, _args, _resolution),
+    do: user_has_role(user, "Santiment Moderator")
 
-    {:ok, flag}
+  def santiment_team_member?(%User{} = user, _args, _resolution),
+    do: user_has_role(user, "Santiment Team Member")
+
+  # The roles are not preloaded when the user comes from a plain `preload: [:user]`
+  # (e.g. sql_query.user via getPublicQueries). In this case batch-load the role
+  # names of all users in the request with a single query.
+  defp user_has_role(%User{id: user_id, roles: roles}, role_name) do
+    if Ecto.assoc_loaded?(roles) and Enum.all?(roles, &Ecto.assoc_loaded?(&1.role)) do
+      {:ok, Enum.any?(roles, fn user_role -> user_role.role.name == role_name end)}
+    else
+      batch({__MODULE__, :role_names_by_user_id}, user_id, fn batch_results ->
+        {:ok, role_name in Map.get(batch_results, user_id, [])}
+      end)
+    end
   end
 
-  def santiment_team_member?(%User{roles: roles}, _args, _resolutiond) do
-    flag = Enum.any?(roles, fn user_role -> user_role.role.name == "Santiment Team Member" end)
-
-    {:ok, flag}
+  def role_names_by_user_id(_, user_ids) do
+    from(ur in UserRole,
+      join: r in assoc(ur, :role),
+      where: ur.user_id in ^Enum.uniq(user_ids),
+      select: {ur.user_id, r.name}
+    )
+    |> Sanbase.Repo.all()
+    |> Enum.group_by(fn {user_id, _} -> user_id end, fn {_, name} -> name end)
   end
 
   def feature_access_level(%User{feature_access_level: level}, _args, _resolution) do

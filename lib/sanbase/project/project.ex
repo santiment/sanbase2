@@ -265,14 +265,19 @@ defmodule Sanbase.Project do
   def sanbase_link(%Project{}), do: nil
 
   @doc ~s"""
-  Return a project with a matching ticker. `Repo.one` fails if there are more
-  than one project with the same ticker.
+  Return a project with a matching ticker. Tickers are not unique, so if there
+  are more than one project with the same ticker, the one with the best
+  coinmarketcap rank is returned (projects without rank come last, ties are
+  broken by id).
   """
   @spec by_currency(%Currency{}) :: %Project{} | nil
   def by_currency(%Currency{code: code}) do
     from(
       p in Project,
-      where: p.ticker == ^code and not is_nil(p.slug)
+      left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+      where: p.ticker == ^code and not is_nil(p.slug),
+      order_by: [asc_nulls_last: latest_cmc.rank, asc: p.id],
+      limit: 1
     )
     |> Repo.one()
   end

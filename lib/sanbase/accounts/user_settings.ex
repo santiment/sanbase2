@@ -1,6 +1,7 @@
 defmodule Sanbase.Accounts.UserSettings do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   alias Sanbase.Accounts.{User, Settings}
   alias Sanbase.Repo
@@ -251,7 +252,23 @@ defmodule Sanbase.Accounts.UserSettings do
     end
   end
 
-  defp settings_update(user_id, params) do
+  @doc """
+  Set the is_subscribed_marketing_emails flag without emitting Mailjet events
+  and without syncing users.marketing_accepted.
+
+  Used when the marketing consent is changed through users.marketing_accepted,
+  which is responsible for the sync and for emitting the Mailjet event itself.
+  """
+  @spec put_marketing_emails_flag(non_neg_integer(), boolean()) ::
+          {:ok, term()} | {:error, term()}
+  def put_marketing_emails_flag(user_id, value) when is_boolean(value) do
+    settings_update(user_id, %{is_subscribed_marketing_emails: value},
+      emit_events: false,
+      sync_marketing_accepted: false
+    )
+  end
+
+  defp settings_update(user_id, params, opts \\ []) do
     changeset =
       Repo.get_by(__MODULE__, user_id: user_id)
       |> case do
@@ -263,13 +280,38 @@ defmodule Sanbase.Accounts.UserSettings do
           changeset(us, %{settings: params})
       end
 
-    case changeset |> Repo.insert_or_update() do
+    Repo.transaction(fn ->
+      with {:ok, %__MODULE__{} = us} <- Repo.insert_or_update(changeset),
+           :ok <- maybe_sync_marketing_accepted(user_id, params, opts) do
+        us
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+    |> case do
       {:ok, %__MODULE__{} = us} ->
-        maybe_emit_event_on_changes(user_id, changeset.changes)
+        if Keyword.get(opts, :emit_events, true),
+          do: maybe_emit_event_on_changes(user_id, changeset.changes)
+
         {:ok, %{us | settings: modify_settings(us)}}
 
-      {:error, changeset} ->
-        {:error, changeset}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  # The settings is_subscribed_marketing_emails flag and users.marketing_accepted
+  # represent the same marketing consent and are kept in sync. Whenever the
+  # settings flag is explicitly written, the users column follows it.
+  defp maybe_sync_marketing_accepted(user_id, params, opts) do
+    with true <- Keyword.get(opts, :sync_marketing_accepted, true),
+         {:ok, value} when is_boolean(value) <- Map.fetch(params, :is_subscribed_marketing_emails) do
+      from(u in User, where: u.id == ^user_id)
+      |> Repo.update_all(set: [marketing_accepted: value])
+
+      :ok
+    else
+      _ -> :ok
     end
   end
 
@@ -279,7 +321,8 @@ defmodule Sanbase.Accounts.UserSettings do
     email_lists_keys = [
       :is_subscribed_biweekly_report,
       :is_subscribed_monthly_newsletter,
-      :is_subscribed_metric_updates
+      :is_subscribed_metric_updates,
+      :is_subscribed_marketing_emails
     ]
 
     for key <- Map.keys(settings_changes), key in email_lists_keys do

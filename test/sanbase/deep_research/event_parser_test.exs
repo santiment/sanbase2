@@ -581,6 +581,39 @@ defmodule Sanbase.DeepResearch.EventParserTest do
     end
   end
 
+  describe "messages channel (handoff sub-agents)" do
+    # Captured from a live run: LangGraph sends `messages/metadata` keyed by message id just
+    # before that message's first chunk.
+    defp metadata_event(id, meta), do: %{id => %{"metadata" => meta}}
+
+    test "a coding- or extract-subagent's message id comes back muted" do
+      id = "lc_run--01a12024-61b2-7d31-b04e-7478b62c9dc2-0"
+
+      assert %Event{muted: [^id]} =
+               EventParser.parse(
+                 metadata_event(id, %{"role" => "extract-subagent", "langgraph_node" => "model"})
+               )
+
+      assert %Event{muted: ["c1"]} =
+               EventParser.parse(metadata_event("c1", %{"lc_agent_name" => "coding-subagent"}))
+    end
+
+    test "the orchestrator's and the research sub-agent's messages are not muted" do
+      for role <- ["orchestrator", "research-subagent"] do
+        assert Event.empty?(EventParser.parse(metadata_event("x", %{"role" => role})))
+      end
+    end
+
+    test "a finished handoff message named after its sub-agent is not thinking" do
+      handoff = "STATUS: ok OUTPUT:\n\nsanity:\n  - OK total_matching=1532"
+
+      assert EventParser.parse([
+               %{"content" => handoff, "type" => "ai", "id" => "m9", "name" => "coding-subagent"},
+               %{}
+             ]) == %Event{}
+    end
+  end
+
   describe "messages channel (thinking)" do
     test "ai message becomes a thinking snapshot" do
       assert EventParser.parse([
@@ -747,5 +780,54 @@ defmodule Sanbase.DeepResearch.EventParserTest do
       "type" => "ai",
       "invalid_tool_calls" => [%{"name" => name, "args" => args, "error" => nil}]
     }
+  end
+
+  describe "malformed agent fields" do
+    # A raise here would end the stream task and park the turn; Continue would replay it.
+    test "non-string gaps and clarification questions are dropped, not raised on" do
+      assert %Event{activity: %{kind: :subagent_findings, gaps: ["kept", "7"]}} =
+               EventParser.parse(%{
+                 "type" => "subagent_findings",
+                 "gaps" => [%{"gap" => "no CEX data"}, "kept", 7, ["x"]]
+               })
+
+      assert %Event{activity: %{kind: :clarification, questions: ["Which chain?"]}} =
+               EventParser.parse(%{
+                 "type" => "clarification",
+                 "questions" => [%{"question" => "?"}, "Which chain?"]
+               })
+    end
+
+    test "search results that are not objects are skipped" do
+      assert %Event{activity: %{results: [%{url: "https://a.com", title: "https://a.com"}]}} =
+               EventParser.parse(%{
+                 "type" => "search_results",
+                 "results" => ["https://b.com", %{"url" => "https://a.com", "title" => %{}}]
+               })
+    end
+
+    test "non-scalar names, urls and ids fall back instead of raising" do
+      assert %Event{activity: %{kind: :mcp_call, id: nil, tool: ""}} =
+               EventParser.parse(%{"type" => "mcp_call", "id" => %{}, "tool" => ["x"]})
+
+      assert %Event{activity: %{kind: :source, url: "", title: nil, domain: nil}} =
+               EventParser.parse(%{
+                 "type" => "source",
+                 "url" => %{},
+                 "title" => [1],
+                 "domain" => %{}
+               })
+
+      assert %Event{activity: %{kind: :status, state: ""}} =
+               EventParser.parse(%{"type" => "status", "state" => %{"x" => 1}})
+    end
+
+    test "a tool_calls entry that is not an object is ignored" do
+      payload = [
+        %{"type" => "ai", "id" => "m1", "content" => "", "tool_calls" => ["write_todos"]}
+      ]
+
+      assert %Event{activity: nil} = EventParser.parse(payload)
+    end
   end
 end

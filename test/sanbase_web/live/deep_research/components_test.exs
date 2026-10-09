@@ -548,7 +548,49 @@ defmodule SanbaseWeb.DeepResearch.ComponentsTest do
         |> Map.update!(:timeline, fn [c] -> [%{c | series: ["junk" | c.series]}] end)
 
       doc = turn |> render_turn() |> LazyHTML.from_fragment()
-      assert Enum.count(LazyHTML.query(doc, "#dra-report-chart-1-33e6333f#{@chart_hook}")) == 1
+      assert Enum.count(LazyHTML.query(doc, "#dra-report-chart-1-33e6333f #{@chart_hook}")) == 1
+    end
+
+    test "the chart header sits outside the hook's ignored canvas, so a re-sent chart updates it" do
+      chart = %{
+        activity: %{
+          kind: :chart,
+          id: "33e6333f",
+          label: "price_usd",
+          series: [%{"label" => "price_usd", "data" => [%{"time" => 1, "value" => 2}]}]
+        }
+      }
+
+      doc =
+        turn([chart], %{report: "x\n\n[chart:33e6333f]\n", phase: :completed, finished_at: @now})
+        |> render_turn()
+        |> LazyHTML.from_fragment()
+
+      canvas = LazyHTML.query(doc, "#dra-report-chart-1-33e6333f #{@chart_hook}")
+      assert LazyHTML.attribute(canvas, "phx-update") == ["ignore"]
+      refute LazyHTML.text(canvas) =~ "price_usd"
+    end
+
+    test "a chart placed twice in the report gets two distinct DOM ids" do
+      chart = %{
+        activity: %{
+          kind: :chart,
+          id: "33e6333f",
+          series: [%{"label" => "price_usd", "data" => [%{"time" => 1, "value" => 2}]}]
+        }
+      }
+
+      report = "a\n\n[chart:33e6333f]\n\nb\n\n[chart:33e6333f]\n"
+
+      ids =
+        turn([chart], %{report: report, phase: :completed, finished_at: @now})
+        |> render_turn()
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query(@chart_hook)
+        |> LazyHTML.attribute("id")
+
+      assert [_, _] = ids
+      assert ids == Enum.uniq(ids)
     end
 
     test "a placeholder for a chart that never streamed degrades to a note" do

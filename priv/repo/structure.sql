@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict K89G8HZGPw275pTtxo0sGLgW6lw4006DnYIQJYlgwoNigvfhlXD2A12i8dgMdas
+\restrict PvbjqjZmuWnlrfYD3EvPnegewcR7DO8MExGYOFT3diTbExa8GzOUeEf9RNBOGhD
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -1410,7 +1410,7 @@ CREATE TABLE public.deep_research_turns (
     question text NOT NULL,
     report text,
     error text,
-    clarification character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    clarification text[] DEFAULT ARRAY[]::text[],
     phase character varying(255) DEFAULT 'planning'::character varying NOT NULL,
     model_tier character varying(255),
     timeline jsonb[] DEFAULT ARRAY[]::jsonb[],
@@ -12646,7 +12646,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict K89G8HZGPw275pTtxo0sGLgW6lw4006DnYIQJYlgwoNigvfhlXD2A12i8dgMdas
+\unrestrict PvbjqjZmuWnlrfYD3EvPnegewcR7DO8MExGYOFT3diTbExa8GzOUeEf9RNBOGhD
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -13260,3 +13260,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260929125810);
 INSERT INTO public."schema_migrations" (version) VALUES (20260929133621);
 INSERT INTO public."schema_migrations" (version) VALUES (20260929133928);
 INSERT INTO public."schema_migrations" (version) VALUES (20260929141453);
+INSERT INTO public."schema_migrations" (version) VALUES (20261009120000);

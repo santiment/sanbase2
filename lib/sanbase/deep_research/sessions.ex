@@ -68,6 +68,34 @@ defmodule Sanbase.DeepResearch.Sessions do
     end
   end
 
+  @doc "The position the session's next turn takes: one past its last stored turn."
+  @spec next_position(Ecto.UUID.t()) :: pos_integer()
+  def next_position(session_id) do
+    from(t in SessionTurn, where: t.session_id == ^session_id, select: max(t.position))
+    |> Repo.one()
+    |> Kernel.||(0)
+    |> Kernel.+(1)
+  end
+
+  @doc "The stored phase of the turn at `position`, or nil when there is no such row."
+  @spec turn_phase(Ecto.UUID.t(), integer()) :: Timeline.phase() | nil
+  def turn_phase(session_id, position) do
+    from(t in SessionTurn,
+      where: t.session_id == ^session_id and t.position == ^position,
+      select: t.phase
+    )
+    |> Repo.one()
+  end
+
+  @doc "Whether a turn other than the one at `position` already stored `report`."
+  @spec report_of_other_turn?(Ecto.UUID.t(), integer(), String.t()) :: boolean()
+  def report_of_other_turn?(session_id, position, report) do
+    from(t in SessionTurn,
+      where: t.session_id == ^session_id and t.position != ^position and t.report == ^report
+    )
+    |> Repo.exists?()
+  end
+
   @doc "Record the LangGraph thread id once it is known (first turn only)."
   @spec set_thread_id(Ecto.UUID.t(), String.t()) :: :ok
   def set_thread_id(session_id, thread_id) when is_binary(thread_id) do

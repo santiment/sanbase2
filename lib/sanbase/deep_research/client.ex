@@ -54,6 +54,8 @@ defmodule Sanbase.DeepResearch.Client do
                         @request_retries * @retry_delay + 1_000
 
   @buffer_key :dra_sse_buffer
+  # Enough for any refusal's `detail`; `Failure.response/3` keeps less still.
+  @error_body_max 8_192
 
   @doc "Create a new thread. Returns `{:ok, thread_id}` or `{:error, failure}`."
   @spec create_thread() :: {:ok, String.t()} | {:error, Failure.t()}
@@ -189,12 +191,7 @@ defmodule Sanbase.DeepResearch.Client do
           receive_timeout: @stream_idle_timeout,
           # A retry would start a SECOND run, interleaving its events with the first's.
           retry: false,
-          # Framing state on the response's private map, scoped to this request.
-          into: fn {:data, data}, {req, resp} ->
-            {lines, buffer} = SSE.feed(Req.Response.get_private(resp, @buffer_key, ""), data)
-            Enum.each(lines, &handle_line(&1, lv_pid, ref))
-            {:cont, {req, Req.Response.put_private(resp, @buffer_key, buffer)}}
-          end
+          into: stream_into(lv_pid, ref)
         )
       )
 
@@ -209,6 +206,20 @@ defmodule Sanbase.DeepResearch.Client do
     end
   end
 
+  # Framing state on the response's private map, scoped to this request. An error response
+  # is not a stream: keep its body, which says why the run was refused.
+  defp stream_into(lv_pid, ref) do
+    fn
+      {:data, data}, {req, %{status: status} = resp} when status in 200..299 ->
+        {lines, buffer} = SSE.feed(Req.Response.get_private(resp, @buffer_key, ""), data)
+        Enum.each(lines, &handle_line(&1, lv_pid, ref))
+        {:cont, {req, Req.Response.put_private(resp, @buffer_key, buffer)}}
+
+      {:data, data}, {req, resp} ->
+        {:cont, {req, %{resp | body: error_body(resp.body, data)}}}
+    end
+  end
+
   defp flush_buffer({:ok, %Req.Response{} = resp}, lv_pid, ref) do
     {lines, ""} = resp |> Req.Response.get_private(@buffer_key, "") |> SSE.flush()
     Enum.each(lines, &handle_line(&1, lv_pid, ref))
@@ -216,6 +227,12 @@ defmodule Sanbase.DeepResearch.Client do
 
   # A transport-level failure has no response to drain.
   defp flush_buffer(_result, _lv_pid, _ref), do: :ok
+
+  defp error_body(body, data) when is_binary(body) and byte_size(body) < @error_body_max,
+    do: body <> data
+
+  defp error_body(body, _data) when is_binary(body), do: body
+  defp error_body(_body, data), do: data
 
   defp handle_line("data:" <> rest, lv_pid, ref) do
     raw = String.trim(rest)

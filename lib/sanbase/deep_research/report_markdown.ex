@@ -170,7 +170,7 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
 
   defp parse_chart_spec(body) do
     case Jason.decode(String.trim(body)) do
-      {:ok, obj} when is_map(obj) -> build_spec(to_string(obj["type"] || "pie"), obj)
+      {:ok, obj} when is_map(obj) -> build_spec(scalar_string(obj["type"]) || "pie", obj)
       _ -> :error
     end
   end
@@ -217,7 +217,7 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
   end
 
   defp one_slice(s) when is_map(s) do
-    label = to_string(s["label"] || s["name"] || "")
+    label = scalar_string(s["label"]) || scalar_string(s["name"]) || ""
 
     case s["value"] || s["count"] do
       v when is_number(v) -> %{label: label, value: v}
@@ -253,7 +253,10 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
         _ -> []
       end
 
-    %{label: blank_to_nil(to_string(s["label"] || s["name"] || "")), points: points}
+    %{
+      label: blank_to_nil(scalar_string(s["label"]) || scalar_string(s["name"]) || ""),
+      points: points
+    }
   end
 
   defp one_series(_), do: nil
@@ -275,6 +278,12 @@ defmodule Sanbase.DeepResearch.ReportMarkdown do
       _ -> nil
     end
   end
+
+  # The agent's JSON, so a label can be any shape; `to_string/1` raises on a map or a
+  # list, and this runs during render, so a raise would crash every load of the report.
+  defp scalar_string(v) when is_binary(v), do: v
+  defp scalar_string(v) when is_number(v), do: to_string(v)
+  defp scalar_string(_), do: nil
 
   defp num(n) when is_number(n), do: n
   defp num(_), do: nil

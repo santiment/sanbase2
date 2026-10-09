@@ -44,7 +44,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
     do: Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: args}) do
+  def perform(%Oban.Job{args: args, attempt: attempt}) do
     args = Map.put_new(args, "version", "v1")
 
     %{
@@ -98,19 +98,23 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
 
         {:snooze, seconds}
 
-      {:error, :service_unavailable} ->
-        Logger.warning(
-          "[Cryptocompare OpenInterest] Service unavailable for #{market}/#{instrument}. Will retry."
-        )
-
-        {:error, :service_unavailable}
-
       {:error, error} ->
-        Logger.warning(
-          "[Cryptocompare OpenInterest] Error for #{market}/#{instrument}: #{inspect(error)}"
-        )
+        case Handler.snooze_transient_error(error, attempt) do
+          {:snooze, seconds} ->
+            Logger.warning(
+              "[Cryptocompare OpenInterest] Transient error for #{market}/#{instrument}: " <>
+                "#{inspect(error)}. Snoozing job for #{seconds}s."
+            )
 
-        {:error, error}
+            {:snooze, seconds}
+
+          {:error, error} ->
+            Logger.warning(
+              "[Cryptocompare OpenInterest] Error for #{market}/#{instrument}: #{inspect(error)}"
+            )
+
+            {:error, error}
+        end
     end
   end
 

@@ -78,6 +78,44 @@ defmodule Sanbase.Cryptocompare.Handler do
     end
   end
 
+  # Snoozing (instead of failing) keeps transient errors out of Sentry. After
+  # this many attempts the error is returned, so a lasting outage still surfaces.
+  # Snoozes count as attempts too: OSS Oban increments both attempt and
+  # max_attempts on snooze, so the worker's own error retries are not consumed.
+  @max_transient_snooze_attempts 8
+  @transient_http_reasons [:timeout, :connect_timeout, :closed, :econnrefused]
+
+  @doc ~s"""
+  Turn an error returned by get_data/3 into the result of the historical worker
+  job on its `attempt`-th attempt.
+
+  Transient errors (503 Service Unavailable, HTTP timeouts and connection
+  errors) are snoozed with an exponential backoff (1 minute, doubling, capped at
+  1 hour) for the first #{@max_transient_snooze_attempts} attempts. Every other
+  error, and a transient error after that, is returned as is.
+
+  ## Examples
+
+      iex> Handler.snooze_transient_error(:service_unavailable, 1)
+      {:snooze, 60}
+
+      iex> Handler.snooze_transient_error("API error: bad instrument", 1)
+      {:error, "API error: bad instrument"}
+  """
+  @spec snooze_transient_error(term(), pos_integer()) ::
+          {:snooze, pos_integer()} | {:error, term()}
+  def snooze_transient_error(error, attempt) when is_integer(attempt) do
+    if transient_error?(error) and attempt <= @max_transient_snooze_attempts do
+      {:snooze, min(60 * 2 ** (attempt - 1), 3600)}
+    else
+      {:error, error}
+    end
+  end
+
+  defp transient_error?(:service_unavailable), do: true
+  defp transient_error?(%HTTPoison.Error{reason: reason}), do: reason in @transient_http_reasons
+  defp transient_error?(_), do: false
+
   def get_markets_and_instruments() do
     cache_key = {__MODULE__, :get_markets_and_instruments}
     Sanbase.Cache.get_or_store({cache_key, 600}, &do_get_markets_and_instruments/0)

@@ -12,6 +12,7 @@ layer whose budget it exhausts.
 | 4 | Absinthe async middleware | 105s | `Helpers.Async` | `Task.await` exit → **500** |
 | 5 | Absinthe batch middleware | 5s (library default) | unconfigured, `ico_resolver.ex` | `exit({:timeout, ..})` → **500** |
 | 6 | Dataloader batches | 55s PG, 105s KV/CH | per-source `timeout:` | batch killed; fields → nil |
+| 6a | `Sanbase.Parallel` fan-outs inside KV batches | 95s | `*_dataloader.ex` | slow group killed; its keys → nil |
 | 7 | `RehydratingCache.get/2` | 30s | `rehydrating_cache.ex` | `{:error, :timeout}` |
 | 8 | Postgres | 30s, CoDel 5s/10s | `config/config.exs` | `DBConnection.ConnectionError` → **500** |
 | 9 | ClickHouse (rw + per-plan ro) | 85s, CoDel 5s/20s | `config/config.exs` | rescued → `{:error, message}` |
@@ -67,6 +68,11 @@ must exceed the peer's budget, or it gives up exactly when the holder is slow.
 - Dataloader timeouts sit on the **sources**, not the loader —
   `Dataloader.new(timeout:)` is never read; the run timeout is
   `max(source timeouts) + 1s`.
+- KV batch functions that fan out with `Sanbase.Parallel` pass
+  `timeout: 95_000, on_timeout: :kill_task` (above CH 85s, below KV 105s) and
+  drop the `{:exit, _}` results. With the default `on_timeout: :exit` one slow
+  group exits the batch task and nils *every* key in it (SANBASE-BACKEND-PROD-R,
+  F9H, GA0). `Sanbase.Parallel`'s own default stays 25s / `:exit`.
 - Modules importing both `Helpers.Async` and `Absinthe.Resolution.Helpers`
   must `except: [async: 1, async: 2]` on the latter, or the call is ambiguous.
 

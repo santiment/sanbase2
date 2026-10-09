@@ -20,6 +20,9 @@ defmodule Sanbase.Parallel do
     ordered = Keyword.get(opts, :ordered, true)
     timeout = Keyword.get(opts, :timeout) || @default_timeout
     on_timeout = Keyword.get(opts, :on_timeout) || :exit
+    # With `on_timeout: :kill_task`, `true` makes a timed out task yield
+    # `{:exit, {input, reason}}` so the caller knows which input was dropped.
+    zip_input_on_exit = Keyword.get(opts, :zip_input_on_exit, false)
     map_type = Keyword.get(opts, :map_type) || :map
 
     # `Task.Supervisor` workers do NOT inherit `Logger.metadata`. Callers
@@ -38,7 +41,8 @@ defmodule Sanbase.Parallel do
         ordered: ordered,
         max_concurrency: max_concurrency,
         timeout: timeout,
-        on_timeout: on_timeout
+        on_timeout: on_timeout,
+        zip_input_on_exit: zip_input_on_exit
       )
 
     case map_type do
@@ -50,9 +54,12 @@ defmodule Sanbase.Parallel do
         end)
 
       :flat_map ->
+        # With `on_timeout: :kill_task` a timed out task yields `{:exit, reason}`,
+        # which is not enumerable - it contributes no elements.
         stream
         |> Enum.flat_map(fn
           {:ok, elem} -> elem
+          {:exit, _reason} -> []
           data -> data
         end)
     end

@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         %{comment_id: comment_id} = args,
         _resolution
       ) do
-    {:ok, Comment.get_subcomments(comment_id, args)}
+    {:ok, Comment.get_subcomments(comment_id, Map.get(args, :limit, 100))}
   end
 
   def comments_feed(

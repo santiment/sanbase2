@@ -188,7 +188,7 @@ defmodule Sanbase.Chat do
           {:ok, ChatMessage.t()} | {:error, Ecto.Changeset.t()}
   def update_message_feedback(message_id, feedback_type)
       when feedback_type in ["thumbs_up", "thumbs_down"] do
-    case Repo.get(ChatMessage, message_id) do
+    case get_message(message_id) do
       nil ->
         {:error, :message_not_found}
 
@@ -213,10 +213,16 @@ defmodule Sanbase.Chat do
   """
   @spec get_chat_with_messages(Ecto.UUID.t()) :: Chat.t() | nil
   def get_chat_with_messages(chat_id) do
-    Chat
-    |> where([c], c.id == ^chat_id)
-    |> preload([:user, :chat_messages])
-    |> Repo.one()
+    case Ecto.UUID.cast(chat_id) do
+      {:ok, chat_id} ->
+        Chat
+        |> where([c], c.id == ^chat_id)
+        |> preload([:user, :chat_messages])
+        |> Repo.one()
+
+      :error ->
+        nil
+    end
   end
 
   @doc """
@@ -235,7 +241,10 @@ defmodule Sanbase.Chat do
   """
   @spec get_chat(Ecto.UUID.t()) :: Chat.t() | nil
   def get_chat(chat_id) do
-    Repo.get(Chat, chat_id)
+    case Ecto.UUID.cast(chat_id) do
+      {:ok, chat_id} -> Repo.get(Chat, chat_id)
+      :error -> nil
+    end
   end
 
   @doc """
@@ -243,7 +252,10 @@ defmodule Sanbase.Chat do
   """
   @spec get_message(Ecto.UUID.t()) :: ChatMessage.t() | nil
   def get_message(message_id) do
-    Repo.get(ChatMessage, message_id)
+    case Ecto.UUID.cast(message_id) do
+      {:ok, message_id} -> Repo.get(ChatMessage, message_id)
+      :error -> nil
+    end
   end
 
   @doc """

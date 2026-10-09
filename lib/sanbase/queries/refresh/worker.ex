@@ -32,7 +32,11 @@ defmodule Sanbase.Queries.RefreshWorker do
         "(oban_job_id=#{job.id}, attempt=#{job.attempt}/#{job.max_attempts}): #{error_str}"
     )
 
-    {:error, "Failed to refresh query_id=#{query_id} user_id=#{user_id}. Reason: #{error_str}"}
+    error_msg = "Failed to refresh query_id=#{query_id} user_id=#{user_id}. Reason: #{error_str}"
+
+    # Retrying a deterministic error cannot succeed, so cancel the job instead of
+    # failing every attempt (and reporting each failure).
+    if deterministic_error?(error_str), do: {:cancel, error_msg}, else: {:error, error_msg}
   end
 
   defp handle_result(result, _job, _query_id, _user_id), do: result
@@ -49,35 +53,44 @@ defmodule Sanbase.Queries.RefreshWorker do
 
   defp maybe_remove_scheduled_job(result, nil), do: result
 
-  defp maybe_remove_scheduled_job({:error, error_str}, scheduled_job) do
-    case retryable_error?(error_str) do
-      true ->
-        {:error, error_str}
-
-      false ->
-        Oban.cancel_job(@oban_conf_name, scheduled_job)
-        {:error, error_str}
-    end
+  defp maybe_remove_scheduled_job({:cancel, _} = result, scheduled_job) do
+    # The error is deterministic, so the next scheduled refresh would fail the same way.
+    Oban.cancel_job(@oban_conf_name, scheduled_job)
+    result
   end
 
   defp maybe_remove_scheduled_job(result, _), do: result
 
-  defp retryable_error?(error_str) do
-    non_retryable_errors = [
-      "(SYNTAX_ERROR)",
-      "(ILLEGAL_TYPE_OF_ARGUMENT)",
-      "(UNKNOWN_IDENTIFIER)",
-      "(ACCESS_DENIED)",
-      "(UNKNOWN_TABLE)",
-      "(MEMORY_LIMIT_EXCEEDED)",
-      "(AMBIGUOUS_COLUMN_NAME)",
-      "Query does not exist or you don't have access to it.",
-      "Cannot fetch the user with id"
-    ]
+  @deterministic_errors [
+    "Query does not exist or you don't have access to it.",
+    "Cannot fetch the user with id"
+  ]
 
-    has_non_retryable_error? =
-      Enum.any?(non_retryable_errors, fn error -> String.contains?(error_str, error) end)
+  # ClickHouse errors carry their code in parentheses, e.g. "(ILLEGAL_PREWHERE)".
+  @clickhouse_error_code_regex ~r/\(([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)\)/
 
-    not has_non_retryable_error?
+  # ClickHouse error codes caused by the server's load or the network rather than by
+  # the query itself. Every other ClickHouse error code means the query text is
+  # invalid or not allowed, which only the query owner can fix.
+  @transient_clickhouse_error_codes ~w[
+    TIMEOUT_EXCEEDED
+    TOO_MANY_SIMULTANEOUS_QUERIES
+    NETWORK_ERROR
+    SOCKET_TIMEOUT
+    QUERY_WAS_CANCELLED
+    ALL_CONNECTION_TRIES_FAILED
+  ]
+
+  defp deterministic_error?(error_str) do
+    cond do
+      Enum.any?(@deterministic_errors, &String.contains?(error_str, &1)) ->
+        true
+
+      match = Regex.run(@clickhouse_error_code_regex, error_str, capture: :all_but_first) ->
+        hd(match) not in @transient_clickhouse_error_codes
+
+      true ->
+        false
+    end
   end
 end

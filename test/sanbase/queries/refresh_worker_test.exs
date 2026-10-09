@@ -35,7 +35,7 @@ defmodule Sanbase.Queries.RefreshWorkerTest do
     assert tags[:oban_user_id] == to_string(user.id)
   end
 
-  test "missing query does not raise, the error identifies the query id" do
+  test "missing query does not raise, the job is cancelled and identifies the query id" do
     user = insert(:user)
 
     job = %Oban.Job{
@@ -45,7 +45,7 @@ defmodule Sanbase.Queries.RefreshWorkerTest do
       args: %{"query_id" => 0, "user_id" => user.id}
     }
 
-    assert {:error, error} = RefreshWorker.perform(job)
+    assert {:cancel, error} = RefreshWorker.perform(job)
 
     assert error =~ "Failed to refresh query_id=0 user_id=#{user.id}"
     assert error =~ "Query does not exist or you don't have access to it."
@@ -61,7 +61,7 @@ defmodule Sanbase.Queries.RefreshWorkerTest do
       args: %{"query_id" => 0, "user_id" => user.id}
     }
 
-    assert {:error, error} = RefreshWorker.perform(job)
+    assert {:cancel, error} = RefreshWorker.perform(job)
 
     assert error =~ "Failed to refresh query_id=0 user_id=#{user.id}"
     assert error =~ "Query does not exist or you don't have access to it."
@@ -93,6 +93,30 @@ defmodule Sanbase.Queries.RefreshWorkerTest do
     assert error =~ "Template keys missing from the parameters: {{asset1}}"
 
     assert [%Oban.Job{state: "scheduled"}] = scheduled_refresh_jobs()
+  end
+
+  test "a transient ClickHouse error is retried and keeps the next scheduled refresh" do
+    user = insert(:user)
+
+    {:ok, query} =
+      Queries.create_query(%{sql_query_text: "SELECT 1", sql_query_parameters: %{}}, user.id)
+
+    job = %Oban.Job{
+      id: 1,
+      attempt: 1,
+      max_attempts: 3,
+      args: %{"query_id" => query.id, "user_id" => user.id}
+    }
+
+    Sanbase.Mock.prepare_mock(Sanbase.Queries, :run_query, fn _query, _user, _metadata, _opts ->
+      {:error, "[9eaa0d5b] (TIMEOUT_EXCEEDED) Timeout exceeded: elapsed 85 seconds"}
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert {:error, error} = RefreshWorker.perform(job)
+      assert error =~ "TIMEOUT_EXCEEDED"
+
+      assert [%Oban.Job{state: "scheduled"}] = scheduled_refresh_jobs()
+    end)
   end
 
   defp scheduled_refresh_jobs() do

@@ -118,14 +118,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{context: %{auth: %{current_user: user, plan: plan}, subscription_product: product}} =
           resolution
       ) do
-    parameters_override = Map.get(args, :parameters_override, %{})
     force_parameters_override = Map.get(args, :force_parameters_override, false)
     query_metadata = QueryMetadata.from_resolution(resolution)
     cache? = Map.get(args, :store_execution, false)
 
     # get_dashboard_query/3 is a function that returns a query struct with the
     # query's local parameter being overriden by the dashboard global parameters
-    with :ok <- Queries.user_can_execute_query(user, product, plan),
+    with {:ok, parameters_override} <- normalize_parameters_override(args),
+         :ok <- Queries.user_can_execute_query(user, product, plan),
          {:ok, query} <-
            Queries.get_dashboard_query(
              dashboard_id,
@@ -146,6 +146,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
              user
            ) do
       {:ok, result}
+    end
+  end
+
+  # `parametersOverride` is a :json arg, so it can be an explicit null or any
+  # non-object JSON value, while only a map is a valid override.
+  defp normalize_parameters_override(args) do
+    case Map.get(args, :parameters_override) do
+      nil -> {:ok, %{}}
+      %{} = map -> {:ok, map}
+      _ -> {:error, "parametersOverride must be a JSON object"}
     end
   end
 
@@ -366,9 +376,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       ) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
-    parameters_override = Map.get(args, :parameters_override, %{})
-
-    with {:ok, dashboard_cache} <-
+    with {:ok, parameters_override} <- normalize_parameters_override(args),
+         {:ok, dashboard_cache} <-
            Dashboards.get_cached_dashboard_queries_executions(
              dashboard_id,
              parameters_override,

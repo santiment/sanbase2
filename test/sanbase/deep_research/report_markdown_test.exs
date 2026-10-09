@@ -186,4 +186,25 @@ defmodule Sanbase.DeepResearch.ReportMarkdownTest do
       assert [{:md, ^md}] = ReportMarkdown.split_charts(md)
     end
   end
+
+  describe "split_charts with malformed chart labels" do
+    # Runs during render, and the report is stored: a raise would crash every load.
+    test "an object label does not raise; the slice keeps an empty label and is dropped" do
+      md = ~s(```chart\n{"type":"pie","slices":[{"label":{"text":"BTC"},"value":3}]}\n```)
+
+      assert [{:md, _}] = ReportMarkdown.split_charts(md)
+    end
+
+    test "a list series label and an object type do not raise" do
+      md =
+        ~s(```chart\n{"type":{"x":1},"series":[{"label":[1.5],"points":[{"t":1,"v":1},{"t":2,"v":2}]}]}\n```)
+
+      assert [{:md, _}] = ReportMarkdown.split_charts(md)
+
+      line =
+        ~s(```chart\n{"type":"line","series":[{"label":[1.5],"points":[{"t":1,"v":1},{"t":2,"v":2}]}]}\n```)
+
+      assert [{:chart, %{series: [%{label: nil}]}}] = ReportMarkdown.split_charts(line)
+    end
+  end
 end

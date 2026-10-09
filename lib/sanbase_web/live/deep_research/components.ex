@@ -1132,22 +1132,11 @@ defmodule SanbaseWeb.DeepResearch.Components do
   attr :id, :string, required: true
   attr :chart, :map, required: true
 
+  # Only the canvas is `phx-update="ignore"` (the hook owns it): the header stays
+  # server-rendered, so a chart the agent re-sends updates its caption and CSV links too.
   defp chart_widget(assigns) do
     ~H"""
-    <div
-      id={@id}
-      phx-hook="LightweightChart"
-      phx-update="ignore"
-      data-chart={
-        Jason.encode!(%{
-          slug: @chart[:slug],
-          range: @chart[:range],
-          summary: @chart[:summary],
-          series: @chart.series
-        })
-      }
-      class="overflow-hidden rounded-xl border border-base-300 bg-base-100"
-    >
+    <div id={@id} class="overflow-hidden rounded-xl border border-base-300 bg-base-100">
       <div class="flex items-center gap-2 border-b border-base-300 px-3.5 py-2 text-xs font-medium text-base-content/60">
         <.icon name="hero-chart-bar" class="size-4 text-primary" />
         <span class="text-base-content/80">{chart_caption(@chart)}</span>
@@ -1166,7 +1155,22 @@ defmodule SanbaseWeb.DeepResearch.Components do
           <.icon name="hero-arrow-down-tray" class="size-3.5" /> CSV
         </a>
       </div>
-      <div class="dra-chart-canvas w-full" style="height: 18rem;"></div>
+      <div
+        id={"#{@id}-canvas"}
+        phx-hook="LightweightChart"
+        phx-update="ignore"
+        data-chart={
+          Jason.encode!(%{
+            slug: @chart[:slug],
+            range: @chart[:range],
+            summary: @chart[:summary],
+            series: @chart.series
+          })
+        }
+        class="w-full"
+        style="height: 18rem;"
+      >
+      </div>
     </div>
     """
   end
@@ -1197,16 +1201,16 @@ defmodule SanbaseWeb.DeepResearch.Components do
         </button>
       </div>
       <div class="space-y-4 px-5 py-4">
-        <%= for seg <- ReportMarkdown.split_charts(ReportMarkdown.reflow_sources(@report)) do %>
+        <%= for seg <- report_segments(@report) do %>
           <%= case seg do %>
             <% {:md, text} -> %>
               <div class="prose prose-sm max-w-none">{markdown(text)}</div>
             <% {:chart, spec} -> %>
               {ChartRenderer.render(spec)}
-            <% {:artifact, chart_id} -> %>
+            <% {:artifact, chart_id, nth} -> %>
               <%= if chart = @charts[chart_id] do %>
                 <.chart_widget
-                  id={stable_dom_id("dra-report-chart", @id, chart, chart_id)}
+                  id={stable_dom_id("dra-report-chart", @id, chart, chart_id) <> nth}
                   chart={chart}
                 />
               <% else %>
@@ -1220,6 +1224,23 @@ defmodule SanbaseWeb.DeepResearch.Components do
   end
 
   # -- view helpers ------------------------------------------------------------
+
+  # A report can place the same `[chart:<id>]` twice; each placement after the first gets
+  # a suffix so the two hook elements never share a DOM id.
+  defp report_segments(report) do
+    report
+    |> ReportMarkdown.reflow_sources()
+    |> ReportMarkdown.split_charts()
+    |> Enum.map_reduce(%{}, fn
+      {:artifact, chart_id}, seen ->
+        n = Map.get(seen, chart_id, 0)
+        {{:artifact, chart_id, if(n == 0, do: "", else: "-#{n}")}, Map.put(seen, chart_id, n + 1)}
+
+      seg, seen ->
+        {seg, seen}
+    end)
+    |> elem(0)
+  end
 
   # Settle an in-flight item (done, outcome unknown) so a terminal turn shows no
   # spinner. `ok` stays nil, so the row renders "interrupted", not a false check.

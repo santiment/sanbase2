@@ -81,12 +81,19 @@ defmodule Sanbase.DeepResearch.Timeline do
     %{settle(turn, merge_phase(turn.phase, :failed), now_ms) | error: turn.error || reason}
   end
 
-  @doc "Cancel a turn (the user's Stop). One that already has a report completes instead."
+  @doc """
+  Cancel a turn (the user's Stop). One that already has a report completes instead, and
+  an already settled one (failed, awaiting the user) keeps its phase.
+  """
   @spec cancel_turn(turn(), non_neg_integer()) :: turn()
   def cancel_turn(%{report: report} = turn, now_ms) when is_binary(report),
     do: complete_turn(turn, now_ms)
 
-  def cancel_turn(turn, now_ms), do: settle(turn, :cancelled, now_ms)
+  def cancel_turn(turn, now_ms) do
+    phase = if settled_phase?(turn.phase), do: turn.phase, else: :cancelled
+
+    settle(turn, phase, now_ms)
+  end
 
   @doc """
   Park an unfinished turn as `:paused`; a settled one is returned as is. `reason`
@@ -250,8 +257,11 @@ defmodule Sanbase.DeepResearch.Timeline do
   results patch the matching call by id; skills dedupe by name.
   """
   @spec reduce_timeline([map()], map()) :: [map()]
+  # Calls upsert by id: a run the server restarts from its checkpoint re-emits them, and
+  # an appended twin would never see its result (that patches the first match) and spin
+  # until the turn settles. The re-emitted call starts over, so it replaces the old row.
   def reduce_timeline(prev, %{kind: :search_query} = a) do
-    prev ++ [%{kind: :search, id: a.id, query: a.query}]
+    upsert_by_id(prev, :search, a.id, fn _ -> %{kind: :search, id: a.id, query: a.query} end)
   end
 
   def reduce_timeline(prev, %{kind: :search_results} = a) do
@@ -269,7 +279,9 @@ defmodule Sanbase.DeepResearch.Timeline do
   end
 
   def reduce_timeline(prev, %{kind: :mcp_call} = a) do
-    prev ++ [%{kind: :mcp, id: a.id, tool: a.tool, args: a[:args]}]
+    upsert_by_id(prev, :mcp, a.id, fn _ ->
+      %{kind: :mcp, id: a.id, tool: a.tool, args: a[:args]}
+    end)
   end
 
   def reduce_timeline(prev, %{kind: :mcp_result} = a) do
@@ -282,7 +294,7 @@ defmodule Sanbase.DeepResearch.Timeline do
   end
 
   def reduce_timeline(prev, %{kind: :fetch_call} = a) do
-    prev ++ [%{kind: :fetch, id: a.id, url: a.url}]
+    upsert_by_id(prev, :fetch, a.id, fn _ -> %{kind: :fetch, id: a.id, url: a.url} end)
   end
 
   def reduce_timeline(prev, %{kind: :fetch_result} = a) do

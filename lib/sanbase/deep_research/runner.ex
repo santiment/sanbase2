@@ -31,6 +31,9 @@ defmodule Sanbase.DeepResearch.Runner do
   @registry Sanbase.DeepResearch.Registry
   @supervisor Sanbase.DeepResearch.RunnerSupervisor
 
+  # Past the Client's own retry budget for a cancel.
+  @cancel_wait_ms 60_000
+
   @continue_message "Continue the interrupted research. Pick up where you left off, reuse the " <>
                       "work already done on this thread, and deliver the final report."
 
@@ -58,7 +61,10 @@ defmodule Sanbase.DeepResearch.Runner do
     :pause_timer,
     :silence_timer,
     :checkpointed_at,
+    :cancel_pid,
+    :last_report,
     running: false,
+    muted: MapSet.new(),
     mcp_warning: nil,
     next_id: 1,
     watchers: %{}
@@ -200,6 +206,16 @@ defmodule Sanbase.DeepResearch.Runner do
     # Nothing settles the old turn once :current_turn changes.
     state = settle_abandoned_turn(state)
 
+    # The caller seeded `next_id` from the transcript it loaded, which another tab may
+    # have since outgrown; reusing a taken position would overwrite that turn's row.
+    # `Map.put`/`Map.get` for keys added since a runner may have started (dev code reload).
+    state =
+      %{state | next_id: max(state.next_id, stored_next_id(state))}
+      |> Map.put(
+        :last_report,
+        (state.current_turn && state.current_turn.report) || Map.get(state, :last_report)
+      )
+
     # Before persist_new_turn, so the row records the tier the run uses.
     state = %{state | model_tier: Keyword.get(opts, :model_tier, state.model_tier)}
 
@@ -218,6 +234,23 @@ defmodule Sanbase.DeepResearch.Runner do
     do: {:reply, {:error, :busy}, state}
 
   def handle_call({:continue, %Turn{phase: :paused} = turn, opts}, _from, state) do
+    if resumable?(state, turn),
+      do: do_continue(turn, opts, state),
+      else: {:reply, {:error, :not_paused}, state}
+  end
+
+  def handle_call({:continue, _turn, _opts}, _from, state),
+    do: {:reply, {:error, :not_paused}, state}
+
+  def handle_call(:cancel, _from, %{running: false} = state),
+    do: {:reply, {:ok, snapshot(state)}, state}
+
+  def handle_call(:cancel, _from, state) do
+    state = cancel_current_run(state)
+    {:reply, {:ok, snapshot(state)}, state}
+  end
+
+  defp do_continue(turn, opts, state) do
     # Same stranding as :ask — once :current_turn moves on, a pending poll reply no
     # longer matches its id.
     state =
@@ -241,16 +274,19 @@ defmodule Sanbase.DeepResearch.Runner do
     {:reply, {:ok, snapshot(state)}, broadcast(state)}
   end
 
-  def handle_call({:continue, _turn, _opts}, _from, state),
-    do: {:reply, {:error, :not_paused}, state}
+  # The caller's copy of the turn can be stale: another tab may have resumed it to an
+  # end, or asked past it. Only the session's last turn, unsettled in storage, resumes.
+  defp resumable?(%{session_id: nil}, _turn), do: true
 
-  def handle_call(:cancel, _from, %{running: false} = state),
-    do: {:reply, {:ok, snapshot(state)}, state}
+  defp resumable?(state, turn) do
+    stored_phase = Sessions.turn_phase(state.session_id, turn.id)
 
-  def handle_call(:cancel, _from, state) do
-    state = cancel_current_run(state)
-    {:reply, {:ok, snapshot(state)}, state}
+    Sessions.next_position(state.session_id) <= turn.id + 1 and
+      (stored_phase == :paused or not Timeline.settled_phase?(stored_phase))
   end
+
+  defp stored_next_id(%{session_id: nil}), do: 1
+  defp stored_next_id(state), do: Sessions.next_position(state.session_id)
 
   @impl true
   def handle_cast({:detach, watcher}, state) do
@@ -283,6 +319,7 @@ defmodule Sanbase.DeepResearch.Runner do
     else
       # Receipt time, so the UI can say how long the stream has been silent.
       event = %{result | at: result.at || now_ms()}
+      {event, state} = mute_handoff(event, state)
       state = state |> apply_run_level(event) |> arm_silence_watchdog()
       {:noreply, update_current_turn(state, &Timeline.apply_result(&1, event))}
     end
@@ -304,9 +341,11 @@ defmodule Sanbase.DeepResearch.Runner do
 
   def handle_info(:event_silence, state), do: {:noreply, %{state | silence_timer: nil}}
 
+  # Keyed by run id as well as turn id: Continue reuses the turn id, and a reply about the
+  # run it replaced must not settle the new one.
   def handle_info(
-        {:dra_run_status, ref, {:ok, run}},
-        %{current_turn: %{id: ref}, running: true} = state
+        {:dra_run_status, {ref, run_id}, {:ok, run}},
+        %{current_turn: %{id: ref}, run_id: run_id, running: true} = state
       ) do
     case run["status"] do
       status when status in ["pending", "running"] ->
@@ -341,10 +380,12 @@ defmodule Sanbase.DeepResearch.Runner do
     maybe_wind_down(state)
   end
 
-  def handle_info({:dra_poll, ref, result}, %{current_turn: %{id: ref}} = state) do
+  def handle_info({:dra_poll, ref, %Event{} = event}, %{current_turn: %{id: ref}} = state) do
+    polled = if event.report && not earlier_report?(state, ref, event.report), do: event.report
+
     state =
       update_current_turn(state, fn turn ->
-        report = turn.report || result[:report]
+        report = turn.report || polled
 
         cond do
           Timeline.settled_phase?(turn.phase) -> turn
@@ -414,9 +455,13 @@ defmodule Sanbase.DeepResearch.Runner do
     user = state.user
     model_tier = Keyword.get(opts, :model_tier, state.model_tier)
     ref = turn.id
+    pending_cancel = Map.get(state, :cancel_pid)
 
     task =
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        # A Stop's cancel still in flight could sweep up the run this task is about to
+        # start (with no run id yet it cancels everything active on the thread).
+        await_exit(pending_cancel, @cancel_wait_ms)
         if is_binary(thread_id), do: Client.cancel_active_runs(thread_id)
 
         # Inside the task: resolving MCP servers does a DB read.
@@ -430,7 +475,22 @@ defmodule Sanbase.DeepResearch.Runner do
       end)
 
     %{state | current_turn: turn, running: true, run_id: nil, mcp_warning: nil, task: task}
+    |> Map.merge(%{cancel_pid: nil, muted: MapSet.new()})
     |> arm_silence_watchdog()
+  end
+
+  defp await_exit(nil, _timeout), do: :ok
+
+  defp await_exit(pid, timeout) do
+    ref = Process.monitor(pid)
+
+    receive do
+      {:DOWN, ^ref, :process, _pid, _reason} -> :ok
+    after
+      timeout -> Process.demonitor(ref, [:flush])
+    end
+
+    :ok
   end
 
   defp arm_silence_watchdog(state) do
@@ -506,7 +566,10 @@ defmodule Sanbase.DeepResearch.Runner do
   defp cancel_current_run(state), do: stop_run(state, &Timeline.cancel_turn(&1, now_ms()))
 
   defp stop_run(state, settle_fun) do
-    if state.running, do: cancel_run_async(state.thread_id, state.run_id)
+    state =
+      if state.running,
+        do: Map.put(state, :cancel_pid, cancel_run_async(state.thread_id, state.run_id)),
+        else: state
 
     %{stop_task(state) | running: false}
     |> update_current_turn(settle_fun)
@@ -603,12 +666,16 @@ defmodule Sanbase.DeepResearch.Runner do
     end
   end
 
+  # Persistence is best effort: a raise (connection loss, a constraint the row breaks)
+  # would otherwise kill the runner and the run it streams.
   defp write_turn(state, turn) do
     with {:error, error} <- Sessions.update_turn(state.session_id, turn.id, turn) do
       log_persist_error("update_turn", error)
     end
 
     :ok
+  rescue
+    error -> log_persist_error("update_turn", error)
   end
 
   # Before the run, so a browser closed mid-run still leaves the question behind.
@@ -618,9 +685,24 @@ defmodule Sanbase.DeepResearch.Runner do
     end
 
     :ok
+  rescue
+    error -> log_persist_error("create_turn", error)
   end
 
   defp persist_new_turn(_state, _turn), do: :ok
+
+  # A coding- or extract-subagent's message is a handoff to its caller, not narration: its id
+  # arrives in `muted` just before its chunks, and its text never reaches the timeline.
+  defp mute_handoff(%Event{} = event, state) do
+    muted = MapSet.union(Map.get(state, :muted, MapSet.new()), MapSet.new(event.muted || []))
+
+    event =
+      if event.thinking && MapSet.member?(muted, event.thinking.id),
+        do: %{event | thinking: nil},
+        else: event
+
+    {event, Map.put(state, :muted, muted)}
+  end
 
   defp apply_run_level(state, %Event{} = event) do
     %{
@@ -652,7 +734,7 @@ defmodule Sanbase.DeepResearch.Runner do
 
   defp check_run_status_async(thread_id, run_id, sink, ref) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      send(sink, {:dra_run_status, ref, Client.get_run(thread_id, run_id)})
+      send(sink, {:dra_run_status, {ref, run_id}, Client.get_run(thread_id, run_id)})
     end)
   end
 
@@ -670,15 +752,30 @@ defmodule Sanbase.DeepResearch.Runner do
   end
 
   # No run_id yet (the stream never reported one) — cancel whatever the thread has active.
+  # Returns the task pid, so the next run can wait for it (see `start_run/4`).
   defp cancel_run_async(thread_id, run_id) when is_binary(thread_id) do
-    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      if is_binary(run_id),
-        do: Client.cancel_run(thread_id, run_id),
-        else: Client.cancel_active_runs(thread_id)
-    end)
+    task =
+      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+        if is_binary(run_id),
+          do: Client.cancel_run(thread_id, run_id),
+          else: Client.cancel_active_runs(thread_id)
+      end)
+
+    case task do
+      {:ok, pid} -> pid
+      _ -> nil
+    end
   end
 
-  defp cancel_run_async(_thread_id, _run_id), do: :ok
+  defp cancel_run_async(_thread_id, _run_id), do: nil
+
+  # The thread state keeps `final_report` across runs, so a run that wrote none polls back
+  # the previous turn's — that one is not this turn's report.
+  defp earlier_report?(%{session_id: nil} = state, _turn_id, report),
+    do: report == Map.get(state, :last_report)
+
+  defp earlier_report?(state, turn_id, report),
+    do: Sessions.report_of_other_turn?(state.session_id, turn_id, report)
 
   defp log_persist_error(operation, error) do
     Logger.warning("Deep research session persistence failed in #{operation}: #{inspect(error)}")

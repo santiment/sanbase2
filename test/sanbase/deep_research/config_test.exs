@@ -30,6 +30,11 @@ defmodule Sanbase.DeepResearch.ConfigTest do
       assert Config.base_url() == "http://127.0.0.1:2024"
     end
 
+    test "a blank value falls back too — a deploy can set the env var to \"\"" do
+      put_env(base_url: "")
+      assert Config.base_url() == "http://127.0.0.1:2024"
+    end
+
     test "strips a trailing slash so path joins never double up" do
       put_env(base_url: "https://agent.example.com/")
       assert Config.base_url() == "https://agent.example.com"
@@ -39,6 +44,11 @@ defmodule Sanbase.DeepResearch.ConfigTest do
   describe "assistant_id/0" do
     test "defaults to the graph name" do
       put_env(assistant_id: nil)
+      assert Config.assistant_id() == "deep_research_agent"
+    end
+
+    test "a blank value falls back to the graph name" do
+      put_env(assistant_id: "")
       assert Config.assistant_id() == "deep_research_agent"
     end
 

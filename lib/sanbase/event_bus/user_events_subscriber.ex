@@ -86,6 +86,30 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
+         %{data: %{event_type: :subscribe_marketing_newsletter, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    email = Sanbase.Accounts.get_user!(user_id).email
+    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:marketing_newsletter, email)
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{data: %{event_type: :unsubscribe_marketing_newsletter, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    email = Sanbase.Accounts.get_user!(user_id).email
+    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(:marketing_newsletter, email)
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
          %{data: %{event_type: :subscribe_biweekly_pro, user_id: _user_id}},
          event_shadow,
          state

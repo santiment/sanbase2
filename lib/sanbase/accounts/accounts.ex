@@ -24,6 +24,61 @@ defmodule Sanbase.Accounts do
   @spec masked_sentinel() :: String.t()
   def masked_sentinel(), do: "<activity_traces_hidden>"
 
+  @doc """
+  Update the privacy policy and marketing consent of a user.
+
+  `users.marketing_accepted` and the `is_subscribed_marketing_emails` user
+  setting represent the same consent and are kept in sync. When
+  `marketing_accepted` changes, the user is subscribed to or unsubscribed from
+  the marketing newsletter Mailjet list. Writing the same value again does not
+  touch Mailjet.
+  """
+  @spec update_terms_and_conditions(User.t(), map()) :: {:ok, User.t()} | {:error, term()}
+  def update_terms_and_conditions(%User{} = user, attrs) do
+    changeset = User.terms_changeset(user, attrs)
+
+    Repo.transaction(fn ->
+      with {:ok, user} <- Repo.update(changeset),
+           :ok <- maybe_sync_marketing_emails_setting(user, attrs) do
+        user
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+    |> case do
+      {:ok, user} ->
+        case Ecto.Changeset.fetch_change(changeset, :marketing_accepted) do
+          {:ok, value} ->
+            Sanbase.Email.MailjetEventEmitter.emit_event(
+              {:ok, user.id},
+              :is_subscribed_marketing_emails,
+              %{is_subscribed_marketing_emails: value}
+            )
+
+          :error ->
+            :ok
+        end
+
+        {:ok, user}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp maybe_sync_marketing_emails_setting(user, attrs) do
+    case Map.fetch(attrs, :marketing_accepted) do
+      {:ok, value} when is_boolean(value) ->
+        case Sanbase.Accounts.UserSettings.put_marketing_emails_flag(user.id, value) do
+          {:ok, _} -> :ok
+          {:error, error} -> {:error, error}
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)
   end

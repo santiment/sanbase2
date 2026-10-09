@@ -22,9 +22,14 @@ config :sanbase, Sanbase.TemplateMailer,
 # Mailjet list that the API-client onboarding email is triggered from. Defaults
 # to the dev list; production must set MAILJET_API_BUSINESS_ONBOARDING_LIST_ID to
 # the production list id so dev/stage never write to the production list.
+#
+# Mailjet list that users who accept marketing emails are subscribed to. There is
+# no dev list, so it is unset by default (subscribe/unsubscribe calls no-op) and
+# only production sets MAILJET_MARKETING_NEWSLETTER_LIST_ID (10331431).
 config :sanbase, Sanbase.Email.MailjetApi,
   api_business_onboarding_list_id:
-    System.get_env("MAILJET_API_BUSINESS_ONBOARDING_LIST_ID", "10331324")
+    System.get_env("MAILJET_API_BUSINESS_ONBOARDING_LIST_ID", "10331324"),
+  marketing_newsletter_list_id: System.get_env("MAILJET_MARKETING_NEWSLETTER_LIST_ID")
 
 # Launch cutoff for API Business onboarding list reconcile. Subscriptions with
 # inserted_at before this datetime are never backfilled into the Mailjet list.

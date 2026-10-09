@@ -286,8 +286,6 @@ defmodule Sanbase.Email.MailjetApi do
         :ok
 
       list_id ->
-        action_map = %{subscribe: "addnoforce", unsubscribe: "remove"}
-
         contacts =
           email_or_emails
           |> List.wrap()
@@ -295,18 +293,34 @@ defmodule Sanbase.Email.MailjetApi do
 
         %{
           "Contacts" => contacts,
-          "Action" => action_map[action]
+          "Action" => mailjet_action(list_atom, action)
         }
         |> Jason.encode!()
         |> manage_subscription(list_id, action)
     end
   end
 
+  # Subscriptions to the marketing newsletter list only happen after an explicit
+  # opt-in by the user, so "addforce" is used to re-add contacts that have
+  # previously unsubscribed from it. "addnoforce" leaves such contacts unsubscribed.
+  defp mailjet_action(:marketing_newsletter, :subscribe), do: "addforce"
+  defp mailjet_action(_list_atom, :subscribe), do: "addnoforce"
+  defp mailjet_action(_list_atom, :unsubscribe), do: "remove"
+
   # Resolves a list atom to its Mailjet list id. Most lists have static ids; the
-  # api_business_onboarding list id is provided per-environment via config so
-  # that dev/stage never write to the production list (nil => calls no-op).
-  defp resolve_list_id(:api_business_onboarding) do
-    case Config.module_get(__MODULE__, :api_business_onboarding_list_id, nil) do
+  # api_business_onboarding and marketing_newsletter list ids are provided
+  # per-environment via config so that dev/stage never write to the production
+  # list (nil => calls no-op).
+  defp resolve_list_id(:api_business_onboarding),
+    do: configured_list_id(:api_business_onboarding_list_id)
+
+  defp resolve_list_id(:marketing_newsletter),
+    do: configured_list_id(:marketing_newsletter_list_id)
+
+  defp resolve_list_id(list_atom), do: @mailjet_lists[list_atom]
+
+  defp configured_list_id(config_key) do
+    case Config.module_get(__MODULE__, config_key, nil) do
       id when is_integer(id) ->
         id
 
@@ -320,8 +334,6 @@ defmodule Sanbase.Email.MailjetApi do
         nil
     end
   end
-
-  defp resolve_list_id(list_atom), do: @mailjet_lists[list_atom]
 
   defp manage_subscription(body_json, list_id, action) do
     HTTPoison.post(

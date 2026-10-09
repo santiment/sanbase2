@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.PriceDataloader do
   alias SanbaseWeb.Graphql.Cache
 
+  require Logger
+
   @max_concurrency 30
 
   @doc """
@@ -20,15 +22,33 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
 
     slugs
     |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.flat_map(
+    |> Sanbase.Parallel.map(
       fn
         [_ | _] = chunk -> do_volume_change(chunk, now, day_ago, two_days_ago)
         [] -> []
       end,
       max_concurrency: 8,
+      # Above the 85s ClickHouse budget and below the 105s Dataloader.KV source
+      # timeout. A chunk that still times out is killed and contributes no
+      # entries (its slugs resolve to nil) instead of exiting the whole batch.
+      # See docs/timeouts.md.
+      timeout: 95_000,
+      on_timeout: :kill_task,
+      zip_input_on_exit: true,
       ordered: false,
       request_context: ctx
     )
+    |> Enum.flat_map(fn
+      {:exit, {slugs, reason}} ->
+        Logger.warning(
+          "PriceDataloader :volume_change_24h dropped #{length(slugs)} slugs. Reason: #{inspect(reason)}"
+        )
+
+        []
+
+      list ->
+        list
+    end)
     |> Map.new()
   end
 
@@ -52,16 +72,21 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
     slugs = Enum.to_list(slugs)
 
     # Returns result like: {:ok, %{"bitcoin" => 31886.7990282547, "santiment" => 0.07190104}}
-    {:ok, result} =
-      Sanbase.Metric.aggregated_timeseries_data(
-        "price_usd",
-        %{slug: slugs},
-        yesterday,
-        now,
-        aggregation: :last
-      )
+    case Sanbase.Metric.aggregated_timeseries_data(
+           "price_usd",
+           %{slug: slugs},
+           yesterday,
+           now,
+           aggregation: :last
+         ) do
+      {:ok, result} ->
+        result
 
-    result
+      # Dataloader.KV stores a per-key error, which `Dataloader.get/4` turns into
+      # nil (`get_policy: :return_nil_on_error`); consumers treat nil as "no price".
+      {:error, error} ->
+        Map.new(slugs, &{&1, {:error, error}})
+    end
   end
 
   # Helper functions

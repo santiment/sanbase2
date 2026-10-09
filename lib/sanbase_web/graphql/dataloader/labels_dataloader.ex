@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.LabelsDataloader do
   alias Sanbase.Clickhouse.Label
 
+  require Logger
+
   @doc """
   `Dataloader.KV` batch callback. Resolves address labels for the
   batched `addresses`, threading the request `ctx` into the parallel
@@ -15,10 +17,25 @@ defmodule SanbaseWeb.Graphql.LabelsDataloader do
     |> Sanbase.Parallel.map(&get_address_labels/1,
       max_concurrency: 4,
       ordered: false,
-      timeout: 55_000,
+      # Above the 85s ClickHouse budget and below the 105s Dataloader.KV source
+      # timeout. A chunk that still times out is killed and dropped (its addresses
+      # resolve to nil) instead of exiting the whole batch. See docs/timeouts.md.
+      timeout: 95_000,
+      on_timeout: :kill_task,
+      zip_input_on_exit: true,
       request_context: ctx
     )
-    |> Enum.reduce(%{}, &Map.merge(&1, &2))
+    |> Enum.reduce(%{}, fn
+      {:exit, {addresses, reason}}, acc ->
+        Logger.warning(
+          "LabelsDataloader :address_labels dropped #{length(addresses)} keys. Reason: #{inspect(reason)}"
+        )
+
+        acc
+
+      map, acc ->
+        Map.merge(acc, map)
+    end)
   end
 
   # Private functions

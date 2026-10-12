@@ -652,4 +652,49 @@ defmodule Sanbase.DeepResearch.TimelineTest do
       assert Timeline.split_series_runs(nil) == []
     end
   end
+
+  describe "calls re-emitted after a server-side restart" do
+    test "a repeated call id replaces its row, and the result settles it" do
+      call = %{kind: :mcp_call, id: "m1", tool: "f", args: %{}}
+
+      t =
+        turn()
+        |> apply_event(%{activity: call})
+        |> apply_event(%{activity: call})
+        |> apply_event(%{
+          activity: %{kind: :mcp_result, id: "m1", tool: "f", ok: true, summary: "done"}
+        })
+
+      assert [%{kind: :mcp, id: "m1", done: true}] = t.timeline
+      refute Timeline.tools_running?(t.timeline)
+    end
+
+    test "search and fetch calls dedupe by id too" do
+      t =
+        turn()
+        |> apply_event(%{activity: %{kind: :search_query, id: "s1", query: "a"}})
+        |> apply_event(%{activity: %{kind: :search_query, id: "s1", query: "a"}})
+        |> apply_event(%{activity: %{kind: :fetch_call, id: "f1", url: "https://a.com"}})
+        |> apply_event(%{activity: %{kind: :fetch_call, id: "f1", url: "https://a.com"}})
+
+      assert [%{kind: :search, id: "s1"}, %{kind: :fetch, id: "f1"}] = t.timeline
+    end
+
+    test "calls without an id still append" do
+      call = %{kind: :mcp_call, id: nil, tool: "f", args: nil}
+      t = turn() |> apply_event(%{activity: call}) |> apply_event(%{activity: call})
+
+      assert [_, _] = t.timeline
+    end
+  end
+
+  describe "cancel_turn on a settled turn" do
+    test "keeps a failure, and a turn awaiting the user, as they are" do
+      failed = %{turn() | phase: :failed, error: "boom"}
+      assert %{phase: :failed, error: "boom"} = Timeline.cancel_turn(failed, 500)
+
+      awaiting = %{turn() | phase: :awaiting_user}
+      assert Timeline.cancel_turn(awaiting, 500).phase == :awaiting_user
+    end
+  end
 end

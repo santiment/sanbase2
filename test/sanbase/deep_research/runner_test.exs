@@ -104,7 +104,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       {:ok, _} = Runner.ask(pid, "q")
       send(pid, {:dra_event, 1, %Event{run_id: "r1", phase: :researching}})
 
-      send(pid, {:dra_run_status, 1, {:ok, %{"status" => "error"}}})
+      send(pid, {:dra_run_status, {1, "r1"}, {:ok, %{"status" => "error"}}})
 
       assert_receive {:dra_runner, ^key,
                       %{running: false, current_turn: %Turn{phase: :paused, error: error}}}
@@ -118,8 +118,20 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       {:ok, _} = Runner.attach(pid, self())
       {:ok, _} = Runner.ask(pid, "q")
 
-      send(pid, {:dra_run_status, 1, {:ok, %{"status" => "running"}}})
+      send(pid, {:dra_run_status, {1, nil}, {:ok, %{"status" => "running"}}})
       :sys.get_state(pid)
+
+      assert :sys.get_state(pid).running == true
+    end
+
+    test "a status for the run a Continue replaced is ignored" do
+      {_key, pid} = start_runner(thread_id: "t1")
+      {:ok, _} = Runner.attach(pid, self())
+      {:ok, _} = Runner.ask(pid, "q")
+      send(pid, {:dra_event, 1, %Event{run_id: "r2", phase: :researching}})
+
+      # A reply to the silence check of turn 1's earlier run "r1".
+      send(pid, {:dra_run_status, {1, "r1"}, {:ok, %{"status" => "interrupted"}}})
 
       assert :sys.get_state(pid).running == true
     end
@@ -129,7 +141,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       {:ok, _} = Runner.attach(pid, self())
       {:ok, _} = Runner.ask(pid, "q")
 
-      send(pid, {:dra_run_status, 99, {:ok, %{"status" => "error"}}})
+      send(pid, {:dra_run_status, {99, nil}, {:ok, %{"status" => "error"}}})
       :sys.get_state(pid)
 
       assert :sys.get_state(pid).running == true
@@ -162,6 +174,19 @@ defmodule Sanbase.DeepResearch.RunnerTest do
     send(pid, {:dra_event, 1, %Event{thinking: %{id: "m1", text: "Scanning"}}})
 
     assert_receive {:dra_runner, ^key, %{current_turn: %Turn{timeline: [%{text: "Scanning"}]}}}
+  end
+
+  test "a muted sub-agent's text never reaches the timeline; narration still does" do
+    {key, pid} = start_runner()
+    {:ok, _} = Runner.attach(pid, self())
+    {:ok, _} = Runner.ask(pid, "q")
+
+    send(pid, {:dra_event, 1, %Event{muted: ["coder-msg"]}})
+    send(pid, {:dra_event, 1, %Event{thinking: %{id: "coder-msg", text: "STATUS: ok OUTPUT:"}}})
+    send(pid, {:dra_event, 1, %Event{thinking: %{id: "m1", text: "Scanning"}}})
+
+    assert_receive {:dra_runner, ^key, %{current_turn: %Turn{timeline: [%{text: "Scanning"}]}}}
+    assert [%{id: "m1"}] = :sys.get_state(pid).current_turn.timeline
   end
 
   test "every event stamps the turn's last_event_at" do
@@ -307,7 +332,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       # Only heartbeats came back: no worker ever emitted the run's metadata event.
       send(pid, {:dra_thread, "th1"})
       send(pid, {:sys.get_state(pid).task.ref, :ok})
-      send(pid, {:dra_poll, 1, %{}})
+      send(pid, {:dra_poll, 1, %Event{}})
 
       assert_receive {:dra_runner, ^key, %{current_turn: %Turn{phase: :failed, error: error}}}
       assert error =~ "never started this run"
@@ -322,7 +347,7 @@ defmodule Sanbase.DeepResearch.RunnerTest do
       send(pid, {:dra_thread, "th1"})
       send(pid, {:dra_event, 1, EventParser.parse(%{"run_id" => "r1", "attempt" => 1})})
       send(pid, {:sys.get_state(pid).task.ref, :ok})
-      send(pid, {:dra_poll, 1, %{}})
+      send(pid, {:dra_poll, 1, %Event{}})
 
       assert_receive {:dra_runner, ^key, %{current_turn: %Turn{phase: :failed, error: error}}}
       assert error =~ "without a report"

@@ -14,7 +14,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
   import Phoenix.LiveViewTest
   import Sanbase.DeepResearch.Fixtures, only: [completed_session: 1, paused_session: 1]
 
-  alias Sanbase.DeepResearch.{Event, Runner, Sessions}
+  alias Sanbase.DeepResearch.{Event, Runner, Sessions, Turn}
   alias Sanbase.DeepResearch.Sessions.SessionTurn
   alias Sanbase.Repo
 
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     submit(view, "q")
     {_session, runner} = runner_of(user)
 
-    send_sync(runner, {:dra_poll, @ref, %{report: "## Recovered report"}})
+    send_sync(runner, {:dra_poll, @ref, %Event{report: "## Recovered report"}})
 
     assert render(view) =~ "Recovered report"
   end
@@ -175,7 +175,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
     submit(view, "q")
     {_session, runner} = runner_of(user)
 
-    send_sync(runner, {:dra_poll, @ref + 1, %{report: "stale poll report"}})
+    send_sync(runner, {:dra_poll, @ref + 1, %Event{report: "stale poll report"}})
 
     refute render(view) =~ "stale poll report"
   end
@@ -243,7 +243,7 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       {_session, runner} = runner_of(user)
 
       send_sync(runner, {:dra_event, @ref, %Event{thinking: %{id: "m1", text: "Scanning"}}})
-      send_sync(runner, {:dra_poll, @ref, %{report: "## Recovered report"}})
+      send_sync(runner, {:dra_poll, @ref, %Event{report: "## Recovered report"}})
       render(view)
 
       assert [row] = Repo.all(SessionTurn)
@@ -316,6 +316,70 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       rows = SessionTurn |> Repo.all() |> Enum.sort_by(& &1.position)
       assert [%{position: 1, phase: :cancelled}, %{position: 2, phase: :queued}] = rows
       assert Enum.all?(rows, &(&1.session_id == session.id))
+    end
+
+    test "a tab with a stale transcript asks into the next free position", %{
+      conn: conn,
+      user: user
+    } do
+      session = completed_session(user)
+      {:ok, view, _html} = live(conn, "#{@path}/#{session.id}")
+
+      # Another tab asked and finished turn 2 after this one loaded the transcript.
+      other = %Turn{id: 2, question: "other tab", started_at: 1, report: "## Other tab's report"}
+      {:ok, _} = Sessions.create_turn(session.id, other)
+
+      submit(view, "this tab")
+
+      rows = SessionTurn |> Repo.all() |> Enum.sort_by(& &1.position)
+      assert [%{position: 1}, %{position: 2} = theirs, %{position: 3} = ours] = rows
+      assert theirs.question == "other tab"
+      assert theirs.report == "## Other tab's report"
+      assert ours.question == "this tab"
+    end
+
+    test "a poll that returns an earlier turn's report does not complete the new turn", %{
+      conn: conn,
+      user: user
+    } do
+      session = completed_session(user)
+      [%{report: earlier_report}] = Repo.all(SessionTurn)
+
+      {:ok, view, _html} = live(conn, "#{@path}/#{session.id}")
+      submit(view, "follow-up")
+      runner = Runner.whereis(session.id)
+
+      mcp_call = %{kind: :mcp_call, id: "c1", tool: "get_metric", args: nil}
+      send_sync(runner, {:dra_event, 2, %Event{phase: :researching, activity: mcp_call}})
+      send_sync(runner, {:dra_poll, 2, %Event{report: earlier_report}})
+      render(view)
+
+      row = Repo.get_by(SessionTurn, session_id: session.id, position: 2)
+      assert row.phase == :failed
+      assert row.report == nil
+      assert row.error =~ "without a report"
+    end
+
+    test "a clarification question longer than 255 characters is persisted", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, view, _html} = live(conn, @path)
+      submit(view, "q")
+      {_session, runner} = runner_of(user)
+
+      question = String.duplicate("Which chain do you mean? ", 20)
+      clarification = %{kind: :clarification, questions: [question]}
+
+      send_sync(
+        runner,
+        {:dra_event, @ref, %Event{phase: :awaiting_user, activity: clarification}}
+      )
+
+      render(view)
+
+      assert Process.alive?(runner)
+      assert [%{phase: :awaiting_user, clarification: [^question]}] = Repo.all(SessionTurn)
     end
   end
 
@@ -404,6 +468,25 @@ defmodule SanbaseWeb.DeepResearchLiveTest do
       )
 
       assert render(view) =~ "Resumed research"
+    end
+
+    test "Continue on a turn another tab already finished is refused", %{
+      conn: conn,
+      user: user
+    } do
+      session = paused_session(user)
+      {:ok, view, _html} = live(conn, "#{@path}/#{session.id}")
+
+      # Another tab resumed and completed the turn after this one loaded it as paused.
+      {:ok, %{turns: [paused]}} = Sessions.get_session_for_user(session.id, user.id)
+      finished = %{paused | phase: :completed, report: "## Finished elsewhere"}
+      {:ok, _} = Sessions.update_turn(session.id, 1, finished)
+
+      render_click(view, "continue_turn", %{"id" => "1"})
+
+      assert [%{phase: :completed, report: "## Finished elsewhere"}] = Repo.all(SessionTurn)
+      runner = Runner.whereis(session.id)
+      refute runner && :sys.get_state(runner).running
     end
 
     test "continue_turn on a settled turn is a no-op", %{conn: conn, user: user} do

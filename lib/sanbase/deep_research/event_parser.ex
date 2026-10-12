@@ -10,6 +10,11 @@ defmodule Sanbase.DeepResearch.EventParser do
 
   alias Sanbase.DeepResearch.Event
 
+  # Sub-agents whose messages are a handoff to their caller — the coder's STATUS/OUTPUT/NOTES,
+  # the extractor's rows — not narration for the reader. Their scripts and findings reach the
+  # UI as their own `script` / `subagent_findings` events.
+  @handoff_roles ~w(coding-subagent extract-subagent)
+
   @activity_types ~w(search_query search_results mcp_call mcp_result tool_call tool_result source skill chart script status report clarification subagent_findings usage)
 
   # Internal structured-output field names that can leak onto the messages channel.
@@ -34,7 +39,7 @@ defmodule Sanbase.DeepResearch.EventParser do
       value["type"] in @activity_types -> parse_activity_event(value)
       stream_error?(value) -> parse_stream_error(value)
       is_map(value["values"]) -> extract_from_values(value["values"])
-      true -> parse_node_updates(value)
+      true -> parse_keyed(value)
     end
   end
 
@@ -66,6 +71,36 @@ defmodule Sanbase.DeepResearch.EventParser do
       activity: %{kind: :status, state: state, detail: nil, attempt: attempt}
     }
   end
+
+  # -- LangGraph `event: messages/metadata` ----------------------------------------
+  #
+  # `{"<message id>": {"metadata": {...}}}`, sent once just before a message's first chunk —
+  # the only place a streamed message says whose it is. The agent stamps every model with its
+  # role (`metadata.role`; deepagents adds `lc_agent_name`), and the ids of a handoff role's
+  # messages come back as `muted`.
+  defp message_metadata?(value) do
+    map_size(value) > 0 and
+      Enum.all?(value, fn {_id, v} -> is_map(v) and is_map(v["metadata"]) end)
+  end
+
+  # A map keyed by something other than the protocol's fields: message metadata (keyed by
+  # message id), else node updates (keyed by node name).
+  defp parse_keyed(value) do
+    if message_metadata?(value),
+      do: parse_message_metadata(value),
+      else: parse_node_updates(value)
+  end
+
+  defp parse_message_metadata(value) do
+    muted =
+      for {id, %{"metadata" => meta}} <- value,
+          handoff_role?(meta["role"]) or handoff_role?(meta["lc_agent_name"]),
+          do: id
+
+    if muted == [], do: %Event{}, else: %Event{muted: muted}
+  end
+
+  defp handoff_role?(role), do: role in @handoff_roles
 
   # -- santiment_meta (optional MCP gateway telemetry injected into the stream) -
 
@@ -118,7 +153,11 @@ defmodule Sanbase.DeepResearch.EventParser do
   defp parse_activity_event(%{"type" => "search_query"} = obj) do
     %Event{
       phase: :researching,
-      activity: %{kind: :search_query, id: obj["id"], query: to_string(obj["query"] || "")}
+      activity: %{
+        kind: :search_query,
+        id: id_or_nil(obj["id"]),
+        query: string_or(obj["query"], "")
+      }
     }
   end
 
@@ -129,8 +168,8 @@ defmodule Sanbase.DeepResearch.EventParser do
       phase: :researching,
       activity: %{
         kind: :search_results,
-        id: obj["id"],
-        query: obj["query"],
+        id: id_or_nil(obj["id"]),
+        query: non_blank(obj["query"]),
         count: if(is_integer(obj["count"]), do: obj["count"], else: length(results)),
         results: results
       }
@@ -144,7 +183,7 @@ defmodule Sanbase.DeepResearch.EventParser do
 
     %Event{
       phase: :researching,
-      activity: %{kind: :fetch_call, id: obj["id"], url: to_string(args["url"] || "")}
+      activity: %{kind: :fetch_call, id: id_or_nil(obj["id"]), url: string_or(args["url"], "")}
     }
   end
 
@@ -152,7 +191,7 @@ defmodule Sanbase.DeepResearch.EventParser do
     %Event{
       activity: %{
         kind: :fetch_result,
-        id: obj["id"],
+        id: id_or_nil(obj["id"]),
         ok: obj["ok"],
         summary: non_blank(obj["summary"])
       }
@@ -167,8 +206,8 @@ defmodule Sanbase.DeepResearch.EventParser do
       phase: :researching,
       activity: %{
         kind: :mcp_call,
-        id: obj["id"],
-        tool: to_string(obj["tool"] || ""),
+        id: id_or_nil(obj["id"]),
+        tool: string_or(obj["tool"], ""),
         args: if(is_map(obj["args"]), do: obj["args"], else: nil)
       }
     }
@@ -178,8 +217,8 @@ defmodule Sanbase.DeepResearch.EventParser do
     %Event{
       activity: %{
         kind: :mcp_result,
-        id: obj["id"],
-        tool: to_string(obj["tool"] || ""),
+        id: id_or_nil(obj["id"]),
+        tool: string_or(obj["tool"], ""),
         ok: obj["ok"],
         summary: non_blank(obj["summary"])
       }
@@ -190,9 +229,9 @@ defmodule Sanbase.DeepResearch.EventParser do
     %Event{
       activity: %{
         kind: :source,
-        title: obj["title"],
-        url: to_string(obj["url"] || ""),
-        domain: obj["domain"]
+        title: non_blank(obj["title"]),
+        url: string_or(obj["url"], ""),
+        domain: non_blank(obj["domain"])
       }
     }
   end
@@ -200,7 +239,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   defp parse_activity_event(%{"type" => "skill"} = obj) do
     %Event{
       phase: :researching,
-      activity: %{kind: :skill, name: to_string(obj["name"] || ""), path: non_blank(obj["path"])}
+      activity: %{kind: :skill, name: string_or(obj["name"], ""), path: non_blank(obj["path"])}
     }
   end
 
@@ -214,7 +253,7 @@ defmodule Sanbase.DeepResearch.EventParser do
         phase: :researching,
         activity: %{
           kind: :chart,
-          id: obj["id"],
+          id: id_or_nil(obj["id"]),
           label: non_blank(obj["label"]),
           source: non_blank(obj["source"]),
           slug: non_blank(obj["slug"]),
@@ -259,7 +298,7 @@ defmodule Sanbase.DeepResearch.EventParser do
 
     gaps =
       case obj["gaps"] do
-        list when is_list(list) -> list |> Enum.map(&to_string/1) |> Enum.reject(&(&1 == ""))
+        list when is_list(list) -> string_list(list)
         _ -> []
       end
 
@@ -277,7 +316,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   defp parse_activity_event(%{"type" => "clarification"} = obj) do
     questions =
       case obj["questions"] do
-        list when is_list(list) -> list |> Enum.map(&to_string/1) |> Enum.reject(&(&1 == ""))
+        list when is_list(list) -> string_list(list)
         _ -> []
       end
 
@@ -310,7 +349,7 @@ defmodule Sanbase.DeepResearch.EventParser do
     %Event{
       live: %{
         kind: :model_call,
-        role: to_string(obj["role"] || "agent"),
+        role: string_or(obj["role"], "agent"),
         model: non_blank(obj["model"]),
         step: integer_or_nil(obj["step"]),
         unit: non_blank(obj["unit"]),
@@ -321,7 +360,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   end
 
   defp parse_activity_event(obj) do
-    state = to_string(obj["state"] || "")
+    state = string_or(obj["state"], "")
     detail = non_blank(obj["detail"])
 
     %Event{activity: status_activity(obj, state, detail), error: status_error(obj, state, detail)}
@@ -349,11 +388,13 @@ defmodule Sanbase.DeepResearch.EventParser do
   defp status_error(_obj, _state, _detail), do: nil
 
   defp parse_results(results) when is_list(results) do
-    Enum.map(results, fn r ->
+    results
+    |> Enum.filter(&is_map/1)
+    |> Enum.map(fn r ->
       %{
-        title: to_string(r["title"] || r["url"] || ""),
-        url: to_string(r["url"] || ""),
-        domain: to_string(r["domain"] || ""),
+        title: string_or(r["title"], nil) || string_or(r["url"], ""),
+        url: string_or(r["url"], ""),
+        domain: string_or(r["domain"], ""),
         snippet: non_blank(r["snippet"])
       }
     end)
@@ -439,11 +480,13 @@ defmodule Sanbase.DeepResearch.EventParser do
   @noise_res [@structured_field_re, @json_scaffolding_re, @json_object_re]
 
   defp parse_messages(payload) do
-    # ONLY AI messages are thinking — tool/human/system messages must not appear.
-    if message_type(payload) != "ai" do
+    msg = Enum.find(payload, &(is_map(&1) and Map.has_key?(&1, "content")))
+
+    # ONLY AI messages are thinking — tool/human/system messages must not appear — and
+    # not a handoff sub-agent's (a finished message carries its agent as `name`).
+    if message_type(payload) != "ai" or handoff_role?(msg["name"]) do
       %Event{}
     else
-      msg = Enum.find(payload, &(is_map(&1) and Map.has_key?(&1, "content")))
       {thinking, phase} = thinking_in(payload)
       {activity, live} = plan_or_draft(msg)
 
@@ -476,7 +519,7 @@ defmodule Sanbase.DeepResearch.EventParser do
   defp plan_call(msg) when is_map(msg) do
     msg["tool_calls"]
     |> List.wrap()
-    |> Enum.find(&(&1["name"] == "write_todos" and is_map(&1["args"])))
+    |> Enum.find(&(is_map(&1) and &1["name"] == "write_todos" and is_map(&1["args"])))
     |> case do
       nil -> nil
       call -> nil_if_empty(todo_list(call["args"]["todos"]))
@@ -489,19 +532,12 @@ defmodule Sanbase.DeepResearch.EventParser do
     list
     |> Enum.filter(&is_map/1)
     |> Enum.map(
-      &%{content: todo_string(&1["content"], ""), status: todo_string(&1["status"], "pending")}
+      &%{content: string_or(&1["content"], ""), status: string_or(&1["status"], "pending")}
     )
     |> Enum.reject(&(&1.content == ""))
   end
 
   defp todo_list(_), do: []
-
-  # The agent's JSON, so a `content` can be any shape. `to_string/1` raises for a map or
-  # a list, and nothing rescues around `handle_line/3` — the raise would end the stream.
-  # A non-scalar reads as the default, and an empty `content` is rejected above.
-  defp todo_string(value, _default) when is_binary(value), do: value
-  defp todo_string(value, _default) when is_number(value), do: to_string(value)
-  defp todo_string(_value, default), do: default
 
   # The plan recovered from a `write_todos` call whose arguments are still streaming:
   # whole JSON when it already parses, else every complete `{...}` object so far. The
@@ -669,6 +705,21 @@ defmodule Sanbase.DeepResearch.EventParser do
   end
 
   defp non_blank(_), do: nil
+
+  # The agent's JSON, so a field can be any shape. `to_string/1` raises for a map or a
+  # list, and nothing rescues around `handle_line/3` — the raise would end the stream.
+  # A non-scalar reads as the default.
+  defp string_or(value, _default) when is_binary(value), do: value
+  defp string_or(value, _default) when is_number(value), do: to_string(value)
+  defp string_or(_value, default), do: default
+
+  defp string_list(list) do
+    list |> Enum.map(&string_or(&1, "")) |> Enum.reject(&(&1 == ""))
+  end
+
+  # Ids key timeline items and DOM ids, so anything but a scalar would crash a render.
+  defp id_or_nil(v) when is_binary(v) or is_integer(v), do: v
+  defp id_or_nil(_), do: nil
 
   defp integer_or_nil(v) when is_integer(v), do: v
   defp integer_or_nil(_), do: nil

@@ -254,6 +254,11 @@ defmodule SanbaseWeb.DeepResearchLive do
   defp ensure_session(%{assigns: %{session_id: id}} = socket, _text) when is_binary(id),
     do: socket
 
+  # A conversation already running unpersisted (its first create failed) stays so: its
+  # runner has no session to write to, and a session row now would hold none of its turns.
+  defp ensure_session(%{assigns: %{runner_pid: pid}} = socket, _text) when is_pid(pid),
+    do: socket
+
   defp ensure_session(socket, text) do
     user = socket.assigns[:current_user]
 

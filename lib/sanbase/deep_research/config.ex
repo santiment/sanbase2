@@ -23,12 +23,12 @@ defmodule Sanbase.DeepResearch.Config do
   @doc "Base URL of the LangGraph server (no trailing slash)."
   @spec base_url() :: String.t()
   def base_url() do
-    (get(:base_url) || @default_base_url) |> String.trim_trailing("/")
+    (present(:base_url) || @default_base_url) |> String.trim_trailing("/")
   end
 
   @doc "Graph id / assistant id to run."
   @spec assistant_id() :: String.t()
-  def assistant_id(), do: get(:assistant_id) || @default_assistant_id
+  def assistant_id(), do: present(:assistant_id) || @default_assistant_id
 
   @doc """
   How long a runner keeps a run alive unwatched: long enough for a websocket
@@ -201,6 +201,15 @@ defmodule Sanbase.DeepResearch.Config do
   # module: reading `__MODULE__` would ignore every configured value and leave the agent
   # on its compiled-in defaults.
   @env_key Sanbase.DeepResearch
+
+  # runtime.exs passes `System.get_env/1` through, so a deploy that sets a var to ""
+  # must still get the default rather than an empty URL or graph id.
+  defp present(key) do
+    case get(key) do
+      value when is_binary(value) and value != "" -> value
+      _ -> nil
+    end
+  end
 
   defp get(key, default \\ nil) do
     :sanbase

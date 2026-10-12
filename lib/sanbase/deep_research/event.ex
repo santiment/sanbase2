@@ -24,6 +24,10 @@ defmodule Sanbase.DeepResearch.Event do
                    or LangGraph's own `error` payload when a run crashes.
     * `meta`     - MCP gateway telemetry (`mcp_tool_calls`, `mcp_configured`,
                    `mcp_warning`)
+    * `muted`    - ids of messages that are a sub-agent's handoff to its caller
+                   (coding-subagent's STATUS/OUTPUT/NOTES, extract-subagent's rows), not
+                   narration for the reader. From LangGraph's `messages/metadata` event,
+                   which precedes a message's first chunk; the runner drops their text.
     * `at`       - when the runner received the line, in ms. Stamped on receipt rather
                    than by the parser, so the UI can say how long the stream has been
                    silent.
@@ -31,7 +35,7 @@ defmodule Sanbase.DeepResearch.Event do
 
   alias Sanbase.DeepResearch.Turn
 
-  defstruct [:run_id, :phase, :report, :thinking, :live, :activity, :error, :meta, :at]
+  defstruct [:run_id, :phase, :report, :thinking, :live, :activity, :error, :meta, :muted, :at]
 
   @typedoc "The phases a streamed line can imply. A turn has more (see `Timeline`)."
   @type phase :: :planning | :researching | :writing | :awaiting_user
@@ -45,11 +49,12 @@ defmodule Sanbase.DeepResearch.Event do
           activity: %{required(:kind) => atom(), optional(atom()) => term()} | nil,
           error: String.t() | nil,
           meta: %{optional(atom()) => term()} | nil,
+          muted: [String.t()] | nil,
           at: non_neg_integer() | nil
         }
 
   # `at` says nothing on its own, and is stamped after this check anyway.
-  @payload_fields [:run_id, :phase, :report, :thinking, :live, :activity, :error, :meta]
+  @payload_fields [:run_id, :phase, :report, :thinking, :live, :activity, :error, :meta, :muted]
 
   @doc "True when the line carried nothing to apply: a heartbeat, noise, or a tool message."
   @spec empty?(t()) :: boolean()

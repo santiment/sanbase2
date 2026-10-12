@@ -213,16 +213,9 @@ defmodule Sanbase.Chat do
   """
   @spec get_chat_with_messages(Ecto.UUID.t()) :: Chat.t() | nil
   def get_chat_with_messages(chat_id) do
-    case Ecto.UUID.cast(chat_id) do
-      {:ok, chat_id} ->
-        Chat
-        |> where([c], c.id == ^chat_id)
-        |> preload([:user, :chat_messages])
-        |> Repo.one()
-
-      :error ->
-        nil
-    end
+    Chat
+    |> preload([:user, :chat_messages])
+    |> get_by_uuid(chat_id)
   end
 
   @doc """
@@ -240,23 +233,13 @@ defmodule Sanbase.Chat do
   Retrieves a chat by ID.
   """
   @spec get_chat(Ecto.UUID.t()) :: Chat.t() | nil
-  def get_chat(chat_id) do
-    case Ecto.UUID.cast(chat_id) do
-      {:ok, chat_id} -> Repo.get(Chat, chat_id)
-      :error -> nil
-    end
-  end
+  def get_chat(chat_id), do: get_by_uuid(Chat, chat_id)
 
   @doc """
   Retrieves a single chat message by ID.
   """
   @spec get_message(Ecto.UUID.t()) :: ChatMessage.t() | nil
-  def get_message(message_id) do
-    case Ecto.UUID.cast(message_id) do
-      {:ok, message_id} -> Repo.get(ChatMessage, message_id)
-      :error -> nil
-    end
-  end
+  def get_message(message_id), do: get_by_uuid(ChatMessage, message_id)
 
   @doc """
   Lists all chats for a specific user, ordered by most recent first.
@@ -361,6 +344,13 @@ defmodule Sanbase.Chat do
     |> limit(^limit)
     |> Repo.all()
     |> Enum.reverse()
+  end
+
+  defp get_by_uuid(queryable, id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, uuid} -> Repo.get(queryable, uuid)
+      :error -> nil
+    end
   end
 
   defp generate_title_from_content(content) do

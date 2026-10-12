@@ -419,12 +419,11 @@ defmodule Sanbase.UserList do
 
   def user_list(user_list_id, user) do
     case Ecto.Type.cast(:id, user_list_id) do
-      {:ok, user_list_id} when is_integer(user_list_id) ->
+      {:ok, user_list_id} ->
         query = user_list_query_by_user_id(user)
         {:ok, Repo.get(query, user_list_id)}
 
-      # A malformed id cannot match any watchlist - treat it as not found
-      _ ->
+      :error ->
         {:ok, nil}
     end
   end

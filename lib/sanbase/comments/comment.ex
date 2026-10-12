@@ -167,14 +167,13 @@ defmodule Sanbase.Comment do
 
   def get_subcomments(comment_id, limit) do
     case Ecto.Type.cast(:id, comment_id) do
-      {:ok, comment_id} when is_integer(comment_id) ->
+      {:ok, comment_id} ->
         subcomments_tree_query(comment_id)
         |> order_by([c], asc: c.inserted_at, asc: c.id)
         |> limit(^limit)
         |> Repo.all()
 
-      # A malformed id cannot match any comment
-      _ ->
+      :error ->
         []
     end
   end

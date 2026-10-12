@@ -1,9 +1,4 @@
 defmodule SanbaseWeb.Graphql.PublicUserRolesNotLoadedTest do
-  # Reproduces SANBASE-BACKEND-PROD-GAR: UserResolver.moderator?/3 and
-  # santiment_team_member?/3 call Enum.any?/2 on `user.roles`. When the
-  # :public_user comes from a plain `preload: [:user]` (e.g. sql_query.user via
-  # getPublicQueries) the roles association is not loaded and the resolver
-  # raises Protocol.UndefinedError (500).
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory

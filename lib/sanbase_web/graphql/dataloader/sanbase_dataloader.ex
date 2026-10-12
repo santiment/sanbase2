@@ -110,6 +110,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :traded_on_exchanges,
     # Users
     :users_by_id,
+    :user_role_names,
     # Founders
     :available_founders_per_slug
     # Trending Words

@@ -1,16 +1,4 @@
 defmodule SanbaseWeb.Graphql.ApiMetricEmptyIntervalTest do
-  # Reproduces SANBASE-BACKEND-PROD-FF:
-  #   ArgumentError: The interval  is not a valid interval
-  #   Sanbase.Utils.DateTime.str_to_sec/1
-  #   <- MetricResolver.interval_no_smaller_than_min_interval/2
-  #
-  # The `interval` GraphQL scalar explicitly accepts the empty string "" and
-  # `CalibrateInterval.calibrate/8` treats it as "pick the best interval for
-  # the from-to range". `interval_no_smaller_than_min_interval/2` runs before
-  # `calibrate/8` and calls `str_to_sec("")`, which raises.
-  #
-  # Desired behaviour: `interval: ""` is auto-calibrated and the data is
-  # returned (no 500 / ArgumentError).
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
@@ -57,10 +45,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricEmptyIntervalTest do
       {:ok, data}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query))
-        |> json_response(200)
+      result = execute_query(context.conn, query)
 
       refute Map.has_key?(result, "errors"), "Got errors: #{inspect(result["errors"])}"
 

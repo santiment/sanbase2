@@ -1,7 +1,4 @@
 defmodule Sanbase.ProjectByCurrencyDuplicateTickerTest do
-  # Reproduces SANBASE-BACKEND-PROD-FBV: Project.by_currency/1 uses Repo.one/1
-  # on `ticker == ^code`, but tickers are not unique (prod has 2 projects with
-  # ticker "ETH"), so fundsRaised*IcoEndPrice raises Ecto.MultipleResultsError.
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
@@ -10,10 +7,10 @@ defmodule Sanbase.ProjectByCurrencyDuplicateTickerTest do
   alias Sanbase.Model.Currency
 
   setup do
-    ethereum = insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
-    impostor = insert(:project, %{name: "Ether Impostor", slug: "ether-impostor", ticker: "ETH"})
+    insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
+    insert(:project, %{name: "Ether Impostor", slug: "ether-impostor", ticker: "ETH"})
 
-    %{ethereum: ethereum, impostor: impostor}
+    :ok
   end
 
   test "by_currency/1 does not raise when several projects share the ticker" do

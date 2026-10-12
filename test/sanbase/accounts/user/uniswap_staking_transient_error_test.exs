@@ -1,14 +1,5 @@
 defmodule Sanbase.Accounts.User.UniswapStakingTransientErrorTest do
-  @moduledoc ~s"""
-  Reproduces SANBASE-BACKEND-PROD-GBD:
-  UniswapStaking.UpdateError: Failed to fetch Uniswap SAN staked balances, update aborted:
-  {:invalid_json, %Jason.DecodeError{data: "<html>...502 Bad Gateway...cloudflare..."}}
-
-  The update runs every 30 minutes. A single transient 502 from the Cloudflare
-  fronted RPC node aborts the whole run and is reported to Sentry immediately.
-  A transient RPC failure should be retried before giving up, and only reported
-  when it persists.
-  """
+  # SANBASE-BACKEND-PROD-GBD: a 502 HTML page from the RPC node aborted the update
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
@@ -38,17 +29,9 @@ defmodule Sanbase.Accounts.User.UniswapStakingTransientErrorTest do
   test "a single transient 502 from the RPC node is retried and not reported", %{user: user} do
     test_pid = self()
 
-    # The first balances_of call fails with the 502 HTML body, all later ones succeed
-    calls = :counters.new(1, [])
-
-    balances_of = fn _addresses, _contract ->
-      :counters.add(calls, 1, 1)
-
-      case :counters.get(calls, 1) do
-        1 -> @bad_gateway_error
-        _ -> {:ok, [2.0]}
-      end
-    end
+    balances_of =
+      [fn -> @bad_gateway_error end, fn -> {:ok, [2.0]} end, fn -> {:ok, [2.0]} end]
+      |> Sanbase.Mock.wrap_consecutives(arity: 2, cycle?: false)
 
     Sanbase.Mock.prepare_mock(UniswapPair, :balances_of, balances_of)
     |> Sanbase.Mock.prepare_mock2(&UniswapPair.total_supply/1, 10.0)

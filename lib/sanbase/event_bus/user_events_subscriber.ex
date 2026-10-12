@@ -146,7 +146,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:metric_updates, email)
+    if email, do: Sanbase.Email.MailjetApi.client().subscribe(metric_updates_list(), email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -157,7 +157,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(:metric_updates, email)
+    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(metric_updates_list(), email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -187,5 +187,17 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     # The unhandled events are marked as completed
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
+  end
+
+  # The metric updates list that users are subscribed to when they toggle the
+  # setting, so dev/stage never write to the production list. This is the list
+  # membership only. Which list the automatic campaigns are sent to is configured
+  # separately via MAILJET_METRIC_UPDATES_LIST (Sanbase.Notifications).
+  defp metric_updates_list() do
+    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
+      "prod" -> :metric_updates
+      "stage" -> :metric_updates_stage
+      _ -> :metric_updates_dev
+    end
   end
 end

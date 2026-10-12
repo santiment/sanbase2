@@ -42,6 +42,10 @@ defmodule Sanbase.Accounts.Settings do
     field(:is_subscribed_comments_emails, :boolean, default: true)
     field(:is_subscribed_likes_emails, :boolean, default: true)
     field(:is_subscribed_metric_updates, :boolean, default: false)
+    # Set when the user explicitly unsubscribes from metric updates, cleared when
+    # they explicitly subscribe again. Billing never auto-subscribes a user that
+    # has opted out.
+    field(:metric_updates_opted_out_at, :utc_datetime, default: nil)
 
     # Toggled by the "Notify me when available" button shown when a metric group
     # is under maintenance. Not exposed in the user profile settings UI.
@@ -83,6 +87,7 @@ defmodule Sanbase.Accounts.Settings do
       :is_subscribed_monthly_newsletter,
       :is_subscribed_biweekly_report,
       :is_subscribed_metric_updates,
+      :metric_updates_opted_out_at,
       :is_subscribed_dev_activity_updates,
       :is_subscribed_marketing_emails,
       :is_subscribed_comments_emails,

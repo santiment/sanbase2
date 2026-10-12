@@ -45,13 +45,16 @@ defmodule SanbaseWeb.Graphql.SubcommentsApiTest do
     assert id == sub1.id
   end
 
-  test "subcomments with a non-integer commentId returns an empty list", %{conn: conn} do
-    query = """
-    {
-      subcomments(commentId: "abc", limit: 1) { id }
-    }
-    """
+  for comment_id <- ["abc", "99999999999999999999"] do
+    test "subcomments with the invalid commentId #{comment_id} returns an empty list",
+         %{conn: conn} do
+      query = """
+      {
+        subcomments(commentId: "#{unquote(comment_id)}", limit: 1) { id }
+      }
+      """
 
-    assert execute_query(conn, query, "subcomments") == []
+      assert execute_query(conn, query, "subcomments") == []
+    end
   end
 end

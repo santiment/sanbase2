@@ -440,10 +440,9 @@ defmodule Sanbase.Accounts.User do
   def by_selector(selector, opts \\ [])
 
   def by_selector(%{id: id}, opts) do
-    case Ecto.Type.cast(:id, id) do
-      # Casting nil succeeds with {:ok, nil}
-      {:ok, user_id} when is_integer(user_id) -> by_id(user_id, opts)
-      _ -> {:error, "Invalid user id: #{inspect(id)}"}
+    case Sanbase.Utils.EctoCommon.cast_id(id) do
+      {:ok, user_id} -> by_id(user_id, opts)
+      :error -> {:error, "Invalid user id: #{inspect(id)}"}
     end
   end
 

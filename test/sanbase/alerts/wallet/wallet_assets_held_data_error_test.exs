@@ -23,16 +23,16 @@ defmodule Sanbase.Alert.WalletAssetsHeldDataErrorTest do
     end)
   end
 
-  test "get_data/1 still returns the held slugs on success" do
-    settings = settings([@address])
+  test "get_data/1 returns the held slugs in the order of the addresses" do
+    addresses = [@address, "0x1111111111111111111111111111111111111111"]
 
     Sanbase.Mock.prepare_mock2(
       &HistoricalBalance.assets_held_by_address/1,
       {:ok, [%{slug: "ethereum", balance: 1.0}, %{slug: "santiment", balance: 2.0}]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      assert {:ok, [{@address, ["ethereum", "santiment"]}]} =
-               WalletAssetsHeldTriggerSettings.get_data(settings)
+      assert {:ok, data} = WalletAssetsHeldTriggerSettings.get_data(settings(addresses))
+      assert data == Enum.map(addresses, &{&1, ["ethereum", "santiment"]})
     end)
   end
 

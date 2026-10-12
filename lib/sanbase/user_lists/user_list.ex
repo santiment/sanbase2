@@ -119,7 +119,7 @@ defmodule Sanbase.UserList do
   @impl Sanbase.Entity.Behaviour
   def by_id(id, opts) when is_integer(id) or is_binary(id) do
     result =
-      case Ecto.Type.cast(:id, id) do
+      case Sanbase.Utils.EctoCommon.cast_id(id) do
         {:ok, id} ->
           from(ul in base_query(), where: ul.id == ^id)
           |> maybe_preload(opts)
@@ -418,7 +418,7 @@ defmodule Sanbase.UserList do
   end
 
   def user_list(user_list_id, user) do
-    case Ecto.Type.cast(:id, user_list_id) do
+    case Sanbase.Utils.EctoCommon.cast_id(user_list_id) do
       {:ok, user_list_id} ->
         query = user_list_query_by_user_id(user)
         {:ok, Repo.get(query, user_list_id)}

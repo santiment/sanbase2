@@ -21,40 +21,9 @@ defmodule Sanbase.Parallel do
   (prefixed with `:label`) and leaves its input out of the result.
   """
   def map(collection, func, opts \\ []) when is_function(func, 1) do
-    max_concurrency = Keyword.get(opts, :max_concurrency) || 2 * System.schedulers_online()
-    # Default arg, not `|| true`: `false || true` would coerce an explicit
-    # `ordered: false` back to `true`, silently forcing ordering. All
-    # existing `ordered: false` callers collect into maps / sums (order
-    # independent), so honoring the flag changes throughput, not results.
-    ordered = Keyword.get(opts, :ordered, true)
-    timeout = Keyword.get(opts, :timeout) || @default_timeout
-    on_timeout = Keyword.get(opts, :on_timeout) || :exit
-    drop? = on_timeout == :drop
-    map_type = Keyword.get(opts, :map_type) || :map
+    stream = stream(collection, func, opts)
 
-    # `Task.Supervisor` workers do NOT inherit `Logger.metadata`. Callers
-    # that need the per-request `Sanbase.RequestContext` (for ClickHouse
-    # masking SETTINGS, the OTP logger filter, etc.) must pass it
-    # explicitly via the `:request_context` option — we do the
-    # cross-process re-seed inside each worker. No `:request_context`
-    # means no propagation; the workers run with empty metadata.
-    func = wrap_with_request_context(func, Keyword.get(opts, :request_context))
-
-    stream =
-      Task.Supervisor.async_stream(
-        Sanbase.TaskSupervisor,
-        collection,
-        func,
-        ordered: ordered,
-        max_concurrency: max_concurrency,
-        timeout: timeout,
-        on_timeout: if(drop?, do: :kill_task, else: on_timeout),
-        zip_input_on_exit: drop? or Keyword.get(opts, :zip_input_on_exit, false)
-      )
-
-    stream = if drop?, do: drop_timed_out(stream, Keyword.get(opts, :label)), else: stream
-
-    case map_type do
+    case Keyword.get(opts, :map_type) || :map do
       :map ->
         stream
         |> Enum.map(fn
@@ -77,11 +46,12 @@ defmodule Sanbase.Parallel do
   `{:error, reason}`. A timed out task is killed and becomes `{:error, {:exit, reason}}`.
   """
   def map_or_error(collection, func, opts \\ []) when is_function(func, 1) do
+    # Reducing the stream itself, halting it shuts down the tasks still running
     collection
-    |> map(func, Keyword.put(opts, :on_timeout, :kill_task))
+    |> stream(func, Keyword.put(opts, :on_timeout, :kill_task))
     |> Enum.reduce_while({:ok, []}, fn
-      {:ok, result}, {:ok, acc} -> {:cont, {:ok, [result | acc]}}
-      {:error, _} = error, _acc -> {:halt, error}
+      {:ok, {:ok, result}}, {:ok, acc} -> {:cont, {:ok, [result | acc]}}
+      {:ok, {:error, _} = error}, _acc -> {:halt, error}
       {:exit, reason}, _acc -> {:halt, {:error, {:exit, reason}}}
     end)
     |> case do
@@ -103,11 +73,46 @@ defmodule Sanbase.Parallel do
     filter(collection, reject_func, opts)
   end
 
+  defp stream(collection, func, opts) do
+    max_concurrency = Keyword.get(opts, :max_concurrency) || 2 * System.schedulers_online()
+    # Default arg, not `|| true`: `false || true` would coerce an explicit
+    # `ordered: false` back to `true`, silently forcing ordering. All
+    # existing `ordered: false` callers collect into maps / sums (order
+    # independent), so honoring the flag changes throughput, not results.
+    ordered = Keyword.get(opts, :ordered, true)
+    timeout = Keyword.get(opts, :timeout) || @default_timeout
+    on_timeout = Keyword.get(opts, :on_timeout) || :exit
+    drop? = on_timeout == :drop
+
+    # `Task.Supervisor` workers do NOT inherit `Logger.metadata`. Callers
+    # that need the per-request `Sanbase.RequestContext` (for ClickHouse
+    # masking SETTINGS, the OTP logger filter, etc.) must pass it
+    # explicitly via the `:request_context` option — we do the
+    # cross-process re-seed inside each worker. No `:request_context`
+    # means no propagation; the workers run with empty metadata.
+    func = wrap_with_request_context(func, Keyword.get(opts, :request_context))
+
+    stream =
+      Task.Supervisor.async_stream(
+        Sanbase.TaskSupervisor,
+        collection,
+        func,
+        ordered: ordered,
+        max_concurrency: max_concurrency,
+        timeout: timeout,
+        on_timeout: if(drop?, do: :kill_task, else: on_timeout),
+        zip_input_on_exit: drop? or Keyword.get(opts, :zip_input_on_exit, false)
+      )
+
+    if drop?, do: drop_timed_out(stream, Keyword.get(opts, :label)), else: stream
+  end
+
+  # Other exits are kept in the result, so the caller sees them
   defp drop_timed_out(stream, label) do
     Stream.reject(stream, fn
-      {:exit, {input, reason}} ->
+      {:exit, {input, :timeout}} ->
         Logger.warning(
-          "#{label || "Sanbase.Parallel"} dropped a timed out task for #{inspect(input, limit: 5)}. Reason: #{inspect(reason)}"
+          "#{label || "Sanbase.Parallel"} dropped a timed out task for #{inspect(input, limit: 5)}"
         )
 
         true

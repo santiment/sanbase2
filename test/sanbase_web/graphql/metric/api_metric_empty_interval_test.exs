@@ -21,20 +21,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricEmptyIntervalTest do
       %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
     ]
 
-    query = """
-    {
-      getMetric(metric: "daily_active_addresses"){
-        timeseriesData(
-          slug: "#{context.slug}"
-          from: "2019-01-01T00:00:00Z"
-          to: "2019-01-03T00:00:00Z"
-          interval: ""){
-            datetime
-            value
-        }
-      }
-    }
-    """
+    query = empty_interval_query(context.slug)
 
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.MetricAdapter.first_datetime/3,
@@ -54,5 +41,38 @@ defmodule SanbaseWeb.Graphql.ApiMetricEmptyIntervalTest do
                %{"datetime" => "2019-01-02T00:00:00Z", "value" => 200.0}
              ]
     end)
+  end
+
+  @tag capture_log: true
+  test "a first_datetime error during auto-calibration is returned, not raised", context do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.MetricAdapter.first_datetime/3,
+      {:error, "Cannot execute database query."}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result = execute_query(context.conn, empty_interval_query(context.slug))
+
+      assert get_in(result, ["data", "getMetric", "timeseriesData"]) == nil
+      assert [%{"message" => message}] = result["errors"]
+      assert message =~ "Cannot execute database query."
+      refute message =~ "no match of right hand side value"
+    end)
+  end
+
+  defp empty_interval_query(slug) do
+    """
+    {
+      getMetric(metric: "daily_active_addresses"){
+        timeseriesData(
+          slug: "#{slug}"
+          from: "2019-01-01T00:00:00Z"
+          to: "2019-01-03T00:00:00Z"
+          interval: ""){
+            datetime
+            value
+        }
+      }
+    }
+    """
   end
 end

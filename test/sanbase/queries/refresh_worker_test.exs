@@ -95,55 +95,61 @@ defmodule Sanbase.Queries.RefreshWorkerTest do
     assert [%Oban.Job{state: "scheduled"}] = scheduled_refresh_jobs()
   end
 
-  test "a transient ClickHouse error is retried and keeps the next scheduled refresh" do
+  for error <- [
+        "(TIMEOUT_EXCEEDED) Timeout exceeded: elapsed 85 seconds",
+        "(MEMORY_LIMIT_EXCEEDED) Memory limit (total) exceeded: would use 56.00 GiB",
+        "(MEMORY_LIMIT_EXCEEDED) (total) memory limit exceeded: would use 56.00 GiB",
+        "(MEMORY_LIMIT_EXCEEDED) Memory limit (for user) exceeded: would use 20.00 GiB"
+      ] do
+    test "the transient ClickHouse error #{error} is retried and keeps the next scheduled refresh" do
+      job = refresh_job()
+
+      mock_run_query({:error, "[9eaa0d5b] " <> unquote(error)})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:error, error} = RefreshWorker.perform(job)
+        assert error =~ unquote(error)
+
+        assert [%Oban.Job{state: "scheduled"}] = scheduled_refresh_jobs()
+      end)
+    end
+  end
+
+  for error <- [
+        "(ILLEGAL_PREWHERE) Storage View doesn't support PREWHERE.",
+        "(MEMORY_LIMIT_EXCEEDED) Memory limit (for query) exceeded: would use 9.31 GiB",
+        "(MEMORY_LIMIT_EXCEEDED) Query memory limit exceeded: would use 9.31 GiB"
+      ] do
+    test "the deterministic ClickHouse error #{error} cancels the job and the next scheduled refresh" do
+      job = refresh_job()
+
+      mock_run_query({:error, "[9eaa0d5b] " <> unquote(error)})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:cancel, error} = RefreshWorker.perform(job)
+        assert error =~ "query_id=#{job.args["query_id"]}"
+        assert error =~ unquote(error)
+
+        assert [%Oban.Job{state: "cancelled"}] = scheduled_refresh_jobs()
+      end)
+    end
+  end
+
+  defp refresh_job() do
     user = insert(:user)
 
     {:ok, query} =
       Queries.create_query(%{sql_query_text: "SELECT 1", sql_query_parameters: %{}}, user.id)
 
-    job = %Oban.Job{
+    %Oban.Job{
       id: 1,
       attempt: 1,
       max_attempts: 3,
       args: %{"query_id" => query.id, "user_id" => user.id}
     }
-
-    Sanbase.Mock.prepare_mock(Sanbase.Queries, :run_query, fn _query, _user, _metadata, _opts ->
-      {:error, "[9eaa0d5b] (TIMEOUT_EXCEEDED) Timeout exceeded: elapsed 85 seconds"}
-    end)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      assert {:error, error} = RefreshWorker.perform(job)
-      assert error =~ "TIMEOUT_EXCEEDED"
-
-      assert [%Oban.Job{state: "scheduled"}] = scheduled_refresh_jobs()
-    end)
   end
 
-  test "a deterministic ClickHouse error cancels the job and the next scheduled refresh" do
-    user = insert(:user)
-
-    {:ok, query} =
-      Queries.create_query(
-        %{sql_query_text: "SELECT * FROM some_view PREWHERE 1", sql_query_parameters: %{}},
-        user.id
-      )
-
-    job = %Oban.Job{
-      id: 1,
-      attempt: 1,
-      max_attempts: 3,
-      args: %{"query_id" => query.id, "user_id" => user.id}
-    }
-
+  defp mock_run_query(result) do
     Sanbase.Mock.prepare_mock(Sanbase.Queries, :run_query, fn _query, _user, _metadata, _opts ->
-      {:error, "[9eaa0d5b] (ILLEGAL_PREWHERE) Storage View doesn't support PREWHERE."}
-    end)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      assert {:cancel, error} = RefreshWorker.perform(job)
-      assert error =~ "query_id=#{query.id}"
-      assert error =~ "ILLEGAL_PREWHERE"
-
-      assert [%Oban.Job{state: "cancelled"}] = scheduled_refresh_jobs()
+      result
     end)
   end
 

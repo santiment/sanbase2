@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   end
 
   def public_triggers_for_user(_root, args, _resolution) do
-    case Ecto.Type.cast(:id, args.user_id) do
+    case Sanbase.Utils.EctoCommon.cast_id(args.user_id) do
       {:ok, user_id} ->
         public_triggers =
           user_id

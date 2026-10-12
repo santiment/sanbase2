@@ -18,8 +18,11 @@ defmodule SanbaseWeb.AuthController do
   }
   @provider_names Map.keys(@providers)
 
-  # URLs are kept in the cookie session, which must stay under 4096 bytes
-  @max_session_url_length 1024
+  @max_redirect_url_length 1024
+
+  # URLs are kept in the cookie session, which must stay under 4096 bytes after signing,
+  # next to the JWTs of a logged in user
+  @max_session_urls_length 1536
 
   def request(conn, %{"provider" => provider} = params) when provider in @provider_names do
     # Instead of `use Ueberauth`, a custom `request/2` puts a few parameters in the session
@@ -38,7 +41,8 @@ defmodule SanbaseWeb.AuthController do
         "success_redirect_url_stored=#{success_redirect_url}"
     )
 
-    origin_url = get_origin_url(referer_url)
+    {fail_redirect_url, origin_url} =
+      fit_session_urls(success_redirect_url, fail_redirect_url, get_origin_url(referer_url))
 
     include_jwt_in_redirect_url =
       Map.get(params, "include_jwt_in_redirect_url", "false") == "true"
@@ -183,17 +187,32 @@ defmodule SanbaseWeb.AuthController do
       SanbaseWeb.Endpoint.website_url()
   end
 
-  # Keep scheme/host/port only; path and query can be arbitrarily long
+  # Keep scheme/host/port only; userinfo, path and query can be arbitrarily long
   defp get_origin_url(referer_url) do
-    origin_url =
-      referer_url
-      |> URI.parse()
-      |> Map.merge(%{fragment: nil, path: nil, query: nil})
-      |> URI.to_string()
+    referer_url
+    |> URI.parse()
+    |> Map.merge(%{userinfo: nil, fragment: nil, path: nil, query: nil})
+    |> URI.to_string()
+  end
 
-    if byte_size(origin_url) <= @max_session_url_length,
-      do: origin_url,
-      else: SanbaseWeb.Endpoint.website_url()
+  # Over budget, the fail URL falls back to the success one, then the origin to the website
+  defp fit_session_urls(success_url, fail_url, origin_url) do
+    cond do
+      session_urls_length(success_url, fail_url, origin_url) <= @max_session_urls_length ->
+        {fail_url, origin_url}
+
+      session_urls_length(success_url, success_url, origin_url) <= @max_session_urls_length ->
+        {success_url, origin_url}
+
+      true ->
+        {success_url, SanbaseWeb.Endpoint.website_url()}
+    end
+  end
+
+  # A fail URL equal to the success URL is not stored
+  defp session_urls_length(success_url, fail_url, origin_url) do
+    fail_length = if fail_url == success_url, do: 0, else: byte_size(fail_url)
+    byte_size(success_url) + fail_length + byte_size(origin_url)
   end
 
   defp extend_if_first_login(redirect_url, first_login) do
@@ -296,7 +315,7 @@ defmodule SanbaseWeb.AuthController do
   @doc false
   def validate_redirect_url(url) when is_binary(url) do
     cond do
-      byte_size(url) > @max_session_url_length ->
+      byte_size(url) > @max_redirect_url_length ->
         Logger.warning("Rejecting oversized redirect URL (#{byte_size(url)} bytes)")
         {:error, "Invalid redirect URL"}
 

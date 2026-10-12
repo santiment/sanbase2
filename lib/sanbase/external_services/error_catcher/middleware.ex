@@ -8,9 +8,7 @@ defmodule Sanbase.ExternalServices.ErrorCatcher.Middleware do
       e in Tesla.Error ->
         e
 
-      # A truncated or invalid gzip/deflate body (or one over :max_body_size)
-      # makes Tesla.Middleware.Compression raise. Return it as a regular
-      # request error so callers handle it like any other failed request.
+      # Raised on a corrupt or oversized gzip/deflate body; return it as a request error
       e in Tesla.Middleware.Compression.Error ->
         {:error, e}
     end

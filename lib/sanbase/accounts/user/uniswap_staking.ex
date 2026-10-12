@@ -11,6 +11,7 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   alias Sanbase.Repo
   alias Sanbase.Accounts.{User, EthAccount}
   alias Sanbase.SmartContracts.UniswapPair
+  alias Sanbase.Utils.Config
 
   schema "user_uniswap_staking" do
     field(:san_staked, :float)
@@ -142,36 +143,24 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
 
   # Helpers
 
-  # The RPC node is behind Cloudflare, which now and then answers a request with
-  # a 502 HTML page. Retry transient failures a few times before giving up, so a
-  # single bad response does not abort (and report) the whole update.
-  @retry_delays_ms [1_000, 5_000]
+  # The Cloudflare-fronted RPC node occasionally returns a 502 HTML page
+  defp retry_delays_ms(), do: Config.module_get(__MODULE__, :retry_delays_ms, [1_000, 5_000])
 
-  defp retry_delays_ms() do
-    if Sanbase.Utils.Config.module_get(Sanbase, :env) == :test,
-      do: [0, 0],
-      else: @retry_delays_ms
-  end
+  defp fetch_uniswap_san_staked_with_retries(users, []), do: fetch_uniswap_san_staked(users)
 
-  defp fetch_uniswap_san_staked_with_retries(users, retry_delays_ms) do
-    result = fetch_uniswap_san_staked(users)
+  defp fetch_uniswap_san_staked_with_retries(users, [delay_ms | rest]) do
+    with {:error, reason} = error <- fetch_uniswap_san_staked(users) do
+      if transient_error?(reason) do
+        Logger.warning(
+          "Transient error fetching Uniswap SAN staked balances, retrying in #{delay_ms}ms: " <>
+            inspect(reason)
+        )
 
-    case {result, retry_delays_ms} do
-      {{:error, reason}, [delay_ms | rest]} ->
-        if transient_error?(reason) do
-          Logger.warning(
-            "Transient error fetching Uniswap SAN staked balances, retrying in #{delay_ms}ms: " <>
-              inspect(reason)
-          )
-
-          Process.sleep(delay_ms)
-          fetch_uniswap_san_staked_with_retries(users, rest)
-        else
-          result
-        end
-
-      _ ->
-        result
+        Process.sleep(delay_ms)
+        fetch_uniswap_san_staked_with_retries(users, rest)
+      else
+        error
+      end
     end
   end
 

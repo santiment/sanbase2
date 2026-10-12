@@ -255,6 +255,28 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert updated_settings.is_subscribed_metric_updates
     end
 
+    test "the first subscription does not override an explicit opt-out from metric updates",
+         context do
+      {:ok, _} =
+        Sanbase.Accounts.UserSettings.update_settings(context.user, %{
+          is_subscribed_metric_updates: true
+        })
+
+      {:ok, _} =
+        Sanbase.Accounts.UserSettings.update_settings(context.user, %{
+          is_subscribed_metric_updates: false
+        })
+
+      query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
+      execute_mutation(context.conn, query, "subscribe")
+
+      Sanbase.EventBus.drain_topics(Sanbase.EventBus.BillingEventSubscriber.topics(), 10_000)
+
+      updated_settings = Sanbase.Accounts.UserSettings.settings_for(context.user, force: true)
+      refute updated_settings.is_subscribed_metric_updates
+      assert updated_settings.metric_updates_opted_out_at
+    end
+
     test "a later subscription does not override an opt-out from metric updates", context do
       insert(:subscription_essential, user: context.user, status: "canceled")
 

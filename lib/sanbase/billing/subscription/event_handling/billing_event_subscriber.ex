@@ -76,9 +76,11 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
        when event_type == :create_subscription do
     subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
 
-    # Auto-subscribe to metric updates only on the user's first subscription, so
-    # that a later subscription does not override an explicit opt-out.
-    if first_subscription?(subscription.user_id) do
+    # Auto-subscribe to metric updates only on the user's first subscription and
+    # only if the user has not explicitly opted out. Users who opted out before
+    # this was tracked are protected by the first subscription check.
+    if first_subscription?(subscription.user_id) and
+         not metric_updates_opted_out?(subscription.user_id) do
       toggle_settings(subscription.user_id, %{
         is_subscribed_metric_updates: true
       })
@@ -161,11 +163,24 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     |> Kernel.==(1)
   end
 
+  defp metric_updates_opted_out?(user_id) do
+    case Sanbase.Accounts.get_user(user_id) do
+      {:ok, user} ->
+        settings = Sanbase.Accounts.UserSettings.settings_for(user, force: true)
+        not is_nil(settings.metric_updates_opted_out_at)
+
+      _ ->
+        false
+    end
+  end
+
+  # Billing changes are not explicit user choices, so they must not be recorded
+  # as a metric updates opt-out (or opt-in).
   defp toggle_settings(user_id, settings) do
     Sanbase.Accounts.get_user(user_id)
     |> case do
       {:ok, user} ->
-        Sanbase.Accounts.UserSettings.update_settings(user, settings)
+        Sanbase.Accounts.UserSettings.update_settings(user, settings, explicit: false)
 
       _ ->
         :ok

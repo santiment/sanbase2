@@ -302,6 +302,19 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
                })
     end
 
+    test "bi-weekly report opt-in is saved together with valid alerts limits", context do
+      insert(:subscription_pro_sanbase, user: context.user)
+
+      assert {:ok, %{settings: settings}} =
+               Sanbase.Accounts.UserSettings.update_settings(context.user, %{
+                 is_subscribed_biweekly_report: true,
+                 alerts_per_day_limit: %{"email" => 50, "telegram" => 100}
+               })
+
+      assert settings.is_subscribed_biweekly_report
+      assert %{"email" => 50, "telegram" => 100} = settings.alerts_per_day_limit
+    end
+
     test "toggle metric updates email setting", context do
       expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)

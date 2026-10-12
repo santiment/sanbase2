@@ -142,15 +142,45 @@ defmodule Sanbase.Accounts.UserSettings do
     {:ok, result}
   end
 
-  def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
-    if can_subscribe_biweekly_report?(user) do
-      do_update_settings(user, params)
-    else
-      {:error, "Only users with an active subscription plan can subscribe to Biweekly Report"}
+  @doc """
+  Update the user settings.
+
+  Changes to `is_subscribed_metric_updates` are treated as an explicit user choice
+  and recorded in `metric_updates_opted_out_at`. Pass `explicit: false` for
+  changes made by the system (e.g. billing) so they are not recorded as such.
+  """
+  def update_settings(user, params, opts \\ []) do
+    params = track_metric_updates_opt_out(params, opts)
+
+    case params do
+      %{is_subscribed_biweekly_report: true} ->
+        if can_subscribe_biweekly_report?(user) do
+          do_update_settings(user, params)
+        else
+          {:error, "Only users with an active subscription plan can subscribe to Biweekly Report"}
+        end
+
+      _ ->
+        do_update_settings(user, params)
     end
   end
 
-  def update_settings(user, params), do: do_update_settings(user, params)
+  defp track_metric_updates_opt_out(params, opts) do
+    case {Keyword.get(opts, :explicit, true), Map.fetch(params, :is_subscribed_metric_updates)} do
+      {true, {:ok, false}} ->
+        Map.put(
+          params,
+          :metric_updates_opted_out_at,
+          DateTime.utc_now() |> DateTime.truncate(:second)
+        )
+
+      {true, {:ok, true}} ->
+        Map.put(params, :metric_updates_opted_out_at, nil)
+
+      _ ->
+        params
+    end
+  end
 
   defp can_subscribe_biweekly_report?(user) do
     Subscription.current_subscription_plan(user.id, Product.product_sanbase()) != "FREE" or
@@ -158,9 +188,11 @@ defmodule Sanbase.Accounts.UserSettings do
   end
 
   # max emails per day = 200, max telegram per day = 1000
-  defp do_update_settings(user, %{
-         alerts_per_day_limit: %{"email" => email_limit, "telegram" => telegram_limit}
-       })
+  defp do_update_settings(
+         user,
+         %{alerts_per_day_limit: %{"email" => email_limit, "telegram" => telegram_limit}} =
+           params
+       )
        when is_integer(email_limit) and email_limit > 0 and is_integer(telegram_limit) and
               telegram_limit > 0 do
     default_limits = Sanbase.Accounts.Settings.default_alerts_limit_per_day()
@@ -176,7 +208,7 @@ defmodule Sanbase.Accounts.UserSettings do
         limits =
           default_limits |> Map.merge(%{"email" => email_limit, "telegram" => telegram_limit})
 
-        settings_update(user.id, %{alerts_per_day_limit: limits})
+        settings_update(user.id, Map.put(params, :alerts_per_day_limit, limits))
     end
   end
 

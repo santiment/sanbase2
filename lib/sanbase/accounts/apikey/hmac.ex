@@ -59,8 +59,7 @@ defmodule Sanbase.Accounts.Hmac do
     token <> "_" <> hmac(token)
   end
 
-  # The base32-encoded HMAC-SHA256 digest is 56 chars long and hmac/1 takes
-  # byte_size(token) chars from it, so longer tokens can never be valid.
+  # base32 HMAC-SHA256 is 56 chars and hmac/1 slices byte_size(token) chars from it
   @max_token_length 56
 
   @spec apikey_valid?(String.t(), String.t()) :: boolean

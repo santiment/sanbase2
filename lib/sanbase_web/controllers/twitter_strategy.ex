@@ -16,8 +16,7 @@ defmodule Sanbase.Ueberauth.Strategy.Twitter do
   def handle_request!(conn) do
     params = with_state_param([], conn)
 
-    # request_token!/2 raises the raw error (a non-200 response tuple or a transport error
-    # like checkout_timeout), so the error is set on the conn and handled by the caller.
+    # request_token!/2 raises the raw error; set it on the conn for the caller to handle
     case Twitter.OAuth.request_token([], redirect_uri: callback_url(conn, params)) do
       {:ok, token} ->
         conn

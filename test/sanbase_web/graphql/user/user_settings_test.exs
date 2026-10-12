@@ -292,6 +292,16 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       assert result["isSubscribedBiweeklyReport"]
     end
 
+    test "alerts limit is validated when subscribing to the bi-weekly report", context do
+      insert(:subscription_pro_sanbase, user: context.user)
+
+      assert {:error, "Email limit cannot be more than 200"} =
+               Sanbase.Accounts.UserSettings.update_settings(context.user, %{
+                 is_subscribed_biweekly_report: true,
+                 alerts_per_day_limit: %{"email" => 500, "telegram" => 10}
+               })
+    end
+
     test "toggle metric updates email setting", context do
       expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
@@ -302,6 +312,40 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       query = update_user_settings("isSubscribedMetricUpdates: false")
       result = execute_mutation(context.conn, query)
       refute result["isSubscribedMetricUpdates"]
+    end
+
+    for {deployment_env, list} <- [
+          {nil, :metric_updates_dev},
+          {"stage", :metric_updates_stage},
+          {"prod", :metric_updates}
+        ] do
+      test "metric updates toggle uses the #{list} list in #{deployment_env || "dev"}", context do
+        deployment_env = unquote(deployment_env)
+        previous = System.get_env("DEPLOYMENT_ENVIRONMENT")
+
+        if deployment_env,
+          do: System.put_env("DEPLOYMENT_ENVIRONMENT", deployment_env),
+          else: System.delete_env("DEPLOYMENT_ENVIRONMENT")
+
+        on_exit(fn ->
+          if previous,
+            do: System.put_env("DEPLOYMENT_ENVIRONMENT", previous),
+            else: System.delete_env("DEPLOYMENT_ENVIRONMENT")
+        end)
+
+        test_pid = self()
+
+        expect(Sanbase.Email.MockMailjetApi, :subscribe, fn list, _email ->
+          send(test_pid, {:subscribed_to, list})
+          :ok
+        end)
+
+        query = update_user_settings("isSubscribedMetricUpdates: true")
+        execute_mutation(context.conn, query)
+
+        Sanbase.EventBus.drain_topics(Sanbase.EventBus.UserEventsSubscriber.topics(), 10_000)
+        assert_received {:subscribed_to, unquote(list)}
+      end
     end
   end
 

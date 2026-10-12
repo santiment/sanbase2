@@ -9,6 +9,7 @@ defmodule Sanbase.Comments.Notification do
 
   alias Sanbase.Repo
   alias Sanbase.UserList
+  alias Sanbase.Accounts.UserSettings
 
   @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
 
@@ -80,7 +81,7 @@ defmodule Sanbase.Comments.Notification do
         likes: votes
       }
 
-      Map.put(acc, user.email, data)
+      maybe_put_recipient(acc, user, data)
     end)
   end
 
@@ -98,11 +99,35 @@ defmodule Sanbase.Comments.Notification do
         likes: votes
       }
 
-      ntf_users_map = Map.put(ntf_users_map, user.email, data)
+      ntf_users_map = maybe_put_recipient(ntf_users_map, user, data)
+      # The user is added to the recipients even if all their emails are disabled,
+      # so votes_only_map/2 does not add them again.
       rcpts = rcpts ++ [user_id]
 
       {ntf_users_map, rcpts}
     end)
+  end
+
+  # Respect the user's email preferences: drop the comments and/or likes part of
+  # the notification if the user has unsubscribed from it, and skip the user
+  # entirely if nothing is left to send.
+  defp maybe_put_recipient(ntf_users_map, user, data) do
+    settings = UserSettings.settings_for(user)
+
+    data =
+      if settings.is_subscribed_comments_emails,
+        do: data,
+        else: %{data | comments: [], comments_count: 0}
+
+    data =
+      if settings.is_subscribed_likes_emails,
+        do: data,
+        else: %{data | likes: [], likes_count: 0}
+
+    case data do
+      %{comments: [], likes: []} -> ntf_users_map
+      _ -> Map.put(ntf_users_map, user.email, data)
+    end
   end
 
   def maybe_update_comments(comments) do

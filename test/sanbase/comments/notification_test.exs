@@ -126,4 +126,65 @@ defmodule Sanbase.Comments.NotificationTest do
     assert author_data.comments_count == 6
     assert author_data.likes_count == 4
   end
+
+  describe "email preferences" do
+    setup context do
+      {:ok, _} =
+        EntityComment.create_and_link(:insight, context.post.id, context.user.id, nil, "hi")
+
+      insert(:vote, post: context.post, user: build(:user))
+
+      :ok
+    end
+
+    test "sends comments and likes by default", context do
+      data = Notification.notify_users_map()[context.author.email]
+
+      assert data.comments_count == 1
+      assert data.likes_count == 1
+    end
+
+    test "omits comments when unsubscribed from comments emails", context do
+      insert(:user_settings,
+        user: context.author,
+        settings: %{is_subscribed_comments_emails: false}
+      )
+
+      data = Notification.notify_users_map()[context.author.email]
+
+      assert %{comments: [], comments_count: 0, likes_count: 1} = data
+    end
+
+    test "omits likes when unsubscribed from likes emails", context do
+      insert(:user_settings,
+        user: context.author,
+        settings: %{is_subscribed_likes_emails: false}
+      )
+
+      data = Notification.notify_users_map()[context.author.email]
+
+      assert %{likes: [], likes_count: 0, comments_count: 1} = data
+    end
+
+    test "skips the user when unsubscribed from both", context do
+      insert(:user_settings,
+        user: context.author,
+        settings: %{is_subscribed_comments_emails: false, is_subscribed_likes_emails: false}
+      )
+
+      refute Map.has_key?(Notification.notify_users_map(), context.author.email)
+    end
+
+    test "skips a likes-only recipient unsubscribed from likes emails", context do
+      liked_post = insert(:post)
+      insert(:vote, post: liked_post, user: build(:user))
+
+      insert(:user_settings,
+        user: liked_post.user,
+        settings: %{is_subscribed_likes_emails: false}
+      )
+
+      refute Map.has_key?(Notification.notify_users_map(), liked_post.user.email)
+    end
+  end
 end

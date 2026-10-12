@@ -76,9 +76,13 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
        when event_type == :create_subscription do
     subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
 
-    toggle_settings(subscription.user_id, %{
-      is_subscribed_metric_updates: true
-    })
+    # Auto-subscribe to metric updates only on the user's first subscription, so
+    # that a later subscription does not override an explicit opt-out.
+    if first_subscription?(subscription.user_id) do
+      toggle_settings(subscription.user_id, %{
+        is_subscribed_metric_updates: true
+      })
+    end
 
     cond do
       Subscription.trialing_sanbase_pro?(subscription) ->
@@ -147,6 +151,14 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
 
   defp do_handle(_type, _event_type, _event) do
     :ok
+  end
+
+  defp first_subscription?(user_id) do
+    import Ecto.Query, only: [from: 2]
+
+    from(s in Subscription, where: s.user_id == ^user_id, select: count(s.id))
+    |> Sanbase.Repo.one()
+    |> Kernel.==(1)
   end
 
   defp toggle_settings(user_id, settings) do

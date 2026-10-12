@@ -204,6 +204,20 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
     end
   end
 
+  describe "registration" do
+    test "a new user is added to the welcome series but not to the old newsletter list", %{
+      user: user
+    } do
+      Sanbase.Accounts.EventEmitter.emit_event({:ok, user}, :register_user, %{
+        login_origin: :email
+      })
+
+      drain_events()
+      assert_received {:mailjet_subscribe, :new_registrations, "consent@example.com"}
+      refute_received {:mailjet_subscribe, :monthly_newsletter, _}
+    end
+  end
+
   defp drain_events() do
     Sanbase.EventBus.drain_topics(@subscriber.topics(), 10_000)
   end

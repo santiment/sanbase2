@@ -41,8 +41,10 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
 
+    # New users are no longer added to the old newsletter list (:monthly_newsletter).
+    # The newsletter list is opt-in and driven by the marketing consent instead.
+    # :new_registrations triggers the welcome email series in Mailjet.
     if email do
-      Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
       Sanbase.Email.MailjetApi.client().subscribe(:new_registrations, email)
     end
 

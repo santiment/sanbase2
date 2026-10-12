@@ -56,6 +56,21 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
            } in data
   end
 
+  for {ecosystems, message} <- [
+        {["etherum"],
+         "The ecosystem 'etherum' is not supported or is mistyped. Did you mean 'ethereum'?"},
+        {["Bitcoin"],
+         "The ecosystem 'Bitcoin' is not supported or is mistyped. Did you mean 'bitcoin'?"},
+        {["ethereum", "xyzzy"], "The ecosystem 'xyzzy' is not supported or is mistyped."}
+      ] do
+    test "unknown ecosystems #{inspect(ecosystems)} return an error", context do
+      result = get_ecosystems_projects(context.conn, unquote(ecosystems))
+
+      assert result["data"]["getEcosystems"] == nil
+      assert [%{"message" => unquote(message)}] = result["errors"]
+    end
+  end
+
   test "get timeseries data", context do
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p1.id, context.eth_ecosystem.id)
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p2.id, context.eth_ecosystem.id)
@@ -162,6 +177,35 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
                "name" => "bitcoin",
                "aggregatedTimeseriesData" => 1212.4
              } in data
+    end)
+  end
+
+  test "an ecosystem without data gets 0 and an empty timeseries", context do
+    args = %{from: ~U[2024-04-08 00:00:00Z], to: ~U[2024-04-11 00:00:00Z]}
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      aggregated =
+        get_ecosystems_aggregated_timeseries_data(
+          context.conn,
+          ["bitcoin"],
+          Map.put(args, :metric, "ecosystem_github_activity")
+        )
+
+      timeseries =
+        get_ecosystems_timeseries_data(
+          context.conn,
+          ["bitcoin"],
+          Map.merge(args, %{metric: "ecosystem_dev_activity", interval: "1d"})
+        )
+
+      assert aggregated["data"]["getEcosystems"] == [
+               %{"name" => "bitcoin", "aggregatedTimeseriesData" => 0.0}
+             ]
+
+      assert timeseries["data"]["getEcosystems"] == [
+               %{"name" => "bitcoin", "timeseriesData" => []}
+             ]
     end)
   end
 

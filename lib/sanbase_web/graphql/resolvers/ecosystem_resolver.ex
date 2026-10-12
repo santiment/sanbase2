@@ -14,15 +14,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :ecosystem_aggregated_metric_data, {ecosystem, args})
     |> on_load(fn loader ->
-      data =
-        Dataloader.get(
-          loader,
-          SanbaseDataloader,
-          :ecosystem_aggregated_metric_data,
-          {ecosystem, args}
-        ) || 0
-
-      {:ok, data}
+      case Dataloader.get(
+             loader,
+             SanbaseDataloader,
+             :ecosystem_aggregated_metric_data,
+             {ecosystem, args}
+           ) do
+        nil -> fetch_error("aggregatedTimeseriesData", args.metric, ecosystem)
+        value -> {:ok, value}
+      end
     end)
   end
 
@@ -44,12 +44,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, key, {ecosystem, args})
     |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, key, {ecosystem, args}) || []
-
-      with {:ok, result} <- MetricTransform.apply_transform(args.transform, result),
+      with result when is_list(result) <-
+             Dataloader.get(loader, SanbaseDataloader, key, {ecosystem, args}),
+           {:ok, result} <- MetricTransform.apply_transform(args.transform, result),
            {:ok, result} <- fit_from_datetime(result, %{args | from: args.original_from}) do
         {:ok, result}
+      else
+        nil -> fetch_error("timeseriesData", args.metric, ecosystem)
+        error -> error
       end
     end)
+  end
+
+  # The dataloader fills every key it fetched, so nil means a failed or timed out fetch
+  defp fetch_error(field, metric, ecosystem) do
+    {:error, "Failed to fetch #{field} for metric #{metric} and ecosystem #{ecosystem}"}
   end
 end

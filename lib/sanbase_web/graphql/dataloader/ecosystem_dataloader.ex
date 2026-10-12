@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
                args.to,
                opts
              ) do
-          {:ok, data} -> aggregated_transform_to_map(data, args)
+          {:ok, data} -> aggregated_transform_to_map(data, ecosystems, args)
           {:error, error} -> errors_map(ecosystems, args, error)
         end
       end,
@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
                args.interval,
                opts
              ) do
-          {:ok, data} -> timeseries_transform_to_map(data, args)
+          {:ok, data} -> timeseries_transform_to_map(data, ecosystems, args)
           {:error, error} -> errors_map(ecosystems, args, error)
         end
       end,
@@ -77,19 +77,19 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
     Map.new(ecosystems, fn ecosystem -> {{ecosystem, args}, {:error, error}} end)
   end
 
-  defp timeseries_transform_to_map(data, args) do
-    data
-    |> Enum.reduce(%{}, fn %{ecosystem: ecosystem, datetime: dt, value: v}, acc ->
-      elem = %{datetime: dt, value: v}
-      Map.update(acc, {ecosystem, args}, [elem], &[elem | &1])
-    end)
-    |> Map.new(fn {k, v} -> {k, Enum.reverse(v)} end)
+  # Every requested key gets a value, so a nil from the loader means the fetch failed
+  defp timeseries_transform_to_map(data, ecosystems, args) do
+    by_ecosystem =
+      Enum.group_by(data, & &1.ecosystem, fn %{datetime: dt, value: v} ->
+        %{datetime: dt, value: v}
+      end)
+
+    Map.new(ecosystems, &{{&1, args}, Map.get(by_ecosystem, &1, [])})
   end
 
-  defp aggregated_transform_to_map(data, args) do
-    data
-    |> Enum.reduce(%{}, fn %{ecosystem: ecosystem, value: value}, acc ->
-      Map.put(acc, {ecosystem, args}, value)
-    end)
+  defp aggregated_transform_to_map(data, ecosystems, args) do
+    by_ecosystem = Map.new(data, &{&1.ecosystem, &1.value})
+
+    Map.new(ecosystems, &{{&1, args}, Map.get(by_ecosystem, &1) || 0})
   end
 end

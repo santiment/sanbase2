@@ -149,8 +149,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  # `parametersOverride` is a :json arg, so it can be an explicit null or any
-  # non-object JSON value, while only a map is a valid override.
+  # `parametersOverride` is a :json arg, so it can be null or a non-object value
   defp normalize_parameters_override(args) do
     case Map.get(args, :parameters_override) do
       nil -> {:ok, %{}}

@@ -135,7 +135,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   def public_triggers_for_user(_root, args, _resolution) do
     case Ecto.Type.cast(:id, args.user_id) do
-      {:ok, user_id} when is_integer(user_id) ->
+      {:ok, user_id} ->
         public_triggers =
           user_id
           |> UserTrigger.public_triggers_for()
@@ -144,7 +144,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
         {:ok, public_triggers}
 
-      _ ->
+      :error ->
         {:error, "Invalid user id: #{inspect(args.user_id)}"}
     end
   end

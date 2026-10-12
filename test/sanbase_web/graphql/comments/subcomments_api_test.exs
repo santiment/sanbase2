@@ -1,8 +1,4 @@
 defmodule SanbaseWeb.Graphql.SubcommentsApiTest do
-  # Reproduces SANBASE-BACKEND-PROD-GAW: CommentResolver.subcomments/3 passes
-  # the whole args map (%{comment_id: .., limit: ..}) as the `limit` to
-  # Sanbase.Comment.get_subcomments/2, so every subcomments query raises
-  # Ecto.Query.CastError.
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
@@ -49,18 +45,13 @@ defmodule SanbaseWeb.Graphql.SubcommentsApiTest do
     assert id == sub1.id
   end
 
-  test "subcomments with a non-integer commentId does not crash", %{conn: conn} do
+  test "subcomments with a non-integer commentId returns an empty list", %{conn: conn} do
     query = """
     {
       subcomments(commentId: "abc", limit: 1) { id }
     }
     """
 
-    result = execute_query(conn, query)
-
-    case result do
-      %{"errors" => [%{"message" => message} | _]} -> assert is_binary(message)
-      _ -> assert get_in(result, ["data", "subcomments"]) == []
-    end
+    assert execute_query(conn, query, "subcomments") == []
   end
 end

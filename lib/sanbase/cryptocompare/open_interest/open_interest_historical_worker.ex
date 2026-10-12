@@ -99,22 +99,11 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
         {:snooze, seconds}
 
       {:error, error} ->
-        case Handler.snooze_transient_error(error, attempt) do
-          {:snooze, seconds} ->
-            Logger.warning(
-              "[Cryptocompare OpenInterest] Transient error for #{market}/#{instrument}: " <>
-                "#{inspect(error)}. Snoozing job for #{seconds}s."
-            )
-
-            {:snooze, seconds}
-
-          {:error, error} ->
-            Logger.warning(
-              "[Cryptocompare OpenInterest] Error for #{market}/#{instrument}: #{inspect(error)}"
-            )
-
-            {:error, error}
-        end
+        Handler.handle_job_error(
+          error,
+          attempt,
+          "[Cryptocompare OpenInterest] #{market}/#{instrument}"
+        )
     end
   end
 

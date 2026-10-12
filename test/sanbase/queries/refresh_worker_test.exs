@@ -119,6 +119,34 @@ defmodule Sanbase.Queries.RefreshWorkerTest do
     end)
   end
 
+  test "a deterministic ClickHouse error cancels the job and the next scheduled refresh" do
+    user = insert(:user)
+
+    {:ok, query} =
+      Queries.create_query(
+        %{sql_query_text: "SELECT * FROM some_view PREWHERE 1", sql_query_parameters: %{}},
+        user.id
+      )
+
+    job = %Oban.Job{
+      id: 1,
+      attempt: 1,
+      max_attempts: 3,
+      args: %{"query_id" => query.id, "user_id" => user.id}
+    }
+
+    Sanbase.Mock.prepare_mock(Sanbase.Queries, :run_query, fn _query, _user, _metadata, _opts ->
+      {:error, "[9eaa0d5b] (ILLEGAL_PREWHERE) Storage View doesn't support PREWHERE."}
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert {:cancel, error} = RefreshWorker.perform(job)
+      assert error =~ "query_id=#{query.id}"
+      assert error =~ "ILLEGAL_PREWHERE"
+
+      assert [%Oban.Job{state: "cancelled"}] = scheduled_refresh_jobs()
+    end)
+  end
+
   defp scheduled_refresh_jobs() do
     from(job in Oban.Job, where: job.worker == "Sanbase.Queries.RefreshWorker")
     |> Sanbase.Repo.all()

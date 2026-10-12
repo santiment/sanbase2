@@ -244,6 +244,19 @@ defmodule Sanbase.ClickhouseRepo do
 
   def timeout_error?(_), do: false
 
+  # transform_error_string/1 puts the code first, so a "(CODE)" inside echoed SQL is ignored
+  @error_code_regex ~r/^(?:\[[^\]]*\]\s*)?\(([A-Z][A-Z0-9_]*)\)/
+
+  @doc false
+  def error_code(message) when is_binary(message) do
+    case Regex.run(@error_code_regex, message, capture: :all_but_first) do
+      [code] -> code
+      nil -> nil
+    end
+  end
+
+  def error_code(_), do: nil
+
   defp log_and_return_error_from_exception(
          %{} = exception,
          function_executed,

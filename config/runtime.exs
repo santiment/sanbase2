@@ -117,10 +117,7 @@ config :brod,
     kafka_client: [
       endpoints: kafka_endpoints,
       auto_start_producers: true,
-      # brod's defaults (3 retries, 500ms apart) crash the producer with
-      # {:reached_max_retries, :no_leader_connection} during short leader elections.
-      # Keep it bounded (~10s) - never -1, `produce_sync` would block forever and
-      # `KafkaExporter.flush/1` calls with a 30s timeout.
+      # brod defaults (3 x 500ms) crash the producer during leader elections; keep bounded since KafkaExporter.flush/1 waits 30s
       default_producer_config: [max_retries: 10, retry_backoff_ms: 1_000]
     ]
   ]
@@ -194,7 +191,6 @@ if config_env() == :prod do
   config :libcluster,
     topologies: [
       postgres_topology: [
-        # LibclusterPostgres.Strategy with a LISTEN connection that survives disconnects
         strategy: Sanbase.Cluster.PostgresStrategy,
         config: [
           hostname: uri.host,

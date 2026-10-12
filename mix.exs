@@ -109,7 +109,7 @@ defmodule Sanbase.Mixfile do
       {:kino_vega_lite, "~> 0.1.9", only: :dev},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:libcluster, "~> 3.0"},
-      {:libcluster_postgres, "~> 0.1"},
+      {:libcluster_postgres, "~> 0.2.0"},
       {:mint, "~> 1.0"},
       # mock ~> 0.3 requires meck ~> 0.9.2, but meck 0.9.x does not compile on
       # OTP 29 ('catch ...' is deprecated + warnings_as_errors). meck 1.x is

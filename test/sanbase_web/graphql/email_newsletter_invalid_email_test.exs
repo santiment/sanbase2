@@ -1,20 +1,5 @@
 defmodule SanbaseWeb.Graphql.EmailNewsletterInvalidEmailTest do
-  # Reproduces Sentry SANBASE-BACKEND-PROD-GAJ:
-  #   MatchError: no match of right hand side value:
-  #     {:error, {1, :smtp_rfc5322_parse, [~c"syntax error before: ", []]}}
-  #   at :mimemail.encode_header_value/2
-  #   <- Swoosh.Adapters.AmazonSES.generate_raw_message_data/2
-  #   <- Sanbase.SimpleMailer <- EmailResolver.verify_email_newsletter/3
-  #
-  # The `verifyEmailNewsletter(email:)` mutation accepts any string, stores it
-  # in `newsletter_tokens` and sends it as the "To" header. gen_smtp's RFC 5322
-  # parser rejects strings like "foo@", "foo" or "foo@bar.com," and mimemail
-  # crashes with a MatchError while building the raw SES message.
-  #
-  # The AmazonSES adapter is mocked so no request leaves the machine, but the
-  # mock still runs the exact same MIME encoding the real adapter does
-  # (`Swoosh.Adapters.SMTP.Helpers.body/2`), so the production crash is
-  # reproduced locally.
+  # SANBASE-BACKEND-PROD-GAJ: malformed emails crashed the MIME encoding of the "To" header
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
@@ -29,7 +14,6 @@ defmodule SanbaseWeb.Graphql.EmailNewsletterInvalidEmailTest do
      [
        validate_config: fn _config -> :ok end,
        deliver: fn email, _config ->
-         # Same encoding as Swoosh.Adapters.AmazonSES.generate_raw_message_data/2
          _raw = Swoosh.Adapters.SMTP.Helpers.body(email, keep_bcc: true)
          {:ok, %{id: "mocked-message-id"}}
        end

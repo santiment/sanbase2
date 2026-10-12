@@ -1,15 +1,4 @@
 defmodule SanbaseWeb.Graphql.PriceDataloaderLastPriceErrorTest do
-  # Reproduces SANBASE-BACKEND-PROD-M8:
-  #   MatchError: no match of right hand side value: {:error, "[...] The query took too
-  #   long to complete. ..."} in SanbaseWeb.Graphql.PriceDataloader.query/3
-  #
-  # `PriceDataloader.query(:last_price_usd, ..)` hard-matches
-  # `{:ok, result} = Sanbase.Metric.aggregated_timeseries_data(...)`. A ClickHouse
-  # error/timeout raises inside the Dataloader.KV batch task, which crashes (one Sentry
-  # event per occurrence) instead of degrading to "no price".
-  #
-  # Desired behaviour: the batch function does not raise; slugs without a price resolve
-  # to nil (the consumers - `balance_usd` and `usd_balance` - already handle nil).
   use Sanbase.DataCase, async: false
 
   alias SanbaseWeb.Graphql.PriceDataloader
@@ -23,20 +12,10 @@ defmodule SanbaseWeb.Graphql.PriceDataloaderLastPriceErrorTest do
       {:error, @error_msg}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result =
-        try do
-          {:ok, PriceDataloader.query(:last_price_usd, ["bitcoin", "ethereum"], nil)}
-        rescue
-          e -> {:raised, e}
-        end
-
-      assert {:ok, map} = result
-      assert is_map(map)
-
-      for slug <- ["bitcoin", "ethereum"] do
-        value = Map.get(map, slug)
-        assert is_nil(value) or match?({:error, _}, value)
-      end
+      assert PriceDataloader.query(:last_price_usd, ["bitcoin", "ethereum"], nil) == %{
+               "bitcoin" => {:error, @error_msg},
+               "ethereum" => {:error, @error_msg}
+             }
     end)
   end
 

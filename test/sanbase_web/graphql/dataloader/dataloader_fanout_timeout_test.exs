@@ -1,62 +1,17 @@
 defmodule SanbaseWeb.Graphql.DataloaderFanoutTimeoutTest do
-  # Reproduces the "Task #PID<..> started from #PID<..> terminating ... exited in:
-  # Task.Supervised.stream(N) ** (EXIT) time out" Sentry issues:
-  #
-  #   * SANBASE-BACKEND-PROD-R   - ClickhouseDataloader.query(:aggregated_metric, ..)  (60_000)
-  #   * SANBASE-BACKEND-PROD-F9H - PriceDataloader.query(:volume_change_24h, ..)       (25_000)
-  #   * SANBASE-BACKEND-PROD-GA0 - BalanceDataloader.query(:address_selector_current_balance, ..) (55_000)
-  #
-  # Each of these Dataloader.KV batch functions fans out with `Sanbase.Parallel.map/3`
-  # (or `flat_map/3`) using the default `on_timeout: :exit`. When a single group's
-  # ClickHouse query is slow, the stream exits the Dataloader batch task, which crashes
-  # (one Sentry event) and nils out *every* field in the batch, including the groups
-  # that finished fine.
-  #
-  # Desired behaviour:
-  #   1. A slow group does not take the whole batch down - the fast groups still resolve.
-  #   2. The fan-out budget outlasts the ClickHouse query budget (docs/timeouts.md), so a
-  #      slow-but-legitimate query gets to return its own result/error instead of being
-  #      killed by an inner timeout that is shorter than the query it wraps.
-  #
-  # To keep the test fast, `Sanbase.Parallel` is wrapped (passthrough) so that the
-  # configured timeout is captured and then shrunk to a few hundred ms.
+  # A slow or failing fan-out fails its whole field, never part of it, without exiting the batch
   use Sanbase.DataCase, async: false
 
   import Mock
 
   alias SanbaseWeb.Graphql.BalanceDataloader
   alias SanbaseWeb.Graphql.ClickhouseDataloader
+  alias SanbaseWeb.Graphql.LabelsDataloader
   alias SanbaseWeb.Graphql.PriceDataloader
 
-  @shrunk_timeout_ms 300
+  defp parallel_mock(), do: {Sanbase.Parallel, [:passthrough], dataloader_timeout: fn -> 300 end}
 
-  defp parallel_mocks(test_pid) do
-    shrink = fn opts ->
-      send(test_pid, {:parallel_timeout, Keyword.get(opts, :timeout)})
-      Keyword.put(opts, :timeout, @shrunk_timeout_ms)
-    end
-
-    [
-      map: fn collection, func, opts ->
-        passthrough([collection, func, shrink.(opts)])
-      end,
-      flat_map: fn collection, func, opts ->
-        passthrough([collection, func, shrink.(opts)])
-      end
-    ]
-  end
-
-  defp clickhouse_budget_ms() do
-    Application.get_env(:sanbase, Sanbase.ClickhouseRepo) |> Keyword.fetch!(:timeout)
-  end
-
-  defp captured_timeout() do
-    assert_received {:parallel_timeout, timeout}
-    # `nil` means Sanbase.Parallel's 25s default is used
-    timeout || 25_000
-  end
-
-  describe "ClickhouseDataloader.query(:aggregated_metric, ..) (SANBASE-BACKEND-PROD-R)" do
+  describe "ClickhouseDataloader.query(:aggregated_metric, ..)" do
     setup do
       from = ~U[2026-09-01 00:00:00Z]
       to = ~U[2026-09-02 00:00:00Z]
@@ -89,80 +44,91 @@ defmodule SanbaseWeb.Graphql.DataloaderFanoutTimeoutTest do
     end
 
     test "a slow selector does not exit the batch; the fast selector still resolves", ctx do
-      with_mocks [
-        {Sanbase.Parallel, [:passthrough], parallel_mocks(self())},
-        ctx.metric_mock
-      ] do
+      with_mocks [parallel_mock(), ctx.metric_mock] do
         result = ClickhouseDataloader.query(:aggregated_metric, ctx.args, nil)
 
         assert Map.get(result, ctx.fast_selector) == %{"bitcoin" => 10.0}
-
-        slow_result = Map.get(result, ctx.slow_selector)
-        assert slow_result == nil or match?({:error, _}, slow_result)
-      end
-    end
-
-    test "the fan-out timeout outlasts the ClickHouse query budget", ctx do
-      with_mocks [
-        {Sanbase.Parallel, [:passthrough], parallel_mocks(self())},
-        {Sanbase.Metric, [:passthrough],
-         aggregated_timeseries_data: fn _metric, %{slug: slugs}, _from, _to, _opts ->
-           {:ok, Map.new(slugs, &{&1, 10.0})}
-         end}
-      ] do
-        _ = ClickhouseDataloader.query(:aggregated_metric, ctx.args, nil)
-
-        assert captured_timeout() > clickhouse_budget_ms()
+        refute Map.has_key?(result, ctx.slow_selector)
       end
     end
   end
 
-  describe "PriceDataloader.query(:volume_change_24h, ..) (SANBASE-BACKEND-PROD-F9H)" do
+  describe "PriceDataloader.query(:volume_change_24h, ..)" do
+    # 100 fast slugs fill the first chunk; the "bad" slug lands alone in the second one
     setup do
-      # 100 fast slugs fill the first chunk (chunk size is 100); the slow slug lands
-      # alone in the second chunk.
       fast_slugs = Enum.map(1..100, &"fast-slug-#{&1}")
-      args = Enum.map(fast_slugs ++ ["slow-slug"], &%{slug: &1})
-
-      %{fast_slugs: fast_slugs, args: args}
+      %{fast_slugs: fast_slugs, args: Enum.map(fast_slugs ++ ["bad-slug"], &%{slug: &1})}
     end
 
-    test "a slow chunk does not exit the batch; the fast chunk still resolves", ctx do
-      with_mocks [
-        {Sanbase.Parallel, [:passthrough], parallel_mocks(self())},
-        {Sanbase.Metric, [:passthrough],
-         aggregated_timeseries_data: fn "volume_usd", %{slug: slugs}, _from, _to ->
-           if "slow-slug" in slugs, do: Process.sleep(:infinity)
-           {:ok, Map.new(slugs, &{&1, 100.0})}
-         end}
-      ] do
+    test "all chunks succeed", ctx do
+      with_mocks [parallel_mock(), volume_mock(fn -> :ok end)] do
         result = PriceDataloader.query(:volume_change_24h, ctx.args, nil)
 
-        for slug <- ctx.fast_slugs do
-          assert Map.get(result, slug) == 0.0
-        end
-
-        assert Map.get(result, "slow-slug") == nil
+        assert map_size(result) == 101
+        assert Map.get(result, "bad-slug") == 0.0
       end
     end
 
-    test "the fan-out timeout outlasts the ClickHouse query budget", ctx do
-      with_mocks [
-        {Sanbase.Parallel, [:passthrough], parallel_mocks(self())},
-        {Sanbase.Metric, [:passthrough],
-         aggregated_timeseries_data: fn "volume_usd", %{slug: slugs}, _from, _to ->
-           {:ok, Map.new(slugs, &{&1, 100.0})}
-         end}
-      ] do
-        _ = PriceDataloader.query(:volume_change_24h, ctx.args, nil)
-
-        # Every chunk runs two sequential ClickHouse queries
-        assert captured_timeout() > clickhouse_budget_ms()
+    for {name, bad_chunk} <- [
+          slow: quote(do: fn -> Process.sleep(:infinity) end),
+          failing: quote(do: fn -> {:error, "boom"} end)
+        ] do
+      test "a #{name} chunk fails the whole field", ctx do
+        with_mocks [parallel_mock(), volume_mock(unquote(bad_chunk))] do
+          assert PriceDataloader.query(:volume_change_24h, ctx.args, nil) == %{}
+        end
       end
+    end
+
+    defp volume_mock(bad_chunk_fun) do
+      {Sanbase.Metric, [:passthrough],
+       aggregated_timeseries_data: fn "volume_usd", %{slug: slugs}, _from, _to ->
+         case "bad-slug" in slugs && bad_chunk_fun.() do
+           {:error, _} = error -> error
+           _ -> {:ok, Map.new(slugs, &{&1, 100.0})}
+         end
+       end}
     end
   end
 
-  describe "BalanceDataloader.query(:address_selector_current_balance, ..) (SANBASE-BACKEND-PROD-GA0)" do
+  describe "LabelsDataloader.query(:address_labels, ..)" do
+    # 50 fast addresses fill the first chunk; the "bad" address lands alone in the second one
+    setup do
+      %{addresses: Enum.map(1..50, &"0xfast#{&1}") ++ ["0xbad"]}
+    end
+
+    test "all chunks succeed", ctx do
+      with_mocks [parallel_mock(), labels_mock(fn -> :ok end)] do
+        result = LabelsDataloader.query(:address_labels, ctx.addresses, nil)
+
+        assert map_size(result) == 51
+        assert Map.get(result, "0xbad") == [%{name: "label"}]
+      end
+    end
+
+    for {name, bad_chunk} <- [
+          slow: quote(do: fn -> Process.sleep(:infinity) end),
+          failing: quote(do: fn -> {:error, "boom"} end)
+        ] do
+      test "a #{name} chunk fails the whole field", ctx do
+        with_mocks [parallel_mock(), labels_mock(unquote(bad_chunk))] do
+          assert LabelsDataloader.query(:address_labels, ctx.addresses, nil) == %{}
+        end
+      end
+    end
+
+    defp labels_mock(bad_chunk_fun) do
+      {Sanbase.Clickhouse.Label, [:passthrough],
+       get_address_labels: fn nil, addresses ->
+         case "0xbad" in addresses && bad_chunk_fun.() do
+           {:error, _} = error -> error
+           _ -> {:ok, Map.new(addresses, &{&1, [%{name: "label"}]})}
+         end
+       end}
+    end
+  end
+
+  describe "BalanceDataloader.query(:address_selector_current_balance, ..)" do
     setup do
       fast_selector = %{slug: "ethereum"}
       slow_selector = %{slug: "slow-chain"}
@@ -191,10 +157,7 @@ defmodule SanbaseWeb.Graphql.DataloaderFanoutTimeoutTest do
     end
 
     test "a slow selector does not exit the batch; the fast selector still resolves", ctx do
-      with_mocks [
-        {Sanbase.Parallel, [:passthrough], parallel_mocks(self())},
-        ctx.balance_mock
-      ] do
+      with_mocks [parallel_mock(), ctx.balance_mock] do
         result = BalanceDataloader.query(:address_selector_current_balance, ctx.args, nil)
 
         assert Map.get(
@@ -204,24 +167,10 @@ defmodule SanbaseWeb.Graphql.DataloaderFanoutTimeoutTest do
 
         assert Map.get(result, {:total_balance, ctx.fast_selector}) == 5.0
 
-        assert Map.get(
+        refute Map.has_key?(
                  result,
                  {"0x2222222222222222222222222222222222222222", ctx.slow_selector}
-               ) == nil
-      end
-    end
-
-    test "the fan-out timeout outlasts the ClickHouse query budget", ctx do
-      with_mocks [
-        {Sanbase.Parallel, [:passthrough], parallel_mocks(self())},
-        {Sanbase.Clickhouse.HistoricalBalance, [:passthrough],
-         current_balance: fn _selector, addresses ->
-           {:ok, Enum.map(addresses, &%{address: &1, balance: 5.0})}
-         end}
-      ] do
-        _ = BalanceDataloader.query(:address_selector_current_balance, ctx.args, nil)
-
-        assert captured_timeout() > clickhouse_budget_ms()
+               )
       end
     end
   end

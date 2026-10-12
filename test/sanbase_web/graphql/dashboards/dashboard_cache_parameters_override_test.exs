@@ -1,8 +1,5 @@
 defmodule SanbaseWeb.Graphql.DashboardCacheParametersOverrideTest do
-  # Reproduces SANBASE-BACKEND-PROD-GAX: getCachedDashboardQueriesExecutions
-  # passes the `parametersOverride` :json arg straight to
-  # DashboardCache.hash_parameters/1, which only has map clauses. An explicit
-  # `null` or any non-object JSON value raises FunctionClauseError (500).
+  # A null or non-object `parametersOverride` (:json arg) must not crash the resolver
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
@@ -20,23 +17,18 @@ defmodule SanbaseWeb.Graphql.DashboardCacheParametersOverrideTest do
     %{conn: conn, dashboard_id: dashboard_id}
   end
 
-  test "explicit null parametersOverride is treated as no override", context do
-    result = get_cached(context.conn, context.dashboard_id, "null")
+  for json <- ["null", ~s|"null"|] do
+    test "parametersOverride #{json} is treated as no override", context do
+      result = execute_query(context.conn, cached_query(context.dashboard_id, unquote(json)))
 
-    refute Map.has_key?(result, "errors")
-    assert %{"queries" => []} = get_in(result, ["data", "getCachedDashboardQueriesExecutions"])
-  end
-
-  test "JSON 'null' string parametersOverride is treated as no override", context do
-    result = get_cached(context.conn, context.dashboard_id, ~s|"null"|)
-
-    refute Map.has_key?(result, "errors")
-    assert %{"queries" => []} = get_in(result, ["data", "getCachedDashboardQueriesExecutions"])
+      refute Map.has_key?(result, "errors")
+      assert %{"queries" => []} = get_in(result, ["data", "getCachedDashboardQueriesExecutions"])
+    end
   end
 
   for json <- [~s|"[1, 2]"|, ~s|"\\"abc\\""|, ~s|"42"|] do
     test "non-object parametersOverride #{json} returns a clean error", context do
-      result = get_cached(context.conn, context.dashboard_id, unquote(json))
+      result = execute_query(context.conn, cached_query(context.dashboard_id, unquote(json)))
 
       assert get_in(result, ["data", "getCachedDashboardQueriesExecutions"]) == nil
       assert [%{"message" => message} | _] = result["errors"]
@@ -45,13 +37,13 @@ defmodule SanbaseWeb.Graphql.DashboardCacheParametersOverrideTest do
   end
 
   test "anonymous user with null parametersOverride does not crash", context do
-    result = get_cached(build_conn(), context.dashboard_id, "null")
+    result = execute_query(build_conn(), cached_query(context.dashboard_id, "null"))
 
     refute Map.has_key?(result, "errors")
   end
 
-  defp get_cached(conn, dashboard_id, parameters_override) do
-    query = """
+  defp cached_query(dashboard_id, parameters_override) do
+    """
     {
       getCachedDashboardQueriesExecutions(
         dashboardId: #{dashboard_id}
@@ -61,9 +53,5 @@ defmodule SanbaseWeb.Graphql.DashboardCacheParametersOverrideTest do
       }
     }
     """
-
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
   end
 end

@@ -1,19 +1,4 @@
 defmodule Sanbase.Alert.WalletAssetsHeldDataErrorTest do
-  # Reproduces SANBASE-BACKEND-PROD-G7R:
-  #   MatchError: no match of right hand side value: {:error, "[...] Cannot execute
-  #   database query. ..."} in anonymous fn/1 in
-  #   Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings.assets_held/1
-  #
-  # `assets_held/1` hard-matches `{:ok, _} = HistoricalBalance.assets_held_by_address/1`
-  # inside the cache function. A ClickHouse error raises inside the evaluator's
-  # `Sanbase.Parallel.map/3` worker; the worker is linked to the scheduler process, so
-  # one failing address aborts the evaluation of every wallet_assets_held alert in the
-  # run. (`get_data/1` even has an `Enum.reject(&match?({:error, _}, &1))` that shows the
-  # intent was to tolerate per-address errors, but it is never reached.)
-  #
-  # Desired behaviour: `get_data/1` does not raise; it returns `{:error, reason}` (which
-  # `TriggerSettingsBase.default_evaluate/3` logs and treats as "not triggered") or skips
-  # the failing address.
   use Sanbase.DataCase, async: false
 
   alias Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings
@@ -28,29 +13,13 @@ defmodule Sanbase.Alert.WalletAssetsHeldDataErrorTest do
   end
 
   @tag capture_log: true
-  test "get_data/1 does not raise when the assets held query fails" do
-    settings = settings([@address])
-
+  test "get_data/1 returns an error when the assets held query fails" do
     Sanbase.Mock.prepare_mock2(
       &HistoricalBalance.assets_held_by_address/1,
       {:error, @error_msg}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result =
-        try do
-          {:ok, WalletAssetsHeldTriggerSettings.get_data(settings)}
-        rescue
-          e -> {:raised, e}
-        end
-
-      assert {:ok, get_data_result} = result
-
-      assert match?({:error, _}, get_data_result) or
-               match?({:ok, list} when is_list(list), get_data_result)
-
-      # The failing address must not be reported as holding no assets - that would
-      # make the next successful evaluation report all its assets as newcomers.
-      refute match?({:ok, [{@address, []}]}, get_data_result)
+      assert {:error, _} = WalletAssetsHeldTriggerSettings.get_data(settings([@address]))
     end)
   end
 

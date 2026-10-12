@@ -74,10 +74,8 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
         filtered_target: %{list: target_list},
         selector: selector
       }) do
-    # Fail the whole evaluation if any address errors - skipping it would
-    # store an empty state and report all its assets as new on the next run.
-    target_list
-    |> Enum.reduce_while({:ok, []}, fn address, {:ok, acc} ->
+    # Fail on any address error: skipping it would report all its assets as new next run
+    Enum.reduce_while(target_list, {:ok, []}, fn address, {:ok, acc} ->
       address = Sanbase.BlockchainAddress.to_internal_format(address)
 
       selector = %{address: address, infrastructure: selector.infrastructure}
@@ -91,10 +89,6 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
           {:halt, error}
       end
     end)
-    |> case do
-      {:ok, data} -> {:ok, Enum.reverse(data)}
-      {:error, _} = error -> error
-    end
   end
 
   defp assets_held(%{} = selector) do

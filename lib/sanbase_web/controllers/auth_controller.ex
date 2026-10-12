@@ -18,8 +18,7 @@ defmodule SanbaseWeb.AuthController do
   }
   @provider_names Map.keys(@providers)
 
-  # The redirect and origin URLs are kept in the cookie session, which must stay under
-  # 4096 bytes after signing and Base64 encoding. Longer URLs fall back to the website URL.
+  # URLs are kept in the cookie session, which must stay under 4096 bytes
   @max_session_url_length 1024
 
   def request(conn, %{"provider" => provider} = params) when provider in @provider_names do
@@ -51,8 +50,7 @@ defmodule SanbaseWeb.AuthController do
       |> put_fail_redirect_url(fail_redirect_url, success_redirect_url)
       |> put_session(:__san_origin_url, origin_url)
 
-    # The strategy sets a failure instead of redirecting when the provider cannot be
-    # reached (e.g. Twitter's request token endpoint is down), so the conn is not sent yet.
+    # The Twitter strategy sets a failure instead of redirecting when the provider is unreachable
     case Ueberauth.run_request(conn, provider, @providers[provider]) do
       %{assigns: %{ueberauth_failure: failure}} = conn ->
         Logger.warning(
@@ -173,8 +171,6 @@ defmodule SanbaseWeb.AuthController do
 
   # Private functions
 
-  # The fail redirect URL is stored only when it differs from the success one, so the
-  # same long URL does not take up the cookie session twice.
   defp put_fail_redirect_url(conn, fail_redirect_url, fail_redirect_url),
     do: delete_session(conn, :__san_fail_redirect_url)
 
@@ -187,8 +183,7 @@ defmodule SanbaseWeb.AuthController do
       SanbaseWeb.Endpoint.website_url()
   end
 
-  # Only the scheme, host and port of the referer are kept - the path, query and
-  # fragment are not needed and can be arbitrarily long.
+  # Keep scheme/host/port only; path and query can be arbitrarily long
   defp get_origin_url(referer_url) do
     origin_url =
       referer_url
@@ -279,19 +274,8 @@ defmodule SanbaseWeb.AuthController do
 
     # In case the provided redirect URL is not valid, simply redirect to sanbase
     case validate_redirect_url(processed_url) do
-      true when byte_size(processed_url) <= @max_session_url_length ->
-        processed_url
-
-      true ->
-        Logger.warning(
-          "Redirect URL too long to keep in the session (#{byte_size(processed_url)} bytes), " <>
-            "falling back to the website URL"
-        )
-
-        SanbaseWeb.Endpoint.website_url()
-
-      _ ->
-        SanbaseWeb.Endpoint.website_url()
+      true -> processed_url
+      _ -> SanbaseWeb.Endpoint.website_url()
     end
   end
 
@@ -309,14 +293,10 @@ defmodule SanbaseWeb.AuthController do
       @valid_redirect_hosts ["localhost" | @valid_redirect_hosts]
   end
 
-  # Temporary headroom: real FE redirect URLs fit in 2048, but 4096 until every deep-link
-  # case is audited, so login returns are not broken.
-  @max_redirect_url_length 4096
-
   @doc false
   def validate_redirect_url(url) when is_binary(url) do
     cond do
-      byte_size(url) > @max_redirect_url_length ->
+      byte_size(url) > @max_session_url_length ->
         Logger.warning("Rejecting oversized redirect URL (#{byte_size(url)} bytes)")
         {:error, "Invalid redirect URL"}
 

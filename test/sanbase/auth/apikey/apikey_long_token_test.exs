@@ -1,17 +1,9 @@
 defmodule Sanbase.Accounts.ApikeyLongTokenTest do
-  # Reproduces Sentry SANBASE-BACKEND-PROD-GA9:
-  #   ArgumentError in :erlang.binary_part/3 ("3rd argument: out of range")
-  #   Hmac.hmac/1 <- Hmac.generate_apikey/1 <- Hmac.apikey_valid?/2
-  #   <- Apikey.apikey_to_user/1 <- Sanbase.MCP.AuthPlug.try_apikey/1
-  #
-  # The HMAC-SHA256 digest is 32 bytes, i.e. 56 base32 chars. `hmac/1` slices
-  # `byte_size(token)` chars from it, so any "<token>_<rest>" credential whose
-  # token part is longer than 56 bytes raises instead of being rejected.
+  # SANBASE-BACKEND-PROD-GA9: tokens longer than the HMAC digest crashed binary_part/3
   use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Accounts.{Apikey, Hmac}
 
-  # 57 chars - one more than the base32-encoded HMAC digest (56 chars)
   @long_token String.duplicate("a", 57)
   @long_apikey @long_token <> "_" <> String.duplicate("b", 16)
 

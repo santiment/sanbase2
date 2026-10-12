@@ -1,12 +1,4 @@
 defmodule SanbaseWeb.Graphql.EcosystemDataloader do
-  require Logger
-
-  # Above the 85s ClickHouse budget, so a slow query returns its own error, and below
-  # the 105s Dataloader.KV source timeout. A group that still times out is killed and
-  # dropped (its keys resolve to nil) instead of exiting the whole batch.
-  # See docs/timeouts.md.
-  @fan_out_timeout 95_000
-
   def query(:ecosystem_aggregated_metric_data, data, ctx) do
     # The key is the arguments, the value is the list of ecosystems
     # The args are from/to/interval/aggregation/metric
@@ -34,13 +26,13 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
         end
       end,
       max_concurrency: 4,
-      timeout: @fan_out_timeout,
-      on_timeout: :kill_task,
-      zip_input_on_exit: true,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "EcosystemDataloader :ecosystem_aggregated_metric_data",
       ordered: false,
       request_context: ctx
     )
-    |> merge_results(:ecosystem_aggregated_metric_data)
+    |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
   def query(:ecosystem_timeseries_metric_data, data, ctx) do
@@ -71,27 +63,13 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
         end
       end,
       max_concurrency: 4,
-      timeout: @fan_out_timeout,
-      on_timeout: :kill_task,
-      zip_input_on_exit: true,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "EcosystemDataloader :ecosystem_timeseries_metric_data",
       ordered: false,
       request_context: ctx
     )
-    |> merge_results(:ecosystem_timeseries_metric_data)
-  end
-
-  defp merge_results(results, query) do
-    Enum.reduce(results, %{}, fn
-      {:exit, {{_args, ecosystems}, reason}}, acc ->
-        Logger.warning(
-          "EcosystemDataloader #{inspect(query)} dropped #{length(ecosystems)} keys. Reason: #{inspect(reason)}"
-        )
-
-        acc
-
-      map, acc ->
-        Map.merge(acc, map)
-    end)
+    |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
   # Dataloader.KV stores the error per key instead of failing the whole batch

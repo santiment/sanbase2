@@ -1,17 +1,4 @@
 defmodule Sanbase.SocialData.CommunityMessagesCountErrorTest do
-  # Reproduces SANBASE-BACKEND-PROD-B3:
-  #   MatchError: no match of right hand side value: {:error, "[...] Error executing
-  #   query. See logs for details."} in anonymous fn/5 in
-  #   Sanbase.SocialData.Community.community_messages_count/5
-  #
-  # For the `:total`/`:all` source, `community_messages_count/5` fans out to the
-  # telegram and reddit sources with `Sanbase.Parallel.flat_map/3` and hard-matches
-  # `{:ok, result} = community_messages_count(...)` inside the worker. When the
-  # metricshub request fails (non-200 status, HTTP error, error body) the worker
-  # crashes and, being linked, takes the caller (the GraphQL request process) down.
-  #
-  # Desired behaviour: an `{:error, reason}` tuple is returned for the combined source
-  # instead of crashing.
   use Sanbase.DataCase, async: false
 
   alias Sanbase.SocialData.Community
@@ -26,9 +13,7 @@ defmodule Sanbase.SocialData.CommunityMessagesCountErrorTest do
       {:ok, %HTTPoison.Response{status_code: 500, body: "Internal Server Error"}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = run_trapping_exits(fn -> run(:total) end)
-
-      assert {:ok, {:error, _reason}} = result
+      assert {:error, _reason} = run(:total)
     end)
   end
 
@@ -45,9 +30,7 @@ defmodule Sanbase.SocialData.CommunityMessagesCountErrorTest do
       end
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = run_trapping_exits(fn -> run("total") end)
-
-      assert {:ok, {:error, _reason}} = result
+      assert {:error, _reason} = run("total")
     end)
   end
 
@@ -69,22 +52,5 @@ defmodule Sanbase.SocialData.CommunityMessagesCountErrorTest do
 
   defp run(source) do
     Community.community_messages_count(%{slug: "santiment"}, @from, @to, "1d", source)
-  end
-
-  # `Sanbase.Parallel` workers are linked to the caller, so a crashing worker would
-  # kill the test process. Trap exits so the crash is observed as a test failure
-  # instead.
-  defp run_trapping_exits(fun) do
-    Process.flag(:trap_exit, true)
-
-    try do
-      {:ok, fun.()}
-    rescue
-      e -> {:raised, e}
-    catch
-      :exit, reason -> {:exit, reason}
-    after
-      Process.flag(:trap_exit, false)
-    end
   end
 end

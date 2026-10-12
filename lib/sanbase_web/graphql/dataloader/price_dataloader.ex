@@ -22,34 +22,21 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
 
     slugs
     |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.map(
-      fn
-        [_ | _] = chunk -> do_volume_change(chunk, now, day_ago, two_days_ago)
-        [] -> []
-      end,
+    |> Sanbase.Parallel.map_or_error(&do_volume_change(&1, now, day_ago, two_days_ago),
       max_concurrency: 8,
-      # Above the 85s ClickHouse budget and below the 105s Dataloader.KV source
-      # timeout. A chunk that still times out is killed and contributes no
-      # entries (its slugs resolve to nil) instead of exiting the whole batch.
-      # See docs/timeouts.md.
-      timeout: 95_000,
-      on_timeout: :kill_task,
-      zip_input_on_exit: true,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
       ordered: false,
       request_context: ctx
     )
-    |> Enum.flat_map(fn
-      {:exit, {slugs, reason}} ->
-        Logger.warning(
-          "PriceDataloader :volume_change_24h dropped #{length(slugs)} slugs. Reason: #{inspect(reason)}"
-        )
+    |> case do
+      {:ok, lists} ->
+        lists |> Enum.concat() |> Map.new()
 
-        []
-
-      list ->
-        list
-    end)
-    |> Map.new()
+      # An empty map fails the field for every slug instead of only for some
+      {:error, error} ->
+        Logger.warning("PriceDataloader :volume_change_24h failed. Reason: #{inspect(error)}")
+        %{}
+    end
   end
 
   def query({:price, slug}, ids, ctx) do
@@ -82,8 +69,7 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
       {:ok, result} ->
         result
 
-      # Dataloader.KV stores a per-key error, which `Dataloader.get/4` turns into
-      # nil (`get_policy: :return_nil_on_error`); consumers treat nil as "no price".
+      # Per-key error; Dataloader.get turns it into nil
       {:error, error} ->
         Map.new(slugs, &{&1, {:error, error}})
     end
@@ -106,10 +92,7 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
              earliest_dt,
              middle_dt
            ) do
-      calculate_volume_percent_change(volumes_previous_24h_map, volumes_last_24h_map)
-    else
-      _ ->
-        []
+      {:ok, calculate_volume_percent_change(volumes_previous_24h_map, volumes_last_24h_map)}
     end
   end
 

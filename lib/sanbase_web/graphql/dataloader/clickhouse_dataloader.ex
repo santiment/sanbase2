@@ -3,14 +3,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Project
   alias Sanbase.Metric
 
-  require Logger
-
-  # Above the 85s ClickHouse budget, so a slow query returns its own error, and below
-  # the 105s Dataloader.KV source timeout. A group that still times out is killed and
-  # dropped (its keys resolve to nil) instead of exiting the whole batch.
-  # See docs/timeouts.md.
-  @fan_out_timeout 95_000
-
   def query(:project_info, args, _ctx) do
     args
     |> Enum.to_list()
@@ -39,13 +31,12 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
         {selector, data}
       end,
-      timeout: @fan_out_timeout,
-      on_timeout: :kill_task,
-      zip_input_on_exit: true,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "ClickhouseDataloader :aggregated_metric",
       ordered: false,
       request_context: ctx
     )
-    |> reject_timed_out(:aggregated_metric)
     |> Map.new()
   end
 
@@ -57,13 +48,12 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       fn {{from, to}, group} ->
         {{from, to}, average_daily_active_addresses(group, from, to)}
       end,
-      timeout: @fan_out_timeout,
-      on_timeout: :kill_task,
-      zip_input_on_exit: true,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "ClickhouseDataloader :average_daily_active_addresses",
       ordered: false,
       request_context: ctx
     )
-    |> reject_timed_out(:average_daily_active_addresses)
     |> Map.new()
   end
 
@@ -79,13 +69,12 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       fn {days, group} ->
         {days, average_dev_activity(group, days)}
       end,
-      timeout: @fan_out_timeout,
-      on_timeout: :kill_task,
-      zip_input_on_exit: true,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "ClickhouseDataloader :average_dev_activity",
       ordered: false,
       request_context: ctx
     )
-    |> reject_timed_out(:average_dev_activity)
     |> Map.new()
   end
 
@@ -113,20 +102,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       end)
 
     versions_map
-  end
-
-  defp reject_timed_out(results, query) do
-    Enum.reject(results, fn
-      {:exit, {{_group_key, group}, reason}} ->
-        Logger.warning(
-          "ClickhouseDataloader #{inspect(query)} dropped #{length(group)} keys. Reason: #{inspect(reason)}"
-        )
-
-        true
-
-      _ ->
-        false
-    end)
   end
 
   defp average_daily_active_addresses(args, from, to) do

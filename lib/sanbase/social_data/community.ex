@@ -37,10 +37,9 @@ defmodule Sanbase.SocialData.Community do
 
         {:halt, error}
     end)
-    |> case do
-      {:ok, data} -> {:ok, Sanbase.Utils.Transform.sum_by_datetime(data, :mentions_count)}
-      {:error, _} = error -> error
-    end
+    |> Sanbase.Utils.Transform.maybe_apply_function(
+      &Sanbase.Utils.Transform.sum_by_datetime(&1, :mentions_count)
+    )
   end
 
   def community_messages_count(%{slug: slug}, from, to, interval, source) do

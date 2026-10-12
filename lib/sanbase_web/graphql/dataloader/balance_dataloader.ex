@@ -1,14 +1,6 @@
 defmodule SanbaseWeb.Graphql.BalanceDataloader do
   alias Sanbase.Clickhouse.HistoricalBalance
 
-  require Logger
-
-  # Above the 85s ClickHouse budget, so a slow query returns its own error, and below
-  # the 105s Dataloader.KV source timeout. A group that still times out is killed and
-  # dropped (its keys resolve to nil) instead of exiting the whole batch.
-  # See docs/timeouts.md.
-  @fan_out_timeout 95_000
-
   def query(:address_selector_current_balance, address_selector_pairs, ctx) do
     groups =
       Enum.group_by(
@@ -20,12 +12,12 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
     Sanbase.Parallel.map(groups, &get_current_balance/1,
       max_concurrency: 4,
       ordered: false,
-      timeout: @fan_out_timeout,
-      on_timeout: :kill_task,
-      zip_input_on_exit: true,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "BalanceDataloader :address_selector_current_balance",
       request_context: ctx
     )
-    |> merge_results(:address_selector_current_balance)
+    |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
   def query(:address_selector_balance_change, address_selector_from_to_tuples, ctx) do
@@ -39,29 +31,15 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
     Sanbase.Parallel.map(groups, &get_balance_change/1,
       max_concurrency: 4,
       ordered: false,
-      timeout: @fan_out_timeout,
-      on_timeout: :kill_task,
-      zip_input_on_exit: true,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "BalanceDataloader :address_selector_balance_change",
       request_context: ctx
     )
-    |> merge_results(:address_selector_balance_change)
+    |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
   # Private functions
-
-  defp merge_results(results, query) do
-    Enum.reduce(results, %{}, fn
-      {:exit, {{_selector, addresses}, reason}}, acc ->
-        Logger.warning(
-          "BalanceDataloader #{inspect(query)} dropped #{length(addresses)} keys. Reason: #{inspect(reason)}"
-        )
-
-        acc
-
-      map, acc ->
-        Map.merge(acc, map)
-    end)
-  end
 
   defp get_current_balance({selector, addresses}) do
     addresses = Enum.uniq(addresses)

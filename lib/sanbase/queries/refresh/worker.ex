@@ -5,6 +5,7 @@ defmodule Sanbase.Queries.RefreshWorker do
 
   require Logger
 
+  alias Sanbase.ClickhouseRepo
   alias Sanbase.Queries.Refresh
 
   @oban_conf_name :oban_web
@@ -34,8 +35,6 @@ defmodule Sanbase.Queries.RefreshWorker do
 
     error_msg = "Failed to refresh query_id=#{query_id} user_id=#{user_id}. Reason: #{error_str}"
 
-    # Retrying a deterministic error cannot succeed, so cancel the job instead of
-    # failing every attempt (and reporting each failure).
     if deterministic_error?(error_str), do: {:cancel, error_msg}, else: {:error, error_msg}
   end
 
@@ -54,7 +53,6 @@ defmodule Sanbase.Queries.RefreshWorker do
   defp maybe_remove_scheduled_job(result, nil), do: result
 
   defp maybe_remove_scheduled_job({:cancel, _} = result, scheduled_job) do
-    # The error is deterministic, so the next scheduled refresh would fail the same way.
     Oban.cancel_job(@oban_conf_name, scheduled_job)
     result
   end
@@ -66,12 +64,7 @@ defmodule Sanbase.Queries.RefreshWorker do
     "Cannot fetch the user with id"
   ]
 
-  # ClickHouse errors carry their code in parentheses, e.g. "(ILLEGAL_PREWHERE)".
-  @clickhouse_error_code_regex ~r/\(([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)\)/
-
-  # ClickHouse error codes caused by the server's load or the network rather than by
-  # the query itself. Every other ClickHouse error code means the query text is
-  # invalid or not allowed, which only the query owner can fix.
+  # ClickHouse error codes caused by load or the network; every other code is a query error
   @transient_clickhouse_error_codes ~w[
     TIMEOUT_EXCEEDED
     TOO_MANY_SIMULTANEOUS_QUERIES
@@ -82,15 +75,9 @@ defmodule Sanbase.Queries.RefreshWorker do
   ]
 
   defp deterministic_error?(error_str) do
-    cond do
-      Enum.any?(@deterministic_errors, &String.contains?(error_str, &1)) ->
-        true
+    code = ClickhouseRepo.error_code(error_str)
 
-      match = Regex.run(@clickhouse_error_code_regex, error_str, capture: :all_but_first) ->
-        hd(match) not in @transient_clickhouse_error_codes
-
-      true ->
-        false
-    end
+    Enum.any?(@deterministic_errors, &String.contains?(error_str, &1)) or
+      (code != nil and code not in @transient_clickhouse_error_codes)
   end
 end

@@ -1,14 +1,5 @@
 defmodule Sanbase.Cryptocompare.HistoricalWorkerTransientErrorsTest do
-  @moduledoc ~s"""
-  Reproduces SANBASE-BACKEND-PROD-G51/G52 ({:error, :service_unavailable}) and
-  SANBASE-BACKEND-PROD-G6H/G79 (HTTPoison.Error :timeout).
-
-  A 503 or an HTTP timeout from the Cryptocompare API is a transient condition.
-  Returning `{:error, _}` makes Oban emit a `[:oban, :job, :exception]` event on
-  every attempt, which the Sentry Oban integration reports as an error. The
-  workers should snooze the job instead, so it is retried later without being
-  reported as a failure.
-  """
+  # SANBASE-BACKEND-PROD-G51/G52/G6H/G79: transient Cryptocompare errors must snooze
   use Sanbase.DataCase, async: false
 
   alias Sanbase.Cryptocompare.OpenInterest
@@ -33,23 +24,17 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTransientErrorsTest do
     }
   end
 
-  for worker <- @workers do
+  for worker <- @workers,
+      {name, response} <- [
+        {"503 Service Unavailable",
+         {:ok, %HTTPoison.Response{status_code: 503, body: "Service Unavailable", headers: []}}},
+        {"HTTP timeout", {:error, %HTTPoison.Error{reason: :timeout}}}
+      ] do
     @worker worker
+    @response response
 
-    test "#{inspect(worker)} snoozes on 503 Service Unavailable instead of failing" do
-      Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, _opts ->
-        {:ok, %HTTPoison.Response{status_code: 503, body: "Service Unavailable", headers: []}}
-      end)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        assert {:snooze, seconds} = @worker.perform(job(@worker))
-        assert is_integer(seconds) and seconds > 0
-      end)
-    end
-
-    test "#{inspect(worker)} snoozes on HTTP timeout instead of failing" do
-      Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, _opts ->
-        {:error, %HTTPoison.Error{reason: :timeout}}
-      end)
+    test "#{inspect(worker)} snoozes on #{name} instead of failing" do
+      Sanbase.Mock.prepare_mock2(&HTTPoison.get/3, @response)
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert {:snooze, seconds} = @worker.perform(job(@worker))
         assert is_integer(seconds) and seconds > 0

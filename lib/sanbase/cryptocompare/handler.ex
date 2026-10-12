@@ -78,16 +78,13 @@ defmodule Sanbase.Cryptocompare.Handler do
     end
   end
 
-  # Snoozing (instead of failing) keeps transient errors out of Sentry. After
-  # this many attempts the error is returned, so a lasting outage still surfaces.
-  # Snoozes count as attempts too: OSS Oban increments both attempt and
-  # max_attempts on snooze, so the worker's own error retries are not consumed.
+  # Snoozes bump attempt and max_attempts in OSS Oban, so worker error retries are not consumed
   @max_transient_snooze_attempts 8
   @transient_http_reasons [:timeout, :connect_timeout, :closed, :econnrefused]
 
   @doc ~s"""
   Turn an error returned by get_data/3 into the result of the historical worker
-  job on its `attempt`-th attempt.
+  job on its `attempt`-th attempt, logging it with `log_prefix`.
 
   Transient errors (503 Service Unavailable, HTTP timeouts and connection
   errors) are snoozed with an exponential backoff (1 minute, doubling, capped at
@@ -96,18 +93,25 @@ defmodule Sanbase.Cryptocompare.Handler do
 
   ## Examples
 
-      iex> Handler.snooze_transient_error(:service_unavailable, 1)
+      iex> Handler.handle_job_error(:service_unavailable, 1, "[Cryptocompare] binance/BTC")
       {:snooze, 60}
 
-      iex> Handler.snooze_transient_error("API error: bad instrument", 1)
+      iex> Handler.handle_job_error("API error: bad instrument", 1, "[Cryptocompare] binance/BTC")
       {:error, "API error: bad instrument"}
   """
-  @spec snooze_transient_error(term(), pos_integer()) ::
+  @spec handle_job_error(term(), pos_integer(), String.t()) ::
           {:snooze, pos_integer()} | {:error, term()}
-  def snooze_transient_error(error, attempt) when is_integer(attempt) do
+  def handle_job_error(error, attempt, log_prefix) when is_integer(attempt) do
     if transient_error?(error) and attempt <= @max_transient_snooze_attempts do
-      {:snooze, min(60 * 2 ** (attempt - 1), 3600)}
+      seconds = min(60 * 2 ** (attempt - 1), 3600)
+
+      Logger.warning(
+        "#{log_prefix} Transient error: #{inspect(error)}. Snoozing job for #{seconds}s."
+      )
+
+      {:snooze, seconds}
     else
+      Logger.warning("#{log_prefix} Error: #{inspect(error)}")
       {:error, error}
     end
   end

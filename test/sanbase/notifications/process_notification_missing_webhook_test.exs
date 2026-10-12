@@ -1,13 +1,5 @@
 defmodule Sanbase.Notifications.ProcessNotificationMissingWebhookTest do
-  @moduledoc ~s"""
-  Reproduces SANBASE-BACKEND-PROD-G53:
-  ArgumentError: expected 1st argument to be a url, a keyword list, or a request, got: nil
-  in Req.new/2, called from DiscordClient.send_message/3.
-
-  The DISCORD_NOTIFICATIONS_WEBHOOK_URL env var is not set, so the webhook is nil.
-  The worker raises on every one of its 20 attempts, each one reported to Sentry.
-  A missing webhook is a configuration problem that retries cannot fix.
-  """
+  # SANBASE-BACKEND-PROD-G53: Req.new/2 raised on a nil Discord webhook
   use Sanbase.DataCase, async: false
 
   import Mox
@@ -27,15 +19,9 @@ defmodule Sanbase.Notifications.ProcessNotificationMissingWebhookTest do
   end
 
   test "a discord notification is cancelled, not retried, when the webhook is not configured" do
-    # The webhook comes from DISCORD_NOTIFICATIONS_WEBHOOK_URL which is not set in test
-    assert nil ==
-             Sanbase.Utils.Config.module_get(Sanbase.Notifications, :discord_webhook)
+    assert nil == Sanbase.Utils.Config.module_get(Sanbase.Notifications, :discord_webhook)
 
-    # The client must not be invoked with a nil webhook
-    stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn
-      nil, _content, _opts -> DiscordClient.send_message(nil, "content", [])
-      _webhook, _content, _opts -> :ok
-    end)
+    stub(Sanbase.Notifications.MockDiscordClient, :send_message, &DiscordClient.send_message/3)
 
     template = Sanbase.Notifications.get_template("metric_created", "all", "discord")
 

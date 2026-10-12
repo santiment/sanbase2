@@ -1,16 +1,4 @@
 defmodule SanbaseWeb.Graphql.ChangesetErrorToStringTest do
-  # Reproduces SANBASE-BACKEND-PROD-CX4:
-  # Protocol.UndefinedError: protocol String.Chars not implemented for Ecto.Changeset
-  #
-  # Absinthe calls `to_string/1` on the value of `{:error, value}` returned by a
-  # resolver. Some resolvers return the raw `%Ecto.Changeset{}` (or a tuple) instead of a
-  # string / keyword list, so the whole request crashes with a 500 instead of returning
-  # a GraphQL validation error. Seen in production for:
-  #   * updateInsight with a title longer than 140 chars
-  #     (Sanbase.Insight.Post.update/3 returns `{:error, changeset}` from Repo.update)
-  #   * createChartConfiguration without a project
-  #     (Sanbase.Chart.Configuration.create/1 returns Repo.insert's `{:error, changeset}`)
-  #   * a `{:missing_contract, "..."}` tuple for slug "avalanche" (resolver not identified)
   use SanbaseWeb.ConnCase, async: true
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -40,13 +28,8 @@ defmodule SanbaseWeb.Graphql.ChangesetErrorToStringTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
-      |> json_response(200)
-
-    assert %{"data" => %{"updateInsight" => nil}, "errors" => [error | _]} = result
-    assert is_binary(error["message"])
+    assert execute_mutation_with_error(conn, mutation) ==
+             "Cannot update insight with id #{post.id}"
   end
 
   test "createChartConfiguration without a project returns a GraphQL error", %{conn: conn} do
@@ -58,17 +41,9 @@ defmodule SanbaseWeb.Graphql.ChangesetErrorToStringTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
-      |> json_response(200)
-
-    assert %{"data" => %{"createChartConfiguration" => nil}, "errors" => [error | _]} = result
-    assert is_binary(error["message"])
+    assert execute_mutation_with_error(conn, mutation) == "Cannot create chart configuration"
   end
 
-  # Sanbase.Transfers.top_transfers/6 returns `{:error, {:missing_contract, msg}}` and
-  # BlockchainAddressResolver.top_transfers/3 passes it through unchanged.
   test "topTransfers for a slug without contract returns a GraphQL error", %{conn: conn} do
     query = """
     {
@@ -82,12 +57,6 @@ defmodule SanbaseWeb.Graphql.ChangesetErrorToStringTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query))
-      |> json_response(200)
-
-    assert %{"data" => %{"topTransfers" => nil}, "errors" => [error | _]} = result
-    assert is_binary(error["message"])
+    assert is_binary(execute_query_with_error(conn, query))
   end
 end

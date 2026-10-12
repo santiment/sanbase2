@@ -649,8 +649,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
-    # Calibrate first: the empty interval "" means "auto" and is replaced here
-    # with a concrete interval, which can then be compared to the min interval
+    # Calibrate first: it turns the auto interval "" into a concrete one
     with {:ok, from, to, interval} <-
            calibrate(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
          {:ok, interval} <- interval_no_smaller_than_min_interval(metric, interval),

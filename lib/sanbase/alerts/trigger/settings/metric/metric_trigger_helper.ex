@@ -73,6 +73,8 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         error
 
       {:ok, data} ->
+        data = maybe_key_by_text(data, selector)
+
         # The target_list could be a list of many identifiers, i.e. slugs.
         # This unfolding will map this map of slug => value pairs to
         # one element per identifier
@@ -82,6 +84,17 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
   end
 
   # Private functions
+
+  # Key text-selector values by the search text, used for cooldowns and messages, not by :value
+  defp maybe_key_by_text(data, %{text: text}) do
+    Enum.map(data, fn
+      %{value: %{value: value}} = elem -> %{elem | value: %{text => value}}
+      %{value: value} = elem when is_number(value) -> %{elem | value: %{text => value}}
+      elem -> elem
+    end)
+  end
+
+  defp maybe_key_by_text(data, _selector), do: data
 
   def unfold_result(data) do
     [

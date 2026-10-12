@@ -37,6 +37,9 @@ defmodule Sanbase.Email.NewsletterToken do
       email_token_generated_at: DateTime.utc_now() |> DateTime.truncate(:second),
       email_token_validated_at: nil
     )
+    |> validate_change(:email, fn :email, email ->
+      if Sanbase.Utils.Email.valid_email?(email), do: [], else: [email: "is invalid"]
+    end)
     |> Repo.insert()
   end
 

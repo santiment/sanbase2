@@ -24,6 +24,8 @@ defmodule Sanbase.Email.MailjetEventHandler do
     "10321582" => :is_subscribed_marketing_emails,
     # alpha_naratives_emails
     "10321590" => :is_subscribed_marketing_emails,
+    # marketing_newsletter
+    "10331431" => :is_subscribed_marketing_emails,
     "-1" => :is_subscribed_biweekly_report
   }
 

@@ -41,8 +41,10 @@ defmodule SanbaseWeb.Graphql.EmailNewsletterInvalidEmailTest do
     end
   end
 
-  test "SimpleMailer.send_email/3 returns an error tuple for a malformed recipient" do
-    assert {:error, _} = Sanbase.SimpleMailer.send_email("foo", "Subject", "Body")
+  for recipient <- ["foo", ""] do
+    test "SimpleMailer.send_email/3 returns an error tuple for the recipient #{inspect(recipient)}" do
+      assert {:error, _} = Sanbase.SimpleMailer.send_email(unquote(recipient), "Subject", "Body")
+    end
   end
 
   defp verify_email_query(email) do

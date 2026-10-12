@@ -166,7 +166,7 @@ defmodule Sanbase.Comment do
   end
 
   def get_subcomments(comment_id, limit) do
-    case Ecto.Type.cast(:id, comment_id) do
+    case Sanbase.Utils.EctoCommon.cast_id(comment_id) do
       {:ok, comment_id} ->
         subcomments_tree_query(comment_id)
         |> order_by([c], asc: c.inserted_at, asc: c.id)

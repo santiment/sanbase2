@@ -74,10 +74,19 @@ defmodule Sanbase.Queries.RefreshWorker do
     ALL_CONNECTION_TRIES_FAILED
   ]
 
-  defp deterministic_error?(error_str) do
-    code = ClickhouseRepo.error_code(error_str)
+  # Only a query over its own memory limit fails again; total/user limits depend on other load
+  @query_memory_limit_regex ~r/memory limit \(for query\)|query memory limit/i
 
+  defp deterministic_error?(error_str) do
     Enum.any?(@deterministic_errors, &String.contains?(error_str, &1)) or
-      (code != nil and code not in @transient_clickhouse_error_codes)
+      deterministic_clickhouse_error?(ClickhouseRepo.error_code(error_str), error_str)
   end
+
+  defp deterministic_clickhouse_error?(nil, _error_str), do: false
+
+  defp deterministic_clickhouse_error?("MEMORY_LIMIT_EXCEEDED", error_str),
+    do: Regex.match?(@query_memory_limit_regex, error_str)
+
+  defp deterministic_clickhouse_error?(code, _error_str),
+    do: code not in @transient_clickhouse_error_codes
 end

@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.WatchlistInvalidIdApiTest do
     %{conn: conn, user: user}
   end
 
-  for id <- ["1 OR 1", "abc", "1; DROP TABLE user_lists"],
+  for id <- ["1 OR 1", "abc", "1; DROP TABLE user_lists", "99999999999999999999"],
       auth? <- [true, false] do
     test "watchlist with invalid id #{inspect(id)} is not found (authenticated: #{auth?})",
          %{conn: conn} do

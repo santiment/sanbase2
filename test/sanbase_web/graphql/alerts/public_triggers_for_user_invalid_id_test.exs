@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.PublicTriggersForUserInvalidIdTest do
 
   import SanbaseWeb.Graphql.TestHelpers
 
-  for user_id <- ["ncMUFCMU", "1 OR 1"] do
+  for user_id <- ["ncMUFCMU", "1 OR 1", "99999999999999999999"] do
     test "publicTriggersForUser with userId #{inspect(user_id)} returns an error" do
       query = """
       {

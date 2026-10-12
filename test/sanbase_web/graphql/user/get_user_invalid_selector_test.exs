@@ -15,7 +15,15 @@ defmodule SanbaseWeb.Graphql.GetUserInvalidSelectorTest do
            }
   end
 
-  for bad_id <- [~s|"undefined"|, ~s|"null"|, ~s|"abc"|, ~s|""|, "null"] do
+  for bad_id <- [
+        ~s|"undefined"|,
+        ~s|"null"|,
+        ~s|"abc"|,
+        ~s|"12abc"|,
+        ~s|""|,
+        "null",
+        ~s|"99999999999999999999"|
+      ] do
     test "getUser with invalid id #{bad_id} returns a GraphQL error, not a 500", %{conn: conn} do
       assert %{"data" => %{"getUser" => nil}, "errors" => [%{"message" => message} | _]} =
                execute_query(conn, get_user_query(unquote(bad_id)))

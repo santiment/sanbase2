@@ -26,28 +26,30 @@ defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
   end
 
   def calibrate(module, metric, slug, from, to, "", min_seconds, max_data_points) do
-    {:ok, first_datetime} =
+    first_datetime_result =
       if function_exported?(module, :first_datetime, 3) do
         module.first_datetime(metric, slug, [])
       else
         module.first_datetime(metric, slug)
       end
 
-    first_datetime = first_datetime || from
+    with {:ok, first_datetime} <- first_datetime_result do
+      first_datetime = first_datetime || from
 
-    from =
-      max(
-        DateTime.to_unix(from, :second),
-        DateTime.to_unix(first_datetime, :second)
-      )
+      from =
+        max(
+          DateTime.to_unix(from, :second),
+          DateTime.to_unix(first_datetime, :second)
+        )
 
-    interval =
-      max(
-        div(DateTime.to_unix(to, :second) - from, max_data_points),
-        min_seconds
-      )
+      interval =
+        max(
+          div(DateTime.to_unix(to, :second) - from, max_data_points),
+          min_seconds
+        )
 
-    {:ok, DateTime.from_unix!(from), to, "#{interval}s"}
+      {:ok, DateTime.from_unix!(from), to, "#{interval}s"}
+    end
   end
 
   def calibrate(

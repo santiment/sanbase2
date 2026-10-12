@@ -10,21 +10,19 @@ defmodule Sanbase.SimpleMailer do
       Logger.info("Email #{rcpt_email} is excluded from receiving emails")
       {:ok, :excluded}
     else
-      email =
-        new()
-        |> from({"Santiment", "support@santiment.net"})
-        |> to(rcpt_email)
-        |> subject(subject)
-        |> text_body(body)
-        |> maybe_add_configuration_set()
-
-      safe_deliver(email)
+      safe_deliver(rcpt_email, subject, body)
     end
   end
 
-  # Encoding can still raise or exit (e.g. non-IDNA domain labels)
-  defp safe_deliver(email) do
-    deliver(email)
+  # Building the recipient or encoding can raise or exit (e.g. "" or non-IDNA domain labels)
+  defp safe_deliver(rcpt_email, subject, body) do
+    new()
+    |> from({"Santiment", "support@santiment.net"})
+    |> to(rcpt_email)
+    |> subject(subject)
+    |> text_body(body)
+    |> maybe_add_configuration_set()
+    |> deliver()
   rescue
     error ->
       Logger.error("Failed to deliver email: #{Exception.message(error)}")

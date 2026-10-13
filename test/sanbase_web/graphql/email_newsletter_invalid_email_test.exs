@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.EmailNewsletterInvalidEmailTest do
-  # SANBASE-BACKEND-PROD-GAJ: malformed emails crashed the MIME encoding of the "To" header
+  # Malformed emails crashed the MIME encoding of the "To" header
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
@@ -41,9 +41,13 @@ defmodule SanbaseWeb.Graphql.EmailNewsletterInvalidEmailTest do
     end
   end
 
-  for recipient <- ["foo", ""] do
-    test "SimpleMailer.send_email/3 returns an error tuple for the recipient #{inspect(recipient)}" do
-      assert {:error, _} = Sanbase.SimpleMailer.send_email(unquote(recipient), "Subject", "Body")
+  # Records stored before the changeset validated emails still reach the mailer
+  for recipient <- ["" | @invalid_emails] do
+    test "SimpleMailer.send_email/3 refuses the malformed recipient #{inspect(recipient)}" do
+      assert {:error, :invalid_email} =
+               Sanbase.SimpleMailer.send_email(unquote(recipient), "Subject", "Body")
+
+      assert_not_called(Swoosh.Adapters.AmazonSES.deliver(:_, :_))
     end
   end
 

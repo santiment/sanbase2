@@ -41,4 +41,18 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTransientErrorsTest do
       end)
     end
   end
+
+  describe "Handler.handle_job_error/3" do
+    @tag capture_log: true
+    test "returns a permanent error instead of snoozing" do
+      assert Sanbase.Cryptocompare.Handler.handle_job_error("API error: bad instrument", 1, "x") ==
+               {:error, "API error: bad instrument"}
+    end
+
+    @tag capture_log: true
+    test "returns a transient error once the snooze attempts are used up" do
+      assert Sanbase.Cryptocompare.Handler.handle_job_error(:service_unavailable, 9, "x") ==
+               {:error, :service_unavailable}
+    end
+  end
 end

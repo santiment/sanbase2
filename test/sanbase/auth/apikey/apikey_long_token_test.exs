@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.ApikeyLongTokenTest do
-  # SANBASE-BACKEND-PROD-GA9: tokens longer than the HMAC digest crashed binary_part/3
+  # Tokens longer than the HMAC digest crashed binary_part/3
   use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Accounts.{Apikey, Hmac}

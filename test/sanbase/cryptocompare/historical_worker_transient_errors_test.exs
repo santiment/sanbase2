@@ -1,5 +1,5 @@
 defmodule Sanbase.Cryptocompare.HistoricalWorkerTransientErrorsTest do
-  # SANBASE-BACKEND-PROD-G51/G52/G6H/G79: transient Cryptocompare errors must snooze
+  # Transient Cryptocompare errors must snooze
   use Sanbase.DataCase, async: false
 
   alias Sanbase.Cryptocompare.OpenInterest

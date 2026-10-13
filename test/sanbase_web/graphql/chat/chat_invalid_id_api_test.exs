@@ -1,5 +1,16 @@
 defmodule SanbaseWeb.Graphql.ChatInvalidIdApiTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase,
+    async: false,
+    parameterize:
+      for(
+        chat_id <- ["1", "bitcoin", "1 OR 1"],
+        {field, arg, auth?} <- [
+          {"chatMessages", "chatId", true},
+          {"chat", "id", true},
+          {"chatMessages", "chatId", false}
+        ],
+        do: %{chat_id: chat_id, field: field, arg: arg, auth?: auth?}
+      )
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
@@ -11,26 +22,19 @@ defmodule SanbaseWeb.Graphql.ChatInvalidIdApiTest do
     %{conn: conn}
   end
 
-  for chat_id <- ["1", "bitcoin", "1 OR 1"],
-      {field, arg, auth?} <- [
-        {"chatMessages", "chatId", true},
-        {"chat", "id", true},
-        {"chatMessages", "chatId", false}
-      ] do
-    test "#{field} with non-UUID #{arg} #{inspect(chat_id)} returns an error (authenticated: #{auth?})",
-         %{conn: conn} do
-      conn = if unquote(auth?), do: conn, else: build_conn()
+  test "a chat query with a non-UUID id returns an error", context do
+    %{chat_id: chat_id, field: field, arg: arg, auth?: auth?} = context
+    conn = if auth?, do: context.conn, else: build_conn()
 
-      query = """
-      {
-        #{unquote(field)}(#{unquote(arg)}: "#{unquote(chat_id)}") { id }
-      }
-      """
+    query = """
+    {
+      #{field}(#{arg}: "#{chat_id}") { id }
+    }
+    """
 
-      assert %{"data" => %{unquote(field) => nil}, "errors" => [%{"message" => message} | _]} =
-               execute_query(conn, query)
+    assert %{"data" => %{^field => nil}, "errors" => [%{"message" => message} | _]} =
+             execute_query(conn, query)
 
-      assert is_binary(message)
-    end
+    assert is_binary(message)
   end
 end

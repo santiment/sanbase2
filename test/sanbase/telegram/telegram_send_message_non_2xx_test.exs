@@ -1,5 +1,5 @@
 defmodule Sanbase.TelegramSendMessageNon2xxTest do
-  # SANBASE-BACKEND-PROD-7QV: a non-200 reply must be {:error, binary}
+  # A non-200 reply must be {:error, binary}
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureLog

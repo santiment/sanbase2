@@ -71,12 +71,12 @@ defmodule Sanbase.Questionnaire.Question do
   Get a question by the UUID V4 id
   """
   @spec by_uuid(question_uuid, Keyword.t()) :: {:ok, t()} | {:error, String.t()}
-  def by_uuid(id, _opts \\ []) do
-    with {:ok, uuid} <- Ecto.UUID.cast(id),
-         %__MODULE__{} = question <- Sanbase.Repo.get(__MODULE__, uuid) do
+  def by_uuid(uuid, _opts \\ []) do
+    with {:ok, cast_uuid} <- Ecto.UUID.cast(uuid),
+         %__MODULE__{} = question <- Sanbase.Repo.get(__MODULE__, cast_uuid) do
       {:ok, question}
     else
-      _ -> {:error, "No questionnaire question with id #{id} exists"}
+      _ -> {:error, "No questionnaire question with id #{uuid} exists"}
     end
   end
 

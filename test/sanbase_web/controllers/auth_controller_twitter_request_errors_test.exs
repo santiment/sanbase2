@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.AuthControllerTwitterRequestErrorsTest do
-  # SANBASE-BACKEND-PROD-CZN / CZM: request token errors crashed GET /auth/twitter
+  # Request token errors crashed GET /auth/twitter
   use SanbaseWeb.ConnCase, async: false
 
   import Mock

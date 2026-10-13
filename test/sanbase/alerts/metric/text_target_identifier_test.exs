@@ -1,6 +1,9 @@
 defmodule Sanbase.Alert.MetricTextTargetIdentifierTest do
-  # Text target alerts must be keyed (cooldown, message) by the search text, not :value
-  use Sanbase.DataCase, async: false
+  # Text target alerts must be keyed (cooldown, message) by the search text, not :value,
+  # whichever shape the social metric adapter returns the value in
+  use Sanbase.DataCase,
+    async: false,
+    parameterize: [%{shape: :map}, %{shape: :number}, %{shape: :keyed}]
 
   import Sanbase.Factory
 
@@ -32,18 +35,8 @@ defmodule Sanbase.Alert.MetricTextTargetIdentifierTest do
     %{user: user, trigger: trigger}
   end
 
-  # The social metric adapters return the value under :value, as a plain number, or
-  # already keyed by the search text
-  for {shape, wrap} <- [
-        map: quote(do: fn v -> %{value: v} end),
-        number: quote(do: fn v -> v end),
-        keyed: quote(do: fn v -> %{"bitcoin" => v} end)
-      ] do
-    test "text target alert with a #{shape} value is keyed by the search text and respects the cooldown",
-         context do
-      wrap = unquote(wrap)
-      run_text_alert(context, {:ok, wrap.(100)}, {:ok, wrap.(5000)})
-    end
+  test "text target alert is keyed by the search text and respects the cooldown", context do
+    run_text_alert(context, {:ok, wrap(context.shape, 100)}, {:ok, wrap(context.shape, 5000)})
   end
 
   defp run_text_alert(context, first_result, second_result) do
@@ -75,4 +68,8 @@ defmodule Sanbase.Alert.MetricTextTargetIdentifierTest do
       refute_receive {:telegram_sent, _}
     end)
   end
+
+  defp wrap(:map, value), do: %{value: value}
+  defp wrap(:number, value), do: value
+  defp wrap(:keyed, value), do: %{"bitcoin" => value}
 end

@@ -1,5 +1,5 @@
 defmodule Sanbase.Cluster.LibclusterPostgresReconnectTest do
-  # Simulates Postgres closing the LISTEN connection (SANBASE-BACKEND-PROD-G61/GA8)
+  # Simulates Postgres closing the LISTEN connection
   use Sanbase.DataCase, async: false
 
   @moduletag capture_log: true

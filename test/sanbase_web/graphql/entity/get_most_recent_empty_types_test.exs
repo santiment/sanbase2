@@ -1,5 +1,11 @@
 defmodule SanbaseWeb.Graphql.GetMostRecentEmptyTypesTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase,
+    async: false,
+    parameterize: [
+      %{args: "types: []", selection: "stats { totalEntitiesCount }"},
+      %{args: "types: []", selection: "data { insight { id } }"},
+      %{args: "", selection: "stats { totalEntitiesCount }"}
+    ]
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
@@ -11,21 +17,15 @@ defmodule SanbaseWeb.Graphql.GetMostRecentEmptyTypesTest do
     {:ok, conn: conn}
   end
 
-  for {name, args, selection} <- [
-        {"stats with empty types", "types: []", "stats { totalEntitiesCount }"},
-        {"data with empty types", "types: []", "data { insight { id } }"},
-        {"stats with neither type nor types", "", "stats { totalEntitiesCount }"}
-      ] do
-    test "getMostRecent #{name} returns a GraphQL error", %{conn: conn} do
-      query = """
-      {
-        getMostRecent(#{unquote(args)} page: 1, pageSize: 10) {
-          #{unquote(selection)}
-        }
+  test "getMostRecent without entity types returns a GraphQL error", context do
+    query = """
+    {
+      getMostRecent(#{context.args} page: 1, pageSize: 10) {
+        #{context.selection}
       }
-      """
+    }
+    """
 
-      assert execute_query_with_error(conn, query) =~ "At least one non-null entity type"
-    end
+    assert execute_query_with_error(context.conn, query) =~ "At least one non-null entity type"
   end
 end

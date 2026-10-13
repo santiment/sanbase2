@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.User.UniswapStakingTransientErrorTest do
-  # SANBASE-BACKEND-PROD-GBD: a 502 HTML page from the RPC node aborted the update
+  # A 502 HTML page from the RPC node aborted the update
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory

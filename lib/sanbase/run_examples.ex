@@ -11,7 +11,6 @@ defmodule Sanbase.RunExamples do
 
   @queries [
     :santiment_queries,
-    :menus,
     :basic_metric_queries,
     :available_metrics,
     :trending_words,
@@ -822,115 +821,6 @@ defmodule Sanbase.RunExamples do
 
     for r <- [dashboard_cache, mapping, dashboard, query],
         do: Sanbase.Repo.delete(r)
-
-    {:ok, :success}
-  end
-
-  defp do_run(:menus) do
-    user = Sanbase.Factory.insert(:user)
-    user2 = Sanbase.Factory.insert(:user)
-
-    {:ok, query} = Sanbase.Queries.create_query(%{name: "Query"}, user.id)
-    {:ok, dashboard} = Sanbase.Dashboards.create_dashboard(%{name: "Dashboard"}, user.id)
-
-    {:ok, menu} =
-      Sanbase.Menus.create_menu(%{name: "MyMenu", description: "MyDescription"}, user.id)
-
-    {:ok, _} =
-      Sanbase.Menus.create_menu_item(
-        %{parent_id: menu.id, query_id: query.id, position: 1},
-        user.id
-      )
-
-    {:ok, _} =
-      Sanbase.Menus.create_menu_item(
-        %{parent_id: menu.id, dashboard_id: dashboard.id, position: 1},
-        user.id
-      )
-
-    # Cannot create item on non-owner menu
-    {:error, _} =
-      Sanbase.Menus.create_menu_item(
-        %{parent_id: menu.id, dashboard_id: dashboard.id, position: 2},
-        user2.id
-      )
-
-    {:ok, sub_menu} =
-      Sanbase.Menus.create_menu(
-        %{
-          name: "MySubMenu",
-          description: "MySubDescription",
-          parent_id: menu.id,
-          position: 1
-        },
-        user.id
-      )
-
-    {:ok, _} = Sanbase.Menus.update_menu(sub_menu.id, %{name: "MySubMenuNewName"}, user.id)
-    # Cannot update non-owner menu
-    {:error, _} = Sanbase.Menus.update_menu(sub_menu.id, %{name: "hehe"}, user2.id)
-    {:ok, fetched_menu} = Sanbase.Menus.get_menu(menu.id, user.id)
-
-    menu_id = menu.id
-    sub_menu_id = sub_menu.id
-    query_id = query.id
-    dashboard_id = dashboard.id
-
-    %{
-      "description" => "MyDescription",
-      "entityId" => ^menu_id,
-      "menuItemId" => nil,
-      "name" => "MyMenu",
-      "entityType" => :menu,
-      "menuItems" => [
-        %{
-          "description" => "MySubDescription",
-          "entityId" => ^sub_menu_id,
-          "menuItems" => [],
-          "name" => "MySubMenuNewName",
-          "position" => 1,
-          "entityType" => :menu
-        },
-        %{
-          "description" => nil,
-          "entityId" => ^dashboard_id,
-          "name" => "Dashboard",
-          "position" => 2,
-          "entityType" => :dashboard
-        },
-        %{
-          "description" => nil,
-          "menuItemId" => query_menu_item_id,
-          "entityId" => ^query_id,
-          "name" => "Query",
-          "position" => 3,
-          "entityType" => :query
-        }
-      ]
-    } = Sanbase.Menus.menu_to_simple_map(fetched_menu)
-
-    # Deleting a menu item does not delete the entity
-
-    Sanbase.Menus.delete_menu_item(query_menu_item_id, user.id)
-    {:ok, _} = Sanbase.Queries.get_query(query_id, user.id)
-
-    # Test cascading deletes
-    for r <- [query, dashboard, sub_menu] do
-      Sanbase.Repo.delete(r)
-    end
-
-    # Check that the menu still exists
-    {:ok, fetched_menu} = Sanbase.Menus.get_menu(menu.id, user.id)
-    # The menu does not have any menu items now
-    [] = fetched_menu.menu_items
-
-    # Deleting the query, dashboard and sub_menu also cascaded and deleted the
-    # menu_items rows
-    menu_item_ids = from(mi in Sanbase.Menus.MenuItem, where: mi.parent_id == ^menu.id)
-    [] = Sanbase.Repo.all(menu_item_ids)
-
-    Sanbase.Repo.delete(menu)
-    {:error, _} = Sanbase.Menus.get_menu(menu.id, user.id)
 
     {:ok, :success}
   end

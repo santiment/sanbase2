@@ -1,6 +1,5 @@
 defmodule Sanbase.Alert.MetricTextTargetIdentifierTest do
-  # Text target alerts must be keyed (cooldown, message) by the search text, not :value,
-  # whichever shape the social metric adapter returns the value in
+  # The social metric adapter can return the value of a text target in any of these shapes
   use Sanbase.DataCase,
     async: false,
     parameterize: [%{shape: :map}, %{shape: :number}, %{shape: :keyed}]
@@ -36,15 +35,11 @@ defmodule Sanbase.Alert.MetricTextTargetIdentifierTest do
   end
 
   test "text target alert is keyed by the search text and respects the cooldown", context do
-    run_text_alert(context, {:ok, wrap(context.shape, 100)}, {:ok, wrap(context.shape, 5000)})
-  end
-
-  defp run_text_alert(context, first_result, second_result) do
-    %{user: user, trigger: trigger} = context
+    %{user: user, trigger: trigger, shape: shape} = context
     test_pid = self()
 
     metric_mock =
-      [fn -> first_result end, fn -> second_result end]
+      [fn -> {:ok, wrap(shape, 100)} end, fn -> {:ok, wrap(shape, 5000)} end]
       |> Sanbase.Mock.wrap_consecutives(arity: 4)
 
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, metric_mock)
@@ -60,10 +55,10 @@ defmodule Sanbase.Alert.MetricTextTargetIdentifierTest do
       refute text =~ "'value'"
 
       {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, trigger.id)
-      assert user_trigger.trigger.last_triggered |> Map.keys() == ["bitcoin"]
+      assert Map.keys(user_trigger.trigger.last_triggered) == ["bitcoin"]
       assert Trigger.has_cooldown?(user_trigger.trigger, "bitcoin")
 
-      # The second run is within the cooldown - nothing is sent.
+      # The second run is within the cooldown - nothing is sent
       Scheduler.run_alert(MetricTriggerSettings)
       refute_receive {:telegram_sent, _}
     end)

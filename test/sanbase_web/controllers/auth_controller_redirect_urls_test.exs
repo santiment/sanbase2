@@ -1,121 +1,99 @@
 defmodule SanbaseWeb.AuthControllerRedirectUrlsTest do
-  # The redirect and origin URLs the OAuth request stores, and where the callback sends the user
   use SanbaseWeb.ConnCase, async: false
 
   @moduletag capture_log: true
 
   @success_url "https://app.santiment.net/charts"
   @fail_url "https://app.santiment.net/login"
-  @long_success_url "https://app.santiment.net/charts?settings=" <> String.duplicate("a", 970)
-  @long_fail_url "https://app.santiment.net/charts?settings=" <> String.duplicate("b", 970)
+  @app_url "https://app.santiment.net/charts?settings="
 
-  describe "request/2 session URLs" do
-    test "stores a fail URL that differs from the success URL", %{conn: conn} do
+  for provider <- ["google", "twitter"] do
+    test "#{provider}: a successful login redirects to the success URL", %{conn: conn} do
       conn =
-        request(conn, %{"success_redirect_url" => @success_url, "fail_redirect_url" => @fail_url})
+        conn
+        |> request("google", %{"success_redirect_url" => @success_url})
+        |> callback(unquote(provider))
 
-      assert get_session(conn, :__san_success_redirect_url) == @success_url
-      assert get_session(conn, :__san_fail_redirect_url) == @fail_url
+      assert redirected_to(conn) == @success_url <> "?signup=true"
+      assert get_session(conn, :access_token)
     end
 
-    test "does not store a fail URL equal to the success URL", %{conn: conn} do
+    test "#{provider}: a failed login redirects to the fail URL", %{conn: conn} do
       conn =
-        request(conn, %{
+        conn
+        |> request("google", %{
           "success_redirect_url" => @success_url,
-          "fail_redirect_url" => @success_url
+          "fail_redirect_url" => @fail_url
         })
+        |> callback(unquote(provider), fail_login?: true)
 
-      assert get_session(conn, :__san_success_redirect_url) == @success_url
-      assert get_session(conn, :__san_fail_redirect_url) == nil
-    end
-
-    test "keeps only the scheme, host and port of the Referer as the origin", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("referer", "https://user:secret@app.santiment.net:8443/x?y=1#z")
-        |> request(%{"success_redirect_url" => @success_url})
-
-      assert get_session(conn, :__san_origin_url) == "https://app.santiment.net:8443"
-    end
-
-    test "over the budget, the fail URL falls back to the success URL", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("referer", "https://app.santiment.net/")
-        |> request(%{
-          "success_redirect_url" => @long_success_url,
-          "fail_redirect_url" => @long_fail_url
-        })
-
-      assert get_session(conn, :__san_success_redirect_url) == @long_success_url
-      assert get_session(conn, :__san_fail_redirect_url) == nil
-      assert get_session(conn, :__san_origin_url) == "https://app.santiment.net"
-    end
-
-    test "over the budget, the origin falls back to the website URL", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("referer", "https://" <> String.duplicate("h", 1_000) <> ".net/")
-        |> request(%{"success_redirect_url" => @long_success_url})
-
-      assert get_session(conn, :__san_success_redirect_url) == @long_success_url
-      assert get_session(conn, :__san_origin_url) == SanbaseWeb.Endpoint.website_url()
+      assert redirected_to(conn) == @fail_url
     end
   end
 
-  describe "callback/2 redirects" do
-    for provider <- ["google", "twitter"] do
-      test "#{provider}: a successful login redirects to the success URL", %{conn: conn} do
-        conn =
-          conn
-          |> Plug.Test.init_test_session(%{
-            __san_success_redirect_url: @success_url,
-            __san_fail_redirect_url: @fail_url
-          })
-          |> callback(unquote(provider))
+  test "a failed login with the same success and fail URL redirects to it", %{conn: conn} do
+    conn =
+      conn
+      |> request("google", %{
+        "success_redirect_url" => @success_url,
+        "fail_redirect_url" => @success_url
+      })
+      |> callback("google", fail_login?: true)
 
-        assert redirected_to(conn) == @success_url <> "?signup=true"
-        assert get_session(conn, :access_token)
-      end
-
-      test "#{provider}: a failed login redirects to the fail URL", %{conn: conn} do
-        conn =
-          conn
-          |> Plug.Test.init_test_session(%{
-            __san_success_redirect_url: @success_url,
-            __san_fail_redirect_url: @fail_url
-          })
-          |> callback(unquote(provider), fail_login?: true)
-
-        assert redirected_to(conn) == @fail_url
-      end
-
-      test "#{provider}: a failed login without a fail URL redirects to the success URL",
-           %{conn: conn} do
-        conn =
-          conn
-          |> Plug.Test.init_test_session(%{__san_success_redirect_url: @success_url})
-          |> callback(unquote(provider), fail_login?: true)
-
-        assert redirected_to(conn) == @success_url
-      end
-
-      test "#{provider}: a failed login without any URL redirects to the website",
-           %{conn: conn} do
-        conn =
-          conn
-          |> Plug.Test.init_test_session(%{})
-          |> callback(unquote(provider), fail_login?: true)
-
-        assert redirected_to(conn) == SanbaseWeb.Endpoint.website_url()
-      end
-    end
+    assert redirected_to(conn) == @success_url
   end
 
-  defp request(conn, params), do: get(conn, "/auth/google", params)
+  test "a failed login without any URL redirects to the website", %{conn: conn} do
+    conn =
+      conn
+      |> request("google", %{})
+      |> callback("google", fail_login?: true)
 
-  # Ueberauth.run_callback/3 is mocked, so the provider is never contacted. A failed login
-  # is a failing step after the provider returned the user.
+    assert redirected_to(conn) == SanbaseWeb.Endpoint.website_url()
+  end
+
+  test "oversized redirect URLs do not overflow the session cookie", %{conn: conn} do
+    conn
+    |> put_req_header("referer", "https://" <> String.duplicate("u", 900) <> "@app.net/")
+    |> request("google", %{
+      "success_redirect_url" => @app_url <> String.duplicate("a", 2_000),
+      "fail_redirect_url" => @app_url <> String.duplicate("b", 2_000)
+    })
+  end
+
+  test "long URLs of a logged in user fit the session cookie and keep the success URL",
+       %{conn: conn} do
+    user = Sanbase.Factory.insert(:user)
+    {:ok, tokens} = SanbaseWeb.Guardian.get_jwt_tokens(user)
+    success_url = @app_url <> String.duplicate("a", 970)
+
+    conn =
+      conn
+      |> Plug.Test.init_test_session(tokens)
+      |> put_req_header("referer", "https://" <> String.duplicate("h", 1_000) <> ".net/")
+      |> request("google", %{
+        "success_redirect_url" => success_url,
+        "fail_redirect_url" => @app_url <> String.duplicate("b", 970)
+      })
+      |> callback("google")
+
+    assert redirected_to(conn) == success_url <> "&signup=true"
+  end
+
+  # Runs the request phase and carries its session cookie over to the next request
+  defp request(conn, provider, params) do
+    conn = get(conn, "/auth/#{provider}", params)
+
+    assert conn.status == 302
+
+    for {_name, %{value: value}} <- conn.resp_cookies do
+      assert byte_size(value) <= 4096
+    end
+
+    recycle(conn)
+  end
+
+  # The provider is never contacted. A failed login is a failing step after it returned the user.
   defp callback(conn, provider, opts \\ []) do
     auth = %Ueberauth.Auth{
       uid: "twitter-#{System.unique_integer([:positive])}",

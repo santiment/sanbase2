@@ -1,5 +1,4 @@
 defmodule SanbaseWeb.AvailableMetricsControllerTest do
-  # A missing or non-JSON filter crashed export/2
   use SanbaseWeb.ConnCase, async: true
 
   @moduletag capture_log: true

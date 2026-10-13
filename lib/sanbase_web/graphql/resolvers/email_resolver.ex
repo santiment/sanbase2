@@ -2,8 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EmailResolver do
   alias Sanbase.Email.NewsletterToken
 
   def verify_email_newsletter(_root, %{email: email}, _resolution) do
-    with true <- Sanbase.Utils.Email.valid_email?(email),
-         {:ok, %NewsletterToken{} = newsletter_token} <-
+    with {:ok, %NewsletterToken{} = newsletter_token} <-
            NewsletterToken.create_email_token(email),
          {:ok, _} <- NewsletterToken.send_email(newsletter_token) do
       {:ok, true}

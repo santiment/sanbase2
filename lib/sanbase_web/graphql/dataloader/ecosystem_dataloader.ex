@@ -77,7 +77,6 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
     Map.new(ecosystems, fn ecosystem -> {{ecosystem, args}, {:error, error}} end)
   end
 
-  # Every requested key gets a value, so a nil from the loader means the fetch failed
   defp timeseries_transform_to_map(data, ecosystems, args) do
     by_ecosystem =
       Enum.group_by(data, & &1.ecosystem, fn %{datetime: dt, value: v} ->

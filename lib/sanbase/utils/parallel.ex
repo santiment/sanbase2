@@ -23,20 +23,14 @@ defmodule Sanbase.Parallel do
   def map(collection, func, opts \\ []) when is_function(func, 1) do
     stream = stream(collection, func, opts)
 
-    case Keyword.get(opts, :map_type) || :map do
-      :map ->
-        stream
-        |> Enum.map(fn
-          {:ok, elem} -> elem
-          data -> data
-        end)
+    unwrap = fn
+      {:ok, elem} -> elem
+      data -> data
+    end
 
-      :flat_map ->
-        stream
-        |> Enum.flat_map(fn
-          {:ok, elem} -> elem
-          data -> data
-        end)
+    case Keyword.get(opts, :map_type) || :map do
+      :map -> Enum.map(stream, unwrap)
+      :flat_map -> Enum.flat_map(stream, unwrap)
     end
   end
 
@@ -46,7 +40,7 @@ defmodule Sanbase.Parallel do
   `{:error, reason}`. A timed out task is killed and becomes `{:error, {:exit, reason}}`.
   """
   def map_or_error(collection, func, opts \\ []) when is_function(func, 1) do
-    # Reducing the stream itself, halting it shuts down the tasks still running
+    # Halting the reduce over the stream shuts down the tasks still running
     collection
     |> stream(func, Keyword.put(opts, :on_timeout, :kill_task))
     |> Enum.reduce_while({:ok, []}, fn

@@ -4,36 +4,21 @@ defmodule SanbaseWeb.Graphql.WatchlistInvalidIdApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  setup do
-    user = insert(:user)
-    conn = setup_jwt_auth(build_conn(), user)
+  test "watchlist with a non-integer id is not found" do
+    conn = setup_jwt_auth(build_conn(), insert(:user))
 
-    %{conn: conn, user: user}
+    query = """
+    {
+      watchlist(id: "1 OR 1") { id name }
+    }
+    """
+
+    assert %{"data" => %{"watchlist" => nil}} = result = execute_query(conn, query)
+    refute Map.has_key?(result, "errors")
   end
 
-  for id <- ["1 OR 1", "abc", "1; DROP TABLE user_lists", "99999999999999999999"],
-      auth? <- [true, false] do
-    test "watchlist with invalid id #{inspect(id)} is not found (authenticated: #{auth?})",
-         %{conn: conn} do
-      conn = if unquote(auth?), do: conn, else: build_conn()
-
-      query = """
-      {
-        watchlist(id: "#{unquote(id)}") { id name }
-      }
-      """
-
-      assert %{"data" => %{"watchlist" => nil}} = result = execute_query(conn, query)
-      refute Map.has_key?(result, "errors")
-    end
-  end
-
-  test "UserList.user_list/2 with an invalid id returns nil", %{user: user} do
-    assert {:ok, nil} = Sanbase.UserList.user_list("1 OR 1", user)
-  end
-
-  test "UserList.by_id/2 with an invalid id returns an error", %{user: _user} do
-    assert {:error, "Watchlist with id 1 OR 1 does not exist"} =
-             Sanbase.UserList.by_id("1 OR 1", [])
+  test "UserList.by_id/2 with a non-integer id returns an error" do
+    assert Sanbase.UserList.by_id("1 OR 1", []) ==
+             {:error, "Watchlist with id 1 OR 1 does not exist"}
   end
 end

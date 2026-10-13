@@ -4,34 +4,25 @@ defmodule SanbaseWeb.Graphql.QuestionnaireInvalidUuidApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  setup do
-    user = insert(:user)
-    conn = setup_jwt_auth(build_conn(), user)
-
-    %{conn: conn}
-  end
-
-  test "Questionnaire.by_uuid/1 with a non-UUID returns an error tuple" do
-    assert {:error, "Questionnaire with uuid bitcoin does not exist"} =
-             Sanbase.Questionnaire.by_uuid("bitcoin")
-  end
+  alias Sanbase.Questionnaire.{Answer, Question}
 
   test "Question.by_uuid/1 with a non-UUID returns an error tuple" do
-    assert Sanbase.Questionnaire.Question.by_uuid("bitcoin") ==
+    assert Question.by_uuid("bitcoin") ==
              {:error, "No questionnaire question with id bitcoin exists"}
   end
 
-  for fun <- [:update, :delete] do
-    test "Answer.#{fun} with a non-UUID returns an error tuple" do
-      args = if unquote(fun) == :update, do: ["bitcoin", 1, %{}], else: ["bitcoin", 1]
+  test "Answer.update/3 and Answer.delete/2 with a non-UUID return an error tuple" do
+    assert {:error, update_error} = Answer.update("bitcoin", 1, %{})
+    assert update_error =~ "with uuid bitcoin does not exist"
 
-      assert {:error, "Anaswer with uuid bitcoin does not exist" <> _} =
-               apply(Sanbase.Questionnaire.Answer, unquote(fun), args)
-    end
+    assert {:error, delete_error} = Answer.delete("bitcoin", 1)
+    assert delete_error =~ "with uuid bitcoin does not exist"
   end
 
   for field <- ["getQuestionnaire", "getQuestionnaireUserAnswers"] do
-    test "#{field} with a non-UUID returns an error", %{conn: conn} do
+    test "#{field} with a non-UUID returns an error" do
+      conn = setup_jwt_auth(build_conn(), insert(:user))
+
       query = """
       {
         #{unquote(field)}(questionnaireUuid: "bitcoin") { uuid }

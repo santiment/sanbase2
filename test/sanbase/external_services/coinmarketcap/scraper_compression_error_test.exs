@@ -1,5 +1,4 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.ScraperCompressionErrorTest do
-  # Tesla.Middleware.Compression.Error escaped the scraper
   use ExUnit.Case,
     async: false,
     parameterize: [

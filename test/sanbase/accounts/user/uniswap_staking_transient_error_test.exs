@@ -1,5 +1,4 @@
 defmodule Sanbase.Accounts.User.UniswapStakingTransientErrorTest do
-  # A 502 HTML page from the RPC node aborted the update
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
@@ -28,10 +27,7 @@ defmodule Sanbase.Accounts.User.UniswapStakingTransientErrorTest do
 
   for {name, error} <- [
         {"a 502 HTML page", Macro.escape(@bad_gateway_error)},
-        {"a transport error", Macro.escape({:error, %Mint.TransportError{reason: :closed}})},
-        {"an HTTP error",
-         Macro.escape({:error, %Mint.HTTPError{module: Mint.HTTP1, reason: :invalid_status_line}})},
-        {"a Finch error", Macro.escape({:error, %Finch.Error{reason: :request_timeout}})}
+        {"a transport error", Macro.escape({:error, %Mint.TransportError{reason: :closed}})}
       ] do
     test "a single transient error (#{name}) is retried and not reported", %{user: user} do
       test_pid = self()

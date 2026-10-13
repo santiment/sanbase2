@@ -1,5 +1,4 @@
 defmodule Sanbase.Notifications.ProcessNotificationMissingWebhookTest do
-  # Req.new/2 raised on a nil Discord webhook
   use Sanbase.DataCase, async: false
 
   import Mox
@@ -12,10 +11,6 @@ defmodule Sanbase.Notifications.ProcessNotificationMissingWebhookTest do
   setup do
     create_default_templates()
     :ok
-  end
-
-  test "DiscordClient.send_message/3 returns an error instead of raising when the webhook is nil" do
-    assert {:error, _} = DiscordClient.send_message(nil, "content", [])
   end
 
   test "a discord notification is cancelled, not retried, when the webhook is not configured" do

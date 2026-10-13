@@ -43,20 +43,4 @@ defmodule SanbaseWeb.Graphql.ChangesetErrorToStringTest do
 
     assert execute_mutation_with_error(conn, mutation) == "Cannot create chart configuration"
   end
-
-  test "topTransfers for a slug without contract returns a GraphQL error", %{conn: conn} do
-    query = """
-    {
-      topTransfers(
-        slug: "no-such-project-#{System.unique_integer([:positive])}"
-        from: "2026-01-01T00:00:00Z"
-        to: "2026-01-02T00:00:00Z"
-      ) {
-        trxValue
-      }
-    }
-    """
-
-    assert is_binary(execute_query_with_error(conn, query))
-  end
 end

@@ -237,10 +237,26 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
     end)
   end
 
-  test "a top transfers fetch error for an address is returned as is", context do
+  test "a slug without a contract returns a missing contract error", context do
+    query = """
+    {
+      topTransfers(
+        slug: "no-such-project-#{System.unique_integer([:positive])}"
+        from: "#{context.datetime_from}"
+        to: "#{context.datetime_to}"
+      ) {
+        trxValue
+      }
+    }
+    """
+
+    assert execute_query_with_error(context.conn, query) =~ "Can't find contract address"
+  end
+
+  test "a missing contract error for an address is returned as a message", context do
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Transfers.top_wallet_transfers/7,
-      {:error, "Cannot fetch top wallet transfers"}
+      {:error, {:missing_contract, "Can't find contract address of the project"}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
@@ -260,7 +276,8 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
         |> post("/graphql", query_skeleton(query, "topTransfers"))
         |> json_response(200)
 
-      assert [%{"message" => "Cannot fetch top wallet transfers"}] = result["errors"]
+      assert [%{"message" => "Can't find contract address of the project"}] =
+               result["errors"]
     end)
   end
 

@@ -5,10 +5,8 @@ defmodule Sanbase.CascadeDeleteUserTest do
 
   test "delete user and all its associations" do
     user = insert(:user)
-    user2 = insert(:user)
     role_san_family = insert(:role_san_family)
 
-    Sanbase.Accounts.LinkedUser.create(user.id, user2.id)
     _ = insert(:subscription_pro_sanbase, user: user)
     _ = insert(:watchlist, user: user)
     _ = insert(:user_role, user: user, role: role_san_family)

@@ -413,48 +413,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert all_insights_for_user |> hd() |> Map.get("text") == post2.text
   end
 
-  test "Getting all insight user has voted for", %{
-    user: user,
-    staked_user: staked_user,
-    conn: conn
-  } do
-    post =
-      insert(:post,
-        user: user,
-        ready_state: Post.published(),
-        state: Post.approved_state()
-      )
-
-    post2 =
-      insert(:post,
-        user: staked_user,
-        ready_state: Post.published(),
-        state: Post.approved_state()
-      )
-
-    Vote.create(%{post_id: post.id, user_id: user.id})
-
-    Vote.create(%{post_id: post2.id, user_id: staked_user.id})
-
-    query = """
-    {
-      allInsightsUserVoted(user_id: #{user.id}) {
-        id,
-        text
-      }
-    }
-    """
-
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "allInsightsUserVoted"))
-      |> json_response(200)
-      |> get_in(["data", "allInsightsUserVoted"])
-
-    assert result |> Enum.count() == 1
-    assert result |> hd() |> Map.get("text") == post.text
-  end
-
   test "Getting all insights ordered", %{
     user: user,
     staked_user: staked_user,

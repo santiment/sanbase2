@@ -30,17 +30,6 @@ defmodule Sanbase.Telegram do
 
   plug(Tesla.Middleware.Headers, [{"Content-Type", "application/json"}])
 
-  def channel_id_valid?(chat_id) do
-    params = %{chat_id: chat_id} |> Jason.encode!()
-
-    with {:ok, %Tesla.Env{status: 200, body: body}} <- post("getChat", params),
-         {:ok, %{"ok" => true}} <- Jason.decode(body) do
-      true
-    else
-      _ -> false
-    end
-  end
-
   @doc ~s"""
   Get the already existing deeplink or creates a new one if there is none.
   A telegram bot and a user can have at most 1 chat channel, so we can have at most

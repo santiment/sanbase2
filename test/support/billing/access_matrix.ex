@@ -81,7 +81,6 @@ defmodule Sanbase.Billing.AccessMatrix do
       {:query, :project_by_slug},
       {:query, :history_price},
       {:query, :top_holders},
-      {:query, :realtime_top_holders},
       {:query, :gas_used},
       {:query, :miners_balance}
     ]

@@ -354,12 +354,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   end
 
   defp get_user_subscription(user_id, product) do
-    # The linked primary user's subscription, or this user's own.
-
-    case Subscription.get_user_subscription(user_id, product) do
-      {:ok, subscription} -> subscription
-      {:error, _} -> nil
-    end
+    Subscription.current_subscription(user_id, product)
   end
 
   defp get_user_subscription_for_sanbase(user_id) do

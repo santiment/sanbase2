@@ -758,7 +758,7 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  @spec get_user_subscription(any, any) :: {:error, any} | {:ok, any}
+  @spec get_user_subscription(any, any) :: {:ok, %__MODULE__{} | nil}
   def get_user_subscription(user_id, product_id) do
     {:ok, current_subscription(user_id, product_id)}
   end

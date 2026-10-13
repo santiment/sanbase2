@@ -111,44 +111,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     {:ok, total_eth_spent}
   end
 
-  @doc ~s"""
-  Returns a list of ETH spent by all ERC20 projects for a given time period,
-  grouped by the given `interval`.
-  """
-  def eth_spent_over_time_by_erc20_projects(
-        _root,
-        %{from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    Project.List.erc20_projects() |> eth_spent_over_time(from, to, interval)
-  end
-
-  @doc ~s"""
-  Returns a list of ETH spent by all projects for a given time period,
-  grouped by the given `interval`.
-  """
-
-  def eth_spent_over_time_by_all_projects(
-        _root,
-        %{from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    Project.List.projects() |> eth_spent_over_time(from, to, interval)
-  end
-
-  defp eth_spent_over_time(projects, from, to, interval) do
-    ctx = Sanbase.RequestContext.current()
-
-    projects
-    |> Sanbase.Parallel.map(
-      &calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
-      timeout: 25_000,
-      max_concurrency: @max_concurrency,
-      request_context: ctx
-    )
-    |> combine_eth_spent_by_all_projects()
-  end
-
   def eth_top_transfers(
         %Project{} = project,
         args,
@@ -263,27 +225,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
 
         {:nocache, {:ok, []}}
     end
-  end
-
-  # Combines a list of lists of ethereum spent data for many projects to a list of ethereum spent data.
-  # The entries at the same positions in each list are summed.
-  defp combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
-    total_eth_spent_over_time =
-      eth_spent_over_time_list
-      |> Enum.reject(fn
-        {:ok, elem} when elem != [] and elem != nil -> false
-        _ -> true
-      end)
-      |> Enum.map(fn {:ok, data} -> data end)
-      |> Stream.zip()
-      |> Stream.map(&Tuple.to_list/1)
-      |> Enum.map(&reduce_eth_spent/1)
-
-    {:ok, total_eth_spent_over_time}
-  end
-
-  defp reduce_eth_spent([%{datetime: datetime} | _] = values) do
-    total_eth_spent = values |> Enum.map(& &1.eth_spent) |> Enum.sum()
-    %{datetime: datetime, eth_spent: total_eth_spent}
   end
 end

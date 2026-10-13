@@ -49,24 +49,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end
   end
 
-  def address_historical_balance_change(
-        _root,
-        %{from: from, to: to, addresses: addresses} = args,
-        _resolution
-      ) do
-    with {:ok, selector} <- args_to_historical_balance_selector(args) do
-      HistoricalBalance.balance_change(selector, addresses, from, to)
-      |> maybe_handle_graphql_error(fn error ->
-        handle_graphql_error(
-          "Historical Balance Change per Address",
-          inspect(selector),
-          error,
-          description: "selector"
-        )
-      end)
-    end
-  end
-
   def miners_balance(root, %{} = args, resolution) do
     MetricResolver.timeseries_data(
       root,

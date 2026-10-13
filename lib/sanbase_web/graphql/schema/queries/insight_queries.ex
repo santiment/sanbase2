@@ -72,20 +72,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       middleware(PostPaywallFilter)
     end
 
-    @desc "Fetch a list of all posts for which a user has voted."
-    field :all_insights_user_voted, list_of(:post) do
-      meta(access: :free)
-
-      arg(:user_id, non_null(:integer))
-      arg(:is_pulse, :boolean)
-      arg(:is_paywall_required, :boolean)
-      arg(:from, :datetime)
-      arg(:to, :datetime)
-
-      resolve(&InsightResolver.all_insights_user_voted_for/3)
-      middleware(PostPaywallFilter)
-    end
-
     @desc ~s"""
     Fetch a list of all posts/insights that have a given tag.
     The user must be logged in to access all fields for the post/insight.

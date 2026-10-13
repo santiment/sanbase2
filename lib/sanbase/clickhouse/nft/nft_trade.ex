@@ -1,14 +1,5 @@
 defmodule Sanbase.Clickhouse.NftTrade do
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
-
   alias Sanbase.ClickhouseRepo
-
-  def get_trades_count(label_key, from, to) do
-    query_struct = get_trades_count_query(label_key, from, to)
-
-    ClickhouseRepo.query_transform(query_struct, fn [count] -> count end)
-    |> maybe_unwrap_ok_value()
-  end
 
   def get_trades(label_key, from, to, opts)
       when label_key in [:nft_influencer, :nft_whale] do
@@ -103,25 +94,6 @@ defmodule Sanbase.Clickhouse.NftTrade do
     """
 
     params = %{blockchain: blockchain, contract: contract}
-
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp get_trades_count_query(label_key, from, to) do
-    sql = """
-    SELECT count(*)
-    FROM (
-      SELECT dt, log_index
-      FROM (#{label_key_dt_filtered_subquery()})
-      GROUP BY dt, log_index
-    )
-    """
-
-    params = %{
-      from: DateTime.to_unix(from),
-      to: DateTime.to_unix(to),
-      label_key: to_string(label_key)
-    }
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end

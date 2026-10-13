@@ -115,19 +115,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, posts}
   end
 
-  def all_insights_user_voted_for(_root, %{user_id: user_id} = args, _context) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to)
-    ]
-
-    posts = Post.all_insights_user_voted_for(user_id, opts)
-
-    {:ok, posts}
-  end
-
   def all_insights_by_tag(_root, %{tag: tag} = args, _context) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),

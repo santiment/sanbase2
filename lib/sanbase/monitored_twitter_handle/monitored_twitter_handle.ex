@@ -58,16 +58,6 @@ defmodule Sanbase.MonitoredTwitterHandle do
     |> maybe_transform_error()
   end
 
-  @doc ~s"""
-  Get a list of all twitter handles that a user has submitted
-  """
-  @spec get_user_submissions(User.user_id()) :: {:ok, [t()]}
-  def get_user_submissions(user_id) do
-    query = from(m in __MODULE__, where: m.user_id == ^user_id)
-
-    {:ok, Repo.all(query)}
-  end
-
   # @doc false
   def update_status(record_id, status, comment \\ nil) when status in @statuses do
     # The status is updated from an admin panel

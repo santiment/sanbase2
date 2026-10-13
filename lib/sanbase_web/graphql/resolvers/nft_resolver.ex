@@ -18,10 +18,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.NftResolver do
     NftTrade.get_trades(label_key, from, to, opts)
   end
 
-  def get_nft_trades_count(_root, %{from: from, to: to, label_key: label_key}, _resolution) do
-    NftTrade.get_trades_count(label_key, from, to)
-  end
-
   def get_nft_collection_by_contract(_root, %{selector: %{address: contract} = selector}, _) do
     infrastructure = selector[:infrastructure] || "ETH"
 

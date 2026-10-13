@@ -27,8 +27,6 @@ defmodule Sanbase.CascadeDeleteUserTest do
         "some comment"
       )
 
-    {:ok, _} = Sanbase.Menus.create_menu(%{name: "MyMenu"}, user.id)
-
     user_trigger = insert(:user_trigger, user: user)
 
     post = insert(:published_post, user: user)

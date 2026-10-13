@@ -31,4 +31,9 @@ defmodule SanbaseWeb.Graphql.WatchlistInvalidIdApiTest do
   test "UserList.user_list/2 with an invalid id returns nil", %{user: user} do
     assert {:ok, nil} = Sanbase.UserList.user_list("1 OR 1", user)
   end
+
+  test "UserList.by_id/2 with an invalid id returns an error", %{user: _user} do
+    assert {:error, "Watchlist with id 1 OR 1 does not exist"} =
+             Sanbase.UserList.by_id("1 OR 1", [])
+  end
 end

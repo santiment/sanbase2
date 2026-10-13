@@ -14,4 +14,12 @@ defmodule SanbaseWeb.AvailableMetricsControllerTest do
       assert conn.status == 400
     end
   end
+
+  test "GET /export_available_metrics with a JSON object filter returns the CSV", %{conn: conn} do
+    conn = get(conn, "/export_available_metrics", %{"filter" => "{}"})
+
+    assert conn.status == 200
+    assert ["text/csv" <> _] = get_resp_header(conn, "content-type")
+    assert [_header | _rows] = String.split(conn.resp_body, "\n", trim: true)
+  end
 end

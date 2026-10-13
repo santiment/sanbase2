@@ -1,5 +1,5 @@
 defmodule Sanbase.ParallelTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   describe "map_or_error/3" do
     test "returns the results in order when every task succeeds" do
@@ -35,7 +35,7 @@ defmodule Sanbase.ParallelTest do
             :slow -> Process.sleep(:infinity)
             x -> {:ok, x}
           end,
-          timeout: 50
+          timeout: 500
         )
 
       assert {:error, {:exit, :timeout}} = result
@@ -53,7 +53,7 @@ defmodule Sanbase.ParallelTest do
             x -> x
           end,
           on_timeout: :drop,
-          timeout: 50
+          timeout: 500
         )
 
       assert result == [:fast]

@@ -32,15 +32,26 @@ defmodule Sanbase.Alert.MetricTextTargetIdentifierTest do
     %{user: user, trigger: trigger}
   end
 
-  test "text target alert is keyed by the search text and respects the cooldown", context do
+  # The social metric adapters return the value under :value, as a plain number, or
+  # already keyed by the search text
+  for {shape, wrap} <- [
+        map: quote(do: fn v -> %{value: v} end),
+        number: quote(do: fn v -> v end),
+        keyed: quote(do: fn v -> %{"bitcoin" => v} end)
+      ] do
+    test "text target alert with a #{shape} value is keyed by the search text and respects the cooldown",
+         context do
+      wrap = unquote(wrap)
+      run_text_alert(context, {:ok, wrap.(100)}, {:ok, wrap.(5000)})
+    end
+  end
+
+  defp run_text_alert(context, first_result, second_result) do
     %{user: user, trigger: trigger} = context
     test_pid = self()
 
     metric_mock =
-      [
-        fn -> {:ok, %{value: 100}} end,
-        fn -> {:ok, %{value: 5000}} end
-      ]
+      [fn -> first_result end, fn -> second_result end]
       |> Sanbase.Mock.wrap_consecutives(arity: 4)
 
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, metric_mock)

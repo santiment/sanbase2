@@ -1,6 +1,8 @@
 defmodule Sanbase.SocialData.CommunityMessagesCountErrorTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
+
   alias Sanbase.SocialData.Community
 
   @from ~U[2019-01-01 00:00:00Z]
@@ -47,6 +49,29 @@ defmodule Sanbase.SocialData.CommunityMessagesCountErrorTest do
                 %{datetime: ~U[2019-01-01 00:00:00Z], mentions_count: 100},
                 %{datetime: ~U[2019-01-02 00:00:00Z], mentions_count: 200}
               ]} = run(:telegram)
+    end)
+  end
+
+  test "single source returns an error tuple when the response is not JSON" do
+    Sanbase.Mock.prepare_mock2(
+      &HTTPoison.get/3,
+      {:ok, %HTTPoison.Response{status_code: 200, body: "<html>not json</html>"}}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      log = capture_log(fn -> assert {:error, _} = run(:telegram) end)
+      assert log =~ "Cannot decode community messages count response"
+    end)
+  end
+
+  test "total source returns an error tuple when a source request crashes" do
+    Process.flag(:trap_exit, true)
+
+    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, _options ->
+      exit(:boom)
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      log = capture_log(fn -> assert {:error, _} = run(:total) end)
+      assert log =~ "Dropped community messages count for source"
     end)
   end
 

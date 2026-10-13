@@ -47,4 +47,32 @@ defmodule Sanbase.Notifications.ProcessNotificationMissingWebhookTest do
 
     assert {:cancel, _reason} = ProcessNotification.perform(%Oban.Job{args: job_args})
   end
+
+  test "a manual discord notification returns other send errors so the job is retried" do
+    stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, _content, _opts ->
+      {:error, :rate_limited}
+    end)
+
+    template = Sanbase.Notifications.get_template("metric_created", "all", "discord")
+
+    {:ok, notification} =
+      Notification.create(%{
+        action: "metric_created",
+        params: %{metrics_list: ["unique_social_volume_farcaster_1h"]},
+        channel: "discord",
+        step: "all",
+        status: "available",
+        is_manual: true,
+        notification_template_id: template.id
+      })
+
+    job_args = %{
+      "is_manual" => true,
+      "channel" => "discord",
+      "notification_id" => notification.id,
+      "params" => %{"content" => "content", "discord_channel" => "metric_updates"}
+    }
+
+    assert {:error, :rate_limited} = ProcessNotification.perform(%Oban.Job{args: job_args})
+  end
 end

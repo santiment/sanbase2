@@ -237,6 +237,33 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
     end)
   end
 
+  test "a top transfers fetch error for an address is returned as is", context do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Transfers.top_wallet_transfers/7,
+      {:error, "Cannot fetch top wallet transfers"}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      query = """
+      {
+        topTransfers(
+          slug: "#{context.slug}"
+          from: "#{context.datetime_from}"
+          to: "#{context.datetime_to}"
+          addressSelector: {address: "#{@address1}" transaction_type: ALL}){
+            datetime
+        }
+      }
+      """
+
+      result =
+        context.conn
+        |> post("/graphql", query_skeleton(query, "topTransfers"))
+        |> json_response(200)
+
+      assert [%{"message" => "Cannot fetch top wallet transfers"}] = result["errors"]
+    end)
+  end
+
   test "top transfers for an address and slug", context do
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Transfers.top_wallet_transfers/7,

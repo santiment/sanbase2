@@ -1,5 +1,5 @@
 defmodule Sanbase.Notifications.ProcessNotificationMissingWebhookTest do
-  # SANBASE-BACKEND-PROD-G53: Req.new/2 raised on a nil Discord webhook
+  # Req.new/2 raised on a nil Discord webhook
   use Sanbase.DataCase, async: false
 
   import Mox

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.AuthControllerCookieOverflowTest do
-  # SANBASE-BACKEND-PROD-8G3: long redirect/origin URLs overflowed the session cookie
+  # Long redirect/origin URLs overflowed the session cookie
   use SanbaseWeb.ConnCase, async: true
 
   @moduletag capture_log: true

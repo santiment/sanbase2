@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.AuthControllerUnknownProviderTest do
-  # SANBASE-BACKEND-PROD-2Q: unknown providers crashed Ueberauth.run_request/4
+  # Unknown providers crashed Ueberauth.run_request/4
   use SanbaseWeb.ConnCase, async: true
 
   @moduletag capture_log: true

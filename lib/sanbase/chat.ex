@@ -346,8 +346,8 @@ defmodule Sanbase.Chat do
     |> Enum.reverse()
   end
 
-  defp get_by_uuid(queryable, id) do
-    case Ecto.UUID.cast(id) do
+  defp get_by_uuid(queryable, uuid) do
+    case Ecto.UUID.cast(uuid) do
       {:ok, uuid} -> Repo.get(queryable, uuid)
       :error -> nil
     end

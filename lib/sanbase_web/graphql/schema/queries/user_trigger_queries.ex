@@ -57,26 +57,6 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
     * `limit` argument defines the size of the page. Default value is 25
     """
     field :alerts_historical_activity, :alert_historical_activity_paginated do
-      deprecate(~s/Use alertsHistoricalActivity instead/)
-      meta(access: :free)
-
-      arg(:cursor, :cursor_input)
-      arg(:limit, :integer, default_value: 25)
-
-      middleware(JWTAuth)
-
-      resolve(&AlertsHistoricalActivityResolver.fetch_historical_activity_for/3)
-    end
-
-    @desc ~s"""
-    Get current user's history of executed alerts with cursor pagination.
-    * `cursor` argument is an object with: type `BEFORE` or `AFTER` and `datetime`.
-      - `type: BEFORE` gives those executed before certain datetime
-      - `type: AFTER` gives those executed after certain datetime
-    * `limit` argument defines the size of the page. Default value is 25
-    """
-    field :signals_historical_activity, :alert_historical_activity_paginated do
-      deprecate(~s/Use alertsHistoricalActivity instead/)
       meta(access: :free)
 
       arg(:cursor, :cursor_input)

@@ -920,7 +920,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       data = json_response(result, 200)
 
       assert data["errors"] != nil
-      assert data["data"]["deletePost"] == nil
+      assert data["data"]["deleteInsight"] == nil
     end
   end
 

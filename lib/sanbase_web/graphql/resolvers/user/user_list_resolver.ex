@@ -87,16 +87,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.fetch_user_lists(user, type)
   end
 
-  def user_list(_root, %{user_list_id: user_list_id}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    UserList.user_list(user_list_id, current_user)
-  end
-
-  def user_list(_root, %{user_list_id: user_list_id}, _resolution) do
-    UserList.user_list(user_list_id, %User{id: nil})
-  end
-
   def settings(%UserList{} = watchlist, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

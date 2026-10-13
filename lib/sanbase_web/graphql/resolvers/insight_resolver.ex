@@ -7,7 +7,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias Sanbase.Insight.PostImage
   alias Sanbase.Insight.ImageUrl
   alias Sanbase.Insight.PopularAuthor
-  alias Sanbase.Comments.EntityComment
 
   def popular_insight_authors(_root, _args, _resolution) do
     PopularAuthor.get()
@@ -287,15 +286,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
        Dataloader.get(loader, SanbaseDataloader, :insights_count_per_user, id) ||
          %{total_count: 0, draft_count: 0, pulse_count: 0, paywall_count: 0}}
     end)
-  end
-
-  # Note: deprecated - should be removed if not used by frontend
-  def insight_comments(_root, %{insight_id: insight_id} = args, _resolution) do
-    comments =
-      EntityComment.get_comments(:insight, insight_id, args)
-      |> Enum.map(& &1.comment)
-
-    {:ok, comments}
   end
 
   def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do

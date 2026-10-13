@@ -65,7 +65,7 @@ defmodule Sanbase.Email.MailjetEventHandlerTest do
       assert {:ok, :is_subscribed_monthly_newsletter} =
                MailjetEventHandler.get_setting_key_for_list("61085")
 
-      assert {:ok, :is_subscribed_marketing_emails} =
+      assert {:ok, :is_subscribed_weekly_newsletter} =
                MailjetEventHandler.get_setting_key_for_list("10321582")
     end
 

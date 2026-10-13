@@ -1549,6 +1549,39 @@ ALTER SEQUENCE public.email_exclusion_list_id_seq OWNED BY public.email_exclusio
 
 
 --
+-- Name: email_list_consents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.email_list_consents (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    list character varying(255) NOT NULL,
+    subscribed boolean NOT NULL,
+    source character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: email_list_consents_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.email_list_consents_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: email_list_consents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.email_list_consents_id_seq OWNED BY public.email_list_consents.id;
+
+
+--
 -- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6067,7 +6100,8 @@ CREATE TABLE public.users (
     is_mcp_banned boolean DEFAULT false NOT NULL,
     mcp_banned_at timestamp(0) without time zone,
     mcp_banned_reason text,
-    are_activity_traces_hidden boolean DEFAULT false NOT NULL
+    are_activity_traces_hidden boolean DEFAULT false NOT NULL,
+    newsletter_opt_in_pending boolean DEFAULT false NOT NULL
 );
 
 
@@ -6714,6 +6748,13 @@ ALTER TABLE ONLY public.ecosystems ALTER COLUMN id SET DEFAULT nextval('public.e
 --
 
 ALTER TABLE ONLY public.email_exclusion_list ALTER COLUMN id SET DEFAULT nextval('public.email_exclusion_list_id_seq'::regclass);
+
+
+--
+-- Name: email_list_consents id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_list_consents ALTER COLUMN id SET DEFAULT nextval('public.email_list_consents_id_seq'::regclass);
 
 
 --
@@ -7916,6 +7957,14 @@ ALTER TABLE ONLY public.ecosystems
 
 ALTER TABLE ONLY public.email_exclusion_list
     ADD CONSTRAINT email_exclusion_list_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: email_list_consents email_list_consents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_list_consents
+    ADD CONSTRAINT email_list_consents_pkey PRIMARY KEY (id);
 
 
 --
@@ -9501,6 +9550,13 @@ CREATE UNIQUE INDEX ecosystems_ecosystem_index ON public.ecosystems USING btree 
 --
 
 CREATE UNIQUE INDEX email_exclusion_list_email_index ON public.email_exclusion_list USING btree (email);
+
+
+--
+-- Name: email_list_consents_user_id_list_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_list_consents_user_id_list_index ON public.email_list_consents USING btree (user_id, list);
 
 
 --
@@ -11336,6 +11392,14 @@ ALTER TABLE ONLY public.discord_dashboards
 
 ALTER TABLE ONLY public.discord_dashboards
     ADD CONSTRAINT discord_dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: email_list_consents email_list_consents_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_list_consents
+    ADD CONSTRAINT email_list_consents_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -13261,3 +13325,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260929133621);
 INSERT INTO public."schema_migrations" (version) VALUES (20260929133928);
 INSERT INTO public."schema_migrations" (version) VALUES (20260929141453);
 INSERT INTO public."schema_migrations" (version) VALUES (20261009120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20261013082759);
+INSERT INTO public."schema_migrations" (version) VALUES (20261013082802);

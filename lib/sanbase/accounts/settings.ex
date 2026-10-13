@@ -52,7 +52,9 @@ defmodule Sanbase.Accounts.Settings do
     field(:is_subscribed_dev_activity_updates, :boolean, default: false)
 
     # 2. Email campaigns/lists through Mailjet
-    field(:is_subscribed_weekly_newsletter, :boolean, default: true)
+    # Opt-in only. Kept in sync with users.marketing_accepted by
+    # Sanbase.Email.ListSubscription (see Sanbase.Email.Lists).
+    field(:is_subscribed_weekly_newsletter, :boolean, default: false)
     field(:is_subscribed_biweekly_report, :boolean, default: false)
     field(:is_subscribed_monthly_newsletter, :boolean, default: true)
 

@@ -249,11 +249,14 @@ defmodule Sanbase.EventBus.EventValidation do
              :subscribe_monthly_newsletter,
              :unsubscribe_monthly_newsletter,
              :subscribe_metric_updates,
-             :unsubscribe_metric_updates,
-             :subscribe_marketing_newsletter,
-             :unsubscribe_marketing_newsletter
+             :unsubscribe_metric_updates
            ] do
     valid_integer_id?(user_id)
+  end
+
+  def valid?(%{event_type: event_type, user_id: user_id, list: list_key})
+      when event_type in [:subscribe_email_list, :unsubscribe_email_list] do
+    valid_integer_id?(user_id) and Map.has_key?(Sanbase.Email.Lists.all(), list_key)
   end
 
   #############################################################################

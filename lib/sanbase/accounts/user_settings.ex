@@ -285,45 +285,56 @@ defmodule Sanbase.Accounts.UserSettings do
   end
 
   @doc """
-  Set the is_subscribed_marketing_emails flag without emitting Mailjet events
-  and without syncing users.marketing_accepted.
+  Write the settings that hold a list subscription without emitting Mailjet
+  events and without syncing the list.
 
-  Used when the marketing consent is changed through users.marketing_accepted,
-  which is responsible for the sync and for emitting the Mailjet event itself.
+  Used by `Sanbase.Email.ListSubscription`, which owns the list sync and calls
+  Mailjet itself.
   """
-  @spec put_marketing_emails_flag(non_neg_integer(), boolean()) ::
-          {:ok, term()} | {:error, term()}
-  def put_marketing_emails_flag(user_id, value) when is_boolean(value) do
-    settings_update(user_id, %{is_subscribed_marketing_emails: value},
-      emit_events: false,
-      sync_marketing_accepted: false
-    )
+  @spec put_list_settings(non_neg_integer(), map()) :: {:ok, term()} | {:error, term()}
+  def put_list_settings(user_id, params) do
+    settings_update(user_id, params, emit_events: false, sync_lists: false)
   end
 
   defp settings_update(user_id, params, opts \\ []) do
-    changeset =
-      Repo.get_by(__MODULE__, user_id: user_id)
-      |> case do
-        nil ->
-          # There are no settings inserted for that user still, create a record
-          changeset(%__MODULE__{}, %{user_id: user_id, settings: params})
-
-        %__MODULE__{} = us ->
-          changeset(us, %{settings: params})
-      end
+    {list_change, params} = split_list_change(params, opts)
 
     Repo.transaction(fn ->
+      # A list change also writes the users row. Lock it before the settings row,
+      # in the same order as Sanbase.Accounts.update_terms_and_conditions/2, so
+      # concurrent changes for the same user cannot deadlock.
+      if list_change, do: lock_user(user_id)
+
+      # The settings are stored as one JSON document that is written as a whole,
+      # so read it under a lock to not overwrite a concurrent change.
+      changeset =
+        from(us in __MODULE__, where: us.user_id == ^user_id, lock: "FOR UPDATE")
+        |> Repo.one()
+        |> case do
+          nil ->
+            # There are no settings inserted for that user still, create a record
+            changeset(%__MODULE__{}, %{user_id: user_id, settings: params})
+
+          %__MODULE__{} = us ->
+            changeset(us, %{settings: params})
+        end
+
       with {:ok, %__MODULE__{} = us} <- Repo.insert_or_update(changeset),
-           :ok <- maybe_sync_marketing_accepted(user_id, params, opts) do
-        us
+           {:ok, list_changed?} <- maybe_change_list(user_id, list_change) do
+        us = if list_change, do: Repo.get_by!(__MODULE__, user_id: user_id), else: us
+        {us, changeset, list_changed?}
       else
         {:error, error} -> Repo.rollback(error)
       end
     end)
     |> case do
-      {:ok, %__MODULE__{} = us} ->
+      {:ok, {%__MODULE__{} = us, changeset, list_changed?}} ->
         if Keyword.get(opts, :emit_events, true),
           do: maybe_emit_event_on_changes(user_id, changeset.changes)
+
+        with {list_key, subscribed} <- list_change, true <- list_changed? do
+          Sanbase.Email.ListSubscription.notify_mailjet(user_id, list_key, subscribed)
+        end
 
         {:ok, %{us | settings: modify_settings(us)}}
 
@@ -332,19 +343,28 @@ defmodule Sanbase.Accounts.UserSettings do
     end
   end
 
-  # The settings is_subscribed_marketing_emails flag and users.marketing_accepted
-  # represent the same marketing consent and are kept in sync. Whenever the
-  # settings flag is explicitly written, the users column follows it.
-  defp maybe_sync_marketing_accepted(user_id, params, opts) do
-    with true <- Keyword.get(opts, :sync_marketing_accepted, true),
-         {:ok, value} when is_boolean(value) <- Map.fetch(params, :is_subscribed_marketing_emails) do
-      from(u in User, where: u.id == ^user_id)
-      |> Repo.update_all(set: [marketing_accepted: value])
+  defp lock_user(user_id) do
+    from(u in User, where: u.id == ^user_id, select: u.id, lock: "FOR UPDATE")
+    |> Repo.one()
+  end
 
-      :ok
+  # The settings of the lists in Sanbase.Email.Lists (e.g. the weekly newsletter
+  # toggle) are not written directly. They go through
+  # Sanbase.Email.ListSubscription, which keeps every place that holds the
+  # subscription in sync, records the consent and calls Mailjet.
+  defp split_list_change(params, opts) do
+    with true <- Keyword.get(opts, :sync_lists, true),
+         {:ok, list_key, subscribed} <- Sanbase.Email.Lists.subscription_change(params) do
+      {{list_key, subscribed}, Sanbase.Email.Lists.drop_settings_keys(params)}
     else
-      _ -> :ok
+      _ -> {nil, params}
     end
+  end
+
+  defp maybe_change_list(_user_id, nil = _list_change), do: {:ok, false}
+
+  defp maybe_change_list(user_id, {list_key, subscribed}) do
+    Sanbase.Email.ListSubscription.change(user_id, list_key, subscribed, :settings_toggle)
   end
 
   defp maybe_emit_event_on_changes(user_id, %{settings: settings}) do
@@ -353,8 +373,7 @@ defmodule Sanbase.Accounts.UserSettings do
     email_lists_keys = [
       :is_subscribed_biweekly_report,
       :is_subscribed_monthly_newsletter,
-      :is_subscribed_metric_updates,
-      :is_subscribed_marketing_emails
+      :is_subscribed_metric_updates
     ]
 
     for key <- Map.keys(settings_changes), key in email_lists_keys do

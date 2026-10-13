@@ -206,7 +206,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "favorite_metrics" => ["daily_active_addresses", "nvt"],
              "isSubscribedBiweeklyReport" => false,
              "isSubscribedEduEmails" => true,
-             "isSubscribedWeeklyNewsletter" => true,
+             "isSubscribedWeeklyNewsletter" => false,
              "isSubscribedMonthlyNewsletter" => true,
              "isSubscribedMarketingEmails" => false,
              "isSubscribedMetricUpdates" => false
@@ -227,7 +227,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "favorite_metrics" => [],
              "isSubscribedBiweeklyReport" => false,
              "isSubscribedEduEmails" => true,
-             "isSubscribedWeeklyNewsletter" => true,
+             "isSubscribedWeeklyNewsletter" => false,
              "isSubscribedMonthlyNewsletter" => true,
              "isSubscribedMarketingEmails" => false,
              "isSubscribedMetricUpdates" => false
@@ -249,7 +249,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       result = execute_query(context.conn, current_user_query(), "currentUser")
 
       assert result["settings"]["isSubscribedEduEmails"]
-      assert result["settings"]["isSubscribedWeeklyNewsletter"]
+      refute result["settings"]["isSubscribedWeeklyNewsletter"]
       assert result["settings"]["isSubscribedMonthlyNewsletter"]
       refute result["settings"]["isSubscribedBiweeklyReport"]
     end

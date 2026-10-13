@@ -95,6 +95,8 @@ defmodule Sanbase.Accounts.User do
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
     field(:marketing_accepted, :boolean, default: false)
+    # A newsletter signup from a website form, applied once the email is verified
+    field(:newsletter_opt_in_pending, :boolean, default: false)
 
     field(:metric_access_level, :string, default: "released")
     field(:feature_access_level, :string, default: "released")
@@ -171,6 +173,7 @@ defmodule Sanbase.Accounts.User do
       :is_registered,
       :is_superuser,
       :marketing_accepted,
+      :newsletter_opt_in_pending,
       :privacy_policy_accepted,
       :salt,
       :stripe_customer_id,

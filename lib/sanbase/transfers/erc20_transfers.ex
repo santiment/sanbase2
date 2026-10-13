@@ -75,37 +75,6 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     )
   end
 
-  def blockchain_address_transaction_volume_over_time(
-        addresses,
-        contract,
-        decimals,
-        from,
-        to,
-        interval
-      ) do
-    query_struct =
-      blockchain_address_transaction_volume_over_time_query(
-        addresses,
-        contract,
-        decimals,
-        from,
-        to,
-        interval
-      )
-
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [unix, incoming, outgoing] ->
-        %{
-          datetime: DateTime.from_unix!(unix),
-          transaction_volume_inflow: incoming,
-          transaction_volume_outflow: outgoing,
-          transaction_volume_total: incoming + outgoing
-        }
-      end
-    )
-  end
-
   def blockchain_address_transaction_volume(addresses, contract, decimals, from, to) do
     query_struct =
       blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to)
@@ -149,31 +118,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     |> maybe_transform()
   end
 
-  def incoming_transfers_summary(address, contract, decimals, from, to, opts) do
-    execute_transfers_summary_query(:incoming, address, contract, decimals, from, to, opts)
-  end
-
-  def outgoing_transfers_summary(address, contract, decimals, from, to, opts) do
-    execute_transfers_summary_query(:outgoing, address, contract, decimals, from, to, opts)
-  end
-
   # Private functions
-
-  defp execute_transfers_summary_query(type, address, contract, decimals, from, to, opts) do
-    query_struct = transfers_summary_query(type, address, contract, decimals, from, to, opts)
-
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [last_transfer_datetime, address, transaction_volume, transfers_count] ->
-        %{
-          last_transfer_datetime: DateTime.from_unix!(last_transfer_datetime),
-          address: address,
-          transaction_volume: transaction_volume,
-          transfers_count: transfers_count
-        }
-      end
-    )
-  end
 
   defp top_wallet_transfers_query(wallets, contract, from, to, decimals, type, opts) do
     sql = """
@@ -371,110 +316,6 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       decimals: Integer.pow(10, decimals),
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to)
-    }
-
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp blockchain_address_transaction_volume_over_time_query(
-         addresses,
-         contract,
-         decimals,
-         from,
-         to,
-         interval
-       ) do
-    sql = """
-    SELECT
-      toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
-      SUM(incoming) / {{decimals}} AS incoming,
-      SUM(outgoing) / {{decimals}} AS outgoing
-    FROM (
-      SELECT
-        dt,
-        0 AS incoming,
-        any(value) AS outgoing
-      FROM erc20_transfers
-      WHERE
-        from IN ({{addresses}}) AND
-        assetRefId = cityHash64('ETH_' || {{contract}}) AND
-        dt >= toDateTime({{from}}) AND
-        dt < toDateTime({{to}})
-      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
-
-      UNION ALL
-
-      SELECT
-        dt,
-        any(value) AS incoming,
-        0 AS outgoing
-      FROM erc20_transfers
-      WHERE
-        to in ({{addresses}}) AND
-        assetRefId = cityHash64('ETH_' || {{contract}}) AND
-        dt >= toDateTime({{from}}) AND
-        dt < toDateTime({{to}})
-      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
-    )
-    GROUP BY time
-    """
-
-    params = %{
-      interval: Sanbase.Utils.DateTime.str_to_sec(interval),
-      from: DateTime.to_unix(from),
-      to: DateTime.to_unix(to),
-      addresses: addresses,
-      contract: contract,
-      decimals: Integer.pow(10, decimals)
-    }
-
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp transfers_summary_query(type, address, contract, decimals, from, to, opts) do
-    order_by_str =
-      case Keyword.get(opts, :order_by, :transaction_volume) do
-        :transaction_volume -> "transaction_volume"
-        :transfers_count -> "transfers_count"
-      end
-
-    {select_column, filter_column, table} =
-      case type do
-        :incoming -> {"from", "to", "erc20_transfers"}
-        :outgoing -> {"to", "from", "erc20_transfers"}
-      end
-
-    sql = """
-    SELECT
-      toUnixTimestamp(max(dt)) AS last_transfer_datetime,
-      "#{select_column}" AS address,
-      SUM(value) / {{decimals}} AS transaction_volume,
-      COUNT(*) AS transfers_count
-    FROM (
-      SELECT dt, from, to, any(value) AS value
-      FROM #{table}
-      WHERE
-        assetRefId = cityHash64('ETH_' || {{contract}}) AND
-        #{filter_column} = {{address}} AND
-        dt >= toDateTime({{from}}) AND
-        dt < toDateTime({{to}})
-      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
-    )
-    GROUP BY "#{select_column}"
-    ORDER BY #{order_by_str} DESC
-    LIMIT {{limit}} OFFSET {{offset}}
-    """
-
-    {limit, offset} = opts_to_limit_offset(opts)
-
-    params = %{
-      decimals: Integer.pow(10, decimals),
-      contract: contract,
-      address: address,
-      from: DateTime.to_unix(from),
-      to: DateTime.to_unix(to),
-      limit: limit,
-      offset: offset
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)

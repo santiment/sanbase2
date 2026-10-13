@@ -40,12 +40,10 @@ defmodule Sanbase.CascadeDeleteUserTest do
             build(:infrastructure, %{code: "ETH"})
       )
 
-    {:ok, _} =
-      Sanbase.BlockchainAddress.BlockchainAddressUserPair.create(
-        blockchain_address.address,
-        "ETH",
-        user.id
-      )
+    {:ok, [_]} =
+      Sanbase.BlockchainAddress.BlockchainAddressUserPair.maybe_create([
+        %{blockchain_address_id: blockchain_address.id, user_id: user.id}
+      ])
 
     {:ok, _} = Sanbase.Accounts.Apikey.generate_apikey(user)
     {:ok, _} = Sanbase.ApiCallLimit.get_quota_db(:user, user)

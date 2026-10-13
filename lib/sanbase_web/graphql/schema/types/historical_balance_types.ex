@@ -12,16 +12,6 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
     end
   end
 
-  object :usd_value_address_change do
-    field(:slug, non_null(:string))
-    field(:current_balance, non_null(:float))
-    field(:previous_balance, non_null(:float))
-    field(:balance_change, non_null(:float))
-    field(:current_usd_value, non_null(:float))
-    field(:previous_usd_value, non_null(:float))
-    field(:usd_value_change, non_null(:float))
-  end
-
   object :historical_balance do
     field(:datetime, non_null(:datetime))
     field(:balance, :float)
@@ -37,13 +27,6 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
 
   object :address_transaction_volume do
     field(:address, non_null(:string))
-    field(:transaction_volume_inflow, non_null(:float))
-    field(:transaction_volume_outflow, non_null(:float))
-    field(:transaction_volume_total, non_null(:float))
-  end
-
-  object :combined_address_transaction_volume_over_time do
-    field(:datetime, non_null(:datetime))
     field(:transaction_volume_inflow, non_null(:float))
     field(:transaction_volume_outflow, non_null(:float))
     field(:transaction_volume_total, non_null(:float))

@@ -8,14 +8,10 @@ defmodule Sanbase.Clickhouse.Label do
   import Sanbase.Metric.SqlQuery.Helper,
     only: [label_id_by_label_fqn_filter: 2, label_id_by_label_key_filter: 2]
 
-  alias Sanbase.Accounts.User
-
   @type label :: %{
           name: String.t(),
           metadata: String.t()
         }
-
-  @create_label_topic "label_changes"
 
   def label_fqns_with_asset(slug) do
     query_struct = label_fqns_with_asset_query(slug)
@@ -146,33 +142,6 @@ defmodule Sanbase.Clickhouse.Label do
       end
     )
   end
-
-  def add_user_labels_to_address(%User{id: user_id, username: username}, selector, labels)
-      when not is_nil(username) do
-    for label <- labels do
-      data = %{
-        type: "SINGLE",
-        event: "CREATE",
-        blockchain:
-          Sanbase.BlockchainAddress.blockchain_from_infrastructure(selector.infrastructure),
-        address: Sanbase.BlockchainAddress.to_internal_format(selector.address),
-        label: %{
-          key: label,
-          owner: username,
-          owner_id: user_id
-        },
-        event_dt: DateTime.to_iso8601(DateTime.utc_now()),
-        change_reason: %{}
-      }
-
-      key = label <> data.event_dt
-      {key, Jason.encode!(data)}
-    end
-    |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(@create_label_topic)
-  end
-
-  def add_user_labels_to_address(%User{username: nil}, _selector, _labels),
-    do: {:error, "Username is required for creating custom address labels"}
 
   # Private functions
 

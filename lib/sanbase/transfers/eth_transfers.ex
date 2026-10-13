@@ -85,48 +85,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     end)
   end
 
-  def incoming_transfers_summary(address, from, to, opts \\ []) do
-    execute_transfers_summary_query(:incoming, address, from, to, opts)
-  end
-
-  def outgoing_transfers_summary(address, from, to, opts \\ []) do
-    execute_transfers_summary_query(:outgoing, address, from, to, opts)
-  end
-
-  def blockchain_address_transaction_volume_over_time(addresses, from, to, interval) do
-    query_struct =
-      blockchain_address_transaction_volume_over_time_query(addresses, from, to, interval)
-
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [unix, incoming, outgoing] ->
-        %{
-          datetime: DateTime.from_unix!(unix),
-          transaction_volume_inflow: incoming,
-          transaction_volume_outflow: outgoing,
-          transaction_volume_total: incoming + outgoing
-        }
-      end
-    )
-  end
-
   # Private functions
-
-  defp execute_transfers_summary_query(type, address, from, to, opts) do
-    query_struct = transfers_summary_query(type, address, from, to, opts)
-
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [last_transfer_datetime, address, transaction_volumes, transfers_count] ->
-        %{
-          last_transfer_datetime: DateTime.from_unix!(last_transfer_datetime),
-          address: address,
-          transaction_volume: transaction_volumes,
-          transfers_count: transfers_count
-        }
-      end
-    )
-  end
 
   defp top_wallet_transfers_query(wallets, from, to, type, opts) do
     sql = """
@@ -222,91 +181,6 @@ defmodule Sanbase.Transfers.EthTransfers do
 
     params = %{
       address: Sanbase.BlockchainAddress.to_internal_format(address),
-      limit: limit,
-      offset: offset
-    }
-
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp blockchain_address_transaction_volume_over_time_query(addresses, from, to, interval) do
-    sql = """
-    SELECT
-      toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
-      SUM(incoming) / #{@eth_decimals} AS incoming,
-      SUM(outgoing) / #{@eth_decimals} AS outgoing
-    FROM (
-      SELECT dt, 0 AS incoming, any(value) AS outgoing
-      FROM eth_transfers
-      WHERE
-        from IN ({{addresses}}) AND
-        dt >= toDateTime({{from}}) AND
-        dt < toDateTime({{to}})
-      GROUP BY dt, from, to, transactionHash, internalTxPosition
-
-      UNION ALL
-
-      SELECT dt, any(value) AS incoming, 0 AS outgoing
-      FROM eth_transfers
-      WHERE
-        to in ({{addresses}}) AND
-        dt >= toDateTime({{from}}) AND
-        dt < toDateTime({{to}})
-      GROUP BY dt, from, to, transactionHash, internalTxPosition
-    )
-    GROUP BY time
-    """
-
-    params = %{
-      interval: Sanbase.Utils.DateTime.str_to_sec(interval),
-      addresses: addresses,
-      from: DateTime.to_unix(from),
-      to: DateTime.to_unix(to)
-    }
-
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp transfers_summary_query(type, address, from, to, opts) do
-    order_by_str =
-      case Keyword.get(opts, :order_by, :transaction_volume) do
-        :transaction_volume -> "transaction_volume"
-        :transfers_count -> "transfers_count"
-      end
-
-    {select_column, filter_column} =
-      case type do
-        :incoming -> {"from", "to"}
-        :outgoing -> {"to", "from"}
-      end
-
-    sql = """
-    SELECT
-      toUnixTimestamp(max(dt)) AS last_transfer_datetime,
-      "#{select_column}" AS address,
-      SUM(value) / #{@eth_decimals} AS transaction_volume,
-      COUNT(*) AS transfers_count
-    FROM (
-      SELECT dt, type, from, to, anyLast(value) AS value
-      FROM eth_transfers
-      WHERE
-        #{filter_column} = {{address}} AND
-        type != 'fee' AND
-        dt >= toDateTime({{from}}) AND
-        dt < toDateTime({{to}})
-      GROUP BY from, type, to, dt, transactionHash, internalTxPosition
-    )
-    GROUP BY "#{select_column}"
-    ORDER BY #{order_by_str} DESC
-    LIMIT {{limit}} OFFSET {{offset}}
-    """
-
-    {limit, offset} = opts_to_limit_offset(opts)
-
-    params = %{
-      address: address,
-      from: DateTime.to_unix(from),
-      to: DateTime.to_unix(to),
       limit: limit,
       offset: offset
     }

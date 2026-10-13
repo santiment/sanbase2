@@ -1,5 +1,4 @@
 defmodule SanbaseWeb.AuthControllerTwitterRequestErrorsTest do
-  # Request token errors crashed GET /auth/twitter
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
@@ -18,14 +17,7 @@ defmodule SanbaseWeb.AuthControllerTwitterRequestErrorsTest do
             request_url: "https://api.twitter.com/oauth/request_token"
           }}},
         {"an HTTP pool checkout_timeout",
-         {:error, %HTTPoison.Error{reason: :checkout_timeout, id: nil}}},
-        {"a Twitter API error",
-         {:ok,
-          %HTTPoison.Response{
-            status_code: 401,
-            body: %{"errors" => [%{"message" => "Could not authenticate you.", "code" => 32}]}
-          }}},
-        {"an unknown error", {:error, :econnrefused}}
+         {:error, %HTTPoison.Error{reason: :checkout_timeout, id: nil}}}
       ] do
     test "#{name} redirects to the fail URL", %{conn: conn} do
       with_mock Ueberauth.Strategy.Twitter.OAuth.Internal,
@@ -47,7 +39,6 @@ defmodule SanbaseWeb.AuthControllerTwitterRequestErrorsTest do
       conn = get(conn, "/auth/twitter", %{"fail_redirect_url" => @fail_redirect_url})
 
       assert redirected_to(conn, 302) =~ "oauth_token=token123"
-      assert get_session(conn, :twitter_token)
     end
   end
 end

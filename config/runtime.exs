@@ -117,7 +117,8 @@ config :brod,
     kafka_client: [
       endpoints: kafka_endpoints,
       auto_start_producers: true,
-      # brod defaults (3 x 500ms) crash the producer during leader elections; keep bounded since KafkaExporter.flush/1 waits 30s
+      # brod's default 3 x 500ms retries crash the producer during leader elections.
+      # 10 x 1s keeps the total under the 30s KafkaExporter.flush/1 waits.
       default_producer_config: [max_retries: 10, retry_backoff_ms: 1_000]
     ]
   ]

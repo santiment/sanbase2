@@ -1,7 +1,7 @@
 defmodule Sanbase.Cluster.PostgresStrategy do
   @moduledoc """
   Wraps `LibclusterPostgres.Strategy` so its LISTEN connection uses `auto_reconnect: true`
-  and a closed Postgres connection no longer crashes the strategy. All callbacks are
+  and a closed Postgres connection reconnects instead of crashing the strategy. All callbacks are
   delegated, so the heartbeat protocol is unchanged. Relies on the 0.2.0 internal `meta.opts`.
   """
   use GenServer

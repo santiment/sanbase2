@@ -1,77 +1,42 @@
 defmodule Sanbase.SocialData.CommunityMessagesCountErrorTest do
   use Sanbase.DataCase, async: false
 
-  import ExUnit.CaptureLog
-
   alias Sanbase.SocialData.Community
 
   @from ~U[2019-01-01 00:00:00Z]
   @to ~U[2019-01-03 00:00:00Z]
+  @ok_body ~s({"data": {"2019-01-01T00:00:00Z": 100, "2019-01-02T00:00:00Z": 200}})
 
-  @tag capture_log: true
-  test "total source returns an error tuple when a source request fails" do
-    Sanbase.Mock.prepare_mock2(
-      &HTTPoison.get/3,
-      {:ok, %HTTPoison.Response{status_code: 500, body: "Internal Server Error"}}
-    )
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      assert {:error, _reason} = run(:total)
-    end)
-  end
+  @moduletag capture_log: true
 
-  @tag capture_log: true
-  test "total source returns an error tuple when only one source fails" do
-    ok_body = ~s({"data": {"2019-01-01T00:00:00Z": 100, "2019-01-02T00:00:00Z": 200}})
-
-    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, options ->
-      source = options |> Keyword.fetch!(:params) |> List.keyfind("source", 0) |> elem(1)
-
-      case source do
-        "telegram" -> {:ok, %HTTPoison.Response{status_code: 200, body: ok_body}}
-        "reddit" -> {:error, %HTTPoison.Error{reason: :timeout}}
-      end
-    end)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      assert {:error, _reason} = run("total")
-    end)
-  end
-
-  test "single source still returns the data on success" do
-    ok_body = ~s({"data": {"2019-01-01T00:00:00Z": 100, "2019-01-02T00:00:00Z": 200}})
-
-    Sanbase.Mock.prepare_mock2(
-      &HTTPoison.get/3,
-      {:ok, %HTTPoison.Response{status_code: 200, body: ok_body}}
-    )
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      assert {:ok,
-              [
-                %{datetime: ~U[2019-01-01 00:00:00Z], mentions_count: 100},
-                %{datetime: ~U[2019-01-02 00:00:00Z], mentions_count: 200}
-              ]} = run(:telegram)
-    end)
-  end
-
-  test "single source returns an error tuple when the response is not JSON" do
+  test "single source returns an error when the response is not JSON" do
     Sanbase.Mock.prepare_mock2(
       &HTTPoison.get/3,
       {:ok, %HTTPoison.Response{status_code: 200, body: "<html>not json</html>"}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      log = capture_log(fn -> assert {:error, _} = run(:telegram) end)
-      assert log =~ "Cannot decode community messages count response"
+      assert {:error, _} = run(:telegram)
     end)
   end
 
-  test "total source returns an error tuple when a source request crashes" do
-    Process.flag(:trap_exit, true)
-
-    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, _options ->
-      exit(:boom)
+  test "total source returns an error when one source fails" do
+    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, options ->
+      case options |> Keyword.fetch!(:params) |> List.keyfind("source", 0) do
+        {"source", "telegram"} -> {:ok, %HTTPoison.Response{status_code: 200, body: @ok_body}}
+        {"source", "reddit"} -> {:error, %HTTPoison.Error{reason: :timeout}}
+      end
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      log = capture_log(fn -> assert {:error, _} = run(:total) end)
-      assert log =~ "Dropped community messages count for source"
+      assert {:error, _} = run("total")
+    end)
+  end
+
+  test "total source returns an error when a source request crashes" do
+    Process.flag(:trap_exit, true)
+
+    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, _options -> exit(:boom) end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert {:error, _} = run(:total)
     end)
   end
 

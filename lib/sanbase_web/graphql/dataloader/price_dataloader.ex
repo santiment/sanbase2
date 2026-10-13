@@ -32,10 +32,9 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
       {:ok, lists} ->
         lists |> Enum.concat() |> Map.new()
 
-      # An empty map fails the field for every slug instead of only for some
       {:error, error} ->
         Logger.warning("PriceDataloader :volume_change_24h failed. Reason: #{inspect(error)}")
-        %{}
+        Map.new(slugs, &{&1, {:error, error}})
     end
   end
 

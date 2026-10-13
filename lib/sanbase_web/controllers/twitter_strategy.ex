@@ -16,7 +16,7 @@ defmodule Sanbase.Ueberauth.Strategy.Twitter do
   def handle_request!(conn) do
     params = with_state_param([], conn)
 
-    # request_token!/2 raises the raw error; set it on the conn for the caller to handle
+    # Not request_token!/2: a provider error becomes an Ueberauth failure instead of raising
     case Twitter.OAuth.request_token([], redirect_uri: callback_url(conn, params)) do
       {:ok, token} ->
         conn
@@ -131,7 +131,6 @@ defmodule Sanbase.Ueberauth.Strategy.Twitter do
   end
 
   defp request_token_error_message(%{message: message}) when is_binary(message), do: message
-  defp request_token_error_message(error) when is_binary(error), do: error
 
   defp request_token_error_message({:ok, %{status_code: status_code}}),
     do: "Unexpected response status code: #{status_code}"

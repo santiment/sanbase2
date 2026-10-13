@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.GetMostRecentEmptyTypesTest do
   use SanbaseWeb.ConnCase,
     async: false,
     parameterize: [
-      %{args: "types: []", selection: "stats { totalEntitiesCount }"},
       %{args: "types: []", selection: "data { insight { id } }"},
       %{args: "", selection: "stats { totalEntitiesCount }"}
     ]

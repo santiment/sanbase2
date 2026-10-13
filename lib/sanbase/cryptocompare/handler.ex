@@ -83,21 +83,12 @@ defmodule Sanbase.Cryptocompare.Handler do
   @transient_http_reasons [:timeout, :connect_timeout, :closed, :econnrefused]
 
   @doc ~s"""
-  Turn an error returned by get_data/3 into the result of the historical worker
-  job on its `attempt`-th attempt, logging it with `log_prefix`.
+  Turn an error returned by get_data/3 into the result of a historical worker job.
 
-  Transient errors (503 Service Unavailable, HTTP timeouts and connection
-  errors) are snoozed with an exponential backoff (1 minute, doubling, capped at
-  1 hour) for the first #{@max_transient_snooze_attempts} attempts. Every other
-  error, and a transient error after that, is returned as is.
-
-  ## Examples
-
-      iex> Handler.handle_job_error(:service_unavailable, 1, "[Cryptocompare] binance/BTC")
-      {:snooze, 60}
-
-      iex> Handler.handle_job_error("API error: bad instrument", 1, "[Cryptocompare] binance/BTC")
-      {:error, "API error: bad instrument"}
+  Transient errors (503 Service Unavailable, HTTP timeouts and connection errors)
+  are snoozed with an exponential backoff (1 minute, doubling, capped at 1 hour)
+  for the first #{@max_transient_snooze_attempts} attempts. Every other error, and
+  a transient error after that, is returned as is.
   """
   @spec handle_job_error(term(), pos_integer(), String.t()) ::
           {:snooze, pos_integer()} | {:error, term()}

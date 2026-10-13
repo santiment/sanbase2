@@ -1,5 +1,4 @@
 defmodule Sanbase.Alert.StampLastTriggeredIdentifierTest do
-  # Social metric alerts on a text target produce the atom identifier :value
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
@@ -27,7 +26,7 @@ defmodule Sanbase.Alert.StampLastTriggeredIdentifierTest do
     %{user: user, trigger: trigger}
   end
 
-  test "stamps a list containing atom identifiers", context do
+  test "stamps atom identifiers under string keys", context do
     %{user: user, trigger: trigger} = context
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 

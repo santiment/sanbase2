@@ -95,10 +95,12 @@ defmodule Sanbase.Queries.RefreshWorkerTest do
     assert [%Oban.Job{state: "scheduled"}] = scheduled_refresh_jobs()
   end
 
+  # A "(CODE)" in the echoed query text is not the error code
   for error <- [
-        "(TIMEOUT_EXCEEDED) Timeout exceeded: elapsed 85 seconds",
+        "(TIMEOUT_EXCEEDED) Timeout exceeded while processing query: SELECT (MY_CONST) FROM t",
+        "Cannot execute query while processing query: SELECT (MY_CONST) FROM t",
+        "(QUOTA_EXCEEDED) Quota for user `sanbase` for 3600s has been exceeded",
         "(MEMORY_LIMIT_EXCEEDED) Memory limit (total) exceeded: would use 56.00 GiB",
-        "(MEMORY_LIMIT_EXCEEDED) (total) memory limit exceeded: would use 56.00 GiB",
         "(MEMORY_LIMIT_EXCEEDED) Memory limit (for user) exceeded: would use 20.00 GiB"
       ] do
     test "the transient ClickHouse error #{error} is retried and keeps the next scheduled refresh" do

@@ -64,14 +64,31 @@ defmodule Sanbase.Queries.RefreshWorker do
     "Cannot fetch the user with id"
   ]
 
-  # ClickHouse error codes caused by load or the network; every other code is a query error
+  # ClickHouse error codes caused by load, quotas, replicas or the network; every other
+  # code is a query error
   @transient_clickhouse_error_codes ~w[
     TIMEOUT_EXCEEDED
+    TOO_SLOW
     TOO_MANY_SIMULTANEOUS_QUERIES
+    SERVER_OVERLOADED
+    QUOTA_EXCEEDED
+    CANNOT_ALLOCATE_MEMORY
+    CANNOT_SCHEDULE_TASK
+    QUERY_WAS_CANCELLED
+    ABORTED
+    KEEPER_EXCEPTION
+    NO_REPLICA_HAS_PART
+    ALL_REPLICAS_ARE_STALE
+    ALL_REPLICAS_LOST
     NETWORK_ERROR
     SOCKET_TIMEOUT
-    QUERY_WAS_CANCELLED
+    DNS_ERROR
+    CANNOT_READ_FROM_SOCKET
+    CANNOT_WRITE_TO_SOCKET
+    UNEXPECTED_PACKET_FROM_SERVER
+    ATTEMPT_TO_READ_AFTER_EOF
     ALL_CONNECTION_TRIES_FAILED
+    POCO_EXCEPTION
   ]
 
   # Only a query over its own memory limit fails again; total/user limits depend on other load

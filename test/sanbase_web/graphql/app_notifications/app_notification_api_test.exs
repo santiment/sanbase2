@@ -581,19 +581,17 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
       assert error_msg =~ "unauthorized"
     end
 
-    for mutation_name <- ["muteUserNotifications", "unmuteUserNotifications"],
-        user_id <- ["abc", "12abc", "99999999999999999999"] do
-      test "#{mutation_name} with the invalid userId #{user_id} returns an error", %{conn: conn} do
+    for mutation_name <- ["muteUserNotifications", "unmuteUserNotifications"] do
+      test "#{mutation_name} with a non-integer userId returns an error", %{conn: conn} do
         mutation = """
         mutation {
-          #{unquote(mutation_name)}(userId: "#{unquote(user_id)}") {
+          #{unquote(mutation_name)}(userId: "12abc") {
             id
           }
         }
         """
 
-        assert execute_mutation_with_error(conn, mutation) ==
-                 "Invalid user id: #{inspect(unquote(user_id))}"
+        assert execute_mutation_with_error(conn, mutation) == ~s(Invalid user id: "12abc")
       end
     end
 

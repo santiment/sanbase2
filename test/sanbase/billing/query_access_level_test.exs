@@ -106,8 +106,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_notification_muted_users,
           :get_presigned_s3_url,
           :get_primary_user,
-          :get_questionnaire,
-          :get_questionnaire_user_answers,
           :get_raw_signals,
           :get_reports,
           :get_reports_by_tags,

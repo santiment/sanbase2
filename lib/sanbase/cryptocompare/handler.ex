@@ -78,6 +78,39 @@ defmodule Sanbase.Cryptocompare.Handler do
     end
   end
 
+  # Snoozes bump attempt and max_attempts in OSS Oban, so worker error retries are not consumed
+  @max_transient_snooze_attempts 8
+  @transient_http_reasons [:timeout, :connect_timeout, :closed, :econnrefused]
+
+  @doc ~s"""
+  Turn an error returned by get_data/3 into the result of a historical worker job.
+
+  Transient errors (503 Service Unavailable, HTTP timeouts and connection errors)
+  are snoozed with an exponential backoff (1 minute, doubling, capped at 1 hour)
+  for the first #{@max_transient_snooze_attempts} attempts. Every other error, and
+  a transient error after that, is returned as is.
+  """
+  @spec handle_job_error(term(), pos_integer(), String.t()) ::
+          {:snooze, pos_integer()} | {:error, term()}
+  def handle_job_error(error, attempt, log_prefix) when is_integer(attempt) do
+    if transient_error?(error) and attempt <= @max_transient_snooze_attempts do
+      seconds = min(60 * 2 ** (attempt - 1), 3600)
+
+      Logger.warning(
+        "#{log_prefix} Transient error: #{inspect(error)}. Snoozing job for #{seconds}s."
+      )
+
+      {:snooze, seconds}
+    else
+      Logger.warning("#{log_prefix} Error: #{inspect(error)}")
+      {:error, error}
+    end
+  end
+
+  defp transient_error?(:service_unavailable), do: true
+  defp transient_error?(%HTTPoison.Error{reason: reason}), do: reason in @transient_http_reasons
+  defp transient_error?(_), do: false
+
   def get_markets_and_instruments() do
     cache_key = {__MODULE__, :get_markets_and_instruments}
     Sanbase.Cache.get_or_store({cache_key, 600}, &do_get_markets_and_instruments/0)

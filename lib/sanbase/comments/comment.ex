@@ -166,10 +166,16 @@ defmodule Sanbase.Comment do
   end
 
   def get_subcomments(comment_id, limit) do
-    subcomments_tree_query(comment_id)
-    |> order_by([c], c.inserted_at)
-    |> limit(^limit)
-    |> Repo.all()
+    case Sanbase.Utils.EctoCommon.cast_id(comment_id) do
+      {:ok, comment_id} ->
+        subcomments_tree_query(comment_id)
+        |> order_by([c], asc: c.inserted_at, asc: c.id)
+        |> limit(^limit)
+        |> Repo.all()
+
+      :error ->
+        []
+    end
   end
 
   defp subcomments_tree_query(comment_id) do

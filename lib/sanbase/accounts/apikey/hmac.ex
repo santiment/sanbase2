@@ -59,8 +59,13 @@ defmodule Sanbase.Accounts.Hmac do
     token <> "_" <> hmac(token)
   end
 
+  # base32 HMAC-SHA256 is 56 chars and hmac/1 slices byte_size(token) chars from it
+  @max_token_length 56
+
   @spec apikey_valid?(String.t(), String.t()) :: boolean
-  def apikey_valid?(token, apikey) when byte_size(apikey) >= 32 and byte_size(token) >= 16 do
+  def apikey_valid?(token, apikey)
+      when byte_size(apikey) >= 32 and byte_size(token) >= 16 and
+             byte_size(token) <= @max_token_length do
     # Constant-time comparison to avoid leaking the expected apikey via a timing
     # side-channel during authentication.
     Plug.Crypto.secure_compare(apikey, generate_apikey(token))

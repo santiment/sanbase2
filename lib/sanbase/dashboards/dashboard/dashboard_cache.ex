@@ -76,6 +76,9 @@ defmodule Sanbase.Dashboards.DashboardCache do
   @doc ~s"""
   Fetch the latest cache values for the given dashboard.
 
+  The cache is returned only if the dashboard is public or the querying user
+  is its owner. If there is no cache yet, a new empty one is created.
+
   The second `opts` argument can contain the following options:
   - lock_for_update - Set to true, if the record is fetched for an update
   - transform_loaded_queries - If set to true, the loaded query caches are
@@ -87,9 +90,13 @@ defmodule Sanbase.Dashboards.DashboardCache do
   def by_dashboard_id(dashboard_id, parameters_override, querying_user_id, opts \\ []) do
     hash = hash_parameters(parameters_override)
 
+    # Check access on every read, not only when the cache row is created
     query =
-      from(d in __MODULE__,
-        where: d.dashboard_id == ^dashboard_id and d.parameters_override_hash == ^hash
+      from(c in __MODULE__,
+        join: d in Dashboard,
+        on: d.id == c.dashboard_id,
+        where: c.dashboard_id == ^dashboard_id and c.parameters_override_hash == ^hash,
+        where: ^readable_by(querying_user_id)
       )
 
     query =
@@ -99,8 +106,16 @@ defmodule Sanbase.Dashboards.DashboardCache do
       end
 
     case Repo.one(query) do
-      nil -> new(dashboard_id, parameters_override, querying_user_id)
-      %__MODULE__{} = cache -> {:ok, cache}
+      %__MODULE__{} = cache ->
+        {:ok, cache}
+
+      nil ->
+        with :ok <- check_read_access(dashboard_id, querying_user_id) do
+          %__MODULE__{}
+          |> change(%{dashboard_id: dashboard_id, parameters_override_hash: hash})
+          |> Repo.insert()
+          |> maybe_transform_error()
+        end
     end
     |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
   end
@@ -139,30 +154,6 @@ defmodule Sanbase.Dashboards.DashboardCache do
       _ -> {:error, "Cannot load dashboard query cache"}
     end
     |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
-  end
-
-  @doc ~s"""
-  Create a new empty record for the given dashboard_id.
-  """
-  @spec new(dashboard_id, parameters_override, user_id) :: {:ok, t()} | {:error, any()}
-  def new(dashboard_id, parameters_override, querying_user_id) do
-    hash = hash_parameters(parameters_override)
-
-    case Sanbase.Dashboards.get_visibility_data(dashboard_id) do
-      {:ok, %{user_id: user_id, is_public: is_public}}
-      when user_id == querying_user_id or is_public == true ->
-        %__MODULE__{}
-        |> change(%{
-          dashboard_id: dashboard_id,
-          parameters_override_hash: hash
-        })
-        |> Repo.insert()
-        |> maybe_transform_error()
-
-      _ ->
-        {:error,
-         "Dashboard with id #{dashboard_id} does not exist or the dashboard is private and the user with id #{querying_user_id} is not the owner of it."}
-    end
   end
 
   @doc ~s"""
@@ -209,23 +200,24 @@ defmodule Sanbase.Dashboards.DashboardCache do
     end
   end
 
-  @doc ~s"""
-  Remove the query result from the cache. This is invoked when the panel is
-  removed from the dashboard.
-  """
-  @spec remove_query_cache(dashboard_id(), dashboard_query_mapping_id(), user_id) ::
-          {:ok, t()} | {:error, any()}
-  def remove_query_cache(dashboard_id, dashboard_query_mapping_id, querying_user_id) do
-    {:ok, cache} = by_dashboard_id(dashboard_id, querying_user_id, lock_for_update: true)
-    queries = Enum.reject(cache.queries, &(&1.id == dashboard_query_mapping_id))
+  # Private functions
 
-    cache
-    |> change(%{queries: queries})
-    |> Repo.update()
-    |> maybe_transform_error()
+  defp check_read_access(dashboard_id, querying_user_id) do
+    case Sanbase.Dashboards.get_visibility_data(dashboard_id) do
+      {:ok, %{user_id: user_id, is_public: is_public}}
+      when user_id == querying_user_id or is_public == true ->
+        :ok
+
+      _ ->
+        {:error,
+         "Dashboard with id #{dashboard_id} does not exist or the dashboard is private and the user with id #{querying_user_id} is not the owner of it."}
+    end
   end
 
-  # Private functions
+  defp readable_by(nil = _querying_user_id), do: dynamic([_c, d], d.is_public == true)
+
+  defp readable_by(querying_user_id),
+    do: dynamic([_c, d], d.is_public == true or d.user_id == ^querying_user_id)
 
   defp transform_loaded_dashboard_cache(%__MODULE__{} = cache, opts) do
     flag = Keyword.get(opts, :transform_loaded_queries, true)

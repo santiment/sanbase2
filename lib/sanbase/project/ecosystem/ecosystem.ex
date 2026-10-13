@@ -62,17 +62,25 @@ defmodule Sanbase.Ecosystem do
     Sanbase.Repo.all(__MODULE__)
   end
 
-  @spec get_ecosystems(:all | list(String.t())) :: {:ok, list(String.t())}
-  def get_ecosystems(ecosystems_filter \\ :all) do
-    query = from(e in __MODULE__, select: e.ecosystem)
+  @doc ~s"""
+  Return the names of all ecosystems, or of the given ones. An unknown name
+  returns an error that suggests the closest existing ecosystem, if any.
+  """
+  @spec get_ecosystems(:all | list(String.t())) :: {:ok, list(String.t())} | {:error, String.t()}
+  def get_ecosystems(ecosystems_filter \\ :all)
 
-    query =
-      case ecosystems_filter do
-        :all -> query
-        ecosystems when is_list(ecosystems) -> query |> where([e], e.ecosystem in ^ecosystems)
-      end
+  def get_ecosystems(:all) do
+    {:ok, Sanbase.Repo.all(from(e in __MODULE__, select: e.ecosystem))}
+  end
 
-    {:ok, Sanbase.Repo.all(query)}
+  def get_ecosystems(ecosystems) when is_list(ecosystems) do
+    query = from(e in __MODULE__, where: e.ecosystem in ^ecosystems, select: e.ecosystem)
+    found = Sanbase.Repo.all(query)
+
+    case Enum.uniq(ecosystems) -- found do
+      [] -> {:ok, found}
+      unknown -> {:error, unknown_ecosystems_error(unknown)}
+    end
   end
 
   def get_ecosystem_by_name(ecosystem) do
@@ -159,6 +167,24 @@ defmodule Sanbase.Ecosystem do
   end
 
   # Private functions
+
+  defp unknown_ecosystems_error(unknown) do
+    {:ok, all} = get_ecosystems(:all)
+
+    Enum.map_join(unknown, " ", fn ecosystem ->
+      "The ecosystem '#{ecosystem}' is not supported or is mistyped." <>
+        did_you_mean(ecosystem, all)
+    end)
+  end
+
+  defp did_you_mean(ecosystem, [_ | _] = all) when is_binary(ecosystem) do
+    distance = &String.jaro_distance(String.downcase(ecosystem), String.downcase(&1))
+    closest = Enum.max_by(all, distance)
+
+    if distance.(closest) > 0.8, do: " Did you mean '#{closest}'?", else: ""
+  end
+
+  defp did_you_mean(_ecosystem, _all), do: ""
 
   defp apply_combinator(list, ecosystems, opts) do
     case Keyword.get(opts, :combinator, :all_of) do

@@ -5,6 +5,7 @@ defmodule Sanbase.Queries.RefreshWorker do
 
   require Logger
 
+  alias Sanbase.ClickhouseRepo
   alias Sanbase.Queries.Refresh
 
   @oban_conf_name :oban_web
@@ -32,7 +33,9 @@ defmodule Sanbase.Queries.RefreshWorker do
         "(oban_job_id=#{job.id}, attempt=#{job.attempt}/#{job.max_attempts}): #{error_str}"
     )
 
-    {:error, "Failed to refresh query_id=#{query_id} user_id=#{user_id}. Reason: #{error_str}"}
+    error_msg = "Failed to refresh query_id=#{query_id} user_id=#{user_id}. Reason: #{error_str}"
+
+    if deterministic_error?(error_str), do: {:cancel, error_msg}, else: {:error, error_msg}
   end
 
   defp handle_result(result, _job, _query_id, _user_id), do: result
@@ -49,35 +52,58 @@ defmodule Sanbase.Queries.RefreshWorker do
 
   defp maybe_remove_scheduled_job(result, nil), do: result
 
-  defp maybe_remove_scheduled_job({:error, error_str}, scheduled_job) do
-    case retryable_error?(error_str) do
-      true ->
-        {:error, error_str}
-
-      false ->
-        Oban.cancel_job(@oban_conf_name, scheduled_job)
-        {:error, error_str}
-    end
+  defp maybe_remove_scheduled_job({:cancel, _} = result, scheduled_job) do
+    Oban.cancel_job(@oban_conf_name, scheduled_job)
+    result
   end
 
   defp maybe_remove_scheduled_job(result, _), do: result
 
-  defp retryable_error?(error_str) do
-    non_retryable_errors = [
-      "(SYNTAX_ERROR)",
-      "(ILLEGAL_TYPE_OF_ARGUMENT)",
-      "(UNKNOWN_IDENTIFIER)",
-      "(ACCESS_DENIED)",
-      "(UNKNOWN_TABLE)",
-      "(MEMORY_LIMIT_EXCEEDED)",
-      "(AMBIGUOUS_COLUMN_NAME)",
-      "Query does not exist or you don't have access to it.",
-      "Cannot fetch the user with id"
-    ]
+  @deterministic_errors [
+    "Query does not exist or you don't have access to it.",
+    "Cannot fetch the user with id"
+  ]
 
-    has_non_retryable_error? =
-      Enum.any?(non_retryable_errors, fn error -> String.contains?(error_str, error) end)
+  # ClickHouse error codes caused by load, quotas, replicas or the network; every other
+  # code is a query error
+  @transient_clickhouse_error_codes ~w[
+    TIMEOUT_EXCEEDED
+    TOO_SLOW
+    TOO_MANY_SIMULTANEOUS_QUERIES
+    SERVER_OVERLOADED
+    QUOTA_EXCEEDED
+    CANNOT_ALLOCATE_MEMORY
+    CANNOT_SCHEDULE_TASK
+    QUERY_WAS_CANCELLED
+    ABORTED
+    KEEPER_EXCEPTION
+    NO_REPLICA_HAS_PART
+    ALL_REPLICAS_ARE_STALE
+    ALL_REPLICAS_LOST
+    NETWORK_ERROR
+    SOCKET_TIMEOUT
+    DNS_ERROR
+    CANNOT_READ_FROM_SOCKET
+    CANNOT_WRITE_TO_SOCKET
+    UNEXPECTED_PACKET_FROM_SERVER
+    ATTEMPT_TO_READ_AFTER_EOF
+    ALL_CONNECTION_TRIES_FAILED
+    POCO_EXCEPTION
+  ]
 
-    not has_non_retryable_error?
+  # Only a query over its own memory limit fails again; total/user limits depend on other load
+  @query_memory_limit_regex ~r/memory limit \(for query\)|query memory limit/i
+
+  defp deterministic_error?(error_str) do
+    Enum.any?(@deterministic_errors, &String.contains?(error_str, &1)) or
+      deterministic_clickhouse_error?(ClickhouseRepo.error_code(error_str), error_str)
   end
+
+  defp deterministic_clickhouse_error?(nil, _error_str), do: false
+
+  defp deterministic_clickhouse_error?("MEMORY_LIMIT_EXCEEDED", error_str),
+    do: Regex.match?(@query_memory_limit_regex, error_str)
+
+  defp deterministic_clickhouse_error?(code, _error_str),
+    do: code not in @transient_clickhouse_error_codes
 end

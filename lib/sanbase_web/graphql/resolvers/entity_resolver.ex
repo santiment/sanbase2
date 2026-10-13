@@ -373,9 +373,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   end
 
   defp validate_arguments(args) do
+    types = get_types(args)
+    missing_types? = types == [] or nil in types
     current_user_data_only = Map.get(args, :current_user_data_only)
 
     case args do
+      _ when missing_types? ->
+        {:error, "At least one non-null entity type must be provided with `type` or `types`"}
+
       %{current_user_data_only: true, user_id_data_only: id} when is_integer(id) ->
         {:error, "Cannot set both currentUserDataOnly: true and userIdDataOnly: <id>"}
 

@@ -31,7 +31,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
         {selector, data}
       end,
-      timeout: 60_000,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "ClickhouseDataloader :aggregated_metric",
       ordered: false,
       request_context: ctx
     )
@@ -46,7 +48,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       fn {{from, to}, group} ->
         {{from, to}, average_daily_active_addresses(group, from, to)}
       end,
-      timeout: 60_000,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "ClickhouseDataloader :average_daily_active_addresses",
       ordered: false,
       request_context: ctx
     )
@@ -65,6 +69,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       fn {days, group} ->
         {days, average_dev_activity(group, days)}
       end,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "ClickhouseDataloader :average_dev_activity",
       ordered: false,
       request_context: ctx
     )

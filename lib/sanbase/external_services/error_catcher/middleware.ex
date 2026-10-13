@@ -5,7 +5,12 @@ defmodule Sanbase.ExternalServices.ErrorCatcher.Middleware do
     try do
       Tesla.run(env, next)
     rescue
-      e in Tesla.Error -> e
+      e in Tesla.Error ->
+        e
+
+      # Raised on a corrupt or oversized gzip/deflate body; return it as a request error
+      e in Tesla.Middleware.Compression.Error ->
+        {:error, e}
     end
   end
 end

@@ -45,6 +45,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
          {:ok, transfers} <- Label.add_labels(slug, transfers),
          {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
       {:ok, transfers}
+    else
+      error -> maybe_unwrap_missing_contract_error(error)
     end
   end
 
@@ -62,6 +64,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
          {:ok, transfers} <- Label.add_labels(slug, transfers),
          {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
       {:ok, transfers}
+    else
+      error -> maybe_unwrap_missing_contract_error(error)
     end
   end
 
@@ -380,6 +384,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   end
 
   # Private functions
+
+  # Absinthe requires the error to be a string (or a keyword list/map with a message)
+  defp maybe_unwrap_missing_contract_error({:error, {:missing_contract, error}}),
+    do: {:error, error}
+
+  defp maybe_unwrap_missing_contract_error(error), do: error
 
   defp apply_in_page_order_by(transfers, args) do
     order_by = Map.fetch!(args, :in_page_order_by)

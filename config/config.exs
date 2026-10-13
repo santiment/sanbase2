@@ -269,7 +269,7 @@ config :sanbase, Sanbase.MetricExporter.S3, bucket: {:system, "METRICS_EXPORTER_
 config :libcluster,
   topologies: [
     postgres_topology: [
-      strategy: LibclusterPostgres.Strategy,
+      strategy: Sanbase.Cluster.PostgresStrategy,
       config: [
         hostname: "localhost",
         username: "postgres",

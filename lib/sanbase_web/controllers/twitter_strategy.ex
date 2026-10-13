@@ -15,11 +15,17 @@ defmodule Sanbase.Ueberauth.Strategy.Twitter do
   """
   def handle_request!(conn) do
     params = with_state_param([], conn)
-    token = Twitter.OAuth.request_token!([], redirect_uri: callback_url(conn, params))
 
-    conn
-    |> put_session(:twitter_token, token)
-    |> redirect!(Twitter.OAuth.authorize_url!(token))
+    # Not request_token!/2: a provider error becomes an Ueberauth failure instead of raising
+    case Twitter.OAuth.request_token([], redirect_uri: callback_url(conn, params)) do
+      {:ok, token} ->
+        conn
+        |> put_session(:twitter_token, token)
+        |> redirect!(Twitter.OAuth.authorize_url!(token))
+
+      {:error, error} ->
+        set_errors!(conn, [error("request_token", request_token_error_message(error))])
+    end
   end
 
   @doc """
@@ -123,6 +129,13 @@ defmodule Sanbase.Ueberauth.Strategy.Twitter do
         set_errors!(conn, [error("token", error["message"])])
     end
   end
+
+  defp request_token_error_message(%{message: message}) when is_binary(message), do: message
+
+  defp request_token_error_message({:ok, %{status_code: status_code}}),
+    do: "Unexpected response status code: #{status_code}"
+
+  defp request_token_error_message(error), do: inspect(error)
 
   defp option(conn, key) do
     default = Keyword.get(default_options(), key)

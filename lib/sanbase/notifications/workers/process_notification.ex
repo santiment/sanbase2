@@ -16,7 +16,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
            []
          ) do
       :ok -> mark_processed(notification)
-      error -> error
+      error -> handle_discord_error(error)
     end
   end
 
@@ -45,7 +45,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
 
     case Sanbase.Notifications.DiscordClient.client().send_message(discord_webhook(), content, []) do
       :ok -> mark_processed(notification)
-      error -> error
+      error -> handle_discord_error(error)
     end
   end
 
@@ -79,6 +79,12 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     notification = Notification.by_id(notification_id)
     Notification.update(notification, %{status: new_status})
   end
+
+  # A missing webhook is a configuration problem that retries cannot fix
+  defp handle_discord_error({:error, :webhook_not_configured}),
+    do: {:cancel, "Discord webhook not configured"}
+
+  defp handle_discord_error(error), do: error
 
   defp discord_webhook() do
     Config.module_get(Sanbase.Notifications, :discord_webhook)

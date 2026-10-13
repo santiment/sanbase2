@@ -134,13 +134,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   end
 
   def public_triggers_for_user(_root, args, _resolution) do
-    public_triggers =
-      args.user_id
-      |> UserTrigger.public_triggers_for()
-      |> Enum.map(&transform_user_trigger/1)
-      |> Enum.map(&sanitize_user_trigger_settings/1)
+    case Sanbase.Utils.EctoCommon.cast_id(args.user_id) do
+      {:ok, user_id} ->
+        public_triggers =
+          user_id
+          |> UserTrigger.public_triggers_for()
+          |> Enum.map(&transform_user_trigger/1)
+          |> Enum.map(&sanitize_user_trigger_settings/1)
 
-    {:ok, public_triggers}
+        {:ok, public_triggers}
+
+      :error ->
+        {:error, "Invalid user id: #{inspect(args.user_id)}"}
+    end
   end
 
   def all_public_triggers(_root, _args, _resolution) do

@@ -60,6 +60,10 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     Map.new(users, &{&1.id, &1})
   end
 
+  def query(:user_role_names, user_ids) do
+    Sanbase.Accounts.Role.role_names_by_user_ids(Enum.to_list(user_ids))
+  end
+
   def query(:infrastructure, infrastructure_ids) do
     infrastructure_ids = Enum.to_list(infrastructure_ids)
 

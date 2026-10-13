@@ -12,7 +12,9 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
     Sanbase.Parallel.map(groups, &get_current_balance/1,
       max_concurrency: 4,
       ordered: false,
-      timeout: 55_000,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "BalanceDataloader :address_selector_current_balance",
       request_context: ctx
     )
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
@@ -29,7 +31,9 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
     Sanbase.Parallel.map(groups, &get_balance_change/1,
       max_concurrency: 4,
       ordered: false,
-      timeout: 55_000,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "BalanceDataloader :address_selector_balance_change",
       request_context: ctx
     )
     |> Enum.reduce(%{}, &Map.merge(&1, &2))

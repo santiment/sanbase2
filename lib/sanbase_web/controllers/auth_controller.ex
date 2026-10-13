@@ -16,8 +16,15 @@ defmodule SanbaseWeb.AuthController do
     "google" => Application.compile_env(:ueberauth, [Ueberauth, :providers, :google]),
     "twitter" => Application.compile_env(:ueberauth, [Ueberauth, :providers, :twitter])
   }
+  @provider_names Map.keys(@providers)
 
-  def request(conn, %{"provider" => provider} = params) do
+  @max_redirect_url_length 1024
+
+  # URLs are kept in the cookie session, which must stay under 4096 bytes after signing,
+  # next to the JWTs of a logged in user
+  @max_session_urls_length 1536
+
+  def request(conn, %{"provider" => provider} = params) when provider in @provider_names do
     # Instead of `use Ueberauth`, a custom `request/2` puts a few parameters in the session
     # before `callback/2` runs - sharing state between the two phases is what lets the
     # redirect URLs and the real origin URL be set dynamically.
@@ -34,19 +41,34 @@ defmodule SanbaseWeb.AuthController do
         "success_redirect_url_stored=#{success_redirect_url}"
     )
 
-    origin_url =
-      referer_url |> URI.parse() |> Map.merge(%{fragment: nil, path: nil}) |> URI.to_string()
+    {fail_redirect_url, origin_url} =
+      fit_session_urls(success_redirect_url, fail_redirect_url, get_origin_url(referer_url))
 
     include_jwt_in_redirect_url =
       Map.get(params, "include_jwt_in_redirect_url", "false") == "true"
 
-    conn
-    |> put_session(:__san_include_jwt_in_redirect_url, include_jwt_in_redirect_url)
-    |> put_session(:__san_success_redirect_url, success_redirect_url)
-    |> put_session(:__san_fail_redirect_url, fail_redirect_url)
-    |> put_session(:__san_origin_url, origin_url)
-    |> Ueberauth.run_request(provider, @providers[provider])
+    conn =
+      conn
+      |> put_session(:__san_include_jwt_in_redirect_url, include_jwt_in_redirect_url)
+      |> put_session(:__san_success_redirect_url, success_redirect_url)
+      |> put_fail_redirect_url(fail_redirect_url, success_redirect_url)
+      |> put_session(:__san_origin_url, origin_url)
+
+    # The Twitter strategy sets a failure instead of redirecting when the provider is unreachable
+    case Ueberauth.run_request(conn, provider, @providers[provider]) do
+      %{assigns: %{ueberauth_failure: failure}} = conn ->
+        Logger.warning(
+          "OAuth request failed: provider=#{provider}, errors=#{inspect(failure.errors)}"
+        )
+
+        conn |> redirect(external: fail_redirect_url)
+
+      conn ->
+        conn
+    end
   end
+
+  def request(conn, _params), do: send_resp(conn, 404, "Not Found")
 
   def delete(conn, _params) do
     conn
@@ -100,7 +122,7 @@ defmodule SanbaseWeb.AuthController do
         else
           _ ->
             conn
-            |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+            |> redirect(external: get_fail_redirect_url(conn))
         end
     end
   end
@@ -144,12 +166,54 @@ defmodule SanbaseWeb.AuthController do
         else
           _ ->
             conn
-            |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+            |> redirect(external: get_fail_redirect_url(conn))
         end
     end
   end
 
+  def callback(conn, _params), do: send_resp(conn, 404, "Not Found")
+
   # Private functions
+
+  defp put_fail_redirect_url(conn, fail_redirect_url, fail_redirect_url),
+    do: delete_session(conn, :__san_fail_redirect_url)
+
+  defp put_fail_redirect_url(conn, fail_redirect_url, _success_redirect_url),
+    do: put_session(conn, :__san_fail_redirect_url, fail_redirect_url)
+
+  defp get_fail_redirect_url(conn) do
+    get_session(conn, :__san_fail_redirect_url) ||
+      get_session(conn, :__san_success_redirect_url) ||
+      SanbaseWeb.Endpoint.website_url()
+  end
+
+  # Keep scheme/host/port only; userinfo, path and query can be arbitrarily long
+  defp get_origin_url(referer_url) do
+    referer_url
+    |> URI.parse()
+    |> Map.merge(%{userinfo: nil, fragment: nil, path: nil, query: nil})
+    |> URI.to_string()
+  end
+
+  # Over budget, the fail URL falls back to the success one, then the origin to the website
+  defp fit_session_urls(success_url, fail_url, origin_url) do
+    cond do
+      session_urls_length(success_url, fail_url, origin_url) <= @max_session_urls_length ->
+        {fail_url, origin_url}
+
+      session_urls_length(success_url, success_url, origin_url) <= @max_session_urls_length ->
+        {success_url, origin_url}
+
+      true ->
+        {success_url, SanbaseWeb.Endpoint.website_url()}
+    end
+  end
+
+  # A fail URL equal to the success URL is not stored
+  defp session_urls_length(success_url, fail_url, origin_url) do
+    fail_length = if fail_url == success_url, do: 0, else: byte_size(fail_url)
+    byte_size(success_url) + fail_length + byte_size(origin_url)
+  end
 
   defp extend_if_first_login(redirect_url, first_login) do
     case first_login do
@@ -247,10 +311,6 @@ defmodule SanbaseWeb.AuthController do
     env when env in [:dev, :test] ->
       @valid_redirect_hosts ["localhost" | @valid_redirect_hosts]
   end
-
-  # Temporary headroom: real FE redirect URLs fit in 2048, but 4096 until every deep-link
-  # case is audited, so login returns are not broken.
-  @max_redirect_url_length 4096
 
   @doc false
   def validate_redirect_url(url) when is_binary(url) do

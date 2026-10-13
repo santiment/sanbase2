@@ -14,19 +14,21 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       fn {args, ecosystems} ->
         opts = [aggregation: args[:aggregation]]
 
-        {:ok, data} =
-          Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
-            ecosystems,
-            args.metric,
-            args.from,
-            args.to,
-            opts
-          )
-
-        aggregated_transform_to_map(data, args)
+        case Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
+               ecosystems,
+               args.metric,
+               args.from,
+               args.to,
+               opts
+             ) do
+          {:ok, data} -> aggregated_transform_to_map(data, ecosystems, args)
+          {:error, error} -> errors_map(ecosystems, args, error)
+        end
       end,
       max_concurrency: 4,
-      timeout: 60_000,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "EcosystemDataloader :ecosystem_aggregated_metric_data",
       ordered: false,
       request_context: ctx
     )
@@ -48,39 +50,45 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       fn {args, ecosystems} ->
         opts = [aggregation: args[:aggregation]]
 
-        {:ok, data} =
-          Sanbase.Ecosystem.Metric.timeseries_data(
-            ecosystems,
-            args.metric,
-            args.from,
-            args.to,
-            args.interval,
-            opts
-          )
-
-        timeseries_transform_to_map(data, args)
+        case Sanbase.Ecosystem.Metric.timeseries_data(
+               ecosystems,
+               args.metric,
+               args.from,
+               args.to,
+               args.interval,
+               opts
+             ) do
+          {:ok, data} -> timeseries_transform_to_map(data, ecosystems, args)
+          {:error, error} -> errors_map(ecosystems, args, error)
+        end
       end,
       max_concurrency: 4,
-      timeout: 60_000,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
+      on_timeout: :drop,
+      label: "EcosystemDataloader :ecosystem_timeseries_metric_data",
       ordered: false,
       request_context: ctx
     )
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
-  defp timeseries_transform_to_map(data, args) do
-    data
-    |> Enum.reduce(%{}, fn %{ecosystem: ecosystem, datetime: dt, value: v}, acc ->
-      elem = %{datetime: dt, value: v}
-      Map.update(acc, {ecosystem, args}, [elem], &[elem | &1])
-    end)
-    |> Map.new(fn {k, v} -> {k, Enum.reverse(v)} end)
+  # Dataloader.KV stores the error per key instead of failing the whole batch
+  defp errors_map(ecosystems, args, error) do
+    Map.new(ecosystems, fn ecosystem -> {{ecosystem, args}, {:error, error}} end)
   end
 
-  defp aggregated_transform_to_map(data, args) do
-    data
-    |> Enum.reduce(%{}, fn %{ecosystem: ecosystem, value: value}, acc ->
-      Map.put(acc, {ecosystem, args}, value)
-    end)
+  defp timeseries_transform_to_map(data, ecosystems, args) do
+    by_ecosystem =
+      Enum.group_by(data, & &1.ecosystem, fn %{datetime: dt, value: v} ->
+        %{datetime: dt, value: v}
+      end)
+
+    Map.new(ecosystems, &{{&1, args}, Map.get(by_ecosystem, &1, [])})
+  end
+
+  defp aggregated_transform_to_map(data, ecosystems, args) do
+    by_ecosystem = Map.new(data, &{&1.ecosystem, &1.value})
+
+    Map.new(ecosystems, &{{&1, args}, Map.get(by_ecosystem, &1) || 0})
   end
 end

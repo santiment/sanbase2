@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.PriceDataloader do
   alias SanbaseWeb.Graphql.Cache
 
+  require Logger
+
   @max_concurrency 30
 
   @doc """
@@ -20,16 +22,20 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
 
     slugs
     |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.flat_map(
-      fn
-        [_ | _] = chunk -> do_volume_change(chunk, now, day_ago, two_days_ago)
-        [] -> []
-      end,
+    |> Sanbase.Parallel.map_or_error(&do_volume_change(&1, now, day_ago, two_days_ago),
       max_concurrency: 8,
+      timeout: Sanbase.Parallel.dataloader_timeout(),
       ordered: false,
       request_context: ctx
     )
-    |> Map.new()
+    |> case do
+      {:ok, lists} ->
+        lists |> Enum.concat() |> Map.new()
+
+      {:error, error} ->
+        Logger.warning("PriceDataloader :volume_change_24h failed. Reason: #{inspect(error)}")
+        Map.new(slugs, &{&1, {:error, error}})
+    end
   end
 
   def query({:price, slug}, ids, ctx) do
@@ -52,16 +58,20 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
     slugs = Enum.to_list(slugs)
 
     # Returns result like: {:ok, %{"bitcoin" => 31886.7990282547, "santiment" => 0.07190104}}
-    {:ok, result} =
-      Sanbase.Metric.aggregated_timeseries_data(
-        "price_usd",
-        %{slug: slugs},
-        yesterday,
-        now,
-        aggregation: :last
-      )
+    case Sanbase.Metric.aggregated_timeseries_data(
+           "price_usd",
+           %{slug: slugs},
+           yesterday,
+           now,
+           aggregation: :last
+         ) do
+      {:ok, result} ->
+        result
 
-    result
+      # Per-key error; Dataloader.get turns it into nil
+      {:error, error} ->
+        Map.new(slugs, &{&1, {:error, error}})
+    end
   end
 
   # Helper functions
@@ -81,10 +91,7 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
              earliest_dt,
              middle_dt
            ) do
-      calculate_volume_percent_change(volumes_previous_24h_map, volumes_last_24h_map)
-    else
-      _ ->
-        []
+      {:ok, calculate_volume_percent_change(volumes_previous_24h_map, volumes_last_24h_map)}
     end
   end
 

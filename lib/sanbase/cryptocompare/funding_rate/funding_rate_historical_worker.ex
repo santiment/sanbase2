@@ -43,7 +43,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
     do: Sanbase.Cryptocompare.FundingRate.HistoricalScheduler
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: args}) do
+  def perform(%Oban.Job{args: args, attempt: attempt}) do
     %{"market" => market, "instrument" => instrument, "timestamp" => timestamp} = args
 
     opts = [
@@ -79,19 +79,12 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
 
         {:snooze, seconds}
 
-      {:error, :service_unavailable} ->
-        Logger.warning(
-          "[Cryptocompare FundingRate] Service unavailable for #{market}/#{instrument}. Will retry."
-        )
-
-        {:error, :service_unavailable}
-
       {:error, error} ->
-        Logger.warning(
-          "[Cryptocompare FundingRate] Error for #{market}/#{instrument}: #{inspect(error)}"
+        Handler.handle_job_error(
+          error,
+          attempt,
+          "[Cryptocompare FundingRate] #{market}/#{instrument}"
         )
-
-        {:error, error}
     end
   end
 

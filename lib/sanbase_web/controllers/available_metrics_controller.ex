@@ -5,18 +5,27 @@ defmodule SanbaseWeb.AvailableMetricsController do
 
   use SanbaseWeb, :controller
 
-  def export(conn, %{"filter" => filter_json}) do
-    conn
-    |> put_resp_content_type("text/csv")
-    |> put_resp_header(
-      "content-disposition",
-      "attachment; filename=\"santiment_available_metrics.csv\""
-    )
-    |> send_resp(200, csv_content(filter_json))
+  def export(conn, %{"filter" => filter_json}) when is_binary(filter_json) do
+    case Jason.decode(filter_json) do
+      {:ok, filter} when is_map(filter) ->
+        conn
+        |> put_resp_content_type("text/csv")
+        |> put_resp_header(
+          "content-disposition",
+          "attachment; filename=\"santiment_available_metrics.csv\""
+        )
+        |> send_resp(200, csv_content(filter))
+
+      _ ->
+        send_resp(conn, 400, "The filter parameter must be a JSON object")
+    end
   end
 
-  defp csv_content(filter_json) do
-    filter = Jason.decode!(filter_json)
+  def export(conn, _params) do
+    send_resp(conn, 400, "Missing the required filter parameter")
+  end
+
+  defp csv_content(filter) do
     metrics_map = Sanbase.AvailableMetrics.get_metrics_map()
 
     metrics =

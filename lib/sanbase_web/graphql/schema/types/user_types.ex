@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     BillingResolver,
     EthAccountResolver,
     InsightResolver,
-    LinkedUserResolver,
     UserChartConfigurationResolver,
     UserListResolver,
     UserOnboardingResolver,
@@ -228,18 +227,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :san_balance, :float do
       cache_resolve(&UserResolver.san_balance/3)
-    end
-
-    field :primary_user_sanbase_subscription, :subscription_plan do
-      resolve(&LinkedUserResolver.primary_user_sanbase_subscription/3)
-    end
-
-    field :primary_user, :public_user do
-      resolve(&LinkedUserResolver.get_primary_user/3)
-    end
-
-    field :secondary_users, list_of(:public_user) do
-      resolve(&LinkedUserResolver.get_secondary_users/3)
     end
 
     @desc ~s"""

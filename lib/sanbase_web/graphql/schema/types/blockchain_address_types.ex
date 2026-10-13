@@ -20,11 +20,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     value(:erc20)
   end
 
-  enum :transfers_summary_order_by do
-    value(:transaction_volume)
-    value(:transfers_count)
-  end
-
   enum :in_page_order_by_type do
     value(:trx_value)
     value(:datetime)
@@ -41,25 +36,10 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     field(:infrastructure, :string)
   end
 
-  object :transfers_summary do
-    field(:last_transfer_datetime, non_null(:datetime))
-    field(:address, non_null(:string))
-    field(:transaction_volume, non_null(:float))
-    field(:transfers_count, non_null(:integer))
-  end
-
   object :current_user_blockchain_address_data do
     field(:pair_id, :integer)
     field(:notes, :string)
     field(:labels, list_of(:blockchain_address_label))
-  end
-
-  object :blockchain_address_user_pair do
-    field(:id, :integer)
-    field(:notes, :string)
-    field(:labels, list_of(:blockchain_address_label))
-    field(:blockchain_address, :blockchain_address_db_stored)
-    field(:user, :public_user)
   end
 
   object :blockchain_address_label do
@@ -68,13 +48,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     field(:notes, :string)
     field(:origin, :string, default_value: "user")
     field(:metadata, :json, default_value: %{})
-  end
-
-  object :blockchain_address_label_change do
-    field(:address, non_null(:blockchain_address_ephemeral))
-    field(:datetime, non_null(:datetime))
-    field(:label, non_null(:string))
-    field(:sign, non_null(:integer))
   end
 
   object :current_user_address_details do

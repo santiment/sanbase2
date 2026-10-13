@@ -7,8 +7,6 @@ defmodule Sanbase.RunExamples do
   Do not run in tests, as if mocked, the purpose of this module would be lost.
   """
 
-  import Ecto.Query
-
   @queries [
     :santiment_queries,
     :basic_metric_queries,
@@ -664,18 +662,6 @@ defmodule Sanbase.RunExamples do
         10,
         :in
       )
-
-    {:ok, _} =
-      Sanbase.Transfers.incoming_transfers_summary("ethereum", @null_address, @from, @to, [])
-
-    {:ok, _} =
-      Sanbase.Transfers.outgoing_transfers_summary("ethereum", @null_address, @from, @to, [])
-
-    {:ok, _} =
-      Sanbase.Transfers.incoming_transfers_summary("santiment", @null_address, @from, @to, [])
-
-    {:ok, _} =
-      Sanbase.Transfers.outgoing_transfers_summary("santiment", @null_address, @from, @to, [])
 
     {:ok, _} = Sanbase.Transfers.top_transfers("santiment", @from, @to, 1, 10)
 

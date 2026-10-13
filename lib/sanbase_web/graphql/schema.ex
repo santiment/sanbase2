@@ -214,7 +214,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:app_notification_mutations)
     import_fields(:auth_mutations)
     import_fields(:billing_mutations)
-    import_fields(:blockchain_address_mutations)
     import_fields(:chat_mutations)
     import_fields(:dashboard_mutations)
     import_fields(:dashboard_queries_interaction_mutations)

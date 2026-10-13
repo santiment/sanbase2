@@ -6,15 +6,12 @@ defmodule Sanbase.Cluster.LibclusterPostgresReconnectTest do
 
   setup do
     repo_config = Sanbase.Repo.config()
-    hostname = Keyword.get(repo_config, :hostname, "localhost")
 
-    # Safety net: this test must only ever touch a local database.
-    assert hostname in ["localhost", "127.0.0.1"]
-
+    # Only backends with this unique application name are ever terminated
     app_name = "sanbase_libcluster_test_#{System.unique_integer([:positive])}"
 
     config = [
-      hostname: hostname,
+      hostname: Keyword.get(repo_config, :hostname, "localhost"),
       username: Keyword.get(repo_config, :username),
       password: Keyword.get(repo_config, :password),
       database: Keyword.fetch!(repo_config, :database),

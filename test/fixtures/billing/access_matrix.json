@@ -197,21 +197,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 365,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": 365,
-              "realtime_data_cut_off_in_days": 30
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -467,25 +452,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": null,
@@ -775,25 +741,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -1068,25 +1015,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -1314,21 +1242,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
@@ -1595,25 +1508,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": null,
@@ -1903,25 +1797,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 365,
-              "realtime_data_cut_off_in_days": 30
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -2196,25 +2071,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 1095,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -2442,21 +2298,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
@@ -2774,29 +2615,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -3041,21 +2859,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": 365,
-              "realtime_data_cut_off_in_days": 30
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -3279,21 +3082,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
@@ -3541,21 +3329,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 30
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 30
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -3779,21 +3552,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": null,
@@ -4039,21 +3797,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -4277,21 +4020,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": null,
@@ -4537,21 +4265,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -4775,21 +4488,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": null,
@@ -5035,21 +4733,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 30
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 30
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -5284,21 +4967,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -5522,21 +5190,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": null,
@@ -5854,29 +5507,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -6121,21 +5751,6 @@
             }
           }
         },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
         "query:top_holders": {
           "access?": true,
           "min_plan": "FREE",
@@ -6359,21 +5974,6 @@
           "access?": true,
           "min_plan": "FREE",
           "restricted?": false,
-          "windows": {
-            "subscription_product=SANAPI": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            },
-            "subscription_product=SANBASE": {
-              "historical_data_in_days": null,
-              "realtime_data_cut_off_in_days": 0
-            }
-          }
-        },
-        "query:realtime_top_holders": {
-          "access?": true,
-          "min_plan": "FREE",
-          "restricted?": true,
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": null,

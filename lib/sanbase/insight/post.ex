@@ -826,15 +826,6 @@ defmodule Sanbase.Insight.Post do
   end
 
   @doc """
-  All published and approved insights that given user has voted for
-  """
-  def all_insights_user_voted_for(user_id, opts \\ []) do
-    public_insights_query(opts)
-    |> user_has_voted_for(user_id)
-    |> Repo.all()
-  end
-
-  @doc """
   Change insights owner to be the fallback user
   """
   def assign_all_user_insights_to_anonymous(user_id) do
@@ -1008,12 +999,6 @@ defmodule Sanbase.Insight.Post do
   defp filter_published_and_approved(query) do
     query
     |> where([p], p.ready_state == ^@published and p.state == ^@approved)
-  end
-
-  defp user_has_voted_for(query, user_id) do
-    query
-    |> join(:left, [p], v in assoc(p, :votes))
-    |> where([_p, v], v.user_id == ^user_id)
   end
 
   defp maybe_order_by_published_at(query, opts) do

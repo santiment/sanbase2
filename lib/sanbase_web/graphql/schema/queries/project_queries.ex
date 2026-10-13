@@ -190,45 +190,5 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
         max_ttl_offset: 240
       )
     end
-
-    @desc ~s"""
-    Fetch ETH spent by all projects within a given time period and interval.
-    This query returns a list of values where each value is of length `interval`.
-    """
-    field :eth_spent_over_time_by_erc20_projects, list_of(:eth_spent_data) do
-      meta(access: :free)
-
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-
-      cache_resolve(&ProjectTransfersResolver.eth_spent_over_time_by_erc20_projects/3,
-        ttl: 120,
-        max_ttl_offset: 120
-      )
-    end
-
-    @desc ~s"""
-    Fetch ETH spent by all projects within a given time period and interval.
-    This query returns a list of values where each value is of length `interval`.
-    """
-    field :eth_spent_over_time_by_all_projects, list_of(:eth_spent_data) do
-      meta(access: :free)
-
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-
-      cache_resolve(&ProjectTransfersResolver.eth_spent_over_time_by_all_projects/3,
-        ttl: 120,
-        max_ttl_offset: 120
-      )
-    end
   end
 end

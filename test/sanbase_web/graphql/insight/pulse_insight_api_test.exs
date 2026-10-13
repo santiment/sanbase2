@@ -260,49 +260,6 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     assert all_insights_for_user |> hd() |> Map.get("title") == post.title
   end
 
-  test "getting all pulse insight user has voted for", context do
-    %{user: user, staked_user: staked_user, conn: conn} = context
-
-    post =
-      insert(:post,
-        user: user,
-        is_pulse: true,
-        ready_state: Post.published(),
-        state: Post.approved_state()
-      )
-
-    post2 =
-      insert(:post,
-        user: staked_user,
-        is_pulse: true,
-        ready_state: Post.published(),
-        state: Post.approved_state()
-      )
-
-    Vote.create(%{post_id: post.id, user_id: user.id})
-    Vote.create(%{post_id: post2.id, user_id: staked_user.id})
-
-    query = """
-    {
-      allInsightsUserVoted(user_id: #{user.id}, isPulse: true) {
-        id
-        text
-        pulseText
-      }
-    }
-    """
-
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "allInsightsUserVoted"))
-      |> json_response(200)
-      |> get_in(["data", "allInsightsUserVoted"])
-
-    assert result |> Enum.count() == 1
-    assert result |> hd() |> Map.get("text") == post.text
-    assert result |> hd() |> Map.get("pulseText") == post.text
-  end
-
   test "get all insights by a list of tags", %{user: user} do
     tag1 = insert(:tag, name: "PRJ1")
     tag2 = insert(:tag, name: "PRJ2")

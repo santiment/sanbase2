@@ -91,7 +91,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
          {:ok, %{first_login: first_login} = user} <-
            User.find_or_insert_by(:email, email, %{username: args[:username]}),
          :ok <- EmailLoginAttempt.check_attempt_limit(user, remote_ip),
-         {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
+         {:ok, user} <-
+           User.Email.update_email_token(
+             user,
+             args[:consent],
+             args[:subscribe_to_weekly_newsletter]
+           ),
          {:ok, _res} <- User.Email.send_login_email(user, first_login, origin_host_parts, args),
          {:ok, %AccessAttempt{}} <- AccessAttempt.create("email_login", user, remote_ip),
          {:ok, _, user} <-
@@ -160,6 +165,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
            Logger.info(
              "[EmailLoginVerify][#{rand_id}] Marked login token for email #{email} as validated"
            ),
+         {:ok, user} <- Accounts.confirm_newsletter_opt_in(user),
          {:ok, _, user} <- Accounts.forward_registration(user, "email_login_verify", args),
          _ <-
            Logger.info(

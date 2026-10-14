@@ -10,6 +10,7 @@ defmodule Sanbase.Email.MailjetEventHandler do
 
   alias Sanbase.Accounts.User
   alias Sanbase.Accounts.UserSettings
+  alias Sanbase.Email.{Lists, ListSubscription}
   alias Sanbase.Repo
 
   @mailjet_list_mapping %{
@@ -20,14 +21,10 @@ defmodule Sanbase.Email.MailjetEventHandler do
     # stage
     "10326676" => :is_subscribed_metric_updates,
     "61085" => :is_subscribed_monthly_newsletter,
-    # sanr_network_emails
-    "10321582" => :is_subscribed_marketing_emails,
-    # alpha_naratives_emails
-    "10321590" => :is_subscribed_marketing_emails,
-    # marketing_newsletter
-    "10331431" => :is_subscribed_marketing_emails,
     "-1" => :is_subscribed_biweekly_report
   }
+
+  # Lists registered in Sanbase.Email.Lists are looked up there first.
 
   @doc """
   Handle an unsubscribe event from Mailjet.
@@ -48,28 +45,48 @@ defmodule Sanbase.Email.MailjetEventHandler do
   def handle_unsubscribe(email, list_id) do
     list_id_str = to_string(list_id)
 
-    case Map.get(@mailjet_list_mapping, list_id_str) do
-      nil ->
+    case lookup(list_id_str) do
+      :error ->
         Logger.warning("Unhandled Mailjet list ID: #{list_id_str} for unsubscribe event")
         {:error, :unknown_list_id}
 
-      setting_key ->
+      {:ok, target} ->
         case Repo.get_by(User, email: email) do
           %User{} = user ->
-            settings_update = Map.put(%{}, setting_key, false)
-            Logger.info("Updating user settings for #{email}: #{inspect(settings_update)}")
-
-            case UserSettings.update_settings(user, settings_update) do
-              {:ok, updated_settings} ->
-                {:ok, updated_settings}
-
-              {:error, reason} ->
-                {:error, reason}
-            end
+            unsubscribe(user, target)
 
           nil ->
             Logger.info("User with email #{email} not found for unsubscribe event")
             {:error, :user_not_found}
+        end
+    end
+  end
+
+  defp unsubscribe(user, {:list, list_key}) do
+    Logger.info("Unsubscribing #{user.email} from the #{list_key} list")
+
+    case ListSubscription.set(user.id, list_key, false, :mailjet_unsubscribe) do
+      {:ok, _changed?} -> {:ok, UserSettings.settings_for(user, force: true)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp unsubscribe(user, {:setting, setting_key}) do
+    settings_update = Map.put(%{}, setting_key, false)
+    Logger.info("Updating user settings for #{user.email}: #{inspect(settings_update)}")
+
+    UserSettings.update_settings(user, settings_update)
+  end
+
+  defp lookup(list_id_str) do
+    case Lists.list_unsubscribed_by(list_id_str) do
+      {:ok, list_key} ->
+        {:ok, {:list, list_key}}
+
+      :error ->
+        case Map.fetch(@mailjet_list_mapping, list_id_str) do
+          {:ok, setting_key} -> {:ok, {:setting, setting_key}}
+          :error -> :error
         end
     end
   end
@@ -87,11 +104,10 @@ defmodule Sanbase.Email.MailjetEventHandler do
   @spec get_setting_key_for_list(integer() | String.t()) ::
           {:ok, atom()} | {:error, :unknown_list_id}
   def get_setting_key_for_list(list_id) do
-    list_id_str = to_string(list_id)
-
-    case Map.get(@mailjet_list_mapping, list_id_str) do
-      nil -> {:error, :unknown_list_id}
-      setting_key -> {:ok, setting_key}
+    case lookup(to_string(list_id)) do
+      {:ok, {:list, list_key}} -> {:ok, Lists.get!(list_key).setting}
+      {:ok, {:setting, setting_key}} -> {:ok, setting_key}
+      :error -> {:error, :unknown_list_id}
     end
   end
 end

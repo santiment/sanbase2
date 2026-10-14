@@ -26,7 +26,14 @@ defmodule Sanbase.Accounts.User.Email do
     end
   end
 
-  def update_email_token(user, consent \\ nil) do
+  @doc """
+  Generate a new email login token.
+
+  `newsletter_opt_in` marks that this login was requested from a newsletter
+  signup form. It is stored with the token, so it is applied only when this
+  token is verified, and a later login request without it clears it.
+  """
+  def update_email_token(user, consent \\ nil, newsletter_opt_in \\ false) do
     user
     |> User.changeset(%{
       email_token: generate_email_token(),
@@ -34,6 +41,9 @@ defmodule Sanbase.Accounts.User.Email do
       email_token_validated_at: nil,
       consent_id: consent
     })
+    # Always written, even when the struct already holds the same value, so a
+    # stale struct can never leave an earlier signup pending.
+    |> Ecto.Changeset.force_change(:newsletter_opt_in_pending, newsletter_opt_in == true)
     |> Repo.update()
   end
 
@@ -155,6 +165,7 @@ defmodule Sanbase.Accounts.User.Email do
 
   defp do_send_login_email(user, first_login, origin_host_parts, args) do
     origin_url = construct_origin_url(origin_host_parts, args)
+
     template = Sanbase.Email.Template.choose_login_template(origin_url, first_login?: first_login)
 
     case generate_login_link(user, first_login, origin_url, args) do
@@ -167,10 +178,17 @@ defmodule Sanbase.Accounts.User.Email do
   end
 
   defp construct_origin_url(origin_host_parts, args) do
-    if Map.get(args, :is_admin_login, false) do
-      SanbaseWeb.Endpoint.admin_url()
-    else
-      "https://" <> Enum.join(origin_host_parts, ".")
+    cond do
+      Map.get(args, :is_admin_login, false) ->
+        SanbaseWeb.Endpoint.admin_url()
+
+      # The santiment.net website has no login page, so the login link of its
+      # forms (e.g. the newsletter signup) must point to the app.
+      origin_host_parts in [["santiment", "net"], ["www", "santiment", "net"]] ->
+        SanbaseWeb.Endpoint.frontend_url()
+
+      true ->
+        "https://" <> Enum.join(origin_host_parts, ".")
     end
   end
 

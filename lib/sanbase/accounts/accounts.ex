@@ -1,8 +1,12 @@
 defmodule Sanbase.Accounts do
+  import Ecto.Query, only: [from: 2]
+
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Accounts.ProtectedUser
+
+  require Logger
 
   @doc """
   True when this user has activity-traces hidden (NDA-protected). Used by
@@ -27,37 +31,52 @@ defmodule Sanbase.Accounts do
   @doc """
   Update the privacy policy and marketing consent of a user.
 
-  `users.marketing_accepted` and the `is_subscribed_marketing_emails` user
-  setting represent the same consent and are kept in sync. When
-  `marketing_accepted` changes, the user is subscribed to or unsubscribed from
-  the marketing newsletter Mailjet list. Writing the same value again does not
-  touch Mailjet.
+  The weekly newsletter is a part of the marketing consent
+  (`marketing_accepted`): giving the consent subscribes the user to the
+  newsletter and withdrawing it unsubscribes, through
+  `Sanbase.Email.ListSubscription`. The newsletter can also be changed on its
+  own from the settings toggle, which does not touch the marketing consent.
+  Both changes are recorded with their source (see `Sanbase.Email.ListConsent`).
+  Writing the same value again changes nothing and does not touch Mailjet.
+
+  The consent source is the signup dialog while the privacy policy is not yet
+  accepted, and the /privacy-policy page afterwards.
+
+  An unticked marketing checkbox in the signup dialog means no new consent, not a
+  withdrawal, so it does not change anything.
   """
   @spec update_terms_and_conditions(User.t(), map()) :: {:ok, User.t()} | {:error, term()}
   def update_terms_and_conditions(%User{} = user, attrs) do
-    changeset = User.terms_changeset(user, attrs)
+    source = if user.privacy_policy_accepted, do: :privacy_page, else: :signup_dialog
+
+    {marketing_accepted, attrs} =
+      case Map.pop(attrs, :marketing_accepted) do
+        {false, attrs} when source == :signup_dialog -> {nil, attrs}
+        result -> result
+      end
 
     Repo.transaction(fn ->
-      with {:ok, user} <- Repo.update(changeset),
-           :ok <- maybe_sync_marketing_emails_setting(user, attrs) do
-        user
+      with {:ok, previous} <- lock_marketing_accepted(user.id),
+           {:ok, user} <- user |> User.terms_changeset(attrs) |> Repo.update(),
+           {:ok, newsletter_changed?} <-
+             maybe_change_marketing(user.id, previous, marketing_accepted, source) do
+        marketing_accepted =
+          if is_boolean(marketing_accepted), do: marketing_accepted, else: previous
+
+        {%{user | marketing_accepted: marketing_accepted}, newsletter_changed?}
       else
         {:error, error} -> Repo.rollback(error)
       end
     end)
     |> case do
-      {:ok, user} ->
-        case Ecto.Changeset.fetch_change(changeset, :marketing_accepted) do
-          {:ok, value} ->
-            Sanbase.Email.MailjetEventEmitter.emit_event(
-              {:ok, user.id},
-              :is_subscribed_marketing_emails,
-              %{is_subscribed_marketing_emails: value}
+      {:ok, {user, newsletter_changed?}} ->
+        if newsletter_changed?,
+          do:
+            Sanbase.Email.ListSubscription.notify_mailjet(
+              user.id,
+              :newsletter,
+              marketing_accepted
             )
-
-          :error ->
-            :ok
-        end
 
         {:ok, user}
 
@@ -66,18 +85,53 @@ defmodule Sanbase.Accounts do
     end
   end
 
-  defp maybe_sync_marketing_emails_setting(user, attrs) do
-    case Map.fetch(attrs, :marketing_accepted) do
-      {:ok, value} when is_boolean(value) ->
-        case Sanbase.Accounts.UserSettings.put_marketing_emails_flag(user.id, value) do
-          {:ok, _} -> :ok
-          {:error, error} -> {:error, error}
-        end
-
-      _ ->
-        :ok
+  defp lock_marketing_accepted(user_id) do
+    from(u in User, where: u.id == ^user_id, select: u.marketing_accepted, lock: "FOR UPDATE")
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :user_not_found}
+      value -> {:ok, value}
     end
   end
+
+  # Giving or withdrawing the marketing consent also subscribes to or
+  # unsubscribes from the newsletter. Returns whether the newsletter changed.
+  defp maybe_change_marketing(user_id, previous, value, source)
+       when is_boolean(value) and value != previous do
+    from(u in User, where: u.id == ^user_id)
+    |> Repo.update_all(set: [marketing_accepted: value])
+
+    with {:ok, _} <- Sanbase.Email.ListConsent.create(user_id, :marketing, value, source) do
+      Sanbase.Email.ListSubscription.change(user_id, :newsletter, value, source)
+    end
+  end
+
+  defp maybe_change_marketing(_user_id, _previous, _value, _source), do: {:ok, false}
+
+  @doc """
+  Apply a newsletter signup made from a website form (`emailLogin` with
+  `subscribeToWeeklyNewsletter: true`) once the user has verified the email
+  address. It subscribes only to the newsletter, not to the broader marketing
+  consent. Failures are logged and do not fail the login.
+  """
+  @spec confirm_newsletter_opt_in(User.t()) :: {:ok, User.t()}
+  def confirm_newsletter_opt_in(%User{newsletter_opt_in_pending: true} = user) do
+    with {:ok, _changed?} <-
+           Sanbase.Email.ListSubscription.set(user.id, :newsletter, true, :website_form),
+         {:ok, user} <-
+           user |> User.changeset(%{newsletter_opt_in_pending: false}) |> Repo.update() do
+      {:ok, user}
+    else
+      {:error, error} ->
+        Logger.error(
+          "Failed to apply the newsletter opt-in for user #{user.id}: #{inspect(error)}"
+        )
+
+        {:ok, user}
+    end
+  end
+
+  def confirm_newsletter_opt_in(%User{} = user), do: {:ok, user}
 
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)

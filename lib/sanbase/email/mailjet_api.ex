@@ -2,6 +2,7 @@ defmodule Sanbase.Email.MailjetApiBehaviour do
   @callback subscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback unsubscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback fetch_list_emails(atom()) :: {:ok, [String.t()]} | {:error, term()}
+  @callback fetch_list_subscribed_emails(atom()) :: {:ok, [String.t()]} | {:error, term()}
   @callback send_campaign(atom(), String.t(), keyword()) :: :ok | {:error, term()}
 end
 
@@ -222,39 +223,87 @@ defmodule Sanbase.Email.MailjetApi do
       {:error, error}
   end
 
+  @doc """
+  Returns the emails of the contacts that receive the list's campaigns: on the
+  list, not unsubscribed from it and not excluded from all campaigns.
+  """
+  def fetch_list_subscribed_emails(list_atom) do
+    case resolve_list_id(list_atom) do
+      nil ->
+        {:error, :list_not_configured}
+
+      list_id ->
+        with {:ok, contacts} <- fetch_all_pages("contact", ContactsList: list_id),
+             {:ok, recipients} <- fetch_all_pages("listrecipient", ContactsList: list_id) do
+          subscribed_contact_ids =
+            for %{"ContactID" => id, "IsUnsubscribed" => false} <- recipients,
+                into: MapSet.new(),
+                do: id
+
+          emails =
+            for %{"ID" => id, "Email" => email} = contact <- contacts,
+                MapSet.member?(subscribed_contact_ids, id),
+                contact["IsExcludedFromCampaigns"] != true,
+                do: email
+
+          {:ok, emails}
+        end
+    end
+  rescue
+    error ->
+      Logger.error(
+        "Error fetching subscribed emails from Mailjet list #{list_atom}. Reason: #{inspect(error)}"
+      )
+
+      {:error, error}
+  end
+
   # private
 
   defp fetch_all_list_emails(list_id, offset, acc) do
-    page_limit = fetch_page_limit()
+    case fetch_page("contact", [ContactsList: list_id], offset) do
+      {:ok, data} ->
+        emails = acc ++ Enum.map(data, & &1["Email"])
 
-    case fetch_list_emails_page(list_id, offset, page_limit) do
-      {:ok, emails} when length(emails) < page_limit ->
-        {:ok, acc ++ emails}
-
-      {:ok, emails} ->
-        fetch_all_list_emails(list_id, offset + page_limit, acc ++ emails)
+        if length(data) < fetch_page_limit(),
+          do: {:ok, emails},
+          else: fetch_all_list_emails(list_id, offset + fetch_page_limit(), emails)
 
       {:error, _} = error ->
         error
     end
   end
 
-  defp fetch_list_emails_page(list_id, offset, page_limit) do
-    url = @base_url <> "contact"
+  defp fetch_all_pages(resource, params, offset \\ 0, acc \\ []) do
+    case fetch_page(resource, params, offset) do
+      {:ok, data} ->
+        acc = acc ++ data
+
+        if length(data) < fetch_page_limit(),
+          do: {:ok, acc},
+          else: fetch_all_pages(resource, params, offset + fetch_page_limit(), acc)
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp fetch_page(resource, params, offset) do
+    url = @base_url <> resource
 
     opts =
       [
         headers: headers(),
-        params: [ContactsList: list_id, Limit: page_limit, Offset: offset]
+        params: params ++ [Limit: fetch_page_limit(), Offset: offset]
       ] ++ req_options()
 
     case Req.get!(url, opts) do
       %{status: 200, body: %{"Data" => data}} ->
-        {:ok, Enum.map(data, & &1["Email"])}
+        {:ok, data}
 
       %{status: _status} = response ->
         Logger.error(
-          "Error fetching emails from Mailjet list id #{list_id}: #{inspect(response)}"
+          "Error fetching Mailjet #{resource} #{inspect(params)}: #{inspect(response)}"
         )
 
         {:error, response.body}

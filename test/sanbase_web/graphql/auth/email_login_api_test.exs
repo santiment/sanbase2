@@ -244,6 +244,30 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert result["success"]
     end
 
+    test "emailLogin from santiment.net sends a login link to the app", context do
+      context.conn
+      |> Plug.Conn.put_req_header("origin", "https://santiment.net")
+      |> email_login(%{email: "john@example.com", subscribe_to_weekly_newsletter: true})
+
+      [{_pid, {Sanbase.TemplateMailer, :send, [_, _, %{login_link: login_link}]}, _}] =
+        call_history(Sanbase.TemplateMailer)
+
+      assert String.starts_with?(
+               login_link,
+               Path.join(SanbaseWeb.Endpoint.frontend_url(), "email_login")
+             )
+    end
+
+    test "emailLogin stores a newsletter signup until the email is verified", context do
+      context.conn
+      |> Plug.Conn.put_req_header("origin", "https://santiment.net")
+      |> email_login(%{email: "john@example.com", subscribe_to_weekly_newsletter: true})
+
+      {:ok, user} = User.by_email("john@example.com")
+      assert user.newsletter_opt_in_pending
+      refute user.marketing_accepted
+    end
+
     test "emailLogin returns true if the login email was sent successfully", context do
       result =
         context.conn

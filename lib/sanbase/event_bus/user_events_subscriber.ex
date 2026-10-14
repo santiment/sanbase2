@@ -88,24 +88,23 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: :subscribe_marketing_newsletter, user_id: user_id}},
+         %{data: %{event_type: event_type, user_id: user_id, list: list_key}},
          event_shadow,
          state
-       ) do
+       )
+       when event_type in [:subscribe_email_list, :unsubscribe_email_list] do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:marketing_newsletter, email)
+    mailjet_list = Sanbase.Email.Lists.get!(list_key).mailjet_list
 
-    EventBus.mark_as_completed({__MODULE__, event_shadow})
-    state
-  end
+    if email do
+      case event_type do
+        :subscribe_email_list ->
+          Sanbase.Email.MailjetApi.client().subscribe(mailjet_list, email)
 
-  defp handle_event(
-         %{data: %{event_type: :unsubscribe_marketing_newsletter, user_id: user_id}},
-         event_shadow,
-         state
-       ) do
-    email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(:marketing_newsletter, email)
+        :unsubscribe_email_list ->
+          Sanbase.Email.MailjetApi.client().unsubscribe(mailjet_list, email)
+      end
+    end
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state

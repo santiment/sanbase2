@@ -27,6 +27,12 @@ Application.put_env(:sanbase, :discord_client, Sanbase.Notifications.MockDiscord
 Application.put_env(:sanbase, :mailjet_api, Sanbase.Email.MockMailjetApi)
 Application.put_env(:sanbase, :openai_client, Sanbase.AI.MockOpenAIClient)
 
+# Releases run in embedded mode and load all modules at boot, so all atoms they
+# contain exist. Tests load modules lazily, so code relying on
+# String.to_existing_atom/1 (like Sanbase.Alert.StructMapTransformation) would
+# fail or pass depending on the order in which the tests run.
+for module <- Application.spec(:sanbase, :modules), do: Code.ensure_loaded!(module)
+
 ExUnit.start()
 Faker.start()
 

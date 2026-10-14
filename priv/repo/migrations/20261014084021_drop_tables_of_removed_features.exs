@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.DropTablesOfRemovedFeatures do
   # Drop the tables (and the columns pointing to them) of features whose code
   # has already been removed: wallet hunters, timeline events, the old dashboards
   # implementation, PPP (geoip_data), the discord bot GPT router, pumpkins,
-  # sign up trials, project transparency, promo coupons, etc.
+  # sign up trials, project transparency, promo coupons, questionnaires, etc.
   #
   # Everything uses IF EXISTS as some of these tables were already dropped
   # manually on some databases (e.g. eth_coin_circulation).
@@ -34,7 +34,11 @@ defmodule Sanbase.Repo.Migrations.DropTablesOfRemovedFeatures do
     :promo_coupons,
     :pumpkins,
     :sign_up_trials,
-    :thread_ai_context
+    :thread_ai_context,
+    # questionnaires
+    :questionnaire_answers,
+    :questionnaire_questions,
+    :questionnaires
   ]
 
   def up do
@@ -84,6 +88,8 @@ defmodule Sanbase.Repo.Migrations.DropTablesOfRemovedFeatures do
 
     # Used only by promo_coupons
     execute("DROP TYPE IF EXISTS lang")
+    # Used only by questionnaire_questions
+    execute("DROP TYPE IF EXISTS question_type")
   end
 
   def down do

@@ -324,7 +324,7 @@ defmodule Sanbase.Dashboards.DashboardCache do
       size ->
         {:error,
          """
-         Cannot cache the panel because its compressed size is #{size}KB \
+         Cannot cache the query result because its compressed size is #{size}KB \
          which is over the limit of #{@allowed_kb_size}KB
          """}
     end

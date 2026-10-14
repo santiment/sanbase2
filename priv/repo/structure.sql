@@ -1233,7 +1233,6 @@ CREATE TABLE public.dashboards (
     name character varying(255) NOT NULL,
     description text,
     is_public boolean DEFAULT false NOT NULL,
-    panels jsonb,
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
@@ -1253,7 +1252,6 @@ CREATE TABLE public.dashboards (
 CREATE TABLE public.dashboards_cache (
     id bigint NOT NULL,
     dashboard_id bigint,
-    panels jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     queries jsonb DEFAULT '{}'::jsonb,

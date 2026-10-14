@@ -225,7 +225,7 @@ defmodule Sanbase.Dashboards.Dashboard do
   def by_id(dashboard_id, opts \\ []) do
     query = from(d in __MODULE__, where: d.id == ^dashboard_id)
 
-    # The frontend can emit multiple updateDashboardPanel requests in parallel
+    # The frontend can emit multiple dashboard update requests in parallel
     # and they can end up executing on multiple backend nodes. In such case,
     # without locking, a race condition is possible and not all updates
     # will be applied.

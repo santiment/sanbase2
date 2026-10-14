@@ -6,9 +6,9 @@ defmodule Sanbase.Queries.Executor do
   alias Sanbase.Clickhouse.Query.Environment
 
   @doc ~s"""
-  Compute the SQL defined in the panel by executing it against ClickHouse.
+  Compute the SQL defined in the query by executing it against ClickHouse.
 
-  The SQL query and arguments are taken from the panel and are executed.
+  The SQL query and its parameters are taken from the query and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
   @spec run(Query.t(), QueryMetadata.t(), Environment.t()) ::

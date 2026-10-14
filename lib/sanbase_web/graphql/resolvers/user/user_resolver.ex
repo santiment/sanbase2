@@ -11,16 +11,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias Sanbase.Accounts.UserSettings
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  def moderator?(%User{roles: roles}, _args, _resolution) do
-    flag = Enum.any?(roles, fn user_role -> user_role.role.name == "Santiment Moderator" end)
+  def moderator?(%User{} = user, _args, resolution),
+    do: user_has_role(user, "Santiment Moderator", resolution)
 
-    {:ok, flag}
-  end
+  def santiment_team_member?(%User{} = user, _args, resolution),
+    do: user_has_role(user, "Santiment Team Member", resolution)
 
-  def santiment_team_member?(%User{roles: roles}, _args, _resolutiond) do
-    flag = Enum.any?(roles, fn user_role -> user_role.role.name == "Santiment Team Member" end)
-
-    {:ok, flag}
+  # Roles may not be preloaded (e.g. sql_query.user); load them
+  defp user_has_role(%User{id: user_id, roles: roles}, role_name, %{context: %{loader: loader}}) do
+    if Ecto.assoc_loaded?(roles) and Enum.all?(roles, &Ecto.assoc_loaded?(&1.role)) do
+      {:ok, Enum.any?(roles, fn user_role -> user_role.role.name == role_name end)}
+    else
+      loader
+      |> Dataloader.load(SanbaseDataloader, :user_role_names, user_id)
+      |> on_load(fn loader ->
+        role_names = Dataloader.get(loader, SanbaseDataloader, :user_role_names, user_id) || []
+        {:ok, role_name in role_names}
+      end)
+    end
   end
 
   def feature_access_level(%User{feature_access_level: level}, _args, _resolution) do

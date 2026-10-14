@@ -13,26 +13,48 @@ defmodule Sanbase.SocialData.Community do
 
   def community_messages_count(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
-    result =
-      @sources
-      |> Sanbase.Parallel.flat_map(
-        fn source ->
-          {:ok, result} = community_messages_count(selector, from, to, interval, source)
-          result
-        end,
-        max_concurrency: 4
-      )
-      |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
+    @sources
+    |> Sanbase.Parallel.map(
+      fn source -> community_messages_count(selector, from, to, interval, source) end,
+      max_concurrency: 4,
+      # Outlast the HTTP recv_timeout so the request returns its own error
+      timeout: @recv_timeout + 5_000,
+      on_timeout: :kill_task,
+      zip_input_on_exit: true
+    )
+    |> Enum.reduce_while({:ok, []}, fn
+      {:ok, data}, {:ok, acc} ->
+        {:cont, {:ok, data ++ acc}}
 
-    {:ok, result}
+      {:error, _} = error, _acc ->
+        {:halt, error}
+
+      {:exit, {source, reason}}, _acc ->
+        error =
+          warn_result(
+            "Dropped community messages count for source #{source} and #{inspect(selector)}. Reason: #{inspect(reason)}"
+          )
+
+        {:halt, error}
+    end)
+    |> Sanbase.Utils.Transform.maybe_apply_function(
+      &Sanbase.Utils.Transform.sum_by_datetime(&1, :mentions_count)
+    )
   end
 
   def community_messages_count(%{slug: slug}, from, to, interval, source) do
     community_messages_count_request(slug, from, to, interval, source |> to_string())
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        community_messages_count_result(result)
+        case Jason.decode(body) do
+          {:ok, result} ->
+            community_messages_count_result(result)
+
+          {:error, error} ->
+            error_result(
+              "Cannot decode community messages count response for project #{slug}: #{Exception.message(error)}"
+            )
+        end
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result(

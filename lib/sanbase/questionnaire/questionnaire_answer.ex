@@ -50,21 +50,21 @@ defmodule Sanbase.Questionnaire.Answer do
   Record the answer of a user to a question.
   """
   @spec create(question_uuid, non_neg_integer, Map.t()) ::
-          {:ok, t()} | {:error, Ecto.Changeset.t()}
+          {:ok, t()} | {:error, Ecto.Changeset.t() | String.t()}
   def create(question_uuid, user_id, params) do
-    {:ok, type} = Question.get_type(question_uuid)
+    with {:ok, type} <- Question.get_type(question_uuid) do
+      params = params |> Map.merge(%{question_uuid: question_uuid, user_id: user_id})
 
-    params = params |> Map.merge(%{question_uuid: question_uuid, user_id: user_id})
-
-    %__MODULE__{}
-    |> cast(params, @fields)
-    |> validate_required(@fields)
-    |> validate_change(:answer, &validate_answer(&1, &2, type))
-    |> Sanbase.Repo.insert(
-      on_conflict: {:replace_all_except, [:uuid]},
-      conflict_target: [:question_uuid, :user_id],
-      returning: true
-    )
+      %__MODULE__{}
+      |> cast(params, @fields)
+      |> validate_required(@fields)
+      |> validate_change(:answer, &validate_answer(&1, &2, type))
+      |> Sanbase.Repo.insert(
+        on_conflict: {:replace_all_except, [:uuid]},
+        conflict_target: [:question_uuid, :user_id],
+        returning: true
+      )
+    end
   end
 
   @doc ~s"""
@@ -73,7 +73,7 @@ defmodule Sanbase.Questionnaire.Answer do
   @spec update(answer_uuid, non_neg_integer(), Map.t()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(uuid, user_id, params) do
-    case Sanbase.Repo.get(__MODULE__, uuid) do
+    case get_by_uuid(uuid) do
       %__MODULE__{user_id: ^user_id} = answer ->
         answer
         |> cast(params, @fields -- [:user_id])
@@ -90,7 +90,7 @@ defmodule Sanbase.Questionnaire.Answer do
   @spec delete(answer_uuid, non_neg_integer()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(uuid, user_id) do
-    case Sanbase.Repo.get(__MODULE__, uuid) do
+    case get_by_uuid(uuid) do
       %__MODULE__{user_id: ^user_id} = answer ->
         Sanbase.Repo.delete(answer)
 
@@ -102,27 +102,41 @@ defmodule Sanbase.Questionnaire.Answer do
   @doc ~s"""
   Get a list of a given user's answers for a questionnaire
   """
-  @spec user_answers(questionnaire_uuid, non_neg_integer) :: {:ok, list(t())}
+  @spec user_answers(questionnaire_uuid, non_neg_integer) ::
+          {:ok, list(t())} | {:error, String.t()}
   def user_answers(questionnaire_uuid, user_id) do
-    question_uuids =
-      from(q in Question,
-        where: q.questionnaire_uuid == ^questionnaire_uuid,
-        select: q.uuid
-      )
+    case Ecto.UUID.cast(questionnaire_uuid) do
+      {:ok, questionnaire_uuid} ->
+        question_uuids =
+          from(q in Question,
+            where: q.questionnaire_uuid == ^questionnaire_uuid,
+            select: q.uuid
+          )
 
-    query =
-      from(
-        ans in __MODULE__,
-        where:
-          ans.question_uuid in subquery(question_uuids) and
-            ans.user_id == ^user_id,
-        preload: [:question]
-      )
+        query =
+          from(
+            ans in __MODULE__,
+            where:
+              ans.question_uuid in subquery(question_uuids) and
+                ans.user_id == ^user_id,
+            preload: [:question]
+          )
 
-    {:ok, Sanbase.Repo.all(query)}
+        {:ok, Sanbase.Repo.all(query)}
+
+      :error ->
+        {:error, "Questionnaire with uuid #{questionnaire_uuid} does not exist"}
+    end
   end
 
   # Private functions
+
+  defp get_by_uuid(uuid) do
+    case Ecto.UUID.cast(uuid) do
+      {:ok, uuid} -> Sanbase.Repo.get(__MODULE__, uuid)
+      :error -> nil
+    end
+  end
 
   defp validate_answer(:answer, answer, type) do
     case Validation.validate_user_provided_answer(answer, type) do

@@ -52,22 +52,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
   def mute_user(_root, %{user_id: muted_user_id}, %{
         context: %{auth: %{current_user: user}}
       }) do
-    muted_user_id = Sanbase.Math.to_integer(muted_user_id)
-
-    case AppNotifications.mute_user(user.id, muted_user_id) do
-      {:ok, _} -> Sanbase.Accounts.get_user(muted_user_id)
-      {:error, reason} -> {:error, reason}
+    with {:ok, muted_user_id} <- cast_user_id(muted_user_id),
+         {:ok, _} <- AppNotifications.mute_user(user.id, muted_user_id) do
+      Sanbase.Accounts.get_user(muted_user_id)
     end
   end
 
   def unmute_user(_root, %{user_id: muted_user_id}, %{
         context: %{auth: %{current_user: user}}
       }) do
-    muted_user_id = Sanbase.Math.to_integer(muted_user_id)
-
-    case AppNotifications.unmute_user(user.id, muted_user_id) do
-      {:ok, _} -> Sanbase.Accounts.get_user(muted_user_id)
-      {:error, reason} -> {:error, reason}
+    with {:ok, muted_user_id} <- cast_user_id(muted_user_id),
+         {:ok, _} <- AppNotifications.unmute_user(user.id, muted_user_id) do
+      Sanbase.Accounts.get_user(muted_user_id)
     end
   end
 
@@ -104,6 +100,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
       nil -> opts
       [] -> opts
       types -> Keyword.put(opts, :types, types)
+    end
+  end
+
+  defp cast_user_id(user_id) do
+    case Sanbase.Utils.EctoCommon.cast_id(user_id) do
+      {:ok, user_id} -> {:ok, user_id}
+      :error -> {:error, "Invalid user id: #{inspect(user_id)}"}
     end
   end
 end

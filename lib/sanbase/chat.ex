@@ -188,7 +188,7 @@ defmodule Sanbase.Chat do
           {:ok, ChatMessage.t()} | {:error, Ecto.Changeset.t()}
   def update_message_feedback(message_id, feedback_type)
       when feedback_type in ["thumbs_up", "thumbs_down"] do
-    case Repo.get(ChatMessage, message_id) do
+    case get_message(message_id) do
       nil ->
         {:error, :message_not_found}
 
@@ -214,9 +214,8 @@ defmodule Sanbase.Chat do
   @spec get_chat_with_messages(Ecto.UUID.t()) :: Chat.t() | nil
   def get_chat_with_messages(chat_id) do
     Chat
-    |> where([c], c.id == ^chat_id)
     |> preload([:user, :chat_messages])
-    |> Repo.one()
+    |> get_by_uuid(chat_id)
   end
 
   @doc """
@@ -234,17 +233,13 @@ defmodule Sanbase.Chat do
   Retrieves a chat by ID.
   """
   @spec get_chat(Ecto.UUID.t()) :: Chat.t() | nil
-  def get_chat(chat_id) do
-    Repo.get(Chat, chat_id)
-  end
+  def get_chat(chat_id), do: get_by_uuid(Chat, chat_id)
 
   @doc """
   Retrieves a single chat message by ID.
   """
   @spec get_message(Ecto.UUID.t()) :: ChatMessage.t() | nil
-  def get_message(message_id) do
-    Repo.get(ChatMessage, message_id)
-  end
+  def get_message(message_id), do: get_by_uuid(ChatMessage, message_id)
 
   @doc """
   Lists all chats for a specific user, ordered by most recent first.
@@ -349,6 +344,13 @@ defmodule Sanbase.Chat do
     |> limit(^limit)
     |> Repo.all()
     |> Enum.reverse()
+  end
+
+  defp get_by_uuid(queryable, uuid) do
+    case Ecto.UUID.cast(uuid) do
+      {:ok, uuid} -> Repo.get(queryable, uuid)
+      :error -> nil
+    end
   end
 
   defp generate_title_from_content(content) do

@@ -46,18 +46,17 @@ defmodule Sanbase.Questionnaire do
   """
   @spec by_uuid(questionnaire_uuid) :: {:ok, t()} | {:error, String.t()}
   def by_uuid(questionnaire_uuid) do
-    query =
-      from(q in __MODULE__,
-        where: q.uuid == ^questionnaire_uuid and q.is_deleted != true,
-        preload: [:questions]
-      )
-
-    case Sanbase.Repo.one(query) do
-      %__MODULE__{} = questionnaire ->
-        {:ok, questionnaire}
-
-      nil ->
-        {:error, "Questionnaire with uuid #{questionnaire_uuid} does not exist"}
+    with {:ok, uuid} <- Ecto.UUID.cast(questionnaire_uuid),
+         %__MODULE__{} = questionnaire <-
+           Sanbase.Repo.one(
+             from(q in __MODULE__,
+               where: q.uuid == ^uuid and q.is_deleted != true,
+               preload: [:questions]
+             )
+           ) do
+      {:ok, questionnaire}
+    else
+      _ -> {:error, "Questionnaire with uuid #{questionnaire_uuid} does not exist"}
     end
   end
 

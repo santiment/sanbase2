@@ -53,6 +53,21 @@ defmodule Sanbase.Accounts.Role do
     |> Sanbase.Repo.all()
   end
 
+  @doc ~s"""
+  Return a map from user id to the list of role names that user has
+  """
+  @spec role_names_by_user_ids(list(non_neg_integer())) :: %{non_neg_integer() => [String.t()]}
+  def role_names_by_user_ids(user_ids) do
+    from(
+      ur in Sanbase.Accounts.UserRole,
+      join: r in assoc(ur, :role),
+      where: ur.user_id in ^user_ids,
+      select: {ur.user_id, r.name}
+    )
+    |> Sanbase.Repo.all()
+    |> Enum.group_by(fn {user_id, _} -> user_id end, fn {_, name} -> name end)
+  end
+
   # Private functions
 
   defp get_role_ids(role_id) do

@@ -22,6 +22,17 @@ defmodule Sanbase.Utils.ErrorHandling do
     |> Jason.encode!()
   end
 
+  @doc ~s"""
+  Turn an `{:error, changeset}` result into an `{:error, message: ..., details: ...}`
+  that can be returned from a GraphQL resolver. Other results are returned as is.
+  """
+  @spec maybe_transform_changeset_error(result, String.t()) :: result when result: any()
+  def maybe_transform_changeset_error({:error, %Ecto.Changeset{} = changeset}, message) do
+    {:error, message: message, details: changeset_errors(changeset)}
+  end
+
+  def maybe_transform_changeset_error(result, _message), do: result
+
   def not_implemented_function_for_metric_error(function, metric) do
     {:error, "The #{function} function is not implemented for #{metric}"}
   end

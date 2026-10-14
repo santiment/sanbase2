@@ -116,7 +116,10 @@ config :brod,
   clients: [
     kafka_client: [
       endpoints: kafka_endpoints,
-      auto_start_producers: true
+      auto_start_producers: true,
+      # brod's default 3 x 500ms retries crash the producer during leader elections.
+      # 10 x 1s keeps the total under the 30s KafkaExporter.flush/1 waits.
+      default_producer_config: [max_retries: 10, retry_backoff_ms: 1_000]
     ]
   ]
 
@@ -189,7 +192,7 @@ if config_env() == :prod do
   config :libcluster,
     topologies: [
       postgres_topology: [
-        strategy: LibclusterPostgres.Strategy,
+        strategy: Sanbase.Cluster.PostgresStrategy,
         config: [
           hostname: uri.host,
           username: username,

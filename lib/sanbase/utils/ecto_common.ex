@@ -1,6 +1,21 @@
 defmodule Sanbase.Utils.EctoCommon do
   import Ecto.Query
 
+  @max_bigint 9_223_372_036_854_775_807
+
+  @doc ~s"""
+  Cast a user-supplied id to a positive integer that fits in a Postgres bigint.
+  Unlike `Sanbase.Math.to_integer/1`, input like "12abc" or "1.5" is rejected
+  instead of truncated to 12 or 1.
+  """
+  @spec cast_id(term()) :: {:ok, pos_integer()} | :error
+  def cast_id(id) do
+    case Ecto.Type.cast(:id, id) do
+      {:ok, id} when is_integer(id) and id > 0 and id <= @max_bigint -> {:ok, id}
+      _ -> :error
+    end
+  end
+
   @doc ~s"""
   Checks whether the user can create a new entity of a given type or if
   a rate limit must be applied.

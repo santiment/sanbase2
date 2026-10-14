@@ -6,7 +6,10 @@ defmodule Sanbase.Insight.Post do
   import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Insight.EventEmitter, only: [emit_event: 3]
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+
+  import Sanbase.Utils.ErrorHandling,
+    only: [changeset_errors: 1, maybe_transform_changeset_error: 2]
+
   import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Tag
@@ -659,8 +662,8 @@ defmodule Sanbase.Insight.Post do
             :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
             {:ok, post}
 
-          {:error, error} ->
-            {:error, error}
+          error ->
+            maybe_transform_changeset_error(error, "Cannot update insight with id #{post_id}")
         end
 
       {:ok, %__MODULE__{user_id: another_user_id}} when user_id != another_user_id ->

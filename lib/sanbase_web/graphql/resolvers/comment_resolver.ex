@@ -60,12 +60,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
     {:ok, comments}
   end
 
-  def subcomments(
-        _root,
-        %{comment_id: comment_id} = args,
-        _resolution
-      ) do
-    {:ok, Comment.get_subcomments(comment_id, args)}
+  def subcomments(_root, %{comment_id: comment_id, limit: limit}, _resolution) do
+    {:ok, Comment.get_subcomments(comment_id, limit)}
   end
 
   def comments_feed(

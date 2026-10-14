@@ -56,6 +56,31 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
            } in data
   end
 
+  for {ecosystems, message} <- [
+        {["etherum"],
+         "The ecosystem 'etherum' is not supported or is mistyped. Did you mean 'ethereum'?"},
+        {["Bitcoin"],
+         "The ecosystem 'Bitcoin' is not supported or is mistyped. Did you mean 'bitcoin'?"},
+        {["ethereum", "xyzzy"], "The ecosystem 'xyzzy' is not supported or is mistyped."}
+      ] do
+    test "unknown ecosystems #{inspect(ecosystems)} return an error", context do
+      result = get_ecosystems_projects(context.conn, unquote(ecosystems))
+
+      assert result["data"]["getEcosystems"] == nil
+      assert [%{"message" => unquote(message)}] = result["errors"]
+    end
+  end
+
+  test "a null ecosystem returns an error without a suggestion", context do
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton("{ getEcosystems(ecosystems: [null]){ name } }"))
+      |> json_response(200)
+
+    assert [%{"message" => "The ecosystem '' is not supported or is mistyped."}] =
+             result["errors"]
+  end
+
   test "get timeseries data", context do
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p1.id, context.eth_ecosystem.id)
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p2.id, context.eth_ecosystem.id)
@@ -130,6 +155,25 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
     end)
   end
 
+  test "a transform error is returned for timeseries data", context do
+    rows = [["ethereum", 1_712_620_800, 5.0], ["ethereum", 1_712_707_200, 5.0]]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_ecosystems_timeseries_data(context.conn, ["ethereum"], %{
+          from: ~U[2024-04-08 00:00:00Z],
+          to: ~U[2024-04-11 00:00:00Z],
+          interval: "1d",
+          metric: "ecosystem_dev_activity",
+          transform: %{type: "z_score", map_as_input_object: true}
+        })
+
+      assert [%{"message" => "Cannot compute zscore on constant timeseries."}] =
+               result["errors"]
+    end)
+  end
+
   test "get aggregated timeseries data", context do
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p1.id, context.eth_ecosystem.id)
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p2.id, context.eth_ecosystem.id)
@@ -162,6 +206,35 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
                "name" => "bitcoin",
                "aggregatedTimeseriesData" => 1212.4
              } in data
+    end)
+  end
+
+  test "an ecosystem without data gets 0 and an empty timeseries", context do
+    args = %{from: ~U[2024-04-08 00:00:00Z], to: ~U[2024-04-11 00:00:00Z]}
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      aggregated =
+        get_ecosystems_aggregated_timeseries_data(
+          context.conn,
+          ["bitcoin"],
+          Map.put(args, :metric, "ecosystem_github_activity")
+        )
+
+      timeseries =
+        get_ecosystems_timeseries_data(
+          context.conn,
+          ["bitcoin"],
+          Map.merge(args, %{metric: "ecosystem_dev_activity", interval: "1d"})
+        )
+
+      assert aggregated["data"]["getEcosystems"] == [
+               %{"name" => "bitcoin", "aggregatedTimeseriesData" => 0.0}
+             ]
+
+      assert timeseries["data"]["getEcosystems"] == [
+               %{"name" => "bitcoin", "timeseriesData" => []}
+             ]
     end)
   end
 

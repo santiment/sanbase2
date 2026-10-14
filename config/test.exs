@@ -131,6 +131,8 @@ config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_op
 
 config :sanbase, Sanbase.Accounts.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
+config :sanbase, Sanbase.Accounts.User.UniswapStaking, retry_delays_ms: [0, 0]
+
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,

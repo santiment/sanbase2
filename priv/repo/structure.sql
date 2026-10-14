@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict PvbjqjZmuWnlrfYD3EvPnegewcR7DO8MExGYOFT3diTbExa8GzOUeEf9RNBOGhD
+\restrict EG37C8QBoSKfDETx8qaeVQ2eWK7GzpPw8nfSggdEi7Y9yNvvm9VlaQNzTlOJx7o
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -59,16 +59,6 @@ CREATE TYPE public.color AS ENUM (
     'yellow',
     'grey',
     'black'
-);
-
-
---
--- Name: lang; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.lang AS ENUM (
-    'en',
-    'jp'
 );
 
 
@@ -1052,41 +1042,6 @@ ALTER SEQUENCE public.clients_scopes_id_seq OWNED BY public.oauth_clients_scopes
 
 
 --
--- Name: comment_notifications; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.comment_notifications (
-    id bigint NOT NULL,
-    last_insight_comment_id integer,
-    last_timeline_event_comment_id integer,
-    notify_users_map jsonb,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    last_chart_configuration_comment_id integer,
-    last_watchlist_comment_id integer
-);
-
-
---
--- Name: comment_notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.comment_notifications_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: comment_notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.comment_notifications_id_seq OWNED BY public.comment_notifications.id;
-
-
---
 -- Name: comments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1326,45 +1281,6 @@ ALTER SEQUENCE public.dashboards_cache_id_seq OWNED BY public.dashboards_cache.i
 
 
 --
--- Name: dashboards_history; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.dashboards_history (
-    id bigint NOT NULL,
-    dashboard_id bigint,
-    user_id bigint,
-    panels jsonb,
-    name character varying(255),
-    description text,
-    is_public boolean,
-    message text,
-    hash text,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    parameters jsonb DEFAULT '{}'::jsonb
-);
-
-
---
--- Name: dashboards_history_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.dashboards_history_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: dashboards_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.dashboards_history_id_seq OWNED BY public.dashboards_history.id;
-
-
---
 -- Name: dashboards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -1420,7 +1336,7 @@ CREATE TABLE public.deep_research_turns (
     inserted_at timestamp(0) without time zone NOT NULL,
     updated_at timestamp(0) without time zone NOT NULL,
     usage jsonb,
-    CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'queued'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'paused'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
+    CONSTRAINT valid_phase CHECK (((phase)::text = ANY (ARRAY[('idle'::character varying)::text, ('queued'::character varying)::text, ('planning'::character varying)::text, ('researching'::character varying)::text, ('writing'::character varying)::text, ('awaiting_user'::character varying)::text, ('paused'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text, ('cancelled'::character varying)::text])))
 );
 
 
@@ -1441,48 +1357,6 @@ CREATE SEQUENCE public.disagreement_tweets_id_seq
 --
 
 ALTER SEQUENCE public.disagreement_tweets_id_seq OWNED BY public.classified_tweets.id;
-
-
---
--- Name: discord_dashboards; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.discord_dashboards (
-    id bigint NOT NULL,
-    panel_id character varying(255),
-    name character varying(255),
-    channel character varying(255),
-    guild character varying(255),
-    user_id bigint,
-    dashboard_id bigint,
-    pinned boolean DEFAULT false,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    discord_user_id character varying(255),
-    discord_user_handle character varying(255),
-    discord_message_id character varying(255),
-    channel_name character varying(255),
-    guild_name character varying(255)
-);
-
-
---
--- Name: discord_dashboards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.discord_dashboards_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: discord_dashboards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.discord_dashboards_id_seq OWNED BY public.discord_dashboards.id;
 
 
 --
@@ -1611,17 +1485,6 @@ CREATE SEQUENCE public.eth_accounts_id_seq
 --
 
 ALTER SEQUENCE public.eth_accounts_id_seq OWNED BY public.eth_accounts.id;
-
-
---
--- Name: eth_coin_circulation; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.eth_coin_circulation (
-    "timestamp" timestamp without time zone NOT NULL,
-    contract_address character varying(255) NOT NULL,
-    "_-1d" double precision
-);
 
 
 --
@@ -1810,40 +1673,6 @@ ALTER SEQUENCE public.featured_items_id_seq OWNED BY public.featured_items.id;
 
 
 --
--- Name: geoip_data; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.geoip_data (
-    id bigint NOT NULL,
-    ip_address character varying(255) NOT NULL,
-    is_vpn boolean NOT NULL,
-    country_name character varying(255) NOT NULL,
-    country_code character varying(255) NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: geoip_data_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.geoip_data_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: geoip_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.geoip_data_id_seq OWNED BY public.geoip_data.id;
-
-
---
 -- Name: github_organizations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1871,44 +1700,6 @@ CREATE SEQUENCE public.github_organizations_id_seq
 --
 
 ALTER SEQUENCE public.github_organizations_id_seq OWNED BY public.github_organizations.id;
-
-
---
--- Name: gpt_router; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.gpt_router (
-    id bigint NOT NULL,
-    question text,
-    route character varying(255),
-    scores jsonb DEFAULT '{}'::jsonb,
-    error text,
-    elapsed_time integer,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    timeframe integer DEFAULT '-1'::integer,
-    sentiment boolean DEFAULT false,
-    projects character varying(255)[] DEFAULT ARRAY[]::character varying[]
-);
-
-
---
--- Name: gpt_router_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.gpt_router_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: gpt_router_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.gpt_router_id_seq OWNED BY public.gpt_router.id;
 
 
 --
@@ -3151,7 +2942,7 @@ CREATE TABLE public.non_crypto_assets (
     metadata jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
+    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY (ARRAY[('stock'::character varying)::text, ('commodity'::character varying)::text, ('index'::character varying)::text, ('forex'::character varying)::text, ('fund'::character varying)::text, ('bond'::character varying)::text, ('other'::character varying)::text])))
 );
 
 
@@ -3668,36 +3459,6 @@ ALTER SEQUENCE public.posts_metrics_id_seq OWNED BY public.posts_metrics.id;
 
 
 --
--- Name: posts_projects; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.posts_projects (
-    id bigint NOT NULL,
-    post_id bigint,
-    project_id bigint
-);
-
-
---
--- Name: posts_projects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.posts_projects_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: posts_projects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.posts_projects_id_seq OWNED BY public.posts_projects.id;
-
-
---
 -- Name: posts_tags; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3760,39 +3521,6 @@ CREATE SEQUENCE public.presigned_s3_urls_id_seq
 --
 
 ALTER SEQUENCE public.presigned_s3_urls_id_seq OWNED BY public.presigned_s3_urls.id;
-
-
---
--- Name: price_migration_tmp; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.price_migration_tmp (
-    id bigint NOT NULL,
-    slug character varying(255) NOT NULL,
-    is_migrated boolean DEFAULT false,
-    progress text,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: price_migration_tmp_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.price_migration_tmp_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: price_migration_tmp_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.price_migration_tmp_id_seq OWNED BY public.price_migration_tmp.id;
 
 
 --
@@ -3883,9 +3611,6 @@ CREATE TABLE public.project (
     team_token_wallet character varying(255),
     market_segment_id bigint,
     infrastructure_id bigint,
-    project_transparency boolean DEFAULT false NOT NULL,
-    project_transparency_description text,
-    project_transparency_status_id bigint,
     token_decimals integer,
     total_supply numeric,
     description text,
@@ -4125,68 +3850,6 @@ ALTER SEQUENCE public.project_social_volume_query_id_seq OWNED BY public.project
 
 
 --
--- Name: project_transparency_statuses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.project_transparency_statuses (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL
-);
-
-
---
--- Name: project_transparency_statuses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.project_transparency_statuses_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: project_transparency_statuses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.project_transparency_statuses_id_seq OWNED BY public.project_transparency_statuses.id;
-
-
---
--- Name: promo_coupons; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.promo_coupons (
-    id bigint NOT NULL,
-    email character varying(255) NOT NULL,
-    message text,
-    coupon character varying(255),
-    origin_url character varying(255),
-    lang public.lang
-);
-
-
---
--- Name: promo_coupons_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.promo_coupons_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: promo_coupons_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.promo_coupons_id_seq OWNED BY public.promo_coupons.id;
-
-
---
 -- Name: promo_trials; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4218,40 +3881,6 @@ CREATE SEQUENCE public.promo_trials_id_seq
 --
 
 ALTER SEQUENCE public.promo_trials_id_seq OWNED BY public.promo_trials.id;
-
-
---
--- Name: pumpkins; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.pumpkins (
-    id bigint NOT NULL,
-    collected integer DEFAULT 0,
-    coupon character varying(255),
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    pages character varying(255)[] DEFAULT ARRAY[]::character varying[]
-);
-
-
---
--- Name: pumpkins_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.pumpkins_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: pumpkins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.pumpkins_id_seq OWNED BY public.pumpkins.id;
 
 
 --
@@ -4708,39 +4337,6 @@ CREATE TABLE public.schema_migrations (
 
 
 --
--- Name: seen_timeline_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.seen_timeline_events (
-    id bigint NOT NULL,
-    seen_at timestamp(0) without time zone,
-    user_id bigint,
-    event_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: seen_timeline_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.seen_timeline_events_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: seen_timeline_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.seen_timeline_events_id_seq OWNED BY public.seen_timeline_events.id;
-
-
---
 -- Name: ses_email_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4880,45 +4476,6 @@ CREATE SEQUENCE public.short_urls_id_seq
 --
 
 ALTER SEQUENCE public.short_urls_id_seq OWNED BY public.short_urls.id;
-
-
---
--- Name: sign_up_trials; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.sign_up_trials (
-    id bigint NOT NULL,
-    user_id bigint,
-    sent_welcome_email boolean DEFAULT false,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    sent_trial_will_end_email boolean DEFAULT false,
-    subscription_id bigint,
-    sent_first_education_email boolean DEFAULT false,
-    sent_second_education_email boolean DEFAULT false,
-    sent_cc_will_be_charged boolean DEFAULT false,
-    sent_trial_finished_without_cc boolean DEFAULT false,
-    is_finished boolean DEFAULT false
-);
-
-
---
--- Name: sign_up_trials_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.sign_up_trials_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: sign_up_trials_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.sign_up_trials_id_seq OWNED BY public.sign_up_trials.id;
 
 
 --
@@ -5347,134 +4904,6 @@ CREATE TABLE public.telegram_user_tokens (
 
 
 --
--- Name: thread_ai_context; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.thread_ai_context (
-    id bigint NOT NULL,
-    discord_user character varying(255),
-    guild_id character varying(255),
-    guild_name character varying(255),
-    channel_id character varying(255),
-    channel_name character varying(255),
-    thread_id character varying(255),
-    thread_name character varying(255),
-    question text,
-    answer text,
-    votes_pos integer DEFAULT 0,
-    votes_neg integer DEFAULT 0,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    elapsed_time double precision,
-    tokens_request integer,
-    tokens_response integer,
-    tokens_total integer,
-    error_message character varying(255),
-    total_cost double precision
-);
-
-
---
--- Name: thread_ai_context_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.thread_ai_context_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: thread_ai_context_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.thread_ai_context_id_seq OWNED BY public.thread_ai_context.id;
-
-
---
--- Name: timeline_event_comments_mapping; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.timeline_event_comments_mapping (
-    id bigint NOT NULL,
-    comment_id bigint,
-    timeline_event_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: timeline_event_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.timeline_event_comments_mapping_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: timeline_event_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.timeline_event_comments_mapping_id_seq OWNED BY public.timeline_event_comments_mapping.id;
-
-
---
--- Name: timeline_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.timeline_events (
-    id bigint NOT NULL,
-    event_type character varying(255),
-    user_id bigint,
-    post_id bigint,
-    user_list_id bigint,
-    user_trigger_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    payload jsonb,
-    data jsonb,
-    CONSTRAINT only_one_fk CHECK ((((
-CASE
-    WHEN (post_id IS NULL) THEN 0
-    ELSE 1
-END +
-CASE
-    WHEN (user_list_id IS NULL) THEN 0
-    ELSE 1
-END) +
-CASE
-    WHEN (user_trigger_id IS NULL) THEN 0
-    ELSE 1
-END) = 1))
-);
-
-
---
--- Name: timeline_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.timeline_events_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: timeline_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
-
-
---
 -- Name: topic_batches; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5494,7 +4923,7 @@ CREATE TABLE public.topic_batches (
     updated_at timestamp without time zone NOT NULL,
     publication_scope character varying(255),
     CONSTRAINT published_topic_batches_require_publication_scope CHECK ((((state)::text <> 'published'::text) OR (publication_scope IS NOT NULL))),
-    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY ((ARRAY['daily_only'::character varying, 'weekly_only'::character varying, 'daily_weekly'::character varying])::text[]))))
+    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY (ARRAY[('daily_only'::character varying)::text, ('weekly_only'::character varying)::text, ('daily_weekly'::character varying)::text]))))
 );
 
 
@@ -6169,22 +5598,17 @@ CREATE TABLE public.votes (
     user_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    timeline_event_id bigint,
     count integer DEFAULT 1,
     chart_configuration_id bigint,
     watchlist_id bigint,
     user_trigger_id bigint,
     dashboard_id bigint,
     query_id bigint,
-    CONSTRAINT only_one_fk CHECK ((((((((
+    CONSTRAINT only_one_fk CHECK (((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
 END +
-CASE
-    WHEN (timeline_event_id IS NULL) THEN 0
-    ELSE 1
-END) +
 CASE
     WHEN (chart_configuration_id IS NULL) THEN 0
     ELSE 1
@@ -6225,186 +5649,6 @@ CREATE SEQUENCE public.votes_id_seq
 --
 
 ALTER SEQUENCE public.votes_id_seq OWNED BY public.votes.id;
-
-
---
--- Name: wallet_hunters_bounties; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.wallet_hunters_bounties (
-    id bigint NOT NULL,
-    title character varying(255),
-    description text,
-    duration character varying(255),
-    proposals_count integer,
-    proposal_reward integer,
-    transaction_id character varying(255),
-    transaction_status character varying(255),
-    hash_digest character varying(255),
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: wallet_hunters_bounties_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.wallet_hunters_bounties_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: wallet_hunters_bounties_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.wallet_hunters_bounties_id_seq OWNED BY public.wallet_hunters_bounties.id;
-
-
---
--- Name: wallet_hunters_proposals; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.wallet_hunters_proposals (
-    id bigint NOT NULL,
-    title text,
-    text text,
-    proposal_id integer,
-    hunter_address character varying(255),
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    proposed_address character varying(255),
-    user_labels character varying(255)[] DEFAULT ARRAY[]::character varying[],
-    transaction_id character varying(255) NOT NULL,
-    transaction_status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
-    bounty_id bigint
-);
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.wallet_hunters_proposals_comments_mapping (
-    id bigint NOT NULL,
-    comment_id bigint,
-    proposal_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.wallet_hunters_proposals_comments_mapping_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.wallet_hunters_proposals_comments_mapping_id_seq OWNED BY public.wallet_hunters_proposals_comments_mapping.id;
-
-
---
--- Name: wallet_hunters_proposals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.wallet_hunters_proposals_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: wallet_hunters_proposals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.wallet_hunters_proposals_id_seq OWNED BY public.wallet_hunters_proposals.id;
-
-
---
--- Name: wallet_hunters_relays_quota; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.wallet_hunters_relays_quota (
-    id bigint NOT NULL,
-    proposals_used integer,
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    votes_used integer DEFAULT 0,
-    last_voted timestamp(0) without time zone,
-    proposals_earned integer DEFAULT 0
-);
-
-
---
--- Name: wallet_hunters_relays_quota_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.wallet_hunters_relays_quota_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: wallet_hunters_relays_quota_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.wallet_hunters_relays_quota_id_seq OWNED BY public.wallet_hunters_relays_quota.id;
-
-
---
--- Name: wallet_hunters_votes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.wallet_hunters_votes (
-    id bigint NOT NULL,
-    proposal_id integer,
-    transaction_id character varying(255),
-    transaction_status character varying(255) DEFAULT 'pending'::character varying,
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: wallet_hunters_votes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.wallet_hunters_votes_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: wallet_hunters_votes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.wallet_hunters_votes_id_seq OWNED BY public.wallet_hunters_votes.id;
 
 
 --
@@ -6667,13 +5911,6 @@ ALTER TABLE ONLY public.clickhouse_query_executions ALTER COLUMN id SET DEFAULT 
 
 
 --
--- Name: comment_notifications id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.comment_notifications ALTER COLUMN id SET DEFAULT nextval('public.comment_notifications_id_seq'::regclass);
-
-
---
 -- Name: comments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6720,20 +5957,6 @@ ALTER TABLE ONLY public.dashboards ALTER COLUMN id SET DEFAULT nextval('public.d
 --
 
 ALTER TABLE ONLY public.dashboards_cache ALTER COLUMN id SET DEFAULT nextval('public.dashboards_cache_id_seq'::regclass);
-
-
---
--- Name: dashboards_history id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboards_history ALTER COLUMN id SET DEFAULT nextval('public.dashboards_history_id_seq'::regclass);
-
-
---
--- Name: discord_dashboards id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.discord_dashboards ALTER COLUMN id SET DEFAULT nextval('public.discord_dashboards_id_seq'::regclass);
 
 
 --
@@ -6793,24 +6016,10 @@ ALTER TABLE ONLY public.featured_items ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- Name: geoip_data id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.geoip_data ALTER COLUMN id SET DEFAULT nextval('public.geoip_data_id_seq'::regclass);
-
-
---
 -- Name: github_organizations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.github_organizations ALTER COLUMN id SET DEFAULT nextval('public.github_organizations_id_seq'::regclass);
-
-
---
--- Name: gpt_router id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gpt_router ALTER COLUMN id SET DEFAULT nextval('public.gpt_router_id_seq'::regclass);
 
 
 --
@@ -7122,13 +6331,6 @@ ALTER TABLE ONLY public.posts_metrics ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- Name: posts_projects id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.posts_projects ALTER COLUMN id SET DEFAULT nextval('public.posts_projects_id_seq'::regclass);
-
-
---
 -- Name: posts_tags id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7140,13 +6342,6 @@ ALTER TABLE ONLY public.posts_tags ALTER COLUMN id SET DEFAULT nextval('public.p
 --
 
 ALTER TABLE ONLY public.presigned_s3_urls ALTER COLUMN id SET DEFAULT nextval('public.presigned_s3_urls_id_seq'::regclass);
-
-
---
--- Name: price_migration_tmp id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.price_migration_tmp ALTER COLUMN id SET DEFAULT nextval('public.price_migration_tmp_id_seq'::regclass);
 
 
 --
@@ -7213,31 +6408,10 @@ ALTER TABLE ONLY public.project_social_volume_query ALTER COLUMN id SET DEFAULT 
 
 
 --
--- Name: project_transparency_statuses id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_transparency_statuses ALTER COLUMN id SET DEFAULT nextval('public.project_transparency_statuses_id_seq'::regclass);
-
-
---
--- Name: promo_coupons id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.promo_coupons ALTER COLUMN id SET DEFAULT nextval('public.promo_coupons_id_seq'::regclass);
-
-
---
 -- Name: promo_trials id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.promo_trials ALTER COLUMN id SET DEFAULT nextval('public.promo_trials_id_seq'::regclass);
-
-
---
--- Name: pumpkins id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.pumpkins ALTER COLUMN id SET DEFAULT nextval('public.pumpkins_id_seq'::regclass);
 
 
 --
@@ -7311,13 +6485,6 @@ ALTER TABLE ONLY public.scheduled_deprecation_notifications ALTER COLUMN id SET 
 
 
 --
--- Name: seen_timeline_events id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.seen_timeline_events ALTER COLUMN id SET DEFAULT nextval('public.seen_timeline_events_id_seq'::regclass);
-
-
---
 -- Name: ses_email_events id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7343,13 +6510,6 @@ ALTER TABLE ONLY public.sheets_templates ALTER COLUMN id SET DEFAULT nextval('pu
 --
 
 ALTER TABLE ONLY public.short_urls ALTER COLUMN id SET DEFAULT nextval('public.short_urls_id_seq'::regclass);
-
-
---
--- Name: sign_up_trials id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.sign_up_trials ALTER COLUMN id SET DEFAULT nextval('public.sign_up_trials_id_seq'::regclass);
 
 
 --
@@ -7427,27 +6587,6 @@ ALTER TABLE ONLY public.tags ALTER COLUMN id SET DEFAULT nextval('public.tags_id
 --
 
 ALTER TABLE ONLY public.telegram_bot_messages ALTER COLUMN id SET DEFAULT nextval('public.telegram_bot_messages_id_seq'::regclass);
-
-
---
--- Name: thread_ai_context id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.thread_ai_context ALTER COLUMN id SET DEFAULT nextval('public.thread_ai_context_id_seq'::regclass);
-
-
---
--- Name: timeline_event_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_event_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.timeline_event_comments_mapping_id_seq'::regclass);
-
-
---
--- Name: timeline_events id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('public.timeline_events_id_seq'::regclass);
 
 
 --
@@ -7581,41 +6720,6 @@ ALTER TABLE ONLY public.versions ALTER COLUMN id SET DEFAULT nextval('public.ver
 --
 
 ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_id_seq'::regclass);
-
-
---
--- Name: wallet_hunters_bounties id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_bounties ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_bounties_id_seq'::regclass);
-
-
---
--- Name: wallet_hunters_proposals id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_proposals ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_proposals_id_seq'::regclass);
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_proposals_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_proposals_comments_mapping_id_seq'::regclass);
-
-
---
--- Name: wallet_hunters_relays_quota id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_relays_quota ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_relays_quota_id_seq'::regclass);
-
-
---
--- Name: wallet_hunters_votes id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_votes ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_votes_id_seq'::regclass);
 
 
 --
@@ -7832,14 +6936,6 @@ ALTER TABLE ONLY public.oauth_clients_scopes
 
 
 --
--- Name: comment_notifications comment_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.comment_notifications
-    ADD CONSTRAINT comment_notifications_pkey PRIMARY KEY (id);
-
-
---
 -- Name: comments comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7896,14 +6992,6 @@ ALTER TABLE ONLY public.dashboards_cache
 
 
 --
--- Name: dashboards_history dashboards_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboards_history
-    ADD CONSTRAINT dashboards_history_pkey PRIMARY KEY (id);
-
-
---
 -- Name: dashboards dashboards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7936,14 +7024,6 @@ ALTER TABLE ONLY public.classified_tweets
 
 
 --
--- Name: discord_dashboards discord_dashboards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.discord_dashboards
-    ADD CONSTRAINT discord_dashboards_pkey PRIMARY KEY (id);
-
-
---
 -- Name: ecosystems ecosystems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7973,14 +7053,6 @@ ALTER TABLE ONLY public.email_list_consents
 
 ALTER TABLE ONLY public.eth_accounts
     ADD CONSTRAINT eth_accounts_pkey PRIMARY KEY (id);
-
-
---
--- Name: eth_coin_circulation eth_coin_circulation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eth_coin_circulation
-    ADD CONSTRAINT eth_coin_circulation_pkey PRIMARY KEY ("timestamp", contract_address);
 
 
 --
@@ -8024,27 +7096,11 @@ ALTER TABLE ONLY public.featured_items
 
 
 --
--- Name: geoip_data geoip_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.geoip_data
-    ADD CONSTRAINT geoip_data_pkey PRIMARY KEY (id);
-
-
---
 -- Name: github_organizations github_organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.github_organizations
     ADD CONSTRAINT github_organizations_pkey PRIMARY KEY (id);
-
-
---
--- Name: gpt_router gpt_router_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gpt_router
-    ADD CONSTRAINT gpt_router_pkey PRIMARY KEY (id);
 
 
 --
@@ -8424,14 +7480,6 @@ ALTER TABLE ONLY public.posts
 
 
 --
--- Name: posts_projects posts_projects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.posts_projects
-    ADD CONSTRAINT posts_projects_pkey PRIMARY KEY (id);
-
-
---
 -- Name: posts_tags posts_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8445,14 +7493,6 @@ ALTER TABLE ONLY public.posts_tags
 
 ALTER TABLE ONLY public.presigned_s3_urls
     ADD CONSTRAINT presigned_s3_urls_pkey PRIMARY KEY (id);
-
-
---
--- Name: price_migration_tmp price_migration_tmp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.price_migration_tmp
-    ADD CONSTRAINT price_migration_tmp_pkey PRIMARY KEY (id);
 
 
 --
@@ -8528,35 +7568,11 @@ ALTER TABLE ONLY public.project_social_volume_query
 
 
 --
--- Name: project_transparency_statuses project_transparency_statuses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_transparency_statuses
-    ADD CONSTRAINT project_transparency_statuses_pkey PRIMARY KEY (id);
-
-
---
--- Name: promo_coupons promo_coupons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.promo_coupons
-    ADD CONSTRAINT promo_coupons_pkey PRIMARY KEY (id);
-
-
---
 -- Name: promo_trials promo_trials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.promo_trials
     ADD CONSTRAINT promo_trials_pkey PRIMARY KEY (id);
-
-
---
--- Name: pumpkins pumpkins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.pumpkins
-    ADD CONSTRAINT pumpkins_pkey PRIMARY KEY (id);
 
 
 --
@@ -8688,14 +7704,6 @@ ALTER TABLE ONLY public.oauth_scopes
 
 
 --
--- Name: seen_timeline_events seen_timeline_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.seen_timeline_events
-    ADD CONSTRAINT seen_timeline_events_pkey PRIMARY KEY (id);
-
-
---
 -- Name: ses_email_events ses_email_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8725,14 +7733,6 @@ ALTER TABLE ONLY public.sheets_templates
 
 ALTER TABLE ONLY public.short_urls
     ADD CONSTRAINT short_urls_pkey PRIMARY KEY (id);
-
-
---
--- Name: sign_up_trials sign_up_trials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.sign_up_trials
-    ADD CONSTRAINT sign_up_trials_pkey PRIMARY KEY (id);
 
 
 --
@@ -8837,30 +7837,6 @@ ALTER TABLE ONLY public.telegram_bot_messages
 
 ALTER TABLE ONLY public.telegram_user_tokens
     ADD CONSTRAINT telegram_user_tokens_pkey PRIMARY KEY (user_id, token);
-
-
---
--- Name: thread_ai_context thread_ai_context_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.thread_ai_context
-    ADD CONSTRAINT thread_ai_context_pkey PRIMARY KEY (id);
-
-
---
--- Name: timeline_event_comments_mapping timeline_event_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_event_comments_mapping
-    ADD CONSTRAINT timeline_event_comments_mapping_pkey PRIMARY KEY (id);
-
-
---
--- Name: timeline_events timeline_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_pkey PRIMARY KEY (id);
 
 
 --
@@ -9037,46 +8013,6 @@ ALTER TABLE ONLY public.versions
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_pkey PRIMARY KEY (id);
-
-
---
--- Name: wallet_hunters_bounties wallet_hunters_bounties_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_bounties
-    ADD CONSTRAINT wallet_hunters_bounties_pkey PRIMARY KEY (id);
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping wallet_hunters_proposals_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_proposals_comments_mapping
-    ADD CONSTRAINT wallet_hunters_proposals_comments_mapping_pkey PRIMARY KEY (id);
-
-
---
--- Name: wallet_hunters_proposals wallet_hunters_proposals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_proposals
-    ADD CONSTRAINT wallet_hunters_proposals_pkey PRIMARY KEY (id);
-
-
---
--- Name: wallet_hunters_relays_quota wallet_hunters_relays_quota_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_relays_quota
-    ADD CONSTRAINT wallet_hunters_relays_quota_pkey PRIMARY KEY (id);
-
-
---
--- Name: wallet_hunters_votes wallet_hunters_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_votes
-    ADD CONSTRAINT wallet_hunters_votes_pkey PRIMARY KEY (id);
 
 
 --
@@ -9469,20 +8405,6 @@ CREATE UNIQUE INDEX dashboards_cache_dashboard_id_parameters_override_hash_index
 
 
 --
--- Name: dashboards_history_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX dashboards_history_dashboard_id_index ON public.dashboards_history USING btree (dashboard_id);
-
-
---
--- Name: dashboards_history_hash_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING btree (hash);
-
-
---
 -- Name: deep_research_sessions_user_id_updated_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9515,20 +8437,6 @@ CREATE INDEX disagreement_tweets_timestamp_index ON public.classified_tweets USI
 --
 
 CREATE UNIQUE INDEX disagreement_tweets_tweet_id_index ON public.classified_tweets USING btree (tweet_id);
-
-
---
--- Name: discord_dashboards_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX discord_dashboards_dashboard_id_index ON public.discord_dashboards USING btree (dashboard_id);
-
-
---
--- Name: discord_dashboards_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX discord_dashboards_user_id_index ON public.discord_dashboards USING btree (user_id);
 
 
 --
@@ -9669,13 +8577,6 @@ CREATE UNIQUE INDEX featured_items_user_list_id_index ON public.featured_items U
 --
 
 CREATE UNIQUE INDEX featured_items_user_trigger_id_index ON public.featured_items USING btree (user_trigger_id);
-
-
---
--- Name: geoip_data_ip_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX geoip_data_ip_address_index ON public.geoip_data USING btree (ip_address);
 
 
 --
@@ -10253,13 +9154,6 @@ CREATE UNIQUE INDEX posts_metrics_post_id_metric_id_index ON public.posts_metric
 
 
 --
--- Name: posts_projects_post_id_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX posts_projects_post_id_project_id_index ON public.posts_projects USING btree (post_id, project_id);
-
-
---
 -- Name: posts_tags_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10337,13 +9231,6 @@ CREATE UNIQUE INDEX project_market_segments_project_id_market_segment_id_index O
 
 
 --
--- Name: project_project_transparency_status_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX project_project_transparency_status_id_index ON public.project USING btree (project_transparency_status_id);
-
-
---
 -- Name: project_slug_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10355,27 +9242,6 @@ CREATE UNIQUE INDEX project_slug_index ON public.project USING btree (slug);
 --
 
 CREATE UNIQUE INDEX project_social_volume_query_project_id_index ON public.project_social_volume_query USING btree (project_id);
-
-
---
--- Name: project_transparency_statuses_name_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX project_transparency_statuses_name_index ON public.project_transparency_statuses USING btree (name);
-
-
---
--- Name: promo_coupons_email_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btree (email);
-
-
---
--- Name: pumpkins_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX pumpkins_user_id_index ON public.pumpkins USING btree (user_id);
 
 
 --
@@ -10463,13 +9329,6 @@ CREATE INDEX scheduled_deprecation_notifications_status_index ON public.schedule
 
 
 --
--- Name: seen_timeline_events_user_id_event_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX seen_timeline_events_user_id_event_id_index ON public.seen_timeline_events USING btree (user_id, event_id);
-
-
---
 -- Name: ses_email_events_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10523,20 +9382,6 @@ CREATE UNIQUE INDEX shared_access_tokens_uuid_index ON public.shared_access_toke
 --
 
 CREATE UNIQUE INDEX short_urls_short_url_index ON public.short_urls USING btree (short_url);
-
-
---
--- Name: sign_up_trials_subscription_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX sign_up_trials_subscription_id_index ON public.sign_up_trials USING btree (subscription_id);
-
-
---
--- Name: sign_up_trials_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX sign_up_trials_user_id_index ON public.sign_up_trials USING btree (user_id);
 
 
 --
@@ -10663,55 +9508,6 @@ CREATE UNIQUE INDEX telegram_user_tokens_token_index ON public.telegram_user_tok
 --
 
 CREATE UNIQUE INDEX telegram_user_tokens_user_id_index ON public.telegram_user_tokens USING btree (user_id);
-
-
---
--- Name: timeline_event_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX timeline_event_comments_mapping_comment_id_index ON public.timeline_event_comments_mapping USING btree (comment_id);
-
-
---
--- Name: timeline_event_comments_mapping_timeline_event_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX timeline_event_comments_mapping_timeline_event_id_index ON public.timeline_event_comments_mapping USING btree (timeline_event_id);
-
-
---
--- Name: timeline_events_inserted_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX timeline_events_inserted_at_index ON public.timeline_events USING btree (inserted_at);
-
-
---
--- Name: timeline_events_post_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX timeline_events_post_id_index ON public.timeline_events USING btree (post_id);
-
-
---
--- Name: timeline_events_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX timeline_events_user_id_inserted_at_index ON public.timeline_events USING btree (user_id, inserted_at);
-
-
---
--- Name: timeline_events_user_list_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX timeline_events_user_list_id_index ON public.timeline_events USING btree (user_list_id);
-
-
---
--- Name: timeline_events_user_trigger_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USING btree (user_trigger_id);
 
 
 --
@@ -10995,13 +9791,6 @@ CREATE UNIQUE INDEX votes_query_id_user_id_index ON public.votes USING btree (qu
 
 
 --
--- Name: votes_timeline_event_id_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING btree (timeline_event_id, user_id);
-
-
---
 -- Name: votes_user_trigger_id_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11013,55 +9802,6 @@ CREATE UNIQUE INDEX votes_user_trigger_id_user_id_index ON public.votes USING bt
 --
 
 CREATE UNIQUE INDEX votes_watchlist_id_user_id_index ON public.votes USING btree (watchlist_id, user_id);
-
-
---
--- Name: wallet_hunters_bounties_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX wallet_hunters_bounties_user_id_index ON public.wallet_hunters_bounties USING btree (user_id);
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX wallet_hunters_proposals_comments_mapping_comment_id_index ON public.wallet_hunters_proposals_comments_mapping USING btree (comment_id);
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping_proposal_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX wallet_hunters_proposals_comments_mapping_proposal_id_index ON public.wallet_hunters_proposals_comments_mapping USING btree (proposal_id);
-
-
---
--- Name: wallet_hunters_proposals_proposal_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX wallet_hunters_proposals_proposal_id_index ON public.wallet_hunters_proposals USING btree (proposal_id);
-
-
---
--- Name: wallet_hunters_proposals_transaction_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX wallet_hunters_proposals_transaction_id_index ON public.wallet_hunters_proposals USING btree (transaction_id);
-
-
---
--- Name: wallet_hunters_relays_quota_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX wallet_hunters_relays_quota_user_id_index ON public.wallet_hunters_relays_quota USING btree (user_id);
-
-
---
--- Name: wallet_hunters_votes_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX wallet_hunters_votes_user_id_index ON public.wallet_hunters_votes USING btree (user_id);
 
 
 --
@@ -11339,22 +10079,6 @@ ALTER TABLE ONLY public.dashboards_cache
 
 
 --
--- Name: dashboards_history dashboards_history_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboards_history
-    ADD CONSTRAINT dashboards_history_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
-
-
---
--- Name: dashboards_history dashboards_history_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboards_history
-    ADD CONSTRAINT dashboards_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
 -- Name: dashboards dashboards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11376,22 +10100,6 @@ ALTER TABLE ONLY public.deep_research_sessions
 
 ALTER TABLE ONLY public.deep_research_turns
     ADD CONSTRAINT deep_research_turns_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.deep_research_sessions(id) ON DELETE CASCADE;
-
-
---
--- Name: discord_dashboards discord_dashboards_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.discord_dashboards
-    ADD CONSTRAINT discord_dashboards_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
-
-
---
--- Name: discord_dashboards discord_dashboards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.discord_dashboards
-    ADD CONSTRAINT discord_dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -11907,22 +10615,6 @@ ALTER TABLE ONLY public.posts
 
 
 --
--- Name: posts_projects posts_projects_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.posts_projects
-    ADD CONSTRAINT posts_projects_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id);
-
-
---
--- Name: posts_projects posts_projects_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.posts_projects
-    ADD CONSTRAINT posts_projects_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
-
-
---
 -- Name: posts_tags posts_tags_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12035,14 +10727,6 @@ ALTER TABLE ONLY public.project_market_segments
 
 
 --
--- Name: project project_project_transparency_status_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project
-    ADD CONSTRAINT project_project_transparency_status_id_fkey FOREIGN KEY (project_transparency_status_id) REFERENCES public.project_transparency_statuses(id);
-
-
---
 -- Name: project_social_volume_query project_social_volume_query_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12056,14 +10740,6 @@ ALTER TABLE ONLY public.project_social_volume_query
 
 ALTER TABLE ONLY public.promo_trials
     ADD CONSTRAINT promo_trials_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: pumpkins pumpkins_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.pumpkins
-    ADD CONSTRAINT pumpkins_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -12163,22 +10839,6 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 
 --
--- Name: seen_timeline_events seen_timeline_events_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.seen_timeline_events
-    ADD CONSTRAINT seen_timeline_events_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.timeline_events(id);
-
-
---
--- Name: seen_timeline_events seen_timeline_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.seen_timeline_events
-    ADD CONSTRAINT seen_timeline_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
 -- Name: shared_access_tokens shared_access_tokens_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12200,22 +10860,6 @@ ALTER TABLE ONLY public.shared_access_tokens
 
 ALTER TABLE ONLY public.short_urls
     ADD CONSTRAINT short_urls_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: sign_up_trials sign_up_trials_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.sign_up_trials
-    ADD CONSTRAINT sign_up_trials_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id);
-
-
---
--- Name: sign_up_trials sign_up_trials_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.sign_up_trials
-    ADD CONSTRAINT sign_up_trials_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -12312,54 +10956,6 @@ ALTER TABLE ONLY public.table_configurations
 
 ALTER TABLE ONLY public.telegram_user_tokens
     ADD CONSTRAINT telegram_user_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: timeline_event_comments_mapping timeline_event_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_event_comments_mapping
-    ADD CONSTRAINT timeline_event_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
-
-
---
--- Name: timeline_event_comments_mapping timeline_event_comments_mapping_timeline_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_event_comments_mapping
-    ADD CONSTRAINT timeline_event_comments_mapping_timeline_event_id_fkey FOREIGN KEY (timeline_event_id) REFERENCES public.timeline_events(id) ON DELETE CASCADE;
-
-
---
--- Name: timeline_events timeline_events_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
-
-
---
--- Name: timeline_events timeline_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
--- Name: timeline_events timeline_events_user_list_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
-
-
---
--- Name: timeline_events timeline_events_user_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
 
 
 --
@@ -12571,14 +11167,6 @@ ALTER TABLE ONLY public.votes
 
 
 --
--- Name: votes votes_timeline_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.votes
-    ADD CONSTRAINT votes_timeline_event_id_fkey FOREIGN KEY (timeline_event_id) REFERENCES public.timeline_events(id) ON DELETE CASCADE;
-
-
---
 -- Name: votes votes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12600,62 +11188,6 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
-
-
---
--- Name: wallet_hunters_bounties wallet_hunters_bounties_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_bounties
-    ADD CONSTRAINT wallet_hunters_bounties_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: wallet_hunters_proposals wallet_hunters_proposals_bounty_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_proposals
-    ADD CONSTRAINT wallet_hunters_proposals_bounty_id_fkey FOREIGN KEY (bounty_id) REFERENCES public.wallet_hunters_bounties(id) ON DELETE CASCADE;
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping wallet_hunters_proposals_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_proposals_comments_mapping
-    ADD CONSTRAINT wallet_hunters_proposals_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
-
-
---
--- Name: wallet_hunters_proposals_comments_mapping wallet_hunters_proposals_comments_mapping_proposal_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_proposals_comments_mapping
-    ADD CONSTRAINT wallet_hunters_proposals_comments_mapping_proposal_id_fkey FOREIGN KEY (proposal_id) REFERENCES public.wallet_hunters_proposals(id) ON DELETE CASCADE;
-
-
---
--- Name: wallet_hunters_proposals wallet_hunters_proposals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_proposals
-    ADD CONSTRAINT wallet_hunters_proposals_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: wallet_hunters_relays_quota wallet_hunters_relays_quota_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_relays_quota
-    ADD CONSTRAINT wallet_hunters_relays_quota_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
--- Name: wallet_hunters_votes wallet_hunters_votes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wallet_hunters_votes
-    ADD CONSTRAINT wallet_hunters_votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -12710,7 +11242,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict PvbjqjZmuWnlrfYD3EvPnegewcR7DO8MExGYOFT3diTbExa8GzOUeEf9RNBOGhD
+\unrestrict EG37C8QBoSKfDETx8qaeVQ2eWK7GzpPw8nfSggdEi7Y9yNvvm9VlaQNzTlOJx7o
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -13327,3 +11859,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260929141453);
 INSERT INTO public."schema_migrations" (version) VALUES (20261009120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261013082759);
 INSERT INTO public."schema_migrations" (version) VALUES (20261013082802);
+INSERT INTO public."schema_migrations" (version) VALUES (20261014084021);

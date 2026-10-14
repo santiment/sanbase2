@@ -29,9 +29,4 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
     # Remove when frontend migrates
     field(:slug, :string)
   end
-
-  object :exchange_funds_flow do
-    field(:datetime, non_null(:datetime))
-    field(:in_out_difference, non_null(:float))
-  end
 end

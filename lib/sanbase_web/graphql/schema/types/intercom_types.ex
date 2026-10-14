@@ -1,12 +1,6 @@
 defmodule SanbaseWeb.Graphql.IntercomTypes do
   use Absinthe.Schema.Notation
 
-  object :user_attribute do
-    field(:user_id, :id)
-    field(:inserted_at, :datetime)
-    field(:properties, :json)
-  end
-
   object :user_event do
     field(:user_id, :id)
     field(:created_at, :datetime)

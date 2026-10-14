@@ -257,16 +257,6 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:is_query_hash_matching, non_null(:boolean))
   end
 
-  input_object :sql_query_execution_result_input_object do
-    field(:clickhouse_query_id, non_null(:string))
-    field(:summary, non_null(:json))
-    field(:rows, non_null(:json))
-    field(:columns, non_null(list_of(:string)))
-    field(:column_types, non_null(list_of(:string)))
-    field(:query_start_time, non_null(:datetime))
-    field(:query_end_time, non_null(:datetime))
-  end
-
   object :dashboard_query_mapping do
     field(:id, non_null(:string))
     field(:query, non_null(:sql_query))

@@ -19,12 +19,6 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
     value(:thumbs_down)
   end
 
-  object :chat_context do
-    field(:dashboard_id, :string)
-    field(:asset, :string)
-    field(:metrics, list_of(:string))
-  end
-
   input_object :chat_context_input do
     field(:dashboard_id, :string)
     field(:asset, :string)

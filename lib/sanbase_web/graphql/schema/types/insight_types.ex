@@ -21,10 +21,6 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:name, non_null(:string))
   end
 
-  object :post_search do
-    field(:post, non_null(:post))
-  end
-
   object :post_image_data do
     field(:image_url, non_null(:string))
     field(:image_url_w400, :string)

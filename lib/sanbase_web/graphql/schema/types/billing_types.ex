@@ -3,13 +3,6 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.BillingResolver
 
-  enum :restriction_types_enum do
-    value(:free)
-    value(:restricted)
-    value(:custom)
-    value(:all)
-  end
-
   enum :billing_status do
     value(:initial)
     value(:incomplete)
@@ -27,11 +20,6 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     value(:burning_regular)
     value(:burning_nft)
     value(:sanr_points_nft)
-  end
-
-  enum :promo_email_lang_enum do
-    value(:en)
-    value(:jp)
   end
 
   enum :billing_interval do
@@ -166,10 +154,6 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:created_at, :datetime)
     field(:status, :string)
     field(:description, :string)
-  end
-
-  object :send_coupon_success do
-    field(:success, non_null(:boolean))
   end
 
   object :coupon do

@@ -1,6 +1,6 @@
 defmodule Sanbase.Queries.Executor.Result do
   @moduledoc ~s"""
-  The result of computing a dashboard panel SQL query.
+  The result of computing an SQL query.
   """
 
   @type t :: %__MODULE__{

@@ -74,6 +74,10 @@ defmodule Sanbase.Repo.Migrations.DropTablesOfRemovedFeatures do
     execute("ALTER TABLE project DROP COLUMN IF EXISTS project_transparency_description")
     execute("ALTER TABLE project DROP COLUMN IF EXISTS project_transparency")
 
+    # Leftovers of the old dashboards implementation
+    execute("ALTER TABLE dashboards DROP COLUMN IF EXISTS panels")
+    execute("ALTER TABLE dashboards_cache DROP COLUMN IF EXISTS panels")
+
     for table <- @tables do
       execute("DROP TABLE IF EXISTS #{table}")
     end

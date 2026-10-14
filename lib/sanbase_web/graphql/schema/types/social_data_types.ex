@@ -29,19 +29,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:all)
   end
 
-  enum :social_dominance_sources do
-    value(:telegram)
-    value(:twitter)
-    value(:reddit)
-    value(:all)
-  end
-
-  enum :social_volume_type do
-    value(:reddit_comments_overview)
-    value(:telegram_chats_overview)
-    value(:telegram_discussion_overview)
-  end
-
   input_object :selector_slug_or_slug_input_object do
     field(:slug, :string)
     field(:slugs, list_of(:string))
@@ -101,16 +88,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
         {:ok, inserted_at}
       end)
     end
-  end
-
-  object :messages do
-    field(:text, :string)
-    field(:datetime, non_null(:datetime))
-  end
-
-  object :chart_data do
-    field(:mentions_count, :float)
-    field(:datetime, non_null(:datetime))
   end
 
   object :social_volume do

@@ -388,20 +388,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:total_votes, :integer)
   end
 
-  object :relays_quota do
-    field(:global_relays_left, :integer)
-    field(:global_relays_quota, :integer)
-    field(:global_relays_used, :integer)
-    field(:proposal_relays_left, :integer)
-    field(:proposal_relays_quota, :integer)
-    field(:proposal_relays_used, :integer)
-    field(:vote_relays_left, :integer)
-    field(:vote_relays_quota, :integer)
-    field(:vote_relays_used, :integer)
-    field(:can_relay_proposal, :boolean)
-    field(:can_relay_vote, :boolean)
-  end
-
   object :public_insights_count do
     field(:total_count, :integer)
     field(:paywall_count, :integer)

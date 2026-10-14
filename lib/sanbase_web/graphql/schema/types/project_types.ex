@@ -99,11 +99,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:display_name, non_null(:string))
   end
 
-  object :metric_anomalies do
-    field(:metric, :string)
-    field(:anomalies, list_of(:string))
-  end
-
   object :project_tag do
     field(:name, non_null(:string))
     field(:type, :string)
@@ -759,15 +754,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :project_info do
     field(:full, :string)
     field(:summary, :string)
-  end
-
-  object :ico_with_eth_contract_info do
-    field(:id, non_null(:id))
-    field(:start_date, :date)
-    field(:end_date, :date)
-    field(:main_contract_address, :string)
-    field(:contract_block_number, :integer)
-    field(:contract_abi, :string)
   end
 
   object :currency_amount do

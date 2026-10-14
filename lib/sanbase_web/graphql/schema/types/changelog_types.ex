@@ -2,27 +2,6 @@ defmodule SanbaseWeb.Graphql.ChangelogTypes do
   use Absinthe.Schema.Notation
 
   @desc """
-  A changelog entry for a specific date containing all metrics and assets events.
-  """
-  object :changelog_date_entry do
-    field(:date, non_null(:date), description: "Date of the changelog entry")
-
-    field(:created_metrics, list_of(:metric_changelog_event),
-      description: "Metrics created on this date"
-    )
-
-    field(:deprecated_metrics, list_of(:metric_deprecation_event),
-      description: "Metrics deprecated on this date"
-    )
-
-    field(:created_assets, list_of(:asset_changelog_event),
-      description: "Assets created on this date"
-    )
-
-    field(:hidden_assets, list_of(:asset_hiding_event), description: "Assets hidden on this date")
-  end
-
-  @desc """
   A metrics-only changelog entry for a specific date.
   """
   object :metrics_changelog_date_entry do

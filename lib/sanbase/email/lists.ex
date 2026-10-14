@@ -21,7 +21,6 @@ defmodule Sanbase.Email.Lists do
     - `:mailjet_list` - the list key used with `Sanbase.Email.MailjetApi`
     - `:setting` - the user settings key that the UI toggle shows
     - `:mirrored_settings` - legacy settings keys that hold the same value
-    - `:user_field` - a `users` column that holds the same value
     - `:basis` - the legal basis for sending
     - `:default` - the setting value for users that have not chosen
     - `:entry_points` - where users can subscribe, used as consent sources
@@ -37,15 +36,16 @@ defmodule Sanbase.Email.Lists do
     # is set per environment with MAILJET_MARKETING_NEWSLETTER_LIST_ID
     # (10331431 in prod).
     #
-    # Users see one consent in two places: the "Weekly newsletter" toggle in
-    # Account Settings and the marketing checkbox at signup and on the
-    # /privacy-policy page (users.marketing_accepted). All of them hold the same
-    # value.
+    # The "Weekly newsletter" toggle in Account Settings controls it. The
+    # newsletter is a part of the broader marketing consent
+    # (users.marketing_accepted, the checkbox at signup and on the
+    # /privacy-policy page): giving that consent subscribes to the newsletter
+    # and withdrawing it unsubscribes, but the toggle changes only the
+    # newsletter (see Sanbase.Accounts.update_terms_and_conditions/2).
     newsletter: %{
       mailjet_list: :marketing_newsletter,
       setting: :is_subscribed_weekly_newsletter,
       mirrored_settings: [:is_subscribed_marketing_emails],
-      user_field: :marketing_accepted,
       basis: :consent,
       default: false,
       entry_points: [:signup_dialog, :privacy_page, :settings_toggle, :website_form],

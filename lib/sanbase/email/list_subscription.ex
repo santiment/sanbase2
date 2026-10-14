@@ -3,10 +3,10 @@ defmodule Sanbase.Email.ListSubscription do
   The single place that changes a user's subscription to a list from
   `Sanbase.Email.Lists`.
 
-  A change writes every place that holds the subscription (the `users` column,
-  the list setting and its mirrored settings), records the consent with its
-  source, and adds or removes the contact in Mailjet. Mailjet is called only
-  when the subscription actually changes.
+  A change writes every place that holds the subscription (the list setting and
+  its mirrored settings), records the consent with its source, and adds or
+  removes the contact in Mailjet. Mailjet is called only when the subscription
+  actually changes.
   """
 
   import Ecto.Query, only: [from: 2]
@@ -19,10 +19,16 @@ defmodule Sanbase.Email.ListSubscription do
   Set the user's subscription to the list and sync it to Mailjet.
 
   Returns `{:ok, changed?}`.
+
+  ## Options
+
+    - `:notify_mailjet` - call Mailjet when the subscription changes. Defaults
+      to `true`. Pass `false` to bring Sanbase in line with Mailjet without
+      calling it.
   """
-  @spec set(non_neg_integer(), Lists.list_key(), boolean(), ListConsent.source()) ::
+  @spec set(non_neg_integer(), Lists.list_key(), boolean(), ListConsent.source(), keyword()) ::
           {:ok, boolean()} | {:error, term()}
-  def set(user_id, list_key, subscribed, source) when is_boolean(subscribed) do
+  def set(user_id, list_key, subscribed, source, opts \\ []) when is_boolean(subscribed) do
     Repo.transaction(fn ->
       case change(user_id, list_key, subscribed, source) do
         {:ok, changed?} -> changed?
@@ -31,7 +37,9 @@ defmodule Sanbase.Email.ListSubscription do
     end)
     |> case do
       {:ok, changed?} ->
-        if changed?, do: notify_mailjet(user_id, list_key, subscribed)
+        if changed? and Keyword.get(opts, :notify_mailjet, true),
+          do: notify_mailjet(user_id, list_key, subscribed)
+
         {:ok, changed?}
 
       {:error, error} ->
@@ -52,7 +60,6 @@ defmodule Sanbase.Email.ListSubscription do
     settings = Map.new(Lists.settings_keys(list_key), &{&1, subscribed})
 
     with {:ok, previous} <- current_value(user_id, list),
-         :ok <- put_user_field(user_id, list, subscribed),
          {:ok, _} <- UserSettings.put_list_settings(user_id, settings),
          :ok <-
            maybe_record_consent(previous != subscribed, user_id, list_key, subscribed, source) do
@@ -72,21 +79,28 @@ defmodule Sanbase.Email.ListSubscription do
     :ok
   end
 
-  defp current_value(user_id, %{user_field: field}) when is_atom(field) and not is_nil(field) do
-    from(u in User, where: u.id == ^user_id, select: field(u, ^field), lock: "FOR UPDATE")
+  defp current_value(user_id, list) do
+    # Lock the users row before the settings row, in the same order as
+    # Sanbase.Accounts.UserSettings and Sanbase.Accounts, so concurrent changes
+    # for the same user cannot deadlock.
+    from(u in User, where: u.id == ^user_id, select: u.id, lock: "FOR UPDATE")
     |> Repo.one()
     |> case do
-      nil -> {:error, :user_not_found}
-      value -> {:ok, value}
+      nil ->
+        {:error, :user_not_found}
+
+      _ ->
+        from(us in UserSettings,
+          where: us.user_id == ^user_id,
+          select: us.settings,
+          lock: "FOR UPDATE"
+        )
+        |> Repo.one()
+        |> case do
+          nil -> {:ok, list.default}
+          settings -> {:ok, Map.get(settings, list.setting) == true}
+        end
     end
-  end
-
-  defp put_user_field(user_id, %{user_field: field}, value)
-       when is_atom(field) and not is_nil(field) do
-    from(u in User, where: u.id == ^user_id)
-    |> Repo.update_all(set: [{field, value}])
-
-    :ok
   end
 
   defp maybe_record_consent(false = _changed?, _user_id, _list_key, _subscribed, _source), do: :ok

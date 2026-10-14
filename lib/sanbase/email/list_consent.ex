@@ -1,8 +1,10 @@
 defmodule Sanbase.Email.ListConsent do
   @moduledoc """
   Append-only record of a user subscribing to or unsubscribing from a
-  consent-based email list (see `Sanbase.Email.Lists`). Stores when and where
-  the choice was made, as evidence of the consent.
+  consent-based email list (see `Sanbase.Email.Lists`), and of giving or
+  withdrawing the marketing consent (`users.marketing_accepted`, recorded as
+  the `:marketing` list). Stores when and where the choice was made, as
+  evidence of the consent.
   """
   use Ecto.Schema
 
@@ -11,12 +13,12 @@ defmodule Sanbase.Email.ListConsent do
 
   alias Sanbase.Repo
 
-  @sources ~w(signup_dialog privacy_page settings_toggle website_form mailjet_unsubscribe)a
+  @sources ~w(signup_dialog privacy_page settings_toggle website_form mailjet_unsubscribe mailjet_list_import)a
 
   schema "email_list_consents" do
     belongs_to(:user, Sanbase.Accounts.User)
 
-    field(:list, Ecto.Enum, values: [:newsletter])
+    field(:list, Ecto.Enum, values: [:newsletter, :marketing])
     field(:subscribed, :boolean)
     field(:source, Ecto.Enum, values: @sources)
 
@@ -29,6 +31,7 @@ defmodule Sanbase.Email.ListConsent do
           | :settings_toggle
           | :website_form
           | :mailjet_unsubscribe
+          | :mailjet_list_import
 
   @doc "Returns the allowed consent sources."
   @spec sources() :: [source()]

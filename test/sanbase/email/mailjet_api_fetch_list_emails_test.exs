@@ -81,4 +81,36 @@ defmodule Sanbase.Email.MailjetApiFetchListEmailsTest do
 
     assert {:error, :list_not_configured} = MailjetApi.fetch_list_emails(@list)
   end
+
+  test "fetch_list_subscribed_emails/1 drops unsubscribed and excluded contacts" do
+    Req.Test.stub(@stub_name, fn conn ->
+      params = URI.decode_query(conn.query_string)
+      assert params["ContactsList"] == Integer.to_string(@list_id)
+
+      data =
+        case {conn.request_path, params["Offset"]} do
+          {"/v3/REST/contact", "0"} ->
+            [
+              %{"ID" => 1, "Email" => "a@example.com", "IsExcludedFromCampaigns" => false},
+              %{"ID" => 2, "Email" => "b@example.com", "IsExcludedFromCampaigns" => false}
+            ]
+
+          {"/v3/REST/contact", "2"} ->
+            [%{"ID" => 3, "Email" => "c@example.com", "IsExcludedFromCampaigns" => true}]
+
+          {"/v3/REST/listrecipient", "0"} ->
+            [
+              %{"ContactID" => 1, "IsUnsubscribed" => false},
+              %{"ContactID" => 2, "IsUnsubscribed" => true}
+            ]
+
+          {"/v3/REST/listrecipient", "2"} ->
+            [%{"ContactID" => 3, "IsUnsubscribed" => false}]
+        end
+
+      Req.Test.json(conn, %{"Data" => data})
+    end)
+
+    assert {:ok, ["a@example.com"]} = MailjetApi.fetch_list_subscribed_emails(@list)
+  end
 end

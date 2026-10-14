@@ -46,6 +46,9 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
       assert user.marketing_accepted
       assert_newsletter_settings(user, true)
 
+      assert [%ListConsent{subscribed: true, source: :privacy_page}] =
+               ListConsent.history(user.id, :marketing)
+
       drain_events()
       assert_received {:mailjet_subscribe, :marketing_newsletter, "consent@example.com"}
     end
@@ -141,6 +144,72 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
     end
   end
 
+  describe "the newsletter as a part of the marketing consent" do
+    test "withdrawing the marketing consent unsubscribes a newsletter turned on separately", %{
+      user: user
+    } do
+      {:ok, user} = Accounts.update_terms_and_conditions(user, %{privacy_policy_accepted: true})
+      {:ok, _} = UserSettings.update_settings(user, %{is_subscribed_weekly_newsletter: true})
+      {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: true})
+      drain_and_flush()
+
+      {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: false})
+
+      refute user.marketing_accepted
+      assert_newsletter_settings(user, false)
+
+      drain_events()
+      assert_received {:mailjet_unsubscribe, :marketing_newsletter, "consent@example.com"}
+    end
+
+    test "withdrawing the marketing consent with the newsletter already off does not touch Mailjet",
+         %{user: user} do
+      {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: true})
+      {:ok, _} = UserSettings.update_settings(user, %{is_subscribed_weekly_newsletter: false})
+      drain_and_flush()
+
+      {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: false})
+
+      refute user.marketing_accepted
+
+      assert [%ListConsent{subscribed: true}, %ListConsent{subscribed: false}] =
+               ListConsent.history(user.id, :marketing)
+
+      drain_events()
+      refute_received {:mailjet_unsubscribe, _, _}
+    end
+
+    test "saving an unchanged marketing consent does not turn the newsletter back on", %{
+      user: user
+    } do
+      {:ok, user} = Accounts.update_terms_and_conditions(user, %{privacy_policy_accepted: true})
+      {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: true})
+      {:ok, _} = UserSettings.update_settings(user, %{is_subscribed_weekly_newsletter: false})
+      drain_and_flush()
+
+      {:ok, _} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: true})
+
+      assert_newsletter_settings(user, false)
+
+      drain_events()
+      refute_received {:mailjet_subscribe, _, _}
+    end
+
+    test "a stale user struct does not hide a change", %{user: user} do
+      {:ok, _} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: true})
+      drain_and_flush()
+
+      # `user` still has marketing_accepted: false
+      {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: false})
+
+      refute Repo.get!(User, user.id).marketing_accepted
+      assert_newsletter_settings(user, false)
+
+      drain_events()
+      assert_received {:mailjet_unsubscribe, :marketing_newsletter, "consent@example.com"}
+    end
+  end
+
   describe "is_subscribed_weekly_newsletter setting (Weekly newsletter toggle)" do
     test "is off by default", %{user: user} do
       refute UserSettings.settings_for(user).is_subscribed_weekly_newsletter
@@ -152,7 +221,8 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
 
       assert settings.is_subscribed_weekly_newsletter
       assert settings.is_subscribed_marketing_emails
-      assert Repo.get!(User, user.id).marketing_accepted
+      refute Repo.get!(User, user.id).marketing_accepted
+      assert [] = ListConsent.history(user.id, :marketing)
 
       assert [%ListConsent{subscribed: true, source: :settings_toggle}] =
                ListConsent.history(user.id, :newsletter)
@@ -168,7 +238,7 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
       assert {:ok, _} =
                UserSettings.update_settings(user, %{is_subscribed_weekly_newsletter: false})
 
-      refute Repo.get!(User, user.id).marketing_accepted
+      assert Repo.get!(User, user.id).marketing_accepted
       assert_newsletter_settings(user, false)
 
       drain_events()
@@ -214,44 +284,46 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
       assert %{"isSubscribedWeeklyNewsletter" => true, "isSubscribedMarketingEmails" => true} =
                result["data"]["updateUserSettings"]
 
-      assert Repo.get!(User, user.id).marketing_accepted
+      refute Repo.get!(User, user.id).marketing_accepted
 
       drain_events()
       assert_received {:mailjet_subscribe, :marketing_newsletter, "consent@example.com"}
     end
   end
 
-  describe "is_subscribed_marketing_emails setting" do
-    test "turning it on syncs marketing_accepted and subscribes to the list", %{user: user} do
+  describe "is_subscribed_marketing_emails setting (legacy, mirrors the newsletter)" do
+    test "turning it on subscribes to the newsletter", %{user: user} do
       assert {:ok, _} =
                UserSettings.update_settings(user, %{is_subscribed_marketing_emails: true})
 
-      assert Repo.get!(User, user.id).marketing_accepted
+      assert_newsletter_settings(user, true)
+      refute Repo.get!(User, user.id).marketing_accepted
 
       drain_events()
       assert_received {:mailjet_subscribe, :marketing_newsletter, "consent@example.com"}
     end
 
-    test "turning it off syncs marketing_accepted and unsubscribes from the list", %{user: user} do
+    test "turning it off unsubscribes from the newsletter", %{user: user} do
       {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: true})
       drain_events()
 
       assert {:ok, _} =
                UserSettings.update_settings(user, %{is_subscribed_marketing_emails: false})
 
-      refute Repo.get!(User, user.id).marketing_accepted
+      assert_newsletter_settings(user, false)
+      assert Repo.get!(User, user.id).marketing_accepted
 
       drain_events()
       assert_received {:mailjet_unsubscribe, :marketing_newsletter, "consent@example.com"}
     end
 
-    test "updating other settings does not touch the marketing consent", %{user: user} do
+    test "updating other settings does not touch the newsletter", %{user: user} do
       {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: true})
       drain_events()
 
       assert {:ok, _} = UserSettings.update_settings(user, %{theme: "nightmode"})
 
-      assert Repo.get!(User, user.id).marketing_accepted
+      assert_newsletter_settings(user, true)
 
       drain_events()
       refute_received {:mailjet_unsubscribe, _, _}
@@ -264,7 +336,7 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
           {"SanR", "10321582"},
           {"Alpha Narratives", "10321590"}
         ] do
-      test "unsubscribing from the #{list_name} list revokes the marketing consent", %{
+      test "unsubscribing from the #{list_name} list unsubscribes from the newsletter", %{
         user: user
       } do
         {:ok, user} = Accounts.update_terms_and_conditions(user, %{marketing_accepted: true})
@@ -272,7 +344,7 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
 
         assert {:ok, _} = MailjetEventHandler.handle_unsubscribe(user.email, unquote(list_id))
 
-        refute Repo.get!(User, user.id).marketing_accepted
+        assert Repo.get!(User, user.id).marketing_accepted
         assert_newsletter_settings(user, false)
 
         assert [_, %ListConsent{subscribed: false, source: :mailjet_unsubscribe}] =
@@ -283,12 +355,13 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
       end
     end
 
-    test "unsubscribing a user that has not accepted marketing does not touch Mailjet", %{
+    test "unsubscribing a user that is not subscribed does not touch Mailjet", %{
       user: user
     } do
       assert {:ok, _} = MailjetEventHandler.handle_unsubscribe(user.email, "10331431")
 
-      refute Repo.get!(User, user.id).marketing_accepted
+      assert_newsletter_settings(user, false)
+      assert [] = ListConsent.history(user.id, :newsletter)
 
       drain_events()
       refute_received {:mailjet_unsubscribe, _, _}
@@ -352,7 +425,7 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
       verify_email_login(conn, user)
 
       user = Repo.get!(User, user.id)
-      assert user.marketing_accepted
+      refute user.marketing_accepted
       refute user.newsletter_opt_in_pending
       assert_newsletter_settings(user, true)
 
@@ -377,7 +450,7 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
         })
 
       assert user.privacy_policy_accepted
-      assert user.marketing_accepted
+      refute user.marketing_accepted
       assert_newsletter_settings(user, true)
 
       drain_events()
@@ -390,7 +463,7 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
 
       verify_email_login(conn, user)
 
-      refute Repo.get!(User, user.id).marketing_accepted
+      assert_newsletter_settings(user, false)
 
       drain_events()
       refute_received {:mailjet_subscribe, :marketing_newsletter, _}
@@ -401,7 +474,7 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
 
       verify_email_login(conn, user)
 
-      refute Repo.get!(User, user.id).marketing_accepted
+      assert_newsletter_settings(user, false)
       assert [] = ListConsent.history(user.id, :newsletter)
     end
   end
@@ -431,5 +504,21 @@ defmodule Sanbase.Accounts.MarketingConsentTest do
 
   defp drain_events() do
     Sanbase.EventBus.drain_topics(@subscriber.topics(), 10_000)
+  end
+
+  # Drain the events and drop the Mailjet calls received so far, so the test
+  # only sees the calls made after this point.
+  defp drain_and_flush() do
+    drain_events()
+    flush_mailjet_calls()
+  end
+
+  defp flush_mailjet_calls() do
+    receive do
+      {:mailjet_subscribe, _, _} -> flush_mailjet_calls()
+      {:mailjet_unsubscribe, _, _} -> flush_mailjet_calls()
+    after
+      0 -> :ok
+    end
   end
 end

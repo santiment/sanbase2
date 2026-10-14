@@ -4,11 +4,13 @@ defmodule Sanbase.Repo.Migrations.ResetWeeklyNewsletterSetting do
   @moduledoc """
   The weekly newsletter setting defaulted to on and was never connected to a
   Mailjet list, so it shows on for most users without them ever opting in.
-  It now follows the marketing consent (users.marketing_accepted), which is the
-  only opt-in the users have given. The mirrored is_subscribed_marketing_emails
-  setting is aligned too.
+  It starts from the marketing consent (users.marketing_accepted), which
+  includes the newsletter. The mirrored is_subscribed_marketing_emails setting
+  is aligned too.
 
-  This only rewrites the stored settings. It does not call Mailjet.
+  This only rewrites the stored settings. It does not call Mailjet. After the
+  deploy, Sanbase.Email.ListImport.import_from_mailjet(:newsletter) makes the
+  setting match the Mailjet list.
   """
 
   def up() do

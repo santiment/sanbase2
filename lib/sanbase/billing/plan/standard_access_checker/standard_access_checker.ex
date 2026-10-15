@@ -77,10 +77,24 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
       "FREE" -> true
       "BASIC" -> plan_name != "FREE"
       "PRO" -> plan_name not in ["FREE", "BASIC"]
+      "MAX" -> max_plan?(requested_product, plan_name)
       "CUSTOM" -> plan_name == "CUSTOM"
       _ -> true
     end
   end
+
+  # The top tier differs per product. On Sanbase only the MAX plan qualifies. SanAPI
+  # has no MAX plan, so there BUSINESS_MAX and the plans above it qualify.
+  @sanapi_max_plans ["BUSINESS_MAX", "CUSTOM", "PREMIUM"]
+  @sanapi_max_plan_prefixes ["INSTITUTIONAL", "ENTERPRISE"]
+
+  defp max_plan?("SANBASE", plan_name), do: plan_name == "MAX"
+
+  defp max_plan?("SANAPI", plan_name) when is_binary(plan_name) do
+    plan_name in @sanapi_max_plans or String.starts_with?(plan_name, @sanapi_max_plan_prefixes)
+  end
+
+  defp max_plan?(_requested_product, _plan_name), do: false
 
   @spec min_plan(product_code, query_or_argument) :: plan_name
   def min_plan(product_code, query_or_argument) do

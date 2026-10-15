@@ -588,9 +588,12 @@ defmodule Sanbase.Billing.Plan.EnterpriseTest do
   defp complexity(args, plan_name) do
     subscription = %Subscription{plan: %Plan{name: plan_name}}
 
-    SanbaseWeb.Graphql.Complexity.from_to_interval(args, 5, %{
-      context: %{auth: %{subscription: subscription}}
-    })
+    SanbaseWeb.Graphql.Complexity.from_to_interval(
+      args,
+      5,
+      %{auth: %{subscription: subscription}},
+      nil
+    )
   end
 
   # A full happy-path mock set, with `create_subscription/1` forwarding the params it

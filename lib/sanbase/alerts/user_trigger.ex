@@ -465,6 +465,8 @@ defmodule Sanbase.Alert.UserTrigger do
     %{trigger: trigger} = user_trigger
 
     with {:ok, %settings_module{} = settings} <- load_in_struct_if_valid(trigger.settings) do
+      settings = put_owner_user_id(settings, user_trigger.user_id)
+
       case settings_module.post_create_process(%{trigger | settings: settings}) do
         :nochange ->
           {:ok, user_trigger}
@@ -485,6 +487,8 @@ defmodule Sanbase.Alert.UserTrigger do
     %{trigger: trigger} = user_trigger
 
     with {:ok, %settings_module{} = settings} <- load_in_struct_if_valid(trigger.settings) do
+      settings = put_owner_user_id(settings, user_trigger.user_id)
+
       case settings_module.post_update_process(%{trigger | settings: settings}) do
         :nochange ->
           {:ok, user_trigger}
@@ -500,6 +504,16 @@ defmodule Sanbase.Alert.UserTrigger do
       end
     end
   end
+
+  @doc ~s"""
+  Put the id of the alert owner in the settings, if they need it. It is not stored
+  in the DB and is used, for example, to resolve only watchlists that are public or
+  owned by the alert owner.
+  """
+  def put_owner_user_id(%{owner_user_id: _} = settings, user_id),
+    do: %{settings | owner_user_id: user_id}
+
+  def put_owner_user_id(settings, _user_id), do: settings
 
   defp by_user_and_id_query(nil, trigger_id) do
     from(

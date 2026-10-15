@@ -360,7 +360,7 @@ defmodule Sanbase.ProjectListSelectorTest do
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
-          ListSelector.slugs(%{selector: selector})
+          ListSelector.slugs(%{selector: selector}, user_id: user.id)
 
         assert total_projects_count == 2
         assert p1.slug in slugs
@@ -408,7 +408,7 @@ defmodule Sanbase.ProjectListSelectorTest do
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
-          ListSelector.slugs(%{selector: selector})
+          ListSelector.slugs(%{selector: selector}, user_id: user.id)
 
         assert total_projects_count == 2
         assert p1.slug in slugs

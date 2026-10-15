@@ -256,7 +256,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   regex-extracted images from text. This ensures backward compatibility
   for old insights where images were never properly linked in the DB.
   """
-  def resolve_images(%Post{text: text, images: images}, _args, _resolution) do
+  def resolve_images(%Post{is_paywall_required: true} = post, _args, resolution) do
+    # A viewer who gets only the preview text gets only the images in it. Batched
+    # with the text field, so access is checked once per response.
+    batch_paywalled_texts(post, resolution, fn texts ->
+      case Map.fetch!(texts, post.id) do
+        text when text == post.text -> {:ok, post_images(post, text, true)}
+        preview_text -> {:ok, post_images(post, preview_text, false)}
+      end
+    end)
+  end
+
+  def resolve_images(%Post{text: text} = post, _args, _resolution),
+    do: {:ok, post_images(post, text, true)}
+
+  defp post_images(%Post{images: images}, text, include_db_only_images?) do
     db_images =
       case images do
         images when is_list(images) ->
@@ -285,15 +299,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       MapSet.new(regex_images, fn %{image_url: url} -> String.downcase(url) end)
 
     orphan_db_images =
-      Enum.reject(db_images, fn %{image_url: url} ->
-        MapSet.member?(text_urls, String.downcase(url))
-      end)
+      if include_db_only_images?,
+        do: Enum.reject(db_images, &MapSet.member?(text_urls, String.downcase(&1.image_url))),
+        else: []
 
-    all_images =
-      (regex_images ++ orphan_db_images)
-      |> Enum.uniq_by(fn %{image_url: url} -> String.downcase(url) end)
-
-    {:ok, all_images}
+    (regex_images ++ orphan_db_images)
+    |> Enum.uniq_by(fn %{image_url: url} -> String.downcase(url) end)
   end
 
   defp post_image_to_map(%PostImage{} = image) do

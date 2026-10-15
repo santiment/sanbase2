@@ -194,6 +194,51 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     assert five_insights_queries == one_insight_queries
   end
 
+  describe "images of paywalled insights" do
+    setup context do
+      storage_dir = Application.get_env(:waffle, :storage_dir) |> String.trim_trailing("/")
+      preview_image = "#{storage_dir}/preview.png"
+      hidden_image = "#{storage_dir}/hidden.png"
+      words = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
+      author = insert(:user)
+
+      post =
+        create_insight(%{text: "#{preview_image} #{words} #{hidden_image}", author: author}, %{})
+
+      for url <- [preview_image, hidden_image] do
+        Sanbase.Repo.insert!(%Sanbase.Insight.PostImage{
+          post_id: post.id,
+          image_url: url,
+          file_name: Path.basename(url),
+          content_hash: Path.basename(url),
+          hash_algorithm: "sha256"
+        })
+      end
+
+      query = "{ insight(id: #{post.id}) { images { imageUrl } } }"
+
+      Map.merge(context, %{
+        author: author,
+        query: query,
+        preview_image: preview_image,
+        hidden_image: hidden_image
+      })
+    end
+
+    test "a user without access sees only the images in the preview", context do
+      %{"images" => images} = execute_query(context.conn, context.query, "insight")
+
+      assert Enum.map(images, & &1["imageUrl"]) == [context.preview_image]
+    end
+
+    test "the author sees all images", context do
+      conn = setup_jwt_auth(build_conn(), context.author)
+      %{"images" => images} = execute_query(conn, context.query, "insight")
+
+      assert Enum.map(images, & &1["imageUrl"]) == [context.preview_image, context.hidden_image]
+    end
+  end
+
   describe "filter paywalled in other fields returning insights" do
     setup do
       text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")

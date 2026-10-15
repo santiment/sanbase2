@@ -276,6 +276,13 @@ defmodule Sanbase.ProjectListSelectorTest do
       end)
     end
 
+    test "with base projects [{watchlistSlug: slug}] of a non-existing watchlist" do
+      selector = %{base_projects: [%{watchlistSlug: "non-existing-watchlist-slug"}]}
+
+      assert {:error, error} = ListSelector.slugs(%{selector: selector})
+      assert error =~ "non-existing-watchlist-slug"
+    end
+
     test "with base projects [{watchlsitId: id}]" do
       p1 = insert(:random_project)
       p2 = insert(:random_project)

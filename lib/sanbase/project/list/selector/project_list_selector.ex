@@ -209,7 +209,11 @@ defmodule Sanbase.Project.ListSelector do
 
   defp get_base_slugs(%{watchlist_slug: slug} = map) do
     detect_cycles!(map)
-    slug |> Sanbase.UserList.by_slug() |> Sanbase.UserList.get_slugs()
+
+    case Sanbase.UserList.by_slug(slug) do
+      nil -> {:error, "Watchlist with slug #{slug} does not exist."}
+      watchlist -> Sanbase.UserList.get_slugs(watchlist)
+    end
   end
 
   defp get_base_slugs(%{slugs: slugs}) when is_list(slugs) do

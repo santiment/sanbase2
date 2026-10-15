@@ -182,14 +182,15 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     case access_token && bearer_authenticate(conn, access_token) do
       {:ok, %{current_user: current_user} = map} ->
         # The subscription of the linked primary user, or of the current user if none.
-        subscription = get_user_subscription_for_sanbase(current_user.id)
+        subscriptions = current_subscriptions_by_product(current_user.id)
+        subscription = get_user_subscription_for_sanbase(subscriptions)
         subscription_product_id = if subscription, do: subscription.plan.product_id, else: nil
 
         subscription_product =
           if subscription, do: Product.code_by_id(subscription.plan.product_id), else: nil
 
         %AuthStruct{
-          permissions: User.Permissions.permissions(current_user),
+          permissions: permissions(subscriptions),
           auth: %{
             auth_method: :user_token,
             current_user: current_user,
@@ -216,14 +217,15 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
          {:ok, %{current_user: current_user} = map} <- bearer_authenticate(conn, token) do
       requested_product_id = @product_id_sanbase
       requested_product = "SANBASE"
-      subscription = find_best_subscription(requested_product_id, current_user.id)
+      subscriptions = current_subscriptions_by_product(current_user.id)
+      subscription = find_best_subscription(requested_product_id, subscriptions)
       subscription_product_id = if subscription, do: subscription.plan.product_id, else: nil
 
       subscription_product =
         if subscription, do: Product.code_by_id(subscription.plan.product_id), else: nil
 
       %AuthStruct{
-        permissions: User.Permissions.permissions(current_user),
+        permissions: permissions(subscriptions),
         auth: %{
           auth_method: :user_token,
           current_user: current_user,
@@ -281,14 +283,15 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         get_req_header(conn, "user-agent")
         |> get_apikey_product_id()
 
-      subscription = find_best_subscription(requested_product_id, current_user.id)
+      subscriptions = current_subscriptions_by_product(current_user.id)
+      subscription = find_best_subscription(requested_product_id, subscriptions)
       subscription_product_id = if subscription, do: subscription.plan.product_id, else: nil
 
       subscription_product =
         if subscription, do: Product.code_by_id(subscription.plan.product_id), else: nil
 
       %AuthStruct{
-        permissions: User.Permissions.permissions(current_user),
+        permissions: permissions(subscriptions),
         auth: %{
           auth_method: :apikey,
           current_user: current_user,
@@ -311,11 +314,25 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
   # Private functions
 
-  defp find_best_subscription(requested_product, user_id) do
+  # All of the user's current subscriptions in one query, keyed by product id. Per
+  # product the highest id wins, the same as `Subscription.current_subscription/2`.
+  # Both the subscription choice and the permissions are computed from this map.
+  defp current_subscriptions_by_product(user_id) do
+    Subscription.user_subscriptions(%User{id: user_id})
+    |> Enum.reduce(%{}, fn %Subscription{plan: %{product_id: product_id}} = sub, acc ->
+      Map.put_new(acc, product_id, sub)
+    end)
+  end
+
+  defp permissions(subscriptions_by_product) do
+    User.Permissions.permissions_from_subscriptions(Map.values(subscriptions_by_product))
+  end
+
+  defp find_best_subscription(requested_product, subscriptions_by_product) do
     # Cross-product fallback both ways, so paying customers keep their benefits in the
     # other product. The plan name is translated in effective_plan_name/2.
-    api_sub = Subscription.current_subscription(user_id, @product_id_api)
-    sanbase_sub = Subscription.current_subscription(user_id, @product_id_sanbase)
+    api_sub = Map.get(subscriptions_by_product, @product_id_api)
+    sanbase_sub = Map.get(subscriptions_by_product, @product_id_sanbase)
 
     case Product.code_by_id(requested_product) do
       "SANBASE" -> sanbase_sub || api_sub
@@ -353,15 +370,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     Subscription.plan_name(subscription)
   end
 
-  defp get_user_subscription(user_id, product) do
-    Subscription.current_subscription(user_id, product)
-  end
-
-  defp get_user_subscription_for_sanbase(user_id) do
+  defp get_user_subscription_for_sanbase(subscriptions_by_product) do
     # Falls back to a SanAPI subscription so paying SanAPI users keep their Sanbase
     # benefits. Custom plans are translated in effective_plan_name/2.
-    get_user_subscription(user_id, @product_id_sanbase) ||
-      get_user_subscription(user_id, @product_id_api)
+    Map.get(subscriptions_by_product, @product_id_sanbase) ||
+      Map.get(subscriptions_by_product, @product_id_api)
   end
 
   defp anon_user_auth_struct(conn) do

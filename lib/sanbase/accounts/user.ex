@@ -330,14 +330,15 @@ defmodule Sanbase.Accounts.User do
   def by_id(user_id, opts \\ [])
 
   def by_id(user_id, opts) when is_integer(user_id) do
-    query = from(u in __MODULE__, where: u.id == ^user_id) |> maybe_preload(opts)
+    query = from(u in __MODULE__, where: u.id == ^user_id)
 
     query =
       case Keyword.get(opts, :lock_for_update, false) do
-        false -> query
-        true -> query |> lock("FOR UPDATE")
+        false -> query |> maybe_join_preload(opts)
+        # Postgres cannot lock the nullable side of an outer join, so a locking
+        # query keeps one preload query per association.
+        true -> query |> lock("FOR UPDATE") |> maybe_preload(opts)
       end
-      |> maybe_preload(opts)
 
     case Sanbase.Repo.one(query) do
       nil -> {:error, "Cannot fetch the user with id #{user_id}"}
@@ -394,7 +395,7 @@ defmodule Sanbase.Accounts.User do
         on: u.id == uat.user_id,
         where: uat.token == ^token
       )
-      |> maybe_preload(opts)
+      |> maybe_join_preload(Keyword.put_new(opts, :join_preloads, true))
 
     case Sanbase.Repo.one(query) do
       %__MODULE__{} = user -> {:ok, user}
@@ -576,6 +577,30 @@ defmodule Sanbase.Accounts.User do
       false ->
         query
     end
+  end
+
+  # With `join_preloads: true` the default preloads are loaded in the same query
+  # with joins instead of one query per association. Used on the per-request
+  # authentication path, where it saves 3-4 queries.
+  defp maybe_join_preload(query, opts) do
+    join? =
+      Keyword.get(opts, :join_preloads, false) and Keyword.get(opts, :preload?, true) and
+        not Keyword.has_key?(opts, :preload)
+
+    case join? do
+      true -> join_preloads(query)
+      false -> maybe_preload(query, opts)
+    end
+  end
+
+  defp join_preloads(query) do
+    from(u in query,
+      left_join: ur in assoc(u, :roles),
+      left_join: r in assoc(ur, :role),
+      left_join: ea in assoc(u, :eth_accounts),
+      left_join: us in assoc(u, :user_settings),
+      preload: [roles: {ur, role: r}, eth_accounts: ea, user_settings: us]
+    )
   end
 
   defp maybe_preload_struct({:ok, %__MODULE__{} = user}), do: {:ok, Repo.preload(user, @preloads)}

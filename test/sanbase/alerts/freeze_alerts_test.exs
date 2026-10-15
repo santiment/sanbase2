@@ -96,39 +96,6 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     assert UserTrigger.frozen?(trigger) == false
   end
 
-  # import ExUnit.CaptureLog
-  # test "alert is unfrozen after subscription is created", context do
-  #   %{user: user, trigger: trigger} = context
-  #   trigger = update_inserted_at(trigger, naive_days_ago(31))
-  #   Sanbase.Alert.Job.freeze_alerts()
-
-  #   assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-  #   assert {:error, error_msg} = UserTrigger.frozen?(trigger)
-  #   assert error_msg =~ "is frozen"
-
-  #   # When a subscription is created/updated/renewed, a billing event is emitted
-  #   # The BillingEventSubscriber has a special handler that reacts to these events and
-  #   # unfreezes the alerts, if necessary.
-  #   Sanbase.Mock.prepare_mock2(
-  #     &Sanbase.StripeApi.create_customer_with_card/2,
-  #     Sanbase.StripeApiTestResponse.create_or_update_customer_resp()
-  #   )
-  #   |> Sanbase.Mock.prepare_mock2(
-  #     &Sanbase.StripeApi.create_subscription/1,
-  #     Sanbase.StripeApiTestResponse.create_subscription_resp()
-  #   )
-  #   |> Sanbase.Mock.run_with_mocks(fn ->
-  #     log =
-  #       capture_log(fn ->
-  #         Sanbase.Billing.subscribe(user, context.plans.plan_pro_sanbase, nil, nil)
-  #       end)
-
-  #     assert log =~ "[BillingEventSubscriber] Unfreezing alerts for user with id #{user.id}"
-  #     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-  #     assert UserTrigger.frozen?(trigger) == false
-  #   end)
-  # end
-
   test "unfreeze alerts in case the billing event is not handled", context do
     %{user: user, trigger: trigger} = context
 

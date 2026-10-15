@@ -91,17 +91,4 @@ defmodule Sanbase.Utils.TransformTest do
       assert Transform.maybe_transform_to_address(addr) == addr
     end
   end
-
-  describe "rename_map_keys!/2" do
-    test "renames specified keys" do
-      result = Transform.rename_map_keys!(%{a: 1, b: 2}, old_keys: [:a], new_keys: [:c])
-      assert result == %{c: 1, b: 2}
-    end
-
-    test "leaves unspecified keys unchanged" do
-      result = Transform.rename_map_keys!(%{a: 1, b: 2, d: 3}, old_keys: [:a], new_keys: [:c])
-      assert result[:b] == 2
-      assert result[:d] == 3
-    end
-  end
 end

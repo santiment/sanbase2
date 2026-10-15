@@ -110,14 +110,6 @@ defmodule Sanbase.Utils.Transform do
     {:error, error}
   end
 
-  def rename_map_keys!(map, old_keys: old_keys, new_keys: new_keys) do
-    old_new_keys_map = Enum.zip(old_keys, new_keys) |> Enum.into(%{})
-
-    map
-    |> Enum.map(fn {k, v} -> {old_new_keys_map[k] || k, v} end)
-    |> Enum.into(%{})
-  end
-
   @doc ~s"""
   Transform an :ok tuple containing a list of a single value to an :ok tuple
   that unwraps the value in the list. Handles the cases of errors

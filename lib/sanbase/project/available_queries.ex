@@ -90,7 +90,7 @@ defmodule Sanbase.Project.AvailableQueries do
     end
   end
 
-  @mineable_specific_queries ["exchangeWallets", "allExchanges"]
+  @mineable_specific_queries ["allExchanges"]
   @ethereum_specific_queries ["gasUsed"]
   @bitcoin_specific_queries []
 

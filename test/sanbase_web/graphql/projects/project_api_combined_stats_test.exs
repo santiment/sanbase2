@@ -27,30 +27,28 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   test "existing slugs and dates", context do
     %{conn: conn, from: from, to: to, slugs: slugs, data: data} = context
 
-    fn ->
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: data}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_history_stats(conn, from, to, slugs)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: data}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        assert result == %{
-                 "data" => %{
-                   "projectsListHistoryStats" => [
-                     %{"datetime" => "2017-05-13T00:00:00Z", "marketcap" => 545, "volume" => 220},
-                     %{
-                       "datetime" => "2017-05-14T00:00:00Z",
-                       "marketcap" => 2000,
-                       "volume" => 1400
-                     },
-                     %{
-                       "datetime" => "2017-05-15T00:00:00Z",
-                       "marketcap" => 2600,
-                       "volume" => 1600
-                     }
-                   ]
-                 }
+      assert result == %{
+               "data" => %{
+                 "projectsListHistoryStats" => [
+                   %{"datetime" => "2017-05-13T00:00:00Z", "marketcap" => 545, "volume" => 220},
+                   %{
+                     "datetime" => "2017-05-14T00:00:00Z",
+                     "marketcap" => 2000,
+                     "volume" => 1400
+                   },
+                   %{
+                     "datetime" => "2017-05-15T00:00:00Z",
+                     "marketcap" => 2600,
+                     "volume" => 1600
+                   }
+                 ]
                }
-      end)
-    end
+             }
+    end)
   end
 
   test "the database returns no data", context do

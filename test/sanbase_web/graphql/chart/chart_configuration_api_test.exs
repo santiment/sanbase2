@@ -520,6 +520,59 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config_id4 in config_ids
     end
 
+    test "returns error for a non-existing project_slug", context do
+      %{conn: conn, project: project, settings: settings} = context
+
+      create_chart_configuration(conn, %{settings | project_id: project.id})
+
+      result = get_chart_configurations(conn, project_slug: "non-existing-slug")
+
+      assert get_in(result, ["data", "chartConfigurations"]) == nil
+
+      assert get_in(result, ["errors", Access.at(0), "message"]) ==
+               "Project with slug 'non-existing-slug' not found."
+    end
+
+    test "a null project_slug is the same as not providing it", context do
+      %{conn: conn, project: project, settings: settings} = context
+
+      config_id =
+        create_chart_configuration(conn, %{settings | project_id: project.id})
+        |> get_in(["data", "createChartConfiguration", "id"])
+
+      query = """
+      {
+        chartConfigurations(projectSlug: null) { id }
+      }
+      """
+
+      result = conn |> post("/graphql", query_skeleton(query)) |> json_response(200)
+
+      refute Map.has_key?(result, "errors")
+      assert %{"id" => config_id} in get_in(result, ["data", "chartConfigurations"])
+    end
+
+    test "a null project_slug with a project_id filters by the project_id", context do
+      %{conn: conn, project: project, project2: project2, settings: settings} = context
+
+      config_id =
+        create_chart_configuration(conn, %{settings | project_id: project.id})
+        |> get_in(["data", "createChartConfiguration", "id"])
+
+      create_chart_configuration(conn, %{settings | project_id: project2.id})
+
+      query = """
+      {
+        chartConfigurations(projectId: #{project.id}, projectSlug: null) { id }
+      }
+      """
+
+      result = conn |> post("/graphql", query_skeleton(query)) |> json_response(200)
+
+      refute Map.has_key?(result, "errors")
+      assert get_in(result, ["data", "chartConfigurations"]) == [%{"id" => config_id}]
+    end
+
     test "returns error when both project_id and project_slug are provided", context do
       %{conn: conn, project: project, project2: project2} = context
 

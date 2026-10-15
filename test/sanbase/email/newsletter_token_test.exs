@@ -17,13 +17,15 @@ defmodule Sanbase.Email.NewsletterTokenTest do
       nt =
         insert(:newsletter_token, email_token_generated_at: Sanbase.Utils.DateTime.hours_ago(25))
 
-      assert NewsletterToken.verify_token(nt.email, nt.token) == {:error, :expired_token}
+      assert NewsletterToken.verify_token(nt.email, nt.token) ==
+               {:error, :newsletter_token_expired}
     end
 
     test "invalid token" do
       nt = insert(:newsletter_token)
 
-      assert NewsletterToken.verify_token(nt.email, "invalid token") == {:error, :invalid_token}
+      assert NewsletterToken.verify_token(nt.email, "invalid token") ==
+               {:error, :newsletter_token_invalid}
     end
   end
 end

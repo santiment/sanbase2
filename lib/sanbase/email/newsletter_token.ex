@@ -62,7 +62,7 @@ defmodule Sanbase.Email.NewsletterToken do
   end
 
   # helpers
-  defp check_and_mark_valid_token(nil), do: {:error, :invalid_token}
+  defp check_and_mark_valid_token(nil), do: {:error, :newsletter_token_invalid}
 
   defp check_and_mark_valid_token(
          %__MODULE__{
@@ -75,7 +75,7 @@ defmodule Sanbase.Email.NewsletterToken do
            @login_email_valid_minutes do
       mark_email_token_as_validated(newsletter_token)
     else
-      {:error, :expired_token}
+      {:error, :newsletter_token_expired}
     end
   end
 

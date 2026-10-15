@@ -474,6 +474,27 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
              end) =~ "Subscription is scheduled for cancellation at the end of the paid period"
     end
 
+    for status <- [:incomplete, :incomplete_expired, :canceled, :unpaid] do
+      test "returns error if subscription status is #{status}", context do
+        subscription =
+          insert(:subscription_essential,
+            user: context.user,
+            stripe_id: "stripe_id",
+            status: unquote(status)
+          )
+
+        query = update_subscription_mutation(subscription.id, context.plans.plan_pro.id)
+
+        error = "Cannot upgrade or downgrade a subscription with status #{unquote(status)}"
+
+        assert capture_log(fn ->
+                 assert execute_mutation_with_error(context.conn, query) == error
+               end) =~ error
+
+        assert_not_called(StripeApi.upgrade_downgrade(:_, :_))
+      end
+    end
+
     test "when not existing plan provided - returns proper error", context do
       subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
       query = update_subscription_mutation(subscription.id, -1)

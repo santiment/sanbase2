@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
   alias Sanbase.Insight.Post
+  alias Sanbase.Insight.PostPaywall
   alias Sanbase.Insight.PostImage
   alias Sanbase.Insight.ImageUrl
   alias Sanbase.Insight.PopularAuthor
@@ -153,11 +154,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   In order to transport less data over the network, this field can be used instead of
   the `text` field as it will be filled only for those insights.
   """
-  def pulse_text(%Post{} = post, _args, _resolution) do
+  def pulse_text(%Post{} = post, _args, resolution) do
     case Post.pulse?(post) do
-      true -> {:ok, post.text}
+      true -> paywalled_text(post, resolution)
       _ -> {:ok, nil}
     end
+  end
+
+  @doc ~s"""
+  Paywalled insights are shown in full only to their author and to users whose
+  plan can access them. This is applied on the field so every query that
+  returns insights is covered.
+  """
+  def text(%Post{} = post, _args, resolution), do: paywalled_text(post, resolution)
+
+  defp paywalled_text(%Post{is_paywall_required: true} = post, resolution) do
+    batch_paywalled_texts(post, resolution, fn texts ->
+      {:ok, Map.fetch!(texts, post.id)}
+    end)
+  end
+
+  defp paywalled_text(%Post{text: text}, _resolution), do: {:ok, text}
+
+  # Batched, so the user's access to paywalled insights is checked once per
+  # response instead of once per insight.
+  defp batch_paywalled_texts(%Post{} = post, resolution, fun) do
+    batch_arg = {resolution.context[:auth], exempt_author?(resolution)}
+
+    batch({__MODULE__, :paywalled_texts, batch_arg}, post, fun)
+  end
+
+  # Authors see their own paywalled insights in full, except in responses stored in
+  # the document cache (getMostRecent, getMostVoted, the project lists). That cache
+  # has no user in its key, so there the paywall applies to the author as well.
+  # Fetching only the user's own entities sets :do_not_cache_query and is not stored.
+  defp exempt_author?(resolution) do
+    not Map.has_key?(resolution.context, :query_cache_key) or
+      Process.get(:do_not_cache_query) == true
+  end
+
+  @doc false
+  def paywalled_texts({auth, exempt_author?}, posts) do
+    posts
+    |> Enum.uniq_by(& &1.id)
+    |> PostPaywall.maybe_filter_paywalled(auth, exempt_author: exempt_author?)
+    |> Map.new(&{&1.id, &1.text})
   end
 
   def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do

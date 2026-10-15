@@ -174,6 +174,115 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     end
   end
 
+  test "the paywall access is checked once per response, not per insight", context do
+    author = insert(:user)
+    text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
+    query = "{ allInsights { text pulseText isPaywallRequired } }"
+
+    create_insight(%{text: text, author: author}, %{})
+    one_insight_queries = count_subscription_queries(fn -> execute_query(context.conn, query) end)
+
+    for _ <- 1..4, do: create_insight(%{text: text, author: author}, %{})
+
+    {insights, five_insights_queries} =
+      count_subscription_queries(fn -> execute_query(context.conn, query, "allInsights") end,
+        return: true
+      )
+
+    assert length(insights) == 5
+    assert Enum.all?(insights, &(&1["text"] != text))
+    assert five_insights_queries == one_insight_queries
+  end
+
+  describe "filter paywalled in other fields returning insights" do
+    setup do
+      text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
+      author = insert(:user)
+
+      {:ok, text: text, author: author}
+    end
+
+    test "featuredInsights", context do
+      insight = create_insight(context, %{})
+      :ok = Sanbase.FeaturedItem.update_item(insight, true)
+
+      query = "{ featuredInsights { id text isPaywallRequired } }"
+      [result] = execute_query(context.conn, query, "featuredInsights")
+
+      assert result["isPaywallRequired"]
+      assert result["text"] != insight.text
+      assert result["text"] =~ "alabala"
+    end
+
+    test "getUser insights", context do
+      insight = create_insight(context, %{})
+
+      query = """
+      {
+        getUser(selector: {id: #{context.author.id}}) {
+          insights { id text isPaywallRequired }
+        }
+      }
+      """
+
+      %{"insights" => [result]} = execute_query(context.conn, query, "getUser")
+
+      assert result["isPaywallRequired"]
+      assert result["text"] != insight.text
+      assert result["text"] =~ "alabala"
+    end
+
+    test "getMostRecent insights", context do
+      insight = create_insight(context, %{published_at: DateTime.utc_now()})
+
+      query = """
+      {
+        getMostRecent(types: [INSIGHT], page: 1, pageSize: 10) {
+          data { insight { id text isPaywallRequired } }
+        }
+      }
+      """
+
+      %{"data" => [%{"insight" => result}]} =
+        execute_query(context.conn, query, "getMostRecent")
+
+      assert result["isPaywallRequired"]
+      assert result["text"] != insight.text
+      assert result["text"] =~ "alabala"
+    end
+  end
+
+  # Counts the queries to the subscriptions table made by the test process, which
+  # also handles the request.
+  defp count_subscription_queries(fun, opts \\ []) do
+    test_pid = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:sanbase, :repo, :query],
+      fn _event, _measurements, %{source: source}, _config ->
+        if self() == test_pid and source == "subscriptions",
+          do: send(test_pid, :subscription_query)
+      end,
+      nil
+    )
+
+    result = fun.()
+    :telemetry.detach(handler_id)
+    count = count_messages(:subscription_query, 0)
+
+    if Keyword.get(opts, :return, false), do: {result, count}, else: count
+  end
+
+  defp count_messages(message, count) do
+    receive do
+      ^message -> count_messages(message, count + 1)
+    after
+      0 -> count
+    end
+  end
+
   defp insight_by_id_query(insight_id) do
     """
     {

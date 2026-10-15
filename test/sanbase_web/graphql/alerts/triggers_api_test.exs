@@ -251,6 +251,48 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert result["data"]["getTriggerById"]["trigger"]["id"] == ut.id
   end
 
+  test "other user public trigger settings do not expose private fields", %{conn: conn} do
+    settings =
+      default_trigger_settings_string_keys()
+      |> Map.merge(%{
+        "channel" => [%{"webhook" => "https://example.com/secret-webhook"}],
+        "template" => "private template",
+        "extra_explanation" => "private explanation"
+      })
+
+    ut =
+      insert(:user_trigger,
+        user: insert(:user),
+        trigger: %{is_public: true, settings: settings, title: "Some generic title"}
+      )
+
+    for conn <- [conn, build_conn()] do
+      trigger = get_trigger_by_id(conn, ut.id)["data"]["getTriggerById"]["trigger"]
+
+      assert trigger["id"] == ut.id
+      assert trigger["settings"]["metric"] == "active_addresses_24h"
+      refute Map.has_key?(trigger["settings"], "channel")
+      refute Map.has_key?(trigger["settings"], "template")
+      refute Map.has_key?(trigger["settings"], "extra_explanation")
+    end
+  end
+
+  test "own public trigger settings are returned in full", %{conn: conn, user: user} do
+    settings =
+      default_trigger_settings_string_keys()
+      |> Map.put("channel", [%{"webhook" => "https://example.com/own-webhook"}])
+
+    ut =
+      insert(:user_trigger,
+        user: user,
+        trigger: %{is_public: true, settings: settings, title: "Some generic title"}
+      )
+
+    trigger = get_trigger_by_id(conn, ut.id)["data"]["getTriggerById"]["trigger"]
+
+    assert trigger["settings"]["channel"] == [%{"webhook" => "https://example.com/own-webhook"}]
+  end
+
   test "cannot get other user private trigger", %{conn: conn} do
     ut =
       insert(:user_trigger,

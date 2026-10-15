@@ -119,6 +119,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
         {:ok, trigger}
     end
     |> handle_result("get by id")
+    |> maybe_sanitize_not_owned_trigger(current_user.id)
   end
 
   def get_trigger_by_id(_root, %{id: id}, _resolution) do
@@ -131,7 +132,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
         {:ok, trigger}
     end
     |> handle_result("get by id")
+    |> maybe_sanitize_not_owned_trigger(nil)
   end
+
+  # Public triggers of other users are readable, but their settings hold private
+  # data like the notification channel (webhook URL) and templates.
+  defp maybe_sanitize_not_owned_trigger({:ok, %{user_id: user_id} = ut}, user_id)
+       when not is_nil(user_id),
+       do: {:ok, ut}
+
+  defp maybe_sanitize_not_owned_trigger({:ok, ut}, _current_user_id),
+    do: {:ok, sanitize_user_trigger_settings(ut)}
+
+  defp maybe_sanitize_not_owned_trigger(result, _current_user_id), do: result
 
   def public_triggers_for_user(_root, args, _resolution) do
     case Sanbase.Utils.EctoCommon.cast_id(args.user_id) do

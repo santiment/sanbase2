@@ -213,4 +213,80 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
              end) =~ "There were no screener_signal alerts triggered"
     end)
   end
+
+  describe "watchlists in the selector" do
+    setup context do
+      owner = insert(:user)
+
+      private_watchlist = insert(:watchlist, user: owner, is_public: false, slug: "private-wl")
+
+      {:ok, _} =
+        Sanbase.UserList.update_user_list(owner, %{
+          id: private_watchlist.id,
+          list_items: [%{project_id: context.p1.id}]
+        })
+
+      %{owner: owner, private_watchlist: private_watchlist}
+    end
+
+    test "another user cannot create an alert on a private watchlist", context do
+      for selector <- [
+            %{watchlist_id: context.private_watchlist.id},
+            %{base_projects: [%{watchlist_id: context.private_watchlist.id}]},
+            %{base_projects: [%{watchlist_slug: context.private_watchlist.slug}]}
+          ] do
+        assert {:error, error} = create_screener_alert(context.user, selector)
+        assert error =~ "does not exist or it is a private watchlist owned by another user"
+      end
+    end
+
+    test "another user's alert on a watchlist made private later is disabled", context do
+      for selector <- [
+            %{watchlist_id: context.private_watchlist.id},
+            %{base_projects: [%{watchlist_id: context.private_watchlist.id}]}
+          ] do
+        {:ok, _} = set_public(context.owner, context.private_watchlist, true)
+        {:ok, user_trigger} = create_screener_alert(context.user, selector)
+        {:ok, _} = set_public(context.owner, context.private_watchlist, false)
+
+        assert ScreenerTriggerSettings.type()
+               |> UserTrigger.get_active_triggers_by_type()
+               |> Sanbase.Alert.Evaluator.run() == []
+
+        {:ok, user_trigger} = UserTrigger.by_user_and_id(context.user.id, user_trigger.id)
+        refute user_trigger.trigger.is_active
+      end
+    end
+
+    test "the alert owner's private watchlist is resolved", context do
+      for selector <- [
+            %{watchlist_id: context.private_watchlist.id},
+            %{base_projects: [%{watchlist_id: context.private_watchlist.id}]}
+          ] do
+        assert slugs_in_screener_after_create(context.owner, selector) == [context.p1.slug]
+      end
+    end
+  end
+
+  defp slugs_in_screener_after_create(user, selector) do
+    {:ok, user_trigger} = create_screener_alert(user, selector)
+
+    {:ok, user_trigger} = UserTrigger.by_user_and_id(user.id, user_trigger.id)
+    user_trigger.trigger.settings.state.slugs_in_screener
+  end
+
+  defp create_screener_alert(user, selector) do
+    UserTrigger.create_user_trigger(user, %{
+      title: "Generic title",
+      cooldown: "0s",
+      settings: %{
+        type: "screener_signal",
+        operation: %{selector: selector},
+        channel: "telegram"
+      }
+    })
+  end
+
+  defp set_public(user, watchlist, is_public),
+    do: Sanbase.UserList.update_user_list(user, %{id: watchlist.id, is_public: is_public})
 end

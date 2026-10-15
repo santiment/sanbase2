@@ -15,12 +15,24 @@ defmodule Sanbase.Project.ListSelector do
   defdelegate valid_selector?(args), to: __MODULE__.Validator
 
   @doc ~s"""
+  The watchlists in the base projects of the selector, as `{:watchlist_id, id}` or
+  `{:watchlist_slug, slug}`. If any of them is private, the result depends on the
+  user it is resolved for, as private watchlists are accessible only by their owner.
+  """
+  @spec watchlist_base_projects(map()) :: [Sanbase.UserList.watchlist_reference()]
+  def watchlist_base_projects(args) do
+    args
+    |> get_in([:selector, :base_projects])
+    |> Sanbase.WatchlistFunction.base_projects_references()
+  end
+
+  @doc ~s"""
   Return a list of projects described by the selector object.
 
-  See `args_to_opts/1` for description of the argument format.
+  See `args_to_opts/2` for description of the argument format.
   """
-  def projects(args) do
-    with {:ok, opts} <- args_to_opts(args) do
+  def projects(args, opts \\ []) do
+    with {:ok, opts} <- args_to_opts(args, opts) do
       projects = Project.List.projects(opts)
 
       {:ok,
@@ -36,10 +48,10 @@ defmodule Sanbase.Project.ListSelector do
   @doc ~s"""
   Return a list of slugs described by the selector object.
 
-  See `args_to_opts/1` for description of the argument format.
+  See `args_to_opts/2` for description of the argument format.
   """
-  def slugs(args) do
-    with {:ok, opts} <- args_to_opts(args) do
+  def slugs(args, opts \\ []) do
+    with {:ok, opts} <- args_to_opts(args, opts) do
       slugs = Project.List.projects_slugs(opts)
 
       {:ok,
@@ -77,9 +89,15 @@ defmodule Sanbase.Project.ListSelector do
       pagination: %{page: 1, page_size: 10}
     }
   }
+
+  ## Options
+    - user_id: the id of the user the selector is resolved for. A watchlist in the
+      base_projects is resolved only if it is public or owned by this user. When not
+      provided, only public watchlists are resolved.
   """
-  def args_to_opts(args) do
+  def args_to_opts(args, opts \\ []) do
     args = Sanbase.Utils.Map.atomize_keys(args)
+    user_id = Keyword.get(opts, :user_id)
 
     filters = Transform.args_to_filters(args)
     base_projects_selector = Transform.args_to_base_projects(args)
@@ -88,7 +106,7 @@ defmodule Sanbase.Project.ListSelector do
     filters_combinator = Transform.args_to_filters_combinator(args)
     include_hidden = Map.get(args, :include_hidden, false)
 
-    with {:ok, base_slugs} <- base_slugs(base_projects_selector),
+    with {:ok, base_slugs} <- base_slugs(base_projects_selector, user_id),
          {:ok, included_slugs} <- included_slugs_by_filters(filters, filters_combinator),
          included_slugs = intersect_with_base_slugs(included_slugs, base_slugs),
          included_slugs = remove_hidden_slugs(included_slugs),
@@ -187,37 +205,36 @@ defmodule Sanbase.Project.ListSelector do
     end
   end
 
-  defp base_slugs(:all), do: {:ok, :all}
+  defp base_slugs(:all, _user_id), do: {:ok, :all}
 
-  defp base_slugs(args_list) when is_list(args_list) do
+  defp base_slugs(args_list, user_id) when is_list(args_list) do
     Enum.reduce_while(args_list, {:ok, []}, fn args, {:ok, acc} ->
-      case get_base_slugs(args) do
+      case get_base_slugs(args, user_id) do
         {:ok, slugs} -> {:cont, {:ok, slugs ++ acc}}
         {:error, error} -> {:halt, {:error, error}}
       end
     end)
   end
 
-  defp get_base_slugs(%{watchlist_id: id} = map) do
-    detect_cycles!(map)
+  defp get_base_slugs(%{watchlist_id: id} = map, user_id),
+    do: watchlist_base_slugs(map, {:watchlist_id, id}, user_id)
 
-    case Sanbase.UserList.by_id(id, []) do
-      {:ok, watchlist} -> Sanbase.UserList.get_slugs(watchlist)
-      {:error, error} -> {:error, error}
-    end
-  end
+  defp get_base_slugs(%{watchlist_slug: slug} = map, user_id),
+    do: watchlist_base_slugs(map, {:watchlist_slug, slug}, user_id)
 
-  defp get_base_slugs(%{watchlist_slug: slug} = map) do
-    detect_cycles!(map)
-    slug |> Sanbase.UserList.by_slug() |> Sanbase.UserList.get_slugs()
-  end
-
-  defp get_base_slugs(%{slugs: slugs}) when is_list(slugs) do
+  defp get_base_slugs(%{slugs: slugs}, _user_id) when is_list(slugs) do
     {:ok, slugs}
   end
 
-  defp get_base_slugs(data) do
+  defp get_base_slugs(data, _user_id) do
     {:error, "The base slugs argument is invalid: #{inspect(data)}."}
+  end
+
+  defp watchlist_base_slugs(map, reference, user_id) do
+    detect_cycles!(map)
+
+    with {:ok, watchlist} <- Sanbase.UserList.fetch_accessible(reference, user_id),
+         do: Sanbase.UserList.get_slugs(watchlist)
   end
 
   defp included_slugs_by_filters([], _filters_combinator), do: {:ok, :all}

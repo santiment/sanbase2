@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
 
   import SanbaseWeb.Graphql.Helpers.{Utils, CalibrateInterval}
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
-  import Sanbase.Project.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
+  import Sanbase.Project.Selector, only: [args_to_selector: 2, args_to_raw_selector: 1]
 
   import Sanbase.Utils.ErrorHandling,
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
@@ -32,18 +32,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   def get_raw_signals(_root, %{from: from, to: to} = args, resolution) do
     signals = Map.get(args, :signals, :all)
 
-    selector =
-      case Map.has_key?(args, :selector) do
-        false ->
-          :all
+    with {:ok, selector} <- raw_signals_selector(args, resolution) do
+      Signal.raw_data(signals, selector, from, to)
+      |> maybe_apply_function(&overwrite_not_accessible_signals(&1, resolution))
+    end
+  end
 
-        true ->
-          {:ok, selector} = args_to_selector(args)
-          selector
-      end
-
-    Signal.raw_data(signals, selector, from, to)
-    |> maybe_apply_function(&overwrite_not_accessible_signals(&1, resolution))
+  defp raw_signals_selector(args, resolution) do
+    case Map.has_key?(args, :selector) do
+      false -> {:ok, :all}
+      true -> args_to_selector(args, selector_opts(resolution))
+    end
   end
 
   def get_available_signals(_root, _args, _resolution), do: {:ok, Signal.available_signals()}
@@ -64,8 +63,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     end
   end
 
-  def available_since(_root, args, %{source: %{signal: signal}}) do
-    with {:ok, selector} <- args_to_selector(args),
+  def available_since(_root, args, %{source: %{signal: signal}} = resolution) do
+    with {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          {:ok, first_datetime} <- Signal.first_datetime(signal, selector) do
       {:ok, first_datetime}
     end
@@ -81,9 +80,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   def timeseries_data(
         _root,
         %{from: from, to: to, interval: interval} = args,
-        %{source: %{signal: signal}}
+        %{source: %{signal: signal}} = resolution
       ) do
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          {:ok, opts} = selector_args_to_opts(args),
          {:ok, from, to, interval} <-
            calibrate(Signal, signal, selector, from, to, interval, 86_400, @datapoints),
@@ -98,9 +97,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   def aggregated_timeseries_data(
         _root,
         %{from: from, to: to} = args,
-        %{source: %{signal: signal}}
+        %{source: %{signal: signal}} = resolution
       ) do
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          {:ok, opts} = selector_args_to_opts(args),
          {:ok, result} <- Signal.aggregated_timeseries_data(signal, selector, from, to, opts) do
       {:ok, Map.values(result) |> List.first()}
@@ -182,4 +181,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     )
     |> Enum.filter(&(&1.type == "signal"))
   end
+
+  # Watchlists in the selector are resolved only if they are public or owned by the
+  # current user, so the user must be passed when resolving the selector.
+  defp selector_opts(resolution), do: [user_id: resolution_to_user_id_or_nil(resolution)]
 end

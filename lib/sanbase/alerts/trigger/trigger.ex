@@ -127,7 +127,22 @@ defmodule Sanbase.Alert.Trigger do
     remove_targets_on_cooldown(target, trigger)
   end
 
-  def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
+  def evaluate(%Trigger{settings: trigger_settings} = trigger) do
+    case valid_watchlists_access?(trigger_settings) do
+      :ok -> do_evaluate(trigger)
+      {:error, error} -> {:error, {:disable_alert, error}}
+    end
+  end
+
+  # An alert can be created only on watchlists that are public or owned by the alert
+  # owner, but a watchlist can be made private later. Such alerts are disabled.
+  defp valid_watchlists_access?(%{owner_user_id: owner_user_id} = settings)
+       when is_integer(owner_user_id),
+       do: Sanbase.Alert.Validation.Target.valid_watchlists_access?(settings, owner_user_id)
+
+  defp valid_watchlists_access?(_settings), do: :ok
+
+  defp do_evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
     filtered_target = remove_targets_on_cooldown(target, trigger)
     trigger_settings = %{trigger_settings | filtered_target: filtered_target}
 
@@ -158,8 +173,19 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   def cache_key(%Trigger{settings: trigger_settings}) do
-    Sanbase.Alert.Settings.cache_key(trigger_settings)
+    case Sanbase.Alert.Settings.cache_key(trigger_settings) do
+      :nocache -> :nocache
+      key -> maybe_add_owner_to_cache_key(key, trigger_settings)
+    end
   end
+
+  # A watchlist target resolves to different projects for different owners, as
+  # only public watchlists and the owner's private ones are resolved.
+  defp maybe_add_owner_to_cache_key(key, %{target: target, owner_user_id: owner_user_id})
+       when is_map_key(target, :watchlist_id) or is_map_key(target, :user_list),
+       do: {key, owner_user_id}
+
+  defp maybe_add_owner_to_cache_key(key, _settings), do: key
 
   def last_triggered(%Trigger{last_triggered: lt}, _target) when map_size(lt) == 0, do: nil
 
@@ -196,7 +222,9 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   defp remove_targets_on_cooldown(%{watchlist_id: watchlist_id}, trigger) do
-    case Sanbase.UserList.by_id(watchlist_id, []) do
+    owner_user_id = Map.get(trigger.settings, :owner_user_id)
+
+    case Sanbase.UserList.fetch_accessible({:watchlist_id, watchlist_id}, owner_user_id) do
       {:error, _} ->
         %{list: [], type: :slug}
 

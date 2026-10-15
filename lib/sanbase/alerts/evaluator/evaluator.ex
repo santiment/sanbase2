@@ -66,6 +66,11 @@ defmodule Sanbase.Alert.Evaluator do
   defp do_evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
     %{cooldown: cooldown, last_triggered: last_triggered} = trigger
 
+    trigger = %{
+      trigger
+      | settings: UserTrigger.put_owner_user_id(trigger.settings, user_trigger.user_id)
+    }
+
     # Some trigger settings (e.g. EthWallet, Screener) return `:nocache` from
     # `cache_key/1` because their result depends on order-dependent state that
     # can't be keyed. For those we skip the cache entirely. Otherwise the cache

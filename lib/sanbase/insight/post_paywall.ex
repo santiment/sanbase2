@@ -15,12 +15,46 @@ defmodule Sanbase.Insight.PostPaywall do
   @type insight_or_insights :: %Post{} | [%Post{}]
   @type auth_or_nil :: %{current_user: %User{}} | nil
 
-  # Takes the request's auth map, not just the user, so the subscriptions that
-  # `SanbaseWeb.Graphql.AuthPlug` already loaded are reused instead of queried.
-  @spec maybe_filter_paywalled(insight_or_insights, auth_or_nil) :: insight_or_insights
-  def maybe_filter_paywalled(nil, _), do: nil
+  @doc ~s"""
+  Truncate the paywalled insights the user cannot access.
 
-  def maybe_filter_paywalled(insights, %{current_user: %User{} = user} = auth) do
+  Takes the request's auth map, not just the user, so the subscriptions that
+  `SanbaseWeb.Graphql.AuthPlug` already loaded are reused instead of queried.
+
+  ## Options
+    - exempt_author: whether the author sees their own paywalled insights in full.
+      Defaults to true.
+  """
+  @spec maybe_filter_paywalled(insight_or_insights, auth_or_nil, Keyword.t()) ::
+          insight_or_insights
+  def maybe_filter_paywalled(insights, auth, opts \\ [])
+  def maybe_filter_paywalled(nil, _, _opts), do: nil
+
+  def maybe_filter_paywalled(insights, auth, opts) do
+    insights
+    |> filter_paywalled_with_access(auth, opts)
+    |> Enum.map(fn {insight, _full_access?} -> insight end)
+  end
+
+  @doc ~s"""
+  Like `maybe_filter_paywalled/3`, but pairs each insight with whether the user
+  gets it in full. Use it when the access result is needed, as a truncated text
+  can be equal to the full text of a short insight.
+  """
+  @spec filter_paywalled_with_access([%Post{}], auth_or_nil, Keyword.t()) ::
+          [{%Post{} | nil, boolean()}]
+  def filter_paywalled_with_access(insights, auth, opts \\ []) when is_list(insights) do
+    exempt_user_id = exempt_user_id(auth, opts)
+
+    Enum.map(insights, fn insight ->
+      if full_access?(insight, exempt_user_id),
+        do: {insight, true},
+        else: {do_filter(insight), false}
+    end)
+  end
+
+  # Returns :all when the user's plan can access every paywalled insight.
+  defp exempt_user_id(%{current_user: %User{} = user} = auth, opts) do
     subscriptions =
       [
         Subscription.current_subscription_from_auth(auth, Product.product_sanbase()),
@@ -29,26 +63,22 @@ defmodule Sanbase.Insight.PostPaywall do
 
     can_access? = Enum.any?(subscriptions, &SanbaseAccessChecker.can_access_paywalled_insights?/1)
 
-    if can_access? do
-      insights
-    else
-      maybe_filter(insights, user.id)
+    cond do
+      can_access? -> :all
+      Keyword.get(opts, :exempt_author, true) -> user.id
+      true -> nil
     end
   end
 
-  def maybe_filter_paywalled(insights, _no_user), do: maybe_filter(insights, nil)
+  defp exempt_user_id(_no_user, _opts), do: nil
 
-  defp maybe_filter(insights, querying_user_id) when is_list(insights) do
-    Enum.map(insights, &do_filter(&1, querying_user_id))
-  end
+  defp full_access?(nil, _), do: true
+  defp full_access?(_insight, :all), do: true
+  defp full_access?(%Post{is_paywall_required: false}, _), do: true
+  defp full_access?(%Post{user_id: user_id}, user_id) when not is_nil(user_id), do: true
+  defp full_access?(_insight, _), do: false
 
-  defp do_filter(nil, _), do: nil
-
-  defp do_filter(%Post{is_paywall_required: false} = insight, _), do: insight
-
-  defp do_filter(%Post{user_id: user_id} = insight, user_id), do: insight
-
-  defp do_filter(insight, _) do
+  defp do_filter(insight) do
     Map.put(insight, :text, truncate(insight))
     |> Map.put(:comments, [])
   end

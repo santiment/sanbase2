@@ -803,6 +803,17 @@ defmodule Sanbase.Insight.Post do
   end
 
   @doc """
+  Fetch public (published and approved) insights by ids, in the order of the ids.
+  """
+  def public_by_ids(post_ids, opts) when is_list(post_ids) do
+    opts = Keyword.put_new(opts, :preload, @preloads)
+
+    base_query()
+    |> filter_published_and_approved()
+    |> Sanbase.Entity.Query.by_ids_with_order(post_ids, opts)
+  end
+
+  @doc """
   Fetch public (published and approved) insights.
   """
   def public_insights(opts \\ []) do

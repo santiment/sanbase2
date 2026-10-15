@@ -5,6 +5,7 @@ defmodule Sanbase.MCP.FetchInsightsTool do
 
   alias Anubis.Server.Response
   alias Sanbase.Insight.Post
+  alias Sanbase.Insight.PostPaywall
   alias Sanbase.MCP.Utils
 
   @max_insights 10
@@ -34,7 +35,7 @@ defmodule Sanbase.MCP.FetchInsightsTool do
 
   defp do_execute(%{insight_ids: insight_ids}, frame) do
     with {:ok, parsed_ids} <- parse_insight_ids(insight_ids),
-         {:ok, insights} <- fetch_insight_details(parsed_ids) do
+         {:ok, insights} <- fetch_insight_details(parsed_ids, frame.assigns[:current_user]) do
       response_data =
         %{
           insights: insights,
@@ -83,10 +84,14 @@ defmodule Sanbase.MCP.FetchInsightsTool do
   defp ensure_integer(value),
     do: raise(ArgumentError, "Cannot convert #{inspect(value)} to integer")
 
-  defp fetch_insight_details(insight_ids) do
-    {:ok, posts} = Post.by_ids(insight_ids, preload: [:tags, :user, :metrics])
+  defp fetch_insight_details(insight_ids, current_user) do
+    {:ok, posts} = Post.public_by_ids(insight_ids, preload: [:tags, :user, :metrics])
 
-    insights = Enum.map(posts, &format_insight_detail/1)
+    insights =
+      posts
+      |> PostPaywall.maybe_filter_paywalled(%{current_user: current_user})
+      |> Enum.map(&format_insight_detail/1)
+
     {:ok, insights}
   rescue
     error ->

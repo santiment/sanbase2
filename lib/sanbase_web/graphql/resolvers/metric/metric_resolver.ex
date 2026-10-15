@@ -53,8 +53,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, Process.get(:__executed_clickhouse_sql_list__, []) |> Enum.reverse()}
   end
 
-  def get_available_metrics(_root, %{plan: plan, product: product} = args, resolution)
-      when not is_nil(plan) do
+  def get_available_metrics(root, args, resolution) do
+    with :ok <- validate_name_regex_filter(args) do
+      do_get_available_metrics(root, args, resolution)
+    end
+  end
+
+  defp do_get_available_metrics(_root, %{plan: plan, product: product} = args, resolution)
+       when not is_nil(plan) do
     product_code = product |> Atom.to_string() |> String.upcase()
     plan_name = plan |> to_string() |> String.upcase()
     packages = Map.get(args, :metric_packages)
@@ -77,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def get_available_metrics(_root, args, resolution) do
+  defp do_get_available_metrics(_root, args, resolution) do
     if Map.get(args, :metric_packages) do
       {:error, "metricPackages is only valid with plan: BUNDLE"}
     else
@@ -95,21 +101,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     user_metric_access_level = resolution_to_metric_access_level(resolution)
     lookback_days = resolution_to_available_metrics_lookback_days(resolution)
 
-    case Metric.available_metrics_for_selector(args.selector,
-           user_metric_access_level: user_metric_access_level,
-           lookback_days: lookback_days
-         ) do
-      {:ok, metrics} ->
-        metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-        metrics = Enum.sort(metrics, :asc)
+    with :ok <- validate_name_regex_filter(args) do
+      case Metric.available_metrics_for_selector(args.selector,
+             user_metric_access_level: user_metric_access_level,
+             lookback_days: lookback_days
+           ) do
+        {:ok, metrics} ->
+          metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
+          metrics = Enum.sort(metrics, :asc)
 
-        {:ok, metrics}
+          {:ok, metrics}
 
-      {:nocache, {:ok, metrics}} ->
-        metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-        metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
+        {:nocache, {:ok, metrics}} ->
+          metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
+          metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
 
-        {:nocache, {:ok, metrics}}
+          {:nocache, {:ok, metrics}}
+      end
     end
   end
 
@@ -786,6 +794,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     metrics -- incomplete_metrics
   end
+
+  defp validate_name_regex_filter(%{name_regex_filter: regex}) when is_binary(regex) do
+    case Regex.compile(regex) do
+      {:ok, _regex} ->
+        :ok
+
+      {:error, {reason, position}} ->
+        {:error, "Invalid nameRegexFilter #{inspect(regex)}: #{reason} at position #{position}"}
+    end
+  end
+
+  defp validate_name_regex_filter(_args), do: :ok
 
   defp maybe_apply_regex_filter(metrics, nil), do: metrics
 

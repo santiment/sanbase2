@@ -82,7 +82,12 @@ defmodule Sanbase.Billing.StripeEvent do
        )
        when type in ["invoice.payment_succeeded", "invoice.payment_failed"] do
     emit_event({:ok, stripe_event}, to_event_type(type), %{})
-    handle_event_common(id, type, subscription_id)
+
+    case subscription_id do
+      # A one-off invoice - there is no subscription to sync
+      nil -> update(id, %{is_processed: true})
+      _ -> handle_event_common(id, type, subscription_id)
+    end
   end
 
   defp handle_event(%{
@@ -96,11 +101,14 @@ defmodule Sanbase.Billing.StripeEvent do
            }
          }
        }) do
-    if amount_due > 0 do
-      subscription = Subscription.by_stripe_id(subscription_id)
+    if amount_due > 0 and is_binary(subscription_id) do
       # only active Sanbase subscriptions
-      if subscription.status == :active and subscription.plan.product_id == 2 do
-        Sanbase.Accounts.EmailJobs.send_automatic_renewal_email(subscription, charge_date)
+      case Subscription.by_stripe_id(subscription_id) do
+        %Subscription{status: :active, plan: %{product_id: 2}} = subscription ->
+          Sanbase.Accounts.EmailJobs.send_automatic_renewal_email(subscription, charge_date)
+
+        _ ->
+          :ok
       end
     end
 

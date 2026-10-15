@@ -260,20 +260,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def timeseries_data_complexity(_root, args, resolution) do
+  def timeseries_data_complexity(_root, args, %{source: %{metric: metric}} = resolution) do
     # Explicitly set `child_complexity` to 2 as this would be the
     # value if both `datetime` and `value` fields are queried.
     child_complexity = 2
 
     complexity =
-      SanbaseWeb.Graphql.Complexity.from_to_interval(args, child_complexity, resolution)
+      args
+      |> SanbaseWeb.Graphql.Complexity.from_to_interval(
+        child_complexity,
+        resolution.context,
+        metric
+      )
       |> Sanbase.Math.to_integer()
 
     {:ok, complexity}
   end
 
-  def available_since(_root, args, %{source: %{metric: metric, version: version}}) do
-    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
+  def available_since(_root, args, %{source: %{metric: metric, version: version}} = resolution) do
+    with {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          true <- all_required_selectors_present?(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
          opts = Keyword.put(opts, :version, version),
@@ -289,8 +294,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def last_datetime_computed_at(_root, args, %{source: %{metric: metric, version: version}}) do
-    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
+  def last_datetime_computed_at(
+        _root,
+        args,
+        %{source: %{metric: metric, version: version}} = resolution
+      ) do
+    with {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          true <- all_required_selectors_present?(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
          opts = Keyword.put(opts, :version, version),
@@ -306,8 +315,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def broken_data(_root, %{from: from, to: to} = args, %{source: %{metric: metric}}) do
-    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
+  def broken_data(_root, %{from: from, to: to} = args, %{source: %{metric: metric}} = resolution) do
+    with {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -329,7 +338,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       args,
       requested_fields,
       :timeseries_data,
-      json_variant?
+      json_variant?,
+      resolution_to_user_id_or_nil(resolution)
     )
   rescue
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
@@ -346,7 +356,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     # Heap-capped: on overrun the BEAM kills the worker with an untrappable :killed exit,
     # turned into a friendly error instead of a Sentry alert.
-    run_per_slug_in_bounded_process(metric, version, args, requested_fields, json_variant?)
+    run_per_slug_in_bounded_process(
+      metric,
+      version,
+      args,
+      requested_fields,
+      json_variant?,
+      resolution_to_user_id_or_nil(resolution)
+    )
   rescue
     # The bounded worker already turns a CatchableError into an {:error, message} tuple,
     # so this clause is only a defensive fallback.
@@ -357,12 +374,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def aggregated_timeseries_data(
         _root,
         %{from: from, to: to} = args,
-        %{source: %{metric: metric, version: version}}
+        %{source: %{metric: metric, version: version}} = resolution
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
-    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
+    with {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -385,7 +402,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def histogram_data(
         _root,
         args,
-        %{source: %{metric: metric}}
+        %{source: %{metric: metric}} = resolution
       ) do
     %{to: to, interval: interval, limit: limit} = args
 
@@ -395,7 +412,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     interval = transform_interval(metric, interval)
 
     with true <- valid_histogram_args?(metric, args),
-         {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
+         {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -412,9 +429,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def table_data(
         _root,
         %{from: from, to: to} = args,
-        %{source: %{metric: metric}}
+        %{source: %{metric: metric}} = resolution
       ) do
-    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
+    with {:ok, selector} <- args_to_selector(args, selector_opts(resolution)),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -469,12 +486,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # (`kill: true`, `error_logger: false`); being unlinked, that :killed exit leaves the
   # request process alone - we see the :DOWN and return a friendly error. Other outcomes
   # are caught in the worker, so inline behaviour (CatchableError, Sentry) is preserved.
-  defp run_per_slug_in_bounded_process(metric, version, args, requested_fields, json_variant?) do
+  defp run_per_slug_in_bounded_process(
+         metric,
+         version,
+         args,
+         requested_fields,
+         json_variant?,
+         user_id
+       ) do
     parent = self()
     ref = make_ref()
 
     # The worker has a fresh process dictionary, so flags must be forwarded explicitly.
-    user_id = Process.get(:__graphql_query_current_user_id__)
     store_executed_sql? = Process.get(:__store_executed_clickhouse_sql__, false)
 
     {_pid, monitor_ref} =
@@ -485,7 +508,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
           error_logger: false
         })
 
-        if user_id, do: Process.put(:__graphql_query_current_user_id__, user_id)
         if store_executed_sql?, do: Process.put(:__store_executed_clickhouse_sql__, true)
 
         outcome =
@@ -497,7 +519,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
                args,
                requested_fields,
                :timeseries_data_per_slug,
-               json_variant?
+               json_variant?,
+               user_id
              )}
           rescue
             e in [Sanbase.Metric.CatchableError] -> {:ok, {:error, Exception.message(e)}}
@@ -543,11 +566,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   # timeseries_data and timeseries_data_per_slug differ only in the Metric function called.
-  defp fetch_timeseries_data(metric, version, args, requested_fields, function, json_variant?)
+  defp fetch_timeseries_data(
+         metric,
+         version,
+         args,
+         requested_fields,
+         function,
+         json_variant?,
+         user_id
+       )
        when function in [:timeseries_data, :timeseries_data_per_slug] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
-    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
+    with {:ok, selector} <-
+           args_to_selector(args, use_process_dictionary: true, user_id: user_id),
          {:ok, transform} <- MetricTransform.args_to_transform(args),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
@@ -921,5 +953,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       true ->
         with :ok <- MetricVersionAccess.check(metric, version, resolution.context), do: true
     end
+  end
+
+  # Watchlists in the selector are resolved only if they are public or owned by the
+  # current user, so the user must be passed when resolving the selector.
+  defp selector_opts(resolution) do
+    [use_process_dictionary: true, user_id: resolution_to_user_id_or_nil(resolution)]
   end
 end

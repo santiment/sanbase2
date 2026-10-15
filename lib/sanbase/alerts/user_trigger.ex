@@ -366,7 +366,7 @@ defmodule Sanbase.Alert.UserTrigger do
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}
   def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
     with {_, false} <- {:nil?, is_nil(settings)},
-         :ok <- validate_settings(settings) do
+         :ok <- validate_settings(settings, user_id) do
       changeset = %UserTrigger{} |> create_changeset(%{user_id: user_id, trigger: params})
 
       case Repo.insert(changeset) do
@@ -400,7 +400,7 @@ defmodule Sanbase.Alert.UserTrigger do
       when is_integer(user_id) and user_id > 0 do
     settings = Map.get(params, :settings)
 
-    with {_, :ok} <- {:validate_settings, validate_settings_or_nil(settings)},
+    with {_, :ok} <- {:validate_settings, validate_settings_or_nil(settings, user_id)},
          {_, {:ok, %__MODULE__{} = struct}} <-
            {:get_trigger, get_trigger_if_owner(user_id, trigger_id)} do
       update_result =
@@ -465,6 +465,8 @@ defmodule Sanbase.Alert.UserTrigger do
     %{trigger: trigger} = user_trigger
 
     with {:ok, %settings_module{} = settings} <- load_in_struct_if_valid(trigger.settings) do
+      settings = put_owner_user_id(settings, user_trigger.user_id)
+
       case settings_module.post_create_process(%{trigger | settings: settings}) do
         :nochange ->
           {:ok, user_trigger}
@@ -485,6 +487,8 @@ defmodule Sanbase.Alert.UserTrigger do
     %{trigger: trigger} = user_trigger
 
     with {:ok, %settings_module{} = settings} <- load_in_struct_if_valid(trigger.settings) do
+      settings = put_owner_user_id(settings, user_trigger.user_id)
+
       case settings_module.post_update_process(%{trigger | settings: settings}) do
         :nochange ->
           {:ok, user_trigger}
@@ -500,6 +504,16 @@ defmodule Sanbase.Alert.UserTrigger do
       end
     end
   end
+
+  @doc ~s"""
+  Put the id of the alert owner in the settings, if they need it. It is not stored
+  in the DB and is used, for example, to resolve only watchlists that are public or
+  owned by the alert owner.
+  """
+  def put_owner_user_id(%{owner_user_id: _} = settings, user_id),
+    do: %{settings | owner_user_id: user_id}
+
+  def put_owner_user_id(settings, _user_id), do: settings
 
   defp by_user_and_id_query(nil, trigger_id) do
     from(
@@ -532,9 +546,12 @@ defmodule Sanbase.Alert.UserTrigger do
     |> Enum.map(&trigger_in_struct/1)
   end
 
-  defp validate_settings(settings) do
+  defp validate_settings(settings, user_id) do
     with {_, {:ok, trigger_struct}} <- {:load_in_struct?, load_in_struct_if_valid(settings)},
          {_, true} <- {:validate_settings, Vex.valid?(trigger_struct)},
+         {_, :ok} <-
+           {:watchlists_access,
+            Sanbase.Alert.Validation.Target.valid_watchlists_access?(trigger_struct, user_id)},
          {_, :ok} <-
            {:webhook_urls,
             Sanbase.Alert.Validation.NotificationChannel.validate_webhook_urls(
@@ -559,6 +576,9 @@ defmodule Sanbase.Alert.UserTrigger do
 
         {:error, errors_text}
 
+      {:watchlists_access, {:error, error}} ->
+        {:error, error}
+
       {:webhook_urls, {:error, error}} ->
         Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(error)}")
         {:error, error}
@@ -569,8 +589,8 @@ defmodule Sanbase.Alert.UserTrigger do
     end
   end
 
-  defp validate_settings_or_nil(nil), do: :ok
-  defp validate_settings_or_nil(settings), do: validate_settings(settings)
+  defp validate_settings_or_nil(nil, _user_id), do: :ok
+  defp validate_settings_or_nil(settings, user_id), do: validate_settings(settings, user_id)
 
   defp clean_params(params) do
     params

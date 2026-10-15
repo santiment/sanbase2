@@ -32,6 +32,9 @@ defmodule Sanbase.Project.Selector do
   the slugs from the watchlist.
 
   ## Options
+    - user_id: the id of the user making the request. A watchlist in the selector is
+      resolved only if it is public or owned by this user. When not provided, only
+      public watchlists are resolved.
     - use_process_dictionary: if true, the selector will be cached in the process dictionary
       for faster access. This is useful when the selector is used multiple times in the same
       request. This is the case when first computing the complexity and then fetching the data
@@ -44,24 +47,43 @@ defmodule Sanbase.Project.Selector do
   @spec args_to_selector(map(), Keyword.t()) :: map()
   def args_to_selector(args, opts \\ []) do
     selector = args |> args_to_raw_selector()
+    user_id = Keyword.get(opts, :user_id)
 
     if Keyword.get(opts, :use_process_dictionary, false) do
-      if result = Process.get({:args_to_selector, selector}) do
+      key = {:args_to_selector, selector, user_id}
+
+      if result = Process.get(key) do
         result
       else
-        result = do_args_to_selector(selector)
-        Process.put({:args_to_selector, selector}, result)
+        result = do_args_to_selector(selector, user_id)
+        Process.put(key, result)
         result
       end
     else
-      do_args_to_selector(selector)
+      do_args_to_selector(selector, user_id)
+    end
+  end
+
+  @doc ~s"""
+  The watchlists the selector resolves its slugs from, as `{:watchlist_id, id}` or
+  `{:watchlist_slug, slug}`. If any of them is private, the result depends on the
+  user making the request, as private watchlists are accessible only by their owner.
+  """
+  @spec watchlist_references(map()) :: [Sanbase.UserList.watchlist_reference()]
+  def watchlist_references(args) do
+    # Same precedence and guards as transform_selector/2, so a null argument
+    # is ignored just like it is when the selector is resolved.
+    case args_to_raw_selector(args) do
+      %{watchlist_id: id} when is_integer(id) -> [{:watchlist_id, id}]
+      %{watchlist_slug: slug} when is_binary(slug) -> [{:watchlist_slug, slug}]
+      _ -> []
     end
   end
 
   # Private functions
 
-  defp do_args_to_selector(raw_selector) do
-    with {:ok, selector} <- transform_selector(raw_selector),
+  defp do_args_to_selector(raw_selector, user_id) do
+    with {:ok, selector} <- transform_selector(raw_selector, user_id),
          {:ok, selector} <- maybe_ignore_slugs(selector),
          # TEMP 02.02.2023: Handle ripple -> xrp rename
          {:ok, selector} <- temp_replace_slugs(selector),
@@ -103,7 +125,7 @@ defmodule Sanbase.Project.Selector do
 
   defp valid_selector?(_), do: true
 
-  defp transform_selector(%{market_segments: market_segments} = selector) do
+  defp transform_selector(%{market_segments: market_segments} = selector, _user_id) do
     slugs =
       Sanbase.Project.List.by_market_segment_all_of(market_segments)
       |> Enum.map(& &1.slug)
@@ -111,7 +133,7 @@ defmodule Sanbase.Project.Selector do
     {:ok, Map.put(selector, :slug, slugs)}
   end
 
-  defp transform_selector(%{ecosystems: ecosystems} = selector) do
+  defp transform_selector(%{ecosystems: ecosystems} = selector, _user_id) do
     with {:ok, projects} <-
            Sanbase.Ecosystem.get_projects_by_ecosystem_names(ecosystems, combinator: :all_of) do
       slugs = projects |> Enum.map(& &1.slug)
@@ -120,7 +142,7 @@ defmodule Sanbase.Project.Selector do
     end
   end
 
-  defp transform_selector(%{contract_address: contract_address} = selector) do
+  defp transform_selector(%{contract_address: contract_address} = selector, _user_id) do
     slugs =
       Sanbase.Project.List.by_contracts(List.wrap(contract_address))
       |> Enum.map(& &1.slug)
@@ -128,37 +150,22 @@ defmodule Sanbase.Project.Selector do
     {:ok, Map.put(selector, :slug, slugs)}
   end
 
-  defp transform_selector(%{watchlist_id: watchlist_id} = selector)
-       when is_integer(watchlist_id) do
-    with {:ok, watchlist} <- Sanbase.UserList.by_id(watchlist_id, []) do
-      case Sanbase.UserList.get_slugs(watchlist) do
-        {:ok, slugs} ->
-          {:ok, Map.put(selector, :slug, slugs)}
+  defp transform_selector(%{watchlist_id: id} = selector, user_id) when is_integer(id),
+    do: watchlist_selector(selector, {:watchlist_id, id}, "id #{id}", user_id)
 
-        {:error, _error} ->
-          {:error, "Cannot fetch slugs for watchlist with id #{watchlist_id}"}
+  defp transform_selector(%{watchlist_slug: slug} = selector, user_id) when is_binary(slug),
+    do: watchlist_selector(selector, {:watchlist_slug, slug}, "slug #{slug}", user_id)
+
+  defp transform_selector(identifier, _user_id), do: {:ok, identifier}
+
+  defp watchlist_selector(selector, reference, reference_str, user_id) do
+    with {:ok, watchlist} <- Sanbase.UserList.fetch_accessible(reference, user_id) do
+      case Sanbase.UserList.get_slugs(watchlist) do
+        {:ok, slugs} -> {:ok, Map.put(selector, :slug, slugs)}
+        {:error, _error} -> {:error, "Cannot fetch slugs for watchlist with #{reference_str}"}
       end
     end
   end
-
-  defp transform_selector(%{watchlist_slug: watchlist_slug} = selector)
-       when is_binary(watchlist_slug) do
-    case Sanbase.UserList.by_slug(watchlist_slug) do
-      nil ->
-        {:error, "Watchlist with slug #{watchlist_slug} does not exist."}
-
-      watchlist ->
-        case watchlist |> Sanbase.UserList.get_slugs() do
-          {:ok, slugs} ->
-            {:ok, Map.put(selector, :slug, slugs)}
-
-          {:error, _error} ->
-            {:error, "Cannot fetch slugs for watchlist with slug #{watchlist_slug}"}
-        end
-    end
-  end
-
-  defp transform_selector(identifier), do: {:ok, identifier}
 
   defp maybe_ignore_slugs(%{ignored_slugs: [_ | _] = ignored_slugs, slug: slugs} = selector) do
     slugs = List.wrap(slugs) -- ignored_slugs

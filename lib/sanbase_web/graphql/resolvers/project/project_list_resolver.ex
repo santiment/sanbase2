@@ -1,21 +1,22 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   alias Sanbase.Project
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   @spec all_projects(any, map, any) :: {:ok, any}
-  def all_projects(_parent, args, _resolution) do
-    get_projects(args, :projects_page, :projects)
+  def all_projects(_parent, args, resolution) do
+    get_projects(args, :projects_page, :projects, resolution)
   end
 
-  def all_erc20_projects(_root, args, _resolution) do
-    get_projects(args, :erc20_projects_page, :erc20_projects)
+  def all_erc20_projects(_root, args, resolution) do
+    get_projects(args, :erc20_projects_page, :erc20_projects, resolution)
   end
 
-  def all_currency_projects(_root, args, _resolution) do
-    get_projects(args, :currency_projects_page, :currency_projects)
+  def all_currency_projects(_root, args, resolution) do
+    get_projects(args, :currency_projects_page, :currency_projects, resolution)
   end
 
-  defp get_projects(args, paged_fun, fun) do
-    with {:ok, opts} <- Project.ListSelector.args_to_opts(args) do
+  defp get_projects(args, paged_fun, fun, resolution) do
+    with {:ok, opts} <- Project.ListSelector.args_to_opts(args, selector_opts(resolution)) do
       page = Map.get(args, :page)
       page_size = Map.get(args, :page_size)
 
@@ -32,9 +33,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
     end
   end
 
-  def all_projects_by_function(_root, %{function: function}, _resolution) do
+  def all_projects_by_function(_root, %{function: function}, resolution) do
     with {:ok, function} <- Sanbase.WatchlistFunction.cast(function),
-         {:ok, data} <- Sanbase.WatchlistFunction.evaluate(function) do
+         {:ok, data} <- Sanbase.WatchlistFunction.evaluate(function, selector_opts(resolution)) do
       %{projects: projects, total_projects_count: total_projects_count} = data
 
       projects = Enum.uniq_by(projects, & &1.id)
@@ -59,8 +60,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
     {:ok, projects}
   end
 
-  def projects_count(_root, args, _resolution) do
-    with {:ok, opts} <- Project.ListSelector.args_to_opts(args) do
+  def projects_count(_root, args, resolution) do
+    with {:ok, opts} <- Project.ListSelector.args_to_opts(args, selector_opts(resolution)) do
       # Remove ordered_slugs from opts in case we need only the count
       opts = Keyword.replace(opts, :ordered_slugs, nil)
 
@@ -74,6 +75,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   end
 
   # Private functions
+
+  # Watchlists in the base projects are resolved only if they are public or owned by
+  # the current user.
+  defp selector_opts(resolution), do: [user_id: Utils.resolution_to_user_id_or_nil(resolution)]
 
   defp page_arguments_valid?(page, page_size) when is_integer(page) and is_integer(page_size) do
     page > 0 and page_size > 0

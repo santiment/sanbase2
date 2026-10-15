@@ -39,6 +39,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
           operation: Type.operation(),
           state: Map.t(),
           # Private fields, not stored in DB.
+          owner_user_id: non_neg_integer() | nil,
           filtered_target: Type.filtered_target(),
           triggered?: boolean(),
           payload: Type.payload(),
@@ -53,8 +54,10 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   Return a list of the `settings.metric` values for the necessary time range
   """
   @spec get_data(ScreenerTriggerSettings.t()) :: {:ok, list(String.t())} | {:error, any()}
-  def get_data(%__MODULE__{operation: %{selector: %{watchlist_id: watchlist_id}}}) do
-    with {:ok, watchlist} <- Sanbase.UserList.by_id(watchlist_id, []),
+  def get_data(%__MODULE__{operation: %{selector: %{watchlist_id: watchlist_id}}} = settings) do
+    reference = {:watchlist_id, watchlist_id}
+
+    with {:ok, watchlist} <- Sanbase.UserList.fetch_accessible(reference, settings.owner_user_id),
          {:ok, slugs} <- Sanbase.UserList.get_slugs(watchlist) do
       {:ok, slugs}
     else
@@ -68,8 +71,9 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
     end
   end
 
-  def get_data(%__MODULE__{operation: %{selector: _} = selector}) do
-    with {:ok, %{slugs: slugs}} <- Project.ListSelector.slugs(selector) do
+  def get_data(%__MODULE__{operation: %{selector: _} = selector} = settings) do
+    with {:ok, %{slugs: slugs}} <-
+           Project.ListSelector.slugs(selector, user_id: settings.owner_user_id) do
       {:ok, slugs}
     else
       {:error, error_msg} when is_binary(error_msg) ->

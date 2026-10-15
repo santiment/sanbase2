@@ -5,10 +5,10 @@ defmodule SanbaseWeb.Graphql.Complexity do
   require Logger
 
   @compile inline: [
-             calculate_complexity: 4,
+             calculate_complexity: 5,
              interval_seconds: 1,
              years_difference_weighted: 2,
-             get_metric_name: 1
+             metric_from_get_metric_api: 0
            ]
   @doc ~S"""
   Returns the complexity as a real number.
@@ -25,40 +25,43 @@ defmodule SanbaseWeb.Graphql.Complexity do
     is rejected.
   """
 
-  def from_to_interval(_, _, %{context: %{auth: %{auth_method: :basic}}}) do
-    # Does not pattern match on `%Absinthe.Complexity{}` so `%Absinthe.Resolution{}`
-    # can be passed. This is possible because only the context is used
-    0
+  def from_to_interval(_, _, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}),
+    do: 0
+
+  def from_to_interval(args, child_complexity, %Absinthe.Complexity{context: context}) do
+    from_to_interval(args, child_complexity, context, metric_from_get_metric_api())
   end
 
-  def from_to_interval(args, child_complexity, struct) do
-    complexity = calculate_complexity(args, child_complexity, struct, use_selector_weight: false)
+  @doc ~s"""
+  Same as `from_to_interval/3`, for callers outside of Absinthe's complexity
+  analysis that already have the context and the metric, like
+  `MetricResolver.timeseries_data_complexity/3`.
+  """
+  def from_to_interval(_, _, %{auth: %{auth_method: :basic}}, _metric), do: 0
 
-    case struct do
-      %{context: %{auth: %{subscription: subscription}}} when not is_nil(subscription) ->
-        div(complexity, complexity_divider_number(subscription))
-
-      _ ->
-        complexity
-    end
+  def from_to_interval(args, child_complexity, context, metric) do
+    args
+    |> calculate_complexity(child_complexity, context, metric, use_selector_weight: false)
+    |> divide_by_plan(context)
   end
 
-  def from_to_interval_selector_weight(_, _, %{context: %{auth: %{auth_method: :basic}}}) do
-    # Does not pattern match on `%Absinthe.Complexity{}` so `%Absinthe.Resolution{}`
-    # can be passed. This is possible because only the context is used
-    0
-  end
+  def from_to_interval_selector_weight(
+        _,
+        _,
+        %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}
+      ),
+      do: 0
 
-  def from_to_interval_selector_weight(args, child_complexity, struct) do
-    complexity = calculate_complexity(args, child_complexity, struct, use_selector_weight: true)
+  def from_to_interval_selector_weight(
+        args,
+        child_complexity,
+        %Absinthe.Complexity{context: context}
+      ) do
+    metric = metric_from_get_metric_api()
 
-    case struct do
-      %{context: %{auth: %{subscription: subscription}}} when not is_nil(subscription) ->
-        div(complexity, complexity_divider_number(subscription))
-
-      _ ->
-        complexity
-    end
+    args
+    |> calculate_complexity(child_complexity, context, metric, use_selector_weight: true)
+    |> divide_by_plan(context)
   end
 
   # Private functions
@@ -91,26 +94,30 @@ defmodule SanbaseWeb.Graphql.Complexity do
     end
   end
 
+  defp divide_by_plan(complexity, %{auth: %{subscription: subscription}})
+       when not is_nil(subscription),
+       do: div(complexity, complexity_divider_number(subscription))
+
+  defp divide_by_plan(complexity, _context), do: complexity
+
   defp calculate_complexity(
          %{from: from, to: to} = args,
          child_complexity,
-         struct,
+         context,
+         metric,
          opts
        )
        when is_number(child_complexity) do
     seconds_difference = Timex.diff(from, to, :seconds) |> abs()
     years_difference_weight = years_difference_weighted(from, to)
     interval_seconds = interval_seconds(args) |> max(1)
-    # Absinthe.Complexity when called from the complexity macro, Absinthe.Resolution
-    # when called from MetricResolver.timeseries_data_complexity/3.
-    metric = get_metric_name(struct)
-
     # Weights: child_complexity (selected fields), data_points_count,
     # years_difference_weight (a long span scans more data) and selector_weight
     # (timeseriesDataPerSlug returns 10x the points for 10 assets).
     data_points_count = seconds_difference / interval_seconds
 
-    selector_weight = selector_weight(args, opts)
+    user_id = get_in(context, [:auth, :current_user, Access.key(:id)])
+    selector_weight = selector_weight(args, user_id, opts)
 
     complexity_weight = complexity_weight(metric)
 
@@ -125,10 +132,10 @@ defmodule SanbaseWeb.Graphql.Complexity do
     ]
     |> Enum.product()
     |> then(fn complexity ->
-      plan = get_in(struct.context, [:auth, :plan])
+      plan = get_in(context, [:auth, :plan])
 
       if complexity > 50_000 and selector_weight > 1 and plan != "FREE" do
-        map = get_in(struct.context[:auth]) || %{}
+        map = context[:auth] || %{}
         plan = map[:plan]
         product = map[:requested_product] || "unknown"
         user_id = (map[:current_user] || %{}) |> Map.get(:id)
@@ -156,15 +163,15 @@ defmodule SanbaseWeb.Graphql.Complexity do
   end
 
   @assets_count_weight 0.1
-  defp selector_weight(args, opts) do
+  defp selector_weight(args, user_id, opts) do
     if Keyword.get(opts, :use_selector_weight, false) do
-      do_selector_weight(args)
+      do_selector_weight(args, user_id)
     else
       1
     end
   end
 
-  defp do_selector_weight(args) do
+  defp do_selector_weight(args, user_id) do
     # Number of slugs times @assets_count_weight. Could be superlinear instead, e.g.
     # 0.1*x + 0.001*x*x.
     case args do
@@ -178,7 +185,12 @@ defmodule SanbaseWeb.Graphql.Complexity do
       _ ->
         # The complexity check runs BEFORE every middleware and returns just a number, so
         # the resolved selector goes to the process dictionary for the middleware to reuse.
-        case Sanbase.Project.Selector.args_to_selector(args, use_process_dictionary: true) do
+        # Pass the same opts as the resolver, so the result in the process dictionary is
+        # reused and watchlists are resolved only if accessible by the current user.
+        case Sanbase.Project.Selector.args_to_selector(args,
+               use_process_dictionary: true,
+               user_id: user_id
+             ) do
           {:ok, %{slug: slugs}} ->
             slugs_list_to_weight(slugs)
 
@@ -195,9 +207,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
 
   # The name comes from the manually passed %Absinthe.Resolution{}, or one `getMetric`
   # resolution would pass here twice and remove two metrics.
-  defp get_metric_name(%{source: %{metric: metric}}), do: metric
-
-  defp get_metric_name(_) do
+  # Absinthe's complexity analysis does not expose the parent `getMetric` arguments,
+  # so the preprocess phase puts the metric names in the process dictionary.
+  defp metric_from_get_metric_api() do
     case Process.get(:__metric_name_from_get_metric_api__) do
       [metric | rest] ->
         # Batched requests resolve in list order, so put the list back without this

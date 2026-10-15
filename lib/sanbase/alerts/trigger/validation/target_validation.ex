@@ -37,6 +37,39 @@ defmodule Sanbase.Alert.Validation.Target do
     do: {:error, "#{inspect(target)} is not a valid target"}
 
   @doc ~s"""
+  Check that every watchlist the alert settings use, in the target or in the
+  screener selector, is public or owned by the user creating or updating the alert.
+  """
+  @spec valid_watchlists_access?(map(), non_neg_integer()) :: :ok | {:error, String.t()}
+  def valid_watchlists_access?(settings, user_id) do
+    settings
+    |> watchlist_references()
+    |> Enum.reduce_while(:ok, fn reference, :ok ->
+      case Sanbase.UserList.fetch_accessible(reference, user_id) do
+        {:ok, _watchlist} -> {:cont, :ok}
+        {:error, error} -> {:halt, {:error, error}}
+      end
+    end)
+  end
+
+  defp watchlist_references(settings) do
+    target_references(Map.get(settings, :target)) ++
+      operation_references(Map.get(settings, :operation))
+  end
+
+  defp target_references(%{watchlist_id: id}) when not is_nil(id), do: [{:watchlist_id, id}]
+  defp target_references(%{user_list: id}) when not is_nil(id), do: [{:watchlist_id, id}]
+  defp target_references(_target), do: []
+
+  defp operation_references(%{selector: %{watchlist_id: id}}) when not is_nil(id),
+    do: [{:watchlist_id, id}]
+
+  defp operation_references(%{selector: _} = operation),
+    do: Sanbase.Project.ListSelector.watchlist_base_projects(operation)
+
+  defp operation_references(_operation), do: []
+
+  @doc ~s"""
   Check if a target is a valid eth_wallet alert target.
 
   It is a valid target if:

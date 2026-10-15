@@ -1,6 +1,16 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
   import Sanbase.Utils.DateTime, only: [round_datetime: 2, str_to_sec: 1]
 
+  def resolution_to_user_id_or_nil(resolution) do
+    case resolution do
+      %{context: %{auth: %{current_user: %{id: user_id}}}} ->
+        user_id
+
+      _ ->
+        nil
+    end
+  end
+
   def selector_args_to_opts(args) when is_map(args) do
     opts = [aggregation: Map.get(args, :aggregation, nil)]
     selector = args[:selector]
@@ -76,7 +86,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   Strip private fields from a trigger map, keeping only public-safe fields.
   Settings are sanitized to remove channels, webhooks, templates, etc.
   """
-  @private_settings_keys ~w(channel template extra_explanation filtered_target triggered? payload template_kv)a
+  @private_settings_keys ~w(channel template extra_explanation filtered_target triggered? payload template_kv owner_user_id)a
   @private_settings_string_keys Enum.map(@private_settings_keys, &to_string/1)
 
   def to_public_trigger(trigger) do

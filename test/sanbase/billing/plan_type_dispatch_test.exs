@@ -264,12 +264,14 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
       assert SanbaseWeb.Graphql.Complexity.from_to_interval(
                args,
                5,
-               %{context: %{auth: %{subscription: bundle}}}
+               %{auth: %{subscription: bundle}},
+               nil
              ) ==
                SanbaseWeb.Graphql.Complexity.from_to_interval(
                  args,
                  5,
-                 %{context: %{auth: %{subscription: pro}}}
+                 %{auth: %{subscription: pro}},
+                 nil
                )
     end
 

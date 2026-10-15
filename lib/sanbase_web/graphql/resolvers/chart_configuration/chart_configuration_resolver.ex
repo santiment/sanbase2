@@ -122,6 +122,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
 
   # Private functions
 
+  # An explicit null is the same as not providing the argument
+  defp transform_project_slug_to_id(%{project_slug: nil} = args) do
+    {:ok, Map.delete(args, :project_slug)}
+  end
+
   defp transform_project_slug_to_id(%{project_id: _, project_slug: _}) do
     {:error,
      "Both projectId and projectSlug arguments are provided. Please use only one of them or none."}
@@ -132,14 +137,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   end
 
   defp transform_project_slug_to_id(%{project_slug: slug} = args) do
-    project_id = Sanbase.Project.id_by_slug(slug)
+    case Sanbase.Project.id_by_slug(slug) do
+      nil ->
+        # Without this, a nil project_id would fall through to the selector
+        # that returns all configurations accessible by the current user
+        {:error, "Project with slug '#{slug}' not found."}
 
-    args =
-      args
-      |> Map.delete(:project_slug)
-      |> Map.put(:project_id, project_id)
+      project_id ->
+        args =
+          args
+          |> Map.delete(:project_slug)
+          |> Map.put(:project_id, project_id)
 
-    {:ok, args}
+        {:ok, args}
+    end
   end
 
   defp transform_project_slug_to_id(args), do: {:ok, args}

@@ -277,6 +277,60 @@ defmodule SanbaseWeb.StripeWebhookTest do
     end
   end
 
+  describe "invoice events not connected to a known subscription" do
+    test "invoice.upcoming for a subscription that is not in the DB is processed" do
+      event =
+        invoice_event("invoice.upcoming", %{
+          "subscription" => "sub_not_in_db",
+          "next_payment_attempt" => 1_700_000_000,
+          "amount_due" => 1000
+        })
+
+      assert {:ok, %StripeEvent{is_processed: true}} = create_and_handle(event)
+    end
+
+    test "invoice.payment_succeeded without a subscription is processed without Stripe calls" do
+      event =
+        invoice_event("invoice.payment_succeeded", %{
+          "subscription" => nil,
+          "total" => 5000,
+          "starting_balance" => 0
+        })
+
+      test_pid = self()
+
+      Sanbase.Mock.prepare_mock(Sanbase.Messaging.Discord, :send_notification, fn _, _, msg ->
+        send(test_pid, {:discord, msg})
+        :ok
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, %StripeEvent{is_processed: true}} = create_and_handle(event)
+        assert_not_called(StripeApi.retrieve_subscription(:_))
+
+        # The payment is still announced, like for any other paid invoice
+        assert_receive {:discord, msg}, 1000
+        assert msg =~ "New payment for $50"
+      end)
+    end
+  end
+
+  defp invoice_event(type, object) do
+    %{
+      "id" => "evt_#{System.unique_integer([:positive])}",
+      "type" => type,
+      "data" => %{"object" => Map.put(object, "id", "in_test")}
+    }
+  end
+
+  defp create_and_handle(event) do
+    {:ok, _} = StripeEvent.create(event)
+
+    case event |> StripeEvent.handle_event_async() |> Task.yield(5000) do
+      {:ok, result} -> result
+      other -> other
+    end
+  end
+
   defp post_stripe_webhook(event) do
     payload =
       case event do

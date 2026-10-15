@@ -2950,7 +2950,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -2965,7 +2965,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -2995,7 +2995,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -3010,7 +3010,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -3025,7 +3025,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -3040,7 +3040,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -3055,7 +3055,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -3070,7 +3070,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -3085,7 +3085,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,
@@ -3100,7 +3100,7 @@
           "windows": {
             "subscription_product=SANAPI": {
               "historical_data_in_days": 730,
-              "realtime_data_cut_off_in_days": 730
+              "realtime_data_cut_off_in_days": 0
             },
             "subscription_product=SANBASE": {
               "historical_data_in_days": 730,

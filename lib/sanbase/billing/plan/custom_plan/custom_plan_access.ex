@@ -5,6 +5,8 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Access do
 
   import Sanbase.Billing.Plan.CustomPlan.Loader, only: [get_data: 2]
 
+  alias Sanbase.Billing.Plan.StandardAccessChecker
+
   def api_call_limits(plan_name, product_code) do
     get_data(plan_name, product_code).restrictions.api_call_limits
   end
@@ -39,14 +41,31 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Access do
   end
 
   def plan_has_access?(query_or_argument, product_code, plan_name) do
-    case query_or_argument do
-      {:metric, metric} -> metric in get_data(plan_name, product_code).resolved_metrics
-      {:signal, signal} -> signal in get_data(plan_name, product_code).resolved_signals
-      {:query, query} -> to_string(query) in get_data(plan_name, product_code).resolved_queries
-    end
+    data = get_data(plan_name, product_code)
+
+    in_allow_list? =
+      case query_or_argument do
+        {:metric, metric} -> metric in data.resolved_metrics
+        {:signal, signal} -> signal in data.resolved_signals
+        {:query, query} -> to_string(query) in data.resolved_queries
+      end
+
+    in_allow_list? and min_plan_max_allowed?(query_or_argument, product_code, data.restrictions)
   end
 
   def get_available_metrics_for_plan(plan_name, product_code, _restriction_type) do
-    get_data(plan_name, product_code).resolved_metrics
+    data = get_data(plan_name, product_code)
+
+    Enum.filter(
+      data.resolved_metrics,
+      &min_plan_max_allowed?({:metric, &1}, product_code, data.restrictions)
+    )
+  end
+
+  # Something with min plan "max" also needs a custom plan restricted as a top tier
+  # plan, in addition to being in the plan's allow-list.
+  defp min_plan_max_allowed?(query_or_argument, product_code, restrictions) do
+    StandardAccessChecker.min_plan(product_code, query_or_argument) != "MAX" or
+      StandardAccessChecker.max_plan?(product_code, restrictions.restricted_access_as_plan)
   end
 end

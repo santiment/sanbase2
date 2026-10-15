@@ -65,31 +65,6 @@ defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
     {:ok, from, to, interval}
   end
 
-  def calibrate_moving_average(
-        module,
-        id,
-        from,
-        to,
-        interval,
-        min_interval,
-        moving_average_base,
-        max_data_points \\ 500
-      ) do
-    {:ok, from, to, interval} =
-      calibrate(module, id, from, to, interval, min_interval, max_data_points)
-
-    ma_interval =
-      max(
-        div(
-          Sanbase.Utils.DateTime.str_to_sec(moving_average_base),
-          Sanbase.Utils.DateTime.str_to_sec(interval)
-        ),
-        2
-      )
-
-    {:ok, from, to, interval, ma_interval}
-  end
-
   def calibrate_incomplete_data_params(true, _module, _metric, from, to) do
     {:ok, from, to}
   end

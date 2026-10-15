@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
-  use SanbaseWeb.ConnCase, async: true
+  # Not async, as the rate limit tests change the global comment limits config, which
+  # would rate limit the comments created by tests running at the same time.
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
@@ -28,44 +30,24 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
       []
     end
 
-    test "creation rate limit per minute is enforced", context do
-      %{conn: conn, post: post} = context
+    for {period, limit, error} <- [
+          {:minute, 2, "Cannot create more than 2 comments per minute"},
+          {:hour, 1, "Cannot create more than 1 comment per hour"},
+          {:day, 1, "Cannot create more than 1 comment per day"}
+        ] do
+      test "creation rate limit per #{period} is enforced", context do
+        %{conn: conn, post: post} = context
 
-      env = Application.get_env(:sanbase, Sanbase.Comment)
-      env = Keyword.put(env, :creation_limit_minute, 2)
-      Application.put_env(:sanbase, Sanbase.Comment, env)
+        env = Application.get_env(:sanbase, Sanbase.Comment)
+        env = Keyword.put(env, :"creation_limit_#{unquote(period)}", unquote(limit))
+        Application.put_env(:sanbase, Sanbase.Comment, env)
 
-      assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
-      assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
+        for _ <- 1..unquote(limit) do
+          assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
+        end
 
-      create_comment_with_error(conn, post.id, "some content", @opts) =~
-        "Cannot create more than 2 comment per minute"
-    end
-
-    test "creation rate limit per hour is enforced", context do
-      %{conn: conn, post: post} = context
-
-      env = Application.get_env(:sanbase, Sanbase.Comment)
-      env = Keyword.put(env, :creation_limit_hour, 1)
-      Application.put_env(:sanbase, Sanbase.Comment, env)
-
-      assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
-
-      create_comment_with_error(conn, post.id, "some content", @opts) =~
-        "Cannot create more than 1 comment per hour"
-    end
-
-    test "creation rate limit per day is enforced", context do
-      %{conn: conn, post: post} = context
-
-      env = Application.get_env(:sanbase, Sanbase.Comment)
-      env = Keyword.put(env, :creation_limit_day, 1)
-      Application.put_env(:sanbase, Sanbase.Comment, env)
-
-      assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
-
-      create_comment_with_error(conn, post.id, "some content", @opts) =~
-        "Cannot create more than 1 comment per day"
+        assert create_comment_with_error(conn, post.id, "some content", @opts) == unquote(error)
+      end
     end
   end
 

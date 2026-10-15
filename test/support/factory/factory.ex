@@ -5,7 +5,6 @@ defmodule Sanbase.Factory do
   alias Sanbase.UserList
   alias Sanbase.Accounts.{User, UserSettings, Role, UserRole, AccessAttempt}
   alias Sanbase.Insight.Post
-  alias Sanbase.Comment
   alias Sanbase.{Project, ProjectEthAddress}
 
   alias Sanbase.Model.{
@@ -177,23 +176,9 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def comment_factory() do
-    %Comment{
-      content: "some default comment"
-    }
-  end
-
   def tag_factory() do
     %Tag{
       name: rand_str(5)
-    }
-  end
-
-  def post_no_default_user_factory() do
-    %Post{
-      title: "Awesome analysis",
-      text: "Text of the post",
-      state: Post.awaiting_approval_state()
     }
   end
 
@@ -430,10 +415,6 @@ defmodule Sanbase.Factory do
 
   def product_sanbase_factory() do
     %Product{id: 2, name: "Sanbase by Santiment", code: "SANBASE"}
-  end
-
-  def product_exchange_wallets_factory() do
-    %Product{id: 5, name: "Exchange Wallets by Santiment", code: "SAN_EXCHANGE_WALLETS"}
   end
 
   def plan_free_factory() do
@@ -750,14 +731,6 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def subscription_pro_custom_factory() do
-    %Subscription{
-      plan_id: 24,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
-      status: "active"
-    }
-  end
-
   def ico_factory() do
     %Ico{
       project_id: 1
@@ -824,10 +797,6 @@ defmodule Sanbase.Factory do
     %UserRole{}
   end
 
-  def exchange_market_pair_mappings_factory do
-    %Sanbase.Exchanges.MarketPairMapping{}
-  end
-
   def newsletter_token_factory do
     %NewsletterToken{
       token: :crypto.strong_rand_bytes(64) |> Base.encode64(),
@@ -865,12 +834,6 @@ defmodule Sanbase.Factory do
     %Sanbase.ShortUrl{
       short_url: rand_str(),
       full_url: "https://santiment.net"
-    }
-  end
-
-  def uniswap_staking_factory do
-    %Sanbase.Accounts.User.UniswapStaking{
-      san_staked: 3000
     }
   end
 

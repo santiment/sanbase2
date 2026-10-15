@@ -23,7 +23,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
     available_queries = AvailableQueries.get(project)
     assert "gasUsed" in available_queries
     assert "allExchanges" in available_queries
-    assert "exchangeWallets" in available_queries
+    refute "exchangeWallets" in available_queries
   end
 
   test "bitcoin has specific metrics" do
@@ -38,7 +38,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
     # There is no gas used for Bitcoin
     assert "gasUsed" not in available_queries
     assert "allExchanges" in available_queries
-    assert "exchangeWallets" in available_queries
+    refute "exchangeWallets" in available_queries
   end
 
   test "project with slug, github, infrastructure, contract and eth addresses" do

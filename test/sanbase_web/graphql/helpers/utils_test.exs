@@ -55,34 +55,4 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
              ) == {:ok, from, context.to, "518s"}
     end
   end
-
-  describe "#calibrate_interval_with_ma_interval/8" do
-    test "returns 2 ma_interval when ma_base/interval is less then 2", context do
-      {:ok, first_datetime} = StoreMock.first_datetime("")
-
-      assert CalibrateInterval.calibrate_moving_average(
-               StoreMock,
-               "some_slug",
-               context.from,
-               context.to,
-               "",
-               60,
-               "1500s"
-             ) == {:ok, first_datetime, context.to, "1382s", 2}
-    end
-
-    test "calculates ma_interval when ma_base/interval is more then 2", context do
-      {:ok, first_datetime} = StoreMock.first_datetime("")
-
-      assert CalibrateInterval.calibrate_moving_average(
-               StoreMock,
-               "some_slug",
-               context.from,
-               context.to,
-               "",
-               60,
-               "10000s"
-             ) == {:ok, first_datetime, context.to, "1382s", 7}
-    end
-  end
 end

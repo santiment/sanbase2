@@ -21,12 +21,8 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   branch returns a standard-ladder value instead of raising, and the test fails
   naming the site.
 
-  ## How to use it while implementing bundles
-
-  `bundle_entry_points/0` is the implementation checklist. Every entry currently
-  asserts that the bundle path is reached and raises. As each function gains a
-  real implementation, move it out of that list and assert its actual behavior.
-  When the list is empty, task BA is complete.
+  Every entry point now has a real bundle implementation and is asserted
+  directly below. A new plan-type-aware entry point must get its own test here.
 
   See `docs/composable-api-plans-handover.md` §7.5 and §7.6.
   """
@@ -45,15 +41,6 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   @products ["SANAPI", "SANBASE"]
   @item {:metric, "price_usd"}
 
-  # {label, fun} pairs where fun takes (plan_name, product) and reaches exactly
-  # one dispatch site. Empty means every site has a real implementation (BA done).
-  defp bundle_entry_points do
-    []
-  end
-
-  # Entry points that have a real bundle implementation, and so are asserted
-  # directly rather than through the "must raise" list above. When
-  # bundle_entry_points/0 is empty, task BA is complete.
   describe "implemented bundle entry points" do
     test "plan_has_access? answers from the entitlement it is handed" do
       entitlement = bundle_entitlement()
@@ -395,21 +382,6 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
   end
 
   describe "bundle dispatch coverage" do
-    test "every entry point routes a bundle plan to the bundle path" do
-      for {label, fun} <- bundle_entry_points(), product <- @products do
-        assert call(fun, @bundle_plan, product) == :dispatched_to_bundle,
-               """
-               #{label} did not dispatch to the bundle path for product=#{product}.
-               Got: #{inspect(call(fun, @bundle_plan, product))}
-
-               Either it returned a standard-ladder answer (a paying bundle
-               customer would silently get the wrong access), or it raised
-               something other than Bundle.NotImplementedError. Add a `:bundle`
-               branch keyed on Plan.type/1.
-               """
-      end
-    end
-
     test "Plan.Restrictions.get passes the entitlement down to the bundle path" do
       # Restrictions.get is what the metric and signal resolvers call. It fans
       # out to plan_has_access? and both window functions, so if it drops the
@@ -436,31 +408,6 @@ defmodule Sanbase.Billing.PlanTypeDispatchTest do
 
       refute refused.is_accessible
     end
-  end
-
-  describe "existing plans never reach the bundle path" do
-    test "no standard plan is routed to the bundle path at any entry point" do
-      for plan <- AccessMatrix.standard_plan_names(),
-          {label, fun} <- bundle_entry_points(),
-          product <- @products do
-        refute call(fun, plan, product) == :dispatched_to_bundle,
-               "#{label} routed the existing plan #{plan} (#{product}) into the bundle path"
-      end
-    end
-  end
-
-  # Returns :dispatched_to_bundle, {:returned, value} or {:raised, module}.
-  #
-  # Exceptions other than Bundle.NotImplementedError are returned rather than
-  # re-raised: several functions have no clause for some valid plan names
-  # (PREMIUM is the live example) and raise CaseClauseError today. That is
-  # pre-existing behavior, pinned by the access-matrix fixture, and not this
-  # test's concern.
-  defp call(fun, plan_name, product) do
-    {:returned, fun.(plan_name, product)}
-  rescue
-    Bundle.NotImplementedError -> :dispatched_to_bundle
-    error -> {:raised, error.__struct__}
   end
 
   defp acl_plan(product, plan_name), do: String.downcase("#{product}_#{plan_name}")

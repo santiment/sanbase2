@@ -26,8 +26,15 @@ defmodule Sanbase.SocialData.Sentiment do
   def sentiment(selector, from, to, interval, source, type) do
     case sentiment_request(selector, from, to, interval, source, type) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        sentiment_result(result)
+        case Jason.decode(body) do
+          {:ok, result} ->
+            sentiment_result(result)
+
+          {:error, error} ->
+            error_result(
+              "Cannot decode sentiment #{type} response for #{inspect(selector)}: #{Exception.message(error)}"
+            )
+        end
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result("Error status #{status} fetching sentiment #{type} for #{inspect(selector)}")

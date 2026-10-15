@@ -123,7 +123,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       "FREE" -> @free_plan_stats[:realtime_data_cut_off_in_days]
       "BASIC" -> @basic_plan_stats[:realtime_data_cut_off_in_days]
       "PRO" -> @pro_plan_stats[:realtime_data_cut_off_in_days]
-      "PRO_PLUS" -> @sanbase_pro_plus_plan_stats[:historical_data_in_days]
+      "PRO_PLUS" -> @sanbase_pro_plus_plan_stats[:realtime_data_cut_off_in_days]
       "MAX" -> @sanbase_max_plan_stats[:realtime_data_cut_off_in_days]
       "BUSINESS_PRO" -> @business_pro_plan_stats[:realtime_data_cut_off_in_days]
       "BUSINESS_MAX" -> @business_max_plan_stats[:realtime_data_cut_off_in_days]

@@ -77,10 +77,54 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
       "FREE" -> true
       "BASIC" -> plan_name != "FREE"
       "PRO" -> plan_name not in ["FREE", "BASIC"]
+      "MAX" -> max_plan?(requested_product, plan_name)
       "CUSTOM" -> plan_name == "CUSTOM"
-      _ -> true
+      min_plan -> unrecognized_min_plan(query_or_argument, requested_product, min_plan)
     end
   end
+
+  # An unrecognized min plan is most likely a misconfiguration. Access is granted, as
+  # it has always been for such values, but it is reported so it gets fixed. This runs
+  # on every request, so each value is reported at most once per hour per node.
+  defp unrecognized_min_plan(query_or_argument, requested_product, min_plan) do
+    key = {__MODULE__, :unrecognized_min_plan, query_or_argument, requested_product, min_plan}
+
+    Sanbase.Cache.get_or_store({key, 3600}, fn ->
+      Logger.error(
+        "[StandardAccessChecker] Unrecognized min plan #{inspect(min_plan)} for " <>
+          "#{inspect(query_or_argument)} on #{inspect(requested_product)}. Access is granted."
+      )
+
+      Sentry.capture_message("unrecognized_min_plan",
+        extra: %{
+          min_plan: inspect(min_plan),
+          query_or_argument: inspect(query_or_argument),
+          requested_product: inspect(requested_product)
+        }
+      )
+
+      :reported
+    end)
+
+    true
+  end
+
+  @sanapi_max_plans ["BUSINESS_MAX", "CUSTOM", "PREMIUM"]
+  @sanapi_max_plan_prefixes ["INSTITUTIONAL", "ENTERPRISE"]
+
+  @doc ~s"""
+  Whether the plan is in the top tier, which gives access to things with min plan "max".
+  The top tier differs per product. On Sanbase only the MAX plan qualifies. SanAPI
+  has no MAX plan, so there BUSINESS_MAX and the plans above it qualify.
+  """
+  @spec max_plan?(product_code, plan_name) :: boolean()
+  def max_plan?("SANBASE", plan_name), do: plan_name == "MAX"
+
+  def max_plan?("SANAPI", plan_name) when is_binary(plan_name) do
+    plan_name in @sanapi_max_plans or String.starts_with?(plan_name, @sanapi_max_plan_prefixes)
+  end
+
+  def max_plan?(_requested_product, _plan_name), do: false
 
   @spec min_plan(product_code, query_or_argument) :: plan_name
   def min_plan(product_code, query_or_argument) do

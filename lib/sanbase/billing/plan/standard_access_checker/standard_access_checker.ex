@@ -79,8 +79,34 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
       "PRO" -> plan_name not in ["FREE", "BASIC"]
       "MAX" -> max_plan?(requested_product, plan_name)
       "CUSTOM" -> plan_name == "CUSTOM"
-      _ -> true
+      min_plan -> unrecognized_min_plan(query_or_argument, requested_product, min_plan)
     end
+  end
+
+  # An unrecognized min plan is most likely a misconfiguration. Access is granted, as
+  # it has always been for such values, but it is reported so it gets fixed. This runs
+  # on every request, so each value is reported at most once per hour per node.
+  defp unrecognized_min_plan(query_or_argument, requested_product, min_plan) do
+    key = {__MODULE__, :unrecognized_min_plan, query_or_argument, requested_product, min_plan}
+
+    Sanbase.Cache.get_or_store({key, 3600}, fn ->
+      Logger.error(
+        "[StandardAccessChecker] Unrecognized min plan #{inspect(min_plan)} for " <>
+          "#{inspect(query_or_argument)} on #{inspect(requested_product)}. Access is granted."
+      )
+
+      Sentry.capture_message("unrecognized_min_plan",
+        extra: %{
+          min_plan: inspect(min_plan),
+          query_or_argument: inspect(query_or_argument),
+          requested_product: inspect(requested_product)
+        }
+      )
+
+      :reported
+    end)
+
+    true
   end
 
   # The top tier differs per product. On Sanbase only the MAX plan qualifies. SanAPI

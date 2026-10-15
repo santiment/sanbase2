@@ -6,6 +6,7 @@ defmodule Sanbase.Billing.Plan.MinPlanMaxTest do
   """
   use SanbaseWeb.ConnCase, async: false
 
+  import Ecto.Query
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -132,6 +133,36 @@ defmodule Sanbase.Billing.Plan.MinPlanMaxTest do
         assert "price_usd" in available_metrics("CUSTOM_MAX_TEST_PRO")
       end)
     end
+  end
+
+  test "an unrecognized min plan grants access and is reported to Sentry once", context do
+    with_restored_registry(context, fn ->
+      {:ok, registry} = Sanbase.Metric.Registry.by_name(@metric)
+
+      # The changeset accepts only known values, so write the DB row directly.
+      Sanbase.Repo.update_all(
+        from(r in Sanbase.Metric.Registry, where: r.id == ^registry.id),
+        set: [sanapi_min_plan: "ultra"]
+      )
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+      Sanbase.Cache.clear_all()
+
+      test_pid = self()
+
+      Sanbase.Mock.prepare_mock(Sentry, :capture_message, fn message, opts ->
+        send(test_pid, {:sentry, message, opts})
+        {:ok, "event-id"}
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert AccessChecker.plan_has_access?({:metric, @metric}, "SANAPI", "FREE")
+        assert AccessChecker.plan_has_access?({:metric, @metric}, "SANAPI", "PRO")
+
+        assert_receive {:sentry, "unrecognized_min_plan", opts}
+        assert opts[:extra][:min_plan] == inspect("ULTRA")
+        refute_receive {:sentry, _, _}, 100
+      end)
+    end)
   end
 
   defp available_metrics(plan_name),

@@ -174,6 +174,183 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     end
   end
 
+  test "the paywall access is checked once per response, not per insight", context do
+    author = insert(:user)
+    text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
+    query = "{ allInsights { text pulseText isPaywallRequired } }"
+
+    for _ <- 1..5, do: create_insight(%{text: text, author: author}, %{})
+
+    {insights, paywall_checks} =
+      count_paywall_checks(fn -> execute_query(context.conn, query, "allInsights") end)
+
+    assert length(insights) == 5
+    assert Enum.all?(insights, &(&1["text"] != text))
+    assert paywall_checks == 1
+  end
+
+  describe "images of paywalled insights" do
+    setup context do
+      storage_dir = Application.get_env(:waffle, :storage_dir) |> String.trim_trailing("/")
+      preview_image = "#{storage_dir}/preview.png"
+      hidden_image = "#{storage_dir}/hidden.png"
+      words = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
+      author = insert(:user)
+
+      post =
+        create_insight(%{text: "#{preview_image} #{words} #{hidden_image}", author: author}, %{})
+
+      for url <- [preview_image, hidden_image] do
+        Sanbase.Repo.insert!(%Sanbase.Insight.PostImage{
+          post_id: post.id,
+          image_url: url,
+          file_name: Path.basename(url),
+          content_hash: Path.basename(url),
+          hash_algorithm: "sha256"
+        })
+      end
+
+      query = "{ insight(id: #{post.id}) { images { imageUrl } } }"
+
+      Map.merge(context, %{
+        author: author,
+        query: query,
+        preview_image: preview_image,
+        hidden_image: hidden_image
+      })
+    end
+
+    test "a user without access sees only the images in the preview", context do
+      %{"images" => images} = execute_query(context.conn, context.query, "insight")
+
+      assert Enum.map(images, & &1["imageUrl"]) == [context.preview_image]
+    end
+
+    test "the author sees all images", context do
+      conn = setup_jwt_auth(build_conn(), context.author)
+      %{"images" => images} = execute_query(conn, context.query, "insight")
+
+      assert Enum.map(images, & &1["imageUrl"]) == [context.preview_image, context.hidden_image]
+    end
+
+    test "a user without access does not see images not in the text of a short insight",
+         context do
+      storage_dir = Application.get_env(:waffle, :storage_dir) |> String.trim_trailing("/")
+      # Shorter than the preview, so the preview text is the same as the full text
+      post = create_insight(%{text: "Short text", author: context.author}, %{})
+
+      Sanbase.Repo.insert!(%Sanbase.Insight.PostImage{
+        post_id: post.id,
+        image_url: "#{storage_dir}/chart.png",
+        file_name: "chart.png",
+        content_hash: "chart.png",
+        hash_algorithm: "sha256"
+      })
+
+      query = "{ insight(id: #{post.id}) { text images { imageUrl } } }"
+
+      assert %{"text" => "Short text", "images" => []} =
+               execute_query(context.conn, query, "insight")
+
+      conn = setup_jwt_auth(build_conn(), context.author)
+
+      assert %{"images" => [%{"imageUrl" => _}]} = execute_query(conn, query, "insight")
+    end
+  end
+
+  describe "filter paywalled in other fields returning insights" do
+    setup do
+      text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
+      author = insert(:user)
+
+      {:ok, text: text, author: author}
+    end
+
+    test "featuredInsights", context do
+      insight = create_insight(context, %{})
+      :ok = Sanbase.FeaturedItem.update_item(insight, true)
+
+      query = "{ featuredInsights { id text isPaywallRequired } }"
+      [result] = execute_query(context.conn, query, "featuredInsights")
+
+      assert result["isPaywallRequired"]
+      assert result["text"] != insight.text
+      assert result["text"] =~ "alabala"
+    end
+
+    test "getUser insights", context do
+      insight = create_insight(context, %{})
+
+      query = """
+      {
+        getUser(selector: {id: #{context.author.id}}) {
+          insights { id text isPaywallRequired }
+        }
+      }
+      """
+
+      %{"insights" => [result]} = execute_query(context.conn, query, "getUser")
+
+      assert result["isPaywallRequired"]
+      assert result["text"] != insight.text
+      assert result["text"] =~ "alabala"
+    end
+
+    test "getMostRecent insights", context do
+      insight = create_insight(context, %{published_at: DateTime.utc_now()})
+
+      query = """
+      {
+        getMostRecent(types: [INSIGHT], page: 1, pageSize: 10) {
+          data { insight { id text isPaywallRequired } }
+        }
+      }
+      """
+
+      %{"data" => [%{"insight" => result}]} =
+        execute_query(context.conn, query, "getMostRecent")
+
+      assert result["isPaywallRequired"]
+      assert result["text"] != insight.text
+      assert result["text"] =~ "alabala"
+    end
+  end
+
+  # Counts the batched paywall access checks started by the test process, which
+  # also handles the request. Each one checks the user's access once for all the
+  # insights in its batch.
+  defp count_paywall_checks(fun) do
+    test_pid = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:absinthe, :middleware, :batch, :start],
+      fn _event, _measurements, %{batch_fun: batch_fun}, _config ->
+        if self() == test_pid and
+             match?(
+               {SanbaseWeb.Graphql.Resolvers.InsightResolver, :paywalled_texts, _},
+               batch_fun
+             ),
+           do: send(test_pid, :paywall_check)
+      end,
+      nil
+    )
+
+    result = fun.()
+    :telemetry.detach(handler_id)
+
+    {result, count_messages(:paywall_check, 0)}
+  end
+
+  defp count_messages(message, count) do
+    receive do
+      ^message -> count_messages(message, count + 1)
+    after
+      0 -> count
+    end
+  end
+
   defp insight_by_id_query(insight_id) do
     """
     {

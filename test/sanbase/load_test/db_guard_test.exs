@@ -48,6 +48,16 @@ defmodule Sanbase.LoadTest.DbGuardTest do
     refute error.message =~ "supersecret"
   end
 
+  test "every load_test mix task runs behind the migrations' database_safety alias" do
+    aliases = Mix.Project.config()[:aliases]
+
+    for task <- ["load_test.setup", "load_test.seed_projects", "load_test.cleanup"] do
+      assert Keyword.get(aliases, String.to_atom(task)) ==
+               ["load_dotenv", "database_safety", task],
+             "#{task} must be aliased to run load_dotenv and database_safety first"
+    end
+  end
+
   test "refuses non-local database hosts" do
     assert_raise RuntimeError, ~r/not local/, fn ->
       DbGuard.check_local!(

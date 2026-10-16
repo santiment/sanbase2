@@ -203,6 +203,23 @@ defmodule Sanbase.Mixfile do
         "ecto.rollback -r Sanbase.Repo",
         "ecto.dump -r Sanbase.Repo"
       ],
+      # The load test tasks insert and delete data. Same guard as the migrations;
+      # each task also calls Sanbase.LoadTest.DbGuard, which is stricter.
+      "load_test.setup": [
+        "load_dotenv",
+        "database_safety",
+        "load_test.setup"
+      ],
+      "load_test.seed_projects": [
+        "load_dotenv",
+        "database_safety",
+        "load_test.seed_projects"
+      ],
+      "load_test.cleanup": [
+        "load_dotenv",
+        "database_safety",
+        "load_test.cleanup"
+      ],
       "hex.outdated": [
         "hex.outdated --sort status"
       ],

@@ -21,10 +21,11 @@ defmodule Mix.Tasks.DatabaseSafety do
     case env != :prod and Sanbase.Utils.prod_db?() do
       true ->
         raise(Mix.Error, """
-        Migration execution was stopped due to safety concerns!
+        Execution was stopped due to safety concerns!
 
-        Trying to execute a migration against a production database while not in
-        production environment is prohibited. Either the DATABASE_URL or the
+        Trying to execute a migration or another data-changing task (e.g. load_test.*)
+        against a production database while not in production environment is
+        prohibited. Either the DATABASE_URL or the
         Sanbase.Repo config value for :hostname is pointing to a production database.
 
         DATABASE_URL takes precedence over the config file but even if the config

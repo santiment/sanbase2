@@ -3,6 +3,11 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
 
   @moduletag capture_log: true
 
+  # The report loads in an `assign_async` task running several queries. On a busy CI
+  # runner it can take longer than the 100ms `render_async/2` waits by default, and
+  # then the test exits while the task still holds a sandbox connection.
+  @async_timeout 5_000
+
   import Mock
   import Phoenix.LiveViewTest
   import Sanbase.Factory
@@ -22,7 +27,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     seed([invoice(id: "in_test", number: "SAN-0001")], [adjustment(description: note)])
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    html = render_async(view)
+    html = render_async(view, @async_timeout)
 
     assert html =~ "Credit Payments"
     assert html =~ "SAN-0001"
@@ -35,7 +40,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
 
   test "says so when nothing was settled from credit", %{conn: conn} do
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    html = render_async(view)
+    html = render_async(view, @async_timeout)
 
     assert html =~ "No invoice was settled from credit in this range."
     assert html =~ "No credit was added in this range."
@@ -44,7 +49,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
   test "warns about the days no import has covered", %{conn: conn} do
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
 
-    assert render_async(view) =~ "Never imported:"
+    assert render_async(view, @async_timeout) =~ "Never imported:"
   end
 
   test "re-imports the selected range from Stripe on demand", %{conn: conn} do
@@ -53,7 +58,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
 
     with_mocks [stripe_mock(invoices, transactions)] do
       {:ok, view, _html} = live(conn, "/admin/credit_payments")
-      html = render_async(view)
+      html = render_async(view, @async_timeout)
 
       refute html =~ "SAN-LATE"
 
@@ -79,14 +84,14 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
 
     with_mocks [stripe_mock([], [transaction])] do
       {:ok, view, _html} = live(conn, "/admin/credit_payments")
-      render_async(view)
+      render_async(view, @async_timeout)
 
       html =
         view
         |> form("#lookup-form", %{"identifier" => user.email})
         |> render_submit()
 
-      html = render_async(view) || html
+      html = render_async(view, @async_timeout) || html
 
       assert html =~ "wire transfer, ref 12345"
       assert html =~ "$500.00"
@@ -98,13 +103,13 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     user = insert(:user, stripe_customer_id: nil)
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    render_async(view)
+    render_async(view, @async_timeout)
 
     view
     |> form("#lookup-form", %{"identifier" => user.email})
     |> render_submit()
 
-    assert render_async(view) =~ "No stripe customer found for"
+    assert render_async(view, @async_timeout) =~ "No stripe customer found for"
   end
 
   test "links the customer to the user record, and to Stripe when unmatched", %{conn: conn} do
@@ -119,7 +124,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     )
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    html = render_async(view)
+    html = render_async(view, @async_timeout)
 
     assert html =~ "/admin/generic/#{user.id}?resource=users"
     assert html =~ user.email
@@ -133,7 +138,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     seed([invoice(id: "in_by_email", customer: "cus_by_email", customer_email: user.email)], [])
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    html = render_async(view)
+    html = render_async(view, @async_timeout)
 
     assert html =~ "/admin/generic/#{user.id}?resource=users"
   end
@@ -144,14 +149,14 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
 
     with_mocks [stripe_mock([], [transaction])] do
       {:ok, view, _html} = live(conn, "/admin/credit_payments")
-      render_async(view)
+      render_async(view, @async_timeout)
 
       for identifier <- [to_string(user.id), "cus_lookup"] do
         view
         |> form("#lookup-form", %{"identifier" => identifier})
         |> render_submit()
 
-        assert render_async(view) =~ "wire transfer ref 42"
+        assert render_async(view, @async_timeout) =~ "wire transfer ref 42"
       end
     end
   end
@@ -173,7 +178,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     )
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    html = render_async(view)
+    html = render_async(view, @async_timeout)
 
     assert html =~ "Settled out of band"
     assert html =~ "$6,000.00"
@@ -207,7 +212,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     )
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    html = render_async(view)
+    html = render_async(view, @async_timeout)
 
     assert html =~ "Paid from purchased credit"
     assert html =~ "Stripe credit"
@@ -296,7 +301,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     seed(invoices, transactions)
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    render_async(view)
+    render_async(view, @async_timeout)
 
     html =
       view
@@ -324,7 +329,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     seed(invoices, [])
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    html = render_async(view)
+    html = render_async(view, @async_timeout)
 
     assert html =~ "30 invoice(s), page 1 of 2"
 
@@ -344,14 +349,14 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
     seed(invoices, [], from: ~D[2026-05-01], to: ~D[2026-05-31])
 
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    render_async(view)
+    render_async(view, @async_timeout)
 
     html =
       view
       |> form("#range-form", %{"from" => "2026-05-01", "to" => "2026-05-31"})
       |> render_change()
 
-    html = render_async(view) || html
+    html = render_async(view, @async_timeout) || html
     assert html =~ "2026-05"
 
     html =
@@ -365,7 +370,7 @@ defmodule SanbaseWeb.Admin.CreditPaymentsLiveTest do
 
   test "offers a CSV download carrying the current range and filters", %{conn: conn} do
     {:ok, view, _html} = live(conn, "/admin/credit_payments")
-    html = render_async(view)
+    html = render_async(view, @async_timeout)
 
     assert html =~ "/admin/credit_payments/export?"
     assert html =~ "what=invoices"

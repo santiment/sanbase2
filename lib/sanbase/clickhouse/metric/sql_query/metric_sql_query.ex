@@ -40,11 +40,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
 
-    {additional_filters, params} =
-      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
+    applied_filters = relevant_filters_for_metric(metric, filters)
+    {additional_filters, params} = additional_filters(applied_filters, params, trailing_and: true)
 
     {fixed_parameters_str, params} =
-      maybe_get_fixed_parameters(metric, version, selector, params, opts ++ [trailing_and: true])
+      maybe_get_fixed_parameters(metric, applied_filters, params, opts ++ [trailing_and: true])
 
     # computed_at is always selected, but the API layer decides whether or not to return it
     sql =
@@ -79,60 +79,57 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp maybe_get_fixed_parameters(_metric, _version, selector, params, _opts)
-       when is_map_key(selector, :label_fqn) or is_map_key(selector, :label_fqns) do
-    # For `historical_balance_centralized_exchanges` the fixed parameters only serve to
-    # list the available label_fqns, and are redundant once the query provides one. For
-    # `combined_historical_balance_centralized_exchanges` the client provides no label_fqn
-    # - the metric covers all exchanges - so they must pin it (the function below).
-    {"", params}
-  end
+  # The fixed-parameter metrics (`combined_historical_balance_funds`,
+  # `historical_balance_whales_usd`, etc.) are `combined_labeled_balance` with the
+  # label derived from the `label_key` in their fixed parameters:
+  #   - one label for all assets: `santiment/<label_key>:v1`
+  #   - one label per asset: `santiment/<label_key>(<slug>):v1`
+  #   - owners under a parent (CEX/DEX owners): no single label, so a label_fqn is required
+  # When the query provides a label_fqn, it is used instead.
+  @per_asset_label_keys ["whale_usd_balance"]
 
-  defp maybe_get_fixed_parameters(metric, version, selector, params, opts) do
+  defp maybe_get_fixed_parameters(metric, applied_filters, params, opts) do
     case opts[:fixed_parameters] do
-      %{"labels" => %{"group" => group, "label_key" => label_key} = map} ->
-        asset_name_filter =
-          if "asset_name" in Map.get(map, "__parametrized__", []) do
-            if not is_binary(selector[:slug]),
-              do:
-                raise(Sanbase.Metric.CatchableError,
-                  message: """
-                  When using the metric #{metric} the provided parameters needs to be a string 'slug', \
-                  or selector that contains a 'slug' argument that is a string, not a list. \
-                  Got '#{inspect(selector)}' instead"
-                  """
-                )
-
-            "asset_name = {{selector}} AND"
-          else
-            ""
-          end
-
-        sql = """
-        label_id = (
-          SELECT label_id
-          FROM label_metadata
-          WHERE
-            fqn = (
-              SELECT DISTINCT(fqn)
-              FROM labeled_balances_filtered
-              WHERE
-                #{asset_name_filter}
-                group = {{group}} AND
-                label_key = {{label_key}} AND
-                #{versioned_metric_id_filter(metric, argument_name: "metric", version: version, version_arg_name: "version")}
-            )
-        )
-        """
-
-        params = Map.merge(params, %{"group" => group, "label_key" => label_key})
-
-        sql = if opts[:trailing_and], do: sql <> " AND", else: sql
-        {sql, params}
+      %{"labels" => labels} ->
+        if Keyword.has_key?(applied_filters, :label_fqn) do
+          {"", params}
+        else
+          {sql, params} = fixed_labels_filter(metric, labels, params)
+          sql = if opts[:trailing_and], do: sql <> " AND", else: sql
+          {sql, params}
+        end
 
       _ ->
         {"", params}
     end
+  end
+
+  defp fixed_labels_filter(metric, %{"parent_label_key" => _}, _params) do
+    raise(Sanbase.Metric.CatchableError,
+      message: "The metric #{metric} requires a 'labelFqn' or 'labelFqns' selector argument"
+    )
+  end
+
+  defp fixed_labels_filter(_metric, %{"label_key" => label_key}, params)
+       when label_key in @per_asset_label_keys do
+    # The first condition is redundant, but lets ClickHouse use the label_id index
+    sql = """
+    label_id IN (SELECT label_id FROM label_metadata WHERE key = {{fixed_label_key}}) AND
+    label_id = dictGetUInt64(
+      'default.labels_by_fqn',
+      'label_id',
+      tuple(concat('santiment/', {{fixed_label_key}}, '(', dictGetString('asset_metadata_dict', 'name', asset_id), '):v1'))
+    )
+    """
+
+    {sql, Map.put(params, "fixed_label_key", label_key)}
+  end
+
+  defp fixed_labels_filter(_metric, %{"label_key" => label_key}, params) do
+    sql =
+      "label_id = dictGetUInt64('default.labels_by_fqn', 'label_id', tuple({{fixed_label_fqn}}))"
+
+    {sql, Map.put(params, "fixed_label_fqn", "santiment/#{label_key}:v1")}
   end
 
   def timeseries_data_per_slug_query(
@@ -160,6 +157,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
     {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
 
+    {fixed_parameters_str, params} =
+      maybe_get_fixed_parameters(metric, filters, params, opts ++ [trailing_and: true])
+
     # `computed_at2` alias: see note in timeseries_data_query/8.
     sql = """
     SELECT
@@ -176,6 +176,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       FROM {{table:inline}}
       WHERE
         #{finalized_data_filter_str(params.table, only_finalized_data)}
+        #{fixed_parameters_str}
         #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
@@ -216,8 +217,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
 
-    {additional_filters, params} =
-      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
+    applied_filters = relevant_filters_for_metric(metric, filters)
+    {additional_filters, params} = additional_filters(applied_filters, params, trailing_and: true)
+
+    {fixed_parameters_str, params} =
+      maybe_get_fixed_parameters(metric, applied_filters, params, opts ++ [trailing_and: true])
 
     sql = """
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
@@ -240,6 +244,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           FROM {{table:inline}}
           WHERE
             #{finalized_data_filter_str(params.table, only_finalized_data)}
+            #{fixed_parameters_str}
             #{additional_filters}
             #{asset_id_filter(%{slug: slugs}, argument_name: "slugs")} AND
             #{versioned_metric_id_filter(metric, argument_name: "metric", version: version, version_arg_name: "version")} AND
@@ -395,51 +400,72 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def available_label_fqns_for_fixed_parameters_query(metric, %{"labels" => labels}) do
-    columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
+    do_available_label_fqns_for_fixed_parameters_query(metric, nil, labels)
+  end
 
-    where_clause =
-      Enum.map(columns_map, fn {key, _} -> "#{key} = {{#{key}}}" end)
-      |> Enum.join(" AND ")
+  def available_label_fqns_for_fixed_parameters_query(metric, slug, %{"labels" => labels}) do
+    do_available_label_fqns_for_fixed_parameters_query(metric, slug, labels)
+  end
+
+  # Owners (CEX/DEX owners): the owner labels with data for the metric. There is no
+  # owner -> exchange relation in label_metadata, so CEX and DEX owners are not split.
+  defp do_available_label_fqns_for_fixed_parameters_query(
+         metric,
+         slug,
+         %{"parent_label_key" => _, "label_key" => label_key}
+       ) do
+    asset_filter_str =
+      if slug, do: "AND " <> asset_id_filter(%{slug: slug}, argument_name: "slug"), else: ""
 
     sql = """
-    SELECT DISTINCT(fqn)
-    FROM labeled_balances_filtered
+    SELECT DISTINCT dictGet('labels_dict', 'fqn', label_id) AS fqn
+    FROM labeled_intraday_metrics_v2
     WHERE
-      #{metric_id_filter(metric, argument_name: "metric")} AND
-      #{where_clause}
+      label_id IN (SELECT label_id FROM label_metadata WHERE key = {{label_key}}) AND
+      dt >= now() - INTERVAL 365 DAY AND
+      #{metric_id_filter(metric, argument_name: "metric")}
+      #{asset_filter_str}
     """
 
-    params =
-      %{metric: Map.get(Registry.name_to_metric_map(), metric)}
-      |> Map.merge(columns_map)
+    params = %{
+      metric: Map.get(Registry.name_to_metric_map(), metric),
+      label_key: label_key,
+      slug: slug
+    }
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_label_fqns_for_fixed_parameters_query(metric, slug, %{"labels" => labels}) do
-    columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
-
-    where_clause =
-      Enum.map(columns_map, fn {key, _} -> "#{key} = {{#{key}}}" end)
-      |> Enum.join(" AND ")
+  defp do_available_label_fqns_for_fixed_parameters_query(
+         _metric,
+         slug,
+         %{"label_key" => label_key}
+       )
+       when label_key in @per_asset_label_keys do
+    fqn_filter_str =
+      if slug,
+        do: "fqn = concat('santiment/', {{label_key}}, '(', {{slug}}, '):v1')",
+        else: "key = {{label_key}}"
 
     sql = """
-    SELECT DISTINCT(fqn)
-    FROM labeled_balances_filtered
-    WHERE
-      #{metric_id_filter(metric, argument_name: "metric")} AND
-      #{where_clause} AND
-      asset_name = {{slug}}
+    SELECT DISTINCT fqn
+    FROM label_metadata
+    WHERE #{fqn_filter_str}
     """
 
-    params =
-      %{
-        metric: Map.get(Registry.name_to_metric_map(), metric),
-        slug: slug
-      }
-      |> Map.merge(columns_map)
+    Sanbase.Clickhouse.Query.new(sql, %{label_key: label_key, slug: slug})
+  end
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+  defp do_available_label_fqns_for_fixed_parameters_query(_metric, _slug, %{
+         "label_key" => label_key
+       }) do
+    sql = """
+    SELECT DISTINCT fqn
+    FROM label_metadata
+    WHERE fqn = {{fqn}}
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, %{fqn: "santiment/#{label_key}:v1"})
   end
 
   def available_label_fqns_for_labeled_intraday_metrics_query(metric) do

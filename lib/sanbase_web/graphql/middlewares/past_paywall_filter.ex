@@ -11,18 +11,18 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPaywallFilter do
         _opts
       )
       when not is_nil(value) do
-    %{resolution | value: filter_value(value, context.auth[:current_user])}
+    %{resolution | value: filter_value(value, context.auth)}
   end
 
   def call(resolution, _), do: resolution
 
   # helpers
-  defp filter_value(%Post{} = insight, current_user) do
-    PostPaywall.maybe_filter_paywalled([insight], current_user) |> hd()
+  defp filter_value(%Post{} = insight, auth) do
+    PostPaywall.maybe_filter_paywalled([insight], auth) |> hd()
   end
 
-  defp filter_value([%Post{} | _rest] = insights, current_user) do
-    PostPaywall.maybe_filter_paywalled(insights, current_user)
+  defp filter_value([%Post{} | _rest] = insights, auth) do
+    PostPaywall.maybe_filter_paywalled(insights, auth)
   end
 
   defp filter_value(value, _), do: value

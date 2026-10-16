@@ -195,6 +195,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
             auth_method: :user_token,
             current_user: current_user,
             subscription: subscription,
+            subscriptions_by_product: subscriptions,
             plan: effective_plan_name(subscription, "SANBASE")
           },
           requested_product_id: @product_id_sanbase,
@@ -230,6 +231,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           auth_method: :user_token,
           current_user: current_user,
           subscription: subscription,
+          subscriptions_by_product: subscriptions,
           plan: effective_plan_name(subscription, requested_product)
         },
         requested_product_id: requested_product_id,
@@ -297,6 +299,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           current_user: current_user,
           token: token,
           subscription: subscription,
+          subscriptions_by_product: subscriptions,
           plan: effective_plan_name(subscription, Product.code_by_id(requested_product_id))
         },
         subscription_product_id: subscription_product_id,
@@ -316,7 +319,9 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
   # All of the user's current subscriptions in one query, keyed by product id. Per
   # product the highest id wins, the same as `Subscription.current_subscription/2`.
-  # Both the subscription choice and the permissions are computed from this map.
+  # The subscription choice and the permissions are computed from this map, and it is
+  # kept in the auth map so resolvers can reuse it via
+  # `Subscription.current_subscription_from_auth/2`.
   defp current_subscriptions_by_product(user_id) do
     Subscription.user_subscriptions(%User{id: user_id})
     |> Enum.reduce(%{}, fn %Subscription{plan: %{product_id: product_id}} = sub, acc ->

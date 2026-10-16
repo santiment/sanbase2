@@ -8,7 +8,8 @@ defmodule SanbaseWeb.Graphql.AuthPlugDbQueriesTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Accounts.{Apikey, EthAccount, UserRole}
-  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.{Plan, Product, Subscription}
+  alias Sanbase.Insight.PostPaywall
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.AuthPlug
 
@@ -212,6 +213,67 @@ defmodule SanbaseWeb.Graphql.AuthPlugDbQueriesTest do
       assert auth.auth.subscription.id == sanbase_sub.id
       assert auth.auth.plan == "PRO"
       assert auth.permissions == %{api: true, sanbase: true, spreadsheet: true}
+    end
+  end
+
+  describe "reusing the subscriptions loaded by the auth plug" do
+    test "current_subscription_from_auth/2 answers from the auth map without queries" do
+      user = insert(:user)
+      api_sub = insert(:subscription_business_pro_monthly, user: user)
+      sanbase_sub = insert(:subscription_pro_sanbase, user: user)
+
+      auth = authenticate(apikey_conn_fun(user).()).auth
+
+      {result, sources} =
+        count_queries(fn ->
+          {Subscription.current_subscription_from_auth(auth, Product.product_api()),
+           Subscription.current_subscription_from_auth(auth, Product.product_sanbase()),
+           Subscription.current_subscription_from_auth(auth, 999)}
+        end)
+
+      assert sources == []
+      assert {%Subscription{id: api_id}, %Subscription{id: sanbase_id}, nil} = result
+      assert api_id == api_sub.id
+      assert sanbase_id == sanbase_sub.id
+    end
+
+    test "current_subscription_from_auth/2 falls back to a query without the auth map" do
+      user = insert(:user)
+      api_sub = insert(:subscription_business_pro_monthly, user: user)
+
+      {result, sources} =
+        count_queries(fn ->
+          Subscription.current_subscription_from_auth(
+            %{current_user: user},
+            Product.product_api()
+          )
+        end)
+
+      assert result.id == api_sub.id
+      assert sources != []
+    end
+
+    test "the paywall filter makes no subscription queries" do
+      user = insert(:user)
+      insert(:subscription_pro_sanbase, user: user)
+      text = Stream.cycle(["word"]) |> Enum.take(200) |> Enum.join(" ")
+      post = build(:post, user_id: insert(:user).id, text: text, is_paywall_required: true)
+
+      auth = authenticate(jwt_session_conn_fun(user).()).auth
+
+      {[filtered], sources} =
+        count_queries(fn -> PostPaywall.maybe_filter_paywalled([post], auth) end)
+
+      assert sources == []
+      assert filtered.text == text
+
+      free_auth = authenticate(jwt_session_conn_fun(insert(:user)).()).auth
+
+      {[filtered], sources} =
+        count_queries(fn -> PostPaywall.maybe_filter_paywalled([post], free_auth) end)
+
+      assert sources == []
+      assert filtered.text != text
     end
   end
 

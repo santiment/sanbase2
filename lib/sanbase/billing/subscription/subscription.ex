@@ -774,6 +774,19 @@ defmodule Sanbase.Billing.Subscription do
     fetch_current_subscription(user_id, product_id)
   end
 
+  @doc """
+  Same as `current_subscription/2` for the authenticated user of a request. The
+  auth map built by `SanbaseWeb.Graphql.AuthPlug` already holds the user's current
+  subscriptions, so no query is made. Without them, falls back to a query.
+  """
+  def current_subscription_from_auth(%{subscriptions_by_product: %{} = subscriptions}, product_id) do
+    Map.get(subscriptions, product_id)
+  end
+
+  def current_subscription_from_auth(%{current_user: %User{} = user}, product_id) do
+    current_subscription(user, product_id)
+  end
+
   def current_subscription_plan(user_id, product_id) do
     current_subscription(user_id, product_id) |> plan_name()
   end

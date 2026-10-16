@@ -359,7 +359,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          requested_product,
          subscription_product
        ) do
-    min_plan = AccessChecker.min_plan({argument, argument_name}, requested_product)
+    min_plan =
+      AccessChecker.min_plan({argument, argument_name}, requested_product)
+      |> upgrade_plan_name(requested_product)
 
     """
     The #{argument} #{argument_name} is not accessible with the currently used \
@@ -371,6 +373,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     be fetched with a SANAPI subscription and vice versa.
     """
   end
+
+  # SanAPI has no MAX plan - its top tier starts at BUSINESS_MAX.
+  defp upgrade_plan_name("MAX", "SANAPI"), do: "BUSINESS_MAX"
+  defp upgrade_plan_name(min_plan, _requested_product), do: min_plan
 
   # Only metrics are sold in packages. Queries and signals reach here too (every bundle
   # gets all of them, so a refusal is unexpected rather than impossible) and are matched

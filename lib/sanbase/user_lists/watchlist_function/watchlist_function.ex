@@ -157,14 +157,47 @@ defmodule Sanbase.WatchlistFunction do
   def valid_function?(%__MODULE__{name: "empty"}, _opts), do: true
 
   @doc ~s"""
+  The watchlists the function uses as base projects, as `{:watchlist_id, id}` or
+  `{:watchlist_slug, slug}`. Keys are matched in any case style, the same way
+  the function is evaluated, so both `baseProjects` and `base_projects` work.
+  """
+  @spec watchlist_references(term()) :: [Sanbase.UserList.watchlist_reference()]
+  def watchlist_references(%{} = function) do
+    with %{} = args <- get_by_underscored_key(function, "args"),
+         base_projects when is_list(base_projects) <-
+           get_by_underscored_key(args, "base_projects") do
+      Enum.flat_map(base_projects, &base_project_watchlist_reference/1)
+    else
+      _ -> []
+    end
+  end
+
+  def watchlist_references(_function), do: []
+
+  defp base_project_watchlist_reference(%{} = base_project) do
+    case {get_by_underscored_key(base_project, "watchlist_id"),
+          get_by_underscored_key(base_project, "watchlist_slug")} do
+      {id, _} when not is_nil(id) -> [{:watchlist_id, id}]
+      {_, slug} when not is_nil(slug) -> [{:watchlist_slug, slug}]
+      _ -> []
+    end
+  end
+
+  defp base_project_watchlist_reference(_base_project), do: []
+
+  defp get_by_underscored_key(map, key) do
+    Enum.find_value(map, fn {k, v} -> if Sanbase.Utils.Inflect.underscore(k) == key, do: v end)
+  end
+
+  @doc ~s"""
   Checks if function evaluates. This is used as a last resort to checking if a
   function is valid as some edge cases can be missed. Creating a watchlist
   with a function that cannot be evaluated will cause constant errors on runtime.
   """
-  @spec evaluates?(%__MODULE__{}) :: boolean()
-  def evaluates?(%__MODULE__{} = fun) do
+  @spec evaluates?(%__MODULE__{}, Keyword.t()) :: boolean()
+  def evaluates?(%__MODULE__{} = fun, opts \\ []) do
     try do
-      case evaluate(fun) do
+      case evaluate(fun, Keyword.take(opts, [:user_id])) do
         {:ok, _} ->
           true
 
@@ -179,11 +212,19 @@ defmodule Sanbase.WatchlistFunction do
     end
   end
 
-  @spec evaluate(%__MODULE__{}) ::
-          {:ok, result} | {:error, String.t()}
-  def evaluate(watchlist_function)
+  @doc ~s"""
+  Evaluate the watchlist function.
 
-  def evaluate(%__MODULE__{name: "address_selector", args: args}) do
+  ## Options
+    - user_id: the id of the user the function is evaluated for. Watchlists used in a
+      selector's base_projects are resolved only if they are public or owned by this
+      user. For a watchlist's own function this is the owner of the watchlist.
+  """
+  @spec evaluate(%__MODULE__{}, Keyword.t()) ::
+          {:ok, result} | {:error, String.t()}
+  def evaluate(watchlist_function, opts \\ [])
+
+  def evaluate(%__MODULE__{name: "address_selector", args: args}, _opts) do
     args = Enum.into(args, %{}, fn {k, v} -> {Sanbase.Utils.Inflect.underscore(k), v} end)
 
     case Map.split(args, @address_selector_fields) do
@@ -196,12 +237,12 @@ defmodule Sanbase.WatchlistFunction do
     end
   end
 
-  def evaluate(%__MODULE__{name: "selector", args: args}) do
+  def evaluate(%__MODULE__{name: "selector", args: args}, opts) do
     args = Enum.into(args, %{}, fn {k, v} -> {Sanbase.Utils.Inflect.underscore(k), v} end)
 
     case Map.split(args, @project_selector_fields) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
-        Project.ListSelector.projects(%{selector: selector})
+        Project.ListSelector.projects(%{selector: selector}, user_id: Keyword.get(opts, :user_id))
 
       {_selector, unsupported_keys_map} ->
         {:error,
@@ -209,7 +250,7 @@ defmodule Sanbase.WatchlistFunction do
     end
   end
 
-  def evaluate(%__MODULE__{name: "market_segment", args: args}) do
+  def evaluate(%__MODULE__{name: "market_segment", args: args}, _opts) do
     market_segment = Map.get(args, "market_segment") || Map.fetch!(args, :market_segment)
     projects = Project.List.by_market_segment_any_of(market_segment)
 
@@ -220,7 +261,7 @@ defmodule Sanbase.WatchlistFunction do
      }}
   end
 
-  def evaluate(%__MODULE__{name: "market_segments", args: args}) do
+  def evaluate(%__MODULE__{name: "market_segments", args: args}, _opts) do
     market_segments = Map.get(args, "market_segments") || Map.fetch!(args, :market_segments)
     projects = Project.List.by_market_segment_all_of(market_segments)
 
@@ -231,7 +272,7 @@ defmodule Sanbase.WatchlistFunction do
      }}
   end
 
-  def evaluate(%__MODULE__{name: "ecosystems", args: args}) do
+  def evaluate(%__MODULE__{name: "ecosystems", args: args}, _opts) do
     ecosystems = Map.get(args, "ecosystems") || Map.fetch!(args, :ecosystems)
 
     with {:ok, projects} <-
@@ -244,7 +285,7 @@ defmodule Sanbase.WatchlistFunction do
     end
   end
 
-  def evaluate(%__MODULE__{name: "top_erc20_projects", args: args}) do
+  def evaluate(%__MODULE__{name: "top_erc20_projects", args: args}, _opts) do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
     ignored_projects_mapset = MapSet.new(ignored_projects)
@@ -261,7 +302,7 @@ defmodule Sanbase.WatchlistFunction do
      }}
   end
 
-  def evaluate(%__MODULE__{name: "top_all_projects", args: args}) do
+  def evaluate(%__MODULE__{name: "top_all_projects", args: args}, _opts) do
     size = Map.get(args, "size") || Map.get(args, :size)
     rank_up_to = Map.get(args, "rank_up_to") || Map.get(args, :rank_up_to)
 
@@ -299,7 +340,7 @@ defmodule Sanbase.WatchlistFunction do
      }}
   end
 
-  def evaluate(%__MODULE__{name: "min_volume", args: args}) do
+  def evaluate(%__MODULE__{name: "min_volume", args: args}, _opts) do
     min_volume = Map.get(args, "min_volume") || Map.fetch!(args, :min_volume)
     projects = Project.List.projects(min_volume: min_volume)
 
@@ -310,7 +351,7 @@ defmodule Sanbase.WatchlistFunction do
      }}
   end
 
-  def evaluate(%__MODULE__{name: "slugs", args: args}) do
+  def evaluate(%__MODULE__{name: "slugs", args: args}, _opts) do
     slugs = Map.get(args, "slugs") || Map.fetch!(args, :slugs)
     projects = Project.List.by_slugs(slugs)
 
@@ -321,7 +362,7 @@ defmodule Sanbase.WatchlistFunction do
      }}
   end
 
-  def evaluate(%__MODULE__{name: "trending_projects"}) do
+  def evaluate(%__MODULE__{name: "trending_projects"}, _opts) do
     projects = Project.List.currently_trending_projects()
 
     {:ok,
@@ -331,7 +372,7 @@ defmodule Sanbase.WatchlistFunction do
      }}
   end
 
-  def evaluate(%__MODULE__{name: "empty"}) do
+  def evaluate(%__MODULE__{name: "empty"}, _opts) do
     {:ok,
      %{
        blockchain_addresses: [],
@@ -393,7 +434,7 @@ defmodule Sanbase.WatchlistFunction do
 
   defp maybe_check_evaluates(fun, opts) do
     case Keyword.get(opts, :check_function_evaluates, true) do
-      true -> evaluates?(fun)
+      true -> evaluates?(fun, opts)
       false -> true
     end
   end

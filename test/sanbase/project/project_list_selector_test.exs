@@ -276,6 +276,13 @@ defmodule Sanbase.ProjectListSelectorTest do
       end)
     end
 
+    test "with base projects [{watchlistSlug: slug}] of a non-existing watchlist" do
+      selector = %{base_projects: [%{watchlistSlug: "non-existing-watchlist-slug"}]}
+
+      assert {:error, error} = ListSelector.slugs(%{selector: selector})
+      assert error =~ "non-existing-watchlist-slug"
+    end
+
     test "with base projects [{watchlsitId: id}]" do
       p1 = insert(:random_project)
       p2 = insert(:random_project)
@@ -353,7 +360,7 @@ defmodule Sanbase.ProjectListSelectorTest do
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
-          ListSelector.slugs(%{selector: selector})
+          ListSelector.slugs(%{selector: selector}, user_id: user.id)
 
         assert total_projects_count == 2
         assert p1.slug in slugs
@@ -401,7 +408,7 @@ defmodule Sanbase.ProjectListSelectorTest do
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
-          ListSelector.slugs(%{selector: selector})
+          ListSelector.slugs(%{selector: selector}, user_id: user.id)
 
         assert total_projects_count == 2
         assert p1.slug in slugs

@@ -86,7 +86,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   Strip private fields from a trigger map, keeping only public-safe fields.
   Settings are sanitized to remove channels, webhooks, templates, etc.
   """
-  @private_settings_keys ~w(channel template extra_explanation filtered_target triggered? payload template_kv)a
+  @private_settings_keys ~w(channel template extra_explanation filtered_target triggered? payload template_kv owner_user_id)a
   @private_settings_string_keys Enum.map(@private_settings_keys, &to_string/1)
 
   def to_public_trigger(trigger) do

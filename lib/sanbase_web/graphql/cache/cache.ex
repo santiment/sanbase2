@@ -147,7 +147,11 @@ defmodule SanbaseWeb.Graphql.Cache do
         # `include_subscription_in_key: true` puts the current product and plan in the key,
         # for results depending on the user's subscription such as metric restrictions.
         args_from_subscription = generate_subscription_args(resolution.context, opts)
-        args_from_user_details = generate_user_details_args(resolution.context, opts)
+        # A private watchlist in the selector is resolved only for its owner, so such
+        # results depend on the current user. Results for public watchlists are shared.
+        args_from_user_details =
+          generate_user_details_args(resolution.context, opts) ++
+            generate_watchlist_selector_args(resolution.context, args)
 
         cache_key =
           cache_key(
@@ -186,6 +190,24 @@ defmodule SanbaseWeb.Graphql.Cache do
   end
 
   defp generate_user_details_args(_context, _opts), do: []
+
+  defp generate_watchlist_selector_args(context, args) do
+    references =
+      Sanbase.Project.Selector.watchlist_references(args) ++
+        Sanbase.Project.ListSelector.watchlist_base_projects(args) ++
+        Sanbase.WatchlistFunction.watchlist_references(Map.get(args, :function))
+
+    case references do
+      [] -> []
+      _ -> [watchlist_access: watchlist_access_key(references, context)]
+    end
+  end
+
+  defp watchlist_access_key(references, context) do
+    if Sanbase.UserList.all_public?(references),
+      do: "shared",
+      else: "user_id:#{get_in(context, [:auth, :current_user, Access.key(:id)])}"
+  end
 
   defp generate_subscription_args(context, opts) do
     case Keyword.get(opts, :include_subscription_in_key, false) do

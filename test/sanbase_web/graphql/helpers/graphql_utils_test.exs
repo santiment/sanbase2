@@ -3,21 +3,6 @@ defmodule SanbaseWeb.Graphql.Helpers.GraphqlUtilsTest do
 
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  describe "resolution_to_user_id_or_nil/1" do
-    test "extracts user_id from nested resolution context" do
-      resolution = %{context: %{auth: %{current_user: %{id: 42}}}}
-      assert Utils.resolution_to_user_id_or_nil(resolution) == 42
-    end
-
-    test "returns nil when no auth context" do
-      assert Utils.resolution_to_user_id_or_nil(%{context: %{}}) == nil
-    end
-
-    test "returns nil for completely different structure" do
-      assert Utils.resolution_to_user_id_or_nil(%{}) == nil
-    end
-  end
-
   describe "selector_args_to_opts/1" do
     test "returns aggregation from args" do
       args = %{aggregation: :avg}

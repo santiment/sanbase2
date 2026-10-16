@@ -91,11 +91,20 @@ defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
            end)
   end
 
+  test "cannot add eth account with an invalid signature", context do
+    result = add_eth_address(context.conn, @address, false)
+
+    %{"errors" => [error]} = result
+    assert error["message"] =~ "Could not add an ethereum address"
+    assert error["message"] =~ "Invalid signature"
+    assert Repo.all(Sanbase.Accounts.EthAccount) == []
+  end
+
   # Helper functions
 
-  defp add_eth_address(conn, address) do
+  defp add_eth_address(conn, address, is_valid \\ true) do
     mock(fn %{method: :get} ->
-      {:ok, %Tesla.Env{status: 200, body: %{"is_valid" => true} |> Jason.encode!()}}
+      {:ok, %Tesla.Env{status: 200, body: %{"is_valid" => is_valid} |> Jason.encode!()}}
     end)
 
     mutation = """

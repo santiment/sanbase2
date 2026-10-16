@@ -30,6 +30,29 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
     assert metrics == expected
   end
 
+  test "get available metrics with an invalid regex filter returns an error", context do
+    query = """
+    {
+      getAvailableMetrics(nameRegexFilter: "(")
+    }
+    """
+
+    error_msg = execute_query_with_error(context.conn, query, "getAvailableMetrics")
+    assert error_msg =~ "Invalid nameRegexFilter"
+  end
+
+  test "get available metrics for selector with an invalid regex filter returns an error",
+       context do
+    query = """
+    {
+      getAvailableMetricsForSelector(selector: {slug: "bitcoin"}, nameRegexFilter: "(")
+    }
+    """
+
+    error_msg = execute_query_with_error(context.conn, query, "getAvailableMetricsForSelector")
+    assert error_msg =~ "Invalid nameRegexFilter"
+  end
+
   test "available metrics with selector slug", context do
     available_metrics = Sanbase.Metric.available_metrics()
 

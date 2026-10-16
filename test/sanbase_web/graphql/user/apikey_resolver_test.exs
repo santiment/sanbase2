@@ -156,7 +156,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     Repo.delete(user)
 
     {:ok, {token1, _apikey}} = Hmac.split_apikey(apikey1)
-    {:ok, {token2, _apikey}} = Hmac.split_apikey(apikey1)
+    {:ok, {token2, _apikey}} = Hmac.split_apikey(apikey2)
 
     refute apikey_valid?(apikey1)
     refute apikey_valid?(apikey2)

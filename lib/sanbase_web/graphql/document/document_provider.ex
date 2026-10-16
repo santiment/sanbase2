@@ -155,15 +155,18 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   # be cached. Datetimes are rounded, so every one in a bucket gives the same key.
   defp sanitize_blueprint(%DateTime{} = dt), do: dt
 
-  defp sanitize_blueprint(
-         {:argument_data, %{function: %{"args" => %{"baseProjects" => base_projects}}}} = tuple
-       ) do
-    has_watchlist_base? =
-      Enum.any?(base_projects, fn elem ->
-        match?(%{"watchlistId" => _}, elem) or match?(%{"watchlistSlug" => _}, elem)
-      end)
+  defp sanitize_blueprint({:argument_data, %{function: %{} = function}} = tuple) do
+    function
+    |> Sanbase.WatchlistFunction.watchlist_references()
+    |> maybe_do_not_cache_watchlists()
 
-    has_watchlist_base? && Process.put(:do_not_cache_query, true)
+    tuple
+  end
+
+  defp sanitize_blueprint({:argument_data, %{selector: %{base_projects: [_ | _]}} = data} = tuple) do
+    data
+    |> Sanbase.Project.ListSelector.watchlist_base_projects()
+    |> maybe_do_not_cache_watchlists()
 
     tuple
   end
@@ -192,6 +195,18 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   end
 
   defp sanitize_blueprint(data), do: data
+
+  # A private watchlist is accessible only by its owner, so a result built from it
+  # depends on the user and must not be cached for everyone. Public watchlists give
+  # the same result to everyone, so it can be cached.
+  defp maybe_do_not_cache_watchlists([]), do: :ok
+
+  defp maybe_do_not_cache_watchlists(references) do
+    if not Sanbase.UserList.all_public?(references),
+      do: Process.put(:do_not_cache_query, true)
+
+    :ok
+  end
 end
 
 defmodule SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent do

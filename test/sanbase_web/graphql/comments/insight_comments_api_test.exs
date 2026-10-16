@@ -38,8 +38,8 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
       assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
       assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
 
-      create_comment_with_error(conn, post.id, "some content", @opts) =~
-        "Cannot create more than 2 comment per minute"
+      assert create_comment_with_error(conn, post.id, "some content", @opts) =~
+               "Cannot create more than 2 comment per minute"
     end
 
     test "creation rate limit per hour is enforced", context do
@@ -51,8 +51,8 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
 
       assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
 
-      create_comment_with_error(conn, post.id, "some content", @opts) =~
-        "Cannot create more than 1 comment per hour"
+      assert create_comment_with_error(conn, post.id, "some content", @opts) =~
+               "Cannot create more than 1 comment per hour"
     end
 
     test "creation rate limit per day is enforced", context do
@@ -64,8 +64,8 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
 
       assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
 
-      create_comment_with_error(conn, post.id, "some content", @opts) =~
-        "Cannot create more than 1 comment per day"
+      assert create_comment_with_error(conn, post.id, "some content", @opts) =~
+               "Cannot create more than 1 comment per day"
     end
   end
 

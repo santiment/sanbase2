@@ -339,6 +339,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          {:ok, _} <- Sanbase.Accounts.EthAccount.create(user.id, address) do
       {:ok, user}
     else
+      false ->
+        {:error,
+         "Could not add an ethereum address for user #{user.id}. Reason: Invalid signature"}
+
       {:error, error_or_changeset} ->
         reason =
           case error_or_changeset do

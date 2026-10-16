@@ -30,6 +30,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
              auth_method: :user_token,
              current_user: user,
              subscription: nil,
+             subscriptions_by_product: %{},
              plan: "FREE"
            }
 

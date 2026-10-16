@@ -124,9 +124,10 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
   # The auth plug resolves a Sansheets apikey to the Sanbase product, preferring the
   # Sanbase subscription. For versions the key is judged by the SanAPI rules, so the
   # SanAPI subscription is preferred instead - the same order a plain apikey gets.
-  defp caller(%{auth: %{auth_method: :apikey, current_user: user} = auth}) do
+  defp caller(%{auth: %{auth_method: :apikey, current_user: _} = auth}) do
     subscription =
-      Subscription.current_subscription(user.id, Product.product_api()) || auth[:subscription]
+      Subscription.current_subscription_from_auth(auth, Product.product_api()) ||
+        auth[:subscription]
 
     %{
       requested_product: "SANAPI",

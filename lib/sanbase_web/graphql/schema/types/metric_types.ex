@@ -420,6 +420,16 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     @desc ~s"""
+    List of group slugs (like `total_market` and `crypto_market`) which can be
+    provided to the `timeseriesDataJson` (and co.) field to fetch the metric.
+    These slugs refer to a group of projects, not to a single project, so they
+    are not part of `availableSlugs`.
+    """
+    field :available_group_slugs, list_of(:string) do
+      cache_resolve(&MetricResolver.get_available_group_slugs/3, ttl: 300)
+    end
+
+    @desc ~s"""
     List of projects which slug can be provided to the `timeseriesDataJson` (and co.)
     field to fetch the metric.
     """

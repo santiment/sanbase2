@@ -78,6 +78,37 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
     |> get_in(["data", "getMetric", "metadata", "availableNonCryptoAssets"])
   end
 
+  test "availableGroupSlugs returns the group slugs, availableSlugs only the projects", %{
+    conn: conn
+  } do
+    insert(:random_project, slug: "santiment")
+
+    rows = [["total_market"], ["crypto_market"], ["santiment"], ["not-a-project"]]
+
+    result =
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = """
+        {
+          getMetric(metric: "daily_active_addresses"){
+            metadata{
+              availableSlugs
+              availableGroupSlugs
+            }
+          }
+        }
+        """
+
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "getMetric", "metadata"])
+      end)
+
+    assert result["availableSlugs"] == ["santiment"]
+    assert Enum.sort(result["availableGroupSlugs"]) == ["crypto_market", "total_market"]
+  end
+
   test "returns data for availableFounders", %{conn: conn} do
     metrics_with_founders =
       Metric.available_metrics()

@@ -23,6 +23,12 @@ defmodule Sanbase.AvailableSlugs do
   # Predate the `non_crypto_assets` table. New non-crypto assets go there, not here.
   @legacy_non_project_slugs ~w(s-and-p-500 gold silver crude-oil dxy gbtc ibit fbtc arkb btco bitb hodl m2-money)
 
+  @doc ~s"""
+  Slugs that do not refer to a single project but to a group of projects,
+  like `total_market` or `crypto_market`.
+  """
+  def group_slugs(), do: @group_of_slugs
+
   def non_project_slugs() do
     (@legacy_non_project_slugs ++ Sanbase.NonCryptoAsset.slugs(include_hidden: true))
     |> Enum.uniq()

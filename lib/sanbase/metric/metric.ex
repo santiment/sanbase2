@@ -638,6 +638,19 @@ defmodule Sanbase.Metric do
   def available_slugs(metric, opts \\ [])
 
   def available_slugs(metric, opts) do
+    available_slugs_among(metric, opts, Sanbase.Project.List.projects_slugs())
+  end
+
+  @doc ~s"""
+  Get the group slugs (`total_market`, `crypto_market`, etc.) that have data for
+  a given metric. These are not projects, so `available_slugs/2` does not return them.
+  """
+  @spec available_group_slugs(metric, opts) :: Type.available_slugs_result()
+  def available_group_slugs(metric, opts \\ []) do
+    available_slugs_among(metric, opts, Sanbase.AvailableSlugs.group_slugs())
+  end
+
+  defp available_slugs_among(metric, opts, supported_slugs) do
     case get_module(metric, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -645,8 +658,6 @@ defmodule Sanbase.Metric do
       module when is_atom(module) ->
         case module.available_slugs(metric, opts) do
           {:ok, slugs} ->
-            supported_slugs = Sanbase.Project.List.projects_slugs()
-
             slugs =
               MapSet.intersection(MapSet.new(slugs), MapSet.new(supported_slugs))
               |> Enum.to_list()

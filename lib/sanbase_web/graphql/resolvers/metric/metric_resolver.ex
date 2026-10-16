@@ -136,6 +136,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_slugs(_root, _args, %{source: %{metric: metric, version: version}}),
     do: Metric.available_slugs(metric, version: version)
 
+  def get_available_group_slugs(_root, _args, %{source: %{metric: metric, version: version}}),
+    do: Metric.available_group_slugs(metric, version: version)
+
   def get_available_projects(
         _root,
         _args,

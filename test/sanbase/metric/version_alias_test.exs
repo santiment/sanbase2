@@ -1,6 +1,8 @@
 defmodule Sanbase.Metric.VersionAliasTest do
   use Sanbase.DataCase, async: false
 
+  import Ecto.Changeset, only: [get_field: 2]
+  import Ecto.Query, only: [from: 2]
   import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1]
 
   alias Sanbase.Repo
@@ -137,6 +139,98 @@ defmodule Sanbase.Metric.VersionAliasTest do
       VersionAlias.clear_cache()
 
       assert [%{version_name: "seven:v1"}] = VersionAlias.to_maps(["7.0"])
+    end
+  end
+
+  describe "exposed_in" do
+    test "is all by default, and must be a known value" do
+      assert get_field(changeset(%{version_num: "7.0", version_name: "seven:v1"}), :exposed_in) ==
+               "all"
+
+      for exposed_in <- ["all", "api_only", "sanbase_only"] do
+        assert changeset(%{version_num: "7.0", version_name: "seven:v1", exposed_in: exposed_in}).valid?
+      end
+
+      assert %{exposed_in: ["is invalid"]} =
+               errors_on(
+                 changeset(%{
+                   version_num: "7.0",
+                   version_name: "seven:v1",
+                   exposed_in: "sansheets"
+                 })
+               )
+    end
+
+    test "the default version is exposed everywhere" do
+      assert %{exposed_in: ["must be all for the default version"]} =
+               errors_on(
+                 changeset(%{
+                   version_num: "1.0",
+                   version_name: "original:v1",
+                   exposed_in: "api_only"
+                 })
+               )
+    end
+
+    test "says in which products a version can be used" do
+      api_only =
+        create_alias!(%{version_num: "7.0", version_name: "seven:v1", exposed_in: "api_only"})
+
+      all = create_alias!(%{version_num: "8.0", version_name: "eight:v1"})
+
+      assert VersionAlias.exposed_in?(api_only, "SANAPI")
+      refute VersionAlias.exposed_in?(api_only, "SANBASE")
+      assert VersionAlias.exposed_in?(all, "SANAPI")
+      assert VersionAlias.exposed_in?(all, "SANBASE")
+
+      # A version without a row is exposed everywhere
+      assert VersionAlias.exposed_in?(nil, "SANBASE")
+    end
+  end
+
+  describe "plan access" do
+    test "comes with the cached row of the scope" do
+      create_alias!(%{
+        version_num: "7.0",
+        version_name: "seven:v1",
+        plan_access: [%{product: "SANAPI", plan: "BUSINESS_PRO"}]
+      })
+
+      create_alias!(%{
+        scope: "social",
+        version_num: "7.0",
+        version_name: "social_seven:v1",
+        plan_access: [%{product: "SANBASE", plan: "MAX"}]
+      })
+
+      assert %VersionAlias{plan_access: [%{product: "SANAPI", plan: "BUSINESS_PRO"}]} =
+               VersionAlias.get("7.0")
+
+      assert %VersionAlias{plan_access: [%{product: "SANBASE", plan: "MAX"}]} =
+               VersionAlias.get("7.0", "social")
+
+      assert VersionAlias.get("9.0") == nil
+      assert ["7.0"] = VersionAlias.rows("github") |> Enum.map(& &1.version_num)
+    end
+
+    test "is deleted with its alias row" do
+      row =
+        create_alias!(%{
+          version_num: "7.0",
+          version_name: "seven:v1",
+          plan_access: [%{product: "SANAPI", plan: "BUSINESS_PRO"}]
+        })
+
+      Repo.delete!(row)
+
+      assert Repo.aggregate(Sanbase.Metric.VersionPlanAccess, :count) ==
+               Repo.aggregate(
+                 from(p in Sanbase.Metric.VersionPlanAccess,
+                   join: a in assoc(p, :version_alias),
+                   select: p.id
+                 ),
+                 :count
+               )
     end
   end
 

@@ -12,6 +12,10 @@ defmodule Sanbase.Metric.VersionAlias do
 
   Every row belongs to a scope (see `Sanbase.Metric.version_scope/1`). A scope sees
   its own rows and the "global" ones; its own win for the same version.
+
+  A row also says where the version can be used (`exposed_in`) and which plans may
+  use it (`plan_access`, see `Sanbase.Metric.VersionPlanAccess`). Both are enforced by
+  `Sanbase.Billing.Plan.MetricVersionAccess`.
   """
 
   use Ecto.Schema
@@ -21,6 +25,7 @@ defmodule Sanbase.Metric.VersionAlias do
   require Logger
 
   alias Sanbase.Repo
+  alias Sanbase.Metric.VersionPlanAccess
 
   @type t :: %__MODULE__{}
 
@@ -30,15 +35,29 @@ defmodule Sanbase.Metric.VersionAlias do
   @scopes ["global", "github", "social"]
   @no_aliases %{by_num: %{}, by_name: %{}}
 
+  # The products a version can be used in, keyed by `exposed_in`.
+  @exposures %{
+    "all" => ["SANAPI", "SANBASE"],
+    "api_only" => ["SANAPI"],
+    "sanbase_only" => ["SANBASE"]
+  }
+
   @doc "The scopes a row can belong to."
   @spec scopes() :: [String.t()]
   def scopes(), do: @scopes
+
+  @doc "The values of `exposed_in`."
+  @spec exposures() :: [String.t()]
+  def exposures(), do: Map.keys(@exposures)
 
   schema "metric_version_aliases" do
     field(:scope, :string, default: "global")
     field(:version_num, :string)
     field(:version_name, :string)
     field(:description, :string)
+    field(:exposed_in, :string, default: "all")
+
+    has_many(:plan_access, VersionPlanAccess)
 
     timestamps()
   end
@@ -46,11 +65,13 @@ defmodule Sanbase.Metric.VersionAlias do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = version_alias, attrs) do
     version_alias
-    |> cast(attrs, [:scope, :version_num, :version_name, :description])
+    |> cast(attrs, [:scope, :version_num, :version_name, :description, :exposed_in])
     |> update_change(:version_num, &trim/1)
     |> update_change(:version_name, &trim/1)
-    |> validate_required([:scope, :version_num, :version_name])
+    |> validate_required([:scope, :version_num, :version_name, :exposed_in])
     |> validate_inclusion(:scope, @scopes)
+    |> validate_inclusion(:exposed_in, Map.keys(@exposures))
+    |> validate_default_version_exposed()
     |> validate_format(:version_name, @name_regex,
       message: "must look like modern_pit:v1 - lowercase, digits, underscores, then :vN or :vN.N"
     )
@@ -65,6 +86,16 @@ defmodule Sanbase.Metric.VersionAlias do
       error_key: :version_name,
       message: "is already the name of another version"
     )
+  end
+
+  # Requests without a version get the default one, so it has to work everywhere.
+  defp validate_default_version_exposed(changeset) do
+    if get_field(changeset, :version_num) == Sanbase.Metric.default_version() and
+         get_field(changeset, :exposed_in) != "all" do
+      add_error(changeset, :exposed_in, "must be all for the default version")
+    else
+      changeset
+    end
   end
 
   # A cleared form field arrives as a change to nil.
@@ -132,6 +163,30 @@ defmodule Sanbase.Metric.VersionAlias do
     end
   end
 
+  @doc "The row of a canonical version, with its `plan_access`, or nil."
+  @spec get(String.t(), String.t()) :: t() | nil
+  def get(version_num, scope \\ "global") when is_binary(version_num) do
+    %{by_num: by_num} = aliases(scope)
+    Map.get(by_num, version_num)
+  end
+
+  @doc "Every row the scope sees."
+  @spec rows(String.t()) :: [t()]
+  def rows(scope \\ "global") do
+    %{by_num: by_num} = aliases(scope)
+    Map.values(by_num)
+  end
+
+  @doc """
+  Whether the version can be used in the product ("SANAPI" or "SANBASE"). A version
+  without a row is exposed everywhere.
+  """
+  @spec exposed_in?(t() | nil, String.t()) :: boolean()
+  def exposed_in?(nil, _product), do: true
+
+  def exposed_in?(%__MODULE__{exposed_in: exposed_in}, product),
+    do: product in Map.get(@exposures, exposed_in, [])
+
   @doc "Every canonical version that has a name."
   @spec version_nums(String.t()) :: [String.t()]
   def version_nums(scope \\ "global") do
@@ -154,7 +209,7 @@ defmodule Sanbase.Metric.VersionAlias do
   # Nothing is stored on failure, so the next read retries.
   defp load_aliases() do
     rows_by_scope =
-      Repo.all(from(a in __MODULE__, where: a.scope in ^@scopes))
+      Repo.all(from(a in __MODULE__, where: a.scope in ^@scopes, preload: :plan_access))
       |> Enum.group_by(& &1.scope)
 
     global_rows = Map.get(rows_by_scope, "global", [])

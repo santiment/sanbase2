@@ -2905,7 +2905,8 @@ CREATE TABLE public.metric_version_aliases (
     version_name character varying(255) NOT NULL,
     description text,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    exposed_in character varying(255) DEFAULT 'all'::character varying NOT NULL
 );
 
 
@@ -2926,6 +2927,41 @@ CREATE SEQUENCE public.metric_version_aliases_id_seq
 --
 
 ALTER SEQUENCE public.metric_version_aliases_id_seq OWNED BY public.metric_version_aliases.id;
+
+
+--
+-- Name: metric_version_plan_access; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_version_plan_access (
+    id bigint NOT NULL,
+    version_alias_id bigint NOT NULL,
+    product character varying(255) NOT NULL,
+    plan character varying(255) NOT NULL,
+    billing_interval character varying(255) DEFAULT 'any'::character varying NOT NULL,
+    include_trial boolean DEFAULT true NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: metric_version_plan_access_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_version_plan_access_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_version_plan_access_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_version_plan_access_id_seq OWNED BY public.metric_version_plan_access.id;
 
 
 --
@@ -6487,6 +6523,13 @@ ALTER TABLE ONLY public.metric_version_aliases ALTER COLUMN id SET DEFAULT nextv
 
 
 --
+-- Name: metric_version_plan_access id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_version_plan_access ALTER COLUMN id SET DEFAULT nextval('public.metric_version_plan_access_id_seq'::regclass);
+
+
+--
 -- Name: metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7662,6 +7705,14 @@ ALTER TABLE ONLY public.metric_ui_metadata
 
 ALTER TABLE ONLY public.metric_version_aliases
     ADD CONSTRAINT metric_version_aliases_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_version_plan_access metric_version_plan_access_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_version_plan_access
+    ADD CONSTRAINT metric_version_plan_access_pkey PRIMARY KEY (id);
 
 
 --
@@ -9284,6 +9335,13 @@ CREATE UNIQUE INDEX metric_version_aliases_scope_version_name_index ON public.me
 --
 
 CREATE UNIQUE INDEX metric_version_aliases_scope_version_num_index ON public.metric_version_aliases USING btree (scope, version_num);
+
+
+--
+-- Name: metric_version_plan_access_unique_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_version_plan_access_unique_index ON public.metric_version_plan_access USING btree (version_alias_id, product, plan, billing_interval);
 
 
 --
@@ -10939,6 +10997,14 @@ ALTER TABLE ONLY public.metric_tag_mappings
 
 
 --
+-- Name: metric_version_plan_access metric_version_plan_access_version_alias_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_version_plan_access
+    ADD CONSTRAINT metric_version_plan_access_version_alias_id_fkey FOREIGN KEY (version_alias_id) REFERENCES public.metric_version_aliases(id) ON DELETE CASCADE;
+
+
+--
 -- Name: metric_tag_mappings metric_tag_mappings_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12344,5 +12410,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261009120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261013082759);
 INSERT INTO public."schema_migrations" (version) VALUES (20261013082802);
 INSERT INTO public."schema_migrations" (version) VALUES (20261014084021);
+INSERT INTO public."schema_migrations" (version) VALUES (20261014084306);
+INSERT INTO public."schema_migrations" (version) VALUES (20261014084308);
 INSERT INTO public."schema_migrations" (version) VALUES (20261021081454);
 INSERT INTO public."schema_migrations" (version) VALUES (20261022073128);

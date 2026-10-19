@@ -297,6 +297,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   test "export version when version is explicitly set to 2.0", context do
     %{conn: conn, apikey: apikey, project: %{slug: slug}} = context
     %{from: from, to: to} = context
+    Sanbase.MetricVersionAliasHelpers.ensure_seeded_versions!()
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
     |> Sanbase.Mock.run_with_mocks(fn ->

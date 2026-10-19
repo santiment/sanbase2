@@ -111,6 +111,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
       versions_maps =
         versions
         |> Enum.reject(fn ver -> ver =~ "Experimental" and metric_access_level != "alpha" end)
+        |> then(
+          &Sanbase.Billing.Plan.MetricVersionAccess.exposed_versions_in(
+            restriction.name,
+            &1,
+            restrictions_product(resolution)
+          )
+        )
         |> Sanbase.Metric.VersionAlias.to_maps(Sanbase.Metric.version_scope(restriction.name))
 
       {:ok, versions_maps}
@@ -118,6 +125,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   end
 
   def available_versions(%{type: _}, _args, _resolution), do: {:ok, []}
+
+  # The restrictions describe a product - the `product` argument of
+  # getAccessRestrictions, defaulting the same way it does - so the versions listed
+  # are the ones exposed in that product, whoever asks.
+  defp restrictions_product(%{path: path, context: context}) do
+    args =
+      Enum.find_value(path, %{}, fn
+        %Absinthe.Blueprint.Document.Field{
+          schema_node: %{identifier: :get_access_restrictions},
+          argument_data: args
+        } ->
+          args
+
+        _ ->
+          nil
+      end)
+
+    product_id =
+      Product.id_by_code(Map.get(args, :product)) || context[:requested_product_id] ||
+        context[:subscription_product_id] || Product.product_api()
+
+    Product.code_by_id(product_id)
+  end
 
   def get_access_control(_root, _args, _resolution) do
     {:error, "The query does not have a product key in the context."}

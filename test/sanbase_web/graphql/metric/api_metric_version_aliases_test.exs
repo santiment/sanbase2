@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1]
+  import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1, pit: 0]
 
   alias Sanbase.Metric.VersionAlias
 
@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
   end
 
   test "a version name and its number reach the adapter as the same canonical version", ctx do
-    create_alias!(%{version_num: "7.1", version_name: "seven_pit:v1"})
+    create_alias!(%{version_num: "7.1", version_name: "seven_pit:v1", plan_access: pit()})
     test_pid = self()
 
     Sanbase.Mock.prepare_mock(
@@ -121,6 +121,60 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
       )
 
     assert error =~ "only users with alpha access"
+  end
+
+  describe "availableVersions lists the versions exposed in the caller's product" do
+    setup do
+      create_alias!(%{version_num: "7.0", version_name: "seven:v1", exposed_in: "api_only"})
+      create_alias!(%{version_num: "8.0", version_name: "eight:v1", exposed_in: "sanbase_only"})
+      Sanbase.Cache.clear_all()
+      :ok
+    end
+
+    test "in the metric metadata", ctx do
+      {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(insert(:user))
+      apikey_conn = setup_apikey_auth(build_conn(), apikey)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/1,
+        {:ok, ["1.0", "7.0", "8.0"]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert version_nums(available_version_names(ctx.conn)) == ["1.0", "8.0"]
+        assert version_nums(available_version_names(apikey_conn)) == ["1.0", "7.0"]
+        assert version_nums(available_version_names(build_conn())) == ["1.0"]
+      end)
+    end
+
+    test "in getAccessRestrictions, for the product asked about", ctx do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/0,
+        {:ok, %{@metric => ["1.0", "7.0", "8.0"]}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert restriction_version_nums(ctx.conn, "SANAPI") == ["1.0", "7.0"]
+        assert restriction_version_nums(ctx.conn, "SANBASE") == ["1.0", "8.0"]
+      end)
+    end
+  end
+
+  defp version_nums(versions), do: Enum.map(versions, & &1["versionNum"])
+
+  defp restriction_version_nums(conn, product) do
+    query = """
+    {
+      getAccessRestrictions(product: #{product}, filter: METRIC) {
+        name
+        availableVersions { versionNum }
+      }
+    }
+    """
+
+    conn
+    |> execute_query(query, "getAccessRestrictions")
+    |> Enum.find(&(&1["name"] == @metric))
+    |> Map.fetch!("availableVersions")
+    |> version_nums()
   end
 
   defp available_version_names(conn) do

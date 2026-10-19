@@ -91,6 +91,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     aggregation =
       Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
 
+    opts = resolve_fixed_parameters(opts, metric)
     filters = get_filters(metric, opts)
 
     timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters, opts)
@@ -136,6 +137,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     aggregation =
       Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
 
+    opts = resolve_fixed_parameters(opts, metric)
     filters = Keyword.get(opts, :additional_filters, [])
     slugs = List.wrap(slug_or_slugs)
     get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)

@@ -174,12 +174,15 @@ defmodule Sanbase.RepoReader do
 
     contracts
     |> Enum.reduce_while(:ok, fn contract_map, _acc ->
-      args = %{
-        address: contract_map["address"] |> Sanbase.BlockchainAddress.to_internal_format(),
-        decimals: contract_map["decimals"],
-        label: contract_map["label"],
-        description: contract_map["description"]
-      }
+      # Pass only the fields present in the data, so missing fields do not
+      # overwrite the existing values of the contract with nil
+      args =
+        for {key, field} <- [decimals: "decimals", label: "label", description: "description"],
+            Map.has_key?(contract_map, field),
+            into: %{
+              address: contract_map["address"] |> Sanbase.BlockchainAddress.to_internal_format()
+            },
+            do: {key, contract_map[field]}
 
       case Project.ContractAddress.add_contract(project, args) do
         {:ok, _} -> {:cont, :ok}

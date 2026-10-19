@@ -262,4 +262,49 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     assert contract1.label == "main"
     assert contract2.label != "main"
   end
+
+  test "updating the project info does not remove the main label of an existing contract" do
+    contract =
+      build(:contract_address,
+        address: "0xMAIN",
+        label: "main",
+        decimals: 8,
+        description: "Manually set"
+      )
+
+    project = insert(:random_project, contract_addresses: [contract])
+
+    # Mirror the scraper flow. Running it multiple times must not flip the
+    # label on and off
+    project =
+      Enum.reduce(1..3, project, fn _, project ->
+        project_info = ProjectInfo.from_project(project)
+        assert project_info.main_contract_address == "0xMAIN"
+
+        {:ok, project} =
+          ProjectInfo.update_project(%{project_info | token_decimals: 18}, project)
+
+        project
+      end)
+
+    assert [contract] = project.contract_addresses
+    assert contract.label == "main"
+    assert contract.decimals == 8
+    assert contract.description == "Manually set"
+  end
+
+  test "updating the project info does not change the label of an existing contract" do
+    contract = build(:contract_address, address: "0xOLD", label: "old_contract", decimals: nil)
+    project = insert(:random_project, contract_addresses: [contract])
+
+    project_info = ProjectInfo.from_project(project)
+    assert project_info.main_contract_address == "0xOLD"
+
+    {:ok, project} = ProjectInfo.update_project(%{project_info | token_decimals: 18}, project)
+
+    assert [contract] = project.contract_addresses
+    assert contract.label == "old_contract"
+    # Missing decimals are still filled in
+    assert contract.decimals == 18
+  end
 end

@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.GenericAdmin.MetricVersionAlias do
   @moduledoc """
   Admin CRUD for `Sanbase.Metric.VersionAlias`. Renaming or deleting a name
-  breaks API clients that send it; numeric versions are unaffected.
+  breaks API clients that send it; numeric versions are unaffected. Deleting a row
+  also deletes its plan access, so no plan can use the version any more.
   """
 
   @behaviour SanbaseWeb.GenericAdmin
@@ -17,7 +18,7 @@ defmodule SanbaseWeb.GenericAdmin.MetricVersionAlias do
   @impl SanbaseWeb.GenericAdmin
   def singular_resource_name(), do: "metric_version_alias"
 
-  @fields [:scope, :version_num, :version_name, :description]
+  @fields [:scope, :version_num, :version_name, :exposed_in, :description]
 
   def resource() do
     %{
@@ -26,9 +27,25 @@ defmodule SanbaseWeb.GenericAdmin.MetricVersionAlias do
       new_fields: @fields,
       edit_fields: @fields,
       fields_override: %{
-        scope: %{type: :select, collection: VersionAlias.scopes()}
+        scope: %{type: :select, collection: VersionAlias.scopes()},
+        exposed_in: %{type: :select, collection: VersionAlias.exposures()}
       }
     }
+  end
+
+  def has_many(version_alias) do
+    version_alias = Sanbase.Repo.preload(version_alias, :plan_access)
+
+    [
+      %{
+        resource: "metric_version_plan_access",
+        resource_name: "Plan access",
+        rows: version_alias.plan_access,
+        fields: [:product, :plan, :billing_interval, :include_trial],
+        funcs: %{},
+        create_link_kv: [linked_resource: :version_alias, linked_resource_id: version_alias.id]
+      }
+    ]
   end
 
   def after_filter(_record, _changeset, _changes), do: VersionAlias.clear_cache()

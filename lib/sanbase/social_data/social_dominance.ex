@@ -1,4 +1,6 @@
 defmodule Sanbase.SocialData.SocialDominance do
+  use Mockery.Macro
+
   import Sanbase.Utils.ErrorHandling
   import Sanbase.SocialData.Utils, only: [maybe_add_and_rename_field: 4]
 
@@ -6,9 +8,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   alias Sanbase.SocialData
   alias Sanbase.Utils.Config
 
-  require Mockery.Macro
-
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
+  defp http_client(), do: mockable(HTTPoison)
 
   @recv_timeout 15_000
   @hours_back_ensure_has_data 3

@@ -1,5 +1,6 @@
 defmodule Sanbase.Accounts.EthAccount do
   use Ecto.Schema
+  use Mockery.Macro
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
@@ -9,9 +10,8 @@ defmodule Sanbase.Accounts.EthAccount do
   alias Sanbase.Accounts.User
 
   require Logger
-  require Mockery.Macro
 
-  defp ethauth, do: Mockery.Macro.mockable(Sanbase.InternalServices.Ethauth)
+  defp ethauth(), do: mockable(Sanbase.InternalServices.Ethauth)
 
   schema "eth_accounts" do
     field(:address, :string)

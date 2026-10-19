@@ -2,73 +2,126 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
   @moduledoc ~s"""
   Decides whether a GraphQL request may use a given metric version.
 
-  The decision is keyed on how the caller authenticated, which the server verifies,
-  and never on the `Origin` or `User-Agent` headers, which the caller controls:
+  The rules are data, stored with the version's alias row in the metric's version
+  scope (`Sanbase.Metric.VersionAlias`):
+
+    * `exposed_in` - the products the version can be used in at all.
+    * `plan_access` - the plans that may use it on each product
+      (`Sanbase.Metric.VersionPlanAccess`). Without a matching row the version is
+      denied, so a version without an alias row is available to no plan.
+
+  The default version is always available.
+
+  The product is decided by how the caller authenticated, which the server verifies,
+  and never by the `Origin` or `User-Agent` headers, which the caller controls:
 
     * basic auth - every version.
-    * JWT (the Sanbase web app) - the Sanbase rules, which do not restrict versions yet.
-    * apikey - the SanAPI rules for the key owner's subscription, whatever the user
-      agent. Sansheets runs on an apikey and gets the same rules.
-    * anonymous - version 1.0 only, whatever the origin.
+    * JWT (the Sanbase web app) - the SANBASE rows, for the Sanbase plan.
+    * apikey - the SANAPI rows, for the key owner's SanAPI subscription, whatever the
+      user agent. Sansheets runs on an apikey and gets the same rules. A Sanbase
+      subscription does not count on SanAPI - its owner is FREE there.
+    * anonymous - FREE, and only versions that both products allow.
 
-  The entitlement matrix lives in
-  `Sanbase.Billing.Plan.ApiAccessChecker.metric_version_buckets/4`. It describes the
-  versions by number ("2.0", "2.1", ...), whatever their name in a scope. Metrics with
-  their own version scope (`Sanbase.Metric.version_scope/1`) do not follow it - every
-  version of the scopes in `@free_scopes` is available to everyone.
-
-  Enforcement is behind the `:enforce` flag (`METRIC_VERSION_ACCESS_ENFORCE`). While it
+  Plan access is behind the `:enforce` flag (`METRIC_VERSION_ACCESS_ENFORCE`). While it
   is off, a request that would be denied is logged and then allowed, so the impact can
-  be measured before any customer loses access.
+  be measured before any customer loses access. `exposed_in` is always enforced - every
+  version is exposed everywhere until an admin changes it.
   """
 
   require Logger
 
-  alias Sanbase.Billing.Plan.AccessChecker
+  alias Sanbase.Billing.Plan
   alias Sanbase.Billing.Product
   alias Sanbase.Billing.Subscription
-  alias Sanbase.Metric.Version
   alias Sanbase.Metric.VersionAlias
+  alias Sanbase.Metric.VersionPlanAccess
 
-  @required_plan %{
-    standard: "a SanAPI Business Pro or Business Max subscription",
-    pit: "a paid yearly SanAPI Business Max subscription"
-  }
-
-  # Every version of the metrics in these version scopes is free.
-  @free_scopes ["github"]
+  @products VersionPlanAccess.products()
+  @product_label %{"SANAPI" => "SanAPI", "SANBASE" => "Sanbase"}
+  @exposure_label %{"api_only" => "SanAPI", "sanbase_only" => "Sanbase"}
 
   @spec check(String.t(), String.t(), map()) :: :ok | {:error, String.t()}
   def check(metric, version, context) do
-    case bucket(metric, version) do
-      # Every caller has version 1.0, so the common case needs no subscription lookup.
-      :base ->
+    # Every caller has the default version, so the common case needs no subscription
+    # lookup.
+    if version == Sanbase.Metric.default_version() do
+      :ok
+    else
+      case caller(context) do
+        :unrestricted -> :ok
+        caller -> check_caller(metric, version, caller, context)
+      end
+    end
+  end
+
+  @doc "The versions of the metric the caller can see - the ones exposed in its product."
+  @spec exposed_versions(String.t(), [String.t()], map()) :: [String.t()]
+  def exposed_versions(metric, versions, context) do
+    case surface(context) do
+      :unrestricted -> versions
+      surface -> filter_exposed(metric, versions, &exposed?(&1, surface))
+    end
+  end
+
+  @doc "The versions of the metric exposed in the product (\"SANAPI\" or \"SANBASE\")."
+  @spec exposed_versions_in(String.t(), [String.t()], String.t()) :: [String.t()]
+  def exposed_versions_in(metric, versions, product) when product in @products do
+    filter_exposed(metric, versions, &VersionAlias.exposed_in?(&1, product))
+  end
+
+  defp filter_exposed(metric, versions, exposed?) do
+    scope = Sanbase.Metric.version_scope(metric)
+    Enum.filter(versions, &exposed?.(VersionAlias.get(&1, scope)))
+  end
+
+  defp check_caller(metric, version, caller, context) do
+    scope = Sanbase.Metric.version_scope(metric)
+    row = VersionAlias.get(version, scope)
+
+    cond do
+      not exposed?(row, caller) ->
+        log("Not exposed", metric, version, "not_exposed", caller, context)
+
+        {:error,
+         "Metric version #{VersionAlias.to_version_name(version, scope)} is available " <>
+           "only in #{@exposure_label[row.exposed_in]}."}
+
+      allowed?(row, caller) ->
         :ok
 
-      bucket ->
-        case caller(context) do
-          :unrestricted ->
-            :ok
+      exempt?(version, context) ->
+        log("Exempt", metric, version, denial_reason(row), caller, context)
+        :ok
 
-          caller ->
-            case allowed_buckets(caller) do
-              :all ->
-                :ok
-
-              buckets ->
-                cond do
-                  bucket in buckets ->
-                    :ok
-
-                  exempt?(version, context) ->
-                    exempt(metric, version, bucket, caller, context)
-
-                  true ->
-                    deny(metric, version, bucket, buckets, caller, context)
-                end
-            end
-        end
+      true ->
+        deny(metric, version, row, caller, context)
     end
+  end
+
+  @doc false
+  def enforce?() do
+    Sanbase.Utils.Config.module_get_boolean(__MODULE__, :enforce) == true
+  end
+
+  defp exposed?(row, :anonymous), do: Enum.all?(@products, &VersionAlias.exposed_in?(row, &1))
+  defp exposed?(row, %{product: product}), do: VersionAlias.exposed_in?(row, product)
+  defp exposed?(row, product) when is_binary(product), do: VersionAlias.exposed_in?(row, product)
+
+  defp allowed?(nil, _caller), do: false
+
+  defp allowed?(row, :anonymous) do
+    Enum.all?(@products, fn product ->
+      Enum.any?(row.plan_access, &VersionPlanAccess.matches?(&1, product, "FREE", nil, false))
+    end)
+  end
+
+  defp allowed?(row, caller) do
+    %{product: product, plan: plan, interval: interval, trialing?: trialing?} = caller
+
+    Enum.any?(
+      row.plan_access,
+      &VersionPlanAccess.matches?(&1, product, plan, interval, trialing?)
+    )
   end
 
   # Users listed in `METRIC_VERSION_ACCESS_EXEMPT_USER_IDS` keep the 2.0 family
@@ -76,11 +129,6 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
   # grandfathering exception for Sanbase MAX customers who already used it through the
   # API before the restriction - nothing else about their plan changes.
   @exempt_version_family "2.0"
-
-  @doc false
-  def enforce?() do
-    Sanbase.Utils.Config.module_get_boolean(__MODULE__, :enforce) == true
-  end
 
   defp exempt?(version, context) do
     exempt_version?(version) and exempt_user?(context[:auth][:current_user])
@@ -107,15 +155,16 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     end)
   end
 
-  # A non-numeric version that is not Experimental (those have their own rule and
-  # never reach here) is treated as the most restricted bucket.
-  defp bucket(metric, version) do
-    cond do
-      Sanbase.Metric.version_scope(metric) in @free_scopes -> :base
-      Version.classify(version) == :other -> :pit
-      true -> Version.classify(version)
-    end
-  end
+  # The product the request comes through, without looking up the subscription. The
+  # same cases as `caller/1`.
+  defp surface(%{auth: %{auth_method: :basic}}), do: :unrestricted
+  defp surface(%{auth: %{auth_method: :none}}), do: :anonymous
+  defp surface(%{auth: %{auth_method: :apikey, current_user: _}}), do: "SANAPI"
+
+  defp surface(%{requested_product_id: product_id}) when is_integer(product_id),
+    do: Product.code_by_id(product_id)
+
+  defp surface(_context), do: :unrestricted
 
   defp caller(%{auth: %{auth_method: :basic}}), do: :unrestricted
 
@@ -129,38 +178,49 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
       Subscription.current_subscription_from_auth(auth, Product.product_api()) ||
         auth[:subscription]
 
-    %{
-      requested_product: "SANAPI",
-      subscription: subscription,
-      plan_name: Subscription.plan_name(subscription)
-    }
+    plan_name = Subscription.plan_name(subscription)
+
+    plan =
+      case subscription_product(subscription) do
+        product when product in [nil, "SANAPI"] -> standard_plan(plan_name, "SANAPI")
+        _ -> "FREE"
+      end
+
+    new_caller("SANAPI", subscription, plan_name, plan)
   end
 
+  # The auth plug has already turned custom plans and bundles into the plan they get
+  # on the requested product.
   defp caller(%{requested_product_id: product_id} = context) when is_integer(product_id) do
-    %{
-      requested_product: Product.code_by_id(product_id),
-      subscription: context[:auth][:subscription],
-      plan_name: context[:auth][:plan] || "FREE"
-    }
+    product = Product.code_by_id(product_id)
+    plan_name = context[:auth][:plan] || "FREE"
+    plan = standard_plan(plan_name, product)
+
+    new_caller(product, context[:auth][:subscription], plan_name, plan)
   end
 
   # No resolved product means the request did not go through the auth plug (an
   # internal call), which is not something this restriction is about.
   defp caller(_context), do: :unrestricted
 
-  defp allowed_buckets(:anonymous), do: [:base]
+  defp new_caller(product, subscription, plan_name, plan) do
+    %{
+      product: product,
+      subscription: subscription,
+      plan_name: plan_name,
+      plan: plan,
+      interval: interval(subscription),
+      trialing?: trialing?(subscription)
+    }
+  end
 
-  defp allowed_buckets(caller) do
-    %{requested_product: requested_product, subscription: subscription, plan_name: plan_name} =
-      caller
-
-    AccessChecker.metric_version_buckets(
-      requested_product,
-      subscription_product(subscription),
-      plan_name,
-      interval(subscription),
-      trialing?(subscription)
-    )
+  # Custom plans and bundles match the rows of the standard plan they are based on.
+  defp standard_plan(plan_name, product) do
+    case Plan.type(plan_name) do
+      :bundle -> Plan.Bundle.equivalent_standard_plan()
+      :custom -> Plan.CustomPlan.Access.restricted_access_as_plan(plan_name, product)
+      :standard -> plan_name
+    end
   end
 
   defp subscription_product(%{plan: %{product_id: product_id}}),
@@ -184,73 +244,113 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     "Your plan (#{plan}) has access to"
   end
 
-  # Users see version names, the same ones `availableVersions` returns, so the list
-  # comes from the alias table. The default version is always included, even when the
-  # table cannot be read.
-  defp allowed_version_names(scope, buckets) do
-    [Sanbase.Metric.default_version() | VersionAlias.version_nums(scope)]
+  defp requirement(_row, :anonymous), do: "requires a subscription"
+
+  defp requirement(row, %{product: product}) do
+    case Enum.filter(plan_access(row), &(&1.product == product)) do
+      [] ->
+        "is not available to any #{@product_label[product]} plan"
+
+      rows ->
+        "requires one of these #{@product_label[product]} plans: " <>
+          Enum.map_join(rows, ", ", &plan_description/1)
+    end
+  end
+
+  defp plan_description(%VersionPlanAccess{} = row) do
+    qualifiers =
+      [
+        row.billing_interval != "any" && "#{row.billing_interval}ly",
+        not row.include_trial && "no trial"
+      ]
+      |> Enum.filter(& &1)
+
+    case qualifiers do
+      [] -> row.plan
+      _ -> "#{row.plan} (#{Enum.join(qualifiers, ", ")})"
+    end
+  end
+
+  defp plan_access(nil), do: []
+  defp plan_access(row), do: row.plan_access
+
+  # Users see version names, the same ones `availableVersions` returns. The default
+  # version is always included, even when the alias table cannot be read.
+  defp allowed_version_names(scope, caller) do
+    allowed =
+      for row <- VersionAlias.rows(scope),
+          exposed?(row, caller) and allowed?(row, caller),
+          do: row.version_num
+
+    [Sanbase.Metric.default_version() | allowed]
     |> Enum.uniq()
-    |> Enum.filter(&(Version.classify(&1) in buckets))
     |> Enum.sort_by(&version_sort_key/1)
     |> Enum.map_join(", ", &VersionAlias.to_version_name(&1, scope))
   end
 
+  # Non-numeric parts ("Experimental (Weighted Age)") sort first instead of raising.
   defp version_sort_key(version) do
-    version |> String.split(".") |> Enum.map(&String.to_integer/1)
+    version
+    |> String.split(".")
+    |> Enum.map(fn part ->
+      case Integer.parse(part) do
+        {int, ""} -> int
+        _ -> -1
+      end
+    end)
   end
 
-  defp deny(metric, version, bucket, buckets, caller, context) do
+  defp denial_reason(nil), do: "no_alias"
+  defp denial_reason(_row), do: "no_plan_access"
+
+  defp deny(metric, version, row, caller, context) do
     enforce? = enforce?()
     scope = Sanbase.Metric.version_scope(metric)
 
-    log_denial(
+    log(
       if(enforce?, do: "Denied", else: "Would deny"),
       metric,
       version,
-      bucket,
+      denial_reason(row),
       caller,
       context
     )
 
     if enforce? do
       {:error,
-       "Metric version #{VersionAlias.to_version_name(version, scope)} requires " <>
-         "#{@required_plan[bucket]}. #{caller_description(caller)} " <>
-         "#{allowed_version_names(scope, buckets)}."}
+       "Metric version #{VersionAlias.to_version_name(version, scope)} " <>
+         "#{requirement(row, caller)}. #{caller_description(caller)} " <>
+         "#{allowed_version_names(scope, caller)}."}
     else
       :ok
     end
   end
 
-  defp exempt(metric, version, bucket, caller, context) do
-    log_denial("Exempt", metric, version, bucket, caller, context)
-    :ok
-  end
-
   # Blocked calls are not exported to api_call_data (error queries never are), so this
   # line is the only record of them. key=value so Loki can aggregate with `| logfmt`.
-  defp log_denial(outcome, metric, version, bucket, caller, context) do
+  defp log(outcome, metric, version, reason, caller, context) do
     user = context[:auth][:current_user]
 
-    {plan, interval, trial?} =
+    {product, plan, interval, trial?} =
       case caller do
         :anonymous ->
-          {"anonymous", nil, false}
+          {nil, "anonymous", nil, false}
 
-        %{plan_name: plan_name, subscription: subscription} ->
-          {plan_name, interval(subscription), trialing?(subscription)}
+        %{product: product, plan_name: plan_name, subscription: subscription} ->
+          {product, plan_name, interval(subscription), trialing?(subscription)}
       end
 
     fields = [
       user_id: user && user.id,
       auth_method: context[:auth][:auth_method],
+      product: product,
       plan: plan,
       interval: interval,
       trial: trial?,
       metric: metric,
       version: version,
       version_name: VersionAlias.to_version_name(version, Sanbase.Metric.version_scope(metric)),
-      required: bucket
+      reason: reason
     ]
 
     Logger.info(

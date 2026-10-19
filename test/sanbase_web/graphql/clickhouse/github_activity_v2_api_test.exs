@@ -3,12 +3,21 @@ defmodule SanbaseWeb.Graphql.GithubActivityV2ApiTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1]
+
+  import Sanbase.MetricVersionAliasHelpers,
+    only: [create_alias!: 1, ensure_alias!: 1, everyone: 0]
 
   setup do
     project = insert(:random_project, %{github_organizations: [build(:github_organization)]})
 
     # Every version of the github metrics is free, so an anonymous request is enough
+    ensure_alias!(%{
+      scope: "github",
+      version_num: "2.0",
+      version_name: "modern:v1",
+      plan_access: everyone()
+    })
+
     %{conn: build_conn(), project: project}
   end
 
@@ -74,8 +83,8 @@ defmodule SanbaseWeb.Graphql.GithubActivityV2ApiTest do
   end
 
   test "availableVersions of dev_activity have the github names", %{conn: conn} do
+    # The github row is created in the setup
     create_alias!(%{scope: "social", version_num: "2.0", version_name: "modern:v1"})
-    create_alias!(%{scope: "github", version_num: "2.0", version_name: "modern:v1"})
 
     query = """
     {

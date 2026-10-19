@@ -166,24 +166,49 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
          %{main_contract_address: contract_address} = project_info_map
        )
        when is_binary(contract_address) do
-    label = if not Project.has_main_contract_addresses?(project), do: "main"
+    project = Repo.preload(project, [:contract_addresses], force: true)
 
-    contract_attrs = %{
-      label: label,
-      address: contract_address,
-      decimals: project_info_map[:token_decimals]
-    }
+    case Enum.find(project.contract_addresses, &(&1.address == contract_address)) do
+      nil ->
+        # Only a brand new contract can become `main`, and only if the project
+        # has no `main` contract yet.
+        label = if not Project.has_main_contract_addresses?(project), do: "main"
 
-    # This returns a contract address, not a project. Do not use
-    # the result of this but instead force the preload of the contracts
-    # in the next call
-    {:ok, _} = Project.ContractAddress.add_contract(project, contract_attrs)
+        contract_attrs = %{
+          label: label,
+          address: contract_address,
+          decimals: project_info_map[:token_decimals]
+        }
+
+        {:ok, _} = Project.ContractAddress.add_contract(project, contract_attrs)
+
+        # The `project` won't have an up-to date list of contracts otherwise
+        Repo.preload(project, [:contract_addresses], force: true)
+
+      %Project.ContractAddress{} = existing ->
+        # Never touch the label or description of an existing contract.
+        # They can be manually curated. Only fill in missing decimals.
+        maybe_fill_contract_decimals(project, existing, project_info_map[:token_decimals])
+    end
+  end
+
+  defp maybe_add_contract_address(%Project{} = project, _project_info_map), do: project
+
+  defp maybe_fill_contract_decimals(
+         %Project{} = project,
+         %Project.ContractAddress{decimals: nil} = contract,
+         decimals
+       )
+       when not is_nil(decimals) do
+    contract
+    |> Project.ContractAddress.changeset(%{decimals: decimals})
+    |> Repo.update!()
 
     # The `project` won't have an up-to date list of contracts otherwise
     Repo.preload(project, [:contract_addresses], force: true)
   end
 
-  defp maybe_add_contract_address(%Project{} = project, _project_info_map), do: project
+  defp maybe_fill_contract_decimals(%Project{} = project, _contract, _decimals), do: project
 
   defp insert_tag({:ok, %Project{} = project}, %ProjectInfo{} = project_info) do
     do_insert_tag(project, project_info)

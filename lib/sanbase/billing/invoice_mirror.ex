@@ -42,21 +42,32 @@ defmodule Sanbase.Billing.InvoiceMirror do
   Returns a list of `{from, to}` date tuples - empty when the range is fully imported.
   Coverage is computed one day at a time, which is precise enough for a range measured
   in months and keeps the gaps easy to state.
+
+  A run covers its range only up to the day before it started: invoices created later
+  on the day it ran were not there to import. So today is never covered, and callers
+  ask for coverage through yesterday.
   """
   @spec coverage(Date.t(), Date.t()) :: [{Date.t(), Date.t()}]
   def coverage(%Date{} = from_date, %Date{} = to_date) do
     covered =
       from(r in SyncRun,
         where: r.status == "completed" and r.from_date <= ^to_date and r.to_date >= ^from_date,
-        select: {r.from_date, r.to_date}
+        select: {r.from_date, r.to_date, r.inserted_at}
       )
       |> Repo.all()
-      |> Enum.flat_map(fn {from, to} -> Date.range(from, to) end)
+      |> Enum.flat_map(&covered_days/1)
       |> MapSet.new()
 
     Date.range(from_date, to_date)
     |> Enum.reject(&MapSet.member?(covered, &1))
     |> group_consecutive()
+  end
+
+  defp covered_days({from, to, started_at}) do
+    last_full_day = started_at |> DateTime.to_date() |> Date.add(-1)
+    to = Enum.min([to, last_full_day], Date)
+
+    if Date.compare(to, from) == :lt, do: [], else: Date.range(from, to)
   end
 
   defp group_consecutive([]), do: []

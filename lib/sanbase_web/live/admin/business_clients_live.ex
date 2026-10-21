@@ -221,7 +221,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     |> start_async(:report, fn ->
       [as_of: as_of, months: @months]
       |> BusinessClients.page()
-      |> Map.put(:coverage, InvoiceMirror.coverage(coverage_from, as_of))
+      # Through yesterday: today is never fully imported, see `InvoiceMirror.coverage/2`.
+      |> Map.put(:coverage, InvoiceMirror.coverage(coverage_from, Date.add(as_of, -1)))
     end)
   end
 

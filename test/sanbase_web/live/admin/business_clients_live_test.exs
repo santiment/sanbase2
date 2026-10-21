@@ -15,8 +15,6 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
   alias Sanbase.Billing.InvoiceMirror
   alias Sanbase.Billing.InvoiceMirror.SyncJob
 
-  @today Date.utc_today()
-
   defp sign_in(role_factory) do
     user = insert(:user, email: "admin#{System.unique_integer([:positive])}@santiment.net")
     role = insert(role_factory)
@@ -41,7 +39,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         acv: 504_000,
         tcv: 1_008_000,
         start_date: ~D[2024-01-15],
-        renewal_date: Date.add(@today, 200),
+        renewal_date: Date.add(today(), 200),
         paid_by: %{
           card: 504_000,
           wire: 504_000,
@@ -69,8 +67,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
   defp metrics(attrs \\ %{}) do
     Map.merge(
       %{
-        as_of: @today,
-        window: %{from: Date.add(@today, -365), to: @today},
+        as_of: today(),
+        window: %{from: Date.add(today(), -365), to: today()},
         client_count: 3,
         at_risk_count: 1,
         retention_action_pct: 50.0,
@@ -99,7 +97,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         business_reason: :business_email,
         mrr: 5_000,
         acv: 60_000,
-        renewal_date: Date.add(@today, 10),
+        renewal_date: Date.add(today(), 10),
         manual_status: :at_risk,
         open_entries_count: 2,
         failed_payment?: true
@@ -120,9 +118,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
 
   defp report_mocks(extra_sync_mocks \\ []) do
     monthly = [
-      metrics(month: Date.beginning_of_month(@today), source: :computed),
+      metrics(month: Date.beginning_of_month(today()), source: :computed),
       metrics(
-        month: @today |> Date.shift(month: -1) |> Date.beginning_of_month(),
+        month: today() |> Date.shift(month: -1) |> Date.beginning_of_month(),
         source: :snapshot,
         client_count: 7
       )
@@ -192,16 +190,16 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         assert has_element?(
                  view,
                  "#client-102 .badge-warning",
-                 Date.to_iso8601(Date.add(@today, 10))
+                 Date.to_iso8601(Date.add(today(), 10))
                )
 
         assert has_element?(view, "#client-103", "High Risk")
 
         assert has_element?(view, "#last-synced-at", "2026-10-20 06:30")
 
-        month = @today |> Date.shift(month: -1) |> Date.beginning_of_month()
+        month = today() |> Date.shift(month: -1) |> Date.beginning_of_month()
         assert has_element?(view, "#month-#{month}", "snapshot")
-        assert has_element?(view, "#month-#{Date.beginning_of_month(@today)}", "computed")
+        assert has_element?(view, "#month-#{Date.beginning_of_month(today())}", "computed")
 
         assert has_element?(
                  view,
@@ -212,7 +210,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         # Every business-email user is personal data beyond the page: Editor only.
         refute has_element?(view, "#export-business-email-users")
 
-        assert_called(Report.page(as_of: @today, months: 12))
+        assert_called(Report.page(as_of: today(), months: 12))
       end
     end
 
@@ -496,6 +494,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
       end
     end
   end
+
+  defp today, do: Date.utc_today()
 
   defp row_ids(view) do
     view

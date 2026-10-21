@@ -107,12 +107,12 @@ defmodule Sanbase.Billing.BusinessClients.Settings do
     changeset = validate(attrs)
 
     if changeset.valid? do
-      merged =
-        get()
-        |> Map.merge(apply_changes(changeset))
-        |> Map.new(fn {key, value} -> {Atom.to_string(key), value} end)
-
       row = Repo.get_by(__MODULE__, key: @key) || %__MODULE__{key: @key}
+
+      # Only the changed keys are stored: a key never edited keeps following its
+      # default, so a later change to a default reaches it.
+      changed = Map.new(changeset.changes, fn {key, value} -> {Atom.to_string(key), value} end)
+      merged = Map.merge(row.settings || %{}, changed)
 
       row
       |> change(settings: merged, updated_by_id: updated_by_id)

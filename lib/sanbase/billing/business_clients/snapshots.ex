@@ -27,7 +27,7 @@ defmodule Sanbase.Billing.BusinessClients.Snapshots do
     today = Date.utc_today()
     since = today |> Date.beginning_of_month() |> Date.shift(month: -1)
 
-    case InvoiceMirror.coverage(since, today) do
+    case InvoiceMirror.coverage(since, Date.add(today, -1)) do
       [] ->
         {:ok, result} = take(today)
 

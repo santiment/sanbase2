@@ -301,6 +301,14 @@ defmodule Sanbase.Billing.InvoiceMirror.SyncTest do
                {~D[2026-01-11], ~D[2026-01-19]}
              ]
     end
+
+    test "a run covers its range only up to the day before it started" do
+      today = Date.utc_today()
+      {:ok, _} = completed_run(Date.add(today, -3), today)
+
+      assert InvoiceMirror.coverage(Date.add(today, -3), today) == [{today, today}]
+      assert InvoiceMirror.coverage(Date.add(today, -3), Date.add(today, -1)) == []
+    end
   end
 
   describe "SyncJob" do

@@ -58,14 +58,17 @@ defmodule SanbaseWeb.GenericAdmin do
   @doc """
   Returns all modules under the `SanbaseWeb.GenericAdmin.*` namespace.
 
-  Uses `:application.get_key/2` to scan loaded modules at runtime.
+  Uses `:application.get_key/2` to scan loaded modules at runtime. That list is read
+  once at boot, so a module deleted while a dev server runs (the code reloader does
+  not update it) is skipped instead of crashing every admin page.
   """
   def custom_defined_modules() do
     case :application.get_key(:sanbase, :modules) do
       {:ok, modules} ->
         modules
         |> Enum.filter(fn module ->
-          String.starts_with?(Atom.to_string(module), "Elixir.SanbaseWeb.GenericAdmin.")
+          String.starts_with?(Atom.to_string(module), "Elixir.SanbaseWeb.GenericAdmin.") and
+            Code.ensure_loaded?(module)
         end)
 
       _ ->

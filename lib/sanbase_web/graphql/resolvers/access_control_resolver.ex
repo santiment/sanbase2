@@ -10,28 +10,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   end
 
   def get_access_restrictions(_root, args, %{context: context}) do
-    # An explicit `null` still arrives as a present key, and it falls through to the
-    # caller's own plan - so "did they name another plan?" has to be about the value
-    # that was resolved, not about the key being there. Keyed on presence, a
-    # `plan: null` would silently drop the caller's own grant.
-    named_plan = Map.get(args, :plan_name) || Map.get(args, :plan)
-    asked_for_another_plan? = not is_nil(named_plan)
-
-    plan_name = named_plan || context[:auth][:plan] || "FREE"
-
-    plan_name = plan_name |> to_string() |> String.upcase()
+    %{
+      plan_name: plan_name,
+      product_code: product_code,
+      asked_for_another_plan?: asked_for_another_plan?
+    } = restrictions_subject(args, context)
 
     case valid_plan_name?(plan_name) do
       false ->
         {:error, "Invalid plan name: #{plan_name}"}
 
       true ->
-        product_id =
-          Product.id_by_code(Map.get(args, :product)) || context[:requested_product_id] ||
-            context[:subscription_product_id] || Product.product_api()
-
-        product_code = Product.code_by_id(product_id)
-
         filter = Map.get(args, :filter)
 
         # A grant belongs to one customer, so it is only applied when the caller is asking
@@ -60,6 +49,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
           {:get_access_restrictions, plan_name, product_code, filter, grant_cache_key(grant)}
         ).()
     end
+  end
+
+  # The plan and product the restrictions describe. `available_versions/3` reads the
+  # same arguments again, so both go through here.
+  defp restrictions_subject(args, context) do
+    # An explicit `null` still arrives as a present key, and it falls through to the
+    # caller's own plan - so "did they name another plan?" has to be about the value
+    # that was resolved, not about the key being there. Keyed on presence, a
+    # `plan: null` would silently drop the caller's own grant.
+    named_plan = Map.get(args, :plan_name) || Map.get(args, :plan)
+
+    plan_name = (named_plan || context[:auth][:plan] || "FREE") |> to_string() |> String.upcase()
+
+    product_id =
+      Product.id_by_code(Map.get(args, :product)) || context[:requested_product_id] ||
+        context[:subscription_product_id] || Product.product_api()
+
+    %{
+      plan_name: plan_name,
+      product_code: Product.code_by_id(product_id),
+      asked_for_another_plan?: not is_nil(named_plan)
+    }
   end
 
   # Only the parts a grant can change the answer with. `nil` for the overwhelming
@@ -111,13 +122,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
       versions_maps =
         versions
         |> Enum.reject(fn ver -> ver =~ "Experimental" and metric_access_level != "alpha" end)
-        |> then(
-          &Sanbase.Billing.Plan.MetricVersionAccess.exposed_versions_in(
-            restriction.name,
-            &1,
-            restrictions_product(resolution)
-          )
-        )
+        |> then(&plan_versions(restriction.name, &1, resolution))
         |> Sanbase.Metric.VersionAlias.to_maps(Sanbase.Metric.version_scope(restriction.name))
 
       {:ok, versions_maps}
@@ -126,27 +131,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
 
   def available_versions(%{type: _}, _args, _resolution), do: {:ok, []}
 
-  # The restrictions describe a product - the `product` argument of
-  # getAccessRestrictions, defaulting the same way it does - so the versions listed
-  # are the ones exposed in that product, whoever asks.
-  defp restrictions_product(%{path: path, context: context}) do
-    args =
-      Enum.find_value(path, %{}, fn
-        %Absinthe.Blueprint.Document.Field{
-          schema_node: %{identifier: :get_access_restrictions},
-          argument_data: args
-        } ->
-          args
+  # The versions the restrictions' plan can use on their product. The caller's own
+  # plan is judged by their subscription; a named plan at its best.
+  defp plan_versions(metric, versions, %{path: path, context: context}) do
+    subject = path |> restrictions_args() |> restrictions_subject(context)
 
-        _ ->
-          nil
-      end)
+    opts =
+      if subject.asked_for_another_plan?,
+        do: [],
+        else: [subscription: context[:auth][:subscription], user: context[:auth][:current_user]]
 
-    product_id =
-      Product.id_by_code(Map.get(args, :product)) || context[:requested_product_id] ||
-        context[:subscription_product_id] || Product.product_api()
+    Sanbase.Billing.Plan.MetricVersionAccess.plan_versions(
+      metric,
+      versions,
+      subject.product_code,
+      subject.plan_name,
+      opts
+    )
+  end
 
-    Product.code_by_id(product_id)
+  defp restrictions_args(path) do
+    Enum.find_value(path, %{}, fn
+      %Absinthe.Blueprint.Document.Field{
+        schema_node: %{identifier: :get_access_restrictions},
+        argument_data: args
+      } ->
+        args
+
+      _ ->
+        nil
+    end)
   end
 
   def get_access_control(_root, _args, _resolution) do

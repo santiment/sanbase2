@@ -65,7 +65,7 @@ defmodule Sanbase.Metric.VersionPlanAccessTest do
         product: "SANAPI",
         plan: "BUSINESS_MAX",
         billing_interval: "year",
-        include_trial: false
+        accessible_if_trial: false
       }
 
       assert VersionPlanAccess.matches?(row, "SANAPI", "BUSINESS_MAX", "year", false)
@@ -81,7 +81,7 @@ defmodule Sanbase.Metric.VersionPlanAccessTest do
         product: "SANAPI",
         plan: "ANY",
         billing_interval: "any",
-        include_trial: true
+        accessible_if_trial: true
       }
 
       for plan <- ["FREE", "PRO", "BUSINESS_MAX"], interval <- [nil, "month", "year"] do

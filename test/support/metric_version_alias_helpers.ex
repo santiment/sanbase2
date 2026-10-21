@@ -14,7 +14,12 @@ defmodule Sanbase.MetricVersionAliasHelpers do
     %{product: "SANAPI", plan: "BUSINESS_MAX"}
   ]
   @pit [
-    %{product: "SANAPI", plan: "BUSINESS_MAX", billing_interval: "year", include_trial: false}
+    %{
+      product: "SANAPI",
+      plan: "BUSINESS_MAX",
+      billing_interval: "year",
+      accessible_if_trial: false
+    }
   ]
 
   def everyone(), do: @everyone
@@ -84,10 +89,11 @@ defmodule Sanbase.MetricVersionAliasHelpers do
     :ok
   end
 
-  @spec admin_owner_conn() :: Plug.Conn.t()
-  def admin_owner_conn() do
+  @doc "A conn logged in as a user with the admin panel role from the factory."
+  @spec admin_conn(atom()) :: Plug.Conn.t()
+  def admin_conn(role_factory) do
     user = Sanbase.Factory.insert(:user)
-    role = Sanbase.Factory.insert(:role_admin_panel_owner)
+    role = Sanbase.Factory.insert(role_factory)
     {:ok, _user_role} = Sanbase.Accounts.UserRole.create(user.id, role.id)
     {:ok, jwt_tokens} = SanbaseWeb.Guardian.get_jwt_tokens(user)
 

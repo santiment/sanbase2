@@ -26,7 +26,7 @@ defmodule Sanbase.Repo.Migrations.CreateMetricVersionPlanAccess do
       add(:product, :string, null: false)
       add(:plan, :string, null: false)
       add(:billing_interval, :string, null: false, default: "any")
-      add(:include_trial, :boolean, null: false, default: true)
+      add(:accessible_if_trial, :boolean, null: false, default: true)
 
       timestamps()
     end
@@ -77,7 +77,7 @@ defmodule Sanbase.Repo.Migrations.CreateMetricVersionPlanAccess do
   defp seed(select) do
     execute("""
     INSERT INTO metric_version_plan_access
-      (version_alias_id, product, plan, billing_interval, include_trial, inserted_at, updated_at)
+      (version_alias_id, product, plan, billing_interval, accessible_if_trial, inserted_at, updated_at)
     SELECT s.*, NOW(), NOW() FROM (#{select}) AS s
     ON CONFLICT DO NOTHING
     """)

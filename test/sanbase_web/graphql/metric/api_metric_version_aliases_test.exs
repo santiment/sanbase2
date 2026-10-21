@@ -3,7 +3,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1, pit: 0]
+
+  import Sanbase.MetricVersionAliasHelpers,
+    only: [create_alias!: 1, business: 0, pit: 0]
 
   alias Sanbase.Metric.VersionAlias
 
@@ -51,7 +53,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
     end)
   end
 
-  test "availableVersions returns the number, the name and the description", ctx do
+  test "availableVersions returns the number, the name and the description" do
     create_alias!(%{
       version_num: "7.1",
       version_name: "seven_pit:v1",
@@ -60,8 +62,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_versions/1, {:ok, ["7.0", "7.1"]})
     |> Sanbase.Mock.run_with_mocks(fn ->
+      # Basic auth is not restricted by plan, so 7.0, which has no alias row, is listed
       versions =
-        ctx.conn
+        basic_auth_conn()
         |> execute_query(available_versions_query(nil), "getMetric")
         |> get_in(["metadata", "availableVersions"])
 
@@ -81,15 +84,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
     end)
   end
 
-  test "an alias edit is visible on the next request, without waiting for the GraphQL cache",
-       ctx do
+  test "an alias edit is visible on the next request, without waiting for the GraphQL cache" do
     Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_versions/1, {:ok, ["7.1"]})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      assert [%{"versionName" => "7.1"}] = available_version_names(ctx.conn)
+      assert [%{"versionName" => "7.1"}] = available_version_names(basic_auth_conn())
 
       create_alias!(%{version_num: "7.1", version_name: "seven_pit:v1"})
 
-      assert [%{"versionName" => "seven_pit:v1"}] = available_version_names(ctx.conn)
+      assert [%{"versionName" => "seven_pit:v1"}] = available_version_names(basic_auth_conn())
     end)
   end
 
@@ -125,8 +127,20 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
 
   describe "availableVersions lists the versions exposed in the caller's product" do
     setup do
-      create_alias!(%{version_num: "7.0", version_name: "seven:v1", exposed_in: "api_only"})
-      create_alias!(%{version_num: "8.0", version_name: "eight:v1", exposed_in: "sanbase_only"})
+      create_alias!(%{
+        version_num: "7.0",
+        version_name: "seven:v1",
+        exposed_in: "api_only",
+        plan_access: [%{product: "SANAPI", plan: "ANY"}]
+      })
+
+      create_alias!(%{
+        version_num: "8.0",
+        version_name: "eight:v1",
+        exposed_in: "sanbase_only",
+        plan_access: [%{product: "SANBASE", plan: "ANY"}]
+      })
+
       Sanbase.Cache.clear_all()
       :ok
     end
@@ -158,12 +172,96 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
     end
   end
 
+  describe "availableVersions lists only the versions the plan can use" do
+    setup do
+      create_alias!(%{version_num: "5.0", version_name: "five:v1", plan_access: business()})
+      create_alias!(%{version_num: "5.1", version_name: "five_pit:v1", plan_access: pit()})
+      Sanbase.Cache.clear_all()
+
+      [versions: ["1.0", "5.0", "5.1"]]
+    end
+
+    test "in the metric metadata, for the caller's plan", ctx do
+      Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_versions/1, {:ok, ctx.versions})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert metadata_version_nums(apikey_conn(:subscription_business_max_yearly)) ==
+                 ["1.0", "5.0", "5.1"]
+
+        assert metadata_version_nums(apikey_conn(:subscription_business_max_monthly)) ==
+                 ["1.0", "5.0"]
+
+        assert metadata_version_nums(apikey_conn(nil)) == ["1.0"]
+        assert metadata_version_nums(build_conn()) == ["1.0"]
+        # Sanbase plans have every version
+        assert metadata_version_nums(ctx.conn) == ["1.0", "5.0", "5.1"]
+      end)
+    end
+
+    test "in getAccessRestrictions, a named plan at its best", ctx do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/0,
+        {:ok, %{@metric => ctx.versions}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert restriction_version_nums(ctx.conn, "SANAPI", "FREE") == ["1.0"]
+        assert restriction_version_nums(ctx.conn, "SANAPI", "BUSINESS_PRO") == ["1.0", "5.0"]
+        # Point-in-time needs a yearly Business Max - which a named plan can be
+        assert restriction_version_nums(ctx.conn, "SANAPI", "BUSINESS_MAX") ==
+                 ["1.0", "5.0", "5.1"]
+
+        assert restriction_version_nums(ctx.conn, "SANBASE", "FREE") == ["1.0", "5.0", "5.1"]
+      end)
+    end
+
+    test "in getAccessRestrictions, the caller's own plan by its subscription", ctx do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/0,
+        {:ok, %{@metric => ctx.versions}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert restriction_version_nums(apikey_conn(:subscription_business_max_monthly), "SANAPI") ==
+                 ["1.0", "5.0"]
+
+        assert restriction_version_nums(apikey_conn(:subscription_business_max_yearly), "SANAPI") ==
+                 ["1.0", "5.0", "5.1"]
+      end)
+    end
+
+    test "while plan access enforcement is off, every exposed version is listed", ctx do
+      config = Application.get_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess)
+
+      try do
+        Application.put_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess, enforce: false)
+
+        Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_versions/1, {:ok, ctx.versions})
+        |> Sanbase.Mock.run_with_mocks(fn ->
+          assert metadata_version_nums(apikey_conn(nil)) == ["1.0", "5.0", "5.1"]
+        end)
+      after
+        Application.put_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess, config)
+      end
+    end
+  end
+
+  defp apikey_conn(subscription_factory) do
+    user = insert(:user)
+    if subscription_factory, do: insert(subscription_factory, user: user)
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    setup_apikey_auth(build_conn(), apikey)
+  end
+
+  defp basic_auth_conn(), do: setup_basic_auth(build_conn(), "user", "pass")
+
+  defp metadata_version_nums(conn), do: conn |> available_version_names() |> version_nums()
+
   defp version_nums(versions), do: Enum.map(versions, & &1["versionNum"])
 
-  defp restriction_version_nums(conn, product) do
+  defp restriction_version_nums(conn, product, plan \\ nil) do
+    plan_arg = if plan, do: ", plan: #{plan}", else: ""
+
     query = """
     {
-      getAccessRestrictions(product: #{product}, filter: METRIC) {
+      getAccessRestrictions(product: #{product}#{plan_arg}, filter: METRIC) {
         name
         availableVersions { versionNum }
       }

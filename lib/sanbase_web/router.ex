@@ -278,6 +278,13 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/metric_versions" do
+      live_session :metric_versions_admin, on_mount: @admin_panel_on_mount do
+        live("/", Admin.MetricVersionsLive.Index, :index)
+        live("/:id", Admin.MetricVersionsLive.Show, :show)
+      end
+    end
+
     scope "/bundle_offering" do
       live_session :bundle_offering_admin, on_mount: @admin_panel_on_mount do
         live("/", Admin.BundleOfferingLive)

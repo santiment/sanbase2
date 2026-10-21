@@ -2939,7 +2939,7 @@ CREATE TABLE public.metric_version_plan_access (
     product character varying(255) NOT NULL,
     plan character varying(255) NOT NULL,
     billing_interval character varying(255) DEFAULT 'any'::character varying NOT NULL,
-    include_trial boolean DEFAULT true NOT NULL,
+    accessible_if_trial boolean DEFAULT true NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );

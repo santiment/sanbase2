@@ -54,24 +54,52 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     end
   end
 
-  @doc "The versions of the metric the caller can see - the ones exposed in its product."
-  @spec exposed_versions(String.t(), [String.t()], map()) :: [String.t()]
-  def exposed_versions(metric, versions, context) do
-    case surface(context) do
+  @doc """
+  The versions of the metric the caller can use - the ones `check/3` lets through.
+  """
+  @spec usable_versions(String.t(), [String.t()], map()) :: [String.t()]
+  def usable_versions(metric, versions, context) do
+    case caller(context) do
       :unrestricted -> versions
-      surface -> filter_exposed(metric, versions, &exposed?(&1, surface))
+      caller -> filter_usable(metric, versions, caller, context[:auth][:current_user])
     end
   end
 
-  @doc "The versions of the metric exposed in the product (\"SANAPI\" or \"SANBASE\")."
-  @spec exposed_versions_in(String.t(), [String.t()], String.t()) :: [String.t()]
-  def exposed_versions_in(metric, versions, product) when product in @products do
-    filter_exposed(metric, versions, &VersionAlias.exposed_in?(&1, product))
+  @doc """
+  The versions of the metric a plan can use on the product ("SANAPI" or "SANBASE").
+
+  With `:subscription` (the caller's own plan) the plan is judged by that
+  subscription's billing interval and trial. Without it the plan is judged at its
+  best - any billing interval, not on trial - as it answers what the plan can give.
+  `:user` adds the versions the user is exempt for.
+  """
+  @spec plan_versions(String.t(), [String.t()], String.t(), String.t(), keyword()) ::
+          [String.t()]
+  def plan_versions(metric, versions, product, plan_name, opts \\ [])
+      when product in @products do
+    subscription = Keyword.get(opts, :subscription)
+    caller = new_caller(product, subscription, plan_name, standard_plan(plan_name, product))
+    caller = if subscription, do: caller, else: %{caller | interval: :any}
+
+    filter_usable(metric, versions, caller, Keyword.get(opts, :user))
   end
 
-  defp filter_exposed(metric, versions, exposed?) do
+  defp filter_usable(metric, versions, caller, user) do
     scope = Sanbase.Metric.version_scope(metric)
-    Enum.filter(versions, &exposed?.(VersionAlias.get(&1, scope)))
+    enforce? = enforce?()
+
+    Enum.filter(versions, fn version ->
+      row = VersionAlias.get(version, scope)
+
+      cond do
+        # Experimental versions have their own alpha-only rule and never reach `check/3`.
+        version =~ "Experimental" -> true
+        version == Sanbase.Metric.default_version() -> true
+        not exposed?(row, caller) -> false
+        not enforce? -> true
+        true -> allowed?(row, caller) or exempt?(version, user)
+      end
+    end)
   end
 
   defp check_caller(metric, version, caller, context) do
@@ -89,7 +117,7 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
       allowed?(row, caller) ->
         :ok
 
-      exempt?(version, context) ->
+      exempt?(version, context[:auth][:current_user]) ->
         log("Exempt", metric, version, denial_reason(row), caller, context)
         :ok
 
@@ -105,7 +133,6 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
   defp exposed?(row, :anonymous), do: Enum.all?(@products, &VersionAlias.exposed_in?(row, &1))
   defp exposed?(row, %{product: product}), do: VersionAlias.exposed_in?(row, product)
-  defp exposed?(row, product) when is_binary(product), do: VersionAlias.exposed_in?(row, product)
 
   defp allowed?(nil, _caller), do: false
 
@@ -130,8 +157,8 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
   # API before the restriction - nothing else about their plan changes.
   @exempt_version_family "2.0"
 
-  defp exempt?(version, context) do
-    exempt_version?(version) and exempt_user?(context[:auth][:current_user])
+  defp exempt?(version, user) do
+    exempt_version?(version) and exempt_user?(user)
   end
 
   defp exempt_version?(version) do
@@ -154,17 +181,6 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
       end
     end)
   end
-
-  # The product the request comes through, without looking up the subscription. The
-  # same cases as `caller/1`.
-  defp surface(%{auth: %{auth_method: :basic}}), do: :unrestricted
-  defp surface(%{auth: %{auth_method: :none}}), do: :anonymous
-  defp surface(%{auth: %{auth_method: :apikey, current_user: _}}), do: "SANAPI"
-
-  defp surface(%{requested_product_id: product_id}) when is_integer(product_id),
-    do: Product.code_by_id(product_id)
-
-  defp surface(_context), do: :unrestricted
 
   defp caller(%{auth: %{auth_method: :basic}}), do: :unrestricted
 
@@ -261,7 +277,7 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     qualifiers =
       [
         row.billing_interval != "any" && "#{row.billing_interval}ly",
-        not row.include_trial && "no trial"
+        not row.accessible_if_trial && "no trial"
       ]
       |> Enum.filter(& &1)
 
@@ -284,20 +300,8 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
     [Sanbase.Metric.default_version() | allowed]
     |> Enum.uniq()
-    |> Enum.sort_by(&version_sort_key/1)
+    |> Enum.sort_by(&VersionAlias.sort_key/1)
     |> Enum.map_join(", ", &VersionAlias.to_version_name(&1, scope))
-  end
-
-  # Non-numeric parts ("Experimental (Weighted Age)") sort first instead of raising.
-  defp version_sort_key(version) do
-    version
-    |> String.split(".")
-    |> Enum.map(fn part ->
-      case Integer.parse(part) do
-        {int, ""} -> int
-        _ -> -1
-      end
-    end)
   end
 
   defp denial_reason(nil), do: "no_alias"

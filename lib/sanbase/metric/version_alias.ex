@@ -177,6 +177,80 @@ defmodule Sanbase.Metric.VersionAlias do
     Map.values(by_num)
   end
 
+  @doc "Every row of every scope with its `plan_access`, read from the database."
+  @spec list_with_plan_access() :: [t()]
+  def list_with_plan_access() do
+    from(a in __MODULE__, preload: :plan_access)
+    |> Repo.all()
+    |> Enum.sort_by(
+      &{Enum.find_index(@scopes, fn s -> s == &1.scope end), sort_key(&1.version_num)}
+    )
+  end
+
+  @doc "The row with its `plan_access`, read from the database."
+  @spec get_with_plan_access!(integer() | String.t()) :: t()
+  def get_with_plan_access!(id), do: __MODULE__ |> Repo.get!(id) |> Repo.preload(:plan_access)
+
+  @spec create(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def create(attrs) do
+    %__MODULE__{}
+    |> changeset(attrs)
+    |> Repo.insert()
+    |> tap(&clear_cache_on_ok/1)
+  end
+
+  @doc """
+  Update the row. Plan access for a product the version is no longer exposed in is
+  deleted with it - it could never match, and would come back silently if the
+  version were exposed there again.
+  """
+  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def update(%__MODULE__{} = version_alias, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:version_alias, changeset(version_alias, attrs))
+    |> Ecto.Multi.delete_all(:unexposed_plan_access, fn %{version_alias: updated} ->
+      from(p in VersionPlanAccess,
+        where:
+          p.version_alias_id == ^updated.id and
+            p.product not in ^Map.fetch!(@exposures, updated.exposed_in)
+      )
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{version_alias: updated}} ->
+        clear_cache()
+        {:ok, updated}
+
+      {:error, :version_alias, changeset, _changes} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc "Delete the row and its plan access."
+  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def delete(%__MODULE__{} = version_alias) do
+    version_alias |> Repo.delete() |> tap(&clear_cache_on_ok/1)
+  end
+
+  defp clear_cache_on_ok({:ok, _}), do: clear_cache()
+  defp clear_cache_on_ok(_), do: :ok
+
+  @doc """
+  Sorts versions numerically ("2.0" before "10.0"). Non-numeric parts
+  ("Experimental (Weighted Age)") sort first instead of raising.
+  """
+  @spec sort_key(String.t()) :: [integer()]
+  def sort_key(version) do
+    version
+    |> String.split(".")
+    |> Enum.map(fn part ->
+      case Integer.parse(part) do
+        {int, ""} -> int
+        _ -> -1
+      end
+    end)
+  end
+
   @doc """
   Whether the version can be used in the product ("SANAPI" or "SANBASE"). A version
   without a row is exposed everywhere.

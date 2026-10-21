@@ -38,6 +38,15 @@ defmodule SanbaseWeb.AdminFormsLive do
         ]
       },
       %{
+        title: "Metric versions",
+        description: """
+        Add metric versions and choose which SanAPI and Sanbase plans can use each one
+        """,
+        buttons: [
+          %{url: ~p"/admin/metric_versions", text: "Open"}
+        ]
+      },
+      %{
         title: "Monitored Twitter Handle Submissions",
         description: """
         Approve or decline submissions for new Twitter handles to be monitored, suggested by users.

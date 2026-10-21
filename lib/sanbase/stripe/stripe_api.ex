@@ -359,6 +359,14 @@ defmodule Sanbase.StripeApi do
     Stripe.Invoice.list(params, kw_list)
   end
 
+  def list_invoice_line_items(invoice_id, params \\ %{}) do
+    Stripe.LineItem.list(invoice_id, params)
+  end
+
+  def retrieve_invoice(invoice_id) when is_binary(invoice_id) do
+    Stripe.Invoice.retrieve(invoice_id)
+  end
+
   def list_charges(params, kw_list \\ []) do
     Stripe.Charge.list(params, kw_list)
   end

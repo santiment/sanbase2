@@ -142,6 +142,7 @@ defmodule SanbaseWeb.GenericAdminController do
       {"User Rankings", ~p"/admin/user_rankings"},
       {"Invoice Archives", ~p"/admin/invoices"},
       {"Credit Payments", ~p"/admin/credit_payments"},
+      {"Business Clients", ~p"/admin/business_clients"},
       {"Bundle Packages", ~p"/admin/bundle_packages"},
       {"Bundle Subscriptions", ~p"/admin/bundle_subscriptions"},
       {"Subscription Grants", ~p"/admin/subscription_grants"},

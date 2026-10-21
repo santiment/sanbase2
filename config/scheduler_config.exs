@@ -137,6 +137,18 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "45 00 * * *",
       task: {Sanbase.Billing.CreditPayments.Sync, :run, []}
     ],
+    # Mirrors every Stripe invoice and its lines, card paid or not, for the Business
+    # Clients page: revenue, churn and renewal are all derived from the lines.
+    sync_stripe_invoices: [
+      schedule: "00 01 * * *",
+      task: {Sanbase.Billing.InvoiceMirror.Sync, :run, []}
+    ],
+    # Freezes each business client's numbers and the month's churn and renewal on the
+    # 1st, after the invoice sync above has picked up the renewals of the last day.
+    business_clients_monthly_snapshot: [
+      schedule: "30 03 1 * *",
+      task: {Sanbase.Billing.BusinessClients.Snapshots, :run, []}
+    ],
     intercom_to_kafka: [
       schedule: "30 01 * * *",
       task: {Sanbase.Intercom, :intercom_to_kafka, []}

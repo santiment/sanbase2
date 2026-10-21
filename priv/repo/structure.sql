@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict EG37C8QBoSKfDETx8qaeVQ2eWK7GzpPw8nfSggdEi7Y9yNvvm9VlaQNzTlOJx7o
+\restrict efYSwlrMycVWPJkHipcKlq1CxfZ1dy6hETajmbGcBTkkKPOpIqCA7NwhJFRIzAv
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 17.10 (Homebrew)
+-- Dumped by pg_dump version 17.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -815,6 +815,173 @@ CREATE SEQUENCE public.bundle_prices_id_seq
 --
 
 ALTER SEQUENCE public.bundle_prices_id_seq OWNED BY public.bundle_prices.id;
+
+
+--
+-- Name: business_client_log_entries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.business_client_log_entries (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    type character varying(255) NOT NULL,
+    severity character varying(255) DEFAULT 'none'::character varying NOT NULL,
+    note text,
+    author_id bigint,
+    resolved_at timestamp(0) without time zone,
+    resolved_by_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: business_client_log_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.business_client_log_entries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: business_client_log_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.business_client_log_entries_id_seq OWNED BY public.business_client_log_entries.id;
+
+
+--
+-- Name: business_client_overrides; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.business_client_overrides (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    business boolean NOT NULL,
+    note text,
+    set_by_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: business_client_overrides_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.business_client_overrides_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: business_client_overrides_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.business_client_overrides_id_seq OWNED BY public.business_client_overrides.id;
+
+
+--
+-- Name: business_client_settings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.business_client_settings (
+    id bigint NOT NULL,
+    key character varying(255) NOT NULL,
+    settings jsonb DEFAULT '{}'::jsonb NOT NULL,
+    updated_by_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: business_client_settings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.business_client_settings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: business_client_settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.business_client_settings_id_seq OWNED BY public.business_client_settings.id;
+
+
+--
+-- Name: business_client_snapshots; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.business_client_snapshots (
+    id bigint NOT NULL,
+    month date NOT NULL,
+    user_id bigint,
+    data jsonb DEFAULT '{}'::jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: business_client_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.business_client_snapshots_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: business_client_snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.business_client_snapshots_id_seq OWNED BY public.business_client_snapshots.id;
+
+
+--
+-- Name: business_metrics_snapshots; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.business_metrics_snapshots (
+    id bigint NOT NULL,
+    month date NOT NULL,
+    data jsonb DEFAULT '{}'::jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: business_metrics_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.business_metrics_snapshots_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: business_metrics_snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.business_metrics_snapshots_id_seq OWNED BY public.business_metrics_snapshots.id;
 
 
 --
@@ -4624,6 +4791,133 @@ CREATE TABLE public.stripe_events (
 
 
 --
+-- Name: stripe_invoice_lines; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stripe_invoice_lines (
+    id bigint NOT NULL,
+    invoice_id bigint NOT NULL,
+    stripe_line_id character varying(255) NOT NULL,
+    stripe_price_id character varying(255),
+    plan_id bigint,
+    description text,
+    period_start timestamp(0) without time zone,
+    period_end timestamp(0) without time zone,
+    amount integer DEFAULT 0 NOT NULL,
+    amount_excluding_tax integer DEFAULT 0 NOT NULL,
+    quantity integer,
+    proration boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: stripe_invoice_lines_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stripe_invoice_lines_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stripe_invoice_lines_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stripe_invoice_lines_id_seq OWNED BY public.stripe_invoice_lines.id;
+
+
+--
+-- Name: stripe_invoice_sync_runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stripe_invoice_sync_runs (
+    id bigint NOT NULL,
+    from_date date NOT NULL,
+    to_date date NOT NULL,
+    status character varying(255) DEFAULT 'running'::character varying NOT NULL,
+    invoices_upserted integer DEFAULT 0 NOT NULL,
+    lines_upserted integer DEFAULT 0 NOT NULL,
+    duration_ms integer,
+    error_message text,
+    triggered_by bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: stripe_invoice_sync_runs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stripe_invoice_sync_runs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stripe_invoice_sync_runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stripe_invoice_sync_runs_id_seq OWNED BY public.stripe_invoice_sync_runs.id;
+
+
+--
+-- Name: stripe_invoices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stripe_invoices (
+    id bigint NOT NULL,
+    stripe_invoice_id character varying(255) NOT NULL,
+    invoice_number character varying(255),
+    stripe_customer_id character varying(255),
+    user_id bigint,
+    customer_email character varying(255),
+    stripe_subscription_id character varying(255),
+    status character varying(255),
+    billing_reason character varying(255),
+    currency character varying(255),
+    invoiced_at timestamp(0) without time zone NOT NULL,
+    paid_at timestamp(0) without time zone,
+    total integer DEFAULT 0 NOT NULL,
+    total_excluding_tax integer DEFAULT 0 NOT NULL,
+    tax integer DEFAULT 0 NOT NULL,
+    amount_paid integer DEFAULT 0 NOT NULL,
+    credit_applied integer DEFAULT 0 NOT NULL,
+    paid_out_of_band boolean DEFAULT false NOT NULL,
+    synced_at timestamp(0) without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: stripe_invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stripe_invoices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stripe_invoices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stripe_invoices_id_seq OWNED BY public.stripe_invoices.id;
+
+
+--
 -- Name: subscription_items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5822,6 +6116,41 @@ ALTER TABLE ONLY public.bundle_prices ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: business_client_log_entries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_log_entries ALTER COLUMN id SET DEFAULT nextval('public.business_client_log_entries_id_seq'::regclass);
+
+
+--
+-- Name: business_client_overrides id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_overrides ALTER COLUMN id SET DEFAULT nextval('public.business_client_overrides_id_seq'::regclass);
+
+
+--
+-- Name: business_client_settings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_settings ALTER COLUMN id SET DEFAULT nextval('public.business_client_settings_id_seq'::regclass);
+
+
+--
+-- Name: business_client_snapshots id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_snapshots ALTER COLUMN id SET DEFAULT nextval('public.business_client_snapshots_id_seq'::regclass);
+
+
+--
+-- Name: business_metrics_snapshots id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_metrics_snapshots ALTER COLUMN id SET DEFAULT nextval('public.business_metrics_snapshots_id_seq'::regclass);
+
+
+--
 -- Name: chart_configuration_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6487,6 +6816,27 @@ ALTER TABLE ONLY public.stripe_credit_sync_runs ALTER COLUMN id SET DEFAULT next
 
 
 --
+-- Name: stripe_invoice_lines id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoice_lines ALTER COLUMN id SET DEFAULT nextval('public.stripe_invoice_lines_id_seq'::regclass);
+
+
+--
+-- Name: stripe_invoice_sync_runs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoice_sync_runs ALTER COLUMN id SET DEFAULT nextval('public.stripe_invoice_sync_runs_id_seq'::regclass);
+
+
+--
+-- Name: stripe_invoices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoices ALTER COLUMN id SET DEFAULT nextval('public.stripe_invoices_id_seq'::regclass);
+
+
+--
 -- Name: subscription_items id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6816,6 +7166,46 @@ ALTER TABLE ONLY public.bundle_package_snapshots
 
 ALTER TABLE ONLY public.bundle_prices
     ADD CONSTRAINT bundle_prices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: business_client_log_entries business_client_log_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_log_entries
+    ADD CONSTRAINT business_client_log_entries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: business_client_overrides business_client_overrides_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_overrides
+    ADD CONSTRAINT business_client_overrides_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: business_client_settings business_client_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_settings
+    ADD CONSTRAINT business_client_settings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: business_client_snapshots business_client_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_snapshots
+    ADD CONSTRAINT business_client_snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: business_metrics_snapshots business_metrics_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_metrics_snapshots
+    ADD CONSTRAINT business_metrics_snapshots_pkey PRIMARY KEY (id);
 
 
 --
@@ -7699,6 +8089,30 @@ ALTER TABLE ONLY public.stripe_events
 
 
 --
+-- Name: stripe_invoice_lines stripe_invoice_lines_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoice_lines
+    ADD CONSTRAINT stripe_invoice_lines_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stripe_invoice_sync_runs stripe_invoice_sync_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoice_sync_runs
+    ADD CONSTRAINT stripe_invoice_sync_runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stripe_invoices stripe_invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoices
+    ADD CONSTRAINT stripe_invoices_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: subscription_items subscription_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8128,6 +8542,48 @@ CREATE UNIQUE INDEX bundle_prices_sku_interval_is_active_index ON public.bundle_
 --
 
 CREATE UNIQUE INDEX bundle_prices_stripe_price_id_index ON public.bundle_prices USING btree (stripe_price_id);
+
+
+--
+-- Name: business_client_log_entries_resolved_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX business_client_log_entries_resolved_at_index ON public.business_client_log_entries USING btree (resolved_at);
+
+
+--
+-- Name: business_client_log_entries_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX business_client_log_entries_user_id_index ON public.business_client_log_entries USING btree (user_id);
+
+
+--
+-- Name: business_client_overrides_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX business_client_overrides_user_id_index ON public.business_client_overrides USING btree (user_id);
+
+
+--
+-- Name: business_client_settings_key_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX business_client_settings_key_index ON public.business_client_settings USING btree (key);
+
+
+--
+-- Name: business_client_snapshots_month_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX business_client_snapshots_month_user_id_index ON public.business_client_snapshots USING btree (month, user_id);
+
+
+--
+-- Name: business_metrics_snapshots_month_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX business_metrics_snapshots_month_index ON public.business_metrics_snapshots USING btree (month);
 
 
 --
@@ -9363,6 +9819,62 @@ CREATE INDEX stripe_credit_sync_runs_inserted_at_index ON public.stripe_credit_s
 
 
 --
+-- Name: stripe_invoice_lines_invoice_id_stripe_line_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX stripe_invoice_lines_invoice_id_stripe_line_id_index ON public.stripe_invoice_lines USING btree (invoice_id, stripe_line_id);
+
+
+--
+-- Name: stripe_invoice_lines_period_start_period_end_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_invoice_lines_period_start_period_end_index ON public.stripe_invoice_lines USING btree (period_start, period_end);
+
+
+--
+-- Name: stripe_invoice_lines_plan_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_invoice_lines_plan_id_index ON public.stripe_invoice_lines USING btree (plan_id);
+
+
+--
+-- Name: stripe_invoice_sync_runs_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_invoice_sync_runs_inserted_at_index ON public.stripe_invoice_sync_runs USING btree (inserted_at);
+
+
+--
+-- Name: stripe_invoices_invoiced_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_invoices_invoiced_at_index ON public.stripe_invoices USING btree (invoiced_at);
+
+
+--
+-- Name: stripe_invoices_stripe_customer_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_invoices_stripe_customer_id_index ON public.stripe_invoices USING btree (stripe_customer_id);
+
+
+--
+-- Name: stripe_invoices_stripe_invoice_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX stripe_invoices_stripe_invoice_id_index ON public.stripe_invoices USING btree (stripe_invoice_id);
+
+
+--
+-- Name: stripe_invoices_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX stripe_invoices_user_id_index ON public.stripe_invoices USING btree (user_id);
+
+
+--
 -- Name: subscription_items_remove_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9840,6 +10352,62 @@ ALTER TABLE ONLY public.blockchain_address_user_pairs
 
 ALTER TABLE ONLY public.blockchain_addresses
     ADD CONSTRAINT blockchain_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
+
+
+--
+-- Name: business_client_log_entries business_client_log_entries_author_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_log_entries
+    ADD CONSTRAINT business_client_log_entries_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: business_client_log_entries business_client_log_entries_resolved_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_log_entries
+    ADD CONSTRAINT business_client_log_entries_resolved_by_id_fkey FOREIGN KEY (resolved_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: business_client_log_entries business_client_log_entries_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_log_entries
+    ADD CONSTRAINT business_client_log_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: business_client_overrides business_client_overrides_set_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_overrides
+    ADD CONSTRAINT business_client_overrides_set_by_id_fkey FOREIGN KEY (set_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: business_client_overrides business_client_overrides_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_overrides
+    ADD CONSTRAINT business_client_overrides_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: business_client_settings business_client_settings_updated_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_settings
+    ADD CONSTRAINT business_client_settings_updated_by_id_fkey FOREIGN KEY (updated_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: business_client_snapshots business_client_snapshots_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_client_snapshots
+    ADD CONSTRAINT business_client_snapshots_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -10803,6 +11371,38 @@ ALTER TABLE ONLY public.stripe_credit_sync_runs
 
 
 --
+-- Name: stripe_invoice_lines stripe_invoice_lines_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoice_lines
+    ADD CONSTRAINT stripe_invoice_lines_invoice_id_fkey FOREIGN KEY (invoice_id) REFERENCES public.stripe_invoices(id) ON DELETE CASCADE;
+
+
+--
+-- Name: stripe_invoice_lines stripe_invoice_lines_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoice_lines
+    ADD CONSTRAINT stripe_invoice_lines_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id) ON DELETE SET NULL;
+
+
+--
+-- Name: stripe_invoice_sync_runs stripe_invoice_sync_runs_triggered_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoice_sync_runs
+    ADD CONSTRAINT stripe_invoice_sync_runs_triggered_by_fkey FOREIGN KEY (triggered_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: stripe_invoices stripe_invoices_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stripe_invoices
+    ADD CONSTRAINT stripe_invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: subscription_items subscription_items_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11126,7 +11726,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict EG37C8QBoSKfDETx8qaeVQ2eWK7GzpPw8nfSggdEi7Y9yNvvm9VlaQNzTlOJx7o
+\unrestrict efYSwlrMycVWPJkHipcKlq1CxfZ1dy6hETajmbGcBTkkKPOpIqCA7NwhJFRIzAv
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11744,3 +12344,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261009120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261013082759);
 INSERT INTO public."schema_migrations" (version) VALUES (20261013082802);
 INSERT INTO public."schema_migrations" (version) VALUES (20261014084021);
+INSERT INTO public."schema_migrations" (version) VALUES (20261021081454);

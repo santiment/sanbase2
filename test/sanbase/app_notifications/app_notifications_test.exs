@@ -935,6 +935,96 @@ defmodule Sanbase.AppNotificationsTest do
       assert length(create_vote_notifications) == 1
     end
 
+    # Screeners are watchlists with is_screener: true, but notifications
+    # about them use the "screener" entity type
+
+    test "create_watchlist for a screener uses screener entity type", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, screener} =
+        UserList.create_user_list(author, %{
+          name: "Screener",
+          is_public: true,
+          is_screener: true
+        })
+
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
+
+      assert [notification] = AppNotifications.list_notifications_for_user(follower.id)
+      assert notification.type == "create_watchlist"
+      assert notification.entity_type == "screener"
+      assert notification.entity_id == screener.id
+    end
+
+    test "update_watchlist for a screener uses screener entity type", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, screener} =
+        UserList.create_user_list(author, %{
+          name: "Screener",
+          is_public: true,
+          is_screener: true
+        })
+
+      new_function = %{"name" => "slugs", "args" => %{"slugs" => ["bitcoin", "ethereum"]}}
+
+      {:ok, _updated} =
+        UserList.update_user_list(author, %{id: screener.id, function: new_function})
+
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
+
+      notification =
+        AppNotifications.list_notifications_for_user(follower.id)
+        |> Enum.find(&(&1.type == "update_watchlist"))
+
+      assert notification.entity_type == "screener"
+      assert notification.entity_id == screener.id
+    end
+
+    test "create_comment on a screener uses screener entity type", %{author: author} do
+      commenter = insert(:user)
+      screener = insert(:screener, user: author, is_public: true)
+
+      {:ok, _comment} =
+        EntityComment.create_and_link(:watchlist, screener.id, commenter.id, nil, "Nice one")
+
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
+
+      assert [notification] =
+               AppNotifications.list_notifications_for_user(author.id, types: ["create_comment"])
+
+      assert notification.entity_type == "screener"
+      assert notification.entity_id == screener.id
+    end
+
+    test "creating multiple votes quickly on a screener emits only one notification", %{
+      author: author
+    } do
+      voter = insert(:user)
+      screener = insert(:screener, user: author, is_public: true)
+
+      {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: screener.id})
+
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
+
+      {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: screener.id})
+
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
+
+      assert [notification] =
+               AppNotifications.list_notifications_for_user(author.id, types: ["create_vote"])
+
+      assert notification.entity_type == "screener"
+      assert notification.entity_id == screener.id
+    end
+
     test "alert_triggered notifies alert owner", %{} do
       user = insert(:user)
       alert_title = "Price Alert"

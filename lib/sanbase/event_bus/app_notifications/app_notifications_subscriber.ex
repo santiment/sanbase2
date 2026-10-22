@@ -107,6 +107,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          state
        )
        when is_integer(entity_owner_user_id) do
+    data = put_screener_entity_type(data)
+
     # Do not notify the author of a comment when they comment on their own entity
     if not same_author_and_receiver?(:create_comment, data) do
       create_notification(:create_comment, [entity_owner_user_id], data)
@@ -124,6 +126,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          state
        )
        when is_integer(entity_owner_user_id) do
+    data = put_screener_entity_type(data)
+
     # Do not notify the author of a comment when they vote on their own entity
     # or when the same voter votes many times in a short period of time
     if not in_cooldown_period?(:create_vote, data) and
@@ -215,18 +219,22 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   end
 
   ## Watchlist notifications
-  defp create_notification(:create_watchlist, user_ids, %{
-         # Only public watchlists generate notifications
-         is_public: true,
-         watchlist_id: watchlist_id,
-         name: name,
-         user_id: author_id
-       }) do
+  defp create_notification(
+         :create_watchlist,
+         user_ids,
+         %{
+           # Only public watchlists generate notifications
+           is_public: true,
+           watchlist_id: watchlist_id,
+           name: name,
+           user_id: author_id
+         } = data
+       ) do
     multi_insert_notification_read_status(user_ids, author_id, "create_watchlist", fn ->
       AppNotifications.create_notification(%{
         type: "create_watchlist",
         user_id: author_id,
-        entity_type: "watchlist",
+        entity_type: watchlist_entity_type(data),
         entity_id: watchlist_id,
         entity_name: name,
         is_broadcast: false,
@@ -244,7 +252,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            name: name,
            user_id: author_id,
            extra_in_memory_data: %{changes: changes}
-         }
+         } = data
        ) do
     changed_fields = update_watchlist_changed_fields(changes)
 
@@ -257,7 +265,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         AppNotifications.create_notification(%{
           type: "update_watchlist",
           user_id: author_id,
-          entity_type: "watchlist",
+          entity_type: watchlist_entity_type(data),
           entity_name: name,
           entity_id: watchlist_id,
           is_broadcast: false,
@@ -447,6 +455,23 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
       chunk_results
     end)
   end
+
+  # Screeners are stored as watchlists with is_screener: true. Notifications
+  # about them get the "screener" entity type so clients can tell them apart.
+  defp watchlist_entity_type(%{is_screener: true}), do: "screener"
+  defp watchlist_entity_type(_data), do: "watchlist"
+
+  # Comment and vote events carry the :watchlist entity type for screeners too.
+  # Resolve it before the cooldown check so the lookup matches the stored type.
+  defp put_screener_entity_type(%{entity_type: entity_type, entity_id: entity_id} = data)
+       when entity_type in [:watchlist, "watchlist"] and is_integer(entity_id) do
+    case Sanbase.Repo.get(Sanbase.UserList, entity_id) do
+      %Sanbase.UserList{is_screener: true} -> %{data | entity_type: :screener}
+      _ -> data
+    end
+  end
+
+  defp put_screener_entity_type(data), do: data
 
   defp update_watchlist_changed_fields(changes) do
     changed_fields = if changes[:is_public], do: [:is_public], else: []

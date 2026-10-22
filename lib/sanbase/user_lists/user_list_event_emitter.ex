@@ -13,7 +13,8 @@ defmodule Sanbase.UserList.EventEmitter do
       user_id: watchlist.user_id,
       watchlist_id: watchlist.id,
       name: watchlist.name,
-      is_public: watchlist.is_public
+      is_public: watchlist.is_public,
+      is_screener: watchlist.is_screener
     }
     |> notify()
   end
@@ -24,6 +25,7 @@ defmodule Sanbase.UserList.EventEmitter do
       user_id: watchlist.user_id,
       watchlist_id: watchlist.id,
       is_public: watchlist.is_public,
+      is_screener: watchlist.is_screener,
       name: watchlist.name,
       extra_in_memory_data: %{changes: changes}
     }

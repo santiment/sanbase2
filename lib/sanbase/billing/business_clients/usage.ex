@@ -1,7 +1,7 @@
 defmodule Sanbase.Billing.BusinessClients.Usage do
   @moduledoc ~s"""
-  Usage signals shown next to each business client: API calls made with an API key
-  and the last web session activity.
+  Usage signals shown next to each business client: API calls made with an API key,
+  the last API key call and the last web session activity.
 
   Display only - nothing here feeds a metric. Every function answers for all the given
   users in one query and returns `%{}` when the query fails, so a slow or unreachable
@@ -12,6 +12,8 @@ defmodule Sanbase.Billing.BusinessClients.Usage do
 
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Repo
+
+  @last_api_call_lookback_days 365
 
   @doc ~s"""
   API key calls per user in `[from, to)`, as a map of user id to count. Users without
@@ -68,6 +70,34 @@ defmodule Sanbase.Billing.BusinessClients.Usage do
       Map.put(acc, user_id, {current, previous})
     end)
     |> ok_or_empty("api_calls_two_windows")
+  end
+
+  @doc ~s"""
+  The last API key call per user before `until`, looking back at most `lookback_days`
+  (default #{@last_api_call_lookback_days}) so the scan stays bounded. Returns
+  `%{user_id => DateTime}`; users without calls in the lookback are absent.
+  """
+  @spec last_api_call([integer()], DateTime.t(), pos_integer()) :: %{integer() => DateTime.t()}
+  def last_api_call(user_ids, until, lookback_days \\ @last_api_call_lookback_days)
+
+  def last_api_call([], _until, _lookback_days), do: %{}
+
+  def last_api_call(user_ids, until, lookback_days) do
+    from = DateTime.add(until, -lookback_days, :day)
+
+    sql = """
+    SELECT user_id, toUnixTimestamp(max(dt))
+    FROM api_call_data
+    WHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{until}})
+      AND auth_method = 'apikey' AND user_id IN ({{user_ids}})
+    GROUP BY user_id
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, %{from: from, until: until, user_ids: user_ids})
+    |> ClickhouseRepo.query_reduce(%{}, fn [user_id, unix], acc ->
+      Map.put(acc, user_id, DateTime.from_unix!(unix))
+    end)
+    |> ok_or_empty("last_api_call")
   end
 
   @doc ~s"""

@@ -14,6 +14,7 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
   @business_pro_yearly 108
   @business_max_monthly 109
   @sanbase_pro 201
+  @sanbase_pro_yearly 202
   @sanbase_basic 205
 
   setup do
@@ -116,6 +117,7 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert client.paid_by.card == 483_800
       assert client.manual_status == :healthy
       assert client.failed_payment? == false
+      assert client.unpaid_invoice? == false
       assert client.override == nil
     end
 
@@ -173,7 +175,7 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert Enum.map(list_clients(), & &1.user_id) == [big.id, small.id]
     end
 
-    test "payment sources: credit, out of band and failed payments", %{today: today} do
+    test "payment sources: credit, out of band and an unpaid invoice", %{today: today} do
       user = user("fin@corp.com", stripe_customer_id: "cus_fin")
       start = Date.add(today, -70)
 
@@ -214,7 +216,25 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert client.paid_by.unknown == 21_000
       assert client.paid_by.out_of_band == 42_000
       assert client.tcv == 126_000
+      # An open invoice - e.g. wire or crypto not received yet - is not a failed charge.
+      assert client.unpaid_invoice?
+      refute client.failed_payment?
+    end
+
+    test "a past due business subscription is a failed payment", %{today: today} do
+      user = user("late@payer.com")
+      invoice(user, [{@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}])
+
+      insert(:subscription_pro_sanbase,
+        user: user,
+        plan_id: @business_pro_monthly,
+        status: :past_due
+      )
+
+      assert [client] = list_clients()
+      assert client.subscription_status == :past_due
       assert client.failed_payment?
+      refute client.unpaid_invoice?
     end
 
     test "a line without a plan id counts by its Stripe price", %{today: today} do
@@ -241,7 +261,7 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
         subscription: "sub_other"
       )
 
-      assert [%{failed_payment?: false}] = list_clients()
+      assert [%{failed_payment?: false, unpaid_invoice?: false}] = list_clients()
     end
 
     test "manual status, retention and usage", %{today: today} do
@@ -263,6 +283,49 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert client.retention_action?
       assert client.api_calls == 120
       assert client.api_calls_prev == 80
+    end
+
+    test "last active is the later of the last web session and the last API call",
+         %{today: today} do
+      web_user = user("web@corp.com")
+      api_user = user("api@corp.com")
+
+      for u <- [web_user, api_user],
+          do:
+            invoice(u, [{@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}])
+
+      # A web session now for one; only API calls for the other.
+      {:ok, _tokens} = SanbaseWeb.Guardian.get_jwt_tokens(web_user)
+      week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day) |> DateTime.truncate(:second)
+
+      clients =
+        Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, fn sql, _args, _opts ->
+          if sql =~ "max(dt)" do
+            {:ok,
+             %{
+               rows: [
+                 [web_user.id, DateTime.to_unix(week_ago)],
+                 [api_user.id, DateTime.to_unix(yesterday)]
+               ]
+             }}
+          else
+            {:ok, %{rows: []}}
+          end
+        end)
+        |> Sanbase.Mock.run_with_mocks(fn -> Report.list_clients() end)
+        |> Map.new(&{&1.user_id, &1})
+
+      web = clients[web_user.id]
+      assert web.last_api_call_at == week_ago
+      assert %DateTime{} = web.last_web_active_at
+      assert DateTime.compare(web.last_web_active_at, week_ago) == :gt
+      assert web.last_active_at == web.last_web_active_at
+
+      api = clients[api_user.id]
+      assert api.last_web_active_at == nil
+      assert api.last_api_call_at == yesterday
+      assert api.last_active_at == yesterday
     end
 
     test "past as_of uses the lines of that date", %{today: today} do
@@ -313,6 +376,190 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert metrics.revenue_renewal.rate == 0.5
       assert metrics.settings.churn_window_months == 12
     end
+
+    test "segments: counts by today's segment, churn by the cohort date's, renewal by the due line",
+         %{today: today} do
+      cohort_date = month_ago(today, 12)
+      year_ago = Date.add(cohort_date, -40)
+      author = user("admin@santiment.net")
+
+      # An email plan a year ago, a business plan now: in the email cohort, not lost.
+      switcher = user("switch@corp.com")
+
+      invoice(switcher, [
+        {@sanbase_pro, Date.add(cohort_date, -5), Date.add(cohort_date, 25), 4_900}
+      ])
+
+      invoice(switcher, [
+        {@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}
+      ])
+
+      # A business plan year renewed: plan cohort, plan renewal.
+      plan_stays = user("stays@corp.com")
+
+      invoice(plan_stays, [
+        {@business_pro_yearly, year_ago, Date.shift(year_ago, year: 1), 478_800}
+      ])
+
+      renewed_on = Date.shift(year_ago, year: 1)
+
+      invoice(plan_stays, [
+        {@business_pro_yearly, renewed_on, Date.shift(renewed_on, year: 1), 478_800}
+      ])
+
+      # An email-plan year not renewed: email cohort lost, email renewal due.
+      email_leaves = user("leaves@fund.io")
+
+      invoice(email_leaves, [
+        {@sanbase_pro_yearly, year_ago, Date.shift(year_ago, year: 1), 52_900}
+      ])
+
+      # A new email-plan client, at risk.
+      email_new = user("new@fund.io")
+      invoice(email_new, [{@sanbase_pro, Date.add(today, -5), Date.add(today, 25), 4_900}])
+
+      {:ok, _} =
+        BusinessClients.create_entry(email_new.id, author.id, %{
+          type: "Complaint",
+          severity: "high_risk"
+        })
+
+      metrics = Report.metrics()
+      %{plan: plan, business_email: email} = metrics.segments
+
+      assert {metrics.client_count, plan.client_count, email.client_count} == {3, 2, 1}
+      assert {metrics.at_risk_count, plan.at_risk_count, email.at_risk_count} == {1, 0, 1}
+      assert plan.retention_action_pct == nil
+      assert email.retention_action_pct == 0.0
+
+      # The switcher counts where they were a year ago.
+      assert metrics.client_churn == %{rate: 1 / 3, lost: 1, base: 3}
+      assert plan.client_churn == %{rate: 0.0, lost: 0, base: 1}
+      assert email.client_churn == %{rate: 0.5, lost: 1, base: 2}
+
+      for key <- [:base_mrr, :lost_mrr, :expansion_mrr] do
+        assert Map.fetch!(plan.revenue_churn, key) + Map.fetch!(email.revenue_churn, key) ==
+                 Map.fetch!(metrics.revenue_churn, key)
+      end
+
+      assert metrics.client_renewal == %{rate: 0.5, renewed: 1, due: 2}
+      assert plan.client_renewal == %{rate: 1.0, renewed: 1, due: 1}
+      assert email.client_renewal == %{rate: 0.0, renewed: 0, due: 1}
+
+      assert plan.revenue_renewal.due_acv + email.revenue_renewal.due_acv ==
+               metrics.revenue_renewal.due_acv
+
+      assert Map.keys(plan) ==
+               Map.keys(Map.drop(metrics, [:as_of, :window, :segments, :settings]))
+    end
+  end
+
+  # ─── churned_clients/1 ───────────────────────────────────────────────────
+
+  describe "churned_clients/1" do
+    test "who left within the window, latest first", %{today: today} do
+      left = user("left@corp.com", username: "lefty", stripe_customer_id: "cus_left")
+      brief = user("brief@corp.com")
+      active = user("active@corp.com")
+      before = user("before@corp.com")
+      switched = user("switched@corp.com")
+      team = user("gone@santiment.net")
+      author = user("admin@santiment.net")
+
+      joined = Date.add(today, -400)
+      invoice(left, [{@business_pro_yearly, joined, Date.add(joined, 365), 478_800}])
+
+      invoice(left, [
+        {@business_max_monthly, Date.add(today, -65), Date.add(today, -35), 99_900}
+      ])
+
+      # Joined and left within the window.
+      invoice(brief, [
+        {@business_pro_monthly, Date.add(today, -100), Date.add(today, -70), 42_000}
+      ])
+
+      invoice(active, [
+        {@business_pro_monthly, Date.add(today, -100), Date.add(today, -70), 42_000}
+      ])
+
+      invoice(active, [{@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}])
+
+      invoice(before, [
+        {@business_pro_monthly, Date.add(month_ago(today, 12), -40),
+         Date.add(month_ago(today, 12), -10), 42_000}
+      ])
+
+      # A plan switch, on a new subscription: still a client.
+      invoice(switched, [
+        {@business_pro_monthly, Date.add(today, -40), Date.add(today, -10), 42_000}
+      ])
+
+      invoice(
+        switched,
+        [{@business_max_monthly, Date.add(today, -10), Date.add(today, 20), 99_900}],
+        subscription: "sub_switched_new"
+      )
+
+      invoice(team, [{@business_pro_monthly, Date.add(today, -60), Date.add(today, -30), 42_000}])
+
+      long_note = String.duplicate("x", 200)
+
+      {:ok, _} =
+        BusinessClients.create_entry(left.id, author.id, %{type: "Complaint", note: long_note})
+
+      assert [left_row, brief_row] = Report.churned_clients(as_of: today)
+
+      assert left_row.user_id == left.id
+      assert left_row.email == "left@corp.com"
+      assert left_row.username == "lefty"
+      assert left_row.stripe_customer_id == "cus_left"
+      assert left_row.business_reason == :plan
+      assert left_row.last_plan_name == "BUSINESS_MAX"
+      assert left_row.interval == "month"
+      assert left_row.joined_on == joined
+      assert left_row.churned_on == Date.add(today, -35)
+      assert left_row.lost_mrr == 99_900
+      assert left_row.tcv == 478_800 + 99_900
+      assert left_row.current_subscription == nil
+      assert left_row.last_entry.type == "Complaint"
+      assert left_row.last_entry.note == String.duplicate("x", 120)
+
+      assert brief_row.user_id == brief.id
+      assert brief_row.churned_on == Date.add(today, -70)
+      assert brief_row.joined_on == Date.add(today, -100)
+      assert brief_row.lost_mrr == 42_000
+      assert brief_row.last_entry == nil
+    end
+
+    test "shows a current subscription on any plan, including a bundle", %{today: today} do
+      to_bundle = user("bundle@corp.com")
+      to_pro = user("pro@corp.com")
+
+      for u <- [to_bundle, to_pro],
+          do:
+            invoice(u, [
+              {@business_pro_monthly, Date.add(today, -60), Date.add(today, -30), 42_000}
+            ])
+
+      bundle =
+        insert(:plan_pro,
+          id: 9_901,
+          name: "BUNDLE",
+          product_id: 1,
+          amount: 0,
+          is_private: true,
+          stripe_id: "plan_bundle_#{System.unique_integer([:positive])}"
+        )
+
+      insert(:subscription_pro_sanbase, user: to_bundle, plan_id: bundle.id)
+      insert(:subscription_pro_sanbase, user: to_pro, plan_id: @sanbase_pro)
+      insert(:subscription_pro_sanbase, user: to_pro, plan_id: @sanbase_basic, status: :canceled)
+
+      rows = Report.churned_clients(as_of: today) |> Map.new(&{&1.user_id, &1})
+
+      assert rows[to_bundle.id].current_subscription == "BUNDLE"
+      assert rows[to_pro.id].current_subscription == "PRO"
+    end
   end
 
   # ─── page/1 ──────────────────────────────────────────────────────────────
@@ -350,6 +597,7 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
 
           assert page == %{
                    clients: Report.list_clients(as_of: as_of),
+                   churned: Report.churned_clients(as_of: as_of),
                    metrics: Report.metrics(as_of: as_of),
                    monthly: Report.monthly_metrics(months: 3)
                  }
@@ -386,8 +634,27 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert current.as_of == month
       assert current.client_churn == %{rate: nil, lost: 0, base: 0}
       assert current.settings.renewal_grace_days == 30
+      assert current.segments.plan.client_count == 1
+      assert current.segments.business_email.client_count == 0
+      assert current.segments.plan.client_churn == %{rate: nil, lost: 0, base: 0}
       assert previous.source == :computed
       assert previous.month == Date.shift(month, month: -1)
+    end
+  end
+
+  describe "Snapshots.metrics_from_data/1" do
+    test "data stored before the segment split has no segments" do
+      metrics =
+        Snapshots.metrics_from_data(%{
+          "as_of" => "2026-01-01",
+          "window" => %{"from" => "2025-01-01", "to" => "2026-01-01"},
+          "client_count" => 5,
+          "client_churn" => %{"rate" => 0.2, "lost" => 1, "base" => 5}
+        })
+
+      assert metrics.client_count == 5
+      assert metrics.client_churn == %{rate: 0.2, lost: 1, base: 5}
+      assert metrics.segments == nil
     end
   end
 
@@ -472,10 +739,11 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
 
       assert notes.client_churn =~ "rolling 6 months"
       assert notes.client_renewal =~ "14-day grace"
+      assert notes.churned =~ "rolling 6 months"
 
       assert Map.keys(notes) |> Enum.sort() ==
                Enum.sort(~w(business_client acv tcv client_churn revenue_churn client_renewal
-                            revenue_renewal at_risk retention usage)a)
+                            revenue_renewal at_risk retention churned usage)a)
     end
   end
 end

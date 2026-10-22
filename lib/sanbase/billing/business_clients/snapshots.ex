@@ -9,7 +9,14 @@ defmodule Sanbase.Billing.BusinessClients.Snapshots do
   again writes nothing new.
   """
 
-  alias Sanbase.Billing.BusinessClients.{ClientSnapshot, MetricsSnapshot, Report, Settings}
+  alias Sanbase.Billing.BusinessClients.{
+    ClientSnapshot,
+    MetricsSnapshot,
+    Periods,
+    Report,
+    Settings
+  }
+
   alias Sanbase.Billing.InvoiceMirror
   alias Sanbase.Repo
 
@@ -84,7 +91,8 @@ defmodule Sanbase.Billing.BusinessClients.Snapshots do
 
   @doc ~s"""
   Turns a stored `MetricsSnapshot.data` (string keys, ISO dates, as it comes back from
-  JSON) into the shape `Report.metrics/1` returns.
+  JSON) into the shape `Report.metrics/1` returns. Data stored before the segments
+  were added gives `segments: nil`.
   """
   @spec metrics_from_data(map()) :: map()
   def metrics_from_data(data) do
@@ -92,17 +100,35 @@ defmodule Sanbase.Billing.BusinessClients.Snapshots do
 
     %{
       as_of: to_date(data["as_of"]),
-      window: %{from: to_date(window["from"]), to: to_date(window["to"])},
+      window: %{from: to_date(window["from"]), to: to_date(window["to"])}
+    }
+    |> Map.merge(metric_fields(data))
+    |> Map.merge(%{
+      segments: segments_from_data(data["segments"]),
+      settings: settings_from_data(Map.get(data, "settings", %{}))
+    })
+  end
+
+  defp metric_fields(data) do
+    %{
       client_count: data["client_count"],
       at_risk_count: data["at_risk_count"],
       retention_action_pct: data["retention_action_pct"],
       client_churn: pick(data["client_churn"], ~w(rate lost base)a),
       revenue_churn: pick(data["revenue_churn"], ~w(rate lost_mrr base_mrr expansion_mrr)a),
       client_renewal: pick(data["client_renewal"], ~w(rate renewed due)a),
-      revenue_renewal: pick(data["revenue_renewal"], ~w(rate renewed_acv due_acv)a),
-      settings: settings_from_data(Map.get(data, "settings", %{}))
+      revenue_renewal: pick(data["revenue_renewal"], ~w(rate renewed_acv due_acv)a)
     }
   end
+
+  # A snapshot taken before the metrics were split has no segments.
+  defp segments_from_data(%{} = stored) do
+    Map.new(Periods.segments(), fn segment ->
+      {segment, metric_fields(Map.get(stored, Atom.to_string(segment)) || %{})}
+    end)
+  end
+
+  defp segments_from_data(_stored), do: nil
 
   # The settings the snapshot was computed with; a key added since falls back to its
   # default.

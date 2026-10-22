@@ -31,9 +31,9 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
   @team_email_pattern "%@santiment.net"
 
-  # An invoice left open this long after it was issued is a failed payment, not one
-  # Stripe is still retrying in its first days.
-  @failed_payment_after_days 7
+  # A business invoice left open this long after it was issued is an unpaid invoice,
+  # not one Stripe is still retrying or a wire / crypto payment still on its way.
+  @unpaid_invoice_after_days 7
 
   # `stripe_credit_invoices.source` values, mapped without creating atoms.
   @credit_sources %{
@@ -56,12 +56,18 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
   @doc ~s"""
   Everything the Business Clients page shows, from one load of the data:
-  `%{clients: list_clients/1, metrics: metrics/1, monthly: monthly_metrics/1}`.
+  `%{clients: list_clients/1, churned: churned_clients/1, metrics: metrics/1,
+  monthly: monthly_metrics/1}`.
 
   Options: `:as_of` (default today) for the clients and the metrics, `:months`
   (default 12) for the monthly history, which always ends at the current month.
   """
-  @spec page(Keyword.t()) :: %{clients: [map()], metrics: map(), monthly: [map()]}
+  @spec page(Keyword.t()) :: %{
+          clients: [map()],
+          churned: [map()],
+          metrics: map(),
+          monthly: [map()]
+        }
   def page(opts \\ []) do
     as_of = Keyword.get(opts, :as_of, Date.utc_today())
     months = last_months(Keyword.get(opts, :months, 12))
@@ -69,6 +75,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     %{
       clients: build_clients(data, as_of),
+      churned: build_churned(data, as_of),
       metrics: metrics_for(data, as_of),
       monthly: monthly_from(months, metrics_snapshots(months), data)
     }
@@ -79,7 +86,15 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   @doc ~s"""
   The clients active on `as_of` (default today), highest MRR first.
 
-  See the moduledoc of `Sanbase.Billing.BusinessClients` for the shape of a client.
+  Besides the revenue numbers, a client carries:
+
+    * `failed_payment?` - the business subscription is `past_due` or `unpaid`, so a
+      card charge failed;
+    * `unpaid_invoice?` - an open or uncollectible business invoice older than
+      #{@unpaid_invoice_after_days} days, typically a wire or crypto invoice not paid yet;
+    * `last_web_active_at`, `last_api_call_at` and `last_active_at`, the later of the
+      two.
+
   Usage comes from ClickHouse and is `nil` when the query fails.
   """
   @spec list_clients(Keyword.t()) :: [map()]
@@ -91,12 +106,37 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     |> build_clients(as_of)
   end
 
+  # ─── Churned clients ─────────────────────────────────────────────────────
+
+  @doc ~s"""
+  The clients who churned in the churn window before `as_of` (default today): active
+  on some day of the window, not active on `as_of`. Latest `churned_on` first.
+
+  Besides the revenue numbers - `lost_mrr` is the MRR on the last covered day,
+  `churned_on - 1` - a row carries `current_subscription`, the plan name of a live
+  local subscription on any plan (e.g. an API bundle the client moved to), and
+  `last_entry`, the type and the start of the note of the latest log entry.
+  """
+  @spec churned_clients(Keyword.t()) :: [map()]
+  def churned_clients(opts \\ []) do
+    as_of = Keyword.get(opts, :as_of, Date.utc_today())
+
+    Settings.get()
+    |> load()
+    |> build_churned(as_of)
+  end
+
   # ─── Metrics ─────────────────────────────────────────────────────────────
 
   @doc ~s"""
   Headline numbers on `as_of` (default today): client count, at-risk count, client
   and revenue churn, client and revenue renewal. Rates are fractions, `nil` when there
   is nothing to divide by.
+
+  `segments` holds the same numbers per segment, `%{plan: ..., business_email: ...}`.
+  The counts split by the client's segment on `as_of`, churn by the segment on the
+  cohort date, renewal by the due line's plan (see `Periods.segment/2`). The segments
+  add up to the totals.
   """
   @spec metrics(Keyword.t()) :: map()
   def metrics(opts \\ []) do
@@ -249,7 +289,9 @@ defmodule Sanbase.Billing.BusinessClients.Report do
           "(#{Enum.join(settings.business_plan_patterns, ", ")}) covering today, or of a " <>
           "Sanbase #{email_plans} plan when the email is not a free provider " <>
           "(#{length(settings.free_email_domains)} domains) or an admin override says so. " <>
-          "Team accounts, legacy enterprise and API bundles are excluded.",
+          "Team accounts, legacy enterprise and API bundles are excluded. " <>
+          "Split: a client with a business plan line in force is Business plan, any other " <>
+          "(business email or override) is Business email.",
       acv:
         "Annual contract value: the monthly value of the lines in force today times 12. " <>
           "A line's monthly value is its amount excluding tax divided by the months it covers. " <>
@@ -260,27 +302,39 @@ defmodule Sanbase.Billing.BusinessClients.Report do
           "are not deducted.",
       client_churn:
         "Of the clients active #{settings.churn_window_months} months ago (#{window}), " <>
-          "the share not active today. Switching plans is not churn.",
+          "the share not active today. Switching plans is not churn. Split by the segment " <>
+          "the client was in #{settings.churn_window_months} months ago.",
       revenue_churn:
         "Of the MRR those clients paid #{settings.churn_window_months} months ago, the share " <>
           "lost since: each client adds what their MRR dropped, so downgrades count. " <>
-          "Upgrades are shown separately as expansion and do not offset losses.",
+          "Upgrades are shown separately as expansion and do not offset losses. Split by " <>
+          "the segment the client was in #{settings.churn_window_months} months ago.",
       client_renewal:
         "Of the #{intervals} periods that ended in the #{window} and are past their #{grace} " <>
           "(or already renewed), the share followed by a paid business period starting " <>
-          "within the grace. Periods still inside the grace are pending and left out.",
+          "within the grace. Periods still inside the grace are pending and left out. " <>
+          "Split by the plan of the period due: a business plan or a #{email_plans} plan.",
       revenue_renewal:
         "The new ACV of the renewed #{intervals} periods over the old ACV of all due ones " <>
-          "(#{window}, #{grace}). #{upgrades}",
+          "(#{window}, #{grace}). #{upgrades} Split by the plan of the period due.",
       at_risk:
         "Clients whose most severe open log entry is at risk or high risk. " <>
-          "Set by hand in the client log; there are no automatic rules yet.",
+          "Set by hand in the client log; there are no automatic rules yet. Split by the " <>
+          "client's segment today.",
       retention:
         "Share of at-risk clients with at least one \"#{settings.retention_action_type}\" " <>
-          "entry in their log.",
+          "entry in their log. Split by the client's segment today.",
+      churned:
+        "Clients active on some day of the #{window} but not today, latest first. Unlike " <>
+          "client churn this also counts clients who joined and left within the window, so " <>
+          "the list can be longer than the clients lost there. Churned on is the first day " <>
+          "not covered; lost MRR is what they paid the day before. \"Now on\" is a current " <>
+          "subscription on any plan, e.g. an API package: such clients still pay, but " <>
+          "outside the business plans.",
       usage:
         "API key calls in the last #{usage_days} days against the #{usage_days} days before, " <>
-          "and the last web session. Shown for context only; no number depends on them."
+          "and the last activity: the later of the last web session and the last API key " <>
+          "call (within a year). Shown for context only; no number depends on them."
     }
   end
 
@@ -490,15 +544,16 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
   # What the client list shows beyond revenue: subscription, payments, log and usage.
   defp client_context(data, user_ids, as_of) do
-    {api_calls, last_active} = usage(user_ids, as_of, data.settings)
+    {api_calls, last_web, last_api} = usage(user_ids, as_of, data.settings)
 
     %{
       subscriptions: subscriptions_by_user(user_ids, Map.keys(data.plans)),
-      failed_invoices: users_with_failed_invoices(user_ids, data.users, Map.keys(data.plans)),
+      unpaid_invoices: users_with_unpaid_invoices(user_ids, data.users, Map.keys(data.plans)),
       status: manual_status_by_user(data.entries_by_user, user_ids, as_of),
       retention: retention_users(data.entries_by_user, user_ids, as_of, data.settings),
       api_calls: api_calls,
-      last_active: last_active,
+      last_web: last_web,
+      last_api: last_api,
       overrides: data.overrides
     }
   end
@@ -509,16 +564,20 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     sub_status = subscription && subscription.status
     {manual_status, open_count} = Map.get(context.status, id, {:healthy, 0})
     {calls, calls_prev} = context.api_calls.(id)
+    last_web = Map.get(context.last_web, id)
+    last_api = Map.get(context.last_api, id)
 
     client
     |> Map.merge(%{
       subscription_status: sub_status,
       renewal_date: renewal_date(subscription, client),
-      failed_payment?:
-        sub_status in @failed_statuses or MapSet.member?(context.failed_invoices, id),
+      failed_payment?: sub_status in @failed_statuses,
+      unpaid_invoice?: MapSet.member?(context.unpaid_invoices, id),
       api_calls: calls,
       api_calls_prev: calls_prev,
-      last_active_at: Map.get(context.last_active, id),
+      last_web_active_at: last_web,
+      last_api_call_at: last_api,
+      last_active_at: latest(last_web, last_api),
       manual_status: manual_status,
       open_entries_count: open_count,
       retention_action?: MapSet.member?(context.retention, id),
@@ -641,12 +700,13 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   defp renewal_date(_subscription, client), do: client.last_period_end
 
   # Users with a business invoice left unpaid: open or uncollectible past the first
-  # retries, with a line on one of the plans. An unpaid invoice for something else is
-  # not a failed payment of the client.
-  defp users_with_failed_invoices([], _users, _plan_ids), do: MapSet.new()
+  # days, with a line on one of the plans. An unpaid invoice for something else is not
+  # the client's. Not a failed payment: a wire or crypto invoice stays open until the
+  # money arrives.
+  defp users_with_unpaid_invoices([], _users, _plan_ids), do: MapSet.new()
 
-  defp users_with_failed_invoices(user_ids, users, plan_ids) do
-    cutoff = DateTime.add(DateTime.utc_now(), -@failed_payment_after_days, :day)
+  defp users_with_unpaid_invoices(user_ids, users, plan_ids) do
+    cutoff = DateTime.add(DateTime.utc_now(), -@unpaid_invoice_after_days, :day)
 
     customer_to_user =
       for id <- user_ids,
@@ -710,10 +770,10 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     current?(as_of) or DateTime.compare(entry.inserted_at, end_of_day(as_of)) == :lt
   end
 
-  # Returns a lookup of `{calls, previous calls}` per user and the last web activity.
-  # When the ClickHouse query returned nothing - failed, or nobody called - the counts
-  # are `nil` rather than a misleading 0.
-  defp usage([], _as_of, _settings), do: {fn _ -> {nil, nil} end, %{}}
+  # Returns a lookup of `{calls, previous calls}` per user, the last web activity and
+  # the last API key call. When the ClickHouse query returned nothing - failed, or
+  # nobody called - the counts are `nil` rather than a misleading 0.
+  defp usage([], _as_of, _settings), do: {fn _ -> {nil, nil} end, %{}, %{}}
 
   defp usage(user_ids, as_of, settings) do
     until = if current?(as_of), do: DateTime.utc_now(), else: end_of_day(as_of)
@@ -724,15 +784,115 @@ defmodule Sanbase.Billing.BusinessClients.Report do
         do: fn _ -> {nil, nil} end,
         else: &Map.get(calls, &1, {0, 0})
 
-    {lookup, Usage.last_web_activity(user_ids)}
+    {lookup, Usage.last_web_activity(user_ids), Usage.last_api_call(user_ids, until)}
+  end
+
+  defp latest(nil, other), do: other
+  defp latest(other, nil), do: other
+  defp latest(a, b), do: if(DateTime.compare(a, b) == :lt, do: b, else: a)
+
+  # ─── Churned ─────────────────────────────────────────────────────────────
+
+  @last_entry_note_length 120
+
+  defp build_churned(data, as_of) do
+    churned = Periods.churned(data.lines_by_user, as_of, data.settings.churn_window_months)
+    current_plans = current_subscription_plans(Enum.map(churned, & &1.user))
+
+    Enum.map(churned, fn row ->
+      user_id = row.user
+      user = Map.get(data.users, user_id, @unknown_user)
+      lines = Map.fetch!(data.lines_by_user, user_id)
+      main = Enum.max_by(row.last_lines, &Periods.monthly_value/1)
+
+      %{
+        user_id: user_id,
+        email: user.email,
+        username: user.username,
+        stripe_customer_id: user.stripe_customer_id,
+        business_reason: business_reason(row.last_lines, Map.get(data.overrides, user_id)),
+        last_plan_name: main.plan_name,
+        interval: main.interval,
+        joined_on: row.joined_on,
+        churned_on: row.churned_on,
+        lost_mrr: row.lost_mrr,
+        tcv:
+          lines |> Enum.filter(&invoiced_by?(&1, as_of)) |> Enum.map(& &1.amount) |> Enum.sum(),
+        current_subscription: Map.get(current_plans, user_id),
+        last_entry: last_entry(Map.get(data.entries_by_user, user_id, []), as_of)
+      }
+    end)
+  end
+
+  # The plan name of each user's live subscription on any plan: paying before
+  # trialing, then the dearest.
+  defp current_subscription_plans([]), do: %{}
+
+  defp current_subscription_plans(user_ids) do
+    from(s in Subscription,
+      join: p in assoc(s, :plan),
+      where: s.user_id in ^user_ids and s.status in [:active, :past_due, :trialing],
+      distinct: s.user_id,
+      order_by: [
+        asc: s.user_id,
+        desc: fragment("(? IN ('active', 'past_due') AND ? > 0)", s.status, p.amount),
+        desc: p.amount,
+        desc: s.id
+      ],
+      select: {s.user_id, p.name}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  defp last_entry(entries, as_of) do
+    entries
+    |> Enum.filter(&written_by?(&1, as_of))
+    |> Enum.max_by(&{DateTime.to_unix(&1.inserted_at), &1.id}, fn -> nil end)
+    |> case do
+      nil ->
+        nil
+
+      entry ->
+        %{
+          type: entry.type,
+          note: entry.note && String.slice(entry.note, 0, @last_entry_note_length),
+          inserted_at: entry.inserted_at
+        }
+    end
   end
 
   # ─── Metrics ─────────────────────────────────────────────────────────────
 
   defp metrics_for(data, as_of) do
+    window = data.settings.churn_window_months
+    cohort_date = Periods.months_before(as_of, window)
+    clients = base_clients(data, as_of)
+
+    # A client's segment is decided per metric: today's for the counts, the one on the
+    # cohort date for churn, the due line's for renewal.
+    segments =
+      Map.new(Periods.segments(), fn segment ->
+        segment_clients = Enum.filter(clients, &(client_segment(&1) == segment))
+
+        cohort_lines =
+          Map.filter(data.lines_by_user, fn {_user_id, lines} ->
+            Periods.segment(lines, cohort_date) == segment
+          end)
+
+        {segment, metric_fields(data, as_of, segment_clients, cohort_lines, segment)}
+      end)
+
+    %{as_of: as_of, window: %{from: cohort_date, to: as_of}}
+    |> Map.merge(metric_fields(data, as_of, clients, data.lines_by_user, nil))
+    |> Map.merge(%{segments: segments, settings: data.settings})
+  end
+
+  # The headline numbers over `clients` (counts), `churn_lines` (the churn cohort) and
+  # the due lines of `segment` (`nil` for all).
+  defp metric_fields(data, as_of, clients, churn_lines, segment) do
     settings = data.settings
     window = settings.churn_window_months
-    clients = base_clients(data, as_of)
     user_ids = Enum.map(clients, & &1.user_id)
     status = manual_status_by_user(data.entries_by_user, user_ids, as_of)
 
@@ -740,19 +900,18 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       for {user_id, {manual_status, _count}} <- status, manual_status != :healthy, do: user_id
 
     retention = retention_users(data.entries_by_user, at_risk, as_of, settings)
-    churn = Periods.churn(data.lines_by_user, as_of, window)
+    churn = Periods.churn(churn_lines, as_of, window)
 
     renewal =
       Periods.renewal(data.lines_by_user, as_of,
         window_months: window,
         intervals: settings.renewal_intervals,
         grace_days: settings.renewal_grace_days,
-        upgrades_full_value: settings.renewal_upgrades_full_value
+        upgrades_full_value: settings.renewal_upgrades_full_value,
+        segment: segment
       )
 
     %{
-      as_of: as_of,
-      window: %{from: Periods.months_before(as_of, window), to: as_of},
       client_count: length(clients),
       at_risk_count: length(at_risk),
       retention_action_pct:
@@ -760,10 +919,13 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       client_churn: churn.client,
       revenue_churn: churn.revenue,
       client_renewal: renewal.client,
-      revenue_renewal: renewal.revenue,
-      settings: settings
+      revenue_renewal: renewal.revenue
     }
   end
+
+  # An override or the business-email rule both put a client in the email segment.
+  defp client_segment(%{business_reason: :plan}), do: :plan
+  defp client_segment(_client), do: :business_email
 
   # ─── Invoices ────────────────────────────────────────────────────────────
 

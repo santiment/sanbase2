@@ -149,6 +149,54 @@ defmodule Sanbase.Billing.BusinessClients.PeriodsTest do
     end
   end
 
+  describe "churned/3" do
+    @as_of ~D[2026-10-01]
+
+    test "who left within the window, latest first, with what they paid last" do
+      lines_by_user = %{
+        # A client since before the window who left in it, after an upgrade.
+        left: [
+          yearly(~D[2024-06-01], 600_000),
+          line(~D[2025-06-01], ~D[2026-03-01], 270_000, subscription: "sub_2"),
+          line(~D[2026-03-01], ~D[2026-06-01], 99_900),
+          line(~D[2026-05-01], ~D[2026-06-01], 1_000, proration: true)
+        ],
+        # Joined and left within the window: not in the churn cohort, still churned.
+        brief: [line(~D[2026-02-01], ~D[2026-03-01], 42_000)],
+        active: [line(~D[2025-01-01], ~D[2025-02-01], 42_000), yearly(~D[2026-01-01], 1_200)],
+        gone_before: [line(~D[2025-08-01], ~D[2025-09-01], 42_000)],
+        switched: [
+          line(~D[2026-01-01], ~D[2026-05-01], 160_000, subscription: "old"),
+          line(~D[2026-05-01], ~D[2026-11-01], 600_000, subscription: "new")
+        ],
+        zero: [line(~D[2026-02-01], ~D[2026-03-01], 0)]
+      }
+
+      assert [left, brief] = Periods.churned(lines_by_user, @as_of, 12)
+
+      assert left.user == :left
+      assert left.churned_on == ~D[2026-06-01]
+      assert left.lost_mrr == 33_300
+      assert left.joined_on == ~D[2024-06-01]
+      assert [%{amount: 99_900}] = left.last_lines
+
+      assert brief.user == :brief
+      assert brief.churned_on == ~D[2026-03-01]
+      assert brief.lost_mrr == 42_000
+      assert brief.joined_on == ~D[2026-02-01]
+    end
+
+    test "a line ending on the window start is outside it, one ending on as_of inside" do
+      lines_by_user = %{
+        edge_out: [line(~D[2025-09-01], ~D[2025-10-01], 1_000)],
+        edge_in: [line(~D[2026-09-01], ~D[2026-10-01], 1_000)]
+      }
+
+      assert [%{user: :edge_in, churned_on: @as_of}] =
+               Periods.churned(lines_by_user, @as_of, 12)
+    end
+  end
+
   describe "renewal/3" do
     test "a yearly period renewed on time" do
       lines_by_user = %{a: [yearly(~D[2025-03-01], 1_200_000), yearly(~D[2026-03-01], 1_200_000)]}
@@ -256,6 +304,58 @@ defmodule Sanbase.Billing.BusinessClients.PeriodsTest do
 
       assert Periods.renewal(lines_by_user, ~D[2026-10-01], @renewal_opts).client ==
                %{rate: 0.0, renewed: 0, due: 1}
+    end
+  end
+
+  describe "segments" do
+    @as_of ~D[2026-10-01]
+
+    defp plan(line), do: Map.put(line, :kind, :business)
+    defp email(line), do: Map.put(line, :kind, :email)
+
+    test "a business plan line in force makes the segment :plan, otherwise :business_email" do
+      both = [
+        plan(yearly(~D[2026-03-01], 1_200_000, subscription: "a")),
+        email(yearly(~D[2026-03-01], 52_900, subscription: "b"))
+      ]
+
+      assert Periods.segment(both, @as_of) == :plan
+      assert Periods.segment([email(yearly(~D[2026-03-01], 52_900))], @as_of) == :business_email
+      # An expired plan line does not count; only the lines in force on the date.
+      assert Periods.segment([plan(yearly(~D[2024-03-01], 1_200_000))], @as_of) ==
+               :business_email
+
+      assert Periods.line_segment(plan(yearly(~D[2026-03-01], 1))) == :plan
+      assert Periods.line_segment(email(yearly(~D[2026-03-01], 1))) == :business_email
+    end
+
+    test "renewal per segment counts the due lines of that segment and sums to the total" do
+      lines_by_user = %{
+        # A business plan year renewed.
+        a: [plan(yearly(~D[2025-03-01], 1_200_000)), plan(yearly(~D[2026-03-01], 1_200_000))],
+        # An email-plan year renewed by a business plan: due in the email segment.
+        b: [email(yearly(~D[2025-04-01], 52_900)), plan(yearly(~D[2026-04-01], 1_200_000))],
+        # An email-plan year not renewed.
+        c: [email(yearly(~D[2025-05-01], 52_900))]
+      }
+
+      total = Periods.renewal(lines_by_user, @as_of, @renewal_opts)
+
+      by_segment =
+        Map.new(Periods.segments(), fn segment ->
+          opts = Keyword.put(@renewal_opts, :segment, segment)
+          {segment, Periods.renewal(lines_by_user, @as_of, opts)}
+        end)
+
+      assert total.client == %{rate: 2 / 3, renewed: 2, due: 3}
+      assert by_segment.plan.client == %{rate: 1.0, renewed: 1, due: 1}
+      assert by_segment.business_email.client == %{rate: 0.5, renewed: 1, due: 2}
+
+      assert by_segment.plan.revenue.due_acv + by_segment.business_email.revenue.due_acv ==
+               total.revenue.due_acv
+
+      assert by_segment.plan.revenue.renewed_acv + by_segment.business_email.revenue.renewed_acv ==
+               total.revenue.renewed_acv
     end
   end
 end

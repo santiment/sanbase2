@@ -16,12 +16,14 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
       format_number: 1,
       format_date: 1,
       format_datetime: 1,
-      renewal_soon?: 2,
+      renewal_highlight?: 3,
+      activity_source: 1,
       severity_label: 1,
       status_badge: 1,
       reason_badge: 1,
       note_mark: 1,
       formula_notes: 1,
+      stripe_customer_link: 1,
       paid_by_mix: 1,
       paid_by_label: 1,
       paid_by_badge_class: 1
@@ -45,6 +47,7 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
           |> assign(:today, Date.utc_today())
           |> assign(:settings, settings)
           |> assign(:notes, BusinessClients.formula_notes(settings))
+          |> assign(:notes_open, false)
           |> assign_entry_form(BusinessClients.change_entry(%{}))
           |> assign(:override_form, to_form(%{"business" => "true", "note" => ""}, as: :override))
           |> load_entries()
@@ -64,6 +67,17 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
   # ─── Events ──────────────────────────────────────────────────────────────
 
   @impl true
+  def handle_event("toggle_section", %{"section" => "notes"}, socket) do
+    {:noreply, assign(socket, :notes_open, !socket.assigns.notes_open)}
+  end
+
+  def handle_event("toggle_section", _params, socket), do: {:noreply, socket}
+
+  # An asterisk opens the formula notes; the link's own anchor jumps to the note.
+  def handle_event("open_notes", _params, socket) do
+    {:noreply, assign(socket, :notes_open, true)}
+  end
+
   def handle_event("validate_entry", %{"entry" => params}, socket) do
     changeset = params |> BusinessClients.change_entry() |> Map.put(:action, :validate)
     {:noreply, assign_entry_form(socket, changeset)}
@@ -265,14 +279,12 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
           >
             user #{@user_id}
           </.link>
-          <.link
-            :if={detail.client && detail.client.stripe_customer_id}
-            href={CreditPayments.stripe_customer_url(detail.client.stripe_customer_id)}
-            target="_blank"
-            class="link link-hover font-mono"
-          >
-            {detail.client.stripe_customer_id}
-          </.link>
+          <.stripe_customer_link
+            :if={detail.client}
+            id="stripe-customer"
+            customer_id={detail.client.stripe_customer_id}
+            show_id
+          />
         </div>
 
         <div
@@ -315,14 +327,19 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
             </div>
             <div class="card bg-base-100 border border-base-300 p-4">
               <div class="text-xs uppercase text-base-content/60">Renewal</div>
-              <div class={[
-                "text-2xl font-bold tabular-nums",
-                renewal_soon?(detail.client.renewal_date, @today) && "text-warning"
-              ]}>
+              <div
+                id="renewal-date"
+                class={[
+                  "text-2xl font-bold tabular-nums",
+                  renewal_highlight?(detail.client, @settings.renewal_intervals, @today) &&
+                    "text-warning"
+                ]}
+              >
                 {format_date(detail.client.renewal_date)}
               </div>
               <div
-                :if={renewal_soon?(detail.client.renewal_date, @today)}
+                :if={renewal_highlight?(detail.client, @settings.renewal_intervals, @today)}
+                id="renewal-soon"
                 class="text-xs text-warning"
               >
                 within 30 days
@@ -361,8 +378,17 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
                       :if={detail.client.failed_payment?}
                       id="failed-payment"
                       class="badge badge-sm badge-error ml-2"
+                      title="The business subscription is past due or unpaid: a charge failed"
                     >
                       <.icon name="hero-exclamation-triangle" class="w-3 h-3" /> payment failed
+                    </span>
+                    <span
+                      :if={detail.client.unpaid_invoice?}
+                      id="unpaid-invoice"
+                      class="badge badge-sm badge-warning badge-soft ml-2"
+                      title="A business invoice has been open for more than 7 days - e.g. a wire or crypto payment not received yet"
+                    >
+                      <.icon name="hero-clock" class="w-3 h-3" /> unpaid invoice
                     </span>
                   </td>
                 </tr>
@@ -397,8 +423,20 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
                   </td>
                 </tr>
                 <tr>
-                  <th class="text-base-content/60 font-normal">Last active</th>
-                  <td>{format_datetime(detail.client.last_active_at)}</td>
+                  <th class="text-base-content/60 font-normal">
+                    Last active<.note_mark key={:usage} notes={@notes} />
+                  </th>
+                  <td id="last-active">
+                    {format_datetime(detail.client.last_active_at)}
+                    <span :if={activity_source(detail.client)} class="badge badge-xs badge-ghost ml-1">
+                      {activity_source(detail.client)}
+                    </span>
+                    <span class="text-base-content/60 ml-2">
+                      (web: {format_datetime(detail.client.last_web_active_at)}, API: {format_datetime(
+                        detail.client.last_api_call_at
+                      )})
+                    </span>
+                  </td>
                 </tr>
                 <tr>
                   <th class="text-base-content/60 font-normal">
@@ -580,7 +618,7 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
       <div
         :if={can_edit?(assigns)}
         id="add-entry-panel"
-        class="card bg-base-100 border border-base-300 p-4 mb-4"
+        class="card bg-base-100 border border-base-300 p-4 mb-4 scroll-mt-20 target:border-primary transition-colors"
       >
         <.form
           for={@entry_form}
@@ -682,7 +720,7 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
         </table>
       </div>
 
-      <.formula_notes notes={@notes} />
+      <.formula_notes notes={@notes} open={@notes_open} />
     </div>
     """
   end

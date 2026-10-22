@@ -52,9 +52,12 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         },
         subscription_status: "active",
         failed_payment?: false,
+        unpaid_invoice?: false,
         api_calls: 1_200,
         api_calls_prev: 900,
         last_active_at: ~U[2026-10-20 10:00:00Z],
+        last_web_active_at: ~U[2026-10-20 10:00:00Z],
+        last_api_call_at: nil,
         manual_status: :healthy,
         open_entries_count: 0,
         retention_action?: false,
@@ -76,6 +79,26 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         revenue_churn: %{rate: 0.1, lost_mrr: 10_000, base_mrr: 100_000, expansion_mrr: 5_000},
         client_renewal: %{rate: 0.75, renewed: 3, due: 4},
         revenue_renewal: %{rate: 0.8, renewed_acv: 800_000, due_acv: 1_000_000},
+        segments: %{
+          plan: %{
+            client_count: 2,
+            at_risk_count: 0,
+            retention_action_pct: nil,
+            client_churn: %{rate: 0.0, lost: 0, base: 1},
+            revenue_churn: %{rate: 0.0, lost_mrr: 0, base_mrr: 60_000, expansion_mrr: 5_000},
+            client_renewal: %{rate: 1.0, renewed: 2, due: 2},
+            revenue_renewal: %{rate: 1.0, renewed_acv: 700_000, due_acv: 700_000}
+          },
+          business_email: %{
+            client_count: 1,
+            at_risk_count: 1,
+            retention_action_pct: 50.0,
+            client_churn: %{rate: 1 / 3, lost: 1, base: 3},
+            revenue_churn: %{rate: 0.25, lost_mrr: 10_000, base_mrr: 40_000, expansion_mrr: 0},
+            client_renewal: %{rate: 0.5, renewed: 1, due: 2},
+            revenue_renewal: %{rate: 1 / 3, renewed_acv: 100_000, due_acv: 300_000}
+          }
+        },
         settings: Settings.defaults()
       },
       Map.new(attrs)
@@ -88,7 +111,14 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
 
   defp clients do
     [
-      client(user_id: 101, email: "big@acme.com", mrr: 90_000, acv: 1_080_000),
+      client(
+        user_id: 101,
+        email: "big@acme.com",
+        mrr: 90_000,
+        acv: 1_080_000,
+        last_active_at: ~U[2026-10-21 08:00:00Z],
+        last_api_call_at: ~U[2026-10-21 08:00:00Z]
+      ),
       client(
         user_id: 102,
         email: "risky@globex.com",
@@ -110,26 +140,81 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         override: true,
         mrr: 1_000,
         acv: 12_000,
+        stripe_customer_id: nil,
         renewal_date: nil,
-        manual_status: :high_risk
+        manual_status: :high_risk,
+        unpaid_invoice?: true
+      ),
+      # Monthly: renews within days every month, so never highlighted.
+      client(
+        user_id: 104,
+        email: "monthly@hooli.com",
+        plan_name: "BUSINESS_PRO",
+        interval: "month",
+        mrr: 500,
+        acv: 6_000,
+        renewal_date: Date.add(today(), 5)
       )
     ]
   end
 
-  defp report_mocks(extra_sync_mocks \\ []) do
+  defp churned do
+    [
+      %{
+        user_id: 201,
+        email: "gone@umbrella.com",
+        username: "umbrella",
+        stripe_customer_id: "cus_umbrella",
+        business_reason: :plan,
+        last_plan_name: "BUSINESS_MAX",
+        interval: "month",
+        joined_on: ~D[2025-02-01],
+        churned_on: Date.add(today(), -20),
+        lost_mrr: 99_900,
+        tcv: 899_100,
+        current_subscription: "BUNDLE",
+        last_entry: %{
+          type: "Complaint",
+          note: "Too expensive",
+          inserted_at: ~U[2026-09-01 10:00:00Z]
+        }
+      },
+      %{
+        user_id: 202,
+        email: "left@soylent.com",
+        username: nil,
+        stripe_customer_id: nil,
+        business_reason: :business_email,
+        last_plan_name: "PRO",
+        interval: "year",
+        joined_on: ~D[2026-01-10],
+        churned_on: Date.add(today(), -90),
+        lost_mrr: 4_900,
+        tcv: 58_800,
+        current_subscription: nil,
+        last_entry: nil
+      }
+    ]
+  end
+
+  defp report_mocks(extra_sync_mocks \\ [], churned \\ churned()) do
     monthly = [
       metrics(month: Date.beginning_of_month(today()), source: :computed),
       metrics(
         month: today() |> Date.shift(month: -1) |> Date.beginning_of_month(),
         source: :snapshot,
-        client_count: 7
+        client_count: 7,
+        # Taken before the segment split.
+        segments: nil
       )
     ]
 
     [
       {Report, [:passthrough],
        [
-         page: fn _opts -> %{clients: clients(), metrics: metrics(), monthly: monthly} end,
+         page: fn _opts ->
+           %{clients: clients(), churned: churned, metrics: metrics(), monthly: monthly}
+         end,
          formula_notes: fn _settings -> notes() end
        ]},
       {InvoiceMirror, [:passthrough],
@@ -194,6 +279,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
                )
 
         assert has_element?(view, "#client-103", "High Risk")
+        assert has_element?(view, "#client-103", "unpaid invoice")
+        refute has_element?(view, "#client-103", "payment failed")
+        refute has_element?(view, "#client-102", "unpaid invoice")
 
         assert has_element?(view, "#last-synced-at", "2026-10-20 06:30")
 
@@ -211,6 +299,104 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         refute has_element?(view, "#export-business-email-users")
 
         assert_called(Report.page(as_of: today(), months: 12))
+      end
+    end
+
+    test "breaks each headline number down by segment" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        # The big number stays the total.
+        assert has_element?(view, "#metric-client-count", "3")
+        assert has_element?(view, "#metric-client-count-plan", "Business plan:")
+        assert has_element?(view, "#metric-client-count-plan .bg-indigo-500")
+        assert has_element?(view, "#metric-client-count-plan", "2")
+        assert has_element?(view, "#metric-client-count-business_email", "Business email:")
+        assert has_element?(view, "#metric-client-count-business_email .bg-amber-500")
+        assert has_element?(view, "#metric-client-count-business_email", "1")
+        assert has_element?(view, "#metric-retention-plan", "-")
+        assert has_element?(view, "#metric-client-churn-plan", "0.0% · 0/1")
+        assert has_element?(view, "#metric-client-churn-business_email", "1/3")
+        assert has_element?(view, "#metric-revenue-churn-business_email", "25.0% · $100/$400")
+        assert has_element?(view, "#metric-client-renewal-business_email", "50.0% · 1/2")
+        assert has_element?(view, "#metric-revenue-renewal-plan", "100.0% · $7,000/$7,000")
+      end
+    end
+
+    test "the monthly table switches between the total and a segment" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+        current = "#month-#{Date.beginning_of_month(today())}"
+        previous = "#month-#{today() |> Date.shift(month: -1) |> Date.beginning_of_month()}"
+
+        assert has_element?(view, ~s(#monthly-segment-total[aria-pressed="true"]))
+        assert has_element?(view, current, "(1/4)")
+        assert has_element?(view, previous, "(1/4)")
+
+        view |> element("#monthly-segment-plan") |> render_click()
+
+        assert has_element?(view, ~s(#monthly-segment-plan[aria-pressed="true"]))
+        assert has_element?(view, current, "(0/1)")
+        assert has_element?(view, current, "(2/2)")
+        # A snapshot taken before the split has no segment numbers.
+        refute has_element?(view, previous, "(1/4)")
+        assert has_element?(view, previous, "-")
+
+        view |> element("#monthly-segment-business_email") |> render_click()
+        assert has_element?(view, current, "(1/3)")
+
+        view |> element("#monthly-segment-total") |> render_click()
+        assert has_element?(view, current, "(1/4)")
+      end
+    end
+
+    test "shows the recently churned clients and where they are now" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(view, "#churned-summary", "2 client(s)")
+        assert has_element?(view, "#churned-summary", "$1,048")
+        assert has_element?(view, ~s(#churned-heading a[href="#formula-churned"]))
+        assert has_element?(view, "#formula-churned", "Formula for churned")
+
+        assert has_element?(view, ~s(#churned-201 a[href="/admin/business_clients/201"]))
+        assert has_element?(view, "#churned-201", "BUSINESS_MAX")
+        assert has_element?(view, "#churned-201", "$999")
+        assert has_element?(view, "#churned-201", Date.to_iso8601(Date.add(today(), -20)))
+        assert has_element?(view, "#churned-201 #churned-now-on-201", "BUNDLE")
+        assert has_element?(view, "#churned-201", "Too expensive")
+
+        assert has_element?(
+                 view,
+                 ~s(#churned-201 a#churned-stripe-customer-201[href="https://dashboard.stripe.com/customers/cus_umbrella"])
+               )
+
+        assert has_element?(view, "#churned-202", "Business email")
+        refute has_element?(view, "#churned-now-on-202")
+        refute has_element?(view, "#churned-stripe-customer-202")
+
+        assert has_element?(
+                 view,
+                 ~s(#export-churned[href="/admin/business_clients/export/churned"])
+               )
+      end
+    end
+
+    test "says when nobody churned" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks([], []) do
+        view = open_page(conn)
+
+        assert has_element?(view, "#churned-empty")
+        assert has_element?(view, "#churned-summary", "0 client(s)")
+        refute has_element?(view, "#churned-rows tr[id^=churned-2]")
       end
     end
 
@@ -239,6 +425,97 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
       with_mocks mocks do
         view = open_page(conn)
         assert has_element?(view, "#coverage-warning", "2026-01-01 to 2026-01-31")
+      end
+    end
+
+    test "links each client to its Stripe customer in a new tab" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(
+                 view,
+                 ~s(#client-101 a#stripe-customer-101[href="https://dashboard.stripe.com/customers/cus_acme"][target="_blank"][rel="noopener noreferrer"])
+               )
+
+        # No customer id, no link.
+        refute has_element?(view, "#stripe-customer-103")
+      end
+    end
+
+    test "highlights only renewals on a renewal interval, by default yearly" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(view, "#clients-count", "Yearly renewals within 30 days")
+
+        assert has_element?(
+                 view,
+                 "#client-102 .badge-warning",
+                 Date.to_iso8601(Date.add(today(), 10))
+               )
+
+        # A monthly renewal is always within 30 days: shown plain.
+        assert has_element?(view, "#client-104", Date.to_iso8601(Date.add(today(), 5)))
+        refute has_element?(view, "#client-104 .badge-warning")
+      end
+    end
+
+    test "shows the later of web and API activity with its source" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(view, "#client-101", "2026-10-21 08:00")
+        assert has_element?(view, "#client-101 .badge", "API")
+        assert has_element?(view, "#client-102 .badge", "web")
+      end
+    end
+
+    test "an editor gets a Log link to the client's add-entry form; a viewer does not" do
+      {_user, conn} = sign_in(:role_admin_panel_editor)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(
+                 view,
+                 ~s(#log-client-102[href="/admin/business_clients/102#add-entry-panel"])
+               )
+      end
+
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+        refute has_element?(view, "#log-client-102")
+      end
+    end
+
+    test "the formula notes start collapsed; an asterisk or the summary opens them" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(view, "details#formula-notes")
+        refute has_element?(view, "#formula-notes[open]")
+
+        view
+        |> element(~s(#metric-client-churn a[href="#formula-client_churn"]))
+        |> render_click()
+
+        assert has_element?(view, "#formula-notes[open]")
+
+        view |> element("#formula-notes-toggle") |> render_click()
+        refute has_element?(view, "#formula-notes[open]")
+
+        view |> element("#formula-notes-toggle") |> render_click()
+        assert has_element?(view, "#formula-notes[open]")
       end
     end
   end
@@ -273,6 +550,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         |> render_change()
 
         assert has_element?(view, "#client-102")
+        assert has_element?(view, "#client-104")
         refute has_element?(view, "#client-101")
         refute has_element?(view, "#client-103")
 
@@ -282,7 +560,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
 
         assert has_element?(view, "#client-103")
         refute has_element?(view, "#client-102")
-        assert has_element?(view, "#clients-count", "Showing 1 of 3")
+        assert has_element?(view, "#clients-count", "Showing 1 of 4")
 
         view
         |> form("#client-filters", %{"plan" => "all", "query" => "nobody-matches"})
@@ -304,14 +582,14 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
       with_mocks report_mocks() do
         view = open_page(conn)
 
-        assert row_ids(view) == ["client-101", "client-102", "client-103"]
+        assert row_ids(view) == ["client-101", "client-102", "client-103", "client-104"]
 
         view |> element("#sort-mrr") |> render_click()
-        assert row_ids(view) == ["client-103", "client-102", "client-101"]
+        assert row_ids(view) == ["client-104", "client-103", "client-102", "client-101"]
 
         view |> element("#sort-renewal_date") |> render_click()
         # Soonest first, the client without a renewal date last.
-        assert row_ids(view) == ["client-102", "client-101", "client-103"]
+        assert row_ids(view) == ["client-104", "client-102", "client-101", "client-103"]
       end
     end
   end
@@ -434,14 +712,51 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
   end
 
   describe "settings" do
-    test "only an owner sees the settings form" do
+    test "collapsed and read-only for everyone who is not an owner" do
       for role <- [:role_admin_panel_viewer, :role_admin_panel_editor] do
         {_user, conn} = sign_in(role)
 
         with_mocks report_mocks() do
           view = open_page(conn)
-          refute has_element?(view, "#settings-form")
+
+          assert has_element?(view, "details#settings-section")
+          refute has_element?(view, "#settings-section[open]")
+          assert has_element?(view, "#settings-fields[disabled]")
+          assert has_element?(view, "#settings-read-only")
+          refute has_element?(view, "#edit-settings")
+          refute has_element?(view, "#save-settings")
+
+          view |> element("#settings-toggle") |> render_click()
+          assert has_element?(view, "#settings-section[open]")
+
+          # Unlocking is checked on the server too.
+          render_hook(view, "edit_settings", %{})
+          assert render(view) =~ "needs the Owner role"
+          assert has_element?(view, "#settings-fields[disabled]")
         end
+      end
+    end
+
+    test "an owner unlocks the settings with Edit and Cancel locks them again" do
+      {_user, conn} = sign_in(:role_admin_panel_owner)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(view, "#settings-fields[disabled]")
+        refute has_element?(view, "#save-settings")
+
+        view |> element("#edit-settings") |> render_click()
+
+        assert has_element?(view, "#settings-section[open]")
+        refute has_element?(view, "#settings-fields[disabled]")
+        assert has_element?(view, "#save-settings")
+
+        view |> element("#cancel-settings") |> render_click()
+
+        assert has_element?(view, "#settings-fields[disabled]")
+        assert has_element?(view, "#edit-settings")
+        assert BusinessClients.settings().churn_window_months == 12
       end
     end
 
@@ -451,8 +766,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
       with_mocks report_mocks() do
         view = open_page(conn)
 
-        assert has_element?(view, "#settings-form")
         assert has_element?(view, "#settings-last-change", "defaults apply")
+
+        view |> element("#edit-settings") |> render_click()
 
         html =
           view
@@ -478,6 +794,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         assert settings.business_email_product_ids == [2, 5]
         assert settings.issue_types == ["Complaint", "Retention action", "Call"]
         assert has_element?(view, "#settings-last-change", user.email)
+        # Saved: back to read-only.
+        assert has_element?(view, "#settings-fields[disabled]")
+        assert has_element?(view, "#edit-settings")
       end
     end
 

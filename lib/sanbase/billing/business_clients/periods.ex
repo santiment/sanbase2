@@ -12,7 +12,8 @@ defmodule Sanbase.Billing.BusinessClients.Periods do
     * `:subscription` - the Stripe subscription id of the invoice, or anything unique
       for a line outside a subscription
 
-  and optionally `:interval` (`"month"` or `"year"`) for the renewal rules.
+  and optionally `:interval` (`"month"` or `"year"`) for the renewal rules and `:kind`
+  (`:business` or `:email`) for the segments.
 
   Only *countable* lines - not a proration and a positive amount - say whether a client
   is active and what they pay per month. A proration settles a change in the middle
@@ -21,6 +22,8 @@ defmodule Sanbase.Billing.BusinessClients.Periods do
   """
 
   @days_per_month 30.44
+
+  @segments [:plan, :business_email]
 
   @type line :: %{
           required(:period_start) => Date.t(),
@@ -95,6 +98,30 @@ defmodule Sanbase.Billing.BusinessClients.Periods do
   end
 
   @doc ~s"""
+  The segments the metrics are split into: `:plan` and `:business_email`.
+  """
+  @spec segments() :: [:plan | :business_email]
+  def segments, do: @segments
+
+  @doc ~s"""
+  A user's segment on the date: `:plan` when a line in force is of a business plan
+  (`kind: :business`), otherwise `:business_email` - an email-plan line counted by the
+  email rule or an admin override.
+  """
+  @spec segment([line()], Date.t()) :: :plan | :business_email
+  def segment(lines, date) do
+    if Enum.any?(current_lines(lines, date), &(&1[:kind] == :business)),
+      do: :plan,
+      else: :business_email
+  end
+
+  @doc ~s"""
+  A line's segment: `:plan` for a business plan line, `:business_email` for any other.
+  """
+  @spec line_segment(line()) :: :plan | :business_email
+  def line_segment(line), do: if(line[:kind] == :business, do: :plan, else: :business_email)
+
+  @doc ~s"""
   The date `months` months before `date`, clamped to the end of a shorter month.
   """
   @spec months_before(Date.t(), non_neg_integer()) :: Date.t()
@@ -152,6 +179,48 @@ defmodule Sanbase.Billing.BusinessClients.Periods do
   end
 
   @doc ~s"""
+  The users who churned within a rolling window: active on at least one day of
+  `[as_of - window_months, as_of)` and not active on `as_of`. That is, a countable
+  line ended within `(as_of - window_months, as_of]` and none covers `as_of`. Unlike
+  `churn/3` this includes users who joined and left within the window.
+
+  Per user: `:user` (the key of `lines_by_user`), `:churned_on` - the latest end of a
+  line that ended by `as_of`, the first day not covered - `:last_lines`, the lines in
+  force on the day before, `:lost_mrr`, their MRR then, and `:joined_on`, the start of
+  the first countable line. Latest `churned_on` first.
+  """
+  @spec churned(%{term() => [line()]}, Date.t(), pos_integer()) :: [
+          %{
+            user: term(),
+            churned_on: Date.t(),
+            last_lines: [line()],
+            lost_mrr: non_neg_integer(),
+            joined_on: Date.t()
+          }
+        ]
+  def churned(lines_by_user, as_of, window_months) do
+    window_start = months_before(as_of, window_months)
+
+    for {user, lines} <- lines_by_user,
+        countable = Enum.filter(lines, &countable?/1),
+        ended = Enum.filter(countable, &ended_within?(&1, window_start, as_of)),
+        ended != [],
+        not active?(countable, as_of) do
+      churned_on = ended |> Enum.map(& &1.period_end) |> Enum.max(Date)
+      last_lines = current_lines(countable, Date.add(churned_on, -1))
+
+      %{
+        user: user,
+        churned_on: churned_on,
+        last_lines: last_lines,
+        lost_mrr: last_lines |> Enum.map(&monthly_value/1) |> Enum.sum(),
+        joined_on: countable |> Enum.map(& &1.period_start) |> Enum.min(Date)
+      }
+    end
+    |> Enum.sort_by(& &1.churned_on, {:desc, Date})
+  end
+
+  @doc ~s"""
   Client and revenue renewal over a rolling window.
 
   A countable line whose `:interval` is in `intervals` is *due* when its period ended
@@ -167,7 +236,11 @@ defmodule Sanbase.Billing.BusinessClients.Periods do
   due lines' old ACV. With `upgrades_full_value: false` each new ACV is capped at the
   old one, so upgrades cannot lift the rate above what was due.
 
-  Options: `:window_months`, `:intervals`, `:grace_days`, `:upgrades_full_value`.
+  With `:segment` only the due lines of that segment (`line_segment/1`) count; the
+  renewal may still be a line of the other segment.
+
+  Options: `:window_months`, `:intervals`, `:grace_days`, `:upgrades_full_value`,
+  `:segment` (default `nil`, every line).
   """
   @spec renewal(%{term() => [line()]}, Date.t(), Keyword.t()) :: %{
           client: %{
@@ -206,11 +279,13 @@ defmodule Sanbase.Billing.BusinessClients.Periods do
     intervals = Keyword.fetch!(opts, :intervals)
     grace_days = Keyword.fetch!(opts, :grace_days)
     full_value? = Keyword.get(opts, :upgrades_full_value, true)
+    segment = Keyword.get(opts, :segment)
 
     for {_user, lines} <- lines_by_user,
         countable = Enum.filter(lines, &countable?/1),
         line <- countable,
         line[:interval] in intervals,
+        segment == nil or line_segment(line) == segment,
         ended_within?(line, window_start, as_of),
         # A one-element generator, so a `nil` renewal is bound instead of filtering.
         renewal <- [renewal_line(line, countable, grace_days, as_of)],

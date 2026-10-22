@@ -22,6 +22,7 @@ defmodule Sanbase.Billing.BusinessClients do
 
   defdelegate page(opts \\ []), to: Report
   defdelegate list_clients(opts \\ []), to: Report
+  defdelegate churned_clients(opts \\ []), to: Report
   defdelegate metrics(opts \\ []), to: Report
   defdelegate monthly_metrics(opts \\ []), to: Report
   defdelegate client_detail(user_id), to: Report

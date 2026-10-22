@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.Admin.BusinessClientsController do
   @moduledoc """
-  CSV exports for the Business Clients admin page: the clients as of today, every user
-  with a business email, and the monthly churn and renewal numbers. Amounts are in
-  dollars with two decimals, so a spreadsheet does not have to divide by 100.
+  CSV exports for the Business Clients admin page: the clients as of today, the
+  recently churned clients, every user with a business email, and the monthly churn
+  and renewal numbers, in total and per segment (`plan_` and `email_` columns). Amounts
+  are in dollars with two decimals, so a spreadsheet does not have to divide by 100.
   """
 
   use SanbaseWeb, :controller
@@ -15,16 +16,29 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
   @client_headers ~w(user_id email username stripe_customer_id plan_name product_id interval
                      business_reason override mrr_usd acv_usd tcv_usd start_date renewal_date) ++
                     Enum.map(@paid_by_keys, &"paid_by_#{&1}_usd") ++
-                    ~w(subscription_status failed_payment api_calls api_calls_prev
-                       last_active_at manual_status open_entries_count retention_action)
+                    ~w(subscription_status failed_payment unpaid_invoice api_calls
+                       api_calls_prev last_active_at last_web_active_at last_api_call_at
+                       manual_status open_entries_count retention_action)
+
+  @churned_headers ~w(user_id email username stripe_customer_id business_reason
+                      last_plan_name interval joined_on churned_on lost_mrr_usd tcv_usd
+                      current_subscription last_entry_type last_entry_note)
 
   @business_email_headers ~w(user_id email username registered_at plan_name paying)
 
-  @monthly_headers ~w(month source window_from window_to client_count at_risk_count
-                      retention_action_pct client_churn_rate clients_lost client_base
-                      revenue_churn_rate lost_mrr_usd base_mrr_usd expansion_mrr_usd
-                      client_renewal_rate clients_renewed clients_due revenue_renewal_rate
-                      renewed_acv_usd due_acv_usd)
+  @metric_headers ~w(client_count at_risk_count retention_action_pct client_churn_rate
+                     clients_lost client_base revenue_churn_rate lost_mrr_usd base_mrr_usd
+                     expansion_mrr_usd client_renewal_rate clients_renewed clients_due
+                     revenue_renewal_rate renewed_acv_usd due_acv_usd)
+
+  # The totals, then the same columns per segment.
+  @segment_prefixes [plan: "plan_", business_email: "email_"]
+
+  @monthly_headers ~w(month source window_from window_to) ++
+                     @metric_headers ++
+                     Enum.flat_map(@segment_prefixes, fn {_segment, prefix} ->
+                       Enum.map(@metric_headers, &(prefix <> &1))
+                     end)
 
   def export(conn, %{"what" => "clients"}) do
     today = Date.utc_today()
@@ -35,6 +49,18 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
       "business_clients_#{today}.csv",
       @client_headers,
       Enum.map(rows, &client_row/1)
+    )
+  end
+
+  def export(conn, %{"what" => "churned"}) do
+    today = Date.utc_today()
+    rows = BusinessClients.churned_clients(as_of: today)
+
+    send_csv(
+      conn,
+      "business_clients_churned_#{today}.csv",
+      @churned_headers,
+      Enum.map(rows, &churned_row/1)
     )
   end
 
@@ -96,13 +122,35 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
       [
         c.subscription_status,
         c.failed_payment?,
+        c.unpaid_invoice?,
         c.api_calls,
         c.api_calls_prev,
         datetime(c.last_active_at),
+        datetime(c.last_web_active_at),
+        datetime(c.last_api_call_at),
         c.manual_status,
         c.open_entries_count,
         c.retention_action?
       ]
+  end
+
+  defp churned_row(c) do
+    [
+      c.user_id,
+      c.email,
+      c.username,
+      c.stripe_customer_id,
+      c.business_reason,
+      c.last_plan_name,
+      c.interval,
+      date(c.joined_on),
+      date(c.churned_on),
+      usd(c.lost_mrr),
+      usd(c.tcv),
+      c.current_subscription,
+      c.last_entry && c.last_entry.type,
+      c.last_entry && c.last_entry.note
+    ]
   end
 
   defp business_email_row(u) do
@@ -110,11 +158,20 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
   end
 
   defp monthly_row(m) do
+    segments = Map.get(m, :segments)
+
+    [date(m.month), m.source, date(m.window.from), date(m.window.to)] ++
+      metric_cells(m) ++
+      Enum.flat_map(@segment_prefixes, fn {segment, _prefix} ->
+        metric_cells(segments && Map.get(segments, segment))
+      end)
+  end
+
+  # A month snapshotted before the split has no segments: empty cells.
+  defp metric_cells(nil), do: Enum.map(@metric_headers, fn _ -> nil end)
+
+  defp metric_cells(m) do
     [
-      date(m.month),
-      m.source,
-      date(m.window.from),
-      date(m.window.to),
       m.client_count,
       m.at_risk_count,
       m.retention_action_pct,

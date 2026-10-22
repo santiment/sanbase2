@@ -51,9 +51,12 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
         },
         subscription_status: "active",
         failed_payment?: true,
+        unpaid_invoice?: false,
         api_calls: 300,
         api_calls_prev: 450,
         last_active_at: ~U[2026-10-19 12:00:00Z],
+        last_web_active_at: ~U[2026-10-10 09:00:00Z],
+        last_api_call_at: ~U[2026-10-19 12:00:00Z],
         manual_status: :healthy,
         open_entries_count: 0,
         retention_action?: false,
@@ -120,7 +123,18 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
       assert has_element?(view, "#client-summary", "$600")
       assert has_element?(view, "#client-summary", "Business email")
       assert has_element?(view, "#failed-payment")
+      refute has_element?(view, "#unpaid-invoice")
       assert has_element?(view, ~s(#client-summary a[title="ACV formula"]))
+
+      assert has_element?(
+               view,
+               ~s(a#stripe-customer[href="https://dashboard.stripe.com/customers/cus_detail"][target="_blank"][rel="noopener noreferrer"]),
+               "cus_detail"
+             )
+
+      assert has_element?(view, "#last-active", "2026-10-19 12:00")
+      assert has_element?(view, "#last-active .badge", "API")
+      assert has_element?(view, "#last-active", "web: 2026-10-10 09:00")
 
       assert has_element?(
                view,
@@ -131,6 +145,55 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
       assert has_element?(view, "#invoice-in_detail_1", "$300.00")
       assert has_element?(view, "#invoice-in_detail_1", "Crypto")
       assert has_element?(view, "#invoice-in_detail_1", "2026-03-01 - 2027-03-01")
+    end
+  end
+
+  test "an unpaid invoice is not a failed payment; no customer id, no Stripe link" do
+    {_admin, conn} = sign_in(:role_admin_panel_viewer)
+    user = insert(:user)
+
+    attrs = %{failed_payment?: false, unpaid_invoice?: true, stripe_customer_id: nil}
+
+    with_mocks [detail_mock(user, attrs)] do
+      view = open_page(conn, user)
+
+      assert has_element?(view, "#unpaid-invoice", "unpaid invoice")
+      refute has_element?(view, "#failed-payment")
+      refute has_element?(view, "#stripe-customer")
+    end
+  end
+
+  test "highlights a renewal within 30 days only on a renewal interval" do
+    {_admin, conn} = sign_in(:role_admin_panel_viewer)
+    user = insert(:user)
+    soon = Date.add(Date.utc_today(), 5)
+
+    with_mocks [detail_mock(user, %{interval: "year", renewal_date: soon})] do
+      view = open_page(conn, user)
+      assert has_element?(view, "#renewal-date.text-warning")
+      assert has_element?(view, "#renewal-soon")
+    end
+
+    with_mocks [detail_mock(user, %{interval: "month", renewal_date: soon})] do
+      view = open_page(conn, user)
+      assert has_element?(view, "#renewal-date", Date.to_iso8601(soon))
+      refute has_element?(view, "#renewal-date.text-warning")
+      refute has_element?(view, "#renewal-soon")
+    end
+  end
+
+  test "the formula notes start collapsed and an asterisk opens them" do
+    {_admin, conn} = sign_in(:role_admin_panel_viewer)
+    user = insert(:user)
+
+    with_mocks [detail_mock(user)] do
+      view = open_page(conn, user)
+
+      refute has_element?(view, "#formula-notes[open]")
+
+      view |> element(~s(#client-summary a[href="#formula-acv"])) |> render_click()
+      assert has_element?(view, "#formula-notes[open]")
+      assert has_element?(view, "#formula-acv", "ACV formula")
     end
   end
 
@@ -154,6 +217,8 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
       with_mocks [detail_mock(user)] do
         view = open_page(conn, user)
 
+        # The Log link of the client list lands here.
+        assert has_element?(view, "#add-entry-panel #entry-form")
         assert has_element?(view, "#log-entries-empty")
 
         view

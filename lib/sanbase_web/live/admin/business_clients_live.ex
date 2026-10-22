@@ -5,8 +5,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   Stripe invoice mirror; the mirror is refreshed by
   `Sanbase.Billing.InvoiceMirror.SyncJob`, which this page can start.
 
-  Viewing needs any Admin Panel role, re-importing needs Editor and changing the
-  settings needs Owner. The formatting helpers and badges are public so the detail
+  Viewing needs any Admin Panel role, re-importing and the quick log link need Editor,
+  and changing the settings needs Owner: everyone sees the settings read-only, an
+  owner unlocks them with Edit. The formatting helpers and badges are public so the detail
   page (`SanbaseWeb.Admin.BusinessClientLive`) renders the same way.
   """
   use SanbaseWeb, :live_view
@@ -17,6 +18,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   alias Sanbase.Admin.Permissions
   alias Sanbase.Billing.BusinessClients
   alias Sanbase.Billing.BusinessClients.Settings
+  alias Sanbase.Billing.CreditPayments
   alias Sanbase.Billing.InvoiceMirror
   alias Sanbase.Billing.InvoiceMirror.SyncJob
 
@@ -26,6 +28,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   @sort_keys %{"mrr" => :mrr, "acv" => :acv, "renewal_date" => :renewal_date}
   @statuses [:healthy, :at_risk, :high_risk]
   @reasons [:plan, :business_email, :override]
+  @segments [:plan, :business_email]
+  @monthly_segments %{"total" => :total, "plan" => :plan, "business_email" => :business_email}
   @paid_by_keys [:card, :wire, :crypto, :san_burn, :stripe_credit, :other, :unknown, :out_of_band]
   @note_keys [
     :business_client,
@@ -37,6 +41,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     :revenue_renewal,
     :at_risk,
     :retention,
+    :churned,
     :usage
   ]
 
@@ -62,6 +67,12 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
       |> assign(:resync_to, today)
       |> assign_settings_form(Settings.validate(%{}))
       |> assign(:settings_last_change, settings_last_change())
+      # Both sections start collapsed and the settings read-only.
+      |> assign(:settings_open, false)
+      |> assign(:settings_editing, false)
+      |> assign(:notes_open, false)
+      # Which numbers the monthly table shows: the totals or one segment's.
+      |> assign(:monthly_segment, :total)
       # The full client list, kept for in-memory filtering and sorting; the table renders
       # the `:clients` stream.
       |> assign(:clients, [])
@@ -71,6 +82,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
       |> assign(:report, AsyncResult.loading())
       |> stream_configure(:clients, dom_id: &"client-#{&1.user_id}")
       |> stream(:clients, [])
+      |> assign(:churned_count, 0)
+      |> assign(:churned_lost_mrr, 0)
+      |> stream_configure(:churned, dom_id: &"churned-#{&1.user_id}")
+      |> stream(:churned, [])
       |> load_report()
 
     {:ok, socket}
@@ -146,6 +161,46 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     {:noreply, assign(socket, :sync_job, SyncJob.get_state())}
   end
 
+  # A <summary> click toggles its <details> in the browser too; the assign follows it
+  # so a re-render keeps the section the way the user left it.
+  def handle_event("toggle_section", %{"section" => "settings"}, socket) do
+    {:noreply, assign(socket, :settings_open, !socket.assigns.settings_open)}
+  end
+
+  def handle_event("toggle_section", %{"section" => "notes"}, socket) do
+    {:noreply, assign(socket, :notes_open, !socket.assigns.notes_open)}
+  end
+
+  def handle_event("toggle_section", _params, socket), do: {:noreply, socket}
+
+  def handle_event("monthly_segment", %{"segment" => segment}, socket) do
+    {:noreply, assign(socket, :monthly_segment, Map.get(@monthly_segments, segment, :total))}
+  end
+
+  # An asterisk opens the formula notes; the link's own anchor jumps to the note.
+  def handle_event("open_notes", _params, socket) do
+    {:noreply, assign(socket, :notes_open, true)}
+  end
+
+  def handle_event("edit_settings", _params, socket) do
+    if owner?(socket.assigns) do
+      {:noreply,
+       socket
+       |> assign_settings_form(Settings.validate(%{}))
+       |> assign(:settings_open, true)
+       |> assign(:settings_editing, true)}
+    else
+      {:noreply, put_flash(socket, :error, "Changing the settings needs the Owner role")}
+    end
+  end
+
+  def handle_event("cancel_settings", _params, socket) do
+    {:noreply,
+     socket
+     |> assign_settings_form(Settings.validate(%{}))
+     |> assign(:settings_editing, false)}
+  end
+
   def handle_event("validate_settings", %{"settings" => params}, socket) do
     changeset =
       params
@@ -167,6 +222,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             |> assign(:settings, settings)
             |> assign(:notes, BusinessClients.formula_notes(settings))
             |> assign_settings_form(Settings.validate(%{}))
+            |> assign(:settings_editing, false)
             |> assign(:settings_last_change, settings_last_change())
             |> put_flash(:info, "Settings saved - the numbers below are recomputed with them")
             |> load_report()
@@ -182,10 +238,6 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     else
       {:noreply, put_flash(socket, :error, "Changing the settings needs the Owner role")}
     end
-  end
-
-  def handle_event("reset_settings_form", _params, socket) do
-    {:noreply, assign_settings_form(socket, Settings.validate(%{}))}
   end
 
   @impl true
@@ -229,6 +281,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   @impl true
   def handle_async(:report, {:ok, report}, socket) do
     {clients, report} = Map.pop(report, :clients)
+    {churned, report} = Map.pop(report, :churned, [])
 
     {:noreply,
      socket
@@ -236,7 +289,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
      |> assign(:clients, clients)
      |> assign(:client_total, length(clients))
      |> assign(:plan_options, plan_options(clients))
-     |> stream_clients()}
+     |> stream_clients()
+     |> assign(:churned_count, length(churned))
+     |> assign(:churned_lost_mrr, churned |> Enum.map(& &1.lost_mrr) |> Enum.sum())
+     |> stream(:churned, churned, reset: true)}
   end
 
   def handle_async(:report, {:exit, reason}, socket) do
@@ -456,6 +512,36 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     diff >= 0 and diff <= @renewal_soon_days
   end
 
+  @doc ~s"""
+  Whether a client's renewal date is highlighted: within #{@renewal_soon_days} days and
+  on one of the renewal intervals (yearly by default). A monthly renewal is always that
+  close, so highlighting it would flag every monthly client.
+  """
+  def renewal_highlight?(client, intervals, today) do
+    client.interval in intervals and renewal_soon?(client.renewal_date, today)
+  end
+
+  @doc "The hint under the client table saying which renewals are highlighted."
+  def renewal_hint([]), do: "No renewals are highlighted."
+
+  def renewal_hint(intervals) do
+    names = Enum.map_join(intervals, " and ", &interval_adjective/1)
+    "#{names} renewals within #{@renewal_soon_days} days are highlighted."
+  end
+
+  defp interval_adjective("year"), do: "Yearly"
+  defp interval_adjective("month"), do: "Monthly"
+  defp interval_adjective(other), do: String.capitalize(to_string(other))
+
+  @doc "Where the last activity came from: `\"API\"`, `\"web\"` or `nil` when never active."
+  def activity_source(%{last_active_at: nil}), do: nil
+
+  def activity_source(%{last_active_at: at, last_api_call_at: %DateTime{} = api}) do
+    if DateTime.compare(api, at) == :eq, do: "API", else: "web"
+  end
+
+  def activity_source(_client), do: "web"
+
   def status_label(:healthy), do: "Healthy"
   def status_label(:at_risk), do: "At Risk"
   def status_label(:high_risk), do: "High Risk"
@@ -464,6 +550,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   def reason_label(:plan), do: "Business plan"
   def reason_label(:business_email), do: "Business email"
   def reason_label(:override), do: "Override"
+  def reason_label(:total), do: "Total"
   def reason_label(nil), do: "Not business"
   def reason_label(other), do: to_string(other)
 
@@ -501,6 +588,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   def note_keys, do: @note_keys
   def statuses, do: @statuses
   def reasons, do: @reasons
+  def segments, do: @segments
 
   def note_label(:business_client), do: "Business client"
   def note_label(:acv), do: "ACV"
@@ -511,6 +599,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   def note_label(:revenue_renewal), do: "Revenue renewal"
   def note_label(:at_risk), do: "At risk"
   def note_label(:retention), do: "Retention actions"
+  def note_label(:churned), do: "Recently churned"
   def note_label(:usage), do: "API usage"
   def note_label(other), do: to_string(other)
 
@@ -541,12 +630,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     <span class="inline-flex items-center gap-1">
       <span class={[
         "badge badge-sm whitespace-nowrap",
-        case @reason do
-          :plan -> "badge-primary badge-soft"
-          :business_email -> "badge-info badge-soft"
-          :override -> "badge-secondary badge-soft"
-          _ -> "badge-ghost"
-        end
+        reason_badge_class(@reason)
       ]}>
         {reason_label(@reason)}
       </span>
@@ -561,7 +645,86 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     """
   end
 
-  @doc "An asterisk that shows how a number is computed, linking to the footnote."
+  # Distinct hues per reason, readable on both themes: a translucent fill and border,
+  # with a darker text on the light theme and a lighter one on the dark theme.
+  defp reason_badge_class(:plan),
+    do:
+      "bg-indigo-500/15 border-indigo-500/30 text-indigo-700 [[data-theme=dark]_&]:text-indigo-200"
+
+  defp reason_badge_class(:business_email),
+    do: "bg-amber-500/15 border-amber-500/40 text-amber-800 [[data-theme=dark]_&]:text-amber-200"
+
+  defp reason_badge_class(:override),
+    do:
+      "bg-purple-500/15 border-purple-500/30 text-purple-700 [[data-theme=dark]_&]:text-purple-200"
+
+  defp reason_badge_class(_reason), do: "badge-ghost"
+
+  # The dot of a segment, in the hue of its reason badge.
+  defp segment_dot_class(:plan), do: "bg-indigo-500"
+  defp segment_dot_class(:business_email), do: "bg-amber-500"
+  defp segment_dot_class(_segment), do: "bg-base-content/40"
+
+  # One segment's numbers; `nil` for a snapshot taken before the split.
+  defp segment_metrics(metrics, segment) do
+    case Map.get(metrics, :segments) do
+      %{} = segments -> Map.get(segments, segment)
+      _ -> nil
+    end
+  end
+
+  # `{segment, text}` per segment for a headline card.
+  defp breakdown(metrics, key) do
+    for segment <- @segments, do: {segment, metric_text(segment_metrics(metrics, segment), key)}
+  end
+
+  defp metric_text(nil, _key), do: "-"
+  defp metric_text(m, :client_count), do: format_number(m.client_count)
+  defp metric_text(m, :at_risk_count), do: format_number(m.at_risk_count)
+  defp metric_text(m, :retention_action_pct), do: percent(m.retention_action_pct)
+
+  defp metric_text(%{client_churn: c}, :client_churn),
+    do: "#{rate(c.rate)} · #{c.lost}/#{c.base}"
+
+  defp metric_text(%{revenue_churn: r}, :revenue_churn),
+    do: "#{rate(r.rate)} · #{money(r.lost_mrr)}/#{money(r.base_mrr)}"
+
+  defp metric_text(%{client_renewal: c}, :client_renewal),
+    do: "#{rate(c.rate)} · #{c.renewed}/#{c.due}"
+
+  defp metric_text(%{revenue_renewal: r}, :revenue_renewal),
+    do: "#{rate(r.rate)} · #{money(r.renewed_acv)}/#{money(r.due_acv)}"
+
+  # `{month row, the numbers to show}`: the totals or the chosen segment's.
+  defp monthly_rows(monthly, :total), do: Enum.map(monthly, &{&1, &1})
+  defp monthly_rows(monthly, segment), do: Enum.map(monthly, &{&1, segment_metrics(&1, segment)})
+
+  @doc "A small link to the customer in the Stripe dashboard; nothing without a customer id."
+  attr(:customer_id, :string, default: nil)
+  attr(:id, :string, required: true)
+  attr(:show_id, :boolean, default: false, doc: "show the customer id next to the icon")
+
+  def stripe_customer_link(assigns) do
+    ~H"""
+    <a
+      :if={@customer_id}
+      id={@id}
+      href={CreditPayments.stripe_customer_url(@customer_id)}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Open the customer in Stripe"
+      class="inline-flex items-center gap-1 text-base-content/50 hover:text-primary transition-colors"
+    >
+      <span :if={@show_id} class="font-mono">{@customer_id}</span>
+      <.icon name="hero-arrow-top-right-on-square" class="w-3.5 h-3.5" />
+    </a>
+    """
+  end
+
+  @doc ~s"""
+  An asterisk that shows how a number is computed. Clicking it opens the collapsed
+  formula notes (the page handles `open_notes`) and its anchor jumps to the note.
+  """
   attr(:key, :atom, required: true)
   attr(:notes, :map, required: true)
 
@@ -570,6 +733,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     <a
       :if={Map.get(@notes, @key)}
       href={"#formula-#{@key}"}
+      phx-click="open_notes"
       title={Map.get(@notes, @key)}
       class="text-primary hover:text-primary/70 font-semibold no-underline cursor-help transition-colors"
     >
@@ -578,16 +742,29 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     """
   end
 
+  @doc ~s"""
+  The formula notes, collapsed unless `open`. The summary sends `toggle_section` with
+  `section: "notes"`, so the page keeps the state across re-renders.
+  """
   attr(:notes, :map, required: true)
+  attr(:open, :boolean, default: false)
   attr(:id, :string, default: "formula-notes")
 
   def formula_notes(assigns) do
     ~H"""
-    <div id={@id} class="card bg-base-100 border border-base-300 p-4">
-      <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
-        How the numbers are computed
-      </h2>
-      <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+    <details id={@id} open={@open} class="group card bg-base-100 border border-base-300 p-4">
+      <summary
+        id={"#{@id}-toggle"}
+        phx-click="toggle_section"
+        phx-value-section="notes"
+        class="flex items-center gap-2 cursor-pointer list-none select-none text-sm font-semibold uppercase tracking-wide text-base-content/60 hover:text-base-content transition-colors [&::-webkit-details-marker]:hidden"
+      >
+        <.icon
+          name="hero-chevron-right"
+          class="w-4 h-4 transition-transform duration-200 group-open:rotate-90"
+        /> How the numbers are computed
+      </summary>
+      <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm mt-3">
         <div
           :for={key <- note_keys()}
           :if={Map.get(@notes, key)}
@@ -598,7 +775,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
           <dd class="text-base-content/70">{Map.get(@notes, key)}</dd>
         </div>
       </dl>
-    </div>
+    </details>
     """
   end
 
@@ -611,6 +788,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   attr(:note, :atom, required: true)
   attr(:notes, :map, required: true)
   attr(:accent, :string, default: nil)
+  attr(:breakdown, :list, default: [], doc: "`{segment, text}` lines under the value")
 
   defp metric_card(assigns) do
     ~H"""
@@ -623,6 +801,17 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
       </div>
       <div class={["text-2xl font-bold tabular-nums", @accent]}>{@value}</div>
       <div :if={@sub} class="text-xs text-base-content/60">{@sub}</div>
+      <div :if={@breakdown != []} class="mt-2 pt-2 border-t border-base-300/70 space-y-0.5">
+        <div
+          :for={{segment, text} <- @breakdown}
+          id={"#{@id}-#{segment}"}
+          class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/60"
+        >
+          <span class={["inline-block w-1.5 h-1.5 rounded-full shrink-0", segment_dot_class(segment)]}></span>
+          <span class="whitespace-nowrap">{reason_label(segment)}:</span>
+          <span class="font-medium tabular-nums text-base-content/90">{text}</span>
+        </div>
+      </div>
     </div>
     """
   end
@@ -749,6 +938,13 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             class="btn btn-sm btn-soft"
           >
             Business-email users CSV
+          </.link>
+          <.link
+            id="export-churned"
+            href={export_path("churned")}
+            class="btn btn-sm btn-soft"
+          >
+            Churned CSV
           </.link>
           <.link
             id="export-monthly-metrics"
@@ -880,6 +1076,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             sub="business clients today"
             note={:business_client}
             notes={@notes}
+            breakdown={breakdown(report.metrics, :client_count)}
           />
           <.metric_card
             id="metric-at-risk"
@@ -888,6 +1085,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             sub="open At Risk / High Risk entries"
             note={:at_risk}
             notes={@notes}
+            breakdown={breakdown(report.metrics, :at_risk_count)}
             accent={report.metrics.at_risk_count > 0 && "text-warning"}
           />
           <.metric_card
@@ -897,6 +1095,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             sub="of at-risk clients"
             note={:retention}
             notes={@notes}
+            breakdown={breakdown(report.metrics, :retention_action_pct)}
           />
           <.metric_card
             id="metric-client-churn"
@@ -905,6 +1104,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             sub={"#{report.metrics.client_churn.lost} lost of #{report.metrics.client_churn.base}"}
             note={:client_churn}
             notes={@notes}
+            breakdown={breakdown(report.metrics, :client_churn)}
           />
           <.metric_card
             id="metric-revenue-churn"
@@ -913,6 +1113,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             sub={"#{money(report.metrics.revenue_churn.lost_mrr)} of #{money(report.metrics.revenue_churn.base_mrr)} MRR, +#{money(report.metrics.revenue_churn.expansion_mrr)} expansion"}
             note={:revenue_churn}
             notes={@notes}
+            breakdown={breakdown(report.metrics, :revenue_churn)}
           />
           <.metric_card
             id="metric-client-renewal"
@@ -921,6 +1122,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             sub={"#{report.metrics.client_renewal.renewed} renewed of #{report.metrics.client_renewal.due} due"}
             note={:client_renewal}
             notes={@notes}
+            breakdown={breakdown(report.metrics, :client_renewal)}
           />
           <.metric_card
             id="metric-revenue-renewal"
@@ -929,6 +1131,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             sub={"#{money(report.metrics.revenue_renewal.renewed_acv)} of #{money(report.metrics.revenue_renewal.due_acv)} ACV"}
             note={:revenue_renewal}
             notes={@notes}
+            breakdown={breakdown(report.metrics, :revenue_renewal)}
           />
         </div>
 
@@ -1009,6 +1212,17 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
           sort_by={@sort_by}
           sort_dir={@sort_dir}
           today={@today}
+          renewal_intervals={@settings.renewal_intervals}
+          can_edit={can_edit?(assigns)}
+        />
+
+        <%!-- ── Recently churned ──────────────────────────────────────── --%>
+        <.churned_table
+          rows={@streams.churned}
+          count={@churned_count}
+          lost_mrr={@churned_lost_mrr}
+          notes={@notes}
+          window_months={@settings.churn_window_months}
         />
       </.async_result>
 
@@ -1032,6 +1246,35 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             <span>Failed to load the monthly numbers: {inspect(reason)}</span>
           </div>
         </:failed>
+
+        <div
+          id="monthly-segment"
+          role="group"
+          aria-label="Segment"
+          class="inline-flex gap-0.5 rounded-lg border border-base-300 bg-base-100 p-0.5 mb-2"
+        >
+          <button
+            :for={segment <- [:total | segments()]}
+            id={"monthly-segment-#{segment}"}
+            type="button"
+            phx-click="monthly_segment"
+            phx-value-segment={segment}
+            aria-pressed={to_string(@monthly_segment == segment)}
+            class={[
+              "inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors duration-150",
+              if(@monthly_segment == segment,
+                do: "bg-base-content text-base-100 shadow-sm",
+                else: "text-base-content/70 hover:bg-base-200 hover:text-base-content"
+              )
+            ]}
+          >
+            <span
+              :if={segment != :total}
+              class={["inline-block w-1.5 h-1.5 rounded-full", segment_dot_class(segment)]}
+            ></span>
+            {reason_label(segment)}
+          </button>
+        </div>
 
         <div class="rounded-box border border-base-300 overflow-x-auto mb-8">
           <table id="monthly-metrics" class="table table-zebra table-sm">
@@ -1064,7 +1307,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
                   No monthly numbers yet.
                 </td>
               </tr>
-              <tr :for={m <- report.monthly} id={"month-#{m.month}"}>
+              <tr
+                :for={{m, v} <- monthly_rows(report.monthly, @monthly_segment)}
+                id={"month-#{m.month}"}
+              >
                 <td class="font-medium whitespace-nowrap">{Calendar.strftime(m.month, "%Y-%m")}</td>
                 <td>
                   <span
@@ -1081,33 +1327,43 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
                     {m.source}
                   </span>
                 </td>
-                <td class="text-right tabular-nums">{format_number(m.client_count)}</td>
-                <td class="text-right tabular-nums">{format_number(m.at_risk_count)}</td>
-                <td class="text-right tabular-nums">{percent(m.retention_action_pct)}</td>
-                <td class="text-right tabular-nums">
-                  {rate(m.client_churn.rate)}
-                  <span class="text-xs text-base-content/50">
-                    ({m.client_churn.lost}/{m.client_churn.base})
-                  </span>
-                </td>
-                <td class="text-right tabular-nums">
-                  {rate(m.revenue_churn.rate)}
-                  <span class="text-xs text-base-content/50">
-                    ({money(m.revenue_churn.lost_mrr)}/{money(m.revenue_churn.base_mrr)})
-                  </span>
-                </td>
-                <td class="text-right tabular-nums">
-                  {rate(m.client_renewal.rate)}
-                  <span class="text-xs text-base-content/50">
-                    ({m.client_renewal.renewed}/{m.client_renewal.due})
-                  </span>
-                </td>
-                <td class="text-right tabular-nums">
-                  {rate(m.revenue_renewal.rate)}
-                  <span class="text-xs text-base-content/50">
-                    ({money(m.revenue_renewal.renewed_acv)}/{money(m.revenue_renewal.due_acv)})
-                  </span>
-                </td>
+                <%= if v do %>
+                  <td class="text-right tabular-nums">{format_number(v.client_count)}</td>
+                  <td class="text-right tabular-nums">{format_number(v.at_risk_count)}</td>
+                  <td class="text-right tabular-nums">{percent(v.retention_action_pct)}</td>
+                  <td class="text-right tabular-nums">
+                    {rate(v.client_churn.rate)}
+                    <span class="text-xs text-base-content/50">
+                      ({v.client_churn.lost}/{v.client_churn.base})
+                    </span>
+                  </td>
+                  <td class="text-right tabular-nums">
+                    {rate(v.revenue_churn.rate)}
+                    <span class="text-xs text-base-content/50">
+                      ({money(v.revenue_churn.lost_mrr)}/{money(v.revenue_churn.base_mrr)})
+                    </span>
+                  </td>
+                  <td class="text-right tabular-nums">
+                    {rate(v.client_renewal.rate)}
+                    <span class="text-xs text-base-content/50">
+                      ({v.client_renewal.renewed}/{v.client_renewal.due})
+                    </span>
+                  </td>
+                  <td class="text-right tabular-nums">
+                    {rate(v.revenue_renewal.rate)}
+                    <span class="text-xs text-base-content/50">
+                      ({money(v.revenue_renewal.renewed_acv)}/{money(v.revenue_renewal.due_acv)})
+                    </span>
+                  </td>
+                <% else %>
+                  <td
+                    :for={_column <- 1..7}
+                    class="text-right text-base-content/50"
+                    title="Snapshot taken before the segment split"
+                  >
+                    -
+                  </td>
+                <% end %>
               </tr>
             </tbody>
           </table>
@@ -1116,12 +1372,14 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
 
       <%!-- ── Settings ──────────────────────────────────────────────── --%>
       <.settings_panel
-        :if={owner?(assigns)}
         form={@settings_form}
         last_change={@settings_last_change}
+        open={@settings_open}
+        editing={@settings_editing}
+        owner={owner?(assigns)}
       />
 
-      <.formula_notes notes={@notes} />
+      <.formula_notes notes={@notes} open={@notes_open} />
     </div>
     """
   end
@@ -1132,11 +1390,13 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   attr(:sort_by, :atom, required: true)
   attr(:sort_dir, :atom, required: true)
   attr(:today, Date, required: true)
+  attr(:renewal_intervals, :list, required: true)
+  attr(:can_edit, :boolean, default: false)
 
   defp clients_table(assigns) do
     ~H"""
     <div id="clients-count" class="text-sm text-base-content/60 mb-2">
-      Showing {@count} of {@total} client(s). Renewals within 30 days are highlighted.
+      Showing {@count} of {@total} client(s). {renewal_hint(@renewal_intervals)}
     </div>
     <div class="rounded-box border border-base-300 overflow-x-auto mb-8">
       <table id="clients-table" class="table table-zebra table-sm">
@@ -1161,11 +1421,12 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             <th>Last active</th>
             <th>Status</th>
             <th class="text-right">Open</th>
+            <th :if={@can_edit}><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody id="clients-rows" phx-update="stream">
           <tr id="clients-empty" class="hidden only:table-row">
-            <td colspan="13" class="text-center text-base-content/60 py-6">
+            <td colspan={if @can_edit, do: 14, else: 13} class="text-center text-base-content/60 py-6">
               No client matches these filters.
             </td>
           </tr>
@@ -1181,6 +1442,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
               >
                 {c.email || c.username || "user ##{c.user_id}"}
               </.link>
+              <.stripe_customer_link
+                id={"stripe-customer-#{c.user_id}"}
+                customer_id={c.stripe_customer_id}
+              />
               <div :if={c.username && c.email} class="text-xs text-base-content/60">
                 {c.username}
               </div>
@@ -1198,13 +1463,13 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             <td class="whitespace-nowrap">{format_date(c.start_date)}</td>
             <td class="whitespace-nowrap">
               <span
-                :if={renewal_soon?(c.renewal_date, @today)}
+                :if={renewal_highlight?(c, @renewal_intervals, @today)}
                 class="badge badge-sm badge-warning"
                 title="Renews within 30 days"
               >
                 {format_date(c.renewal_date)}
               </span>
-              <span :if={!renewal_soon?(c.renewal_date, @today)}>
+              <span :if={!renewal_highlight?(c, @renewal_intervals, @today)}>
                 {format_date(c.renewal_date)}
               </span>
             </td>
@@ -1219,15 +1484,29 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
                 <span
                   :if={c.failed_payment?}
                   class="badge badge-xs badge-error whitespace-nowrap"
-                  title="The latest invoice payment failed"
+                  title="The business subscription is past due or unpaid: a charge failed"
                 >
                   <.icon name="hero-exclamation-triangle" class="w-3 h-3" /> payment failed
+                </span>
+                <span
+                  :if={c.unpaid_invoice?}
+                  class="badge badge-xs badge-warning badge-soft whitespace-nowrap"
+                  title="A business invoice has been open for more than 7 days - e.g. a wire or crypto payment not received yet"
+                >
+                  <.icon name="hero-clock" class="w-3 h-3" /> unpaid invoice
                 </span>
               </div>
             </td>
             <td><.usage_trend now={c.api_calls} prev={c.api_calls_prev} /></td>
             <td class="whitespace-nowrap text-base-content/70">
               {format_datetime(c.last_active_at)}
+              <span
+                :if={activity_source(c)}
+                class="badge badge-xs badge-ghost ml-1"
+                title={"Last web session: #{format_datetime(c.last_web_active_at)}, last API call: #{format_datetime(c.last_api_call_at)}"}
+              >
+                {activity_source(c)}
+              </span>
             </td>
             <td>
               <span class="inline-flex items-center gap-1">
@@ -1245,6 +1524,113 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
               </span>
               <span :if={c.open_entries_count == 0} class="text-base-content/40">0</span>
             </td>
+            <td :if={@can_edit} class="text-right">
+              <.link
+                id={"log-client-#{c.user_id}"}
+                navigate={~p"/admin/business_clients/#{c.user_id}" <> "#add-entry-panel"}
+                class="btn btn-xs btn-ghost gap-1 opacity-70 hover:opacity-100 transition-opacity"
+                title="Add a log entry, e.g. mark the client At Risk"
+              >
+                <.icon name="hero-pencil-square" class="w-3.5 h-3.5" /> Log
+              </.link>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
+  attr(:rows, :any, required: true, doc: "the `:churned` stream")
+  attr(:count, :integer, required: true)
+  attr(:lost_mrr, :integer, required: true)
+  attr(:notes, :map, required: true)
+  attr(:window_months, :integer, required: true)
+
+  defp churned_table(assigns) do
+    ~H"""
+    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-2">
+      <h2 id="churned-heading" class="text-xl font-semibold">
+        Recently churned<.note_mark key={:churned} notes={@notes} />
+      </h2>
+      <span id="churned-summary" class="text-sm text-base-content/60">
+        {@count} client(s) in the last {@window_months} months ·
+        <span class="font-medium text-error">{money(@lost_mrr)}</span>
+        MRR lost
+      </span>
+    </div>
+    <div class="rounded-box border border-base-300 overflow-x-auto mb-8">
+      <table id="churned-table" class="table table-zebra table-sm">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Business because</th>
+            <th>Last plan</th>
+            <th>Joined</th>
+            <th>Churned on</th>
+            <th class="text-right">Lost MRR</th>
+            <th class="text-right">TCV</th>
+            <th>Now on</th>
+            <th>Last log entry</th>
+          </tr>
+        </thead>
+        <tbody id="churned-rows" phx-update="stream">
+          <tr id="churned-empty" class="hidden only:table-row">
+            <td colspan="9" class="text-center text-base-content/60 py-6">
+              No client churned in the window.
+            </td>
+          </tr>
+          <tr
+            :for={{dom_id, c} <- @rows}
+            id={dom_id}
+            class="hover:bg-base-200 transition-colors"
+          >
+            <td class="max-w-64">
+              <.link
+                navigate={~p"/admin/business_clients/#{c.user_id}"}
+                class="link link-primary font-medium break-all"
+              >
+                {c.email || c.username || "user ##{c.user_id}"}
+              </.link>
+              <.stripe_customer_link
+                id={"churned-stripe-customer-#{c.user_id}"}
+                customer_id={c.stripe_customer_id}
+              />
+              <div :if={c.username && c.email} class="text-xs text-base-content/60">
+                {c.username}
+              </div>
+            </td>
+            <td><.reason_badge reason={c.business_reason} /></td>
+            <td class="whitespace-nowrap">
+              <div class="font-medium">{c.last_plan_name}</div>
+              <div class="text-xs text-base-content/60">{c.interval}</div>
+            </td>
+            <td class="whitespace-nowrap">{format_date(c.joined_on)}</td>
+            <td class="whitespace-nowrap font-medium">{format_date(c.churned_on)}</td>
+            <td class="text-right tabular-nums font-medium text-error">{money(c.lost_mrr)}</td>
+            <td class="text-right tabular-nums text-base-content/70">{money(c.tcv)}</td>
+            <td>
+              <span
+                :if={c.current_subscription}
+                id={"churned-now-on-#{c.user_id}"}
+                class="badge badge-sm badge-success badge-soft whitespace-nowrap"
+                title="Still paying elsewhere: a current subscription outside the business plans"
+              >
+                {c.current_subscription}
+              </span>
+              <span :if={!c.current_subscription} class="text-base-content/40">-</span>
+            </td>
+            <td class="max-w-80">
+              <div :if={c.last_entry}>
+                <span class="badge badge-xs badge-ghost whitespace-nowrap">
+                  {c.last_entry.type}
+                </span>
+                <span :if={c.last_entry.note} class="text-xs text-base-content/70">
+                  {c.last_entry.note}
+                </span>
+              </div>
+              <span :if={!c.last_entry} class="text-base-content/40">-</span>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -1254,122 +1640,164 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
 
   attr(:form, Phoenix.HTML.Form, required: true)
   attr(:last_change, :map, default: nil)
+  attr(:open, :boolean, default: false)
+  attr(:editing, :boolean, default: false)
+  attr(:owner, :boolean, default: false)
 
+  # Collapsed by default and read-only: the inputs sit in a disabled fieldset until an
+  # owner presses Edit. Saving is checked against the Owner role again on the server.
   defp settings_panel(assigns) do
     ~H"""
-    <h2 class="text-xl font-semibold mb-2">Settings</h2>
-    <p class="text-sm text-base-content/60 mb-2">
-      The parameters behind every number on this page. A change applies to all computed
-      months at once; snapshot months keep the settings they were frozen with. Lists take
-      one value per line or comma separated.
-      <span :if={@last_change} id="settings-last-change">
-        Last changed {format_datetime(@last_change.updated_at)}{if @last_change.by,
-          do: " by #{@last_change.by}"}.
-      </span>
-      <span :if={is_nil(@last_change)} id="settings-last-change">
-        The defaults apply - nobody has changed them yet.
-      </span>
-    </p>
+    <details
+      id="settings-section"
+      open={@open}
+      class="group card bg-base-100 border border-base-300 p-4 mb-8"
+    >
+      <summary
+        id="settings-toggle"
+        phx-click="toggle_section"
+        phx-value-section="settings"
+        class="flex items-center gap-2 cursor-pointer list-none select-none hover:text-primary transition-colors [&::-webkit-details-marker]:hidden"
+      >
+        <.icon
+          name="hero-chevron-right"
+          class="w-4 h-4 transition-transform duration-200 group-open:rotate-90"
+        />
+        <span class="text-xl font-semibold">Settings</span>
+        <span
+          :if={!@editing}
+          id="settings-read-only"
+          class="badge badge-xs badge-ghost ml-1"
+        >
+          read-only
+        </span>
+        <span :if={@editing} class="badge badge-xs badge-warning badge-soft ml-1">editing</span>
+      </summary>
 
-    <div class="card bg-base-100 border border-base-300 p-4 mb-8">
+      <p class="text-sm text-base-content/60 my-3">
+        The parameters behind every number on this page. A change applies to all computed
+        months at once; snapshot months keep the settings they were frozen with. Lists take
+        one value per line or comma separated.
+        <span :if={@last_change} id="settings-last-change">
+          Last changed {format_datetime(@last_change.updated_at)}{if @last_change.by,
+            do: " by #{@last_change.by}"}.
+        </span>
+        <span :if={is_nil(@last_change)} id="settings-last-change">
+          The defaults apply - nobody has changed them yet.
+        </span>
+        <span :if={!@owner}>Only an Owner can change them.</span>
+      </p>
+
       <.form
         for={@form}
         id="settings-form"
         phx-change="validate_settings"
         phx-submit="save_settings"
       >
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6">
-          <.input
-            field={@form[:business_plan_patterns]}
-            type="textarea"
-            label="Business plans (a trailing * matches a prefix)"
-            value={list_text(@form[:business_plan_patterns].value)}
-          />
-          <.input
-            field={@form[:business_email_plan_names]}
-            type="textarea"
-            label="Plans that need a business email"
-            value={list_text(@form[:business_email_plan_names].value)}
-          />
-          <.input
-            field={@form[:free_email_domains]}
-            type="textarea"
-            label="Free email domains"
-            value={list_text(@form[:free_email_domains].value)}
-          />
-          <.input
-            field={@form[:issue_types]}
-            type="textarea"
-            label="Log entry types"
-            value={list_text(@form[:issue_types].value)}
-          />
-          <.input
-            field={@form[:types_without_severity]}
-            type="textarea"
-            label="Types without severity"
-            value={list_text(@form[:types_without_severity].value)}
-          />
-          <div>
+        <fieldset id="settings-fields" disabled={!@editing} class="disabled:opacity-80">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6">
             <.input
-              field={@form[:business_email_product_ids]}
-              type="text"
-              label="Business-email product ids"
-              value={inline_list_text(@form[:business_email_product_ids].value)}
+              field={@form[:business_plan_patterns]}
+              type="textarea"
+              label="Business plans (a trailing * matches a prefix)"
+              value={list_text(@form[:business_plan_patterns].value)}
             />
             <.input
-              field={@form[:renewal_intervals]}
-              type="text"
-              label="Renewal intervals (month, year)"
-              value={inline_list_text(@form[:renewal_intervals].value)}
+              field={@form[:business_email_plan_names]}
+              type="textarea"
+              label="Plans that need a business email"
+              value={list_text(@form[:business_email_plan_names].value)}
             />
             <.input
-              field={@form[:retention_action_type]}
-              type="select"
-              label="Retention action type"
-              options={field_list(@form, :issue_types)}
+              field={@form[:free_email_domains]}
+              type="textarea"
+              label="Free email domains"
+              value={list_text(@form[:free_email_domains].value)}
+            />
+            <.input
+              field={@form[:issue_types]}
+              type="textarea"
+              label="Log entry types"
+              value={list_text(@form[:issue_types].value)}
+            />
+            <.input
+              field={@form[:types_without_severity]}
+              type="textarea"
+              label="Types without severity"
+              value={list_text(@form[:types_without_severity].value)}
+            />
+            <div>
+              <.input
+                field={@form[:business_email_product_ids]}
+                type="text"
+                label="Business-email product ids"
+                value={inline_list_text(@form[:business_email_product_ids].value)}
+              />
+              <.input
+                field={@form[:renewal_intervals]}
+                type="text"
+                label="Renewal intervals (month, year)"
+                value={inline_list_text(@form[:renewal_intervals].value)}
+              />
+              <.input
+                field={@form[:retention_action_type]}
+                type="select"
+                label="Retention action type"
+                options={field_list(@form, :issue_types)}
+              />
+            </div>
+            <.input
+              field={@form[:churn_window_months]}
+              type="number"
+              label="Churn window (months)"
+              min="1"
+              max="36"
+            />
+            <.input
+              field={@form[:renewal_grace_days]}
+              type="number"
+              label="Renewal grace (days)"
+              min="0"
+            />
+            <.input
+              field={@form[:usage_window_days]}
+              type="number"
+              label="API usage window (days)"
+              min="1"
+            />
+            <.input
+              field={@form[:renewal_upgrades_full_value]}
+              type="checkbox"
+              label="An upgrade at renewal counts its full value as renewed"
             />
           </div>
-          <.input
-            field={@form[:churn_window_months]}
-            type="number"
-            label="Churn window (months)"
-            min="1"
-            max="36"
-          />
-          <.input
-            field={@form[:renewal_grace_days]}
-            type="number"
-            label="Renewal grace (days)"
-            min="0"
-          />
-          <.input
-            field={@form[:usage_window_days]}
-            type="number"
-            label="API usage window (days)"
-            min="1"
-          />
-          <.input
-            field={@form[:renewal_upgrades_full_value]}
-            type="checkbox"
-            label="An upgrade at renewal counts its full value as renewed"
-          />
-        </div>
+        </fieldset>
 
-        <div class="flex items-center gap-2 mt-2">
-          <button id="save-settings" type="submit" class="btn btn-sm btn-primary">
+        <div :if={@owner} class="flex items-center gap-2 mt-2">
+          <button
+            :if={!@editing}
+            id="edit-settings"
+            type="button"
+            phx-click="edit_settings"
+            class="btn btn-sm btn-soft"
+          >
+            <.icon name="hero-pencil-square" class="w-4 h-4" /> Edit
+          </button>
+          <button :if={@editing} id="save-settings" type="submit" class="btn btn-sm btn-primary">
             Save settings
           </button>
           <button
-            id="reset-settings"
+            :if={@editing}
+            id="cancel-settings"
             type="button"
-            phx-click="reset_settings_form"
+            phx-click="cancel_settings"
             class="btn btn-sm btn-ghost"
           >
-            Discard changes
+            Cancel
           </button>
         </div>
       </.form>
-    </div>
+    </details>
     """
   end
 end

@@ -150,6 +150,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     # the CUSTOM rung publishes no numbers - each contract sets its own
     assert limits_by_name["CUSTOM"] == nil
+
+    assert Enum.all?(result["plans"], fn plan ->
+             plan["product"] == %{"id" => result["id"], "name" => result["name"]}
+           end)
   end
 
   describe "#productsWithPlans and the new offering" do
@@ -803,10 +807,15 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
     {
       productsWithPlans {
+        id
         name
         plans {
           id
           name
+          product {
+            id
+            name
+          }
           apiCallLimits {
             month
             hour

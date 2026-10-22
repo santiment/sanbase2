@@ -444,7 +444,7 @@ defmodule Sanbase.Billing.Plan do
                coalesce(pl.is_deprecated, false) == false),
         where: ^new_offering_filter,
         order_by: [desc: pl.order, asc: pl.id],
-        preload: [plans: pl]
+        preload: [plans: {pl, product: p}]
       )
 
     product_with_plans = Repo.all(query)

@@ -174,6 +174,13 @@ defmodule Sanbase.Billing.Plan do
   @spec business_plan_names() :: [String.t()]
   def business_plan_names, do: @business_plan_names
 
+  @doc ~s"""
+  The name a plan name answers as - `"ESSENTIAL"` is `"BASIC"`, the mapping
+  `plan_name/1` applies to a plan row. Any other name is returned unchanged.
+  """
+  @spec canonical_name(String.t()) :: String.t()
+  def canonical_name(name) when is_binary(name), do: Map.get(@plan_name_aliases, name, name)
+
   def plan_name(%__MODULE__{} = plan) do
     case Map.get(@plan_name_aliases, plan.name, plan.name) do
       name when name in @same_name_plans -> name

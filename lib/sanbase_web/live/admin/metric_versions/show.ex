@@ -43,12 +43,16 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
 
   def handle_event("delete", _params, socket) do
     with_edit_permission(socket, fn ->
-      {:ok, version} = VersionAlias.delete(socket.assigns.version)
+      case VersionAlias.delete(socket.assigns.version) do
+        {:ok, version} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Deleted #{version.version_name}.")
+           |> push_navigate(to: ~p"/admin/metric_versions")}
 
-      {:noreply,
-       socket
-       |> put_flash(:info, "Deleted #{version.version_name}.")
-       |> push_navigate(to: ~p"/admin/metric_versions")}
+        {:error, changeset} ->
+          {:noreply, put_flash(socket, :error, "Not deleted: #{errors_to_string(changeset)}")}
+      end
     end)
   end
 
@@ -64,19 +68,27 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
 
   def handle_event("save_access", _params, socket) do
     with_edit_permission(socket, fn ->
-      %{version: version, access: access} = socket.assigns
+      %{version: version, access: access, grid_editable?: grid_editable?} = socket.assigns
 
-      case VersionPlanAccess.replace_all(version, enabled_entries(access, version)) do
-        {:ok, _rows} ->
+      if grid_editable?,
+        do: save_access(socket, version, access),
+        else:
           {:noreply,
-           socket
-           |> put_flash(:info, "Plan access saved. It applies to requests right away.")
-           |> load(version.id)}
-
-        {:error, changeset} ->
-          {:noreply, put_flash(socket, :error, "Not saved: #{errors_to_string(changeset)}")}
-      end
+           put_flash(socket, :error, "The plan access of this version cannot be edited here.")}
     end)
+  end
+
+  defp save_access(socket, version, access) do
+    case VersionPlanAccess.replace_all(version, enabled_entries(access, version)) do
+      {:ok, _rows} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Plan access saved. It applies to requests right away.")
+         |> load(version.id)}
+
+      {:error, changeset} ->
+        {:noreply, put_flash(socket, :error, "Not saved: #{errors_to_string(changeset)}")}
+    end
   end
 
   defp with_edit_permission(socket, fun) do
@@ -90,14 +102,27 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
   defp load(socket, id) do
     version = VersionAlias.get_with_plan_access!(id)
     access = access_from_rows(version.plan_access)
+    duplicated = duplicated_plans(version.plan_access)
 
     socket
     |> assign(:page_title, "Metric version #{version.version_name}")
     |> assign(:version, version)
     |> assign(:access, access)
     |> assign(:saved_access, access)
-    |> assign(:grid_editable?, socket.assigns.can_edit? and access_configurable?(version))
+    |> assign(:editable?, socket.assigns.can_edit? and not VersionAlias.locked?(version))
+    |> assign(:duplicated_plans, duplicated)
+    |> assign(
+      :grid_editable?,
+      socket.assigns.can_edit? and access_configurable?(version) and duplicated == []
+    )
     |> assign_details_form(%{})
+  end
+
+  # Plans with more than one row (one per billing interval). The grid shows one entry
+  # per plan, so saving would merge them - it is not editable until they are fixed.
+  defp duplicated_plans(rows) do
+    for {{product, plan}, [_, _ | _] = plan_rows} <- Enum.group_by(rows, &{&1.product, &1.plan}),
+        do: %{product: product, plan: plan, intervals: Enum.map(plan_rows, & &1.billing_interval)}
   end
 
   defp assign_details_form(socket, params, action \\ nil) do
@@ -234,7 +259,7 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
             </div>
           </div>
           <button
-            :if={@can_edit?}
+            :if={@editable?}
             id="delete-version"
             type="button"
             phx-click="delete"
@@ -244,6 +269,11 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
             Delete version
           </button>
         </div>
+      </div>
+
+      <div :if={VersionAlias.locked?(@version)} id="version-locked" class="alert alert-info">
+        This is the default version - every request without a version uses it and every
+        plan can always use it. It cannot be changed or deleted, so clients that send {@version.version_name} keep working.
       </div>
 
       <div class="card bg-base-100 border border-base-300">
@@ -260,7 +290,7 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
               field={@details_form[:version_name]}
               type="text"
               label="Version name"
-              disabled={not @can_edit?}
+              disabled={not @editable?}
             />
             <div>
               <.input
@@ -268,7 +298,7 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
                 type="select"
                 label="Exposed in"
                 options={exposure_options()}
-                disabled={not @can_edit?}
+                disabled={not @editable?}
               />
               <p
                 :if={@removed_by_exposure != []}
@@ -287,9 +317,9 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
               type="textarea"
               label="Description"
               outer_div_class="md:col-span-2"
-              disabled={not @can_edit?}
+              disabled={not @editable?}
             />
-            <div :if={@can_edit?} class="md:col-span-2 flex justify-end">
+            <div :if={@editable?} class="md:col-span-2 flex justify-end">
               <button
                 id="save-details"
                 type="submit"
@@ -312,12 +342,22 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
             </span>
           </div>
 
-          <div :if={default_version?(@version)} class="alert alert-info text-sm">
-            Version {@version.version_num} is the default version. Every plan can always use it.
-          </div>
           <div :if={experimental?(@version)} class="alert alert-info text-sm">
             Experimental versions are available only to users with alpha access.
             Plan access is not used for them.
+          </div>
+
+          <div
+            :if={@duplicated_plans != []}
+            id="duplicated-plans"
+            class="alert alert-warning text-sm"
+          >
+            <span>
+              {Enum.map_join(@duplicated_plans, "; ", fn d ->
+                "#{product_label(d.product)} #{plan_label(d.plan, d.product)} has one row per billing interval (#{Enum.join(d.intervals, ", ")})"
+              end)}. This page shows one entry per plan, so saving would merge them.
+              Fix the rows in the database before editing here.
+            </span>
           </div>
 
           <p :if={access_configurable?(@version)} class="text-sm text-base-content/70">
@@ -354,6 +394,13 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
                     <span class="text-base-content/60">Who can use it:</span>
                     {summary(@access, product)}
                   </p>
+                  <p
+                    :if={product == "SANBASE" and access_configurable?(@version)}
+                    class="text-xs text-base-content/60 mt-1"
+                  >
+                    SanAPI subscribers without a Sanbase plan count by their SanAPI plan:
+                    SanAPI Pro as Pro, Essential as Basic, and the plans marked (SanAPI).
+                  </p>
                   <table class="table table-sm mt-2">
                     <thead>
                       <tr>
@@ -372,7 +419,7 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Show do
                         ]}
                       >
                         <td>
-                          <div class="font-medium">{plan_label(plan)}</div>
+                          <div class="font-medium">{plan_label(plan, product)}</div>
                           <div :if={plan == "ANY"} class="text-xs text-base-content/60">
                             Every plan, free users included
                           </div>

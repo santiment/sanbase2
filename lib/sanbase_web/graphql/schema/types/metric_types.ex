@@ -549,6 +549,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:required_selectors, list_of(list_of(:selector_name)))
 
+    @desc ~s"""
+    The versions of the metric the caller can request with getMetric(version: ...):
+    the ones available in the caller's product (SanAPI for API keys, Sanbase for the
+    web app) and to the caller's plan. Version 1.0 is always included.
+    """
     # Not cache_resolve: names are applied after the cached numeric list.
     field :available_versions, list_of(:metric_version) do
       resolve(&MetricResolver.get_available_versions/3)

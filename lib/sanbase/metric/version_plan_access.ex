@@ -26,18 +26,24 @@ defmodule Sanbase.Metric.VersionPlanAccess do
   @products ["SANAPI", "SANBASE"]
   @any_plan "ANY"
 
-  # The plans sold on each product, cheapest first.
+  # The plans a caller can have on each product, cheapest first. A SanAPI subscriber
+  # who opens Sanbase without a Sanbase plan is matched by their SanAPI plan name, so
+  # the SanAPI plans whose names Sanbase does not sell are on the Sanbase list too.
+  # (SanAPI Pro and Essential answer as Sanbase PRO and BASIC.)
+  @sanapi_only_plans ["BUSINESS_PRO", "BUSINESS_MAX", "INSTITUTIONAL", "ENTERPRISE"]
+
   @product_plans %{
     "SANAPI" => [
       "FREE",
-      "ESSENTIAL",
+      # Sold as Essential - `Sanbase.Billing.Plan.canonical_name/1`.
+      "BASIC",
       "PRO",
       "BUSINESS_PRO",
       "BUSINESS_MAX",
       "INSTITUTIONAL",
       "ENTERPRISE"
     ],
-    "SANBASE" => ["FREE", "BASIC", "PRO", "PRO_PLUS", "MAX"]
+    "SANBASE" => ["FREE", "BASIC", "PRO", "PRO_PLUS", "MAX" | @sanapi_only_plans]
   }
 
   @plans [@any_plan | @product_plans |> Map.values() |> List.flatten() |> Enum.uniq()]
@@ -51,9 +57,14 @@ defmodule Sanbase.Metric.VersionPlanAccess do
   @spec plans() :: [String.t()]
   def plans(), do: @plans
 
-  @doc "The plans sold on the product, cheapest first, without \"ANY\"."
+  @doc "The plans a caller on the product can have, cheapest first, without \"ANY\"."
   @spec plans(String.t()) :: [String.t()]
   def plans(product) when product in @products, do: Map.fetch!(@product_plans, product)
+
+  @doc "Whether the plan is a SanAPI plan that is matched by name on Sanbase."
+  @spec sanapi_plan_on_sanbase?(String.t(), String.t()) :: boolean()
+  def sanapi_plan_on_sanbase?(product, plan),
+    do: product == "SANBASE" and plan in @sanapi_only_plans
 
   @doc "The plan name that matches every plan."
   @spec any_plan() :: String.t()
@@ -108,7 +119,13 @@ defmodule Sanbase.Metric.VersionPlanAccess do
   `version_alias_id`), in one transaction. Takes effect on every node at once.
   """
   @spec replace_all(VersionAlias.t(), [map()]) :: {:ok, [t()]} | {:error, Ecto.Changeset.t()}
-  def replace_all(%VersionAlias{id: id}, rows) when is_list(rows) do
+  def replace_all(%VersionAlias{id: id} = version_alias, rows) when is_list(rows) do
+    if VersionAlias.locked?(version_alias),
+      do: VersionAlias.locked_error(version_alias),
+      else: do_replace_all(id, rows)
+  end
+
+  defp do_replace_all(id, rows) do
     multi =
       rows
       |> Enum.with_index()
@@ -135,7 +152,9 @@ defmodule Sanbase.Metric.VersionPlanAccess do
   end
 
   defp normalize_plan(nil), do: nil
-  defp normalize_plan(plan), do: plan |> String.trim() |> String.upcase()
+
+  defp normalize_plan(plan),
+    do: plan |> String.trim() |> String.upcase() |> Sanbase.Billing.Plan.canonical_name()
 
   # A row for a product the version is not exposed in would never match.
   defp validate_exposed(changeset) do

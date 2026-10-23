@@ -2,7 +2,9 @@ defmodule SanbaseWeb.Admin.MetricVersionsLiveTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
-  import Sanbase.MetricVersionAliasHelpers, only: [admin_conn: 1, create_alias!: 1]
+
+  import Sanbase.MetricVersionAliasHelpers,
+    only: [admin_conn: 1, create_alias!: 1, ensure_alias!: 1]
 
   alias Sanbase.Metric.VersionAlias
 
@@ -171,14 +173,92 @@ defmodule SanbaseWeb.Admin.MetricVersionsLiveTest do
       assert {:error, _} = VersionAlias.to_version_num("seven:v1")
     end
 
-    test "the default version is not configured by plan", %{conn: conn} do
-      version = create_alias!(%{version_num: "1.0", version_name: "original:v1"})
+    test "the default version cannot be changed or deleted", %{conn: conn} do
+      version =
+        ensure_alias!(%{
+          version_num: "1.0",
+          version_name: "original:v1",
+          plan_access: [%{product: "SANAPI", plan: "ANY"}]
+        })
 
       {:ok, view, _html} = live(conn, ~p"/admin/metric_versions/#{version.id}")
 
-      assert render(view) =~ "Every plan can always use it"
-      assert has_element?(view, "#access-SANAPI-PRO-enabled[disabled]")
+      assert has_element?(view, "#version-locked")
+      refute has_element?(view, "#delete-version")
+      refute has_element?(view, "#save-details")
       refute has_element?(view, "#save-access")
+
+      assert has_element?(
+               view,
+               "#version-details-form input[name='version_alias[version_name]'][disabled]"
+             )
+
+      assert has_element?(view, "#access-SANAPI-ANY-enabled[disabled]")
+
+      # Events sent without the buttons are refused too. The banner above says the same
+      # words, so the flash itself is checked.
+      render_hook(view, "delete", %{})
+      assert has_element?(view, "#flash-error", "cannot be changed or deleted")
+
+      render_hook(view, "save_details", %{"version_alias" => %{"version_name" => "renamed:v1"}})
+
+      render_hook(view, "save_access", %{})
+      assert has_element?(view, "#flash-error", "cannot be edited here")
+
+      assert %VersionAlias{version_name: "original:v1", plan_access: plan_access} =
+               VersionAlias.get("1.0")
+
+      assert Enum.any?(plan_access, &(&1.product == "SANAPI" and &1.plan == "ANY"))
+    end
+  end
+
+  describe "plans and rows the grid has to handle" do
+    test "the Sanbase grid lists the SanAPI plans matched by name there", %{conn: conn} do
+      version = create_alias!(%{version_num: "7.0", version_name: "seven:v1"})
+
+      {:ok, view, _html} = live(conn, ~p"/admin/metric_versions/#{version.id}")
+
+      assert has_element?(view, "#access-SANBASE-BUSINESS_MAX", "Business Max (SanAPI)")
+      assert has_element?(view, "#access-SANAPI-BASIC", "Essential")
+    end
+
+    test "a plan with one row per billing interval is not merged by saving", %{conn: conn} do
+      version =
+        create_alias!(%{
+          version_num: "7.0",
+          version_name: "seven:v1",
+          plan_access: [
+            %{product: "SANAPI", plan: "ANY", billing_interval: "month"},
+            %{
+              product: "SANAPI",
+              plan: "ANY",
+              billing_interval: "year",
+              accessible_if_trial: false
+            }
+          ]
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/admin/metric_versions/#{version.id}")
+
+      assert has_element?(view, "#duplicated-plans")
+      refute has_element?(view, "#save-access")
+      assert render_hook(view, "save_access", %{}) =~ "cannot be edited here"
+      assert %VersionAlias{plan_access: [_, _]} = VersionAlias.get("7.0")
+    end
+
+    test "a scope's own 1.0 row can be deleted, the global one cannot", %{conn: conn} do
+      ensure_alias!(%{version_num: "1.0", version_name: "original:v1"})
+
+      own =
+        create_alias!(%{scope: "github", version_num: "1.0", version_name: "github_original:v1"})
+
+      {:ok, view, _html} = live(conn, ~p"/admin/metric_versions/#{own.id}")
+      refute has_element?(view, "#version-locked")
+
+      {:ok, _index, _html} =
+        view |> element("#delete-version") |> render_click() |> follow_redirect(conn)
+
+      assert {:ok, "1.0"} == VersionAlias.to_version_num("original:v1", "github")
     end
   end
 

@@ -20,7 +20,8 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     * apikey - the SANAPI rows, for the key owner's SanAPI subscription, whatever the
       user agent. Sansheets runs on an apikey and gets the same rules. A Sanbase
       subscription does not count on SanAPI - its owner is FREE there.
-    * anonymous - FREE, and only versions that both products allow.
+    * anonymous - FREE, and only versions that both products allow. So is any
+      request that did not go through the auth plug, such as one over the websocket.
 
   Plan access is behind the `:enforce` flag (`METRIC_VERSION_ACCESS_ENFORCE`). While it
   is off, a request that would be denied is logged and then allowed, so the impact can
@@ -68,10 +69,11 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
   @doc """
   The versions of the metric a plan can use on the product ("SANAPI" or "SANBASE").
 
-  With `:subscription` (the caller's own plan) the plan is judged by that
-  subscription's billing interval and trial. Without it the plan is judged at its
-  best - any billing interval, not on trial - as it answers what the plan can give.
-  `:user` adds the versions the user is exempt for.
+  With `:subscription` (the caller's own plan, also when it is `nil` - no
+  subscription) the plan is judged by that subscription's billing interval and trial.
+  Without the key the plan is judged at its best - any billing interval, not on
+  trial - as it answers what the plan can give. `:user` adds the versions the user
+  is exempt for.
   """
   @spec plan_versions(String.t(), [String.t()], String.t(), String.t(), keyword()) ::
           [String.t()]
@@ -79,10 +81,52 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
       when product in @products do
     subscription = Keyword.get(opts, :subscription)
     caller = new_caller(product, subscription, plan_name, standard_plan(plan_name, product))
-    caller = if subscription, do: caller, else: %{caller | interval: :any}
+
+    # FREE has no subscription, so it never has a billing interval to be at its best in.
+    caller =
+      if Keyword.has_key?(opts, :subscription) or plan_name == "FREE",
+        do: caller,
+        else: %{caller | interval: :any}
 
     filter_usable(metric, versions, caller, Keyword.get(opts, :user))
   end
+
+  @doc """
+  The versions of the metric the caller's own plan can use on the product - what
+  `check/3` lets through for the caller's requests to that product. A web app user
+  asking about SanAPI is judged as their API key would be. Otherwise, on the other
+  product, the caller's plan is judged there by `plan_versions/5`.
+  """
+  @spec own_plan_versions(String.t(), [String.t()], String.t(), String.t(), map()) ::
+          [String.t()]
+  def own_plan_versions(metric, versions, product, plan_name, context)
+      when product in @products do
+    user = context[:auth][:current_user]
+
+    case caller(context) do
+      :unrestricted ->
+        versions
+
+      %{product: ^product} = caller ->
+        filter_usable(metric, versions, caller, user)
+
+      %{product: "SANBASE"} when product == "SANAPI" ->
+        filter_usable(metric, versions, apikey_caller(context), user)
+
+      _anonymous_or_other_product ->
+        plan_versions(metric, versions, product, plan_name,
+          subscription: context[:auth][:subscription],
+          user: user
+        )
+    end
+  end
+
+  # The caller as their API key requests are judged - the same subscriptions, by the
+  # SanAPI rules of `caller/1`.
+  defp apikey_caller(%{auth: %{current_user: %{}} = auth}),
+    do: caller(%{auth: Map.put(auth, :auth_method, :apikey)})
+
+  defp apikey_caller(_context), do: :anonymous
 
   defp filter_usable(metric, versions, caller, user) do
     scope = Sanbase.Metric.version_scope(metric)
@@ -196,13 +240,14 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
     plan_name = Subscription.plan_name(subscription)
 
-    plan =
-      case subscription_product(subscription) do
-        product when product in [nil, "SANAPI"] -> standard_plan(plan_name, "SANAPI")
-        _ -> "FREE"
-      end
+    case subscription_product(subscription) do
+      product when product in [nil, "SANAPI"] ->
+        new_caller("SANAPI", subscription, plan_name, standard_plan(plan_name, "SANAPI"))
 
-    new_caller("SANAPI", subscription, plan_name, plan)
+      # A Sanbase subscription gives nothing on SanAPI - its owner is FREE there.
+      _ ->
+        new_caller("SANAPI", subscription, plan_name, "FREE")
+    end
   end
 
   # The auth plug has already turned custom plans and bundles into the plan they get
@@ -215,28 +260,49 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
     new_caller(product, context[:auth][:subscription], plan_name, plan)
   end
 
-  # No resolved product means the request did not go through the auth plug (an
-  # internal call), which is not something this restriction is about.
-  defp caller(_context), do: :unrestricted
+  # Anything else did not go through the auth plug - a GraphQL document sent over the
+  # websocket (`SanbaseWeb.UserSocket` mounts Absinthe with no auth in the context),
+  # or a context built by hand. Nothing vouches for the caller, so it is anonymous.
+  defp caller(_context), do: :anonymous
 
   defp new_caller(product, subscription, plan_name, plan) do
-    %{
+    caller = %{
       product: product,
       subscription: subscription,
+      subscription_product: subscription_product(subscription),
       plan_name: plan_name,
       plan: plan,
       interval: interval(subscription),
       trialing?: trialing?(subscription)
     }
+
+    # A subscription of the other product that gives nothing here (a Sanbase plan on
+    # an apikey, a bundle in the web app) is FREE - with no billing interval or trial,
+    # as FREE never has one. Its own plan name is kept for the message and the log.
+    case caller do
+      %{plan: "FREE", subscription_product: sub_product} when sub_product not in [nil, product] ->
+        %{
+          caller
+          | plan_name: Subscription.plan_name(subscription),
+            interval: nil,
+            trialing?: false
+        }
+
+      caller ->
+        caller
+    end
   end
 
   # Custom plans and bundles match the rows of the standard plan they are based on.
   defp standard_plan(plan_name, product) do
-    case Plan.type(plan_name) do
-      :bundle -> Plan.Bundle.equivalent_standard_plan()
-      :custom -> Plan.CustomPlan.Access.restricted_access_as_plan(plan_name, product)
-      :standard -> plan_name
-    end
+    base_plan =
+      case Plan.type(plan_name) do
+        :bundle -> Plan.Bundle.equivalent_standard_plan()
+        :custom -> Plan.CustomPlan.Access.restricted_access_as_plan(plan_name, product)
+        :standard -> plan_name
+      end
+
+    if is_binary(base_plan), do: Plan.canonical_name(base_plan), else: base_plan
   end
 
   defp subscription_product(%{plan: %{product_id: product_id}}),
@@ -251,16 +317,45 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
 
   defp caller_description(:anonymous), do: "Anonymous requests have access to"
 
-  defp caller_description(%{plan_name: plan_name, subscription: subscription}) do
+  # The plan as it was judged: a Sanbase subscription on an apikey is FREE on SanAPI.
+  defp caller_description(
+         %{plan: "FREE", product: product, subscription_product: sub_product} = caller
+       )
+       when sub_product not in [nil, product] do
+    %{plan_name: plan_name, subscription_product: subscription_product} = caller
+
+    "Your plan (#{@product_label[subscription_product]} #{plan_name}, which is FREE on " <>
+      "#{@product_label[product]}) has access to"
+  end
+
+  defp caller_description(%{plan_name: plan_name, interval: interval, trialing?: trialing?}) do
     plan =
-      [plan_name, interval(subscription), if(trialing?(subscription), do: "trial")]
+      [plan_name, interval, if(trialing?, do: "trial")]
       |> Enum.reject(&is_nil/1)
       |> Enum.join(", ")
 
     "Your plan (#{plan}) has access to"
   end
 
-  defp requirement(_row, :anonymous), do: "requires a subscription"
+  # Anonymous requests have FREE on both products, so the version is open to some
+  # signed-in plan - say which, per product.
+  defp requirement(row, :anonymous) do
+    case plan_access(row) do
+      [] ->
+        "is not available to any plan"
+
+      rows ->
+        plans =
+          for product <- @products,
+              product_rows = Enum.filter(rows, &(&1.product == product)),
+              product_rows != [],
+              do:
+                "#{@product_label[product]} plans: " <>
+                  Enum.map_join(product_rows, ", ", &plan_description/1)
+
+        "needs an API key or a Sanbase login (#{Enum.join(plans, "; ")})"
+    end
+  end
 
   defp requirement(row, %{product: product}) do
     case Enum.filter(plan_access(row), &(&1.product == product)) do
@@ -281,14 +376,23 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
       ]
       |> Enum.filter(& &1)
 
+    plan = if row.plan == VersionPlanAccess.any_plan(), do: "any plan", else: row.plan
+
     case qualifiers do
-      [] -> row.plan
-      _ -> "#{row.plan} (#{Enum.join(qualifiers, ", ")})"
+      [] -> plan
+      _ -> "#{plan} (#{Enum.join(qualifiers, ", ")})"
     end
   end
 
+  # Cheapest plan first, the order the admin page shows them in.
   defp plan_access(nil), do: []
-  defp plan_access(row), do: row.plan_access
+
+  defp plan_access(row) do
+    Enum.sort_by(row.plan_access, fn access ->
+      order = [VersionPlanAccess.any_plan() | VersionPlanAccess.plans(access.product)]
+      {Enum.find_index(order, &(&1 == access.plan)) || length(order), access.plan}
+    end)
+  end
 
   # Users see version names, the same ones `availableVersions` returns. The default
   # version is always included, even when the alias table cannot be read.
@@ -335,13 +439,15 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
   defp log(outcome, metric, version, reason, caller, context) do
     user = context[:auth][:current_user]
 
-    {product, plan, interval, trial?} =
+    # The interval and trial the decision used, and the product of the subscription
+    # the plan comes from - a Sanbase PRO key is FREE on SanAPI, not SanAPI PRO.
+    {product, plan, subscription_product, interval, trial?} =
       case caller do
         :anonymous ->
-          {nil, "anonymous", nil, false}
+          {nil, "anonymous", nil, nil, false}
 
-        %{product: product, plan_name: plan_name, subscription: subscription} ->
-          {product, plan_name, interval(subscription), trialing?(subscription)}
+        %{product: product, plan_name: plan_name} = caller ->
+          {product, plan_name, caller.subscription_product, caller.interval, caller.trialing?}
       end
 
     fields = [
@@ -349,6 +455,7 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccess do
       auth_method: context[:auth][:auth_method],
       product: product,
       plan: plan,
+      subscription_product: subscription_product,
       interval: interval,
       trial: trial?,
       metric: metric,

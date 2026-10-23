@@ -227,6 +227,71 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
       end)
     end
 
+    test "in getAccessRestrictions, the own plan answers as getMetric does for a Sanbase key" do
+      create_alias!(%{
+        version_num: "6.0",
+        version_name: "six:v1",
+        plan_access: [%{product: "SANAPI", plan: "PRO"}]
+      })
+
+      conn = apikey_conn(:subscription_pro_sanbase)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/0,
+        {:ok, %{@metric => ["1.0", "6.0"]}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        # A Sanbase PRO key is FREE on SanAPI, not SanAPI PRO
+        assert restriction_version_nums(conn, "SANAPI") == ["1.0"]
+      end)
+    end
+
+    test "in getAccessRestrictions about SanAPI, a web app user gets their API key's answer" do
+      create_alias!(%{
+        version_num: "6.0",
+        version_name: "six:v1",
+        plan_access: [%{product: "SANAPI", plan: "PRO"}]
+      })
+
+      %{user: sanbase_pro} = insert(:subscription_pro_sanbase, user: insert(:user))
+      %{user: sanapi_pro} = insert(:subscription_pro, user: insert(:user))
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/0,
+        {:ok, %{@metric => ["1.0", "6.0"]}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for {user, expected} <- [{sanbase_pro, ["1.0"]}, {sanapi_pro, ["1.0", "6.0"]}] do
+          {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+
+          assert restriction_version_nums(setup_jwt_auth(build_conn(), user), "SANAPI") ==
+                   expected
+
+          assert restriction_version_nums(setup_apikey_auth(build_conn(), apikey), "SANAPI") ==
+                   expected
+        end
+      end)
+    end
+
+    test "in getAccessRestrictions, a FREE caller's own plan has no billing interval", ctx do
+      create_alias!(%{
+        version_num: "6.0",
+        version_name: "six:v1",
+        plan_access: [%{product: "SANAPI", plan: "ANY", billing_interval: "month"}]
+      })
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/0,
+        {:ok, %{@metric => ["1.0", "6.0"]}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        # As getMetric would answer: a monthly-only row does not match no subscription
+        assert restriction_version_nums(apikey_conn(nil), "SANAPI") == ["1.0"]
+        # FREE asked about by name has no billing interval either
+        assert restriction_version_nums(ctx.conn, "SANAPI", "FREE") == ["1.0"]
+      end)
+    end
+
     test "while plan access enforcement is off, every exposed version is listed", ctx do
       config = Application.get_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess)
 

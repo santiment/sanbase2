@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
+  alias Sanbase.Billing.Plan.MetricVersionAccess
   alias Sanbase.Billing.Product
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -132,22 +133,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   def available_versions(%{type: _}, _args, _resolution), do: {:ok, []}
 
   # The versions the restrictions' plan can use on their product. The caller's own
-  # plan is judged by their subscription; a named plan at its best.
+  # plan answers as getMetric does; a named plan is judged at its best.
   defp plan_versions(metric, versions, %{path: path, context: context}) do
     subject = path |> restrictions_args() |> restrictions_subject(context)
+    %{product_code: product, plan_name: plan_name} = subject
 
-    opts =
-      if subject.asked_for_another_plan?,
-        do: [],
-        else: [subscription: context[:auth][:subscription], user: context[:auth][:current_user]]
-
-    Sanbase.Billing.Plan.MetricVersionAccess.plan_versions(
-      metric,
-      versions,
-      subject.product_code,
-      subject.plan_name,
-      opts
-    )
+    if subject.asked_for_another_plan?,
+      do: MetricVersionAccess.plan_versions(metric, versions, product, plan_name),
+      else: MetricVersionAccess.own_plan_versions(metric, versions, product, plan_name, context)
   end
 
   defp restrictions_args(path) do

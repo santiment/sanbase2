@@ -3,8 +3,8 @@ defmodule Sanbase.Metric.VersionAlias do
   Human-readable names for metric versions: "2.1" is "modern_pit:v1".
 
   Names always end in `:vN`, so they can never be mistaken for a version ("2.1",
-  "Experimental (Weighted Age)"). Versions without a row pass through untouched -
-  the table is a list of aliases, not an allowlist.
+  "Experimental (Weighted Age)"). A version without a row passes through untouched
+  as a number, but no plan can use it - access comes from the row's `plan_access`.
 
   Applied only at the GraphQL boundary (`to_version_num/2` on the way in,
   `to_maps/2` on the way out) from a single `:persistent_term`; everything in
@@ -31,6 +31,9 @@ defmodule Sanbase.Metric.VersionAlias do
 
   @name_regex ~r/^[a-z][a-z0-9_]*:v\d+(\.\d+)*$/
   @term_key {__MODULE__, :aliases}
+  # Changed by every clear. A load that a clear overlapped may have read rows from
+  # before the change, so it does not store them - see `load_aliases/0`.
+  @generation_key {__MODULE__, :generation}
 
   @scopes ["global", "github", "social"]
   @no_aliases %{by_num: %{}, by_name: %{}}
@@ -105,12 +108,20 @@ defmodule Sanbase.Metric.VersionAlias do
   @doc "Drop the cached rows on every node; each reloads on its next read."
   @spec clear_cache() :: :ok
   def clear_cache() do
-    :persistent_term.erase(@term_key)
+    clear_local_cache()
 
     for node <- Node.list() do
-      Node.spawn(node, :persistent_term, :erase, [@term_key])
+      Node.spawn(node, __MODULE__, :clear_local_cache, [])
     end
 
+    :ok
+  end
+
+  @doc false
+  # The generation changes before the erase, so a load running across them sees it.
+  def clear_local_cache() do
+    :persistent_term.put(@generation_key, make_ref())
+    :persistent_term.erase(@term_key)
     :ok
   end
 
@@ -206,6 +217,12 @@ defmodule Sanbase.Metric.VersionAlias do
   """
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(%__MODULE__{} = version_alias, attrs) do
+    if locked?(version_alias),
+      do: locked_error(version_alias),
+      else: do_update(version_alias, attrs)
+  end
+
+  defp do_update(version_alias, attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:version_alias, changeset(version_alias, attrs))
     |> Ecto.Multi.delete_all(:unexposed_plan_access, fn %{version_alias: updated} ->
@@ -229,7 +246,27 @@ defmodule Sanbase.Metric.VersionAlias do
   @doc "Delete the row and its plan access."
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(%__MODULE__{} = version_alias) do
-    version_alias |> Repo.delete() |> tap(&clear_cache_on_ok/1)
+    if locked?(version_alias),
+      do: locked_error(version_alias),
+      else: version_alias |> Repo.delete() |> tap(&clear_cache_on_ok/1)
+  end
+
+  @doc """
+  Whether the row is the global row of the default version. Every request without a
+  version uses it and every plan has it, so it cannot be changed or deleted -
+  renaming or deleting it would break every client that sends its name. A scope's
+  own row for it can be, as the global one is there to fall back to.
+  """
+  @spec locked?(t()) :: boolean()
+  def locked?(%__MODULE__{scope: scope, version_num: num}),
+    do: scope == "global" and num == Sanbase.Metric.default_version()
+
+  @doc false
+  def locked_error(%__MODULE__{} = version_alias) do
+    {:error,
+     version_alias
+     |> change()
+     |> add_error(:version_num, "is the default version, which cannot be changed or deleted")}
   end
 
   defp clear_cache_on_ok({:ok, _}), do: clear_cache()
@@ -261,13 +298,6 @@ defmodule Sanbase.Metric.VersionAlias do
   def exposed_in?(%__MODULE__{exposed_in: exposed_in}, product),
     do: product in Map.get(@exposures, exposed_in, [])
 
-  @doc "Every canonical version that has a name."
-  @spec version_nums(String.t()) :: [String.t()]
-  def version_nums(scope \\ "global") do
-    %{by_num: by_num} = aliases(scope)
-    Map.keys(by_num)
-  end
-
   defp name?(input), do: Regex.match?(@name_regex, input)
 
   defp aliases(scope) do
@@ -280,8 +310,11 @@ defmodule Sanbase.Metric.VersionAlias do
     Map.get(aliases_by_scope, scope, @no_aliases)
   end
 
-  # Nothing is stored on failure, so the next read retries.
+  # Nothing is stored on failure, so the next read retries. Nothing is stored either
+  # when a clear ran during the load: the rows may predate the change it was for.
   defp load_aliases() do
+    generation = :persistent_term.get(@generation_key, nil)
+
     rows_by_scope =
       Repo.all(from(a in __MODULE__, where: a.scope in ^@scopes, preload: :plan_access))
       |> Enum.group_by(& &1.scope)
@@ -294,7 +327,15 @@ defmodule Sanbase.Metric.VersionAlias do
         scope -> {scope, index(global_rows ++ Map.get(rows_by_scope, scope, []))}
       end)
 
-    :persistent_term.put(@term_key, aliases_by_scope)
+    if :persistent_term.get(@generation_key, nil) == generation do
+      :persistent_term.put(@term_key, aliases_by_scope)
+
+      # A clear changes the generation before it erases, so one that ran between the
+      # check and the put is seen here - drop what may be stale.
+      if :persistent_term.get(@generation_key, nil) != generation,
+        do: :persistent_term.erase(@term_key)
+    end
+
     aliases_by_scope
   rescue
     e ->

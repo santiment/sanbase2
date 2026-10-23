@@ -3,7 +3,7 @@ defmodule Sanbase.Metric.VersionAliasTest do
 
   import Ecto.Changeset, only: [get_field: 2]
   import Ecto.Query, only: [from: 2]
-  import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1]
+  import Sanbase.MetricVersionAliasHelpers, only: [create_alias!: 1, ensure_alias!: 1]
 
   alias Sanbase.Repo
   alias Sanbase.Metric.VersionAlias
@@ -106,7 +106,7 @@ defmodule Sanbase.Metric.VersionAliasTest do
       assert [%{version_name: "modern:v1"}] = VersionAlias.to_maps(["2.0"])
       assert [%{version_name: "filtered:v1"}] = VersionAlias.to_maps(["2.0"], "github")
       assert VersionAlias.to_version_name("2.0", "github") == "filtered:v1"
-      assert VersionAlias.version_nums("github") == ["2.0"]
+      assert version_nums("github") == ["2.0"]
 
       assert {:ok, "2.0"} == VersionAlias.to_version_num("filtered:v1", "github")
       assert {:error, error} = VersionAlias.to_version_num("modern:v1", "github")
@@ -124,9 +124,9 @@ defmodule Sanbase.Metric.VersionAliasTest do
         assert {:ok, "1.0"} == VersionAlias.to_version_num("original:v1", scope)
       end
 
-      assert Enum.sort(VersionAlias.version_nums("social")) == ["1.0", "2.0"]
-      assert VersionAlias.version_nums("github") == ["1.0"]
-      assert VersionAlias.version_nums() == ["1.0"]
+      assert version_nums("social") == ["1.0", "2.0"]
+      assert version_nums("github") == ["1.0"]
+      assert version_nums("global") == ["1.0"]
     end
 
     test "rows are cached until clear_cache/0" do
@@ -139,6 +139,27 @@ defmodule Sanbase.Metric.VersionAliasTest do
       VersionAlias.clear_cache()
 
       assert [%{version_name: "seven:v1"}] = VersionAlias.to_maps(["7.0"])
+    end
+
+    test "a load that a clear ran during is used but not cached" do
+      Repo.insert!(%VersionAlias{version_num: "7.0", version_name: "seven:v1"})
+      VersionAlias.clear_cache()
+
+      # An admin change lands (and clears the cache) while the rows are being read
+      Sanbase.Mock.prepare_mock(Sanbase.Repo, :all, fn query ->
+        result = :meck.passthrough([query])
+        VersionAlias.clear_local_cache()
+        result
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert [%{version_name: "seven:v1"}] = VersionAlias.to_maps(["7.0"])
+      end)
+
+      assert :persistent_term.get({VersionAlias, :aliases}, :undefined) == :undefined
+
+      # The next read loads and caches as usual
+      assert [%{version_name: "seven:v1"}] = VersionAlias.to_maps(["7.0"])
+      assert %{} = :persistent_term.get({VersionAlias, :aliases})
     end
   end
 
@@ -233,6 +254,31 @@ defmodule Sanbase.Metric.VersionAliasTest do
                )
     end
   end
+
+  describe "the default version" do
+    test "cannot be changed, deleted or have its plan access replaced" do
+      row = ensure_alias!(%{version_num: "1.0", version_name: "original:v1"})
+
+      assert {:error, changeset} = VersionAlias.update(row, %{version_name: "renamed:v1"})
+      assert {"is the default version" <> _, _} = changeset.errors[:version_num]
+      assert {:error, _} = VersionAlias.delete(row)
+      assert {:error, _} = Sanbase.Metric.VersionPlanAccess.replace_all(row, [])
+
+      assert %VersionAlias{version_name: "original:v1"} = Repo.get(VersionAlias, row.id)
+    end
+
+    test "other versions can be changed and deleted" do
+      row = create_alias!(%{version_num: "7.0", version_name: "seven:v1"})
+
+      assert {:ok, %VersionAlias{version_name: "seven:v2"} = row} =
+               VersionAlias.update(row, %{version_name: "seven:v2"})
+
+      assert {:ok, _} = VersionAlias.delete(row)
+    end
+  end
+
+  defp version_nums(scope),
+    do: scope |> VersionAlias.rows() |> Enum.map(& &1.version_num) |> Enum.sort()
 
   defp changeset(attrs), do: VersionAlias.changeset(%VersionAlias{}, attrs)
 

@@ -433,6 +433,12 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     # only metrics have default_aggregation, for queries and signals it is nil
     field(:default_aggregation, :aggregation)
 
+    @desc ~s"""
+    The versions of the metric that the plan and product of these restrictions can
+    request. For the caller's own plan the billing interval and trial of their
+    subscription count; a plan passed by name is judged at its best (yearly, not on
+    trial). Version 1.0 is always included.
+    """
     field :available_versions, list_of(:metric_version) do
       resolve(&SanbaseWeb.Graphql.Resolvers.AccessControlResolver.available_versions/3)
     end

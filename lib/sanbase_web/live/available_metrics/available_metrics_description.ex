@@ -492,9 +492,10 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     <pre>
     One of: global, github, social.
     Decides the names of the metric's versions and who can access them.
-    In the social scope "2.0" is modern:v1 and needs a paid SanAPI plan.
-    In the github scope the versions have their own names and all of them are free.
-    The global scope is for the rest of the metrics.
+    A scope has its own version names - "2.0" is modern:v1 in both the social and
+    the github scope, but a different computation. The global scope is for the rest
+    of the metrics, and every scope also sees the global versions.
+    Which plans can use each version is set on the Metric versions admin page.
     </pre>
     """
   end

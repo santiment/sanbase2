@@ -184,7 +184,7 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Index do
                   navigate={~p"/admin/metric_versions/#{version.id}"}
                   class="btn btn-ghost btn-sm"
                 >
-                  {if @can_edit?, do: "Configure", else: "View"}
+                  {if @can_edit? and not VersionAlias.locked?(version), do: "Configure", else: "View"}
                 </.link>
               </td>
             </tr>

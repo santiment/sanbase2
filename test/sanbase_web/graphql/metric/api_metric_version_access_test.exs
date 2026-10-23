@@ -25,6 +25,47 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
   end
 
   describe "apikey" do
+    test "an Essential subscription matches the rows of BASIC, the plan it answers as" do
+      create_alias!(%{
+        version_num: "7.0",
+        version_name: "seven:v1",
+        plan_access: [%{product: "SANAPI", plan: "ESSENTIAL"}]
+      })
+
+      assert %{plan_access: [%{plan: "BASIC"}]} = VersionAlias.get("7.0")
+      assert allowed?(apikey_conn(:subscription_essential), "7.0")
+    end
+
+    test "a Sanbase subscription is FREE on SanAPI, without its interval or trial" do
+      create_alias!(%{
+        version_num: "7.0",
+        version_name: "seven:v1",
+        plan_access: [%{product: "SANAPI", plan: "ANY", accessible_if_trial: false}]
+      })
+
+      assert allowed?(apikey_conn(:subscription_max_sanbase, status: "trialing"), "7.0")
+    end
+
+    test "the error says a Sanbase plan is FREE on SanAPI, and the log has its product" do
+      create_alias!(%{
+        version_num: "7.0",
+        version_name: "seven:v1",
+        plan_access: [%{product: "SANAPI", plan: "PRO"}]
+      })
+
+      log =
+        capture_log(fn ->
+          assert execute_query_with_error(
+                   apikey_conn(:subscription_pro_sanbase),
+                   query("7.0"),
+                   "getMetric"
+                 ) =~
+                   "Your plan (Sanbase PRO, which is FREE on SanAPI) has access to original:v1."
+        end)
+
+      assert log =~ "product=SANAPI plan=PRO subscription_product=SANBASE interval= trial=false"
+    end
+
     test "Sanbase MAX gets version 1.0 only" do
       conn = apikey_conn(:subscription_max_sanbase)
 
@@ -155,10 +196,29 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
       assert denied?(conn, "2.0")
     end
 
-    test "the error says anonymous requests have version 1.0 only" do
+    test "the error names the plans that have the version, per product" do
       assert execute_query_with_error(build_conn(), query("2.0"), "getMetric") ==
-               "Metric version modern:v1 requires a subscription. " <>
+               "Metric version modern:v1 needs an API key or a Sanbase login " <>
+                 "(SanAPI plans: BUSINESS_PRO, BUSINESS_MAX; Sanbase plans: any plan). " <>
                  "Anonymous requests have access to original:v1."
+    end
+
+    test "the error says when a free API key is enough" do
+      create_alias!(%{
+        version_num: "7.0",
+        version_name: "seven:v1",
+        plan_access: [%{product: "SANAPI", plan: "ANY"}]
+      })
+
+      assert execute_query_with_error(build_conn(), query("7.0"), "getMetric") =~
+               "Metric version seven:v1 needs an API key or a Sanbase login (SanAPI plans: any plan)."
+    end
+
+    test "the error says when no plan has the version" do
+      create_alias!(%{version_num: "7.0", version_name: "seven:v1"})
+
+      assert execute_query_with_error(build_conn(), query("7.0"), "getMetric") =~
+               "Metric version seven:v1 is not available to any plan."
     end
 
     test "get a version only when it is free on both products" do
@@ -233,7 +293,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
                  query("social_modern:v1", "social_volume_total"),
                  "getMetric"
                ) ==
-                 "Metric version social_modern:v1 requires a subscription. " <>
+                 "Metric version social_modern:v1 needs an API key or a Sanbase login " <>
+                   "(SanAPI plans: BUSINESS_PRO, BUSINESS_MAX; Sanbase plans: any plan). " <>
                    "Anonymous requests have access to original:v1."
 
         conn = apikey_conn(:subscription_business_pro_monthly)
@@ -429,7 +490,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
       assert log =~ "[MetricVersionAccess] Denied user_id="
 
       assert log =~
-               "auth_method=apikey product=SANAPI plan=BUSINESS_MAX interval=month trial=false"
+               "auth_method=apikey product=SANAPI plan=BUSINESS_MAX subscription_product=SANAPI interval=month trial=false"
 
       assert log =~
                "metric=#{@metric} version=2.1 version_name=modern_pit:v1 reason=no_plan_access"
@@ -446,7 +507,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
 
         assert log =~
                  "[MetricVersionAccess] Would deny user_id= auth_method=none product= " <>
-                   "plan=anonymous interval= trial=false"
+                   "plan=anonymous subscription_product= interval= trial=false"
       after
         Application.put_env(:sanbase, Sanbase.Billing.Plan.MetricVersionAccess, config)
       end
@@ -470,6 +531,47 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
   defp jwt_conn(factory) do
     %{user: user} = insert(factory, user: insert(:user))
     setup_jwt_auth(build_conn(), user)
+  end
+
+  describe "without any alias or plan access rows (the seed not imported)" do
+    setup do
+      Sanbase.Repo.delete_all(VersionAlias)
+      VersionAlias.clear_cache()
+      :ok
+    end
+
+    test "version 1.0 still works for everyone" do
+      {:ok, free_apikey} = Apikey.generate_apikey(insert(:user))
+
+      for conn <- [
+            build_conn(),
+            setup_apikey_auth(build_conn(), free_apikey),
+            apikey_conn(:subscription_business_max_yearly),
+            jwt_conn(:subscription_max_sanbase)
+          ] do
+        assert allowed?(conn, nil)
+        assert allowed?(conn, "1.0")
+      end
+    end
+
+    test "every other version is denied" do
+      assert denied?(apikey_conn(:subscription_business_max_yearly), "2.0")
+      assert denied?(jwt_conn(:subscription_max_sanbase), "2.1")
+    end
+
+    test "availableVersions keeps version 1.0" do
+      query = """
+      { getMetric(metric: "#{@metric}") { metadata { availableVersions { versionNum } } } }
+      """
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_versions/1, {:ok, ["1.0", "2.0"]})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for conn <- [build_conn(), apikey_conn(:subscription_business_max_yearly)] do
+          assert %{"metadata" => %{"availableVersions" => [%{"versionNum" => "1.0"}]}} =
+                   execute_query(conn, query, "getMetric")
+        end
+      end)
+    end
   end
 
   defp allowed?(conn, version, metric \\ @metric) do

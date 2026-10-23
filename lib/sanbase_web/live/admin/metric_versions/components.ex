@@ -38,24 +38,33 @@ defmodule SanbaseWeb.Admin.MetricVersionsLive.Components do
     Enum.map(VersionPlanAccess.billing_intervals(), &{Map.fetch!(@interval_labels, &1), &1})
   end
 
-  @doc ~s|"BUSINESS_MAX" -> "Business Max", "ANY" -> "All plans"|
-  def plan_label(plan) do
-    if plan == VersionPlanAccess.any_plan() do
-      "All plans"
-    else
-      plan |> String.split("_") |> Enum.map_join(" ", &String.capitalize/1)
+  @doc ~s|"BUSINESS_MAX" -> "Business Max", "ANY" -> "All plans", SanAPI "BASIC" -> "Essential"|
+  def plan_label(plan, product) do
+    cond do
+      plan == VersionPlanAccess.any_plan() -> "All plans"
+      # Sold as Essential, stored as BASIC - `Sanbase.Billing.Plan.canonical_name/1`.
+      product == "SANAPI" and plan == "BASIC" -> "Essential"
+      VersionPlanAccess.sanapi_plan_on_sanbase?(product, plan) -> "#{humanize(plan)} (SanAPI)"
+      true -> humanize(plan)
     end
   end
 
+  defp humanize(plan), do: plan |> String.split("_") |> Enum.map_join(" ", &String.capitalize/1)
+
   @doc ~s|A plan access entry as people read it: "Business Max (yearly, no trial)".|
-  def access_label(%{plan: plan, billing_interval: interval, accessible_if_trial: trial?}) do
+  def access_label(%{
+        product: product,
+        plan: plan,
+        billing_interval: interval,
+        accessible_if_trial: trial?
+      }) do
     qualifiers =
       [interval != "any" && "#{interval}ly", not trial? && "no trial"]
       |> Enum.filter(& &1)
 
     case qualifiers do
-      [] -> plan_label(plan)
-      _ -> "#{plan_label(plan)} (#{Enum.join(qualifiers, ", ")})"
+      [] -> plan_label(plan, product)
+      _ -> "#{plan_label(plan, product)} (#{Enum.join(qualifiers, ", ")})"
     end
   end
 

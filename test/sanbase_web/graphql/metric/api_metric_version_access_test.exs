@@ -66,56 +66,25 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
       assert log =~ "product=SANAPI plan=PRO subscription_product=SANBASE interval= trial=false"
     end
 
-    test "Sanbase MAX gets version 1.0 only" do
-      conn = apikey_conn(:subscription_max_sanbase)
+    # {subscription factory, attrs, versions allowed}; the seeded versions not listed
+    # are denied.
+    @api_plans [
+      {nil, [], ["1.0"]},
+      {:subscription_max_sanbase, [], ["1.0"]},
+      {:subscription_business_pro_monthly, [], ["1.0", "2.0", "3.0"]},
+      {:subscription_business_pro_yearly, [], ["1.0", "2.0", "3.0"]},
+      {:subscription_business_max_monthly, [], ["1.0", "2.0", "3.0"]},
+      {:subscription_business_max_yearly, [status: "trialing"], ["1.0", "2.0", "3.0"]},
+      {:subscription_business_max_yearly, [], ["1.0", "2.0", "2.1", "2.1.2", "3.0", "3.1"]}
+    ]
 
-      assert allowed?(conn, "1.0")
-      assert denied?(conn, "2.0")
-      assert denied?(conn, "2.1")
-      assert denied?(conn, "3.0")
-    end
-
-    test "Business Pro gets the newer versions but not point-in-time" do
-      for factory <- [:subscription_business_pro_monthly, :subscription_business_pro_yearly] do
-        conn = apikey_conn(factory)
-
-        assert allowed?(conn, "1.0")
-        assert allowed?(conn, "2.0")
-        assert allowed?(conn, "3.0")
-        assert denied?(conn, "2.1")
-        assert denied?(conn, "2.1.1")
-        assert denied?(conn, "3.1")
+    test "each plan gets the seeded versions of its SanAPI plan access" do
+      for {factory, attrs, allowed} <- @api_plans,
+          conn = if(factory, do: apikey_conn(factory, attrs), else: apikey_conn_without_plan()),
+          version <- ["1.0", "2.0", "2.1", "2.1.2", "3.0", "3.1"] do
+        assert allowed?(conn, version) == version in allowed,
+               "#{factory} #{inspect(attrs)} #{version}"
       end
-    end
-
-    test "Business Max monthly gets the newer versions but not point-in-time" do
-      conn = apikey_conn(:subscription_business_max_monthly)
-
-      assert allowed?(conn, "2.0")
-      assert denied?(conn, "2.1")
-    end
-
-    test "Business Max yearly gets every version" do
-      conn = apikey_conn(:subscription_business_max_yearly)
-
-      for version <- ["1.0", "2.0", "2.1", "2.1.2", "3.0", "3.1"] do
-        assert allowed?(conn, version), version
-      end
-    end
-
-    test "a Business Max yearly trial does not get point-in-time" do
-      conn = apikey_conn(:subscription_business_max_yearly, status: "trialing")
-
-      assert allowed?(conn, "2.0")
-      assert denied?(conn, "2.1")
-    end
-
-    test "no subscription gets version 1.0 only" do
-      {:ok, apikey} = Apikey.generate_apikey(insert(:user))
-      conn = setup_apikey_auth(build_conn(), apikey)
-
-      assert allowed?(conn, "1.0")
-      assert denied?(conn, "2.0")
     end
 
     test "omitting the version is unaffected" do
@@ -179,46 +148,35 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
   end
 
   describe "anonymous" do
-    test "without an origin gets version 1.0 only" do
-      assert allowed?(build_conn(), "1.0")
-      assert denied?(build_conn(), "2.0")
-    end
+    test "get version 1.0 only, whatever the origin" do
+      for origin <- [nil, "https://example.com", "https://app.santiment.net"] do
+        conn = if origin, do: put_req_header(build_conn(), "origin", origin), else: build_conn()
 
-    test "from a third-party origin gets version 1.0 only" do
-      conn = put_req_header(build_conn(), "origin", "https://example.com")
-      assert denied?(conn, "2.0")
-    end
-
-    test "the origin does not change the rules - a Santiment origin gets version 1.0 only" do
-      conn = put_req_header(build_conn(), "origin", "https://app.santiment.net")
-
-      assert allowed?(conn, "1.0")
-      assert denied?(conn, "2.0")
+        assert allowed?(conn, "1.0")
+        assert denied?(conn, "2.0")
+      end
     end
 
     test "the error names the plans that have the version, per product" do
-      assert execute_query_with_error(build_conn(), query("2.0"), "getMetric") ==
-               "Metric version modern:v1 needs an API key or a Sanbase login " <>
-                 "(SanAPI plans: BUSINESS_PRO, BUSINESS_MAX; Sanbase plans: any plan). " <>
-                 "Anonymous requests have access to original:v1."
-    end
-
-    test "the error says when a free API key is enough" do
       create_alias!(%{
         version_num: "7.0",
         version_name: "seven:v1",
         plan_access: [%{product: "SANAPI", plan: "ANY"}]
       })
 
+      create_alias!(%{version_num: "8.0", version_name: "eight:v1"})
+
+      assert execute_query_with_error(build_conn(), query("2.0"), "getMetric") ==
+               "Metric version modern:v1 needs an API key or a Sanbase login " <>
+                 "(SanAPI plans: BUSINESS_PRO, BUSINESS_MAX; Sanbase plans: any plan). " <>
+                 "Anonymous requests have access to original:v1."
+
+      # A free API key is enough
       assert execute_query_with_error(build_conn(), query("7.0"), "getMetric") =~
                "Metric version seven:v1 needs an API key or a Sanbase login (SanAPI plans: any plan)."
-    end
 
-    test "the error says when no plan has the version" do
-      create_alias!(%{version_num: "7.0", version_name: "seven:v1"})
-
-      assert execute_query_with_error(build_conn(), query("7.0"), "getMetric") =~
-               "Metric version seven:v1 is not available to any plan."
+      assert execute_query_with_error(build_conn(), query("8.0"), "getMetric") =~
+               "Metric version eight:v1 is not available to any plan."
     end
 
     test "get a version only when it is free on both products" do
@@ -520,6 +478,11 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAccessTest do
 
       refute log =~ "[MetricVersionAccess]"
     end
+  end
+
+  defp apikey_conn_without_plan() do
+    {:ok, apikey} = Apikey.generate_apikey(insert(:user))
+    setup_apikey_auth(build_conn(), apikey)
   end
 
   defp apikey_conn(factory, attrs \\ []) do

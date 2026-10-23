@@ -92,7 +92,7 @@ defmodule Sanbase.Metric.VersionPlanAccess do
     |> validate_required([:version_alias_id, :product, :plan, :billing_interval])
     |> validate_inclusion(:product, @products)
     |> validate_inclusion(:billing_interval, @billing_intervals)
-    |> validate_inclusion(:plan, @plans)
+    |> validate_plan_for_product()
     |> validate_exposed()
     |> foreign_key_constraint(:version_alias_id)
     |> unique_constraint([:version_alias_id, :product, :plan, :billing_interval],
@@ -155,6 +155,17 @@ defmodule Sanbase.Metric.VersionPlanAccess do
 
   defp normalize_plan(plan),
     do: plan |> String.trim() |> String.upcase() |> Sanbase.Billing.Plan.canonical_name()
+
+  # A plan a caller on the product never has would never match.
+  defp validate_plan_for_product(changeset) do
+    allowed =
+      case get_field(changeset, :product) do
+        product when product in @products -> [@any_plan | plans(product)]
+        _ -> @plans
+      end
+
+    validate_inclusion(changeset, :plan, allowed)
+  end
 
   # A row for a product the version is not exposed in would never match.
   defp validate_exposed(changeset) do

@@ -13,11 +13,17 @@ defmodule Sanbase.Metric.VersionPlanAccessTest do
   end
 
   describe "changeset" do
-    test "accepts the known products, plans and billing intervals", %{version_alias: row} do
+    test "accepts the known products, their plans and billing intervals", %{version_alias: row} do
       for product <- VersionPlanAccess.products(),
-          plan <- VersionPlanAccess.plans(),
+          plan <- ["ANY" | VersionPlanAccess.plans(product)],
           interval <- VersionPlanAccess.billing_intervals() do
         assert changeset(row, %{product: product, plan: plan, billing_interval: interval}).valid?
+      end
+
+      # Sanbase plans no SanAPI caller has
+      for plan <- ["PRO_PLUS", "MAX"] do
+        assert %{plan: ["is invalid"]} =
+                 errors_on(changeset(row, %{product: "SANAPI", plan: plan}))
       end
 
       assert %{product: ["is invalid"]} =

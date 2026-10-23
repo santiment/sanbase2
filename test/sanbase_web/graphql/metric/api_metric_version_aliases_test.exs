@@ -227,25 +227,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricVersionAliasesTest do
       end)
     end
 
-    test "in getAccessRestrictions, the own plan answers as getMetric does for a Sanbase key" do
-      create_alias!(%{
-        version_num: "6.0",
-        version_name: "six:v1",
-        plan_access: [%{product: "SANAPI", plan: "PRO"}]
-      })
-
-      conn = apikey_conn(:subscription_pro_sanbase)
-
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Metric.available_versions/0,
-        {:ok, %{@metric => ["1.0", "6.0"]}}
-      )
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        # A Sanbase PRO key is FREE on SanAPI, not SanAPI PRO
-        assert restriction_version_nums(conn, "SANAPI") == ["1.0"]
-      end)
-    end
-
     test "in getAccessRestrictions about SanAPI, a web app user gets their API key's answer" do
       create_alias!(%{
         version_num: "6.0",

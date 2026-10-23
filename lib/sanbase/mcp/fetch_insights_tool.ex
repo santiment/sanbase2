@@ -84,7 +84,7 @@ defmodule Sanbase.MCP.FetchInsightsTool do
     do: raise(ArgumentError, "Cannot convert #{inspect(value)} to integer")
 
   defp fetch_insight_details(insight_ids) do
-    {:ok, posts} = Post.by_ids(insight_ids, preload: [:tags, :user, :metrics])
+    {:ok, posts} = Post.public_by_ids(insight_ids, preload: [:tags, :user, :metrics])
 
     insights = Enum.map(posts, &format_insight_detail/1)
     {:ok, insights}

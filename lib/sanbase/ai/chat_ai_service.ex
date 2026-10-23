@@ -37,27 +37,6 @@ defmodule Sanbase.AI.ChatAIService do
   end
 
   @doc """
-  Generates and updates chat title based on the first user message (async).
-  """
-  @spec generate_and_update_chat_title(String.t(), String.t()) :: :ok
-  def generate_and_update_chat_title(chat_id, first_message) do
-    Task.start(fn ->
-      case openai_client().generate_chat_title(first_message) do
-        {:ok, title} ->
-          case Chat.update_chat_title(chat_id, title) do
-            {:ok, _} -> Logger.info("Updated chat title for chat #{chat_id}")
-            {:error, reason} -> Logger.error("Failed to update chat title: #{reason}")
-          end
-
-        {:error, reason} ->
-          Logger.error("Failed to generate chat title: #{reason}")
-      end
-    end)
-
-    :ok
-  end
-
-  @doc """
   Generates and updates chat title based on the first user message (synchronous).
   """
   @spec generate_and_update_chat_title_sync(String.t(), String.t()) ::

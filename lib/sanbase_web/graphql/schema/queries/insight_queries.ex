@@ -12,7 +12,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   }
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
-  alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
 
   object :insight_queries do
     field :popular_insight_authors, list_of(:public_user) do
@@ -31,7 +30,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:id, non_null(:integer))
 
       resolve(&InsightResolver.post/3)
-      middleware(PostPaywallFilter)
     end
 
     @desc """
@@ -52,7 +50,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights/3)
-      middleware(PostPaywallFilter)
     end
 
     @desc "Fetch a list of all posts for given user ID."
@@ -69,7 +66,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:page_size, :integer, default_value: 20)
 
       resolve(&InsightResolver.all_insights_for_user/3)
-      middleware(PostPaywallFilter)
     end
 
     @desc ~s"""
@@ -86,7 +82,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights_by_tag/3)
-      middleware(PostPaywallFilter)
     end
 
     field :all_insights_by_search_term, list_of(:post) do
@@ -101,7 +96,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:page_size, :integer, default_value: 10)
 
       cache_resolve(&InsightResolver.all_insights_by_search_term/3, ttl: 5, max_ttl_offset: 5)
-      middleware(PostPaywallFilter)
     end
 
     @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."

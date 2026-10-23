@@ -508,8 +508,7 @@ defmodule Sanbase.Billing.Subscription do
   """
   def update_subscription(%__MODULE__{} = db_subscription, plan) do
     # don't allow upgrade/downgrade for incomplete and canceled subscriptions
-    with false <-
-           db_subscription.status in [:incomplete, :incomplete_expired, :canceled, :unpaid],
+    with :ok <- check_can_upgrade_downgrade(db_subscription),
          {:ok, stripe_subscription} <- StripeApi.upgrade_downgrade(db_subscription, plan),
          {:ok, db_subscription} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
@@ -517,6 +516,16 @@ defmodule Sanbase.Billing.Subscription do
       {:ok, db_subscription}
     end
   end
+
+  defp check_can_upgrade_downgrade(%__MODULE__{status: status})
+       when status in [:incomplete, :incomplete_expired, :canceled, :unpaid] do
+    {:error,
+     %__MODULE__.Error{
+       message: "Cannot upgrade or downgrade a subscription with status #{status}"
+     }}
+  end
+
+  defp check_can_upgrade_downgrade(%__MODULE__{}), do: :ok
 
   @doc """
   Cancel subscription.

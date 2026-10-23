@@ -81,7 +81,7 @@ defmodule Sanbase.UserList do
     user_list
     |> cast(attrs, @create_fields)
     |> validate_required([:name, :user_id])
-    |> validate_change(:function, &validate_function/2)
+    |> validate_function()
     |> unique_constraint(:slug)
   end
 
@@ -90,16 +90,23 @@ defmodule Sanbase.UserList do
     user_list
     |> cast(attrs, @update_fields)
     |> cast_assoc(:list_items)
-    |> validate_change(:function, &validate_function/2)
+    |> validate_function()
     |> unique_constraint(:slug)
   end
 
-  defp validate_function(:function, nil), do: []
+  # The function is evaluated as the watchlist owner, so it can use the owner's
+  # private watchlists.
+  defp validate_function(changeset) do
+    user_id = get_field(changeset, :user_id)
+    validate_change(changeset, :function, &validate_function(&1, &2, user_id))
+  end
 
-  defp validate_function(:function, function) do
+  defp validate_function(:function, nil, _user_id), do: []
+
+  defp validate_function(:function, function, user_id) do
     {:ok, function} = function |> WatchlistFunction.cast()
 
-    case WatchlistFunction.valid_function?(function) do
+    case WatchlistFunction.valid_function?(function, user_id: user_id) do
       true ->
         []
 
@@ -193,6 +200,47 @@ defmodule Sanbase.UserList do
   end
 
   def public?(%__MODULE__{is_public: is_public}), do: is_public
+
+  @type watchlist_reference ::
+          {:watchlist_id, integer() | String.t()} | {:watchlist_slug, String.t()}
+
+  @doc ~s"""
+  Fetch a watchlist by id or slug if it is public or owned by the user. Private
+  watchlists are accessible only by their owner, so with a nil user_id only
+  public watchlists are returned.
+  """
+  @spec fetch_accessible(watchlist_reference(), non_neg_integer() | nil) ::
+          {:ok, %__MODULE__{}} | {:error, String.t()}
+  def fetch_accessible(reference, user_id) do
+    user = %User{id: user_id}
+
+    result =
+      case reference do
+        {:watchlist_id, id} -> user_list(id, user)
+        {:watchlist_slug, slug} -> user_list_by_slug(slug, user)
+      end
+
+    case result do
+      {:ok, %__MODULE__{} = watchlist} ->
+        {:ok, watchlist}
+
+      _ ->
+        {:error,
+         "#{reference_to_str(reference)} does not exist or it is a private watchlist owned by another user."}
+    end
+  end
+
+  @doc ~s"""
+  Whether all the referenced watchlists exist and are public.
+  """
+  @spec all_public?([watchlist_reference()]) :: boolean()
+  def all_public?(references) do
+    Enum.all?(references, &match?({:ok, _}, fetch_accessible(&1, nil)))
+  end
+
+  defp reference_to_str({:watchlist_id, id}), do: "Watchlist with id #{id}"
+  defp reference_to_str({:watchlist_slug, slug}), do: "Watchlist with slug #{slug}"
+
   def screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
   def type(%__MODULE__{type: type}), do: type
 
@@ -200,7 +248,7 @@ defmodule Sanbase.UserList do
   Return a list of all blockchain addresses in a watchlist.
   """
   def get_blockchain_addresses(%__MODULE__{function: function} = watchlist) do
-    case WatchlistFunction.evaluate(function) do
+    case WatchlistFunction.evaluate(function, user_id: watchlist.user_id) do
       {:error, error} ->
         {:error, error}
 
@@ -239,7 +287,7 @@ defmodule Sanbase.UserList do
   Return a list of all projects in a watchlist.
   """
   def get_projects(%__MODULE__{function: function} = watchlist) do
-    case WatchlistFunction.evaluate(function) do
+    case WatchlistFunction.evaluate(function, user_id: watchlist.user_id) do
       {:error, error} ->
         {:error, error}
 

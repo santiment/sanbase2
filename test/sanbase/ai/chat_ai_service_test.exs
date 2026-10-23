@@ -208,46 +208,6 @@ defmodule Sanbase.AI.ChatAIServiceTest do
     end
   end
 
-  describe "generate_and_update_chat_title/2" do
-    test "generates and updates chat title", %{chat: chat} do
-      first_message = "What are the key metrics for Bitcoin analysis?"
-      mock_title = "Bitcoin Analysis Metrics"
-
-      expect(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn message ->
-        assert message == first_message
-        {:ok, mock_title}
-      end)
-
-      assert :ok = ChatAIService.generate_and_update_chat_title(chat.id, first_message)
-
-      # Give the async task time to complete
-      Process.sleep(100)
-
-      # Verify the chat title was updated
-      updated_chat = Chat.get_chat(chat.id)
-      assert updated_chat.title == mock_title
-    end
-
-    @tag capture_log: true
-    test "handles title generation errors gracefully", %{chat: chat} do
-      first_message = "Test message"
-
-      expect(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn message ->
-        assert message == first_message
-        {:error, "API error"}
-      end)
-
-      assert :ok = ChatAIService.generate_and_update_chat_title(chat.id, first_message)
-
-      # Give the async task time to complete
-      Process.sleep(100)
-
-      # Chat title should remain unchanged
-      updated_chat = Chat.get_chat(chat.id)
-      assert updated_chat.title == "Test Chat"
-    end
-  end
-
   describe "generate_and_update_chat_title_sync/2" do
     test "generates and updates chat title synchronously", %{chat: chat} do
       first_message = "What are the key metrics for Bitcoin analysis?"

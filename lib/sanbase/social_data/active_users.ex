@@ -14,8 +14,15 @@ defmodule Sanbase.SocialData.ActiveUsers do
       when source in ["telegram", "twitter_crypto", "twitter", "reddit", "bitcointalk"] do
     case active_users_request(selector, from, to, interval, source) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        active_users_result(result)
+        case Jason.decode(body) do
+          {:ok, result} ->
+            active_users_result(result)
+
+          {:error, error} ->
+            error_result(
+              "Cannot decode social active users response: #{Exception.message(error)}"
+            )
+        end
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result("Error status #{status} fetching social active users")

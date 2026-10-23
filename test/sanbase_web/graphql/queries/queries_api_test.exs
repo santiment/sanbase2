@@ -527,7 +527,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         assert length(caches) == 2
 
         owner_user_id = context.user.id |> to_string()
-        own_user_id = context.user.id |> to_string()
+        own_user_id = context.user2.id |> to_string()
 
         owner_cache = caches |> Enum.find(&(&1["user"]["id"] == owner_user_id))
         own_cache = caches |> Enum.find(&(&1["user"]["id"] == own_user_id))

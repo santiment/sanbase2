@@ -111,8 +111,15 @@ defmodule Sanbase.SocialData do
     response
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        handle_callback.(result)
+        case Jason.decode(body) do
+          {:ok, result} ->
+            handle_callback.(result)
+
+          {:error, error} ->
+            error_result(
+              "Cannot decode #{query_name_str} response for #{arg_str}: #{Exception.message(error)}"
+            )
+        end
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         error_result("Error status #{status} fetching #{query_name_str} for #{arg_str}: #{body}")

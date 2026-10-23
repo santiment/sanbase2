@@ -27,6 +27,25 @@ defmodule SanbaseWeb.Graphql.EmailSubscribeApiTest do
     assert res == true
   end
 
+  test "subscribing with an already used token returns an error", context do
+    nt = insert(:newsletter_token)
+    assert {:ok, _} = Sanbase.Email.NewsletterToken.verify_token(nt.email, nt.token)
+
+    mutation = subscribe_email_query(nt.token, nt.email)
+    error_msg = execute_mutation_with_error(context.conn, mutation)
+
+    assert error_msg == "Verification token expired"
+  end
+
+  test "subscribing with an invalid token returns an error", context do
+    nt = insert(:newsletter_token)
+
+    mutation = subscribe_email_query("invalid-token", nt.email)
+    error_msg = execute_mutation_with_error(context.conn, mutation)
+
+    assert error_msg == "Verification token is not valid"
+  end
+
   defp verify_email_query(email) do
     """
     mutation {

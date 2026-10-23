@@ -24,7 +24,10 @@ defmodule Sanbase.Alert.Trigger.Settings.TriggerSettingsBase do
     filtered_target: %{list: []},
     triggered?: false,
     payload: %{},
-    template_kv: %{}
+    template_kv: %{},
+    # The id of the alert owner. Set before evaluation, used to resolve only
+    # watchlists that are public or owned by the alert owner.
+    owner_user_id: nil
   ]
 
   @doc "Returns the list of private struct fields common to all trigger settings."
@@ -35,7 +38,8 @@ defmodule Sanbase.Alert.Trigger.Settings.TriggerSettingsBase do
 
     quote do
       @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
-      @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
+      @derive {Jason.Encoder,
+               except: [:filtered_target, :triggered?, :payload, :template_kv, :owner_user_id]}
       @trigger_type unquote(trigger_type)
 
       alias Sanbase.Alert.Trigger.Settings.TriggerSettingsBase

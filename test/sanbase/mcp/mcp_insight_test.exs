@@ -191,4 +191,46 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
     assert context.insight2.id == id2
     assert requested_ids == [context.insight1.id, context.insight2.id]
   end
+
+  test "insights fetch does not return draft or unapproved insights", context do
+    other_user = insert(:user)
+
+    draft =
+      insert(:post,
+        user: other_user,
+        title: "Draft",
+        text: "Secret draft text",
+        ready_state: Sanbase.Insight.Post.draft()
+      )
+
+    unapproved =
+      insert(:published_post,
+        user: other_user,
+        title: "Unapproved",
+        text: "Unapproved text",
+        state: Sanbase.Insight.Post.awaiting_approval_state()
+      )
+
+    {:ok, result} =
+      try_few_times(
+        fn ->
+          Sanbase.MCP.Client.call_tool("fetch_insights_tool", %{
+            insight_ids: [context.insight1.id, draft.id, unapproved.id]
+          })
+        end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    assert %Anubis.MCP.Response{
+             result: %{"content" => [%{"text" => json}], "isError" => false}
+           } = result
+
+    data = Jason.decode!(json)
+
+    assert Enum.map(data["insights"], & &1["id"]) == [context.insight1.id]
+    assert data["total_count"] == 1
+    refute json =~ "Secret draft text"
+    refute json =~ "Unapproved text"
+  end
 end

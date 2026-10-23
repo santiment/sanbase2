@@ -47,8 +47,15 @@ defmodule Sanbase.SocialData.SocialDominance do
   def social_dominance(%{slug: slug}, from, to, interval, source) do
     case social_dominance_request(%{slug: slug}, from, to, interval, source) do
       {:ok, %{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        social_dominance_result(result)
+        case Jason.decode(body) do
+          {:ok, result} ->
+            social_dominance_result(result)
+
+          {:error, error} ->
+            error_result(
+              "Cannot decode social dominance response for project with slug #{inspect(slug)}: #{Exception.message(error)}"
+            )
+        end
 
       {:ok, %{status_code: status}} ->
         warn_result(

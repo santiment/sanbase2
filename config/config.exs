@@ -86,6 +86,11 @@ config :sanbase, Sanbase.RepoReader,
 
 config :sanbase, Sanbase.Price.Validator, enabled: {:system, "PRICE_VALIDATOR_ENABLED", true}
 
+# Compute combined_labeled_balance from combined_labeled_balance_delta for these slugs.
+# "" - disabled, "bitcoin,litecoin" - only these slugs, "*" - all slugs
+config :sanbase, Sanbase.Clickhouse.MetricAdapter.LabeledBalance,
+  from_delta_slugs: {:system, "LABELED_BALANCE_FROM_DELTA_SLUGS", ""}
+
 # enforce off: requests that would be denied a metric version are logged and allowed.
 config :sanbase, Sanbase.Billing.Plan.MetricVersionAccess,
   enforce: {:system, "METRIC_VERSION_ACCESS_ENFORCE", true},

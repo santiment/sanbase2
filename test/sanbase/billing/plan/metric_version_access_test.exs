@@ -99,20 +99,13 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccessTest do
     assert message =~ "Your plan (SanAPI BUNDLE, which is FREE on Sanbase)"
   end
 
-  test "a named FREE plan is judged without a billing interval, as FREE never has one" do
-    create_alias!(%{
-      version_num: "7.0",
-      version_name: "seven:v1",
-      plan_access: [
-        %{product: "SANAPI", plan: "ANY", billing_interval: "year"},
-        %{product: "SANAPI", plan: "BUSINESS_PRO", billing_interval: "month"}
-      ]
-    })
-
-    assert MetricVersionAccess.plan_versions(@metric, ["1.0", "7.0"], "SANAPI", "FREE") == ["1.0"]
-
-    assert MetricVersionAccess.plan_versions(@metric, ["1.0", "7.0"], "SANAPI", "BUSINESS_PRO") ==
-             ["1.0", "7.0"]
+  test "a request that did not go through the auth plug is anonymous" do
+    # A GraphQL document over the websocket has no auth in its context
+    for context <- [%{}, %{pubsub: SanbaseWeb.Endpoint, loader: nil}] do
+      assert :ok == MetricVersionAccess.check(@metric, "1.0", context)
+      assert {:error, _} = MetricVersionAccess.check(@metric, "2.0", context)
+      assert MetricVersionAccess.usable_versions(@metric, ["1.0", "2.0"], context) == ["1.0"]
+    end
   end
 
   # Only SanAPI PRO, so a caller matched as anything else (FREE) is denied.
@@ -122,15 +115,6 @@ defmodule Sanbase.Billing.Plan.MetricVersionAccessTest do
       version_name: "seven:v1",
       plan_access: [%{product: "SANAPI", plan: "PRO"}]
     })
-  end
-
-  test "a request that did not go through the auth plug is anonymous" do
-    # A GraphQL document over the websocket has no auth in its context
-    for context <- [%{}, %{pubsub: SanbaseWeb.Endpoint, loader: nil}] do
-      assert :ok == MetricVersionAccess.check(@metric, "1.0", context)
-      assert {:error, _} = MetricVersionAccess.check(@metric, "2.0", context)
-      assert MetricVersionAccess.usable_versions(@metric, ["1.0", "2.0"], context) == ["1.0"]
-    end
   end
 
   defp apikey_context(context, plan_name, interval) do

@@ -199,7 +199,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert institutional["id"] == to_string(context.institutional.id)
     end
 
-    test "lists Institutional for everyone once the offering is activated", context do
+    test "lists Institutional for everyone once the offering is activated" do
       insert(:role_san_team)
       {:ok, _} = Sanbase.Billing.Plan.SaleControls.activate_bundle_plans()
 

@@ -106,15 +106,13 @@ defmodule Sanbase.Email.ListSubscription do
   defp maybe_record_consent(false = _changed?, _user_id, _list_key, _subscribed, _source), do: :ok
 
   defp maybe_record_consent(true = _changed?, user_id, list_key, subscribed, source) do
-    case Lists.get!(list_key).basis do
-      :consent ->
-        case ListConsent.create(user_id, list_key, subscribed, source) do
-          {:ok, _} -> :ok
-          {:error, error} -> {:error, error}
-        end
-
-      _ ->
-        :ok
+    if Lists.get!(list_key).basis == :consent do
+      case ListConsent.create(user_id, list_key, subscribed, source) do
+        {:ok, _} -> :ok
+        {:error, error} -> {:error, error}
+      end
+    else
+      :ok
     end
   end
 end

@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do

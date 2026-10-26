@@ -73,6 +73,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         as_of: today(),
         window: %{from: Date.add(today(), -365), to: today()},
         client_count: 3,
+        mrr: 100_000,
         at_risk_count: 1,
         retention_action_pct: 50.0,
         client_churn: %{rate: 0.25, lost: 1, base: 4},
@@ -82,6 +83,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         segments: %{
           plan: %{
             client_count: 2,
+            mrr: 60_000,
             at_risk_count: 0,
             retention_action_pct: nil,
             client_churn: %{rate: 0.0, lost: 0, base: 1},
@@ -91,6 +93,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
           },
           business_email: %{
             client_count: 1,
+            mrr: 40_000,
             at_risk_count: 1,
             retention_action_pct: 50.0,
             client_churn: %{rate: 1 / 3, lost: 1, base: 3},
@@ -316,6 +319,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         assert has_element?(view, "#metric-client-count-business_email", "Business email:")
         assert has_element?(view, "#metric-client-count-business_email .bg-amber-500")
         assert has_element?(view, "#metric-client-count-business_email", "1")
+        assert has_element?(view, "#metric-mrr", "$1,000")
+        assert has_element?(view, "#metric-mrr", "ARR $12,000")
+        assert has_element?(view, "#metric-mrr-plan", "$600")
+        assert has_element?(view, "#metric-mrr-business_email", "$400")
         assert has_element?(view, "#metric-retention-plan", "-")
         assert has_element?(view, "#metric-client-churn-plan", "0.0% · 0/1")
         assert has_element?(view, "#metric-client-churn-business_email", "1/3")

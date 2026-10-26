@@ -64,6 +64,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsControllerTest do
     as_of: ~D[2026-10-01],
     window: %{from: ~D[2025-10-01], to: ~D[2026-10-01]},
     client_count: 12,
+    mrr: 150_000,
     at_risk_count: 2,
     retention_action_pct: 50.0,
     client_churn: %{rate: 0.25, lost: 1, base: 4},
@@ -73,6 +74,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsControllerTest do
     segments: %{
       plan: %{
         client_count: 9,
+        mrr: 120_000,
         at_risk_count: 0,
         retention_action_pct: nil,
         client_churn: %{rate: 0.0, lost: 0, base: 1},
@@ -82,6 +84,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsControllerTest do
       },
       business_email: %{
         client_count: 3,
+        mrr: 30_000,
         at_risk_count: 2,
         retention_action_pct: 50.0,
         client_churn: %{rate: 1 / 3, lost: 1, base: 3},
@@ -213,14 +216,16 @@ defmodule SanbaseWeb.Admin.BusinessClientsControllerTest do
       assert record["lost_mrr_usd"] == "100.50"
       assert record["client_renewal_rate"] == ""
 
+      assert record["mrr_usd"] == "1500.00"
       assert record["plan_client_count"] == "9"
+      assert record["plan_mrr_usd"] == "1200.00"
       assert record["plan_base_mrr_usd"] == "900.00"
       assert record["email_client_count"] == "3"
       assert record["email_clients_lost"] == "1"
       assert record["email_client_base"] == "3"
       assert record["email_client_churn_rate"] == "0.3333"
       assert record["email_lost_mrr_usd"] == "100.50"
-      assert length(header) == 4 + 16 * 3
+      assert length(header) == 4 + 17 * 3
 
       old = Enum.zip(header, old_row) |> Map.new()
       assert old["client_count"] == "12"

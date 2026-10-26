@@ -35,7 +35,7 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
   defp invoice(user, lines, attrs \\ []) do
     n = System.unique_integer([:positive])
     first_start = lines |> hd() |> elem(1)
-    total = lines |> Enum.map(&elem(&1, 3)) |> Enum.sum()
+    total = lines |> Enum.map(&(elem(&1, 3) - line_discount(&1))) |> Enum.sum()
 
     invoice =
       Repo.insert!(
@@ -74,12 +74,16 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
         period_end: at(to),
         amount: amount,
         amount_excluding_tax: amount,
+        discount: Keyword.get(opts, :discount, 0),
         proration: Keyword.get(opts, :proration, false)
       })
     end
 
     invoice
   end
+
+  defp line_discount({_, _, _, _, opts}), do: Keyword.get(opts, :discount, 0)
+  defp line_discount(_line), do: 0
 
   defp with_usage(rows, fun) do
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
@@ -219,6 +223,55 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       # An open invoice - e.g. wire or crypto not received yet - is not a failed charge.
       assert client.unpaid_invoice?
       refute client.failed_payment?
+    end
+
+    test "an uncollectible invoice followed by a paid one is settled, an open one is not",
+         %{today: today} do
+      user = user("trial@corp.com")
+      start = Date.add(today, -60)
+
+      invoice(user, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}],
+        status: "uncollectible",
+        subscription: "sub_monthly"
+      )
+
+      invoice(user, [{@business_pro_yearly, Date.add(start, 25), Date.add(start, 390), 478_800}])
+
+      assert [%{unpaid_invoice?: false, tcv: 478_800}] = list_clients()
+
+      invoice(user, [{@business_pro_monthly, Date.add(today, -15), Date.add(today, 15), 42_000}],
+        status: "open",
+        subscription: "sub_monthly"
+      )
+
+      assert [%{unpaid_invoice?: true}] = list_clients()
+    end
+
+    test "revenue is counted after discounts and a fully discounted line does not count",
+         %{today: today} do
+      user = user("coupon@corp.com")
+      comped = user("comped@corp.com")
+      start = Date.add(today, -100)
+
+      invoice(user, [
+        {@business_pro_yearly, start, Date.shift(start, year: 1), 478_800, [discount: 47_880]}
+      ])
+
+      invoice(comped, [
+        {@business_pro_yearly, start, Date.shift(start, year: 1), 478_800, [discount: 478_800]}
+      ])
+
+      assert [client] = list_clients()
+      assert client.user_id == user.id
+      assert client.acv == 430_920
+      assert client.tcv == 430_920
+
+      assert client.mrr ==
+               Sanbase.Billing.BusinessClients.Periods.monthly_value(%{
+                 amount: 430_920,
+                 period_start: start,
+                 period_end: Date.shift(start, year: 1)
+               })
     end
 
     test "a past due business subscription is a failed payment", %{today: today} do
@@ -428,6 +481,8 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       %{plan: plan, business_email: email} = metrics.segments
 
       assert {metrics.client_count, plan.client_count, email.client_count} == {3, 2, 1}
+      assert metrics.mrr == plan.mrr + email.mrr
+      assert email.mrr == 4_900
       assert {metrics.at_risk_count, plan.at_risk_count, email.at_risk_count} == {1, 0, 1}
       assert plan.retention_action_pct == nil
       assert email.retention_action_pct == 0.0
@@ -649,10 +704,12 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
           "as_of" => "2026-01-01",
           "window" => %{"from" => "2025-01-01", "to" => "2026-01-01"},
           "client_count" => 5,
+          "mrr" => 120_000,
           "client_churn" => %{"rate" => 0.2, "lost" => 1, "base" => 5}
         })
 
       assert metrics.client_count == 5
+      assert metrics.mrr == 120_000
       assert metrics.client_churn == %{rate: 0.2, lost: 1, base: 5}
       assert metrics.segments == nil
     end
@@ -742,7 +799,7 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert notes.churned =~ "rolling 6 months"
 
       assert Map.keys(notes) |> Enum.sort() ==
-               Enum.sort(~w(business_client acv tcv client_churn revenue_churn client_renewal
+               Enum.sort(~w(business_client mrr acv tcv client_churn revenue_churn client_renewal
                             revenue_renewal at_risk retention churned usage)a)
     end
   end

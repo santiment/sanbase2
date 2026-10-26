@@ -112,6 +112,7 @@ defmodule Sanbase.Billing.BusinessClients.Snapshots do
   defp metric_fields(data) do
     %{
       client_count: data["client_count"],
+      mrr: data["mrr"],
       at_risk_count: data["at_risk_count"],
       retention_action_pct: data["retention_action_pct"],
       client_churn: pick(data["client_churn"], ~w(rate lost base)a),

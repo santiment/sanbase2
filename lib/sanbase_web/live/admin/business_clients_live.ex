@@ -680,6 +680,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
 
   defp metric_text(nil, _key), do: "-"
   defp metric_text(m, :client_count), do: format_number(m.client_count)
+  defp metric_text(m, :mrr), do: money(m.mrr)
   defp metric_text(m, :at_risk_count), do: format_number(m.at_risk_count)
   defp metric_text(m, :retention_action_pct), do: percent(m.retention_action_pct)
 
@@ -1068,7 +1069,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
           )} to {format_date(report.metrics.window.to)}
         </div>
 
-        <div id="metric-cards" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4 mb-8">
+        <div id="metric-cards" class="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-8 gap-4 mb-8">
           <.metric_card
             id="metric-client-count"
             label="Clients"
@@ -1077,6 +1078,15 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             note={:business_client}
             notes={@notes}
             breakdown={breakdown(report.metrics, :client_count)}
+          />
+          <.metric_card
+            id="metric-mrr"
+            label="MRR"
+            value={money(report.metrics.mrr)}
+            sub={"ARR #{money(report.metrics.mrr && report.metrics.mrr * 12)}"}
+            note={:mrr}
+            notes={@notes}
+            breakdown={breakdown(report.metrics, :mrr)}
           />
           <.metric_card
             id="metric-at-risk"
@@ -1285,6 +1295,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
                 <th class="text-right">
                   Clients<.note_mark key={:business_client} notes={@notes} />
                 </th>
+                <th class="text-right">MRR<.note_mark key={:mrr} notes={@notes} /></th>
                 <th class="text-right">At risk<.note_mark key={:at_risk} notes={@notes} /></th>
                 <th class="text-right">Retention<.note_mark key={:retention} notes={@notes} /></th>
                 <th class="text-right">
@@ -1303,7 +1314,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             </thead>
             <tbody>
               <tr :if={report.monthly == []}>
-                <td colspan="9" class="text-center text-base-content/60 py-6">
+                <td colspan="10" class="text-center text-base-content/60 py-6">
                   No monthly numbers yet.
                 </td>
               </tr>
@@ -1329,6 +1340,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
                 </td>
                 <%= if v do %>
                   <td class="text-right tabular-nums">{format_number(v.client_count)}</td>
+                  <td class="text-right tabular-nums">{money(v.mrr)}</td>
                   <td class="text-right tabular-nums">{format_number(v.at_risk_count)}</td>
                   <td class="text-right tabular-nums">{percent(v.retention_action_pct)}</td>
                   <td class="text-right tabular-nums">
@@ -1357,7 +1369,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
                   </td>
                 <% else %>
                   <td
-                    :for={_column <- 1..7}
+                    :for={_column <- 1..8}
                     class="text-right text-base-content/50"
                     title="Snapshot taken before the segment split"
                   >

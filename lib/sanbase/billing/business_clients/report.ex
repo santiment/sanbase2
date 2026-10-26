@@ -15,7 +15,8 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       product when the user's email is not a free provider, or an admin override says
       yes (an override of no excludes them).
 
-  `@santiment.net` users never count. All amounts are cents, excluding tax.
+  `@santiment.net` users never count. All amounts are cents, excluding tax and after
+  discounts; a line fully discounted by a coupon is `$0` and does not count.
   """
 
   import Ecto.Query
@@ -90,8 +91,9 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     * `failed_payment?` - the business subscription is `past_due` or `unpaid`, so a
       card charge failed;
-    * `unpaid_invoice?` - an open or uncollectible business invoice older than
-      #{@unpaid_invoice_after_days} days, typically a wire or crypto invoice not paid yet;
+    * `unpaid_invoice?` - an open business invoice older than
+      #{@unpaid_invoice_after_days} days, typically a wire or crypto invoice not paid
+      yet, or an uncollectible one with no business invoice paid after it;
     * `last_web_active_at`, `last_api_call_at` and `last_active_at`, the later of the
       two.
 
@@ -129,8 +131,8 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   # ─── Metrics ─────────────────────────────────────────────────────────────
 
   @doc ~s"""
-  Headline numbers on `as_of` (default today): client count, at-risk count, client
-  and revenue churn, client and revenue renewal. Rates are fractions, `nil` when there
+  Headline numbers on `as_of` (default today): client count, MRR, at-risk count,
+  client and revenue churn, client and revenue renewal. Rates are fractions, `nil` when there
   is nothing to divide by.
 
   `segments` holds the same numbers per segment, `%{plan: ..., business_email: ...}`.
@@ -292,12 +294,18 @@ defmodule Sanbase.Billing.BusinessClients.Report do
           "Team accounts, legacy enterprise and API bundles are excluded. " <>
           "Split: a client with a business plan line in force is Business plan, any other " <>
           "(business email or override) is Business email.",
+      mrr:
+        "Monthly recurring revenue: the sum of the clients' MRR, the monthly value of " <>
+          "their lines in force today. ARR is MRR times 12, the sum of the clients' ACV. " <>
+          "Split by the client's segment today.",
       acv:
         "Annual contract value: the monthly value of the lines in force today times 12. " <>
-          "A line's monthly value is its amount excluding tax divided by the months it covers. " <>
+          "A line's monthly value is its amount excluding tax and after discounts divided by " <>
+          "the months it covers; a line made free by a coupon does not count. " <>
           "Refunds and credit notes are not deducted.",
       tcv:
-        "Total contract value: everything paid to date for business plans, excluding tax, " <>
+        "Total contract value: everything paid to date for business plans, excluding tax " <>
+          "and after discounts, " <>
           "including prorations, whatever the payment method. Refunds and credit notes " <>
           "are not deducted.",
       client_churn:
@@ -434,7 +442,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
           plan_id: coalesce(l.plan_id, p.id),
           period_start: l.period_start,
           period_end: l.period_end,
-          amount: l.amount_excluding_tax,
+          amount: l.amount_excluding_tax - l.discount,
           proration: l.proration,
           invoice_id: i.id,
           stripe_invoice_id: i.stripe_invoice_id,
@@ -702,12 +710,35 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   # Users with a business invoice left unpaid: open or uncollectible past the first
   # days, with a line on one of the plans. An unpaid invoice for something else is not
   # the client's. Not a failed payment: a wire or crypto invoice stays open until the
-  # money arrives.
+  # money arrives. An uncollectible invoice is written off, so a business invoice paid
+  # after it settles it - e.g. a monthly invoice written off after a trial and a yearly
+  # plan bought instead. An open one is still owed whatever was paid since.
   defp users_with_unpaid_invoices([], _users, _plan_ids), do: MapSet.new()
 
   defp users_with_unpaid_invoices(user_ids, users, plan_ids) do
     cutoff = DateTime.add(DateTime.utc_now(), -@unpaid_invoice_after_days, :day)
+    invoices = business_invoices(user_ids, users, plan_ids)
 
+    last_paid =
+      for %{status: "paid", total: total} = invoice <- invoices, total > 0, reduce: %{} do
+        acc ->
+          Map.update(acc, invoice.user_id, invoice.invoiced_at, &latest(&1, invoice.invoiced_at))
+      end
+
+    for %{status: status, invoiced_at: invoiced_at} = invoice <- invoices,
+        status in ["open", "uncollectible"],
+        DateTime.before?(invoiced_at, cutoff),
+        status == "open" or not paid_after?(Map.get(last_paid, invoice.user_id), invoiced_at),
+        into: MapSet.new(),
+        do: invoice.user_id
+  end
+
+  defp paid_after?(nil, _invoiced_at), do: false
+  defp paid_after?(paid_at, invoiced_at), do: DateTime.after?(paid_at, invoiced_at)
+
+  # The users' invoices with a line on one of the plans - found by user id or by the
+  # Stripe customer when the invoice has no user - with the user resolved.
+  defp business_invoices(user_ids, users, plan_ids) do
     customer_to_user =
       for id <- user_ids,
           customer = get_in(users, [id, :stripe_customer_id]),
@@ -725,14 +756,19 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     from(i in Invoice,
       as: :invoice,
-      where: i.status in ["open", "uncollectible"] and i.invoiced_at < ^cutoff,
+      where: i.status in ["open", "uncollectible", "paid"],
       where: i.user_id in ^user_ids or i.stripe_customer_id in ^customer_ids,
       where: exists(business_line),
-      select: {i.user_id, i.stripe_customer_id}
+      select: %{
+        user_id: i.user_id,
+        customer: i.stripe_customer_id,
+        status: i.status,
+        invoiced_at: i.invoiced_at,
+        total: i.total_excluding_tax
+      }
     )
     |> Repo.all()
-    |> Enum.map(fn {user_id, customer} -> user_id || Map.get(customer_to_user, customer) end)
-    |> MapSet.new()
+    |> Enum.map(&%{&1 | user_id: &1.user_id || Map.get(customer_to_user, &1.customer)})
   end
 
   # `{manual_status, open entry count}` per user, from the entries open on `as_of`.
@@ -913,6 +949,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     %{
       client_count: length(clients),
+      mrr: clients |> Enum.map(& &1.mrr) |> Enum.sum(),
       at_risk_count: length(at_risk),
       retention_action_pct:
         if(at_risk == [], do: nil, else: MapSet.size(retention) / length(at_risk) * 100),
@@ -966,6 +1003,8 @@ defmodule Sanbase.Billing.BusinessClients.Report do
               period_start: line.period_start,
               period_end: line.period_end,
               amount_excluding_tax: line.amount_excluding_tax,
+              discount: line.discount,
+              net_amount: InvoiceLine.net_amount(line),
               proration: line.proration
             }
           end)

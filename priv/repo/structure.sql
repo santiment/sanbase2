@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict efYSwlrMycVWPJkHipcKlq1CxfZ1dy6hETajmbGcBTkkKPOpIqCA7NwhJFRIzAv
+\restrict TLGDVffcJP7DqUEWwi7gju2eN4U58wIwd05EpMPzI0CI4uQQL37uKZndat2dY3f
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -4844,7 +4844,8 @@ CREATE TABLE public.stripe_invoice_lines (
     quantity integer,
     proration boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    discount integer DEFAULT 0 NOT NULL
 );
 
 
@@ -10997,14 +10998,6 @@ ALTER TABLE ONLY public.metric_tag_mappings
 
 
 --
--- Name: metric_version_plan_access metric_version_plan_access_version_alias_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.metric_version_plan_access
-    ADD CONSTRAINT metric_version_plan_access_version_alias_id_fkey FOREIGN KEY (version_alias_id) REFERENCES public.metric_version_aliases(id) ON DELETE CASCADE;
-
-
---
 -- Name: metric_tag_mappings metric_tag_mappings_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11018,6 +11011,14 @@ ALTER TABLE ONLY public.metric_tag_mappings
 
 ALTER TABLE ONLY public.metric_ui_metadata
     ADD CONSTRAINT metric_ui_metadata_metric_category_mapping_id_fkey FOREIGN KEY (metric_category_mapping_id) REFERENCES public.metric_category_mappings(id) ON DELETE CASCADE;
+
+
+--
+-- Name: metric_version_plan_access metric_version_plan_access_version_alias_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_version_plan_access
+    ADD CONSTRAINT metric_version_plan_access_version_alias_id_fkey FOREIGN KEY (version_alias_id) REFERENCES public.metric_version_aliases(id) ON DELETE CASCADE;
 
 
 --
@@ -11792,7 +11793,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict efYSwlrMycVWPJkHipcKlq1CxfZ1dy6hETajmbGcBTkkKPOpIqCA7NwhJFRIzAv
+\unrestrict TLGDVffcJP7DqUEWwi7gju2eN4U58wIwd05EpMPzI0CI4uQQL37uKZndat2dY3f
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12414,3 +12415,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261014084306);
 INSERT INTO public."schema_migrations" (version) VALUES (20261014084308);
 INSERT INTO public."schema_migrations" (version) VALUES (20261021081454);
 INSERT INTO public."schema_migrations" (version) VALUES (20261022073128);
+INSERT INTO public."schema_migrations" (version) VALUES (20261026082656);

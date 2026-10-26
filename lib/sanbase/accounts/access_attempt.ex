@@ -13,13 +13,51 @@ defmodule Sanbase.Accounts.AccessAttempt do
 
   def check_attempt_limit(type, user, remote_ip) do
     config = get_config(type)
-    too_many_user_attempts? = attempts_count(type, user) > config.allowed_user_attempts
-    too_many_ip_attempts? = attempts_count(type, remote_ip) > config.allowed_ip_attempts
 
-    if too_many_user_attempts? or too_many_ip_attempts? do
-      {:error, :too_many_attempts}
-    else
-      :ok
+    # Check burst limits (short-term)
+    too_many_user_burst? = attempts_count(type, user, :burst) > config.allowed_user_burst_attempts
+
+    too_many_ip_burst? =
+      attempts_count(type, remote_ip, :burst) > config.allowed_ip_burst_attempts
+
+    # Check daily limits (long-term)
+    too_many_user_daily? = attempts_count(type, user, :daily) > config.allowed_user_daily_attempts
+
+    too_many_ip_daily? =
+      attempts_count(type, remote_ip, :daily) > config.allowed_ip_daily_attempts
+
+    cond do
+      too_many_user_burst? or too_many_ip_burst? ->
+        {:error, :too_many_burst_attempts}
+
+      too_many_user_daily? or too_many_ip_daily? ->
+        {:error, :too_many_daily_attempts}
+
+      true ->
+        :ok
+    end
+  end
+
+  def check_ip_attempt_limit(type, remote_ip) do
+    config = get_config(type)
+
+    # Check burst limits (short-term)
+    too_many_ip_burst? =
+      attempts_count(type, remote_ip, :burst) > config.allowed_ip_burst_attempts
+
+    # Check daily limits (long-term)
+    too_many_ip_daily? =
+      attempts_count(type, remote_ip, :daily) > config.allowed_ip_daily_attempts
+
+    cond do
+      too_many_ip_burst? ->
+        {:error, :too_many_burst_attempts}
+
+      too_many_ip_daily? ->
+        {:error, :too_many_daily_attempts}
+
+      true ->
+        :ok
     end
   end
 
@@ -44,9 +82,10 @@ defmodule Sanbase.Accounts.AccessAttempt do
     |> foreign_key_constraint(:user_id)
   end
 
-  defp attempts_count(type, remote_ip) when is_binary(remote_ip) do
+  defp attempts_count(type, remote_ip, limit_type) when is_binary(remote_ip) do
     config = get_config(type)
-    interval_limit = Timex.shift(Timex.now(), minutes: -config.interval_in_minutes)
+    interval_minutes = get_interval_minutes(config, limit_type)
+    interval_limit = Timex.shift(Timex.now(), minutes: -interval_minutes)
 
     from(attempt in __MODULE__,
       where:
@@ -57,9 +96,10 @@ defmodule Sanbase.Accounts.AccessAttempt do
     |> Repo.aggregate(:count, :id)
   end
 
-  defp attempts_count(type, %{id: user_id}) do
+  defp attempts_count(type, %{id: user_id}, limit_type) do
     config = get_config(type)
-    interval_limit = Timex.shift(Timex.now(), minutes: -config.interval_in_minutes)
+    interval_minutes = get_interval_minutes(config, limit_type)
+    interval_limit = Timex.shift(Timex.now(), minutes: -interval_minutes)
 
     from(attempt in __MODULE__,
       where:
@@ -69,6 +109,9 @@ defmodule Sanbase.Accounts.AccessAttempt do
     )
     |> Repo.aggregate(:count, :id)
   end
+
+  defp get_interval_minutes(config, :burst), do: config.burst_interval_in_minutes
+  defp get_interval_minutes(config, :daily), do: config.daily_interval_in_minutes
 
   defp get_config(type) do
     case type do

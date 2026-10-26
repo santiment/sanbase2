@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
 
   @business_email_headers ~w(user_id email username registered_at plan_name paying)
 
-  @metric_headers ~w(client_count at_risk_count retention_action_pct client_churn_rate
+  @metric_headers ~w(client_count mrr_usd at_risk_count retention_action_pct client_churn_rate
                      clients_lost client_base revenue_churn_rate lost_mrr_usd base_mrr_usd
                      expansion_mrr_usd client_renewal_rate clients_renewed clients_due
                      revenue_renewal_rate renewed_acv_usd due_acv_usd)
@@ -173,6 +173,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
   defp metric_cells(m) do
     [
       m.client_count,
+      usd(m.mrr),
       m.at_risk_count,
       m.retention_action_pct,
       m.client_churn.rate,

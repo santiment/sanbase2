@@ -92,6 +92,8 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
                    period_start: ~D[2026-03-01],
                    period_end: ~D[2027-03-01],
                    amount_excluding_tax: 30_000,
+                   discount: 0,
+                   net_amount: 30_000,
                    proration: false
                  }
                ]

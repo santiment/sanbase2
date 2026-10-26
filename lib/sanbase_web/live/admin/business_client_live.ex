@@ -595,9 +595,12 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
                 <td colspan="2" class="whitespace-nowrap">
                   {format_date(line.period_start)} - {format_date(line.period_end)}
                 </td>
-                <td class="text-right tabular-nums">{money_exact(line.amount_excluding_tax)}</td>
+                <td class="text-right tabular-nums">{money_exact(line.net_amount)}</td>
                 <td colspan="3">
                   {line.plan_name || "-"}
+                  <span :if={line.discount > 0} class="badge badge-xs badge-outline ml-1">
+                    {money_exact(line.discount)} discount
+                  </span>
                   <span :if={line.proration} class="badge badge-xs badge-outline ml-1">
                     proration
                   </span>

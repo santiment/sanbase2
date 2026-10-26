@@ -77,6 +77,29 @@ defmodule Sanbase.Billing.InvoiceMirror.SyncTest do
       assert line.amount_excluding_tax == 10_000
     end
 
+    test "a line's discounts are summed" do
+      invoice =
+        invoice(
+          total_excluding_tax: 7_000,
+          lines:
+            lines([
+              line(
+                discount_amounts: [
+                  %{amount: 1_000, discount: "di_line"},
+                  %{amount: 2_000, discount: "di_invoice"}
+                ]
+              )
+            ])
+        )
+
+      {:ok, _summary} = sync([invoice])
+
+      assert [line] = Repo.all(InvoiceLine)
+      assert line.amount_excluding_tax == 10_000
+      assert line.discount == 3_000
+      assert InvoiceLine.net_amount(line) == 7_000
+    end
+
     test "drafts are skipped and every other status is kept" do
       invoices = [
         invoice(id: "in_draft", status: "draft"),

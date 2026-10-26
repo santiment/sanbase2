@@ -446,11 +446,19 @@ defmodule Sanbase.Billing.InvoiceMirror.Sync do
       period_end: to_datetime(Map.get(period, :end)),
       amount: amount,
       amount_excluding_tax: Map.get(line, :amount_excluding_tax) || amount,
+      discount: discount(line),
       quantity: Map.get(line, :quantity),
       proration: Map.get(line, :proration) == true,
       inserted_at: now,
       updated_at: now
     }
+  end
+
+  # Line and invoice level discounts alike, as Stripe allocated them to the line.
+  defp discount(line) do
+    (Map.get(line, :discount_amounts) || [])
+    |> Enum.map(&(Map.get(&1, :amount) || 0))
+    |> Enum.sum()
   end
 
   # A line of a legacy plan may carry the plan and no price; the plan id is the same

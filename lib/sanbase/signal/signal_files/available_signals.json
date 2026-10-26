@@ -160,5 +160,35 @@
       "SANAPI": "free",
       "SANBASE": "free"
     }
+  },
+  {
+    "human_readable_name": "Anomaly: Old Coins Moved",
+    "name": "anomaly_old_coins_moved",
+    "signal": "old_coins_moved",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
+  },
+  {
+    "human_readable_name": "Anomaly: Whale Accumulation",
+    "name": "anomaly_whale_accumulation",
+    "signal": "whale_accumulation",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   }
 ]

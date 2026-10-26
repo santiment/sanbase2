@@ -33,6 +33,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   @paid_by_keys [:card, :wire, :crypto, :san_burn, :stripe_credit, :other, :unknown, :out_of_band]
   @note_keys [
     :business_client,
+    :mrr,
     :acv,
     :tcv,
     :client_churn,
@@ -591,6 +592,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   def segments, do: @segments
 
   def note_label(:business_client), do: "Business client"
+  def note_label(:mrr), do: "MRR"
   def note_label(:acv), do: "ACV"
   def note_label(:tcv), do: "TCV"
   def note_label(:client_churn), do: "Client churn"

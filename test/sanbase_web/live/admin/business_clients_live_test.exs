@@ -321,6 +321,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         assert has_element?(view, "#metric-client-count-business_email", "1")
         assert has_element?(view, "#metric-mrr", "$1,000")
         assert has_element?(view, "#metric-mrr", "ARR $12,000")
+        assert has_element?(view, ~s(#metric-mrr a[href="#formula-mrr"]))
+        assert has_element?(view, "#formula-mrr", "Formula for mrr")
         assert has_element?(view, "#metric-mrr-plan", "$600")
         assert has_element?(view, "#metric-mrr-business_email", "$400")
         assert has_element?(view, "#metric-retention-plan", "-")

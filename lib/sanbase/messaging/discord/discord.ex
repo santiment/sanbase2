@@ -2,12 +2,12 @@ defmodule Sanbase.Messaging.Discord do
   @moduledoc ~s"""
   Send notification to Discord and handle the response
   """
-  require Mockery.Macro
+  use Mockery.Macro
   require Logger
 
   @type json :: String.t()
 
-  defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
+  defp http_client(), do: mockable(HTTPoison)
 
   @doc ~s"""
   Send the payload to Discord. Handle the response and log accordingly

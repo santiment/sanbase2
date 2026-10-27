@@ -75,6 +75,14 @@ defmodule SanbaseWeb.Router do
     get("/glama.json", SanbaseWeb.WellKnownController, :glama)
     options("/oauth-authorization-server", SanbaseWeb.OAuthController, :preflight)
     options("/oauth-protected-resource", SanbaseWeb.OAuthController, :preflight)
+
+    get(
+      "/oauth-protected-resource/mcp_knowledge",
+      SanbaseWeb.OAuthController,
+      :knowledge_protected_resource
+    )
+
+    options("/oauth-protected-resource/mcp_knowledge", SanbaseWeb.OAuthController, :preflight)
   end
 
   # OAuth 2.0 browser flow (authorize, consent, dev login)
@@ -107,6 +115,17 @@ defmodule SanbaseWeb.Router do
   scope "/mcp" do
     pipe_through(:mcp_auth)
     forward("/", Sanbase.MCP.StreamableHTTPPlug)
+  end
+
+  # Team-only knowledge MCP (FAQ, Academy, Insights + FAQ drafts) for the
+  # support team. Every request requires an @santiment.net user.
+  pipeline :mcp_knowledge_auth do
+    plug(Sanbase.MCP.Knowledge.AuthPlug)
+  end
+
+  scope "/mcp_knowledge" do
+    pipe_through(:mcp_knowledge_auth)
+    forward("/", Sanbase.MCP.Knowledge.StreamableHTTPPlug)
   end
 
   # Dev MCP server exposing search docs

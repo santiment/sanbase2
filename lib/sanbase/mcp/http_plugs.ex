@@ -158,10 +158,13 @@ defmodule Sanbase.MCP.StreamableHTTPPlug do
     )
   end
 
-  # When both JSON and SSE are advertised on POST, Anubis can choose SSE
-  # response mode and keep the response stream open, causing client timeouts.
-  # Force JSON responses for POST requests; SSE remains available via GET.
-  defp normalize_post_accept_header(%Plug.Conn{method: "POST"} = conn) do
+  @doc """
+  When both JSON and SSE are advertised on POST, Anubis can choose SSE
+  response mode and keep the response stream open, causing client timeouts.
+  Force JSON responses for POST requests; SSE remains available via GET.
+  """
+  @spec normalize_post_accept_header(Plug.Conn.t()) :: Plug.Conn.t()
+  def normalize_post_accept_header(%Plug.Conn{method: "POST"} = conn) do
     case get_req_header(conn, "accept") do
       [accept | _] ->
         if String.contains?(accept, "application/json") and
@@ -176,7 +179,7 @@ defmodule Sanbase.MCP.StreamableHTTPPlug do
     end
   end
 
-  defp normalize_post_accept_header(conn), do: conn
+  def normalize_post_accept_header(conn), do: conn
 end
 
 defmodule Sanbase.MCP.StreamableHTTPDevPlug do

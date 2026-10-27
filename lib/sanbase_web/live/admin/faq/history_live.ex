@@ -74,7 +74,8 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
                   <span class={[
                     "badge badge-sm",
                     entry.question_type == "ask_ai" && "badge-info",
-                    entry.question_type == "smart_search" && "badge-success"
+                    entry.question_type == "smart_search" && "badge-success",
+                    entry.question_type in ["mcp_search", "mcp_answer"] && "badge-warning"
                   ]}>
                     {String.replace(entry.question_type, "_", " ")}
                   </span>

@@ -34,11 +34,18 @@ defmodule SanbaseWeb.OAuthController do
     conn |> put_cors_headers() |> json(metadata)
   end
 
-  def protected_resource(conn, _params) do
+  def protected_resource(conn, _params), do: protected_resource_json(conn, "/mcp")
+
+  # RFC 9728 path-suffixed metadata for the team-only knowledge MCP, so clients
+  # bind their token to `/mcp_knowledge` instead of the public `/mcp`.
+  def knowledge_protected_resource(conn, _params),
+    do: protected_resource_json(conn, "/mcp_knowledge")
+
+  defp protected_resource_json(conn, path) do
     backend_url = Config.module_get(SanbaseWeb.Endpoint, :backend_url)
 
     resource = %{
-      resource: "#{backend_url}/mcp",
+      resource: "#{backend_url}#{path}",
       authorization_servers: ["#{backend_url}"]
     }
 

@@ -41,7 +41,7 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
       :query_plan
     ])
     |> validate_required([:question, :answer, :is_successful, :source, :question_type])
-    |> validate_inclusion(:question_type, ["ask_ai", "smart_search"])
+    |> validate_inclusion(:question_type, ["ask_ai", "smart_search", "mcp_search", "mcp_answer"])
   end
 
   def create(args) do

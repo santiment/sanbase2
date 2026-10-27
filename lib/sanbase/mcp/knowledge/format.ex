@@ -1,11 +1,7 @@
 defmodule Sanbase.MCP.Knowledge.Format do
   @moduledoc """
-  Shapes knowledge-base records into the JSON the knowledge MCP tools return.
-
-  Every record carries a `type` and an `id`, which is exactly what
-  `fetch_entry` takes, so the client can always go from an excerpt to the
-  full document. Links come from `Sanbase.Knowledge.Context`, the same place
-  the Ask answers build their citations from.
+  JSON shapes returned by the knowledge MCP tools. Every record has the `type`
+  and `id` that `fetch_entry` takes.
   """
 
   alias Anubis.Server.Response
@@ -13,7 +9,6 @@ defmodule Sanbase.MCP.Knowledge.Format do
   alias Sanbase.Knowledge.Context
   alias Sanbase.Knowledge.FaqEntry
 
-  @doc "A numbered search hit of `source`, as returned by `search_knowledge`."
   @spec hit(map(), Context.source()) :: map()
   def hit(hit, :faq) do
     %{
@@ -23,7 +18,6 @@ defmodule Sanbase.MCP.Knowledge.Format do
       title: hit.question,
       url: Context.marker(hit, :faq).url,
       similarity: round_similarity(hit[:similarity]),
-      # FAQ entries are short and embedded whole, so the hit is the full entry.
       is_full_text: true,
       text: hit.answer_markdown
     }
@@ -58,7 +52,6 @@ defmodule Sanbase.MCP.Knowledge.Format do
     }
   end
 
-  @doc "A full FAQ entry, drafts included, as returned by the FAQ tools."
   @spec faq_entry(%FaqEntry{}) :: map()
   def faq_entry(%FaqEntry{} = entry) do
     %{
@@ -76,7 +69,6 @@ defmodule Sanbase.MCP.Knowledge.Format do
     }
   end
 
-  @doc "A similar FAQ entry from `Sanbase.Knowledge.Faq.find_most_similar_faqs/3`."
   @spec similar_faq(map()) :: map()
   def similar_faq(entry) do
     %{
@@ -90,7 +82,6 @@ defmodule Sanbase.MCP.Knowledge.Format do
     }
   end
 
-  @doc "A tool error response for a changeset or an already formatted message."
   @spec error_response(Ecto.Changeset.t() | String.t()) :: Response.t()
   def error_response(%Ecto.Changeset{} = changeset) do
     errors = Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
@@ -101,10 +92,6 @@ defmodule Sanbase.MCP.Knowledge.Format do
     Response.error(Response.tool(), message)
   end
 
-  @doc """
-  The FAQ fields a draft tool was given, without the ones left out. Shared by
-  `create_faq_draft` and `update_faq_draft`.
-  """
   @spec draft_attrs(map()) :: map()
   def draft_attrs(params) do
     params

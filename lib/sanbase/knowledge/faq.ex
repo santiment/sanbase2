@@ -7,8 +7,6 @@ defmodule Sanbase.Knowledge.Faq do
 
   require Logger
 
-  # Entries at least this similar (on question + answer) count as duplicates. A
-  # starting point; tune it once real drafts come in.
   @duplicate_min_similarity 0.85
 
   def embed_all() do
@@ -34,10 +32,6 @@ defmodule Sanbase.Knowledge.Faq do
     end)
   end
 
-  @doc """
-  List non-deleted entries, newest first. `opts[:status]` (`:published` or
-  `:draft`) narrows the list to that status; without it all statuses are listed.
-  """
   def list_entries(page, page_size, opts \\ [])
       when is_integer(page) and is_integer(page_size) do
     page = if page < 1, do: 1, else: page
@@ -64,10 +58,6 @@ defmodule Sanbase.Knowledge.Faq do
     Repo.get!(FaqEntry, id) |> Repo.preload([:tags, :created_by, :reviewed_by])
   end
 
-  @doc """
-  Fetch a non-deleted entry by id. Drafts are returned too: callers decide
-  whether a draft may be shown.
-  """
   @spec get_entry(String.t()) :: {:ok, %FaqEntry{}} | {:error, :not_found}
   def get_entry(id) when is_binary(id) do
     with {:ok, uuid} <- Ecto.UUID.cast(id),
@@ -87,15 +77,7 @@ defmodule Sanbase.Knowledge.Faq do
     |> maybe_update_embedding(true)
   end
 
-  @doc """
-  Create an unreviewed draft on behalf of `user`. Drafts never reach answers
-  until `publish/2`.
-
-  The draft is embedded before it is saved, so a duplicate check made right
-  after already sees it. Unless `force: true` is given, near-duplicates of the
-  draft (published entries or other drafts) are returned as
-  `{:duplicates, entries}` and nothing is saved.
-  """
+  @doc "Create a draft, unless near-duplicates exist and `force: true` is not given."
   @spec create_draft(User.t(), map(), keyword()) ::
           {:ok, %FaqEntry{}}
           | {:duplicates, [map()]}
@@ -119,11 +101,6 @@ defmodule Sanbase.Knowledge.Faq do
     end
   end
 
-  @doc """
-  Update a draft. The row is locked and must still be an undeleted draft, so an
-  edit racing a publish can never change live content. A changed question or
-  answer is re-embedded before the update is saved.
-  """
   @spec update_draft(%FaqEntry{}, map()) ::
           {:ok, %FaqEntry{}} | {:error, :not_a_draft | :embedding_failed | Ecto.Changeset.t()}
   def update_draft(%FaqEntry{id: id}, attrs) do
@@ -140,14 +117,7 @@ defmodule Sanbase.Knowledge.Faq do
     end)
   end
 
-  @doc """
-  Publish a draft as reviewed by `reviewer`. `seen` is the entry as the
-  reviewer saw it: the draft is published only if it still has that question,
-  answer and source, so an edit made after the review never goes live unseen.
-
-  Returns `{:error, :changed}` if the draft was edited in the meantime and
-  `{:error, :not_a_draft}` if it was already published or rejected.
-  """
+  @doc "Publish `seen` only if the draft still matches it, so unreviewed edits never go live."
   @spec publish(%FaqEntry{}, User.t()) ::
           {:ok, %FaqEntry{}} | {:error, :changed | :not_a_draft}
   def publish(%FaqEntry{id: id} = seen, %User{} = reviewer) do
@@ -192,13 +162,7 @@ defmodule Sanbase.Knowledge.Faq do
     FaqEntry.changeset(entry, attrs)
   end
 
-  @doc """
-  Return the `size` entries most similar to `user_input` (text or embedding).
-
-  Only published entries are searched by default, as the results feed answers.
-  Pass `statuses: [:draft]` or `statuses: [:published, :draft]` to search
-  drafts, e.g. for duplicate checks; each result carries its `:status`.
-  """
+  @doc "Searches published entries only, unless `opts[:statuses]` says otherwise."
   def find_most_similar_faqs(user_input, size, opts \\ [])
 
   def find_most_similar_faqs(user_input, size, opts) when is_binary(user_input) do
@@ -227,10 +191,7 @@ defmodule Sanbase.Knowledge.Faq do
     {:ok, result}
   end
 
-  @doc """
-  The base query for every read that feeds answers, search or exports:
-  published, non-deleted entries. Start such reads here so drafts cannot leak in.
-  """
+  @doc "Published, non-deleted entries. Base every answer/search/export read on it."
   def live_query(), do: entries_query([:published])
 
   # Private functions
@@ -301,8 +262,7 @@ defmodule Sanbase.Knowledge.Faq do
     end
   end
 
-  # In test the embedding runs inline, so it stays within the test's mocks and
-  # Ecto sandbox instead of racing them from a detached task.
+  # Inline in test, so it stays within the mocks and the Ecto sandbox.
   if Application.compile_env(:sanbase, :env) == :test do
     defp maybe_update_embedding({:ok, %FaqEntry{} = entry} = result, true = _content_changed?) do
       do_update_embedding(entry)

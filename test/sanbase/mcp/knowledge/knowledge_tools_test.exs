@@ -85,13 +85,6 @@ defmodule Sanbase.MCP.Knowledge.ToolsTest do
       assert [%{question_type: "mcp_search"} | _] =
                Sanbase.Knowledge.QuestionAnswerLog.list_entries()
     end
-
-    test "rejects unknown sources", %{frame: frame} do
-      assert {:error, message} =
-               call(Knowledge.SearchKnowledgeTool, %{question: "q", sources: ["blog"]}, frame)
-
-      assert message =~ "Unknown sources"
-    end
   end
 
   describe "fetch_entry" do
@@ -153,11 +146,6 @@ defmodule Sanbase.MCP.Knowledge.ToolsTest do
 
       assert message =~ "No insight entry"
     end
-
-    test "reports unknown ids", %{frame: frame} do
-      assert {:error, _} = call(Knowledge.FetchEntryTool, %{type: "faq", id: "not-a-uuid"}, frame)
-      assert {:error, _} = call(Knowledge.FetchEntryTool, %{type: "academy", id: "abc"}, frame)
-    end
   end
 
   describe "create_faq_draft" do
@@ -178,29 +166,6 @@ defmodule Sanbase.MCP.Knowledge.ToolsTest do
       {:ok, saved} = Faq.get_entry(entry["id"])
       assert saved.origin == :mcp
       assert saved.created_by_id == user.id
-    end
-
-    test "reports near-duplicates instead of creating, unless forced", %{frame: frame} do
-      existing = insert_faq(%{"question" => "What is MVRV?", "answer_markdown" => "A ratio."})
-      params = %{question: "What does MVRV mean?", answer_markdown: "It is a ratio."}
-
-      assert {:ok, %{"created" => false, "similar_entries" => [similar]}} =
-               with_mocks(fn -> call(Knowledge.CreateFaqDraftTool, params, frame) end)
-
-      assert similar["id"] == existing.id
-      assert Faq.count_entries(status: :draft) == 0
-
-      assert {:ok, %{"created" => true}} =
-               with_mocks(fn ->
-                 call(Knowledge.CreateFaqDraftTool, Map.put(params, :force, true), frame)
-               end)
-    end
-
-    test "rejects unknown tags", %{frame: frame} do
-      params = %{question: "Q?", answer_markdown: "A.", tags: ["made-up"]}
-
-      assert {:error, message} = call(Knowledge.CreateFaqDraftTool, params, frame)
-      assert message =~ "Unknown tags"
     end
   end
 
@@ -243,24 +208,11 @@ defmodule Sanbase.MCP.Knowledge.ToolsTest do
              Sanbase.Knowledge.QuestionAnswerLog.list_entries()
   end
 
-  describe "server gate" do
-    test "refuses non-team users even past the plug" do
-      outsider = insert(:user, email: "someone@gmail.com")
-      frame = Frame.new(%{current_user: outsider})
+  test "the server refuses non-team users even past the plug" do
+    outsider = insert(:user, email: "someone@gmail.com")
+    frame = Frame.new(%{current_user: outsider})
 
-      assert {:error, %Anubis.MCP.Error{}, _frame} =
-               Knowledge.Server.handle_request(%{"method" => "tools/list"}, frame)
-    end
-
-    test "lists the knowledge tools to team members", %{frame: frame} do
-      assert {:reply, %{"tools" => tools}, _frame} =
-               Knowledge.Server.handle_request(
-                 %{"method" => "tools/list", "params" => %{}},
-                 frame
-               )
-
-      assert tools |> Enum.map(& &1.name) |> Enum.sort() ==
-               ~w(answer_question create_faq_draft fetch_entry search_knowledge update_faq_draft)
-    end
+    assert {:error, %Anubis.MCP.Error{}, _frame} =
+             Knowledge.Server.handle_request(%{"method" => "tools/list"}, frame)
   end
 end

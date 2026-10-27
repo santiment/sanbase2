@@ -117,8 +117,7 @@ defmodule SanbaseWeb.Router do
     forward("/", Sanbase.MCP.StreamableHTTPPlug)
   end
 
-  # Team-only knowledge MCP (FAQ, Academy, Insights + FAQ drafts) for the
-  # support team. Every request requires an @santiment.net user.
+  # Team-only knowledge MCP (FAQ, Academy, Insights, FAQ drafts)
   pipeline :mcp_knowledge_auth do
     plug(Sanbase.MCP.Knowledge.AuthPlug)
   end

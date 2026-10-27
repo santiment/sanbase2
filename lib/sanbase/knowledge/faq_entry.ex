@@ -13,9 +13,7 @@ defmodule Sanbase.Knowledge.FaqEntry do
     field(:embedding, Pgvector.Ecto.Vector)
     field(:is_deleted, :boolean, default: false)
 
-    # Drafts are invisible to every read path that feeds answers, search or
-    # exports until a team member publishes them. `origin` records where the
-    # entry was created; `internal_notes` is reviewer context and is never served.
+    # Drafts stay out of answers until published; `internal_notes` is never served.
     field(:status, Ecto.Enum, values: [:draft, :published], default: :published)
     field(:origin, Ecto.Enum, values: [:admin, :mcp], default: :admin)
     field(:internal_notes, :string)

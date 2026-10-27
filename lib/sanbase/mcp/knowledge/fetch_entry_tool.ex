@@ -16,7 +16,6 @@ defmodule Sanbase.MCP.Knowledge.FetchEntryTool do
   alias Sanbase.MCP.Knowledge.Format
   alias Sanbase.MCP.ToolError
 
-  # Long insights are cut to keep one call within a sensible context budget.
   @max_text_length 40_000
 
   def name(), do: "fetch_entry"
@@ -99,7 +98,6 @@ defmodule Sanbase.MCP.Knowledge.FetchEntryTool do
 
   defp fetch(_type, _id), do: {:error, :not_found}
 
-  # Only insights that are public anywhere else: published, approved, not deleted.
   defp visible?(%Post{} = post) do
     post.ready_state == Post.published() and post.state == Post.approved_state() and
       post.is_deleted != true

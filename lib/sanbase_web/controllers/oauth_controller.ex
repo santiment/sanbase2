@@ -36,8 +36,7 @@ defmodule SanbaseWeb.OAuthController do
 
   def protected_resource(conn, _params), do: protected_resource_json(conn, "/mcp")
 
-  # RFC 9728 path-suffixed metadata for the team-only knowledge MCP, so clients
-  # bind their token to `/mcp_knowledge` instead of the public `/mcp`.
+  # RFC 9728 path-suffixed metadata, so tokens bind to `/mcp_knowledge`, not `/mcp`.
   def knowledge_protected_resource(conn, _params),
     do: protected_resource_json(conn, "/mcp_knowledge")
 

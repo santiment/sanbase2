@@ -1,14 +1,7 @@
 defmodule Sanbase.MCP.Knowledge.Server do
   @moduledoc """
-  Internal MCP server for the Santiment team, served at `/mcp_knowledge`.
-
-  It exposes the Santiment knowledge base (FAQ, Academy, Insights) so the
-  support team can answer user questions from Claude, and lets Claude draft
-  new FAQ entries that a team member reviews before they are published.
-
-  Access is limited to `@santiment.net` users by
-  `Sanbase.MCP.Knowledge.AuthPlug`; `handle_request/2` checks again so a
-  routing mistake cannot expose the tools.
+  Team-only MCP server for the knowledge base, served at `/mcp_knowledge`.
+  `handle_request/2` re-checks access so a routing mistake cannot expose it.
   """
 
   use Anubis.Server,

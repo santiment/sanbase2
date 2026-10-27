@@ -117,8 +117,6 @@ defmodule Sanbase.MCP.Knowledge.SearchKnowledgeTool do
       faq: "faq" in sources,
       academy: "academy" in sources,
       insight: "insight" in sources,
-      # Widen each matched chunk with its neighbours: the client model reads the
-      # excerpts directly, so more continuous text gives better answers.
       context_expansion: true
     ]
 
@@ -153,8 +151,6 @@ defmodule Sanbase.MCP.Knowledge.SearchKnowledgeTool do
     end
   end
 
-  # Drafts similar to the question, searched directly (not as a filter over the
-  # top entries of every status) and held to the same similarity floor as answers.
   defp drafts(embedding, params) do
     if params[:include_drafts] == true do
       {:ok, entries} = Faq.find_most_similar_faqs(embedding, 5, statuses: [:draft])

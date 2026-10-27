@@ -1,12 +1,7 @@
 defmodule Sanbase.MCP.Knowledge.Access do
   @moduledoc """
-  Who may use the knowledge MCP served at `/mcp_knowledge`: Santiment team
-  members, identified by an `@santiment.net` email.
-
-  This is deliberately stricter than `Sanbase.MCP.ToolInvocation.team_member?/1`,
-  which also matches superusers and configured personal addresses. The check
-  is only as strong as email verification at login: every login path sets the
-  email from a verified source (magic link, Google, Twitter).
+  Only `@santiment.net` users may use the knowledge MCP. Stricter than
+  `Sanbase.MCP.ToolInvocation.team_member?/1` on purpose.
   """
 
   alias Sanbase.Accounts.User

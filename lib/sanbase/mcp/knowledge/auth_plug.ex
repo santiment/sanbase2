@@ -1,15 +1,7 @@
 defmodule Sanbase.MCP.Knowledge.AuthPlug do
   @moduledoc """
-  Plug that restricts the knowledge MCP (`/mcp_knowledge`) to Santiment team
-  members. Accepts the same credentials as `Sanbase.MCP.AuthPlug` (OAuth
-  Bearer token or API key).
-
-  Unlike the public `/mcp`, no method is reachable without credentials, not
-  even `initialize` or `tools/list`: the tool list describes internal
-  workflows. A missing or invalid credential gets a 401 with the
-  `www-authenticate` header that starts the client's OAuth flow. A valid
-  credential of a non-team user gets a 403, so the client does not loop
-  through OAuth again.
+  Restricts `/mcp_knowledge` to team members, for every method. No or invalid
+  credentials get a 401 that starts OAuth; non-team users get a 403.
   """
   @behaviour Plug
 

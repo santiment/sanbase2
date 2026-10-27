@@ -122,10 +122,7 @@ defmodule Sanbase.Knowledge.Academy do
 
   def search_chunks(_query, _k), do: {:error, :invalid_arguments}
 
-  @doc """
-  Fetch an indexed, non-stale Academy article with its full text, reassembled
-  from its chunks in document order.
-  """
+  @doc "A non-stale Academy article with its full text, reassembled from its chunks."
   @spec get_article_with_text(integer()) :: {:ok, map()} | {:error, :not_found}
   def get_article_with_text(article_id) when is_integer(article_id) do
     case Repo.get_by(AcademyArticle, id: article_id, is_stale: false) do

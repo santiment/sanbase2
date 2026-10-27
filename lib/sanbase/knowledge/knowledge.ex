@@ -85,13 +85,8 @@ defmodule Sanbase.Knowledge do
   end
 
   @doc """
-  Retrieve the context the answer model would see for `user_input`, without
-  asking it for an answer: the query plan and the reranked hits per source,
-  each carrying the `:marker_id` it is cited by, plus the citation registry and
-  the query embedding (so callers can run further similarity searches with it).
-
-  Accepts the same options as `answer_question/2`. Used by the knowledge MCP,
-  where the client model writes the answer itself from these excerpts.
+  The numbered hits the answer prompt would get, without generating an answer.
+  Takes the same options as `answer_question/2`.
   """
   @spec retrieve_context(String.t(), keyword()) ::
           {:ok,
@@ -268,8 +263,6 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  # The reranked hits of every enabled source, numbered globally, as they reach the
-  # answer prompt. Shared by the prompt builder and `retrieve_context/2`.
   defp retrieve_numbered_hits(user_input, embedding, options) do
     min_sim = min_similarity(options)
 

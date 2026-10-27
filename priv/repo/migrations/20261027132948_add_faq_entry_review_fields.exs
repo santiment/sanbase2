@@ -1,9 +1,7 @@
 defmodule Sanbase.Repo.Migrations.AddFaqEntryReviewFields do
   use Ecto.Migration
 
-  # FAQ entries can now be created as drafts (e.g. by Claude through the knowledge
-  # MCP) that a team member reviews before they reach any answer. Existing rows
-  # stay live, hence the `published` default.
+  # Existing rows stay live, hence the `published` default.
   def change() do
     alter table(:faq_entries) do
       add(:status, :string, null: false, default: "published")

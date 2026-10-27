@@ -4,6 +4,11 @@ defmodule Sanbase.MCP.Knowledge.UpdateFaqDraftTool do
 
   Only the fields you pass are changed; `tags`, when given, replaces the whole tag list.
   Published entries cannot be changed here, only in the admin panel.
+
+  Before calling it, show the user the draft and the change, and ask them to confirm they
+  want to update it. A draft created by someone else is not changed on the first call: the
+  tool says so and names the author. Tell the user explicitly that the draft is NOT theirs,
+  ask again, and only after they confirm call again with `confirm: true`.
   """
 
   use Anubis.Server.Component, type: :tool
@@ -22,7 +27,7 @@ defmodule Sanbase.MCP.Knowledge.UpdateFaqDraftTool do
     %{
       "title" => "Update FAQ Draft",
       "readOnlyHint" => false,
-      "destructiveHint" => false,
+      "destructiveHint" => true,
       "idempotentHint" => true,
       "openWorldHint" => false
     }
@@ -44,25 +49,54 @@ defmodule Sanbase.MCP.Knowledge.UpdateFaqDraftTool do
       required: false,
       description: "New reviewer notes; this replaces the previous notes."
     )
+
+    field(:confirm, :boolean,
+      required: false,
+      description:
+        "Set to true only after the user confirmed updating a draft created by someone else."
+    )
   end
 
   @impl true
   def execute(%{id: id} = params, frame) do
-    {:reply, params |> update() |> to_response(id), frame}
+    {:reply, params |> update(frame.assigns.current_user) |> to_response(id), frame}
   end
 
-  defp update(%{id: id} = params) do
+  defp update(%{id: id} = params, user) do
     attrs = Format.draft_attrs(params)
 
     with :ok <- CreateFaqDraftTool.validate_tags(attrs[:tags]),
          {:ok, entry} <- get_entry(id),
+         :ok <- check_draft(entry),
+         :ok <- check_author(entry, user, params[:confirm] == true),
          {:ok, entry} <- Faq.update_draft(entry, attrs) do
       {:ok, Sanbase.Repo.preload(entry, [:tags, :created_by], force: true)}
     end
   end
 
+  # `Faq.update_draft/2` checks again under a row lock, in case it is published meanwhile.
+  defp check_draft(%FaqEntry{status: :draft}), do: :ok
+  defp check_draft(_entry), do: {:error, :not_a_draft}
+
+  defp check_author(%FaqEntry{created_by_id: user_id}, %{id: user_id}, _confirmed?), do: :ok
+  defp check_author(_entry, _user, true = _confirmed?), do: :ok
+  defp check_author(entry, _user, false = _confirmed?), do: {:not_author, entry}
+
   defp to_response({:ok, entry}, _id) do
     Response.json(Response.tool(), %{updated: true, entry: Format.faq_entry(entry)})
+  end
+
+  defp to_response({:not_author, entry}, _id) do
+    author = (entry.created_by && entry.created_by.email) || "an unknown user"
+
+    Response.json(Response.tool(), %{
+      updated: false,
+      message:
+        "Nothing was changed. This draft was NOT created by you: it was created by " <>
+          "#{author}. Tell the user explicitly that it is not their draft and ask them to " <>
+          "confirm they want to change it. Only after they confirm, call again with `confirm: true`.",
+      entry: Format.faq_entry(entry)
+    })
   end
 
   defp to_response({:error, :not_a_draft}, id) do

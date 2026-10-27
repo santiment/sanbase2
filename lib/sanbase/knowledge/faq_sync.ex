@@ -32,13 +32,14 @@ defmodule Sanbase.Knowledge.FaqSync do
   @export_version 1
 
   @doc """
-  Dump all non-deleted FAQ entries (question, answer_markdown, source_url,
-  tags, and the original id) to `path` as JSON. Returns the count written.
+  Dump all published, non-deleted FAQ entries (question, answer_markdown,
+  source_url, tags, and the original id) to `path` as JSON. Returns the count
+  written. Drafts are left out: the import creates entries as published.
   """
   @spec export_to_file(Path.t()) :: {:ok, %{path: Path.t(), count: non_neg_integer()}}
   def export_to_file(path) do
     faqs =
-      from(e in FaqEntry, where: e.is_deleted == false, preload: [:tags])
+      from(e in Sanbase.Knowledge.Faq.live_query(), preload: [:tags])
       |> Repo.all()
       |> Enum.map(fn e ->
         %{

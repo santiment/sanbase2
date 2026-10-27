@@ -161,6 +161,11 @@ defmodule SanbaseWeb.Admin.HomeStatsLive do
             accent={(stats.disagreement_tweets.review_required > 0 && "text-warning") || nil}
           />
           <.stat_card label="FAQ Active" value={stats.faq_entries.active} />
+          <.stat_card
+            label="FAQ Drafts to Review"
+            value={stats.faq_entries.drafts}
+            accent={(stats.faq_entries.drafts > 0 && "text-warning") || nil}
+          />
         </.stats_section>
       </.async_result>
     </div>

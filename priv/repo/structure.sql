@@ -1724,7 +1724,13 @@ CREATE TABLE public.faq_entries (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     embedding public.vector(1536),
-    is_deleted boolean DEFAULT false NOT NULL
+    is_deleted boolean DEFAULT false NOT NULL,
+    status character varying(255) DEFAULT 'published'::character varying NOT NULL,
+    origin character varying(255) DEFAULT 'admin'::character varying NOT NULL,
+    internal_notes text,
+    created_by_id bigint,
+    reviewed_by_id bigint,
+    reviewed_at timestamp(0) without time zone
 );
 
 
@@ -8936,7 +8942,14 @@ CREATE INDEX faq_entries_inserted_at_index ON public.faq_entries USING btree (in
 -- Name: faq_entries_question_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX faq_entries_question_index ON public.faq_entries USING btree (question);
+CREATE UNIQUE INDEX faq_entries_question_index ON public.faq_entries USING btree (question) WHERE (is_deleted = false);
+
+
+--
+-- Name: faq_entries_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX faq_entries_status_index ON public.faq_entries USING btree (status);
 
 
 --
@@ -10752,6 +10765,22 @@ ALTER TABLE ONLY public.ico_currencies
 --
 -- Name: ico_currencies ico_currencies_ico_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
+-- Name: faq_entries faq_entries_created_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries
+    ADD CONSTRAINT faq_entries_created_by_id_fkey FOREIGN KEY (created_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: faq_entries faq_entries_reviewed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries
+    ADD CONSTRAINT faq_entries_reviewed_by_id_fkey FOREIGN KEY (reviewed_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 
 ALTER TABLE ONLY public.ico_currencies
     ADD CONSTRAINT ico_currencies_ico_id_fkey FOREIGN KEY (ico_id) REFERENCES public.icos(id) ON DELETE CASCADE;
@@ -12416,3 +12445,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261014084308);
 INSERT INTO public."schema_migrations" (version) VALUES (20261021081454);
 INSERT INTO public."schema_migrations" (version) VALUES (20261022073128);
 INSERT INTO public."schema_migrations" (version) VALUES (20261026082656);
+INSERT INTO public."schema_migrations" (version) VALUES (20261027132948);
+INSERT INTO public."schema_migrations" (version) VALUES (20261027140423);

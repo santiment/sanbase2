@@ -184,13 +184,13 @@ faqs = [
 alias Sanbase.Knowledge.Faq
 alias Sanbase.Knowledge.FaqEntry
 
-# Upsert on the question: `faq_entries.question` is uniquely indexed, so creating
+# Upsert on the question: `faq_entries.question` is unique among non-deleted entries, so creating
 # an existing one raises and a corrected answer above would never land. Both
 # branches regenerate the embedding.
 for faq <- faqs do
   attrs = %{question: faq.question, answer_markdown: faq.answer}
 
-  case Sanbase.Repo.get_by(FaqEntry, question: faq.question) do
+  case Sanbase.Repo.get_by(FaqEntry, question: faq.question, is_deleted: false) do
     nil -> Faq.create_entry(attrs)
     %FaqEntry{} = entry -> Faq.update_entry(entry, attrs)
   end

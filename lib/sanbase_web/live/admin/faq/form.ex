@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
   end
 
   def handle_event("check_similar", %{"question" => question}, socket) do
-    case Faq.find_most_similar_faqs(question || "", 5) do
+    case Faq.find_most_similar_faqs(question || "", 5, statuses: [:published, :draft]) do
       {:ok, entries} when entries != [] ->
         socket = socket |> assign(:similar_entries, entries)
         {:noreply, socket}
@@ -148,6 +148,9 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           <div :for={entry <- @similar_entries}>
             <span class="mb-2">
               {entry.similarity |> Float.round(2)} | {entry.question}
+              <span :if={entry.status == :draft} class="badge badge-xs badge-warning badge-soft">
+                Draft
+              </span>
             </span>
             <.link navigate={~p"/admin/faq/#{entry.id}"} class="link link-primary text-sm">
               Link
@@ -189,6 +192,17 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           </.error>
         </div>
 
+        <div>
+          <.input
+            field={@form[:internal_notes]}
+            type="textarea"
+            label="Internal notes (optional, never shown to users)"
+            placeholder="Context for reviewers: the original user question, who provided the information..."
+            rows="3"
+            class="w-full textarea"
+          />
+        </div>
+
         <.tags form={@form} tags={@tags} />
         <div class="flex items-center justify-end space-x-3">
           <.link
@@ -212,7 +226,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       <label class="block text-sm font-medium mb-1">Tags</label>
       <div class="flex gap-6 flex-wrap">
         <label
-          :for={tag <- ["code", "subscription", "api", "metrics", "payment", "sanbase"]}
+          :for={tag <- FaqEntry.allowed_tags()}
           class="inline-flex items-center gap-2"
         >
           <input

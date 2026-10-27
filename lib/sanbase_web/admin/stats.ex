@@ -97,7 +97,18 @@ defmodule SanbaseWeb.Admin.Stats do
   defp faq_entries_block do
     from(f in Sanbase.Knowledge.FaqEntry,
       select: %{
-        active: count(fragment("CASE WHEN ? = false THEN 1 END", f.is_deleted)),
+        active:
+          count(
+            fragment(
+              "CASE WHEN ? = false AND ? = 'published' THEN 1 END",
+              f.is_deleted,
+              f.status
+            )
+          ),
+        drafts:
+          count(
+            fragment("CASE WHEN ? = false AND ? = 'draft' THEN 1 END", f.is_deleted, f.status)
+          ),
         deleted: count(fragment("CASE WHEN ? = true THEN 1 END", f.is_deleted))
       }
     )

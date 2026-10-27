@@ -170,8 +170,9 @@ defmodule Sanbase.MCP.Knowledge.ToolsTest do
   end
 
   describe "update_faq_draft" do
-    test "updates drafts and refuses published entries", %{frame: frame} do
+    test "updates drafts and refuses published entries", %{frame: frame, user: user} do
       draft = insert_faq(%{"question" => "Q?", "answer_markdown" => "A."}, :draft)
+      Repo.update_all(FaqEntry, set: [created_by_id: user.id])
       published = insert_faq(%{"question" => "Live?", "answer_markdown" => "Yes."})
 
       assert {:ok, %{"updated" => true, "entry" => %{"answer_markdown" => "Better."}}} =
@@ -191,6 +192,24 @@ defmodule Sanbase.MCP.Knowledge.ToolsTest do
                )
 
       assert message =~ "already published"
+    end
+
+    test "asks for confirmation before changing someone else's draft", %{frame: frame} do
+      author = insert(:user, email: "author@santiment.net")
+      draft = insert_faq(%{"question" => "Q?", "answer_markdown" => "A."}, :draft)
+      Repo.update_all(FaqEntry, set: [created_by_id: author.id])
+      params = %{id: draft.id, answer_markdown: "Better."}
+
+      assert {:ok, %{"updated" => false, "message" => message}} =
+               call(Knowledge.UpdateFaqDraftTool, params, frame)
+
+      assert message =~ "NOT created by you"
+      assert message =~ "author@santiment.net"
+
+      assert {:ok, %{"updated" => true}} =
+               with_mocks(fn ->
+                 call(Knowledge.UpdateFaqDraftTool, Map.put(params, :confirm, true), frame)
+               end)
     end
   end
 

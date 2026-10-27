@@ -55,7 +55,7 @@ defmodule Sanbase.Knowledge.Context do
       source: :faq,
       prefix: "FAQ",
       label: faq_label(hit.question),
-      url: "#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{hit.id}"
+      url: faq_admin_url(hit.id)
     }
   end
 
@@ -79,6 +79,10 @@ defmodule Sanbase.Knowledge.Context do
       url: hit.url
     }
   end
+
+  @doc "The admin panel page of an FAQ entry, which is what FAQ citations link to."
+  @spec faq_admin_url(String.t()) :: String.t()
+  def faq_admin_url(id), do: "#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{id}"
 
   @doc """
   Assemble the inner context text for a list of reranked hits of one source.

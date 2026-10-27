@@ -16,6 +16,18 @@ defmodule Sanbase.Insight.PostEmbedding do
   @doc false
   def chunk_text_marker(), do: @chunk_text_marker
 
+  @doc """
+  The body of a stored `text_chunk`, without the title preamble added for
+  embedding. Text without the marker is returned trimmed as is.
+  """
+  @spec chunk_body(String.t() | nil) :: String.t()
+  def chunk_body(text) do
+    case String.split(text || "", @chunk_text_marker, parts: 2) do
+      [_, body] -> String.trim(body)
+      _ -> String.trim(text || "")
+    end
+  end
+
   schema "posts_embeddings" do
     field(:embedding, Pgvector.Ecto.Vector)
     field(:text_chunk, :string)

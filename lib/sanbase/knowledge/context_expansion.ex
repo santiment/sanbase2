@@ -50,7 +50,7 @@ defmodule Sanbase.Knowledge.ContextExpansion do
     merged =
       post_id
       |> PostEmbedding.fetch_chunks(neighbour_indices(idx, radius))
-      |> Enum.map(&insight_body(&1.text_chunk))
+      |> Enum.map(&PostEmbedding.chunk_body(&1.text_chunk))
       |> Unchunker.merge()
 
     if merged == "", do: hit, else: %{hit | text_chunk: merged}
@@ -76,16 +76,5 @@ defmodule Sanbase.Knowledge.ContextExpansion do
   # not returned by the fetch.
   defp neighbour_indices(idx, radius) do
     Enum.to_list(max(0, idx - radius)..(idx + radius))
-  end
-
-  # Insight chunk text is stored wrapped with a title preamble; keep only what
-  # follows the writer's marker so neighbours stitch without repeating the title.
-  defp insight_body(text) do
-    marker = PostEmbedding.chunk_text_marker()
-
-    case String.split(text || "", marker, parts: 2) do
-      [_, body] -> String.trim(body)
-      _ -> String.trim(text || "")
-    end
   end
 end

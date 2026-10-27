@@ -151,6 +151,7 @@ defmodule Sanbase.Insight.Post do
           post_id: e.post_id,
           post_title: p.title,
           published_at: p.published_at,
+          is_paywall_required: p.is_paywall_required,
           text_chunk: e.text_chunk,
           chunk_index: e.chunk_index,
           similarity: fragment("1 - (embedding <=> ?)", ^embedding)
@@ -233,6 +234,7 @@ defmodule Sanbase.Insight.Post do
           post_id: e.post_id,
           post_title: p.title,
           published_at: p.published_at,
+          is_paywall_required: p.is_paywall_required,
           text_chunk: e.text_chunk,
           chunk_index: e.chunk_index
         }

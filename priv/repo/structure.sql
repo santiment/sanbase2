@@ -10675,6 +10675,22 @@ ALTER TABLE ONLY public.exchange_addresses
 
 
 --
+-- Name: faq_entries faq_entries_created_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries
+    ADD CONSTRAINT faq_entries_created_by_id_fkey FOREIGN KEY (created_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: faq_entries faq_entries_reviewed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries
+    ADD CONSTRAINT faq_entries_reviewed_by_id_fkey FOREIGN KEY (reviewed_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: faq_entries_tags faq_entries_tags_faq_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10764,22 +10780,6 @@ ALTER TABLE ONLY public.ico_currencies
 
 --
 -- Name: ico_currencies ico_currencies_ico_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
--- Name: faq_entries faq_entries_created_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.faq_entries
-    ADD CONSTRAINT faq_entries_created_by_id_fkey FOREIGN KEY (created_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
-
-
---
--- Name: faq_entries faq_entries_reviewed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.faq_entries
-    ADD CONSTRAINT faq_entries_reviewed_by_id_fkey FOREIGN KEY (reviewed_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
-
-
 --
 
 ALTER TABLE ONLY public.ico_currencies

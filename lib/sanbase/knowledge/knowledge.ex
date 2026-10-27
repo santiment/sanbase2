@@ -34,6 +34,9 @@ defmodule Sanbase.Knowledge do
   """
   def prompt_top_n(), do: @prompt_top_n
 
+  @doc "The minimum similarity a hit needs to reach the answer prompt."
+  def default_min_similarity(), do: @default_min_similarity
+
   # Attach the resolved plan so the Ask UI can show how the query was interpreted.
   defp attach_plan({:ok, answer}, plan), do: {:ok, answer, plan}
   defp attach_plan(other, _plan), do: other
@@ -79,6 +82,35 @@ defmodule Sanbase.Knowledge do
     end
 
     attach_plan(result, plan)
+  end
+
+  @doc """
+  Retrieve the context the answer model would see for `user_input`, without
+  asking it for an answer: the query plan and the reranked hits per source,
+  each carrying the `:marker_id` it is cited by, plus the citation registry and
+  the query embedding (so callers can run further similarity searches with it).
+
+  Accepts the same options as `answer_question/2`. Used by the knowledge MCP,
+  where the client model writes the answer itself from these excerpts.
+  """
+  @spec retrieve_context(String.t(), keyword()) ::
+          {:ok,
+           %{
+             plan: QueryPlan.t(),
+             hits: %{faq: [map()], insight: [map()], academy: [map()]},
+             registry: [Context.marker()],
+             embedding: [float()]
+           }}
+          | {:error, term()}
+  def retrieve_context(user_input, options \\ []) do
+    plan = QueryPlan.build(user_input, options)
+    options = Keyword.put(options, :query_plan, plan)
+
+    with {:ok, [embedding]} <-
+           Sanbase.AI.Embedding.generate_embeddings([plan.semantic_query], 1536),
+         {:ok, numbered, registry} <- retrieve_numbered_hits(user_input, embedding, options) do
+      {:ok, %{plan: plan, hits: numbered, registry: registry, embedding: embedding}}
+    end
   end
 
   def smart_search(user_input, options) do
@@ -224,15 +256,8 @@ defmodule Sanbase.Knowledge do
   # `{source, prefix, label, url}` marker `Citations` turns into a link; empty means no
   # source cleared the similarity threshold.
   defp build_question_answer_prompt(user_input, embedding, options) do
-    min_sim = min_similarity(options)
-
     with {:ok, base_prompt} <- generate_initial_prompt(user_input, options),
-         {:ok, faq_hits} <- retrieve_faqs(user_input, embedding, options, min_sim),
-         {:ok, insight_hits} <- answer_insight_hits(user_input, embedding, options, min_sim),
-         {:ok, academy_hits} <- answer_academy_hits(user_input, embedding, options, min_sim) do
-      {numbered, registry} =
-        number_sources([{:faq, faq_hits}, {:insight, insight_hits}, {:academy, academy_hits}])
-
+         {:ok, numbered, registry} <- retrieve_numbered_hits(user_input, embedding, options) do
       prompt =
         base_prompt
         |> append_section(:faq, numbered[:faq])
@@ -240,6 +265,21 @@ defmodule Sanbase.Knowledge do
         |> append_section(:academy, numbered[:academy])
 
       {:ok, prompt, registry}
+    end
+  end
+
+  # The reranked hits of every enabled source, numbered globally, as they reach the
+  # answer prompt. Shared by the prompt builder and `retrieve_context/2`.
+  defp retrieve_numbered_hits(user_input, embedding, options) do
+    min_sim = min_similarity(options)
+
+    with {:ok, faq_hits} <- retrieve_faqs(user_input, embedding, options, min_sim),
+         {:ok, insight_hits} <- answer_insight_hits(user_input, embedding, options, min_sim),
+         {:ok, academy_hits} <- answer_academy_hits(user_input, embedding, options, min_sim) do
+      {numbered, registry} =
+        number_sources([{:faq, faq_hits}, {:insight, insight_hits}, {:academy, academy_hits}])
+
+      {:ok, numbered, registry}
     end
   end
 

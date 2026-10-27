@@ -123,6 +123,30 @@ defmodule Sanbase.Knowledge.Academy do
   def search_chunks(_query, _k), do: {:error, :invalid_arguments}
 
   @doc """
+  Fetch an indexed, non-stale Academy article with its full text, reassembled
+  from its chunks in document order.
+  """
+  @spec get_article_with_text(integer()) :: {:ok, map()} | {:error, :not_found}
+  def get_article_with_text(article_id) when is_integer(article_id) do
+    case Repo.get_by(AcademyArticle, id: article_id, is_stale: false) do
+      nil ->
+        {:error, :not_found}
+
+      article ->
+        text =
+          from(c in AcademyArticleChunk,
+            where: c.article_id == ^article.id and c.is_stale == false,
+            order_by: [asc: c.chunk_index],
+            select: c.content
+          )
+          |> Repo.all()
+          |> Sanbase.Knowledge.Unchunker.merge()
+
+        {:ok, %{id: article.id, title: article.title, url: article.academy_url, text: text}}
+    end
+  end
+
+  @doc """
   Find the top `k` similar Academy articles
 
   Returns a list of maps containing the academy article title, similarity score, and url

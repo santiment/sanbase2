@@ -44,68 +44,89 @@ defmodule SanbaseWeb.Admin.UserRolesLiveTest do
     end
   end
 
-  describe "assign_role" do
-    test "an owner can assign a role" do
-      # sign_in/1 already inserted the owner role at its fixed id.
-      {_owner, conn} = sign_in(:role_admin_panel_owner)
-      target = insert(:user, email: "target@santiment.net")
+  describe "roles editor" do
+    setup do
+      {owner, conn} = sign_in(:role_admin_panel_owner)
+      team_role = insert(:role_san_team)
+      family_role = insert(:role_san_family)
+      target = insert(:user, email: "target#{System.unique_integer([:positive])}@santiment.net")
+      {:ok, _} = UserRole.create(target.id, team_role.id)
 
-      {:ok, view, _html} = live(conn, "/admin/user_roles")
+      %{owner: owner, conn: conn, target: target, team_role: team_role, family_role: family_role}
+    end
 
-      render_change(view, "assign_role", %{
-        "role_assignment" => %{"user_id" => "#{target.id}", "role_id" => "#{owner_role_id()}"}
+    test "selecting a user shows their roles checked", ctx do
+      {:ok, view, _html} = live(ctx.conn, "/admin/user_roles")
+
+      view |> element("#edit-roles-#{ctx.target.id}") |> render_click()
+
+      assert has_element?(view, "#roles-editor")
+      assert has_element?(view, "#role-#{ctx.team_role.id}[checked]")
+      refute has_element?(view, "#role-#{ctx.family_role.id}[checked]")
+    end
+
+    test "saving grants checked and revokes unchecked roles", ctx do
+      {:ok, view, _html} = live(ctx.conn, "/admin/user_roles?user_id=#{ctx.target.id}")
+
+      view
+      |> form("#user-roles-form", %{
+        roles: %{"#{ctx.team_role.id}" => "false", "#{ctx.family_role.id}" => "true"}
       })
+      |> render_submit()
 
-      assert has_role?(target.id, owner_role_id())
+      assert has_role?(ctx.target.id, ctx.family_role.id)
+      refute has_role?(ctx.target.id, ctx.team_role.id)
+      assert has_element?(view, "#role-#{ctx.family_role.id}[checked]")
+    end
+
+    test "a non-santiment user cannot be granted roles", ctx do
+      outsider = insert(:user, email: "outsider@example.com")
+      {:ok, _} = UserRole.create(outsider.id, ctx.team_role.id)
+
+      {:ok, view, _html} = live(ctx.conn, "/admin/user_roles?user_id=#{outsider.id}")
+
+      assert has_element?(view, "#role-#{ctx.family_role.id}[disabled]")
+
+      render_submit(view, "save_roles", %{"roles" => %{"#{ctx.family_role.id}" => "true"}})
+
+      refute has_role?(outsider.id, ctx.family_role.id)
+      assert has_role?(outsider.id, ctx.team_role.id)
+    end
+
+    test "an owner cannot revoke their own Owner role", ctx do
+      {:ok, view, _html} = live(ctx.conn, "/admin/user_roles?user_id=#{ctx.owner.id}")
+
+      render_submit(view, "save_roles", %{"roles" => %{"#{owner_role_id()}" => "false"}})
+
+      assert has_role?(ctx.owner.id, owner_role_id())
     end
   end
 
   describe "handle_event authorization" do
-    # A non-owner's roles in assigns — the state a client that bypassed or
-    # outlived the mount check would have.
-    setup do
+    test "save_roles is refused for a non-owner" do
+      target = insert(:user, email: "target2@santiment.net")
+      insert(:role_admin_panel_owner)
+
+      # A non-owner's roles in assigns — the state a client that bypassed or
+      # outlived the mount check would have.
       socket = %Phoenix.LiveView.Socket{
         assigns: %{
           __changed__: %{},
           flash: %{},
           current_user_role_names: ["Admin Panel Viewer"],
-          search_query: ""
+          selected_user: target
         }
       }
 
-      {:ok, socket: socket}
-    end
-
-    test "assign_role is refused for a non-owner", %{socket: socket} do
-      target = insert(:user, email: "target2@santiment.net")
-      role_id = owner_role_id()
-      insert(:role_admin_panel_owner)
-
       {:noreply, socket} =
         SanbaseWeb.Admin.UserRolesLive.handle_event(
-          "assign_role",
-          %{"role_assignment" => %{"user_id" => "#{target.id}", "role_id" => "#{role_id}"}},
+          "save_roles",
+          %{"roles" => %{"#{owner_role_id()}" => "true"}},
           socket
         )
 
       assert socket.assigns.flash["error"] =~ "Only an Admin Panel Owner"
-      refute has_role?(target.id, role_id)
-    end
-
-    test "remove_role is refused for a non-owner", %{socket: socket} do
-      target = insert(:user, email: "target3@santiment.net")
-      role = insert(:role_admin_panel_owner)
-      {:ok, _} = UserRole.create(target.id, role.id)
-
-      {:noreply, socket} =
-        SanbaseWeb.Admin.UserRolesLive.handle_event(
-          "remove_role",
-          %{"user_id" => "#{target.id}", "role_id" => "#{role.id}"},
-          socket
-        )
-
-      assert socket.assigns.flash["error"] =~ "Only an Admin Panel Owner"
-      assert has_role?(target.id, role.id)
+      refute has_role?(target.id, owner_role_id())
     end
   end
 end

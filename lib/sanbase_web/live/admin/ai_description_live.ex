@@ -1,15 +1,9 @@
 defmodule SanbaseWeb.Admin.AiDescriptionLive do
   use SanbaseWeb, :live_view
 
-  import Ecto.Query
-
-  alias Sanbase.Repo
-  alias Sanbase.Accounts.User
-  alias Sanbase.Insight.Post
-  alias Sanbase.Chart.Configuration
-  alias Sanbase.UserList
-  alias Sanbase.Accounts.UserSettings
+  alias Sanbase.AI.ContentCandidates
   alias Sanbase.AI.DescriptionJob
+  alias Sanbase.Accounts.UserSettings
 
   @default_page_size 20
   @allowed_entity_types [:charts, :screeners, :watchlists, :insights]
@@ -73,7 +67,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
   def handle_event("search_user", params, socket) do
     query = String.trim(Map.get(params, "query", Map.get(params, "value", "")))
-    results = if String.length(query) >= 2, do: search_users(query), else: []
+    results = if String.length(query) >= 2, do: ContentCandidates.search_users(query), else: []
 
     socket =
       socket
@@ -266,7 +260,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     else
       pending =
         [:charts, :screeners, :watchlists, :insights]
-        |> Enum.flat_map(&fetch_all_pending(&1, user.id))
+        |> Enum.flat_map(&ContentCandidates.pending_ids(&1, user.id))
 
       if pending == [] do
         {:noreply, put_flash(socket, :info, "All entities already have AI descriptions")}
@@ -309,7 +303,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       {:noreply,
        socket |> assign(:show_override_confirm, false) |> put_flash(:error, "No user selected")}
     else
-      {count, _} = override_descriptions(entity_type, user.id)
+      {count, _} = ContentCandidates.override_descriptions(entity_type, user.id)
 
       socket =
         socket
@@ -486,8 +480,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     %{entity_type: entity_type, page: page, page_size: page_size, selected_user: user} =
       socket.assigns
 
-    offset = (page - 1) * page_size
-    {entities, total_count} = fetch_entities(entity_type, user.id, page_size, offset)
+    {entities, total_count} = ContentCandidates.list(entity_type, user.id, page, page_size)
     total_pages = max(1, ceil(total_count / page_size))
 
     tab_counts =
@@ -495,7 +488,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       |> Map.new(fn type ->
         if type == entity_type,
           do: {type, total_count},
-          else: {type, count_entities(type, user.id)}
+          else: {type, ContentCandidates.count(type, user.id)}
       end)
 
     socket
@@ -503,201 +496,6 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     |> assign(:total_count, total_count)
     |> assign(:total_pages, total_pages)
     |> assign(:tab_counts, tab_counts)
-  end
-
-  defp fetch_entities(:insights, user_id, limit, offset) do
-    base =
-      from(p in Post,
-        where: p.is_deleted == false and p.user_id == ^user_id,
-        preload: [:user],
-        order_by: [desc: p.inserted_at]
-      )
-
-    count = Repo.aggregate(base, :count, :id)
-    entities = Repo.all(from(q in base, limit: ^limit, offset: ^offset))
-    {entities, count}
-  end
-
-  defp fetch_entities(:charts, user_id, limit, offset) do
-    base =
-      from(c in Configuration,
-        where: c.is_deleted == false and c.user_id == ^user_id,
-        preload: [:user],
-        order_by: [desc: c.inserted_at]
-      )
-
-    count = Repo.aggregate(base, :count, :id)
-    entities = Repo.all(from(q in base, limit: ^limit, offset: ^offset))
-    {entities, count}
-  end
-
-  defp fetch_entities(:screeners, user_id, limit, offset) do
-    base =
-      from(ul in UserList,
-        where: ul.is_deleted == false and ul.is_screener == true and ul.user_id == ^user_id,
-        preload: [:user],
-        order_by: [desc: ul.inserted_at]
-      )
-
-    count = Repo.aggregate(base, :count, :id)
-    entities = Repo.all(from(q in base, limit: ^limit, offset: ^offset))
-    {entities, count}
-  end
-
-  defp fetch_entities(:watchlists, user_id, limit, offset) do
-    base =
-      from(ul in UserList,
-        where: ul.is_deleted == false and ul.is_screener == false and ul.user_id == ^user_id,
-        preload: [:user],
-        order_by: [desc: ul.inserted_at]
-      )
-
-    count = Repo.aggregate(base, :count, :id)
-    entities = Repo.all(from(q in base, limit: ^limit, offset: ^offset))
-    {entities, count}
-  end
-
-  # Returns {id, type} pairs only — full records are loaded in batches inside DescriptionJob.
-  defp fetch_all_pending(:insights, user_id) do
-    Repo.all(
-      from(p in Post,
-        where: p.is_deleted == false and p.user_id == ^user_id and is_nil(p.ai_description),
-        order_by: [desc: p.inserted_at],
-        select: p.id
-      )
-    )
-    |> Enum.map(&{&1, :insights})
-  end
-
-  defp fetch_all_pending(:charts, user_id) do
-    Repo.all(
-      from(c in Configuration,
-        where: c.is_deleted == false and c.user_id == ^user_id and is_nil(c.ai_description),
-        order_by: [desc: c.inserted_at],
-        select: c.id
-      )
-    )
-    |> Enum.map(&{&1, :charts})
-  end
-
-  defp fetch_all_pending(:screeners, user_id) do
-    Repo.all(
-      from(ul in UserList,
-        where:
-          ul.is_deleted == false and ul.is_screener == true and ul.user_id == ^user_id and
-            is_nil(ul.ai_description),
-        order_by: [desc: ul.inserted_at],
-        select: ul.id
-      )
-    )
-    |> Enum.map(&{&1, :screeners})
-  end
-
-  defp fetch_all_pending(:watchlists, user_id) do
-    Repo.all(
-      from(ul in UserList,
-        where:
-          ul.is_deleted == false and ul.is_screener == false and ul.user_id == ^user_id and
-            is_nil(ul.ai_description),
-        order_by: [desc: ul.inserted_at],
-        select: ul.id
-      )
-    )
-    |> Enum.map(&{&1, :watchlists})
-  end
-
-  defp count_entities(:insights, user_id) do
-    Repo.aggregate(
-      from(p in Post, where: p.is_deleted == false and p.user_id == ^user_id),
-      :count,
-      :id
-    )
-  end
-
-  defp count_entities(:charts, user_id) do
-    Repo.aggregate(
-      from(c in Configuration, where: c.is_deleted == false and c.user_id == ^user_id),
-      :count,
-      :id
-    )
-  end
-
-  defp count_entities(:screeners, user_id) do
-    Repo.aggregate(
-      from(ul in UserList,
-        where: ul.is_deleted == false and ul.is_screener == true and ul.user_id == ^user_id
-      ),
-      :count,
-      :id
-    )
-  end
-
-  defp count_entities(:watchlists, user_id) do
-    Repo.aggregate(
-      from(ul in UserList,
-        where: ul.is_deleted == false and ul.is_screener == false and ul.user_id == ^user_id
-      ),
-      :count,
-      :id
-    )
-  end
-
-  defp search_users(query) do
-    query = String.trim(query)
-
-    case Integer.parse(query) do
-      {user_id, ""} ->
-        # Numeric input — search by ID
-        Repo.all(from(u in User, where: u.id == ^user_id, limit: 10))
-
-      _ ->
-        # Text input — search by username or email (case-insensitive partial match)
-        pattern = "%#{String.downcase(query)}%"
-
-        Repo.all(
-          from(u in User,
-            where:
-              fragment("lower(?) LIKE ?", u.username, ^pattern) or
-                fragment("lower(?) LIKE ?", u.email, ^pattern),
-            order_by: u.id,
-            limit: 10
-          )
-        )
-    end
-  end
-
-  defp override_descriptions(:insights, user_id) do
-    Repo.update_all(
-      from(p in Post,
-        where: p.user_id == ^user_id and p.is_deleted == false and not is_nil(p.ai_description),
-        update: [set: [short_desc: p.ai_description]]
-      ),
-      []
-    )
-  end
-
-  defp override_descriptions(:charts, user_id) do
-    Repo.update_all(
-      from(c in Configuration,
-        where: c.user_id == ^user_id and c.is_deleted == false and not is_nil(c.ai_description),
-        update: [set: [description: c.ai_description]]
-      ),
-      []
-    )
-  end
-
-  defp override_descriptions(type, user_id) when type in [:screeners, :watchlists] do
-    screener_flag = type == :screeners
-
-    Repo.update_all(
-      from(ul in UserList,
-        where:
-          ul.user_id == ^user_id and ul.is_deleted == false and ul.is_screener == ^screener_flag and
-            not is_nil(ul.ai_description),
-        update: [set: [description: ul.ai_description]]
-      ),
-      []
-    )
   end
 
   defp update_entity_ai_desc(entities, id, ai_description) do
@@ -794,7 +592,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     if socket.assigns.selected_user && socket.assigns.selected_user.id == user_id do
       socket
     else
-      case Repo.get(User, user_id) do
+      case ContentCandidates.get_user(user_id) do
         nil ->
           socket
           |> assign(:selected_user, nil)

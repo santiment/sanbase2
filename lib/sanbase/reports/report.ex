@@ -16,7 +16,7 @@ defmodule Sanbase.Report do
 
   @type get_reports_opts :: %{
           required(:is_logged_in) => boolean(),
-          optional(:plan_name) => String.t()
+          optional(:paid_plan?) => boolean()
         }
 
   schema "reports" do
@@ -30,8 +30,8 @@ defmodule Sanbase.Report do
     timestamps()
   end
 
-  @doc false
-  def new_changeset(report, attrs \\ %{}) do
+  @doc "Unvalidated changeset for rendering the report forms."
+  def change_report(report \\ %__MODULE__{}, attrs \\ %{}) do
     attrs = normalize_tags(attrs)
 
     report
@@ -127,7 +127,7 @@ defmodule Sanbase.Report do
     Enum.map(reports, fn report -> %{report | url: nil} end)
   end
 
-  defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_name: "FREE"}) do
+  defp show_only_preview_fields?(reports, %{is_logged_in: true, paid_plan?: false}) do
     reports
     |> Enum.map(fn
       %__MODULE__{is_pro: true} = report ->

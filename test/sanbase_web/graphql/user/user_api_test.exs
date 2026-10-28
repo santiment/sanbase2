@@ -500,6 +500,15 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       assert result["twitterHandle"] == nil
     end
 
+    test "updates the avatar, also through the deprecated avatalUrl", %{conn: conn} do
+      for arg <- ["avatarUrl", "avatalUrl"] do
+        url = "https://example.com/#{arg}.png"
+        mutation = ~s|mutation { updateUserProfile(#{arg}: "#{url}") { avatarUrl } }|
+
+        assert execute_mutation(conn, mutation, "updateUserProfile")["avatarUrl"] == url
+      end
+    end
+
     test "invalid URL format returns error", %{conn: conn} do
       mutation = """
       mutation {

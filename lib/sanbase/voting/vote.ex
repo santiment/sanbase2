@@ -187,6 +187,30 @@ defmodule Sanbase.Vote do
     Repo.get_by(__MODULE__, opts)
   end
 
+  @doc ~s"""
+  `{entity_id, vote_column}` of a votable entity, or of a map holding one of the
+  vote columns (e.g. the result of `vote`/`unvote`). `nil` if not votable.
+  """
+  def entity_key(%Post{id: id}), do: {id, :post_id}
+  def entity_key(%UserList{id: id}), do: {id, :watchlist_id}
+  def entity_key(%Chart.Configuration{id: id}), do: {id, :chart_configuration_id}
+  def entity_key(%Sanbase.Dashboards.Dashboard{id: id}), do: {id, :dashboard_id}
+  def entity_key(%Sanbase.Queries.Query{id: id}), do: {id, :query_id}
+  def entity_key(%UserTrigger{id: id}), do: {id, :user_trigger_id}
+  def entity_key(%{trigger: %{id: id}}) when is_integer(id), do: {id, :user_trigger_id}
+
+  def entity_key(%{post_id: id}) when is_integer(id), do: {id, :post_id}
+  def entity_key(%{watchlist_id: id}) when is_integer(id), do: {id, :watchlist_id}
+
+  def entity_key(%{chart_configuration_id: id}) when is_integer(id),
+    do: {id, :chart_configuration_id}
+
+  def entity_key(%{dashboard_id: id}) when is_integer(id), do: {id, :dashboard_id}
+  def entity_key(%{query_id: id}) when is_integer(id), do: {id, :query_id}
+  def entity_key(%{user_trigger_id: id}) when is_integer(id), do: {id, :user_trigger_id}
+
+  def entity_key(_), do: nil
+
   def user_total_votes(user_id) do
     query =
       from(

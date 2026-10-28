@@ -158,6 +158,8 @@ defmodule SanbaseWeb.AuthControllerTest do
       assert AuthController.validate_redirect_url("https://insights.santiment.net") == true
       assert AuthController.validate_redirect_url("https://queries.santiment.net") == true
       assert AuthController.validate_redirect_url("https://app-stage.santiment.net") == true
+      assert AuthController.validate_redirect_url("https://business.santiment.net") == true
+      assert AuthController.validate_redirect_url("https://business-stage.santiment.net") == true
     end
 
     test "rejects invalid schemes" do

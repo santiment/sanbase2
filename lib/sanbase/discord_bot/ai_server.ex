@@ -166,6 +166,7 @@ defmodule Sanbase.DiscordBot.AiServer do
       |> Map.put(:v2_fallback, result["v2_fallback"] || false)
       |> Map.put(:rephrased_question, result["rephrased_question"])
       |> Map.put(:tools_used, result["tools_used"] || [])
+      |> Map.put(:tool_issues, result["tool_issues"] || [])
       |> Map.put(:langfuse_trace_id, result["trace_id"])
       |> Map.put(:error_message, result["error_message"])
 

@@ -2,6 +2,7 @@ defmodule Sanbase.DiscordBot.AiServerTest do
   use Sanbase.DataCase, async: false
 
   import Ecto.Query
+  import Mock
 
   alias Sanbase.DiscordBot.AiContext
   alias Sanbase.DiscordBot.AiServer
@@ -50,6 +51,29 @@ defmodule Sanbase.DiscordBot.AiServerTest do
     assert row.error_message =~ "ai_server_transport_"
     assert row.discord_user == "tg:someone"
     assert is_nil(row.answer)
+  end
+
+  test "tool problems the AI server reports are stored on the row" do
+    body =
+      Jason.encode!(%{
+        "route" => %{"route" => "twitter"},
+        "function_called" => "responses_orchestrator",
+        "answer" => %{"answer" => "No posts matched."},
+        "status" => "ok",
+        "tools_used" => ["search_tweets"],
+        "tool_issues" => ["search_tweets:empty"],
+        "trace_id" => "78b51dcb"
+      })
+
+    with_mock HTTPoison,
+      post: fn _url, _body, _headers, _opts ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: body}}
+      end do
+      assert {:ok, ai_context, _result} = AiServer.answer("why did BTC drop?", @metadata)
+
+      assert ai_context.tool_issues == ["search_tweets:empty"]
+      assert ai_context.langfuse_trace_id == "78b51dcb"
+    end
   end
 
   test "a recorded failure does not become conversation context" do

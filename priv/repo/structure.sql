@@ -390,7 +390,10 @@ CREATE TABLE public.ai_context (
     v2_fallback boolean DEFAULT false,
     rephrased_question text,
     tools_used character varying(255)[] DEFAULT ARRAY[]::character varying[],
-    langfuse_trace_id character varying(255)
+    langfuse_trace_id character varying(255),
+    delivery_status character varying(255),
+    delivery_error text,
+    tool_issues character varying(255)[] DEFAULT ARRAY[]::character varying[]
 );
 
 
@@ -8484,6 +8487,13 @@ CREATE INDEX access_attempts_type_user_id_inserted_at_index ON public.access_att
 
 
 --
+-- Name: ai_context_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ai_context_inserted_at_index ON public.ai_context USING btree (inserted_at);
+
+
+--
 -- Name: ai_context_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12447,3 +12457,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261022073128);
 INSERT INTO public."schema_migrations" (version) VALUES (20261026082656);
 INSERT INTO public."schema_migrations" (version) VALUES (20261027132948);
 INSERT INTO public."schema_migrations" (version) VALUES (20261027140423);
+INSERT INTO public."schema_migrations" (version) VALUES (20261028145234);

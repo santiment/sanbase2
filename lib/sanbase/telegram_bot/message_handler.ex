@@ -254,25 +254,41 @@ defmodule Sanbase.TelegramBot.MessageHandler do
 
     last_index = length(messages) - 1
 
-    messages
-    |> Enum.with_index()
-    |> Enum.each(fn {text, index} ->
-      opts =
-        if index == last_index do
-          Keyword.put(send_opts, :reply_markup, votes_keyboard(ai_context))
-        else
-          send_opts
+    delivery =
+      messages
+      |> Enum.with_index()
+      |> Enum.reduce(:ok, fn {text, index}, delivery ->
+        opts =
+          if index == last_index do
+            Keyword.put(send_opts, :reply_markup, votes_keyboard(ai_context))
+          else
+            send_opts
+          end
+
+        case send_with_markdown_fallback(chat_id, text, opts) do
+          {:ok, %{"message_id" => message_id}} ->
+            # Record the sent message so future replies to it continue this conversation
+            BotMessage.store(chat_id, message_id, conversation_id)
+            delivery
+
+          {:ok, _result} ->
+            delivery
+
+          {:error, reason} ->
+            # Keep the first failure; later parts may still get through.
+            if delivery == :ok, do: {:error, reason}, else: delivery
         end
+      end)
 
-      case send_with_markdown_fallback(chat_id, text, opts) do
-        {:ok, %{"message_id" => message_id}} ->
-          # Record the sent message so future replies to it continue this conversation
-          BotMessage.store(chat_id, message_id, conversation_id)
+    case AiContext.record_delivery(ai_context, delivery) do
+      {:ok, _ai_context} ->
+        :ok
 
-        _ ->
-          :ok
-      end
-    end)
+      {:error, changeset} ->
+        Logger.error(
+          "[TelegramQABot] Could not record answer delivery: #{inspect(changeset.errors)}"
+        )
+    end
   end
 
   # Telegram's legacy Markdown parser rejects unbalanced */_, which LLM output

@@ -1,11 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SheetsTemplateResolver do
   alias Sanbase.SheetsTemplate
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing
 
   def get_sheets_templates(_root, _args, %{context: %{auth: %{current_user: _} = auth}}) do
-    plan =
-      Subscription.current_subscription_from_auth(auth, Product.product_sanbase())
-      |> Subscription.plan_name()
+    plan = Billing.sanbase_plan_name_from_auth(auth)
 
     {:ok, SheetsTemplate.get_all(%{is_logged_in: true, plan_name: plan})}
   end

@@ -44,6 +44,20 @@ defmodule Sanbase.Billing do
   defdelegate create_free_basic_api, to: ProPlus
   defdelegate delete_free_basic_api, to: ProPlus
 
+  # Reuses the subscriptions already loaded in the auth context
+  def sanbase_plan_name_from_auth(auth) do
+    auth
+    |> Subscription.current_subscription_from_auth(Product.product_sanbase())
+    |> Subscription.plan_name()
+  end
+
+  def user_has_product_access?(user_or_id, product_id) do
+    case Subscription.current_subscription(user_or_id, product_id) do
+      nil -> false
+      %Subscription{} = subscription -> Subscription.plan_name(subscription) != "FREE"
+    end
+  end
+
   def list_products(), do: Repo.all(Product)
 
   def list_plans() do
@@ -252,6 +266,111 @@ defmodule Sanbase.Billing do
       emit_event(result, :update_stripe_customer, %{user: user, card_token: card_token})
 
       {:ok, user}
+    end
+  end
+
+  def refresh_subscription_payment_intent(%User{id: user_id}, subscription_id) do
+    with {_, %Subscription{user_id: ^user_id} = subscription} <-
+           {:subscription?, Subscription.by_id(subscription_id)},
+         {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription.stripe_id) do
+      Subscription.sync_subscription_with_stripe(stripe_subscription, subscription)
+    end
+  end
+
+  def list_payments(%User{} = user) do
+    case StripeApi.list_payments(user) do
+      {:ok, %Stripe.List{data: payments}} -> {:ok, Enum.map(payments, &payment_to_map/1)}
+      other -> other
+    end
+  end
+
+  def retrieve_coupon(coupon) do
+    with {:ok, %Stripe.Coupon{} = coupon} <- StripeApi.retrieve_coupon(coupon) do
+      {:ok,
+       coupon
+       |> Map.take([:id, :name, :percent_off, :amount_off])
+       |> Map.put(:is_valid, coupon.valid)}
+    end
+  end
+
+  def upcoming_invoice(%User{id: user_id}, subscription_id) do
+    with %Subscription{user_id: ^user_id} = subscription <- Subscription.by_id(subscription_id),
+         true <- subscription.status in [:active, :trialing, :past_due],
+         {:ok, %Stripe.Invoice{} = invoice} <- StripeApi.upcoming_invoice(subscription.stripe_id) do
+      {:ok,
+       %{
+         period_start: DateTime.from_unix!(invoice.period_start),
+         period_end: DateTime.from_unix!(invoice.period_end),
+         amount_due: invoice.total
+       }}
+    end
+  end
+
+  def default_payment_instrument(%User{} = user) do
+    with {:ok, customer} <- StripeApi.fetch_stripe_customer(user) do
+      case choose_default_card(customer) do
+        nil ->
+          {:error, :no_default_payment_instrument}
+
+        card ->
+          {:ok, Map.take(card, [:last4, :dynamic_last4, :exp_year, :exp_month, :brand, :funding])}
+      end
+    end
+  end
+
+  def update_default_payment_instrument(%User{} = user, card_token) do
+    if user.stripe_customer_id do
+      StripeApi.maybe_detach_payment_method(user.stripe_customer_id)
+    end
+
+    with {:ok, _} <- create_or_update_stripe_customer(user, card_token), do: {:ok, true}
+  end
+
+  def delete_default_payment_instrument(%User{} = user) do
+    with :ok <- StripeApi.delete_default_card(user), do: {:ok, true}
+  end
+
+  def create_setup_intent(%User{} = user) do
+    with {:ok, setup_intent} <- StripeApi.create_setup_intent(user),
+         do: {:ok, %{client_secret: setup_intent.client_secret}}
+  end
+
+  def san_credit_balance(%User{} = user) do
+    with {:ok, customer} <- StripeApi.retrieve_customer(user),
+         true <- customer.balance < 0 do
+      -(customer.balance / 100)
+    else
+      _ -> 0.00
+    end
+  end
+
+  defp payment_to_map(%Stripe.Charge{} = charge) do
+    charge
+    |> Map.take([:status, :amount, :receipt_url, :description])
+    |> Map.put(:created_at, DateTime.from_unix!(charge.created))
+  end
+
+  # default card can be either a card token or a payment method
+  # they are stored in different places in the customer object
+  defp choose_default_card(customer) do
+    cond do
+      # Check for default payment method first
+      is_map(customer.invoice_settings) and customer.invoice_settings.default_payment_method ->
+        pm_id = customer.invoice_settings.default_payment_method
+        {:ok, pm} = StripeApi.retrieve_payment_method(pm_id)
+        pm.card
+
+      # Fall back to default source if it exists and is a card
+      customer.default_source && is_struct(customer.default_source, Stripe.Card) ->
+        Map.from_struct(customer.default_source)
+
+      # Handle card source type
+      customer.default_source && is_map(customer.default_source) &&
+          Map.get(customer.default_source, :type) == "card" ->
+        get_in(customer.default_source, [:card]) || customer.default_source
+
+      true ->
+        nil
     end
   end
 

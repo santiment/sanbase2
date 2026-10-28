@@ -5,7 +5,8 @@ defmodule Sanbase.Accounts.UserSettings do
 
   alias Sanbase.Accounts.{User, Settings}
   alias Sanbase.Repo
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing
+  alias Sanbase.Billing.Product
 
   @self_reset_api_rate_limits_cooldown 90
 
@@ -183,8 +184,8 @@ defmodule Sanbase.Accounts.UserSettings do
   end
 
   defp can_subscribe_biweekly_report?(user) do
-    Subscription.current_subscription_plan(user.id, Product.product_sanbase()) != "FREE" or
-      Subscription.current_subscription_plan(user.id, Product.product_api()) != "FREE"
+    Billing.user_has_product_access?(user.id, Product.product_sanbase()) or
+      Billing.user_has_product_access?(user.id, Product.product_api())
   end
 
   # max emails per day = 200, max telegram per day = 1000

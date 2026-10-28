@@ -382,6 +382,7 @@ defmodule SanbaseWeb.Router do
       live("/ses_events", Admin.SesEventsLive)
       live("/api_business_onboarding", Admin.ApiBusinessOnboardingLive)
       live("/mcp_tool_invocations", Admin.McpToolInvocationsLive)
+      live("/ai_bot_review", Admin.AiBotReviewLive)
       live("/memory_stats", Admin.MemoryStatsLive)
       live("/user_stats", UserStatsLive)
       live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
@@ -398,6 +399,7 @@ defmodule SanbaseWeb.Router do
 
     get("/user_rankings/export", Admin.UserRankingsController, :export)
     get("/credit_payments/export", Admin.CreditPaymentsController, :export)
+    get("/ai_bot_review/export", Admin.AiBotReviewController, :export)
     get("/business_clients/export/:what", Admin.BusinessClientsController, :export)
     get("/download_inactive_users_csv", InactiveUsersController, :download_csv)
   end

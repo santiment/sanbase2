@@ -57,6 +57,17 @@ defmodule Sanbase.DiscordBot.AiContext do
     field(:tools_used, {:array, :string}, default: [])
     field(:langfuse_trace_id, :string)
 
+    # Review diagnostics, read by the AI bot review admin page.
+    #
+    # delivery_status: "sent" | "failed" - whether the answer reached the chat.
+    #                  Set after posting; nil when nothing was posted.
+    # delivery_error:  why posting failed
+    # tool_issues:     problems the AI server reports per tool, e.g.
+    #                  "search_tweets:empty" or "fetch_metric_data_tool:error"
+    field(:delivery_status, :string)
+    field(:delivery_error, :string)
+    field(:tool_issues, {:array, :string}, default: [])
+
     timestamps()
   end
 
@@ -99,10 +110,14 @@ defmodule Sanbase.DiscordBot.AiContext do
       :v2_fallback,
       :rephrased_question,
       :tools_used,
-      :langfuse_trace_id
+      :langfuse_trace_id,
+      :delivery_status,
+      :delivery_error,
+      :tool_issues
     ])
     |> validate_required([:discord_user, :guild_id, :channel_id, :question])
     |> validate_inclusion(:status, ["ok", "degraded", "error"])
+    |> validate_inclusion(:delivery_status, ["sent", "failed"])
   end
 
   def by_id(id) do
@@ -148,6 +163,26 @@ defmodule Sanbase.DiscordBot.AiContext do
     end)
     |> List.flatten()
   end
+
+  @doc """
+  Records whether the answer of a turn was posted to the chat.
+
+  `:ok` marks it sent; `{:error, reason}` marks it failed and keeps the reason.
+  """
+  def record_delivery(%__MODULE__{} = ai_context, :ok) do
+    ai_context
+    |> changeset(%{delivery_status: "sent", delivery_error: nil})
+    |> Repo.update()
+  end
+
+  def record_delivery(%__MODULE__{} = ai_context, {:error, reason}) do
+    ai_context
+    |> changeset(%{delivery_status: "failed", delivery_error: delivery_error(reason)})
+    |> Repo.update()
+  end
+
+  defp delivery_error(reason) when is_binary(reason), do: String.slice(reason, 0, 2000)
+  defp delivery_error(reason), do: reason |> inspect() |> String.slice(0, 2000)
 
   def add_vote(context_id, new_vote) do
     context = Repo.get!(__MODULE__, context_id)

@@ -137,6 +137,7 @@ defmodule SanbaseWeb.GenericAdminController do
       {"Metric Registry", ~p"/admin/metric_registry"},
       {"Metric Versions", ~p"/admin/metric_versions"},
       {"Memory Stats", ~p"/admin/memory_stats"},
+      {"AI Bot Review", ~p"/admin/ai_bot_review"},
       {"SES Events", ~p"/admin/ses_events"},
       {"User Roles", ~p"/admin/user_roles"},
       {"User Overview", ~p"/admin/user_overview"},

@@ -115,16 +115,23 @@ defmodule Sanbase.DiscordBot.CommandHandler do
           process_ai_server_response(ai_server_response)
 
         msgs = content |> Utils.split_message(@max_message_length)
+        last_index = length(msgs) - 1
 
-        msgs
-        |> Enum.with_index()
-        |> Enum.each(fn {msg, index} ->
-          last_message? = index == length(msgs) - 1
-          message_components = if last_message?, do: components, else: []
-          Nostrum.Api.Message.create(thread.id, content: msg, components: message_components)
-        end)
+        delivery =
+          msgs
+          |> Enum.with_index()
+          |> Enum.reduce_while(:ok, fn {text, index}, :ok ->
+            message_components = if index == last_index, do: components, else: []
 
-        feedback_row_message(msg, thread, ai_context)
+            case create_message(thread.id, content: text, components: message_components) do
+              {:ok, _message} -> {:cont, :ok}
+              {:error, _reason} = error -> {:halt, error}
+            end
+          end)
+
+        record_delivery(ai_context, delivery)
+
+        if delivery == :ok, do: feedback_row_message(msg, thread, ai_context)
 
       {:error, :eserverlimit, time_left} ->
         Nostrum.Api.Message.create(thread.id,
@@ -375,6 +382,26 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       embeds: embeds,
       components: [ai_context_action_row(ai_context)]
     )
+  end
+
+  # A failed post used to crash the task (e.g. a Jason.EncodeError raised inside
+  # Nostrum), so the answer was lost without a trace. Return the failure instead.
+  defp create_message(channel_id, opts) do
+    Nostrum.Api.Message.create(channel_id, opts)
+  rescue
+    error -> {:error, Exception.message(error)}
+  catch
+    :exit, reason -> {:error, reason}
+  end
+
+  defp record_delivery(ai_context, delivery) do
+    case AiContext.record_delivery(ai_context, delivery) do
+      {:ok, _ai_context} ->
+        :ok
+
+      {:error, changeset} ->
+        Logger.error("Could not record AI answer delivery: #{inspect(changeset.errors)}")
+    end
   end
 
   defp extract_query(msg) do

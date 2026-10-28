@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
-  alias Sanbase.Metric.UIMetadata.DisplayOrder
-  alias Sanbase.Repo
+  alias Sanbase.MetricRegistry
 
   def deduce_source(%{} = metric_data, _args, _resolution) do
     source =
@@ -14,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
   end
 
   def get_ordered_metrics(_root, _args, _resolution) do
-    ordered_data = DisplayOrder.get_ordered_metrics()
+    ordered_data = MetricRegistry.ui_display_order_ordered_metrics()
 
     {:ok,
      %{
@@ -24,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
   end
 
   def get_ordered_metrics_v2(_root, _args, _resolution) do
-    ordered_data = Sanbase.Metric.Category.get_ordered_metrics()
+    ordered_data = MetricRegistry.category_ordered_metrics()
 
     # Update the dispaly_order based on category. All metrics inside the same category have
     # display_order in ascending order without gaps starting from 1
@@ -48,14 +47,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
 
   def get_metrics_by_category(_root, %{category: category}, _resolution) do
     # Find category by name
-    case Sanbase.Metric.UIMetadata.Category.by_name(category) do
+    case MetricRegistry.ui_category_by_name(category) do
       nil ->
         {:ok, []}
 
       category_record ->
         metrics =
-          DisplayOrder.by_category(category_record.id)
-          |> Enum.map(&Repo.preload(&1, [:category, :group]))
+          MetricRegistry.ui_metrics_by_category(category_record.id)
           |> Enum.map(&to_api_format/1)
 
         {:ok, metrics}
@@ -64,20 +62,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
 
   def get_metrics_by_category_and_group(_root, %{category: category, group: group}, _resolution) do
     # Find category by name
-    case Sanbase.Metric.UIMetadata.Category.by_name(category) do
+    case MetricRegistry.ui_category_by_name(category) do
       nil ->
         {:ok, []}
 
       category_record ->
         # Find group by name and category_id
-        case Sanbase.Metric.UIMetadata.Group.by_name_and_category(group, category_record.id) do
+        case MetricRegistry.ui_group_by_name_and_category(group, category_record.id) do
           nil ->
             {:ok, []}
 
           group_record ->
             metrics =
-              DisplayOrder.by_category_and_group(category_record.id, group_record.id)
-              |> Enum.map(&Repo.preload(&1, [:category, :group]))
+              MetricRegistry.ui_metrics_by_category_and_group(
+                category_record.id,
+                group_record.id
+              )
               |> Enum.map(&to_api_format/1)
 
             {:ok, metrics}
@@ -87,15 +87,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
 
   def get_recently_added_metrics(_root, %{days: days}, _resolution) do
     metrics =
-      DisplayOrder.recently_added(days)
-      |> Enum.map(&Repo.preload(&1, [:category, :group]))
+      MetricRegistry.ui_recently_added_metrics(days)
       |> Enum.map(&to_api_format/1)
 
     {:ok, metrics}
   end
 
   def get_categories_and_groups(_root, _args, _resolution) do
-    categories_and_groups = DisplayOrder.get_categories_and_groups()
+    categories_and_groups = MetricRegistry.ui_categories_and_groups()
 
     {:ok, categories_and_groups}
   end
@@ -118,7 +117,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
       unit: display_order.unit,
       description: display_order.description,
       args: display_order.args,
-      is_new: DisplayOrder.is_new?(display_order.inserted_at),
+      is_new: MetricRegistry.ui_metric_new?(display_order.inserted_at),
       status: display_order.status,
       display_order: display_order.display_order,
       inserted_at: display_order.inserted_at,

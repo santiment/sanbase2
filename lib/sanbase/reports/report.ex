@@ -30,8 +30,8 @@ defmodule Sanbase.Report do
     timestamps()
   end
 
-  @doc false
-  def new_changeset(report, attrs \\ %{}) do
+  @doc "Unvalidated changeset for rendering the report forms."
+  def change_report(report \\ %__MODULE__{}, attrs \\ %{}) do
     attrs = normalize_tags(attrs)
 
     report

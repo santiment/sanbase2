@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.WebinarResolver do
-  alias Sanbase.Webinar
-  alias Sanbase.Webinars.Registration
+  alias Sanbase.Webinars.{Webinar, Registration}
   alias Sanbase.Billing
 
   def get_webinars(_root, _args, %{context: %{auth: %{current_user: _} = auth}}) do

@@ -65,6 +65,22 @@ defmodule SanbaseWeb.Admin.AiBotReviewLiveTest do
     refute has_element?(view, "#rows-#{failed.id}")
   end
 
+  test "pages the rows but counts the whole range", %{conn: conn} do
+    turns = for _ <- 1..101, do: create_turn(%{elapsed_time: 90.0})
+    oldest = hd(turns)
+
+    {:ok, view, _html} = live(conn, "/admin/ai_bot_review")
+
+    assert has_element?(view, "#flag-count-slow", "101")
+    assert has_element?(view, "#review-pages", "Page 1 of 2")
+    refute has_element?(view, "#rows-#{oldest.id}")
+
+    view |> element("#next-page") |> render_click()
+
+    assert has_element?(view, "#rows-#{oldest.id}")
+    assert has_element?(view, "#prev-page")
+  end
+
   test "opens the full turn", %{conn: conn} do
     context =
       create_turn(%{

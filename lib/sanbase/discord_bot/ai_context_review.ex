@@ -24,7 +24,6 @@ defmodule Sanbase.DiscordBot.AiContextReview do
   # Questions shorter than this are mostly tickers or "hi"; their script says
   # little about the language the user expects.
   @min_letters_for_language 12
-  @max_rows 2000
 
   @scripts [
     latin: ~r/\p{Latin}/u,
@@ -51,15 +50,11 @@ defmodule Sanbase.DiscordBot.AiContextReview do
     * `:flagged_only` - keep only rows with at least one flag
   """
   def list(from, to, opts \\ []) do
-    from(c in AiContext,
-      where: c.inserted_at >= ^from and c.inserted_at < ^to,
-      order_by: [desc: c.inserted_at],
-      limit: @max_rows
-    )
-    |> filter_platform(opts[:platform])
+    from
+    |> range_query(to, opts[:platform])
     |> Repo.all()
-    |> Enum.map(&%{id: &1.id, context: &1, flags: flags_for(&1)})
-    |> filter_flags(opts[:flag], opts[:flagged_only])
+    |> Enum.map(&review_row/1)
+    |> Enum.filter(&keep?(&1, opts[:flag], opts[:flagged_only]))
   end
 
   @doc """
@@ -86,15 +81,41 @@ defmodule Sanbase.DiscordBot.AiContextReview do
   them with `select/2`; the unnarrowed list is what the flag counts come from.
   """
   def list_for_filters(filters) do
-    list(
-      NaiveDateTime.new!(filters.from, ~T[00:00:00]),
-      NaiveDateTime.new!(Date.add(filters.to, 1), ~T[00:00:00]),
-      platform: filters.platform
-    )
+    {from, to} = datetime_range(filters)
+    list(from, to, platform: filters.platform)
   end
 
   @doc "Keeps the rows that match the flag filters of `filters`."
-  def select(rows, filters), do: filter_flags(rows, filters.flag, filters.flagged_only)
+  def select(rows, filters), do: Enum.filter(rows, &keep?(&1, filters.flag, filters.flagged_only))
+
+  @doc """
+  `list_for_filters/1` narrowed by `select/2`, read in batches so the export
+  holds only one batch in memory. Must run inside `Repo.transaction/2`.
+  """
+  def stream_for_filters(filters) do
+    {from, to} = datetime_range(filters)
+
+    from
+    |> range_query(to, filters.platform)
+    |> Repo.stream(max_rows: 500)
+    |> Stream.map(&review_row/1)
+    |> Stream.filter(&keep?(&1, filters.flag, filters.flagged_only))
+  end
+
+  defp datetime_range(filters) do
+    {NaiveDateTime.new!(filters.from, ~T[00:00:00]),
+     NaiveDateTime.new!(Date.add(filters.to, 1), ~T[00:00:00])}
+  end
+
+  defp range_query(from, to, platform) do
+    from(c in AiContext,
+      where: c.inserted_at >= ^from and c.inserted_at < ^to,
+      order_by: [desc: c.inserted_at, desc: c.id]
+    )
+    |> filter_platform(platform)
+  end
+
+  defp review_row(context), do: %{id: context.id, context: context, flags: flags_for(context)}
 
   defp parse_date(value, default) when is_binary(value) do
     case Date.from_iso8601(value) do
@@ -167,9 +188,9 @@ defmodule Sanbase.DiscordBot.AiContextReview do
   One JSON object per line, for handing the rows to an agent that has Langfuse
   and code access.
   """
-  def to_jsonl(rows) do
-    Enum.map_join(rows, "", fn row -> Jason.encode!(export_row(row)) <> "\n" end)
-  end
+  def to_jsonl(rows), do: Enum.map_join(rows, "", &to_jsonl_line/1)
+
+  def to_jsonl_line(row), do: Jason.encode!(export_row(row)) <> "\n"
 
   def export_row(%{context: c, flags: flags}) do
     %{
@@ -203,9 +224,7 @@ defmodule Sanbase.DiscordBot.AiContextReview do
   defp filter_platform(query, "discord"), do: where(query, [c], not like(c.guild_id, "tg_%"))
   defp filter_platform(query, _platform), do: query
 
-  defp filter_flags(rows, flag, _flagged_only) when flag in @flags,
-    do: Enum.filter(rows, &(flag in &1.flags))
-
-  defp filter_flags(rows, _flag, true), do: Enum.filter(rows, &(&1.flags != []))
-  defp filter_flags(rows, _flag, _flagged_only), do: rows
+  defp keep?(row, flag, _flagged_only) when flag in @flags, do: flag in row.flags
+  defp keep?(row, _flag, true), do: row.flags != []
+  defp keep?(_row, _flag, _flagged_only), do: true
 end

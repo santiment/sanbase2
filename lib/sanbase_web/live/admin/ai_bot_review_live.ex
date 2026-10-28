@@ -10,6 +10,8 @@ defmodule SanbaseWeb.Admin.AiBotReviewLive do
   alias Sanbase.DiscordBot.AiContext
   alias Sanbase.DiscordBot.AiContextReview
 
+  @page_size 100
+
   @default_langfuse_traces_url "http://langfuse.production.san:31080/project/cmkgxdule0006yr077uhnzh1m/traces/"
 
   @flag_labels %{
@@ -34,8 +36,11 @@ defmodule SanbaseWeb.Admin.AiBotReviewLive do
   @impl true
   def handle_params(params, _url, socket) do
     filters = AiContextReview.parse_filters(params)
+    # Counts cover the whole range; only the current page is rendered.
     all_rows = AiContextReview.list_for_filters(filters)
     rows = AiContextReview.select(all_rows, filters)
+    page_count = max(div(length(rows) + @page_size - 1, @page_size), 1)
+    page = params |> parse_page() |> min(page_count)
 
     {:noreply,
      socket
@@ -43,8 +48,17 @@ defmodule SanbaseWeb.Admin.AiBotReviewLive do
      |> assign(:filter_form, to_form(filter_params(filters), as: :filters))
      |> assign(:total_count, length(all_rows))
      |> assign(:shown_count, length(rows))
+     |> assign(:page, page)
+     |> assign(:page_count, page_count)
      |> assign(:flag_counts, AiContextReview.flag_counts(all_rows))
-     |> stream(:rows, rows, reset: true)}
+     |> stream(:rows, Enum.slice(rows, (page - 1) * @page_size, @page_size), reset: true)}
+  end
+
+  defp parse_page(params) do
+    case Integer.parse(params["page"] || "") do
+      {page, ""} when page > 0 -> page
+      _ -> 1
+    end
   end
 
   @impl true
@@ -200,6 +214,30 @@ defmodule SanbaseWeb.Admin.AiBotReviewLive do
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div
+        :if={@page_count > 1}
+        id="review-pages"
+        class="flex items-center justify-end gap-2 mt-4 text-sm"
+      >
+        <.link
+          :if={@page > 1}
+          id="prev-page"
+          patch={~p"/admin/ai_bot_review?#{Map.put(@export_params, "page", @page - 1)}"}
+          class="btn btn-sm btn-ghost"
+        >
+          <.icon name="hero-chevron-left" class="w-4 h-4" /> Newer
+        </.link>
+        <span class="text-base-content/60">Page {@page} of {@page_count}</span>
+        <.link
+          :if={@page < @page_count}
+          id="next-page"
+          patch={~p"/admin/ai_bot_review?#{Map.put(@export_params, "page", @page + 1)}"}
+          class="btn btn-sm btn-ghost"
+        >
+          Older <.icon name="hero-chevron-right" class="w-4 h-4" />
+        </.link>
       </div>
 
       <.details_modal :if={@selected} selected={@selected} flag_labels={@flag_labels} />

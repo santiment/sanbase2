@@ -133,6 +133,8 @@ defmodule Sanbase.Accounts do
 
   def confirm_newsletter_opt_in(%User{} = user), do: {:ok, user}
 
+  @profile_fields [:description, :website_url, :twitter_handle, :avatar_url]
+
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)
   end
@@ -206,5 +208,13 @@ defmodule Sanbase.Accounts do
       {:error, _, reason, _} ->
         {:error, reason}
     end
+  end
+
+  def update_profile(%User{} = user, attrs) do
+    User.update(user, Map.take(attrs, @profile_fields))
+  end
+
+  def reload_user_settings(%User{} = user) do
+    Repo.preload(user, :user_settings, force: true)
   end
 end

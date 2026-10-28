@@ -214,7 +214,8 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:description, :string)
       arg(:website_url, :string)
       arg(:twitter_handle, :string)
-      arg(:avatal_url, :string)
+      arg(:avatar_url, :string)
+      arg(:avatal_url, :string, deprecate: "Misspelled, use avatarUrl")
 
       middleware(JWTAuth)
       resolve(&UserResolver.update_profile/3)

@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [requested_fields: 1]
 
+  alias Sanbase.Accounts
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.User
   alias Sanbase.Accounts.UserFollower
@@ -325,8 +326,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          {:ok, _acl} <- Sanbase.ApiCallLimit.reset(user),
          {:ok, _settings} <-
            UserSettings.update_self_reset_api_rate_limits_datetime(user, DateTime.utc_now()) do
-      user = Sanbase.Repo.preload(user, :user_settings, force: true)
-      {:ok, user}
+      {:ok, Accounts.reload_user_settings(user)}
     end
   end
 
@@ -381,7 +381,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       |> Enum.into(%{})
 
     user
-    |> Sanbase.Accounts.update_terms_and_conditions(args)
+    |> Accounts.update_terms_and_conditions(args)
     |> case do
       {:ok, user} ->
         {:ok, user}
@@ -416,7 +416,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def update_profile(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    case User.update(user, args) do
+    # `avatalUrl` is the old misspelled argument name, kept for existing clients
+    {avatal_url, args} = Map.pop(args, :avatal_url)
+    args = if avatal_url, do: Map.put_new(args, :avatar_url, avatal_url), else: args
+
+    case Accounts.update_profile(user, args) do
       {:ok, user} ->
         {:ok, user}
 

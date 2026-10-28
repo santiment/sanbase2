@@ -2,6 +2,18 @@ defmodule Sanbase.Transfers do
   alias Sanbase.Project
 
   alias Sanbase.Transfers.{EthTransfers, Erc20Transfers, BtcTransfers}
+  alias Sanbase.Utils.BlockchainAddressUtils
+  alias Sanbase.Clickhouse.Label
+
+  @doc "Add address labels and mark exchange addresses in `transfers`."
+  def enrich_with_labels(transfers, blockchain_or_slug, infrastructure \\ nil) do
+    with {:ok, transfers} <-
+           BlockchainAddressUtils.transform_address_to_map(transfers, infrastructure),
+         {:ok, transfers} <- Label.add_labels(blockchain_or_slug, transfers),
+         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
+      {:ok, transfers}
+    end
+  end
 
   def blockchain_address_transaction_volume(slug, address_or_addresses, from, to) do
     case Project.contract_info_infrastructure_by_slug(slug) do

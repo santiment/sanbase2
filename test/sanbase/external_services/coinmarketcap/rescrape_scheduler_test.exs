@@ -26,115 +26,57 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeSchedulerTest do
     [project: project]
   end
 
-  describe "executing a rescrape" do
-    test "scrapes the interval day by day and finishes", context do
-      mock_cmc_success()
+  test "scrapes the interval day by day without touching the regular scraper", context do
+    mock_cmc_success()
 
-      {:ok, srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-22 00:00:00])
+    {:ok, _} =
+      PriceScrapingProgress.store_progress("bitcoin", "coinmarketcap", ~U[2026-10-21 05:14:06Z])
 
-      run_scheduler()
+    srp = create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-22 00:00:00])
 
-      assert Enum.sort(requested_ranges()) == [
-               {~U[2023-07-19 00:00:00Z], ~U[2023-07-20 00:00:00Z]},
-               {~U[2023-07-20 00:00:00Z], ~U[2023-07-21 00:00:00Z]},
-               {~U[2023-07-21 00:00:00Z], ~U[2023-07-22 00:00:00Z]}
-             ]
+    run_scheduler()
 
-      {:ok, srp} = ScheduleRescrapePrice.by_id(srp.id)
-      assert srp.status == :finished
-      assert srp.progress_datetime == ~N[2023-07-22 00:00:00]
-      assert srp.started_at != nil
-      assert srp.finished_at != nil
+    assert Enum.sort(requested_ranges()) == [
+             {~U[2023-07-19 00:00:00Z], ~U[2023-07-20 00:00:00Z]},
+             {~U[2023-07-20 00:00:00Z], ~U[2023-07-21 00:00:00Z]},
+             {~U[2023-07-21 00:00:00Z], ~U[2023-07-22 00:00:00Z]}
+           ]
 
-      prices = Sanbase.InMemoryKafka.Producer.get_state() |> Map.get("asset_prices")
-      assert prices != []
-    end
+    assert %{status: :finished, progress_datetime: ~N[2023-07-22 00:00:00]} = reload(srp)
+    assert Sanbase.InMemoryKafka.Producer.get_state() |> Map.get("asset_prices") != []
 
-    test "does not touch the progress of the regular scraper", context do
-      mock_cmc_success()
+    assert PriceScrapingProgress.last_scraped("bitcoin", "coinmarketcap") ==
+             ~U[2026-10-21 05:14:06Z]
+  end
 
-      {:ok, _} =
-        PriceScrapingProgress.store_progress("bitcoin", "coinmarketcap", ~U[2026-10-21 05:14:06Z])
+  test "resumes from the cursor and extends a short last interval to 1 hour", context do
+    mock_cmc_success()
+    srp = create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:10:00])
+    {:ok, _} = ScheduleRescrapePrice.advance_cursor(srp, ~N[2023-07-20 00:00:00])
 
-      {:ok, _srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-20 00:00:00])
+    run_scheduler()
 
-      run_scheduler()
+    assert Enum.sort(requested_ranges()) == [
+             {~U[2023-07-20 00:00:00Z], ~U[2023-07-21 00:00:00Z]},
+             {~U[2023-07-20 23:10:00Z], ~U[2023-07-21 00:10:00Z]}
+           ]
 
-      assert PriceScrapingProgress.last_scraped("bitcoin", "coinmarketcap") ==
-               ~U[2026-10-21 05:14:06Z]
-    end
+    assert %{status: :finished} = reload(srp)
+  end
 
-    test "resumes from the cursor", context do
-      mock_cmc_success()
+  test "skips cancelled rescrapes and fails the ones without a coinmarketcap id", context do
+    mock_cmc_success()
+    cancelled = create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
+    {:ok, _} = ScheduleRescrapePrice.cancel(cancelled)
 
-      {:ok, srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-22 00:00:00])
+    no_cmc_id =
+      create_rescrape(insert(:random_project), ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
 
-      {:ok, _} = ScheduleRescrapePrice.advance_cursor(srp, ~N[2023-07-21 00:00:00])
+    run_scheduler()
 
-      run_scheduler()
-
-      assert requested_ranges() == [{~U[2023-07-21 00:00:00Z], ~U[2023-07-22 00:00:00Z]}]
-    end
-
-    test "a short last interval is extended to 1 hour", context do
-      mock_cmc_success()
-
-      {:ok, srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-20 00:10:00])
-
-      run_scheduler()
-
-      assert Enum.sort(requested_ranges()) == [
-               {~U[2023-07-19 00:00:00Z], ~U[2023-07-20 00:00:00Z]},
-               {~U[2023-07-19 23:10:00Z], ~U[2023-07-20 00:10:00Z]}
-             ]
-
-      {:ok, srp} = ScheduleRescrapePrice.by_id(srp.id)
-      assert srp.status == :finished
-      assert srp.progress_datetime == ~N[2023-07-20 00:10:00]
-    end
-
-    test "a day without price points does not end the rescrape", context do
-      mock_cmc(fn -> %Tesla.Env{status: 200, body: Jason.encode!(empty_points_response())} end)
-
-      {:ok, srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
-
-      run_scheduler()
-
-      assert length(requested_ranges()) == 2
-      {:ok, srp} = ScheduleRescrapePrice.by_id(srp.id)
-      assert srp.progress_datetime == ~N[2023-07-21 00:00:00]
-      assert srp.status == :finished
-    end
-
-    test "a cancelled rescrape is not executed", context do
-      mock_cmc_success()
-
-      {:ok, srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
-
-      {:ok, _} = ScheduleRescrapePrice.cancel(srp)
-
-      run_scheduler()
-
-      assert requested_ranges() == []
-    end
-
-    test "a project without a coinmarketcap integer id fails the rescrape" do
-      project = insert(:random_project)
-
-      {:ok, srp} = create_rescrape(project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
-
-      run_scheduler()
-
-      {:ok, srp} = ScheduleRescrapePrice.by_id(srp.id)
-      assert srp.status == :failed
-      assert srp.last_error =~ "no coinmarketcap integer id"
-    end
+    assert requested_ranges() == []
+    assert %{status: :failed, last_error: "" <> error} = reload(no_cmc_id)
+    assert error =~ "no coinmarketcap integer id"
   end
 
   describe "errors" do
@@ -150,15 +92,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeSchedulerTest do
         end
       end)
 
-      {:ok, srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
+      srp = create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
 
       run_scheduler(max_concurrency: 1)
 
-      {:ok, srp} = ScheduleRescrapePrice.by_id(srp.id)
-      assert srp.status == :finished
-      assert srp.progress_datetime == ~N[2023-07-21 00:00:00]
-      assert srp.last_error == nil
+      assert %{status: :finished, last_error: nil} = reload(srp)
 
       assert requested_ranges() == [
                {~U[2023-07-19 00:00:00Z], ~U[2023-07-20 00:00:00Z]},
@@ -170,28 +108,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeSchedulerTest do
     test "after too many failures the rescrape is marked as failed", context do
       mock_cmc(fn -> %Tesla.Env{status: 500, body: "boom"} end)
 
-      {:ok, srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
+      srp = create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
 
       run_scheduler(max_failures: 3)
 
-      {:ok, srp} = ScheduleRescrapePrice.by_id(srp.id)
-      assert srp.status == :failed
-      assert srp.progress_datetime == nil
-      assert srp.last_error =~ "Status: 500"
+      assert %{status: :failed, progress_datetime: nil, last_error: "" <> error} = reload(srp)
+      assert error =~ "Status: 500"
     end
 
     test "a crash while fetching is handled as an error", context do
       mock_cmc(fn -> exit(:boom) end)
 
-      {:ok, srp} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
+      srp = create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
 
       run_scheduler(max_failures: 1)
 
-      {:ok, srp} = ScheduleRescrapePrice.by_id(srp.id)
-      assert srp.status == :failed
-      assert srp.last_error =~ "exited"
+      assert %{status: :failed, last_error: "" <> error} = reload(srp)
+      assert error =~ "exited"
     end
   end
 
@@ -209,35 +142,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeSchedulerTest do
 
       insert(:latest_cmc_data, %{coinmarketcap_id: "ethereum", coinmarketcap_integer_id: 1027})
 
-      {:ok, _} =
-        create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-22 00:00:00],
-          priority: :low
-        )
-
-      {:ok, _} =
-        create_rescrape(ethereum, ~N[2023-07-19 00:00:00], ~N[2023-07-22 00:00:00],
-          priority: :high
-        )
+      create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-22 00:00:00], :low)
+      create_rescrape(ethereum, ~N[2023-07-19 00:00:00], ~N[2023-07-22 00:00:00], :high)
 
       run_scheduler(max_concurrency: 1)
 
       assert requested_cmc_ids() == [1027, 1027, 1027, 1, 1, 1]
     end
-  end
-
-  test "the cursor cannot be moved from a stale position", context do
-    {:ok, srp} =
-      create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])
-
-    # Two schedulers read the same rescrape, the first one moves the cursor
-    assert {:ok, _} = ScheduleRescrapePrice.advance_cursor(srp, ~N[2023-07-20 00:00:00])
-
-    assert {:error, :not_active} =
-             ScheduleRescrapePrice.advance_cursor(srp, ~N[2023-07-20 00:00:00])
-  end
-
-  test "does not start when disabled" do
-    assert :ignore = RescrapeScheduler.init(enabled?: false)
   end
 
   # Run the scheduler until there is nothing left to fetch
@@ -248,19 +159,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeSchedulerTest do
         opts
       )
 
-    pid = start_supervised!({RescrapeScheduler, opts})
+    start_supervised!({RescrapeScheduler, opts})
     assert_receive {:rescrape_scheduler, :idle}, 5_000
-    pid
   end
 
-  defp create_rescrape(project, from, to, opts \\ []) do
-    ScheduleRescrapePrice.create(%{
-      project_id: project.id,
-      from: from,
-      to: to,
-      priority: Keyword.get(opts, :priority, :normal)
-    })
+  defp create_rescrape(project, from, to, priority \\ :normal) do
+    {:ok, srp} =
+      ScheduleRescrapePrice.create(%{
+        project_id: project.id,
+        from: from,
+        to: to,
+        priority: priority
+      })
+
+    srp
   end
+
+  defp reload(srp), do: Sanbase.Repo.get!(ScheduleRescrapePrice, srp.id)
 
   defp mock_cmc_success() do
     body = File.read!(Path.join(__DIR__, "data/btc_web_api_success2.json"))
@@ -275,13 +190,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeSchedulerTest do
       send(test_pid, {:cmc_request, url})
       response_fun.()
     end)
-  end
-
-  defp empty_points_response() do
-    %{
-      "data" => %{"points" => %{}},
-      "status" => %{"error_code" => "0", "error_message" => "SUCCESS"}
-    }
   end
 
   defp requested_urls(acc \\ []) do

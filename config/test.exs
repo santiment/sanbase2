@@ -87,6 +87,8 @@ config :sanbase, Sanbase.EventBus.MetricRegistrySubscriber,
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.TestServer
 
+config :sanbase, Sanbase.ExternalServices.RateLimiting.PriorityServer, bypass: true
+
 config :sanbase, Sanbase.Metric.Registry.ChangeSuggestion, debug_applying_changes: true
 
 # Default-off in test. Tests that need the real RehydratingCache path (e.g.

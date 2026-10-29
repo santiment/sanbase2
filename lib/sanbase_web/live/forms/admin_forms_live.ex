@@ -74,6 +74,16 @@ defmodule SanbaseWeb.AdminFormsLive do
         ]
       },
       %{
+        title: "Price Rescrapes",
+        description: """
+        Schedule coinmarketcap price rescrapes for one, many or all projects, change their
+        priority, cancel or resume them, and follow their progress live
+        """,
+        buttons: [
+          %{url: ~p"/admin/price_rescrapes", text: "Open"}
+        ]
+      },
+      %{
         title: "Image Uploader",
         description: """
         Upload an image that can be used for avatars, project logos, etc.

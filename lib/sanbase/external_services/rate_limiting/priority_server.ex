@@ -123,7 +123,7 @@ defmodule Sanbase.ExternalServices.RateLimiting.PriorityServer do
 
   defp grant_next(state) do
     case pop_next(state) do
-      nil ->
+      {:empty, state} ->
         state
 
       {priority, from, state} ->
@@ -145,7 +145,7 @@ defmodule Sanbase.ExternalServices.RateLimiting.PriorityServer do
   end
 
   # Returns the next waiter that is still alive, so a dead process does not
-  # waste a request slot.
+  # waste a request slot. The dead waiters are dropped from the queues.
   defp pop_next(state) do
     popped =
       Enum.find_value(priority_order(state), fn priority ->
@@ -160,7 +160,7 @@ defmodule Sanbase.ExternalServices.RateLimiting.PriorityServer do
 
     case popped do
       nil ->
-        nil
+        {:empty, state}
 
       {priority, {pid, _} = from, state} ->
         if Process.alive?(pid), do: {priority, from, state}, else: pop_next(state)

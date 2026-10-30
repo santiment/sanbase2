@@ -13,6 +13,7 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
   alias Sanbase.Mix.Helper.ScheduleRescrapeHelpers
 
   @refresh_interval_ms 5_000
+  @list_limit 200
   @status_filters ~w(active running pending finished failed cancelled all)
   @schedule_types %{from: :naive_datetime, to: :naive_datetime, priority: :string}
   @no_permission "You need the Admin Panel Editor role to do this."
@@ -31,7 +32,8 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
        suggestions: [],
        selected_projects: [],
        all_projects?: false,
-       scheduling?: false
+       scheduling?: false,
+       scheduled_slugs: []
      )
      |> assign_schedule_form(%{"priority" => "normal"})
      |> load_rescrapes()}
@@ -86,6 +88,9 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
       not can_edit? ->
         {:noreply, put_flash(socket, :error, @no_permission)}
 
+      socket.assigns.scheduling? ->
+        {:noreply, socket}
+
       not changeset.valid? ->
         {:noreply, assign_schedule_form(socket, params, :validate)}
 
@@ -93,14 +98,7 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
         {:noreply, put_flash(socket, :error, "Pick at least one project")}
 
       true ->
-        %{from: from, to: to, priority: priority} = Ecto.Changeset.apply_changes(changeset)
-        projects = if all?, do: nil, else: selected
-        priority = String.to_existing_atom(priority)
-
-        {:noreply,
-         socket
-         |> assign(:scheduling?, true)
-         |> start_async(:schedule, fn -> schedule(projects, from, to, priority) end)}
+        {:noreply, start_scheduling(socket, changeset, if(all?, do: nil, else: selected))}
     end
   end
 
@@ -127,15 +125,16 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
 
   @impl true
   def handle_async(:schedule, {:ok, {total, errors}}, socket) do
-    # Keep picked only the projects that were not scheduled
+    # Unpick the scheduled projects. The failed ones and the ones picked meanwhile stay.
     failed = MapSet.new(errors, &elem(&1, 0))
+    scheduled = MapSet.new(socket.assigns.scheduled_slugs) |> MapSet.difference(failed)
 
     socket =
       socket
       |> assign(
         scheduling?: false,
-        all_projects?: socket.assigns.all_projects? and errors != [],
-        selected_projects: Enum.filter(socket.assigns.selected_projects, &(&1.slug in failed))
+        all_projects?: false,
+        selected_projects: Enum.reject(socket.assigns.selected_projects, &(&1.slug in scheduled))
       )
       |> put_flash(:info, "Scheduled #{total - length(errors)} rescrape(s)")
       |> load_rescrapes()
@@ -202,16 +201,21 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
       </div>
 
       <div class="flex flex-col gap-2">
-        <.form for={%{}} id="rescrapes-filter-form" phx-change="filter_search" class="w-72">
-          <input
-            type="text"
-            name="search"
-            value={@search}
-            placeholder="Filter by project slug or name"
-            phx-debounce="300"
-            class="input input-sm w-full"
-          />
-        </.form>
+        <div class="flex items-center gap-3">
+          <.form for={%{}} id="rescrapes-filter-form" phx-change="filter_search" class="w-72">
+            <input
+              type="text"
+              name="search"
+              value={@search}
+              placeholder="Filter by project slug or name"
+              phx-debounce="300"
+              class="input input-sm w-full"
+            />
+          </.form>
+          <span :if={@truncated?} id="rescrapes-truncated" class="text-xs text-warning">
+            Showing the first {@list_limit}, filter to find the rest
+          </span>
+        </div>
 
         <div class="rounded-box border border-base-300 overflow-x-auto">
           <table class="table table-sm">
@@ -433,10 +437,19 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
         else: String.to_existing_atom(socket.assigns.status_filter)
 
     rescrapes =
-      ScheduleRescrapePrice.list(status: status, search: String.trim(socket.assigns.search))
+      ScheduleRescrapePrice.list(
+        status: status,
+        search: String.trim(socket.assigns.search),
+        limit: @list_limit
+      )
 
     socket
-    |> assign(now: NaiveDateTime.utc_now(), counts: ScheduleRescrapePrice.status_counts())
+    |> assign(
+      now: NaiveDateTime.utc_now(),
+      counts: ScheduleRescrapePrice.status_counts(),
+      list_limit: @list_limit,
+      truncated?: length(rescrapes) == @list_limit
+    )
     |> stream(:rescrapes, rescrapes, reset: true)
   end
 
@@ -444,7 +457,8 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
   defp with_rescrape(socket, id, fun) do
     socket =
       with true <- socket.assigns.can_edit? || {:error, @no_permission},
-           {:ok, srp} <- ScheduleRescrapePrice.by_id(String.to_integer(id)),
+           {id, ""} <- Integer.parse(id),
+           {:ok, srp} <- ScheduleRescrapePrice.by_id(id),
            {:ok, _} <- fun.(srp) do
         put_flash(socket, :info, "Updated the rescrape of #{srp.project.slug}")
       else
@@ -456,6 +470,9 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
 
         {:error, error} ->
           put_flash(socket, :error, error)
+
+        _ ->
+          put_flash(socket, :error, "Invalid rescrape id")
       end
 
     {:noreply, load_rescrapes(socket)}
@@ -472,6 +489,16 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
       do: socket,
       else:
         put_flash(socket, :error, "Not scraped from coinmarketcap: #{Enum.join(unknown, ", ")}")
+  end
+
+  # `projects` is nil when scheduling all the coinmarketcap projects
+  defp start_scheduling(socket, changeset, projects) do
+    %{from: from, to: to, priority: priority} = Ecto.Changeset.apply_changes(changeset)
+    priority = String.to_existing_atom(priority)
+
+    socket
+    |> assign(scheduling?: true, scheduled_slugs: Enum.map(projects || [], & &1.slug))
+    |> start_async(:schedule, fn -> schedule(projects, from, to, priority) end)
   end
 
   # Runs in a task, so scheduling all the projects does not block the page

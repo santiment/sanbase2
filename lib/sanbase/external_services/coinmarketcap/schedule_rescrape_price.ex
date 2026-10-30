@@ -73,6 +73,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
     |> check_constraint(:from, name: :from_before_to, message: "must be before `to`")
   end
 
+  @doc ~s"""
+  Used by the generic admin edits. Sets the lifecycle fields when the status
+  is changed by hand, like cancel/1 and resume/1 do.
+  """
+  def update_changeset(%ScheduleRescrapePrice{} = srp, attrs) do
+    changeset = changeset(srp, attrs)
+
+    case fetch_change(changeset, :status) do
+      {:ok, status} when status in @active_statuses ->
+        changeset |> put_change(:finished_at, nil) |> put_change(:last_error, nil)
+
+      {:ok, _status} ->
+        put_change(changeset, :finished_at, now())
+
+      :error ->
+        changeset
+    end
+  end
+
   @spec create(map()) :: {:ok, %ScheduleRescrapePrice{}} | {:error, Ecto.Changeset.t()}
   def create(attrs) do
     %ScheduleRescrapePrice{}
@@ -245,7 +264,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
     total = NaiveDateTime.diff(Enum.min([to, now], NaiveDateTime), from)
     done = NaiveDateTime.diff(cursor(srp), from)
 
-    if total > 0, do: min(max(done / total, 0.0), 1.0), else: 1.0
+    # A rescrape whose interval starts in the future has nothing done yet
+    if total > 0, do: min(max(done / total, 0.0), 1.0), else: 0.0
   end
 
   @doc ~s"""

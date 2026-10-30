@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict nSaeHsNqA57PolTiSbHOl4IMXXCe2qWXhRNMFp2juNSbPM14RzhdSpht2lVgrSY
+\restrict TLGDVffcJP7DqUEWwi7gju2eN4U58wIwd05EpMPzI0CI4uQQL37uKZndat2dY3f
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 17.10 (Homebrew)
+-- Dumped by pg_dump version 17.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -124,19 +124,6 @@ CREATE TYPE public.oban_job_state AS ENUM (
     'completed',
     'discarded',
     'cancelled'
-);
-
-
---
--- Name: question_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.question_type AS ENUM (
-    'single_select',
-    'multiple_select',
-    'open_text',
-    'open_number',
-    'boolean'
 );
 
 
@@ -1504,7 +1491,7 @@ CREATE TABLE public.deep_research_turns (
     inserted_at timestamp(0) without time zone NOT NULL,
     updated_at timestamp(0) without time zone NOT NULL,
     usage jsonb,
-    CONSTRAINT valid_phase CHECK (((phase)::text = ANY ((ARRAY['idle'::character varying, 'queued'::character varying, 'planning'::character varying, 'researching'::character varying, 'writing'::character varying, 'awaiting_user'::character varying, 'paused'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
+    CONSTRAINT valid_phase CHECK (((phase)::text = ANY (ARRAY[('idle'::character varying)::text, ('queued'::character varying)::text, ('planning'::character varying)::text, ('researching'::character varying)::text, ('writing'::character varying)::text, ('awaiting_user'::character varying)::text, ('paused'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text, ('cancelled'::character varying)::text])))
 );
 
 
@@ -3152,7 +3139,7 @@ CREATE TABLE public.non_crypto_assets (
     metadata jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY ((ARRAY['stock'::character varying, 'commodity'::character varying, 'index'::character varying, 'forex'::character varying, 'fund'::character varying, 'bond'::character varying, 'other'::character varying])::text[])))
+    CONSTRAINT valid_asset_type CHECK (((asset_type)::text = ANY (ARRAY[('stock'::character varying)::text, ('commodity'::character varying)::text, ('index'::character varying)::text, ('forex'::character varying)::text, ('fund'::character varying)::text, ('bond'::character varying)::text, ('other'::character varying)::text])))
 );
 
 
@@ -4192,52 +4179,6 @@ CREATE TABLE public.question_answer_logs (
 
 
 --
--- Name: questionnaire_answers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.questionnaire_answers (
-    uuid uuid NOT NULL,
-    user_id bigint NOT NULL,
-    question_uuid uuid NOT NULL,
-    answer jsonb NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: questionnaire_questions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.questionnaire_questions (
-    uuid uuid NOT NULL,
-    questionnaire_uuid uuid NOT NULL,
-    "order" integer NOT NULL,
-    question character varying(255) NOT NULL,
-    type public.question_type DEFAULT 'open_text'::public.question_type NOT NULL,
-    answer_options jsonb DEFAULT '{}'::jsonb NOT NULL,
-    has_extra_open_text_answer boolean DEFAULT false NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: questionnaires; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.questionnaires (
-    uuid uuid NOT NULL,
-    name character varying(255) NOT NULL,
-    description text,
-    ends_at timestamp(0) without time zone,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    is_deleted boolean DEFAULT false
-);
-
-
---
 -- Name: reports; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5267,7 +5208,7 @@ CREATE TABLE public.topic_batches (
     updated_at timestamp without time zone NOT NULL,
     publication_scope character varying(255),
     CONSTRAINT published_topic_batches_require_publication_scope CHECK ((((state)::text <> 'published'::text) OR (publication_scope IS NOT NULL))),
-    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY ((ARRAY['daily_only'::character varying, 'weekly_only'::character varying, 'daily_weekly'::character varying])::text[]))))
+    CONSTRAINT topic_batches_publication_scope_valid CHECK (((publication_scope IS NULL) OR ((publication_scope)::text = ANY (ARRAY[('daily_only'::character varying)::text, ('weekly_only'::character varying)::text, ('daily_weekly'::character varying)::text]))))
 );
 
 
@@ -8063,30 +8004,6 @@ ALTER TABLE ONLY public.question_answer_logs
 
 
 --
--- Name: questionnaire_answers questionnaire_answers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.questionnaire_answers
-    ADD CONSTRAINT questionnaire_answers_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: questionnaire_questions questionnaire_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.questionnaire_questions
-    ADD CONSTRAINT questionnaire_questions_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: questionnaires questionnaires_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.questionnaires
-    ADD CONSTRAINT questionnaires_pkey PRIMARY KEY (uuid);
-
-
---
 -- Name: reports reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9809,13 +9726,6 @@ CREATE INDEX queries_user_id_index ON public.queries USING btree (user_id);
 
 
 --
--- Name: questionnaire_answers_question_uuid_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX questionnaire_answers_question_uuid_user_id_index ON public.questionnaire_answers USING btree (question_uuid, user_id);
-
-
---
 -- Name: san_burn_credit_transactions_trx_hash_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11468,30 +11378,6 @@ ALTER TABLE ONLY public.question_answer_logs
 
 
 --
--- Name: questionnaire_answers questionnaire_answers_question_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.questionnaire_answers
-    ADD CONSTRAINT questionnaire_answers_question_uuid_fkey FOREIGN KEY (question_uuid) REFERENCES public.questionnaire_questions(uuid) ON DELETE CASCADE;
-
-
---
--- Name: questionnaire_answers questionnaire_answers_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.questionnaire_answers
-    ADD CONSTRAINT questionnaire_answers_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: questionnaire_questions questionnaire_questions_questionnaire_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.questionnaire_questions
-    ADD CONSTRAINT questionnaire_questions_questionnaire_uuid_fkey FOREIGN KEY (questionnaire_uuid) REFERENCES public.questionnaires(uuid) ON DELETE CASCADE;
-
-
---
 -- Name: san_burn_credit_transactions san_burn_credit_transactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11967,7 +11853,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict nSaeHsNqA57PolTiSbHOl4IMXXCe2qWXhRNMFp2juNSbPM14RzhdSpht2lVgrSY
+\unrestrict TLGDVffcJP7DqUEWwi7gju2eN4U58wIwd05EpMPzI0CI4uQQL37uKZndat2dY3f
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

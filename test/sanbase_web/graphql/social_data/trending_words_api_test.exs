@@ -278,6 +278,36 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       end)
     end
 
+    test "Free user sees masked summaries of the first 3 words" do
+      System.put_env("MASK_FIRST_3_WORDS_FREE_USER", "true")
+      now = DateTime.utc_now(:second)
+      from = DateTime.add(now, -2, :day)
+      rows = trending_words_rows(%{dt1: from, dt3: now})
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = """
+        {
+          getTrendingWords(from: "#{from}", to: "#{now}", interval: "1d", size: 2) {
+            topWords { word summaries { summary } }
+          }
+        }
+        """
+
+        top_words =
+          build_conn()
+          |> execute(query)
+          |> get_in(["data", "getTrendingWords", Access.at(0), "topWords"])
+
+        assert top_words == [
+                 %{"word" => "***", "summaries" => [%{"summary" => "***"}]},
+                 %{"word" => "***", "summaries" => [%{"summary" => "***"}]},
+                 %{"word" => "***", "summaries" => [%{"summary" => "***"}]},
+                 %{"word" => "word2", "summaries" => [%{"summary" => "Third summary"}]}
+               ]
+      end)
+    end
+
     test "error", context do
       %{dt1: dt1, dt2: dt2} = context
 

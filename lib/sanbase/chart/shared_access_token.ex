@@ -95,7 +95,7 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
     cache_key = {__MODULE__, :get_resolved_token, token.uuid} |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store(cache_key, fn ->
-      case Sanbase.Billing.Subscription.user_has_sanbase_pro?(token.user_id) do
+      case Sanbase.Billing.Subscription.user_has_sanbase_pro_access?(token.user_id) do
         true ->
           {:ok, config} = Configuration.by_id(token.chart_configuration_id, preload: [:project])
           metrics = extract_metrics(config)

@@ -87,6 +87,32 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
                context.pro_webinar.url
              ]
     end
+
+    for subscription_factory <- [
+          :subscription_business_pro_monthly,
+          :subscription_business_max_monthly
+        ] do
+      test "with #{subscription_factory} user list all published webinars", context do
+        user = insert(:user)
+        insert(unquote(subscription_factory), user: user)
+
+        res = get_webinars(setup_jwt_auth(build_conn(), user))
+
+        assert Enum.map(res, & &1["url"]) == [
+                 context.free_webinar.url,
+                 context.pro_webinar.url
+               ]
+      end
+    end
+
+    test "with SanAPI PRO user gets preview fields for pro webinars", context do
+      user = insert(:user)
+      insert(:subscription_pro, user: user)
+
+      res = get_webinars(setup_jwt_auth(build_conn(), user))
+
+      assert Enum.map(res, & &1["url"]) == [context.free_webinar.url, nil]
+    end
   end
 
   describe "Register for webinar" do

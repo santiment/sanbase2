@@ -272,6 +272,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
             summary: "***",
             bullish_summary: "***",
             bearish_summary: "***",
+            summaries: Enum.map(word.summaries, &%{&1 | summary: "***"}),
             top_documents_ids: if(word.top_documents_ids == [], do: [], else: ["***"])
         }
       else

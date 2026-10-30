@@ -3,9 +3,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.WebinarResolver do
   alias Sanbase.Billing
 
   def get_webinars(_root, _args, %{context: %{auth: %{current_user: _} = auth}}) do
-    plan = Billing.sanbase_plan_name_from_auth(auth)
+    has_pro_access = Billing.sanbase_pro_access_from_auth?(auth)
 
-    {:ok, Webinar.get_all(%{is_logged_in: true, plan_name: plan})}
+    {:ok, Webinar.get_all(%{is_logged_in: true, has_pro_access: has_pro_access})}
   end
 
   def get_webinars(_root, _args, _resolution) do

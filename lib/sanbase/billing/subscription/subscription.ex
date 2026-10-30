@@ -33,6 +33,11 @@ defmodule Sanbase.Billing.Subscription do
   @trial_days 14
   @san_holder_coupon "SAN_HOLDER_1000"
 
+  # SanAPI plans that include Sanbase PRO or higher. Institutional and Enterprise are
+  # matched by prefix, the same way `StandardAccessChecker.max_plan?/2` matches them.
+  @api_plans_with_sanbase ["BUSINESS_PRO", "BUSINESS_MAX"]
+  @api_plan_prefixes_with_sanbase ["INSTITUTIONAL", "ENTERPRISE"]
+
   # Unused due to disabling of annual discounts
   # @one_month_discount_days 30
   # @during_trial_discount_percent_off 50
@@ -746,6 +751,21 @@ defmodule Sanbase.Billing.Subscription do
     |> Sanbase.Repo.all()
   end
 
+  @doc ~s"""
+  The ids of the users with an active or trialing SanAPI plan that includes Sanbase.
+  """
+  def get_api_plans_with_sanbase_user_ids() do
+    __MODULE__
+    |> Query.all_active_and_trialing_subscriptions()
+    |> join(:inner, [sub], p in assoc(sub, :plan))
+    |> where([_sub, p], p.product_id == @product_api)
+    |> select([sub, p], {sub.user_id, p.name})
+    |> Sanbase.Repo.all()
+    |> Enum.flat_map(fn {user_id, plan_name} ->
+      if api_plan_includes_sanbase?(plan_name), do: [user_id], else: []
+    end)
+  end
+
   def trialing_sanbase_pro?(subscription) do
     subscription = Repo.preload(subscription, :plan)
 
@@ -766,6 +786,29 @@ defmodule Sanbase.Billing.Subscription do
       _ -> false
     end
   end
+
+  @doc ~s"""
+  Whether the user has Sanbase PRO or higher, either from a Sanbase subscription or
+  from a SanAPI plan that includes Sanbase (Business, Institutional, Enterprise).
+  """
+  def user_has_sanbase_pro_access?(user_id) do
+    user_has_sanbase_pro?(user_id) or
+      case get_user_subscription(user_id, @product_api) do
+        {:ok, %__MODULE__{plan: %{name: name}}} -> api_plan_includes_sanbase?(name)
+        _ -> false
+      end
+  end
+
+  @doc ~s"""
+  Whether the SanAPI plan includes Sanbase PRO or higher.
+  """
+  @spec api_plan_includes_sanbase?(String.t() | nil) :: boolean()
+  def api_plan_includes_sanbase?(plan_name) when is_binary(plan_name) do
+    plan_name in @api_plans_with_sanbase or
+      String.starts_with?(plan_name, @api_plan_prefixes_with_sanbase)
+  end
+
+  def api_plan_includes_sanbase?(_plan_name), do: false
 
   @spec get_user_subscription(any, any) :: {:ok, %__MODULE__{} | nil}
   def get_user_subscription(user_id, product_id) do

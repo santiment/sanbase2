@@ -1,8 +1,8 @@
 defmodule Sanbase.Billing.Plan.MinPlanMaxTest do
   @moduledoc ~s"""
   A metric with min plan `max` is accessible only by the top tier of each
-  product: Sanbase MAX on Sanbase, and BUSINESS_MAX and above on SanAPI (which
-  has no MAX plan).
+  product: MAX, BUSINESS_MAX, INSTITUTIONAL and ENTERPRISE on Sanbase, and
+  BUSINESS_MAX and above on SanAPI (which has no MAX plan).
   """
   use SanbaseWeb.ConnCase, async: false
 
@@ -40,9 +40,12 @@ defmodule Sanbase.Billing.Plan.MinPlanMaxTest do
     end)
   end
 
-  test "Sanbase: only MAX has access", context do
+  test "Sanbase: only MAX, BUSINESS_MAX, INSTITUTIONAL and ENTERPRISE have access",
+       context do
     with_restored_registry(context, fn ->
-      assert AccessChecker.plan_has_access?({:metric, @metric}, "SANBASE", "MAX")
+      for plan <- ["MAX", "BUSINESS_MAX", "INSTITUTIONAL", "ENTERPRISE"] do
+        assert AccessChecker.plan_has_access?({:metric, @metric}, "SANBASE", plan), plan
+      end
 
       for plan <- [
             "FREE",
@@ -50,9 +53,6 @@ defmodule Sanbase.Billing.Plan.MinPlanMaxTest do
             "PRO",
             "PRO_PLUS",
             "BUSINESS_PRO",
-            "BUSINESS_MAX",
-            "INSTITUTIONAL",
-            "ENTERPRISE",
             "CUSTOM",
             "PREMIUM"
           ] do

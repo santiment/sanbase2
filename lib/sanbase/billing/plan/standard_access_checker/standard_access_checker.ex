@@ -114,11 +114,15 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @doc ~s"""
   Whether the plan is in the top tier, which gives access to things with min plan "max".
-  The top tier differs per product. On Sanbase only the MAX plan qualifies. SanAPI
+  The top tier differs per product. On Sanbase the MAX plan qualifies, and so do
+  BUSINESS_MAX, INSTITUTIONAL and ENTERPRISE, which include Sanbase access. SanAPI
   has no MAX plan, so there BUSINESS_MAX and the plans above it qualify.
   """
   @spec max_plan?(product_code, plan_name) :: boolean()
-  def max_plan?("SANBASE", plan_name), do: plan_name == "MAX"
+  def max_plan?("SANBASE", plan_name) when is_binary(plan_name) do
+    plan_name in ["MAX", "BUSINESS_MAX"] or
+      String.starts_with?(plan_name, @sanapi_max_plan_prefixes)
+  end
 
   def max_plan?("SANAPI", plan_name) when is_binary(plan_name) do
     plan_name in @sanapi_max_plans or String.starts_with?(plan_name, @sanapi_max_plan_prefixes)

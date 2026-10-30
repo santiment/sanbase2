@@ -96,6 +96,53 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     assert UserTrigger.frozen?(trigger) == false
   end
 
+  for subscription_factory <- [
+        :subscription_business_pro_monthly,
+        :subscription_business_max_monthly
+      ] do
+    test "does not freeze #{subscription_factory} user alerts", context do
+      %{user: user, trigger: trigger} = context
+
+      trigger = update_inserted_at(trigger, naive_days_ago(31))
+      insert(unquote(subscription_factory), user: user)
+
+      Sanbase.Alert.Job.freeze_alerts()
+
+      assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
+      assert UserTrigger.frozen?(trigger) == false
+    end
+  end
+
+  test "unfreeze alerts of a user who bought Business Pro", context do
+    %{user: user, trigger: trigger} = context
+
+    trigger = update_inserted_at(trigger, naive_days_ago(31))
+    Sanbase.Alert.Job.freeze_alerts()
+
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
+    assert {:error, error_msg} = UserTrigger.frozen?(trigger)
+    assert error_msg =~ "is frozen"
+
+    insert(:subscription_business_pro_monthly, user: user)
+    Sanbase.Alert.Job.unfreeze_alerts()
+
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
+    assert UserTrigger.frozen?(trigger) == false
+  end
+
+  test "freezes alerts of a SanAPI PRO user", context do
+    %{user: user, trigger: trigger} = context
+
+    trigger = update_inserted_at(trigger, naive_days_ago(31))
+    insert(:subscription_pro, user: user)
+
+    Sanbase.Alert.Job.freeze_alerts()
+
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
+    assert {:error, error_msg} = UserTrigger.frozen?(trigger)
+    assert error_msg =~ "is frozen"
+  end
+
   test "unfreeze alerts in case the billing event is not handled", context do
     %{user: user, trigger: trigger} = context
 

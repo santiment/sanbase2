@@ -129,6 +129,73 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     end)
   end
 
+  for subscription_factory <- [
+        :subscription_business_pro_monthly,
+        :subscription_business_max_monthly
+      ] do
+    test "#{subscription_factory} user can create a token that gives access", context do
+      user = insert(:user)
+      insert(unquote(subscription_factory), user: user)
+
+      chart_configuration =
+        insert(:chart_configuration,
+          user: user,
+          project: context.config_project,
+          is_public: true,
+          metrics: ["defi_total_value_locked_usd"]
+        )
+
+      token_uuid =
+        get_chart_configuration_shared_access_token(
+          setup_jwt_auth(build_conn(), user),
+          chart_configuration.id
+        )
+        |> get_in(["data", "getChartConfigurationSharedAccessToken", "uuid"])
+
+      assert is_binary(token_uuid) and byte_size(token_uuid) > 0
+
+      from = ~U[2015-01-01 00:00:00Z]
+      to = ~U[2016-10-01 00:00:00Z]
+      result = {:ok, [%{datetime: from, value: 5}]}
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/6, result)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        conn =
+          Plug.Conn.put_req_header(
+            context.conn,
+            "x-sharedaccess-authorization",
+            "SharedAccessToken #{token_uuid}"
+          )
+
+        slug = context.config_project.slug
+
+        assert get_metric(conn, "defi_total_value_locked_usd", slug, from, to, "1d") == %{
+                 "data" => %{
+                   "getMetric" => %{
+                     "timeseriesData" => [
+                       %{"datetime" => DateTime.to_iso8601(from), "value" => 5.0}
+                     ]
+                   }
+                 }
+               }
+      end)
+    end
+  end
+
+  test "user without a Sanbase Pro or Business plan cannot create token", context do
+    chart_config = insert(:chart_configuration, user: context.user, is_public: true)
+
+    error =
+      get_chart_configuration_shared_access_token(
+        setup_jwt_auth(build_conn(), context.user),
+        chart_config.id
+      )
+      |> get_in(["errors", Access.at(0), "message"])
+
+    assert error ==
+             "Generating a Shared Access Token from a chart layout is allowed only for Sanbase Pro, Business, Institutional and Enterprise users."
+  end
+
   test "cannot create token for private layout", context do
     chart_config = insert(:chart_configuration, user: context.pro_user, is_public: false)
 

@@ -57,6 +57,7 @@ defmodule SanbaseWeb.Graphql.Billing.BusinessProApiAccessTest do
           assert word["summary"] == "#{word["word"]} summary"
           assert word["bullishSummary"] == "#{word["word"]} bullish summary"
           assert word["bearishSummary"] == "#{word["word"]} bearish summary"
+          assert word["summaries"] == [%{"summary" => "#{word["word"]} summary"}]
           refute inspect(word) =~ "***"
         end
 
@@ -194,7 +195,153 @@ defmodule SanbaseWeb.Graphql.Billing.BusinessProApiAccessTest do
     end
   end
 
+  describe "Sanbase metrics with Business Pro and Business Max" do
+    @sanbase_pro_metric "stock_to_flow"
+
+    setup context do
+      {:ok, registry} = Sanbase.Metric.Registry.by_name(@sanbase_pro_metric)
+      original = Map.take(registry, [:sanbase_min_plan])
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(registry, %{sanbase_min_plan: "pro"}, emit_event: false)
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      business_pro_user = insert(:user)
+      insert(:subscription_business_pro_monthly, user: business_pro_user)
+
+      business_max_user = insert(:user)
+      insert(:subscription_business_max_monthly, user: business_max_user)
+
+      [
+        original_registry: original,
+        business_jwt_conns: [
+          {"BUSINESS_PRO", setup_jwt_auth(build_conn(), business_pro_user)},
+          {"BUSINESS_MAX", setup_jwt_auth(build_conn(), business_max_user)}
+        ],
+        free_jwt_conn: setup_jwt_auth(build_conn(), insert(:user)),
+        selector: %{slug: context.project.slug}
+      ]
+    end
+
+    test "a metric with Sanbase min plan PRO is fetched with full history and realtime",
+         context do
+      with_restored_registry(context, fn ->
+        metric = @sanbase_pro_metric
+        assert StandardAccessChecker.min_plan("SANBASE", {:metric, metric}) == "PRO"
+
+        test_pid = self()
+
+        Sanbase.Mock.prepare_mock(Metric, :timeseries_data, fn
+          ^metric, _selector, from, to, _interval, _opts ->
+            send(test_pid, {:timeseries_data_called, from, to})
+            {:ok, [%{datetime: from, value: 1.0}]}
+        end)
+        |> Sanbase.Mock.run_with_mocks(fn ->
+          # A different `from` per plan, so no request is answered from the cache
+          for {{plan, conn}, index} <- Enum.with_index(context.business_jwt_conns) do
+            {from, to} = from_to(5 * 365 + index, 0)
+            query = metric_query(metric, context.selector, from, to)
+
+            result =
+              conn
+              |> post("/graphql", query_skeleton(query))
+              |> json_response(200)
+
+            refute Map.has_key?(result, "errors"), plan
+            assert_received {:timeseries_data_called, ^from, ^to}, plan
+          end
+
+          {from, to} = from_to(5 * 365 + 10, 0)
+          query = metric_query(metric, context.selector, from, to)
+
+          error =
+            context.free_jwt_conn
+            |> post("/graphql", query_skeleton(query))
+            |> json_response(200)
+            |> get_in(["errors", Access.at(0), "message"])
+
+          assert error =~ "is not accessible with the currently used SANBASE FREE subscription"
+          refute_received {:timeseries_data_called, _, _}
+        end)
+      end)
+    end
+  end
+
+  describe "Sanbase metrics with min plan MAX" do
+    setup context do
+      {:ok, registry} = Sanbase.Metric.Registry.by_name(@sanbase_pro_metric)
+      original = Map.take(registry, [:sanbase_min_plan])
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(registry, %{sanbase_min_plan: "max"}, emit_event: false)
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      business_pro_user = insert(:user)
+      insert(:subscription_business_pro_monthly, user: business_pro_user)
+
+      business_max_user = insert(:user)
+      insert(:subscription_business_max_monthly, user: business_max_user)
+
+      [
+        original_registry: original,
+        business_pro_jwt_conn: setup_jwt_auth(build_conn(), business_pro_user),
+        business_max_jwt_conn: setup_jwt_auth(build_conn(), business_max_user),
+        selector: %{slug: context.project.slug}
+      ]
+    end
+
+    test "Business Max can fetch it on Sanbase, Business Pro cannot", context do
+      with_restored_registry(context, fn ->
+        metric = @sanbase_pro_metric
+        assert StandardAccessChecker.min_plan("SANBASE", {:metric, metric}) == "MAX"
+
+        {from, to} = from_to(5 * 365, 0)
+        query = metric_query(metric, context.selector, from, to)
+
+        Sanbase.Mock.prepare_mock2(
+          &Metric.timeseries_data/6,
+          {:ok, [%{datetime: from, value: 1.0}]}
+        )
+        |> Sanbase.Mock.run_with_mocks(fn ->
+          error =
+            context.business_pro_jwt_conn
+            |> post("/graphql", query_skeleton(query))
+            |> json_response(200)
+            |> get_in(["errors", Access.at(0), "message"])
+
+          assert error =~
+                   "is not accessible with the currently used SANAPI BUSINESS_PRO subscription"
+
+          result =
+            context.business_max_jwt_conn
+            |> post("/graphql", query_skeleton(query))
+            |> json_response(200)
+
+          refute Map.has_key?(result, "errors")
+
+          assert get_in(result, ["data", "getMetric", "timeseriesData"]) == [
+                   %{"datetime" => DateTime.to_iso8601(from), "value" => 1.0}
+                 ]
+        end)
+      end)
+    end
+  end
+
   # Private functions
+
+  # The registry is cached in persistent_term, which the DB sandbox does not roll back
+  defp with_restored_registry(context, fun) do
+    fun.()
+  after
+    {:ok, registry} = Sanbase.Metric.Registry.by_name(@sanbase_pro_metric)
+
+    {:ok, _} =
+      Sanbase.Metric.Registry.update(registry, context.original_registry, emit_event: false)
+
+    Sanbase.Metric.Registry.refresh_stored_terms()
+  end
 
   defp capture_trending_words_calls(fun) do
     test_pid = self()
@@ -236,7 +383,7 @@ defmodule SanbaseWeb.Graphql.Billing.BusinessProApiAccessTest do
           summary: "#{word} summary",
           bullish_summary: "#{word} bullish summary",
           bearish_summary: "#{word} bearish summary",
-          summaries: []
+          summaries: [%{source: "twitter", datetime: datetime, summary: "#{word} summary"}]
         }
       end
 
@@ -312,6 +459,7 @@ defmodule SanbaseWeb.Graphql.Billing.BusinessProApiAccessTest do
           summary
           bullishSummary
           bearishSummary
+          summaries { summary }
           topDocuments { text screenName source }
         }
       }

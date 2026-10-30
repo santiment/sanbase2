@@ -67,8 +67,7 @@ defmodule Sanbase.Webinars.Webinar do
     |> show_only_preview_fields?(opts)
   end
 
-  defp show_only_preview_fields?(webinars, %{plan_name: plan})
-       when plan in ["PRO", "PRO_PLUS", "MAX"] do
+  defp show_only_preview_fields?(webinars, %{has_pro_access: true}) do
     webinars
   end
 

@@ -51,6 +51,18 @@ defmodule Sanbase.Billing do
     |> Subscription.plan_name()
   end
 
+  @doc ~s"""
+  Whether the authenticated user has Sanbase PRO or higher, either from a Sanbase
+  subscription or from a SanAPI plan that includes Sanbase.
+  """
+  def sanbase_pro_access_from_auth?(auth) do
+    sanbase_plan_name_from_auth(auth) in ["PRO", "PRO_PLUS", "MAX"] or
+      auth
+      |> Subscription.current_subscription_from_auth(Product.product_api())
+      |> Subscription.plan_name()
+      |> Subscription.api_plan_includes_sanbase?()
+  end
+
   def user_has_product_access?(user_or_id, product_id) do
     case Subscription.current_subscription(user_or_id, product_id) do
       nil -> false
@@ -376,7 +388,8 @@ defmodule Sanbase.Billing do
 
   def get_sanbase_pro_user_ids() do
     user_ids =
-      Subscription.get_direct_sanbase_pro_user_ids()
+      (Subscription.get_direct_sanbase_pro_user_ids() ++
+         Subscription.get_api_plans_with_sanbase_user_ids())
       |> Enum.uniq()
 
     {:ok, user_ids}

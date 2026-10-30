@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
         %{context: %{auth: %{current_user: user}}}
       ) do
     with {_, true} <-
-           {:sanbase_pro?, Sanbase.Billing.Subscription.user_has_sanbase_pro?(user.id)},
+           {:sanbase_pro?, Sanbase.Billing.Subscription.user_has_sanbase_pro_access?(user.id)},
          {:ok, %Configuration{} = config} <- Configuration.by_id(id, querying_user_id: user.id),
          true <- user_can_get_shared_access_token?(config, user.id),
          {:ok, shared_access_token} <- get_or_generate_shared_access_token(config) do
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
     else
       {:sanbase_pro?, false} ->
         {:error,
-         "Generating a Shared Access Token from a chart layout is allowed only for Sanbase Pro users."}
+         "Generating a Shared Access Token from a chart layout is allowed only for Sanbase Pro, Business, Institutional and Enterprise users."}
 
       error ->
         error

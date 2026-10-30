@@ -18,24 +18,30 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     )
   end
 
+  @max_retry_after_seconds 300
+
   @doc ~s"""
   The datetime until which a 429 response says we must not send requests.
   The `retry-after` header can hold either a number of seconds or an HTTP-date.
-  Defaults to 1 second when the header is missing or cannot be parsed.
+  Defaults to 1 second when the header is missing or cannot be parsed. The wait
+  is capped, as it blocks all the requests that share the rate limiter.
   """
   @spec retry_after_datetime(Tesla.Env.t()) :: DateTime.t()
   def retry_after_datetime(%Tesla.Env{headers: headers}) do
     now = DateTime.utc_now()
 
-    with {_, value} <- Enum.find(headers, &match?({"retry-after", _}, &1)),
-         value = String.trim(value),
-         {:seconds, :error} <- {:seconds, Integer.parse(value)},
-         {:ok, datetime} <- parse_http_date(value) do
-      datetime
-    else
-      {:seconds, {seconds, _}} -> DateTime.add(now, seconds, :second)
-      _ -> DateTime.add(now, 1, :second)
-    end
+    retry_after =
+      with {_, value} <- Enum.find(headers, &match?({"retry-after", _}, &1)),
+           value = String.trim(value),
+           {:seconds, :error} <- {:seconds, Integer.parse(value)},
+           {:ok, datetime} <- parse_http_date(value) do
+        datetime
+      else
+        {:seconds, {seconds, _}} -> DateTime.add(now, seconds, :second)
+        _ -> DateTime.add(now, 1, :second)
+      end
+
+    Enum.min([retry_after, DateTime.add(now, @max_retry_after_seconds, :second)], DateTime)
   end
 
   defp parse_http_date(value) do

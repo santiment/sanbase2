@@ -3,6 +3,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePriceTest do
 
   import Sanbase.Factory
 
+  alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice
 
   setup do
@@ -66,6 +67,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePriceTest do
     {:ok, srp} = ScheduleRescrapePrice.advance_cursor(srp, ~N[2023-07-20 00:00:00])
     assert ScheduleRescrapePrice.progress(srp, ~N[2030-01-01 00:00:00]) == 0.5
     assert ScheduleRescrapePrice.progress(srp, ~N[2023-07-20 12:00:00]) == 1 / 1.5
+    # The interval has not started yet
+    assert ScheduleRescrapePrice.progress(srp, ~N[2023-07-18 00:00:00]) == 0.0
+  end
+
+  test "status edits from the generic admin set the lifecycle fields", context do
+    srp = create_rescrape(context.bitcoin)
+
+    {:ok, srp} =
+      srp |> ScheduleRescrapePrice.update_changeset(%{status: :cancelled}) |> Repo.update()
+
+    assert %NaiveDateTime{} = srp.finished_at
+
+    {:ok, srp} =
+      srp |> ScheduleRescrapePrice.update_changeset(%{status: :pending}) |> Repo.update()
+
+    assert %{finished_at: nil, last_error: nil} = srp
   end
 
   test "finds the coinmarketcap projects by slug, name or ticker" do
@@ -86,7 +103,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePriceTest do
     srp
   end
 
-  defp reload(srp), do: Sanbase.Repo.get!(ScheduleRescrapePrice, srp.id)
+  defp reload(srp), do: Repo.get!(ScheduleRescrapePrice, srp.id)
   defp ids(rescrapes), do: Enum.map(rescrapes, & &1.id)
   defp slugs(projects), do: Enum.map(projects, & &1.slug)
 end

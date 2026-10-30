@@ -79,7 +79,12 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
-      cache_resolve(&SocialDataResolver.get_trending_words/3, ttl: 600, max_ttl_offset: 240)
+      # The resolver masks the top results for FREE users, so the plan must be in the key
+      cache_resolve(&SocialDataResolver.get_trending_words/3,
+        ttl: 600,
+        max_ttl_offset: 240,
+        include_subscription_in_key: true
+      )
     end
 
     @desc ~s"""
@@ -102,7 +107,12 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
-      cache_resolve(&SocialDataResolver.get_trending_stories/3, ttl: 600, max_ttl_offset: 240)
+      # The resolver masks the top results for FREE users, so the plan must be in the key
+      cache_resolve(&SocialDataResolver.get_trending_stories/3,
+        ttl: 600,
+        max_ttl_offset: 240,
+        include_subscription_in_key: true
+      )
     end
 
     @desc ~s"""

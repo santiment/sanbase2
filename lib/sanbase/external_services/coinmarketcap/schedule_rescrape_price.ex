@@ -23,6 +23,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
   alias __MODULE__
   alias Sanbase.Repo
   alias Sanbase.Project
+  alias Sanbase.Model.LatestCoinmarketcapData
 
   @priorities [:low, :normal, :high]
   @statuses [:pending, :running, :finished, :failed, :cancelled]
@@ -66,6 +67,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
     |> cast(attrs, [:project_id, :from, :to, :priority, :status])
     |> validate_required([:project_id, :from, :to, :priority, :status])
     |> validate_from_before_to()
+    |> validate_from_not_in_future()
     |> unique_constraint(:project_id,
       name: :schedule_rescrape_prices_one_active_per_project_index,
       message: "already has an active (pending or running) rescrape"
@@ -238,12 +240,32 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
   end
 
   @doc ~s"""
-  The pending and running rescrapes, with their projects.
+  The pending and running rescrapes, without their projects.
   """
   @spec list_active() :: [%ScheduleRescrapePrice{}]
   def list_active() do
-    from(s in ScheduleRescrapePrice, where: s.status in ^@active_statuses, preload: :project)
+    from(s in ScheduleRescrapePrice, where: s.status in ^@active_statuses)
     |> Repo.all()
+  end
+
+  @doc ~s"""
+  The coinmarketcap integer ids of the projects, by project id. The projects
+  without one are not in the map.
+  """
+  @spec coinmarketcap_integer_ids([non_neg_integer()]) :: %{
+          non_neg_integer() => non_neg_integer()
+        }
+  def coinmarketcap_integer_ids(project_ids) do
+    from(ssm in Project.SourceSlugMapping,
+      join: cmc in LatestCoinmarketcapData,
+      on: cmc.coinmarketcap_id == ssm.slug,
+      where:
+        ssm.source == "coinmarketcap" and ssm.project_id in ^project_ids and
+          not is_nil(cmc.coinmarketcap_integer_id),
+      select: {ssm.project_id, cmc.coinmarketcap_integer_id}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   @spec status_counts() :: %{atom() => non_neg_integer()}
@@ -363,6 +385,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
     else
       changeset
     end
+  end
+
+  # The scheduler would wait until `from` to start the rescrape
+  defp validate_from_not_in_future(changeset) do
+    validate_change(changeset, :from, fn :from, from ->
+      if NaiveDateTime.compare(from, NaiveDateTime.utc_now()) == :gt,
+        do: [from: "must not be in the future"],
+        else: []
+    end)
   end
 
   defp error_to_string(error) when is_binary(error), do: String.slice(error, 0, 2000)

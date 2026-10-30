@@ -71,6 +71,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePriceTest do
     assert ScheduleRescrapePrice.progress(srp, ~N[2023-07-18 00:00:00]) == 0.0
   end
 
+  test "a rescrape cannot start in the future", context do
+    from = NaiveDateTime.utc_now() |> NaiveDateTime.add(3600)
+
+    assert {:error, changeset} =
+             ScheduleRescrapePrice.create(%{
+               project_id: context.bitcoin.id,
+               from: from,
+               to: NaiveDateTime.add(from, 86_400)
+             })
+
+    assert %{from: ["must not be in the future"]} = errors_on(changeset)
+  end
+
   test "status edits from the generic admin set the lifecycle fields", context do
     srp = create_rescrape(context.bitcoin)
 

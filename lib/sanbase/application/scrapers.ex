@@ -62,8 +62,10 @@ defmodule Sanbase.Application.Scrapers do
       # Historical coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap,
 
-      # Coinmarketcap price rescrapes. Runs when the historical fetcher is enabled
-      Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler,
+      # Coinmarketcap price rescrapes. Runs when the historical fetcher is enabled.
+      # Under its own temporary supervisor, so a crash loop of the rescrapes
+      # cannot take down this supervisor and the other scrapers.
+      Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler.isolated_child_spec(),
 
       # Realtime coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,

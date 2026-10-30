@@ -23,8 +23,9 @@ defmodule Sanbase.Application.Scrapers do
         time_between_requests: 100
       ),
 
-      # Coinmarketcap graph data rate limiter
-      RateLimiting.Server.child_spec(
+      # Coinmarketcap graph data rate limiter. Serves the price rescrapes
+      # according to their priority.
+      RateLimiting.PriorityServer.child_spec(
         :graph_coinmarketcap_rate_limiter,
         scale: 60_000,
         limit: 60,
@@ -60,6 +61,11 @@ defmodule Sanbase.Application.Scrapers do
 
       # Historical coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap,
+
+      # Coinmarketcap price rescrapes. Runs when the historical fetcher is enabled.
+      # Under its own temporary supervisor, so a crash loop of the rescrapes
+      # cannot take down this supervisor and the other scrapers.
+      Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler.isolated_child_spec(),
 
       # Realtime coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,

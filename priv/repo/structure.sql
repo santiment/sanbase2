@@ -4398,10 +4398,16 @@ CREATE TABLE public.schedule_rescrape_prices (
     "from" timestamp without time zone NOT NULL,
     "to" timestamp without time zone NOT NULL,
     original_last_updated timestamp without time zone,
-    in_progress boolean NOT NULL,
-    finished boolean NOT NULL,
+    in_progress boolean DEFAULT false NOT NULL,
+    finished boolean DEFAULT true NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    priority character varying(255) DEFAULT 'normal'::character varying NOT NULL,
+    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    progress_datetime timestamp(0) without time zone,
+    last_error text,
+    started_at timestamp(0) without time zone,
+    finished_at timestamp(0) without time zone
 );
 
 
@@ -7478,6 +7484,14 @@ ALTER TABLE ONLY public.featured_items
 
 
 --
+-- Name: schedule_rescrape_prices from_before_to; Type: CHECK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.schedule_rescrape_prices
+    ADD CONSTRAINT from_before_to CHECK (("from" < "to")) NOT VALID;
+
+
+--
 -- Name: github_organizations github_organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9751,6 +9765,13 @@ CREATE UNIQUE INDEX sanbase_notifications_read_status_user_id_notification_id_in
 --
 
 CREATE UNIQUE INDEX sanr_emails_email_index ON public.sanr_emails USING btree (email);
+
+
+--
+-- Name: schedule_rescrape_prices_one_active_per_project_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX schedule_rescrape_prices_one_active_per_project_index ON public.schedule_rescrape_prices USING btree (project_id) WHERE ((status)::text = ANY ((ARRAY['pending'::character varying, 'running'::character varying])::text[]));
 
 
 --
@@ -12452,6 +12473,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261013082802);
 INSERT INTO public."schema_migrations" (version) VALUES (20261014084021);
 INSERT INTO public."schema_migrations" (version) VALUES (20261014084306);
 INSERT INTO public."schema_migrations" (version) VALUES (20261014084308);
+INSERT INTO public."schema_migrations" (version) VALUES (20261021074340);
 INSERT INTO public."schema_migrations" (version) VALUES (20261021081454);
 INSERT INTO public."schema_migrations" (version) VALUES (20261022073128);
 INSERT INTO public."schema_migrations" (version) VALUES (20261026082656);

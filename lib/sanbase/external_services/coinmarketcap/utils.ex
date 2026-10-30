@@ -11,15 +11,44 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
   # There is no meaningful result to be returned here. If it does not exit
   # this case should return a special case and it should be handeled so the
   # `last_updated` is not updated when no points are written
-  def wait_rate_limit(%Tesla.Env{status: 429, headers: headers}, rate_limiting_server) do
-    wait_period =
-      case Enum.find(headers, &match?({"retry-after", _}, &1)) do
-        {_, wait_period} -> wait_period |> String.to_integer()
-        _ -> 1
+  def wait_rate_limit(%Tesla.Env{status: 429} = resp, rate_limiting_server) do
+    Sanbase.ExternalServices.RateLimiting.Server.wait_until(
+      rate_limiting_server,
+      retry_after_datetime(resp)
+    )
+  end
+
+  @max_retry_after_seconds 300
+
+  @doc ~s"""
+  The datetime until which a 429 response says we must not send requests.
+  The `retry-after` header can hold either a number of seconds or an HTTP-date.
+  Defaults to 1 second when the header is missing or cannot be parsed. The wait
+  is capped, as it blocks all the requests that share the rate limiter.
+  """
+  @spec retry_after_datetime(Tesla.Env.t()) :: DateTime.t()
+  def retry_after_datetime(%Tesla.Env{headers: headers}) do
+    now = DateTime.utc_now()
+
+    retry_after =
+      with {_, value} <- Enum.find(headers, &match?({"retry-after", _}, &1)),
+           value = String.trim(value),
+           {:seconds, :error} <- {:seconds, Integer.parse(value)},
+           {:ok, datetime} <- parse_http_date(value) do
+        datetime
+      else
+        {:seconds, {seconds, _}} -> DateTime.add(now, seconds, :second)
+        _ -> DateTime.add(now, 1, :second)
       end
 
-    wait_until = Timex.shift(Timex.now(), seconds: wait_period)
-    Sanbase.ExternalServices.RateLimiting.Server.wait_until(rate_limiting_server, wait_until)
+    Enum.min([retry_after, DateTime.add(now, @max_retry_after_seconds, :second)], DateTime)
+  end
+
+  defp parse_http_date(value) do
+    case Timex.parse(value, "{RFC1123}") do
+      {:ok, %DateTime{} = datetime} -> {:ok, DateTime.shift_zone!(datetime, "Etc/UTC")}
+      _ -> :error
+    end
   end
 
   def get_cmc_metadata(opts \\ []) do

@@ -353,6 +353,7 @@ defmodule SanbaseWeb.Router do
       live("/suggest_github_organizations_admin_live", SuggestGithubOrganizationsAdminLive)
       live("/upload_image_live", UploadImageLive)
       live("/uploaded_images_live", UploadedImagesLive)
+      live("/price_rescrapes", Admin.PriceRescrapesLive)
 
       live "/notifications/manual/discord", NotificationsLive.ManualDiscordFormLive
       live "/notifications/manual/email", NotificationsLive.ManualEmailFormLive

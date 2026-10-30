@@ -18,12 +18,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
   failures the rescrape is marked as failed. A restart loses only the days
   that were in flight, the running rescrapes continue from their cursor.
 
+  The scheduler is isolated from the other scrapers, see `isolated_child_spec/1`.
+  Errors while working on a rescrape (e.g. the DB is unavailable) are logged and
+  do not crash the scheduler. The rescrape is dropped from memory and reloaded
+  from its cursor on the next refresh. A rescrape whose `from` is in the future
+  waits until then.
+
   Only one scheduler should run. A second one would fetch the same days, but
   cannot break a rescrape, as the cursor is moved with conditional updates.
   """
   use GenServer
 
-  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Coinmarketcap.{ScheduleRescrapePrice, WebApi}
   alias Sanbase.Utils.Config
@@ -38,6 +43,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
   @interval_seconds 86_400
   # WebApi skips intervals shorter than 1 hour
   @min_interval_seconds 3600
+  @supervisor_max_restarts 3
+  @supervisor_max_seconds 60
+
+  # The scheduler applies its own changes to the in-memory rescrape too, so a
+  # difference in these fields means the rescrape was changed from outside,
+  # e.g. cancelled and resumed between two refreshes
+  @externally_changed_fields [:status, :from, :to, :progress_datetime, :last_error]
 
   @doc ~s"""
   Options (all but :enabled? are meant for tests):
@@ -50,14 +62,34 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end
 
+  @doc ~s"""
+  The child spec used by the scrapers supervisor. It keeps a crash loop of the
+  scheduler away from the other scrapers.
+
+  The scheduler runs under its own supervisor, which gives up after
+  #{@supervisor_max_restarts} restarts in #{@supervisor_max_seconds} seconds. That
+  supervisor is :temporary, so its parent neither restarts it nor counts its
+  exit towards its own restart limit. When it gives up, only the rescrapes stop,
+  until the next restart of the app.
+  """
+  def isolated_child_spec(opts \\ []) do
+    supervisor_opts = [
+      strategy: :one_for_one,
+      max_restarts: @supervisor_max_restarts,
+      max_seconds: @supervisor_max_seconds
+    ]
+
+    %{
+      id: :cmc_rescrape_scheduler_supervisor,
+      start: {Supervisor, :start_link, [[{__MODULE__, opts}], supervisor_opts]},
+      type: :supervisor,
+      restart: :temporary
+    }
+  end
+
   @impl true
   def init(opts) do
-    enabled? =
-      Keyword.get_lazy(opts, :enabled?, fn ->
-        Config.module_get(Coinmarketcap, :sync_enabled, false) in [true, "true"]
-      end)
-
-    if enabled? do
+    if enabled?(opts) do
       send(self(), :refresh)
 
       {:ok,
@@ -82,8 +114,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
     Process.send_after(self(), :refresh, state.refresh_interval_ms)
 
     state =
-      state
-      |> reload_rescrapes()
+      safely(fn -> reload_rescrapes(state) end, state, "Reloading the rescrapes")
       |> fill_slots()
 
     {:noreply, state}
@@ -91,83 +122,115 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
 
   def handle_info({ref, result}, state) when is_map_key(state.tasks, ref) do
     Process.demonitor(ref, [:flush])
-    {id, tasks} = Map.pop(state.tasks, ref)
-
-    state =
-      %{state | tasks: tasks}
-      |> handle_result(id, ref, result)
-      |> fill_slots()
-
-    {:noreply, state}
+    {:noreply, task_done(state, ref, result)}
   end
 
   def handle_info({:DOWN, ref, :process, _pid, reason}, state)
       when is_map_key(state.tasks, ref) do
-    {id, tasks} = Map.pop(state.tasks, ref)
-
-    state =
-      %{state | tasks: tasks}
-      |> handle_result(id, ref, {:error, "Fetching prices exited: #{inspect(reason)}"})
-      |> fill_slots()
-
-    {:noreply, state}
+    {:noreply, task_done(state, ref, {:error, "Fetching prices exited: #{inspect(reason)}"})}
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
 
   # Private functions
 
+  # Reading the config must not crash, as a failed start would stop the
+  # scrapers supervisor from starting
+  defp enabled?(opts) do
+    Keyword.get_lazy(opts, :enabled?, fn ->
+      Config.module_get(Coinmarketcap, :sync_enabled, false) in [true, "true"]
+    end)
+  catch
+    kind, reason ->
+      Logger.error(
+        "[CMC Rescrape] The scheduler is disabled, reading its config failed: " <>
+          Exception.format(kind, reason, __STACKTRACE__)
+      )
+
+      false
+  end
+
+  defp task_done(state, ref, result) do
+    {id, tasks} = Map.pop(state.tasks, ref)
+    state = %{state | tasks: tasks}
+
+    safely(
+      fn -> handle_result(state, id, ref, result) end,
+      drop_rescrape(state, id),
+      "Handling a result of rescrape #{id}"
+    )
+    |> fill_slots()
+  end
+
   defp reload_rescrapes(state) do
-    rescrapes =
-      Enum.reduce(ScheduleRescrapePrice.list_active(), %{}, fn srp, acc ->
-        case reloaded_entry(state, srp) do
-          {:ok, entry} -> Map.put(acc, srp.id, entry)
-          :error -> acc
-        end
-      end)
+    {known, new} =
+      ScheduleRescrapePrice.list_active()
+      |> Enum.split_with(&Map.has_key?(state.rescrapes, &1.id))
+
+    known = Map.new(known, &{&1.id, reloaded_entry(state.rescrapes[&1.id], &1)})
 
     # The rescrapes that are no longer active are dropped. The results of their
     # days in flight are ignored.
-    %{state | rescrapes: rescrapes}
+    %{state | rescrapes: Map.merge(known, new_entries(new))}
   end
 
-  # Keep the in-memory cursor, only the priority can be changed from outside
-  defp reloaded_entry(state, srp) do
-    case Map.fetch(state.rescrapes, srp.id) do
-      {:ok, entry} -> {:ok, %{entry | srp: %{entry.srp | priority: srp.priority}}}
-      :error -> new_entry(srp)
-    end
+  # Keep the in-memory cursor, only the priority can be changed from outside.
+  # A rescrape changed in another way is restarted from its cursor in the DB.
+  defp reloaded_entry(entry, srp) do
+    if Map.take(entry.srp, @externally_changed_fields) ==
+         Map.take(srp, @externally_changed_fields),
+       do: %{entry | srp: %{entry.srp | priority: srp.priority}},
+       else: new_entry(%{srp | project: entry.srp.project}, entry.cmc_integer_id)
   end
 
-  defp new_entry(srp) do
-    case LatestCoinmarketcapData.coinmarketcap_integer_id(srp.project) do
-      nil ->
-        error = "#{Sanbase.Project.describe(srp.project)} has no coinmarketcap integer id"
-        _ = ScheduleRescrapePrice.mark_failed(srp, error)
-        :error
+  defp new_entries([]), do: %{}
 
-      cmc_integer_id ->
-        {:ok,
-         %{
-           srp: srp,
-           cmc_integer_id: cmc_integer_id,
-           # The start of the next day to fetch
-           next_from: srp |> ScheduleRescrapePrice.cursor() |> to_unix(),
-           # The days in flight, in the order they were started: {task_ref, interval, done?}
-           in_flight: [],
-           failures: 0,
-           retry_at: nil
-         }}
-    end
+  defp new_entries(srps) do
+    srps = Sanbase.Repo.preload(srps, :project)
+    cmc_ids = ScheduleRescrapePrice.coinmarketcap_integer_ids(Enum.map(srps, & &1.project_id))
+
+    Enum.reduce(srps, %{}, fn srp, acc ->
+      case Map.fetch(cmc_ids, srp.project_id) do
+        {:ok, cmc_integer_id} ->
+          Map.put(acc, srp.id, new_entry(srp, cmc_integer_id))
+
+        :error ->
+          error = "#{Sanbase.Project.describe(srp.project)} has no coinmarketcap integer id"
+
+          safely(
+            fn -> ScheduleRescrapePrice.mark_failed(srp, error) end,
+            :error,
+            "Failing rescrape #{srp.id}"
+          )
+
+          acc
+      end
+    end)
+  end
+
+  defp new_entry(srp, cmc_integer_id) do
+    %{
+      srp: srp,
+      cmc_integer_id: cmc_integer_id,
+      # The start of the next day to fetch
+      next_from: srp |> ScheduleRescrapePrice.cursor() |> to_unix(),
+      # The days in flight, in the order they were started: {task_ref, interval, done?}
+      in_flight: [],
+      failures: 0,
+      retry_at: nil
+    }
   end
 
   defp fill_slots(state) do
     state = finish_completed(state)
 
     with true <- map_size(state.tasks) < state.max_concurrency,
-         %{} = entry <- next_entry(state) do
-      state
-      |> start_next_day(entry)
+         %{srp: %{id: id}} = entry <- next_entry(state) do
+      safely(
+        fn -> start_next_day(state, entry) end,
+        drop_rescrape(state, id),
+        "Starting a day of rescrape #{id}"
+      )
       |> fill_slots()
     else
       _ ->
@@ -178,16 +241,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
 
   defp finish_completed(state) do
     completed =
-      for {id, %{in_flight: []} = entry} <- state.rescrapes,
-          entry.next_from >= end_unix(entry.srp),
-          do: id
+      for {id, %{in_flight: []} = entry} <- state.rescrapes, finished?(entry), do: id
 
     Enum.reduce(completed, state, fn id, state ->
       srp = state.rescrapes[id].srp
       Logger.info("[CMC Rescrape] Finished rescrape #{srp.id} for #{srp.project.slug}")
-      _ = ScheduleRescrapePrice.mark_finished(srp)
+
+      safely(
+        fn -> ScheduleRescrapePrice.mark_finished(srp) end,
+        :error,
+        "Finishing rescrape #{srp.id}"
+      )
+
       drop_rescrape(state, id)
     end)
+  end
+
+  # A rescrape whose `from` is in the future has not started, so it is not finished
+  defp finished?(%{srp: srp, next_from: next_from}) do
+    next_from >= end_unix(srp) and to_unix(srp.from) <= DateTime.to_unix(DateTime.utc_now())
   end
 
   # The rescrape with the highest priority that has a day to fetch
@@ -308,6 +380,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
       {:export, error} -> {:error, "Kafka export failed: #{inspect(error)}"}
       {:error, error} -> {:error, error}
     end
+  end
+
+  # Runs `fun` and returns `fallback` if it raises or exits, so a failure (e.g.
+  # the DB is unavailable) does not crash the scheduler. A rescrape dropped
+  # from memory is reloaded from its cursor on the next refresh.
+  defp safely(fun, fallback, action) do
+    fun.()
+  catch
+    kind, reason ->
+      Logger.error(
+        "[CMC Rescrape] #{action} failed: " <> Exception.format(kind, reason, __STACKTRACE__)
+      )
+
+      fallback
   end
 
   defp put_entry(state, entry),

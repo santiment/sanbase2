@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLiveTest do
   import Phoenix.LiveViewTest
   import Sanbase.Factory
 
-  alias Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice
+  alias Sanbase.ExternalServices.Coinmarketcap.{ScheduleRescrapePrice, PriceScrapingProgress}
 
   setup do
     [project | _] =
@@ -37,6 +37,59 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLiveTest do
     assert [%{priority: :high}, %{priority: :high}] = rescrapes
     assert Enum.all?(rescrapes, &has_element?(view, "#rescrapes-#{&1.id}"))
     refute has_element?(view, "#selected-ethereum")
+  end
+
+  test "pasting a slug twice does not report it as unknown" do
+    {:ok, view, _html} = live(login(:role_admin_panel_editor), "/admin/price_rescrapes")
+
+    view
+    |> form("#project-search-form", %{project_search: "bitcoin, ethereum, bitcoin"})
+    |> render_submit()
+
+    assert has_element?(view, "#selected-bitcoin")
+    refute has_element?(view, "#flash-error")
+  end
+
+  test "after a partial all-projects run the failed projects are picked", context do
+    # Not scraped by the regular scraper yet
+    insert(:project, %{slug: "unscraped"})
+
+    for slug <- ["bitcoin", "ethereum"],
+        do:
+          {:ok, _} =
+            PriceScrapingProgress.store_progress(slug, "coinmarketcap", DateTime.utc_now())
+
+    # Bitcoin already has an active rescrape
+    create_rescrape(context.project)
+
+    {:ok, view, _html} = live(login(:role_admin_panel_editor), "/admin/price_rescrapes")
+
+    # A pick made before switching to all the projects
+    view |> form("#project-search-form", %{project_search: "ethereum"}) |> render_submit()
+    view |> element("#all-projects-toggle") |> render_click()
+
+    view
+    |> form("#schedule-form", %{
+      rescrape: %{from: "2023-07-19T00:00", to: "2023-07-21T00:00", priority: "normal"}
+    })
+    |> render_submit()
+
+    render_async(view)
+
+    # Only ethereum is scheduled. Bitcoin keeps its earlier rescrape.
+    active_slugs = ScheduleRescrapePrice.list(status: :active) |> Enum.map(& &1.project.slug)
+    assert Enum.sort(active_slugs) == ["bitcoin", "ethereum"]
+    assert has_element?(view, "#selected-bitcoin")
+    refute has_element?(view, "#selected-ethereum")
+  end
+
+  test "malformed events do not crash the page" do
+    {:ok, view, _html} = live(login(:role_admin_panel_editor), "/admin/price_rescrapes")
+
+    render_click(view, "preset", %{"days" => "x"})
+    render_click(view, "filter_status", %{"status" => "bogus"})
+
+    assert has_element?(view, "#schedule-form")
   end
 
   test "an editor changes the priority, cancels and resumes a rescrape", context do

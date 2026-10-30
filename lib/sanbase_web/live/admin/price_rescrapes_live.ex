@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
   @status_filters ~w(active running pending finished failed cancelled all)
   @schedule_types %{from: :naive_datetime, to: :naive_datetime, priority: :string}
   @no_permission "You need the Admin Panel Editor role to do this."
+  @max_flash_errors 10
 
   @impl true
   def mount(_params, _session, socket) do
@@ -32,8 +33,7 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
        suggestions: [],
        selected_projects: [],
        all_projects?: false,
-       scheduling?: false,
-       scheduled_slugs: []
+       scheduling?: false
      )
      |> assign_schedule_form(%{"priority" => "normal"})
      |> load_rescrapes()}
@@ -69,11 +69,17 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
   end
 
   def handle_event("preset", %{"days" => days}, socket) do
-    to = %{NaiveDateTime.utc_now() | second: 0, microsecond: {0, 0}}
-    from = NaiveDateTime.add(to, -String.to_integer(days) * 86_400)
-    params = Map.merge(socket.assigns.schedule_params, %{"from" => from, "to" => to})
+    case Integer.parse(days) do
+      {days, ""} when days > 0 ->
+        to = %{NaiveDateTime.utc_now() | second: 0, microsecond: {0, 0}}
+        from = NaiveDateTime.add(to, -days * 86_400)
+        params = Map.merge(socket.assigns.schedule_params, %{"from" => from, "to" => to})
 
-    {:noreply, assign_schedule_form(socket, params)}
+        {:noreply, assign_schedule_form(socket, params)}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("validate_schedule", %{"rescrape" => params}, socket) do
@@ -107,6 +113,9 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
     {:noreply, socket |> assign(:status_filter, status) |> load_rescrapes()}
   end
 
+  # An unknown status can come only from a modified client
+  def handle_event("filter_status", _params, socket), do: {:noreply, socket}
+
   def handle_event("filter_search", %{"search" => search}, socket) do
     {:noreply, socket |> assign(:search, search) |> load_rescrapes()}
   end
@@ -124,30 +133,34 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
   end
 
   @impl true
-  def handle_async(:schedule, {:ok, {total, errors}}, socket) do
-    # Unpick the scheduled projects. The failed ones and the ones picked meanwhile stay.
+  def handle_async(:schedule, {:ok, %{all?: all?, slugs: slugs, errors: errors}}, socket) do
     failed = MapSet.new(errors, &elem(&1, 0))
-    scheduled = MapSet.new(socket.assigns.scheduled_slugs) |> MapSet.difference(failed)
+    scheduled = slugs |> MapSet.new() |> MapSet.difference(failed)
+
+    # Unpick the scheduled projects. The failed ones and the ones picked
+    # meanwhile stay. After an all-projects run the failed ones are picked,
+    # so they can be retried.
+    failed_projects =
+      if all? and errors != [],
+        do: ScheduleRescrapePrice.projects_by_slugs(MapSet.to_list(failed)),
+        else: []
+
+    selected =
+      socket.assigns.selected_projects
+      |> Enum.reject(&(&1.slug in scheduled))
+      |> Kernel.++(failed_projects)
+      |> Enum.uniq_by(& &1.slug)
 
     socket =
       socket
-      |> assign(
-        scheduling?: false,
-        all_projects?: false,
-        selected_projects: Enum.reject(socket.assigns.selected_projects, &(&1.slug in scheduled))
-      )
-      |> put_flash(:info, "Scheduled #{total - length(errors)} rescrape(s)")
+      |> assign(scheduling?: false, all_projects?: false, selected_projects: selected)
+      |> put_flash(:info, "Scheduled #{MapSet.size(scheduled)} rescrape(s)")
       |> load_rescrapes()
 
     socket =
       if errors == [],
         do: socket,
-        else:
-          put_flash(
-            socket,
-            :error,
-            "Skipped: " <> Enum.map_join(errors, "; ", &"#{elem(&1, 0)} #{elem(&1, 1)}")
-          )
+        else: put_flash(socket, :error, "Skipped: " <> errors_text(errors))
 
     {:noreply, socket}
   end
@@ -203,13 +216,13 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
       <div class="flex flex-col gap-2">
         <div class="flex items-center gap-3">
           <.form for={%{}} id="rescrapes-filter-form" phx-change="filter_search" class="w-72">
-            <input
+            <.input
+              id="rescrapes-search"
               type="text"
               name="search"
               value={@search}
               placeholder="Filter by project slug or name"
               phx-debounce="300"
-              class="input input-sm w-full"
             />
           </.form>
           <span :if={@truncated?} id="rescrapes-truncated" class="text-xs text-warning">
@@ -252,15 +265,14 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
       class="rounded-box border border-base-300 p-4 grid lg:grid-cols-2 gap-6"
     >
       <div class="flex flex-col gap-2">
-        <label class="label gap-2 text-sm">
-          <input
-            id="all-projects-toggle"
-            type="checkbox"
-            class="toggle toggle-sm"
-            checked={@all_projects?}
-            phx-click="toggle_all_projects"
-          /> All coinmarketcap projects
-        </label>
+        <.input
+          id="all-projects-toggle"
+          type="checkbox"
+          name="all_projects"
+          label="All coinmarketcap projects"
+          checked={@all_projects?}
+          phx-click="toggle_all_projects"
+        />
 
         <.form
           :if={not @all_projects?}
@@ -270,13 +282,14 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
           phx-submit="add_projects"
           class="relative"
         >
-          <input
+          <.input
+            id="project-search"
             type="text"
             name="project_search"
+            value=""
             placeholder="Search by slug, name or ticker, or paste slugs and press Enter"
             autocomplete="off"
             phx-debounce="200"
-            class="input w-full"
           />
           <ul
             :if={@suggestions != []}
@@ -397,9 +410,14 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
         phx-change="set_priority"
       >
         <input type="hidden" name="rescrape_id" value={@srp.id} />
-        <select name="priority" class="select select-xs w-24">
-          {Phoenix.HTML.Form.options_for_select(~w(high normal low), to_string(@srp.priority))}
-        </select>
+        <.input
+          id={"priority-#{@srp.id}"}
+          type="select"
+          name="priority"
+          value={to_string(@srp.priority)}
+          options={~w(high normal low)}
+          outer_div_class="w-28"
+        />
       </.form>
       <span :if={not (@can_edit? and @active?)}>{@srp.priority}</span>
     </td>
@@ -479,6 +497,7 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
   end
 
   defp add_projects(socket, slugs) do
+    slugs = Enum.uniq(slugs)
     projects = ScheduleRescrapePrice.projects_by_slugs(slugs)
     selected = Enum.uniq_by(socket.assigns.selected_projects ++ projects, & &1.slug)
     unknown = slugs -- Enum.map(projects, & &1.slug)
@@ -497,20 +516,27 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
     priority = String.to_existing_atom(priority)
 
     socket
-    |> assign(scheduling?: true, scheduled_slugs: Enum.map(projects || [], & &1.slug))
+    |> assign(:scheduling?, true)
     |> start_async(:schedule, fn -> schedule(projects, from, to, priority) end)
   end
 
   # Runs in a task, so scheduling all the projects does not block the page
   defp schedule(projects, from, to, priority) do
-    projects =
-      projects || Sanbase.Project.List.projects_with_source("coinmarketcap", include_hidden: true)
+    all? = projects == nil
+    projects = projects || ScheduleRescrapeHelpers.all_projects()
 
     errors =
       ScheduleRescrapeHelpers.run(from, to, projects: projects, priority: priority)
       |> Enum.map(fn {slug, errors} -> {slug, format_errors(errors)} end)
 
-    {length(projects), errors}
+    %{all?: all?, slugs: Enum.map(projects, & &1.slug), errors: errors}
+  end
+
+  defp errors_text(errors) do
+    {shown, rest} = Enum.split(errors, @max_flash_errors)
+    text = Enum.map_join(shown, "; ", fn {slug, error} -> "#{slug} #{error}" end)
+
+    if rest == [], do: text, else: text <> "; and #{length(rest)} more"
   end
 
   defp assign_schedule_form(socket, params, action \\ nil) do
@@ -528,9 +554,16 @@ defmodule SanbaseWeb.Admin.PriceRescrapesLive do
     from = Ecto.Changeset.get_field(changeset, :from)
     to = Ecto.Changeset.get_field(changeset, :to)
 
-    if from && to && NaiveDateTime.compare(from, to) != :lt,
-      do: Ecto.Changeset.add_error(changeset, :to, "must be after `from`"),
-      else: changeset
+    cond do
+      from && to && NaiveDateTime.compare(from, to) != :lt ->
+        Ecto.Changeset.add_error(changeset, :to, "must be after `from`")
+
+      from && NaiveDateTime.compare(from, NaiveDateTime.utc_now()) == :gt ->
+        Ecto.Changeset.add_error(changeset, :from, "must not be in the future")
+
+      true ->
+        changeset
+    end
   end
 
   defp format_errors(%Ecto.Changeset{} = changeset),

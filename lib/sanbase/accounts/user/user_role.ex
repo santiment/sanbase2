@@ -37,4 +37,26 @@ defmodule Sanbase.Accounts.UserRole do
     )
     |> Sanbase.Repo.delete_all()
   end
+
+  @doc """
+  Grants `grant_role_ids` and revokes `revoke_role_ids` in one transaction.
+  Unauthorized, like `create/2`.
+  """
+  def update_roles(user_id, grant_role_ids, revoke_role_ids) do
+    import Ecto.Query
+
+    revoke_query =
+      from(ur in __MODULE__, where: ur.user_id == ^user_id and ur.role_id in ^revoke_role_ids)
+
+    grant_role_ids
+    |> Enum.reduce(Ecto.Multi.new(), fn role_id, multi ->
+      Ecto.Multi.insert(
+        multi,
+        {:grant, role_id},
+        changeset(%__MODULE__{}, %{user_id: user_id, role_id: role_id})
+      )
+    end)
+    |> Ecto.Multi.delete_all(:revoke, revoke_query)
+    |> Sanbase.Repo.transaction()
+  end
 end

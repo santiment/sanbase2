@@ -512,8 +512,12 @@ defmodule Sanbase.Billing.Subscription do
   Stripe docs: https://stripe.com/docs/billing/subscriptions/upgrading-downgrading#switching
   """
   def update_subscription(%__MODULE__{} = db_subscription, plan) do
+    db_subscription = Repo.preload(db_subscription, :plan)
+
     # don't allow upgrade/downgrade for incomplete and canceled subscriptions
     with :ok <- check_can_upgrade_downgrade(db_subscription),
+         :ok <- check_same_product(db_subscription, plan),
+         :ok <- check_trial_allowed_on_plan(db_subscription, plan),
          {:ok, stripe_subscription} <- StripeApi.upgrade_downgrade(db_subscription, plan),
          {:ok, db_subscription} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
@@ -531,6 +535,56 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   defp check_can_upgrade_downgrade(%__MODULE__{}), do: :ok
+
+  # Trial eligibility is "the user has no subscription for this product", answered from
+  # the plan each subscription is on *now*. Moving a subscription to another product's
+  # plan would leave the user with no subscription for the original product and so make
+  # them eligible for its trial again - repeatable for unlimited trials. Changing
+  # product is a new purchase and goes through `subscribe`, which also runs the
+  # cross-product cancellations in `maybe_cancel_subscriptions/2`.
+  defp check_same_product(
+         %__MODULE__{plan: %Plan{product_id: product_id}},
+         %Plan{product_id: product_id}
+       ),
+       do: :ok
+
+  defp check_same_product(%__MODULE__{}, %Plan{} = plan) do
+    {:error,
+     %__MODULE__.Error{
+       message:
+         "Cannot move this subscription to #{Plan.plan_full_name(plan)} as it is a " <>
+           "different product. Subscribe to it instead."
+     }}
+  end
+
+  # Stripe keeps `trial_end` when only the price changes, so a trialing subscription
+  # takes its trial to the new plan. See `Billing.trial_plan_change_allowed?/2` for which
+  # moves that is acceptable for. The rest are refused rather than ending the trial
+  # here: ending a trial charges the card immediately, which a plan change must not do.
+  defp check_trial_allowed_on_plan(
+         %__MODULE__{plan: %Plan{} = current_plan} = subscription,
+         %Plan{} = plan
+       ) do
+    if trialing?(subscription) and not Billing.trial_plan_change_allowed?(current_plan, plan) do
+      {:error,
+       %__MODULE__.Error{
+         message:
+           "#{Plan.plan_full_name(plan)} is not available during the free trial. " <>
+             "You can change to it once the trial has ended."
+       }}
+    else
+      :ok
+    end
+  end
+
+  # `trial_end` is checked as well as the status so a row whose status has not been
+  # synced from Stripe yet is still treated as trialing.
+  defp trialing?(%__MODULE__{status: :trialing}), do: true
+
+  defp trialing?(%__MODULE__{trial_end: %DateTime{} = trial_end}),
+    do: DateTime.compare(trial_end, DateTime.utc_now()) == :gt
+
+  defp trialing?(%__MODULE__{}), do: false
 
   @doc """
   Cancel subscription.
@@ -947,16 +1001,16 @@ defmodule Sanbase.Billing.Subscription do
 
     trial_end_unix = Sanbase.Utils.DateTime.days_after(@trial_days) |> DateTime.to_unix()
 
+    # Which plans are trialled at all is decided by `Billing.trial_plan?/1`, the same
+    # check `update_subscription/2` uses to stop a trial moving to another plan.
     cond do
-      product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id, plan) ->
+      not Billing.trial_plan?(plan) ->
+        defaults
+
+      product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 
-      # BUSINESS, INSTITUTIONAL and ENTERPRISE are excluded from the API trial: for the top
-      # SanAPI plans a free fortnight of unlimited history is the product, so trialling them
-      # is product's call to make deliberately (task TR).
-      product_id == @product_api and
-        plan.name not in ~w(BUSINESS_PRO BUSINESS_MAX INSTITUTIONAL ENTERPRISE) and
-          Billing.eligible_for_api_trial?(user.id) ->
+      product_id == @product_api and Billing.eligible_for_api_trial?(user.id) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 
       true ->

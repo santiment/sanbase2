@@ -155,6 +155,57 @@ defmodule SanbaseWeb.Graphql.RegistrationDisabledTest do
     end
   end
 
+  describe "eth registration disabled" do
+    setup do
+      {:ok, _} = FeatureToggle.disable_eth_registration()
+      :ok
+    end
+
+    test "is enabled when there is no row" do
+      {:ok, _} = FeatureToggle.enable_eth_registration()
+      Sanbase.Repo.delete_all(FeatureToggle)
+      assert FeatureToggle.eth_registration_enabled?()
+    end
+
+    test "a new address gets an error and no user is created", context do
+      users_count_before = Sanbase.Repo.aggregate(User, :count)
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        capture_log(fn ->
+          error_msg =
+            eth_login(context.conn)
+            |> get_in(["errors", Access.at(0), "message"])
+
+          assert error_msg == @message
+        end)
+      end)
+
+      assert Sanbase.Repo.aggregate(User, :count) == users_count_before
+      assert Sanbase.Accounts.EthAccount.by_address(@address) == nil
+    end
+
+    test "an existing address can still log in", context do
+      {:ok, _} = FeatureToggle.enable_eth_registration()
+      {:ok, user} = Sanbase.Accounts.create_user_with_eth_address(@address)
+      {:ok, _} = FeatureToggle.disable_eth_registration()
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+      |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v2/1, false)
+      |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v3/1, false)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result = eth_login(context.conn) |> get_in(["data", "ethLogin"])
+
+        assert result["user"]["id"] == to_string(user.id)
+      end)
+    end
+
+    test "other signup paths still create users" do
+      assert FeatureToggle.user_registration_enabled?()
+      assert {:ok, %User{}} = User.find_or_insert_by(:email, "new@example.com")
+    end
+  end
+
   defp email_login(conn, args) do
     mutation = """
     mutation {

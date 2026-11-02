@@ -23,6 +23,20 @@ defmodule Sanbase.Accounts.AccessAttempt do
     end
   end
 
+  @doc ~s"""
+  Check only the per-IP limit. Used before the user is looked up, so known and
+  unknown users get the same answer.
+  """
+  def check_ip_attempt_limit(type, remote_ip) when is_binary(remote_ip) do
+    config = get_config(type)
+
+    if attempts_count(type, remote_ip) > config.allowed_ip_attempts do
+      {:error, :too_many_attempts}
+    else
+      :ok
+    end
+  end
+
   def create(type, user, remote_ip) do
     %__MODULE__{}
     |> changeset(%{

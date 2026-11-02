@@ -8,9 +8,14 @@ defmodule Sanbase.FeatureToggle do
     - `user_registration` (default: enabled) - when disabled, no new users can
       be created. Existing users can still log in. Checked in
       `Sanbase.Accounts.User.create/2`.
+    - `eth_registration` (default: enabled) - when disabled, a wallet address
+      without an account cannot create one through wallet login. Existing
+      wallet users can still log in, and the other signup paths are not
+      affected. Checked in `Sanbase.Accounts.create_user_with_eth_address/1`.
 
   Toggle them in the admin panel (Feature Toggles), from IEx with
-  `enable_user_registration/0` / `disable_user_registration/0`, or with SQL.
+  `enable_user_registration/0` / `disable_user_registration/0` (and the
+  `eth_registration` equivalents), or with SQL.
   """
 
   use Ecto.Schema
@@ -21,6 +26,7 @@ defmodule Sanbase.FeatureToggle do
   alias Sanbase.Repo
 
   @user_registration "user_registration"
+  @eth_registration "eth_registration"
 
   schema "feature_toggles" do
     field(:name, :string)
@@ -50,6 +56,15 @@ defmodule Sanbase.FeatureToggle do
 
   @spec disable_user_registration() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def disable_user_registration(), do: set(@user_registration, false)
+
+  @spec eth_registration_enabled?() :: boolean()
+  def eth_registration_enabled?(), do: enabled?(@eth_registration, true)
+
+  @spec enable_eth_registration() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  def enable_eth_registration(), do: set(@eth_registration, true)
+
+  @spec disable_eth_registration() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  def disable_eth_registration(), do: set(@eth_registration, false)
 
   @doc """
   Whether the toggle is enabled. Returns `default` when the toggle has no row.

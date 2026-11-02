@@ -190,10 +190,21 @@ defmodule Sanbase.Accounts do
   @doc ~s"""
   Create a new user with an ETH address. The address is created and linked in the
   ETH Accounts, but also set as the username.
+
+  Returns `{:error, :registrations_disabled}` when the `eth_registration` or the
+  `user_registration` feature toggle is disabled.
   """
   @spec create_user_with_eth_address(String.t()) ::
           {:ok, User.t()} | {:error, Ecto.Changeset.t()} | {:error, :registrations_disabled}
   def create_user_with_eth_address(address) when is_binary(address) do
+    if Sanbase.FeatureToggle.eth_registration_enabled?() do
+      do_create_user_with_eth_address(address)
+    else
+      {:error, :registrations_disabled}
+    end
+  end
+
+  defp do_create_user_with_eth_address(address) do
     multi_result =
       Ecto.Multi.new()
       |> Ecto.Multi.run(:add_user, fn _, _ -> User.create(%{}) end)

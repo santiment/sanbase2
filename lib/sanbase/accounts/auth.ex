@@ -62,6 +62,7 @@ defmodule Sanbase.Accounts.Auth do
     with :ok <- Turnstile.validate(args[:token], remote_ip),
          true <- allowed_email_domain?(email),
          true <- allowed_origin?(origin_host_parts, origin_url),
+         :ok <- EmailLoginAttempt.check_ip_attempt_limit(remote_ip),
          {:ok, %{first_login: first_login} = user} <-
            User.find_or_insert_by(:email, email, %{username: args[:username]}),
          :ok <- EmailLoginAttempt.check_attempt_limit(user, remote_ip),

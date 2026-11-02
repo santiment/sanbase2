@@ -233,7 +233,31 @@ defmodule Sanbase.Accounts.User do
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)
   def san_balance_or_zero(user), do: __MODULE__.SanBalance.san_balance_or_zero(user)
 
-  def create(attrs) do
+  @doc ~s"""
+  Create a new user. Every signup path (email, Google, Twitter, wallet and admin
+  login) creates users through this function.
+
+  Returns `{:error, :registrations_disabled}` when the `user_registration`
+  feature toggle is disabled. Existing users are found before this is called, so
+  they can still log in.
+
+  Options:
+    - `skip_registration_check: true` - create the user even when registration is
+      disabled. Only for internal tooling (seeds, load tests), never for a path
+      reachable from a request.
+  """
+  @spec create(map(), Keyword.t()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()} | {:error, :registrations_disabled}
+  def create(attrs, opts \\ []) do
+    if Keyword.get(opts, :skip_registration_check, false) or
+         Sanbase.FeatureToggle.user_registration_enabled?() do
+      do_create(attrs)
+    else
+      {:error, :registrations_disabled}
+    end
+  end
+
+  defp do_create(attrs) do
     attrs = if attrs[:salt], do: attrs, else: Map.put(attrs, :salt, generate_salt())
 
     attrs =
@@ -469,7 +493,8 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def find_or_insert_by(field, value, attrs \\ %{})
+  # `opts` are passed to create/2, see its docs.
+  def find_or_insert_by(field, value, attrs \\ %{}, opts \\ [])
       when field in [:email, :username, :twitter_id] do
     # When this function is used to create a new user during login/singup process
     # it **must** be followed by calling `Sanbase.Accounts.forward_registration/2`
@@ -487,7 +512,7 @@ defmodule Sanbase.Accounts.User do
             %{field => value, salt: User.generate_salt(), first_login: true}
           )
 
-        create(user_create_attrs)
+        create(user_create_attrs, opts)
 
       user ->
         {:ok, user}

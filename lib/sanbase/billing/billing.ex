@@ -82,9 +82,77 @@ defmodule Sanbase.Billing do
     |> Enum.empty?()
   end
 
-  def eligible_for_sanbase_trial?(user_id, plan) do
-    # Only PRO plans are eligible for trials
-    plan.name == "PRO" and eligible_for_sanbase_trial?(user_id)
+  # The plans a trial can be on, by product. An allow-list, so a plan that is added,
+  # renamed or resurrected is not trialled until someone decides it should be.
+  # Everything above SanAPI PRO - BUSINESS_*, PREMIUM, CUSTOM*, INSTITUTIONAL,
+  # ENTERPRISE, bundles - is left out: for the top SanAPI plans a free fortnight of
+  # unlimited history is the product, so trialling them is product's call to make
+  # deliberately (task TR), and custom plans are never trialled
+  # (see `Plan.CustomPlan.Access.response_size_limits/2`).
+  @sanbase_trial_plans ~w(PRO)
+  @api_trial_plans ~w(BASIC ESSENTIAL PRO)
+
+  # Rank of the plans a trialing subscription may move *down* to without losing
+  # anything for us: the trial carries over, so the target must give no more access
+  # than the plan the trial is on. Unlisted plans (PREMIUM, CUSTOM*, INSTITUTIONAL,
+  # ENTERPRISE, bundles) are unranked and never a downgrade target.
+  @sanbase_plan_rank %{"FREE" => 0, "BASIC" => 1, "PRO" => 2, "PRO_PLUS" => 3, "MAX" => 4}
+  @api_plan_rank %{
+    "FREE" => 0,
+    "BASIC" => 1,
+    "ESSENTIAL" => 1,
+    "PRO" => 2,
+    "BUSINESS_PRO" => 3,
+    "BUSINESS_MAX" => 4
+  }
+
+  @doc ~s"""
+  Whether `plan` is one the free trial can be on, regardless of who subscribes.
+
+  Only Sanbase PRO, and SanAPI BASIC/ESSENTIAL and PRO, are trialled. Whether a given
+  user still gets the trial is answered by `eligible_for_sanbase_trial?/1` and
+  `eligible_for_api_trial?/1`.
+  """
+  @spec trial_plan?(%Plan{}) :: boolean()
+  def trial_plan?(%Plan{product_id: product_id, name: name}) do
+    cond do
+      product_id == Product.product_sanbase() -> name in @sanbase_trial_plans
+      product_id == Product.product_api() -> name in @api_trial_plans
+      true -> false
+    end
+  end
+
+  @doc ~s"""
+  Whether a trialing subscription on plan `from` may be moved to plan `to`.
+
+  Stripe keeps `trial_end` when a subscription's price changes, so the trial moves
+  with it - and nothing is charged until the trial ends. That is fine when `to` is
+  itself a trial plan, the same plan on another billing interval, or a lower plan of
+  the same product. Anything else (Sanbase PRO to MAX, SanAPI PRO to BUSINESS_MAX or
+  PREMIUM) would hand out a plan that is never trialled for free, so it has to wait
+  for the trial to end.
+  """
+  @spec trial_plan_change_allowed?(%Plan{}, %Plan{}) :: boolean()
+  def trial_plan_change_allowed?(%Plan{} = from, %Plan{} = to) do
+    from.product_id == to.product_id and
+      (trial_plan?(to) or from.name == to.name or not_higher_plan?(from, to))
+  end
+
+  defp not_higher_plan?(%Plan{product_id: product_id} = from, %Plan{} = to) do
+    ranks =
+      cond do
+        product_id == Product.product_sanbase() -> @sanbase_plan_rank
+        product_id == Product.product_api() -> @api_plan_rank
+        true -> %{}
+      end
+
+    case {Map.get(ranks, from.name), Map.get(ranks, to.name)} do
+      {from_rank, to_rank} when is_integer(from_rank) and is_integer(to_rank) ->
+        to_rank <= from_rank
+
+      _ ->
+        false
+    end
   end
 
   def eligible_for_api_trial?(user_id) do

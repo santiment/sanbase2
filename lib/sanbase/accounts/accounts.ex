@@ -191,7 +191,8 @@ defmodule Sanbase.Accounts do
   Create a new user with an ETH address. The address is created and linked in the
   ETH Accounts, but also set as the username.
   """
-  @spec create_user_with_eth_address(String.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_user_with_eth_address(String.t()) ::
+          {:ok, User.t()} | {:error, Ecto.Changeset.t()} | {:error, :registrations_disabled}
   def create_user_with_eth_address(address) when is_binary(address) do
     multi_result =
       Ecto.Multi.new()

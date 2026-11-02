@@ -49,10 +49,12 @@ defmodule Mix.Tasks.LoadTest.Setup do
         email = "loadtest_#{i}@sanload.test"
 
         with {:ok, user} <-
-               Sanbase.Accounts.User.find_or_insert_by(:email, email, %{
-                 username: "loadtest_#{i}",
-                 privacy_policy_accepted: true
-               }),
+               Sanbase.Accounts.User.find_or_insert_by(
+                 :email,
+                 email,
+                 %{username: "loadtest_#{i}", privacy_policy_accepted: true},
+                 skip_registration_check: true
+               ),
              {:ok, _subscription} <- ensure_subscription(user),
              {:ok, apikey} <- Sanbase.Accounts.Apikey.generate_apikey(user) do
           if no_rate_limits, do: disable_rate_limits(user)

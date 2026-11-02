@@ -35,6 +35,10 @@ defmodule Sanbase.Accounts.Auth do
 
       {:ok, Map.take(tokens, [:access_token, :refresh_token]) |> Map.put(:user, user)}
     else
+      {:error, :registrations_disabled} ->
+        Logger.info("Wallet login rejected: registrations are disabled. Address: #{address}")
+        {:error, "New registrations are temporarily disabled."}
+
       {:error, %Ecto.Changeset{} = changeset} ->
         Logger.warning("Login failed: #{inspect(changeset)}")
         {:error, "Wallet Login verification failed"}
@@ -74,6 +78,15 @@ defmodule Sanbase.Accounts.Auth do
       emit_event({:ok, user}, :send_email_login_link, %{origin_url: origin_url})
       {:ok, %{success: true}}
     else
+      {:error, :registrations_disabled} ->
+        # Answer as if the email was sent, so the response does not reveal which
+        # emails have an account. No user is created and no email is sent.
+        Logger.info(
+          "Login email not sent: registrations are disabled. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
+        {:ok, %{success: true}}
+
       {:error, :invalid_redirect_url, message} ->
         Logger.error(
           "Login failed: #{message}. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"

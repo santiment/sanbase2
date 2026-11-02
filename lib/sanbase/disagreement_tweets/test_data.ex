@@ -198,7 +198,7 @@ defmodule Sanbase.DisagreementTweets.TestData do
                 marketing_accepted: false
               })
 
-            case Sanbase.Accounts.User.create(attrs) do
+            case Sanbase.Accounts.User.create(attrs, skip_registration_check: true) do
               {:ok, user} ->
                 IO.puts("✅ Created test user: #{user.email}")
                 user

@@ -35,6 +35,10 @@ defmodule Sanbase.Accounts.Auth do
 
       {:ok, Map.take(tokens, [:access_token, :refresh_token]) |> Map.put(:user, user)}
     else
+      {:error, :registrations_disabled} ->
+        Logger.info("Wallet login rejected: registrations are disabled. Address: #{address}")
+        {:error, "New registrations are temporarily disabled."}
+
       {:error, %Ecto.Changeset{} = changeset} ->
         Logger.warning("Login failed: #{inspect(changeset)}")
         {:error, "Wallet Login verification failed"}
@@ -58,6 +62,7 @@ defmodule Sanbase.Accounts.Auth do
     with :ok <- Turnstile.validate(args[:token], remote_ip),
          true <- allowed_email_domain?(email),
          true <- allowed_origin?(origin_host_parts, origin_url),
+         :ok <- EmailLoginAttempt.check_ip_attempt_limit(remote_ip),
          {:ok, %{first_login: first_login} = user} <-
            User.find_or_insert_by(:email, email, %{username: args[:username]}),
          :ok <- EmailLoginAttempt.check_attempt_limit(user, remote_ip),
@@ -74,6 +79,15 @@ defmodule Sanbase.Accounts.Auth do
       emit_event({:ok, user}, :send_email_login_link, %{origin_url: origin_url})
       {:ok, %{success: true}}
     else
+      {:error, :registrations_disabled} ->
+        # Answer as if the email was sent, so the response does not reveal which
+        # emails have an account. No user is created and no email is sent.
+        Logger.info(
+          "Login email not sent: registrations are disabled. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
+        {:ok, %{success: true}}
+
       {:error, :invalid_redirect_url, message} ->
         Logger.error(
           "Login failed: #{message}. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"

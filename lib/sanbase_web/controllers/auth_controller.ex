@@ -120,9 +120,7 @@ defmodule SanbaseWeb.AuthController do
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
           |> redirect(external: redirect_url)
         else
-          _ ->
-            conn
-            |> redirect(external: get_fail_redirect_url(conn))
+          error -> oauth_login_failed(conn, error)
         end
     end
   end
@@ -164,14 +162,24 @@ defmodule SanbaseWeb.AuthController do
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
           |> redirect(external: redirect_url)
         else
-          _ ->
-            conn
-            |> redirect(external: get_fail_redirect_url(conn))
+          error -> oauth_login_failed(conn, error)
         end
     end
   end
 
   def callback(conn, _params), do: send_resp(conn, 404, "Not Found")
+
+  defp oauth_login_failed(conn, error) do
+    if error == {:error, :registrations_disabled} do
+      Logger.info(
+        "OAuth callback: provider=#{conn.params["provider"]}, " <>
+          "login rejected: registrations are disabled"
+      )
+    end
+
+    conn
+    |> redirect(external: get_fail_redirect_url(conn))
+  end
 
   # Private functions
 

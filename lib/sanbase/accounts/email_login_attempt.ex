@@ -19,6 +19,10 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
     AccessAttempt.check_attempt_limit(type(), user, remote_ip)
   end
 
+  def check_ip_attempt_limit(remote_ip) do
+    AccessAttempt.check_ip_attempt_limit(type(), remote_ip)
+  end
+
   @impl true
   def create(user, remote_ip) do
     AccessAttempt.create(type(), user, remote_ip)

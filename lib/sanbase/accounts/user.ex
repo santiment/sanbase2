@@ -237,9 +237,9 @@ defmodule Sanbase.Accounts.User do
   Create a new user. Every signup path (email, Google, Twitter, wallet and admin
   login) creates users through this function.
 
-  Returns `{:error, :registrations_disabled}` when the `disable_user_registration`
-  feature toggle is on. Existing users are found before this is called, so they
-  can still log in.
+  Returns `{:error, :registrations_disabled}` when the `user_registration`
+  feature toggle is disabled. Existing users are found before this is called, so
+  they can still log in.
 
   Options:
     - `skip_registration_check: true` - create the user even when registration is
@@ -249,11 +249,11 @@ defmodule Sanbase.Accounts.User do
   @spec create(map(), Keyword.t()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()} | {:error, :registrations_disabled}
   def create(attrs, opts \\ []) do
-    if not Keyword.get(opts, :skip_registration_check, false) and
-         Sanbase.FeatureToggle.user_registration_disabled?() do
-      {:error, :registrations_disabled}
-    else
+    if Keyword.get(opts, :skip_registration_check, false) or
+         Sanbase.FeatureToggle.user_registration_enabled?() do
       do_create(attrs)
+    else
+      {:error, :registrations_disabled}
     end
   end
 

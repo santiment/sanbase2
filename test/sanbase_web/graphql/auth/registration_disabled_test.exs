@@ -20,14 +20,14 @@ defmodule SanbaseWeb.Graphql.RegistrationDisabledTest do
 
   describe "feature toggle" do
     test "registration is enabled when there is no row" do
-      refute FeatureToggle.user_registration_disabled?()
+      assert FeatureToggle.user_registration_enabled?()
       assert {:ok, %User{}} = User.find_or_insert_by(:email, "new@example.com")
     end
 
-    test "a row inserted directly in the DB disables registration" do
-      Sanbase.Repo.insert!(%FeatureToggle{name: "disable_user_registration", enabled: true})
+    test "a row set to disabled directly in the DB disables registration" do
+      Sanbase.Repo.insert!(%FeatureToggle{name: "user_registration", enabled: false})
 
-      assert FeatureToggle.user_registration_disabled?()
+      refute FeatureToggle.user_registration_enabled?()
 
       assert {:error, :registrations_disabled} =
                User.find_or_insert_by(:email, "new@example.com")
@@ -35,21 +35,23 @@ defmodule SanbaseWeb.Graphql.RegistrationDisabledTest do
 
     test "disable and enable registration" do
       {:ok, _} = FeatureToggle.disable_user_registration()
-      assert FeatureToggle.user_registration_disabled?()
+      refute FeatureToggle.user_registration_enabled?()
       assert {:error, :registrations_disabled} = User.create(%{email: "new@example.com"})
 
       {:ok, _} = FeatureToggle.enable_user_registration()
-      refute FeatureToggle.user_registration_disabled?()
+      assert FeatureToggle.user_registration_enabled?()
       assert {:ok, %User{}} = User.create(%{email: "new@example.com"})
     end
 
     test "setting a toggle twice updates the same row" do
-      {:ok, _} = FeatureToggle.disable_user_registration()
       {:ok, _} = FeatureToggle.enable_user_registration()
-      {:ok, toggle} = FeatureToggle.disable_user_registration()
+      {:ok, _} = FeatureToggle.disable_user_registration()
+      {:ok, toggle} = FeatureToggle.enable_user_registration()
 
       assert toggle.enabled
-      assert [%FeatureToggle{enabled: true}] = Sanbase.Repo.all(FeatureToggle)
+
+      assert [%FeatureToggle{name: "user_registration", enabled: true}] =
+               Sanbase.Repo.all(FeatureToggle)
     end
 
     test "internal tooling can create users with skip_registration_check" do

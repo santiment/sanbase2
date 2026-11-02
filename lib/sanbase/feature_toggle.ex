@@ -1,12 +1,16 @@
 defmodule Sanbase.FeatureToggle do
   @moduledoc """
-  On/off switches stored in the `feature_toggles` table. A toggle without a row,
-  or with `enabled = false`, is off. Toggles are read from the database on every
-  check, so a change (also one made with plain SQL) applies immediately.
+  On/off switches stored in the `feature_toggles` table. Toggles are read from
+  the database on every check, so a change (also one made with plain SQL)
+  applies immediately. A toggle without a row has its default value.
 
   Toggles:
-    - `disable_user_registration` - when on, no new users can be created.
-      Existing users can still log in. Checked in `Sanbase.Accounts.User.create/2`.
+    - `user_registration` (default: enabled) - when disabled, no new users can
+      be created. Existing users can still log in. Checked in
+      `Sanbase.Accounts.User.create/2`.
+
+  Toggle them in the admin panel (Feature Toggles), from IEx with
+  `enable_user_registration/0` / `disable_user_registration/0`, or with SQL.
   """
 
   use Ecto.Schema
@@ -16,7 +20,7 @@ defmodule Sanbase.FeatureToggle do
 
   alias Sanbase.Repo
 
-  @disable_user_registration "disable_user_registration"
+  @user_registration "user_registration"
 
   schema "feature_toggles" do
     field(:name, :string)
@@ -31,18 +35,31 @@ defmodule Sanbase.FeatureToggle do
     |> validate_required([:name, :enabled])
   end
 
-  @spec user_registration_disabled?() :: boolean()
-  def user_registration_disabled?(), do: enabled?(@disable_user_registration)
+  # Used by the admin panel for edits: only `enabled` can change.
+  def update_changeset(%__MODULE__{} = toggle, attrs) do
+    toggle
+    |> cast(attrs, [:enabled])
+    |> validate_required([:enabled])
+  end
 
-  @spec disable_user_registration() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
-  def disable_user_registration(), do: set(@disable_user_registration, true)
+  @spec user_registration_enabled?() :: boolean()
+  def user_registration_enabled?(), do: enabled?(@user_registration, true)
 
   @spec enable_user_registration() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
-  def enable_user_registration(), do: set(@disable_user_registration, false)
+  def enable_user_registration(), do: set(@user_registration, true)
 
-  @spec enabled?(String.t()) :: boolean()
-  def enabled?(name) when is_binary(name) do
-    Repo.exists?(from(t in __MODULE__, where: t.name == ^name and t.enabled))
+  @spec disable_user_registration() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  def disable_user_registration(), do: set(@user_registration, false)
+
+  @doc """
+  Whether the toggle is enabled. Returns `default` when the toggle has no row.
+  """
+  @spec enabled?(String.t(), boolean()) :: boolean()
+  def enabled?(name, default) when is_binary(name) and is_boolean(default) do
+    case Repo.one(from(t in __MODULE__, where: t.name == ^name, select: t.enabled)) do
+      nil -> default
+      enabled -> enabled
+    end
   end
 
   @spec set(String.t(), boolean()) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}

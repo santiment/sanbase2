@@ -128,4 +128,64 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed"
     end
   end
+
+  describe "feature_toggles" do
+    setup do
+      # The migration inserts this row. structure.sql has no data, so insert it here.
+      toggle =
+        Sanbase.Repo.insert!(%Sanbase.FeatureToggle{
+          name: "user_registration",
+          enabled: true
+        })
+
+      %{toggle: toggle}
+    end
+
+    defp update_toggle(conn, toggle, params) do
+      put(conn, ~p"/admin/generic/#{toggle.id}?resource=feature_toggles", %{
+        "resource" => "feature_toggles",
+        "feature_toggles" => params
+      })
+    end
+
+    test "the index page lists the toggles" do
+      conn = get(sign_in(:role_admin_panel_viewer), ~p"/admin/generic?resource=feature_toggles")
+
+      assert html_response(conn, 200) =~ "user_registration"
+    end
+
+    test "the admin home page sidebar links to the toggles" do
+      html = sign_in(:role_admin_panel_viewer) |> get(~p"/admin") |> html_response(200)
+
+      assert html =~ ~s(href="/admin/generic?resource=feature_toggles")
+      assert html =~ "Feature Toggles"
+    end
+
+    test "an editor can disable and enable registration", %{toggle: toggle} do
+      editor_conn = sign_in(:role_admin_panel_editor)
+
+      conn = update_toggle(editor_conn, toggle, %{"enabled" => "false"})
+      assert redirected_to(conn) =~ "/admin/generic"
+      refute Sanbase.FeatureToggle.user_registration_enabled?()
+
+      update_toggle(editor_conn, toggle, %{"enabled" => "true"})
+      assert Sanbase.FeatureToggle.user_registration_enabled?()
+    end
+
+    test "the name cannot be changed from the admin panel", %{toggle: toggle} do
+      update_toggle(sign_in(:role_admin_panel_editor), toggle, %{
+        "enabled" => "false",
+        "name" => "renamed"
+      })
+
+      assert Sanbase.Repo.get!(Sanbase.FeatureToggle, toggle.id).name == "user_registration"
+    end
+
+    test "a viewer cannot change a toggle", %{toggle: toggle} do
+      conn = update_toggle(sign_in(:role_admin_panel_viewer), toggle, %{"enabled" => "false"})
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed"
+      assert Sanbase.FeatureToggle.user_registration_enabled?()
+    end
+  end
 end

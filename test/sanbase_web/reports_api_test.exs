@@ -14,9 +14,10 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
   end
 
   describe "upload a report" do
-    test "succeeds with basic auth", context do
-      res = upload_report(context.basic_auth_conn)
-      assert res["data"]["uploadReport"]["url"] =~ "image.png"
+    test "denied with basic auth", context do
+      %{"errors" => [error]} = res = upload_report(context.basic_auth_conn)
+      assert res["data"]["uploadReport"] == nil
+      assert error["message"] =~ "Basic authentication has read-only access"
     end
 
     test "unauthorized with no auth" do

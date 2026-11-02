@@ -20,6 +20,12 @@ defmodule SanbaseWeb.Graphql.AuthTypes do
     field(:user, non_null(:user))
   end
 
+  object :eth_login_challenge do
+    field(:message, non_null(:string))
+    field(:nonce, non_null(:string))
+    field(:expires_at, non_null(:datetime))
+  end
+
   object :logout do
     field(:success, non_null(:boolean))
   end

@@ -76,12 +76,32 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
     end
 
     @desc ~s"""
-    Login using metamask
+    Start a wallet login. Returns a one-time message for the wallet to sign and
+    the nonce to send back with `ethLogin`. The message expires after a few
+    minutes and can be used for one login only.
+
+    Sign the returned `message` exactly as it is (personal_sign), then call
+    `ethLogin(address, signature, nonce)`.
+    """
+    field :eth_login_challenge, :eth_login_challenge do
+      arg(:address, non_null(:string))
+
+      resolve(&AuthResolver.eth_login_challenge/3)
+    end
+
+    @desc ~s"""
+    Login using a wallet (Metamask).
+
+    Preferred: get a message with `ethLoginChallenge`, sign it and pass its
+    `nonce` here. Without `nonce`, the legacy fixed message
+    "Login in Santiment with address <address>" and its `messageHash` are
+    expected; that flow can be switched off by the server.
     """
     field :eth_login, :login do
       arg(:signature, non_null(:string))
       arg(:address, non_null(:string))
-      arg(:message_hash, non_null(:string))
+      arg(:message_hash, :string)
+      arg(:nonce, :string)
 
       resolve(&AuthResolver.eth_login/3)
       middleware(CreateOrDeleteSession)

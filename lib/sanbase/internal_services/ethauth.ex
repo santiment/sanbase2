@@ -45,9 +45,16 @@ defmodule Sanbase.InternalServices.Ethauth do
   """
   @spec valid_signature?(any(), any()) :: boolean() | {:error, String.t()}
   def valid_signature?(address, signature) do
-    Logger.info(["[Ethauth] Verify signature"])
+    valid_signature?(address, signature, "Login in Santiment with address #{address}")
+  end
 
-    message = "Login in Santiment with address #{address}"
+  @doc ~s"""
+  Verify that `signature` is a signature of `message` by the owner of `address`.
+  Used by the wallet login challenge, where the message contains a one-time nonce.
+  """
+  @spec valid_signature?(any(), any(), String.t()) :: boolean() | {:error, String.t()}
+  def valid_signature?(address, signature, message) when is_binary(message) do
+    Logger.info(["[Ethauth] Verify signature"])
 
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
            get(client(), "verify",

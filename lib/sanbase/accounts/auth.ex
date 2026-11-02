@@ -11,21 +11,41 @@ defmodule Sanbase.Accounts.Auth do
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Accounts
-  alias Sanbase.Accounts.{AccessAttempt, EmailLoginAttempt, EthAccount, Turnstile, User}
+
+  alias Sanbase.Accounts.{
+    AccessAttempt,
+    EmailLoginAttempt,
+    EthAccount,
+    EthLoginChallenge,
+    Turnstile,
+    User
+  }
+
+  alias Sanbase.FeatureToggle
   alias Sanbase.InternalServices.Ethauth
 
   require Logger
 
   @blocked_domains ["burpcollaborator.net"]
 
+  @doc ~s"""
+  Log in with a wallet signature.
+
+  Two ways to prove the wallet:
+    - `nonce` given: the wallet signed the message of a challenge from
+      `Sanbase.Accounts.EthLoginChallenge.create/1`. The nonce works once and
+      expires, so a captured signature cannot be replayed.
+    - no `nonce` (legacy): the wallet signed the fixed text "Login in Santiment
+      with address X". Such a signature never expires. Accepted only while the
+      `eth_login_legacy` feature toggle is enabled.
+  """
   def eth_login(
-        %{signature: signature, address: address, message_hash: message_hash} = args,
+        %{signature: _, address: address} = args,
         %{issue_tokens: issue_tokens, origin_url: origin_url}
       ) do
     event_args = %{login_origin: :eth_login, origin_url: origin_url}
 
-    with true <- address_message_hash(address) == message_hash,
-         true <- Ethauth.valid_signature?(address, signature),
+    with :ok <- verify_wallet_signature(args),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          first_login? <- User.RegistrationState.first_login?(user, "eth_login"),
          {:ok, tokens} <- issue_tokens.(user),
@@ -207,6 +227,36 @@ defmodule Sanbase.Accounts.Auth do
       {:error, "Email not supported."}
     else
       true
+    end
+  end
+
+  defp verify_wallet_signature(%{nonce: nonce, address: address, signature: signature})
+       when is_binary(nonce) do
+    # Check the signature before using up the nonce, so a wrong signature does not
+    # burn it. `consume/2` is atomic, so of two requests with the same valid
+    # signature only one logs in.
+    with {:ok, message} <- EthLoginChallenge.get_open(address, nonce),
+         true <- Ethauth.valid_signature?(address, signature, message),
+         :ok <- EthLoginChallenge.consume(address, nonce) do
+      :ok
+    end
+  end
+
+  defp verify_wallet_signature(%{address: address, signature: signature} = args) do
+    message_hash = Map.get(args, :message_hash)
+
+    cond do
+      not FeatureToggle.eth_login_legacy_enabled?() ->
+        {:error, :legacy_eth_login_disabled}
+
+      address_message_hash(address) != message_hash ->
+        false
+
+      true ->
+        case Ethauth.valid_signature?(address, signature) do
+          true -> :ok
+          other -> other
+        end
     end
   end
 

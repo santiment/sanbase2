@@ -12,10 +12,14 @@ defmodule Sanbase.FeatureToggle do
       without an account cannot create one through wallet login. Existing
       wallet users can still log in, and the other signup paths are not
       affected. Checked in `Sanbase.Accounts.create_user_with_eth_address/1`.
+    - `eth_login_legacy` (default: enabled) - when disabled, wallet login only
+      accepts signatures of a one-time challenge (`ethLoginChallenge`), not the
+      old fixed message, so captured old signatures stop working. Checked in
+      `Sanbase.Accounts.Auth.eth_login/2`.
 
   Toggle them in the admin panel (Feature Toggles), from IEx with
   `enable_user_registration/0` / `disable_user_registration/0` (and the
-  `eth_registration` equivalents), or with SQL.
+  `eth_registration` and `eth_login_legacy` equivalents), or with SQL.
   """
 
   use Ecto.Schema
@@ -27,6 +31,7 @@ defmodule Sanbase.FeatureToggle do
 
   @user_registration "user_registration"
   @eth_registration "eth_registration"
+  @eth_login_legacy "eth_login_legacy"
 
   schema "feature_toggles" do
     field(:name, :string)
@@ -65,6 +70,15 @@ defmodule Sanbase.FeatureToggle do
 
   @spec disable_eth_registration() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def disable_eth_registration(), do: set(@eth_registration, false)
+
+  @spec eth_login_legacy_enabled?() :: boolean()
+  def eth_login_legacy_enabled?(), do: enabled?(@eth_login_legacy, true)
+
+  @spec enable_eth_login_legacy() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  def enable_eth_login_legacy(), do: set(@eth_login_legacy, true)
+
+  @spec disable_eth_login_legacy() :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  def disable_eth_login_legacy(), do: set(@eth_login_legacy, false)
 
   @doc """
   Whether the toggle is enabled. Returns `default` when the toggle has no row.

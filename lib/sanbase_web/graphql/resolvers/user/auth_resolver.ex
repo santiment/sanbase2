@@ -36,6 +36,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     end
   end
 
+  def eth_login_challenge(_root, %{address: address}, _resolution) do
+    Sanbase.Accounts.EthLoginChallenge.create(address)
+  end
+
   def eth_login(_root, args, %{context: %{device_data: device_data, origin_url: origin_url}}) do
     Auth.eth_login(args, %{issue_tokens: issue_jwt_tokens(device_data), origin_url: origin_url})
     |> to_graphql_result()

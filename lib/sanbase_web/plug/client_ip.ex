@@ -8,8 +8,13 @@ defmodule SanbaseWeb.Plug.ClientIp do
   client, so every per-IP limit and every logged IP was really Cloudflare's.
 
   How the client IP is found:
-    1. Take the nearest public hop from the forwarding headers, skipping private,
-       loopback and in-cluster (100.64.0.0/10) addresses such as Traefik.
+    1. Take the nearest hop from the forwarding headers that is not private or
+       loopback (`RemoteIp` defaults).
+
+       In-cluster addresses (100.64.0.0/10) are deliberately not skipped: an
+       in-cluster service that calls the API keeps its own address as the
+       client, and `Sanbase.ApiCallLimit` exempts cluster addresses from limits
+       (`Sanbase.Utils.IP.san_cluster_ip?/1`). That is how it worked before.
     2. If that hop is a Cloudflare address, the request came through Cloudflare,
        so its `CF-Connecting-IP` header is trusted. Cloudflare always sets that
        header itself and replaces any value the client sent.
@@ -68,11 +73,6 @@ defmodule SanbaseWeb.Plug.ClientIp do
                         {tuple_size(ip), value, String.to_integer(bits)}
                       end)
 
-  # Kubernetes pods and services in our clusters use the shared address space
-  # 100.64.0.0/10, which `RemoteIp` does not treat as private. Without this an
-  # in-cluster proxy in front of the app would be taken as the client.
-  @internal_ranges ~w[100.64.0.0/10]
-
   def cloudflare_ranges(), do: @cloudflare_ranges
 
   @impl true
@@ -92,14 +92,14 @@ defmodule SanbaseWeb.Plug.ClientIp do
 
   @doc false
   def client_ip(headers, peer_ip) do
-    case RemoteIp.from(headers, proxies: @internal_ranges) do
+    case RemoteIp.from(headers) do
       nil ->
         peer_ip
 
       nearest_hop ->
         if cloudflare?(nearest_hop) do
           cf_connecting_ip(headers) ||
-            RemoteIp.from(headers, proxies: @cloudflare_ranges ++ @internal_ranges) ||
+            RemoteIp.from(headers, proxies: @cloudflare_ranges) ||
             nearest_hop
         else
           nearest_hop

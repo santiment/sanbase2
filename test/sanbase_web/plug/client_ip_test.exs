@@ -71,12 +71,11 @@ defmodule SanbaseWeb.Plug.ClientIpTest do
       assert ClientIp.client_ip(headers, @traefik) == parse(@client)
     end
 
-    test "in-cluster hops (100.64.0.0/10) are skipped" do
-      headers = [{"x-forwarded-for", "#{@client}, #{@cf_edge}, 100.96.13.164"}]
-      assert ClientIp.client_ip(headers, @traefik) == parse(@client)
-
+    test "an in-cluster hop (100.64.0.0/10) stays the client, as before" do
+      # Cluster addresses are exempt from API call limits, so an in-cluster
+      # service forwarding requests keeps being seen as itself.
       headers = [{"x-forwarded-for", "#{@client}, 100.96.13.164"}]
-      assert ClientIp.client_ip(headers, @traefik) == parse(@client)
+      assert ClientIp.client_ip(headers, @traefik) == {100, 96, 13, 164}
     end
 
     test "only private hops (in-cluster call): the peer address is kept" do

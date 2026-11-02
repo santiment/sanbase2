@@ -154,6 +154,12 @@ defmodule SanbaseWeb.Graphql.Schema do
     Map.put(ctx, :loader, dataloader(request_context))
   end
 
+  # Basic auth is read-only and public-data-only: no mutations, no fields scoped to the
+  # current user, no internal basic-auth-only fields.
+  def middleware(middleware, field, object) do
+    SanbaseWeb.Graphql.Middlewares.BasicAuthReadOnly.maybe_prepend(middleware, field, object)
+  end
+
   def plugins do
     [
       Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()

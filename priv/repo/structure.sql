@@ -1768,6 +1768,38 @@ ALTER SEQUENCE public.faq_entries_tags_id_seq OWNED BY public.faq_entries_tags.i
 
 
 --
+-- Name: feature_toggles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.feature_toggles (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    enabled boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: feature_toggles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.feature_toggles_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: feature_toggles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.feature_toggles_id_seq OWNED BY public.feature_toggles.id;
+
+
+--
 -- Name: featured_items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6323,6 +6355,13 @@ ALTER TABLE ONLY public.faq_entries_tags ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: feature_toggles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feature_toggles ALTER COLUMN id SET DEFAULT nextval('public.feature_toggles_id_seq'::regclass);
+
+
+--
 -- Name: featured_items id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7467,6 +7506,14 @@ ALTER TABLE ONLY public.faq_entries
 
 ALTER TABLE ONLY public.faq_entries_tags
     ADD CONSTRAINT faq_entries_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: feature_toggles feature_toggles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feature_toggles
+    ADD CONSTRAINT feature_toggles_pkey PRIMARY KEY (id);
 
 
 --
@@ -8974,6 +9021,13 @@ CREATE UNIQUE INDEX faq_entries_tags_faq_entry_id_tag_id_index ON public.faq_ent
 --
 
 CREATE INDEX faq_entries_updated_at_index ON public.faq_entries USING btree (updated_at);
+
+
+--
+-- Name: feature_toggles_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX feature_toggles_name_index ON public.feature_toggles USING btree (name);
 
 
 --
@@ -12458,3 +12512,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261026082656);
 INSERT INTO public."schema_migrations" (version) VALUES (20261027132948);
 INSERT INTO public."schema_migrations" (version) VALUES (20261027140423);
 INSERT INTO public."schema_migrations" (version) VALUES (20261028145234);
+INSERT INTO public."schema_migrations" (version) VALUES (20261102120000);

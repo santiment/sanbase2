@@ -107,6 +107,9 @@ FROM ${RUNNER_IMAGE}
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales imagemagick ca-certificates \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
+# Restrict ImageMagick to the image formats we resize
+COPY rel/imagemagick-policy.xml /etc/ImageMagick-6/policy.xml
+
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 

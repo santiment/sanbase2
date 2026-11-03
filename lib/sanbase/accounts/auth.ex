@@ -38,17 +38,23 @@ defmodule Sanbase.Accounts.Auth do
     - no `nonce` (legacy): the wallet signed the fixed text "Login in Santiment
       with address X". Such a signature never expires. Accepted only while the
       `eth_login_legacy` feature toggle is enabled.
+
+  Either way, `token` is a Cloudflare Turnstile token (optional for now, see
+  `validate_turnstile/2`). It is checked first, so a bad token does not reach
+  the signature check or use up a challenge.
   """
   def eth_login(
         %{signature: _, address: address} = args,
-        %{issue_tokens: issue_tokens, origin_url: origin_url}
+        %{issue_tokens: issue_tokens, origin_url: origin_url, remote_ip: remote_ip}
       ) do
     # `EthLoginChallenge.create/1` trims the address, so the login must too.
     address = String.trim(address)
     args = %{args | address: address}
     event_args = %{login_origin: :eth_login, origin_url: origin_url}
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
-    with :ok <- verify_wallet_signature(args),
+    with :ok <- validate_turnstile(args[:token], remote_ip),
+         :ok <- verify_wallet_signature(args),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          first_login? <- User.RegistrationState.first_login?(user, "eth_login"),
          {:ok, tokens} <- issue_tokens.(user),
@@ -58,6 +64,13 @@ defmodule Sanbase.Accounts.Auth do
 
       {:ok, Map.take(tokens, [:access_token, :refresh_token]) |> Map.put(:user, user)}
     else
+      {:error, {:turnstile, message}} ->
+        Logger.info(
+          "Wallet login rejected: #{message}. Address: #{address}, IP Address: #{remote_ip}"
+        )
+
+        {:error, message}
+
       {:error, :registrations_disabled} ->
         Logger.info("Wallet login rejected: registrations are disabled. Address: #{address}")
         {:error, "New registrations are temporarily disabled."}
@@ -230,6 +243,20 @@ defmodule Sanbase.Accounts.Auth do
       {:error, "Email not supported."}
     else
       true
+    end
+  end
+
+  # TODO: Make the token required once the frontend sends it on every wallet
+  # login: delete this clause, so a missing token is rejected like in emailLogin.
+  defp validate_turnstile(nil, remote_ip) do
+    Logger.info("Wallet login without a Turnstile token. IP Address: #{remote_ip}")
+    :ok
+  end
+
+  defp validate_turnstile(token, remote_ip) do
+    case Turnstile.validate(token, remote_ip) do
+      :ok -> :ok
+      {:error, message} -> {:error, {:turnstile, message}}
     end
   end
 

@@ -4,8 +4,9 @@ defmodule SanbaseWeb.Graphql.EthLoginChallengeApiTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
+  import Mock, only: [assert_called: 1, called: 1]
 
-  alias Sanbase.Accounts.EthLoginChallenge
+  alias Sanbase.Accounts.{EthLoginChallenge, Turnstile}
   alias Sanbase.Billing.Subscription.LiquiditySubscription
   alias Sanbase.FeatureToggle
   alias Sanbase.InternalServices.Ethauth
@@ -42,6 +43,7 @@ defmodule SanbaseWeb.Graphql.EthLoginChallengeApiTest do
     end
 
     Sanbase.Mock.prepare_mock(Ethauth, :valid_signature?, verify)
+    |> Sanbase.Mock.prepare_mock2(&Turnstile.validate/2, :ok)
     |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v2/1, false)
     |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v3/1, false)
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -125,6 +127,53 @@ defmodule SanbaseWeb.Graphql.EthLoginChallengeApiTest do
     end)
   end
 
+  describe "turnstile" do
+    test "the token and the client IP are passed to Turnstile", context do
+      %{"nonce" => nonce} =
+        challenge(context.conn, @address) |> get_in(["data", "ethLoginChallenge"])
+
+      with_login_mocks(true, fn ->
+        assert eth_login(context.conn, %{nonce: nonce, token: "tt-123"})
+               |> get_in(["data", "ethLogin", "accessToken"])
+
+        assert_called(Turnstile.validate("tt-123", "127.0.0.1"))
+      end)
+    end
+
+    test "without a token, login works and Turnstile is not called", context do
+      %{"nonce" => nonce} =
+        challenge(context.conn, @address) |> get_in(["data", "ethLoginChallenge"])
+
+      with_login_mocks(true, fn ->
+        log =
+          capture_log(fn ->
+            assert eth_login(context.conn, %{nonce: nonce, token: nil})
+                   |> get_in(["data", "ethLogin", "accessToken"])
+          end)
+
+        assert log =~ "Wallet login without a Turnstile token"
+        refute called(Turnstile.validate(:_, :_))
+      end)
+    end
+
+    test "an invalid token is rejected and no user is created", context do
+      users_count_before = Sanbase.Repo.aggregate(Sanbase.Accounts.User, :count)
+
+      with_login_mocks(true, {:error, "Turnstile verification failed"}, fn ->
+        log =
+          capture_log(fn ->
+            error = eth_login(context.conn, %{message_hash: @message_hash}) |> first_error()
+            assert error == "Turnstile verification failed"
+          end)
+
+        assert log =~ "Wallet login rejected: Turnstile verification failed"
+      end)
+
+      assert Sanbase.Repo.aggregate(Sanbase.Accounts.User, :count) == users_count_before
+      assert Sanbase.Accounts.EthAccount.by_address(@address) == nil
+    end
+  end
+
   describe "legacy fixed-message login" do
     test "works while eth_login_legacy is enabled", context do
       with_login_mocks(true, fn ->
@@ -167,8 +216,9 @@ defmodule SanbaseWeb.Graphql.EthLoginChallengeApiTest do
     end
   end
 
-  defp with_login_mocks(signature_valid?, fun) do
-    Sanbase.Mock.prepare_mock2(&Ethauth.valid_signature?/2, signature_valid?)
+  defp with_login_mocks(signature_valid?, turnstile_result \\ :ok, fun) do
+    Sanbase.Mock.prepare_mock2(&Turnstile.validate/2, turnstile_result)
+    |> Sanbase.Mock.prepare_mock2(&Ethauth.valid_signature?/2, signature_valid?)
     |> Sanbase.Mock.prepare_mock2(&Ethauth.valid_signature?/3, signature_valid?)
     |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v2/1, false)
     |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v3/1, false)
@@ -197,10 +247,10 @@ defmodule SanbaseWeb.Graphql.EthLoginChallengeApiTest do
     {address, extra} = Map.pop(extra, :address, @address)
 
     extra_args =
-      Enum.map_join(extra, " ", fn
-        {:nonce, v} -> ~s(nonce: "#{v}")
-        {:message_hash, v} -> ~s(messageHash: "#{v}")
-      end)
+      extra
+      |> Map.put_new(:token, "test-token")
+      |> Map.reject(fn {_, v} -> is_nil(v) end)
+      |> map_to_args()
 
     mutation = """
     mutation {

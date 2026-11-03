@@ -19,6 +19,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.Turnstile.validate/2, :ok)
     |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v2/1, false)
     |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v3/1, false)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.SmartContracts.UniswapPair.total_supply/1, 10.00)
@@ -47,6 +48,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.Turnstile.validate/2, :ok)
     |> Sanbase.Mock.prepare_mock2(
       &LiquiditySubscription.user_staked_in_uniswap_v2/1,
       false
@@ -81,6 +83,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.Turnstile.validate/2, :ok)
     |> Sanbase.Mock.prepare_mock2(
       &LiquiditySubscription.user_staked_in_uniswap_v2/1,
       false
@@ -115,6 +118,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.Turnstile.validate/2, :ok)
     |> Sanbase.Mock.run_with_mocks(fn ->
       log =
         capture_log(fn ->
@@ -135,7 +139,8 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
       ethLogin(
         signature: "#{signature}"
         address: "#{address}"
-        messageHash: "#{message_hash}"){
+        messageHash: "#{message_hash}"
+        token: "test-token"){
           user{ id firstLogin }
           accessToken
           refreshToken

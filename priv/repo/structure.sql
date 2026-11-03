@@ -1643,6 +1643,41 @@ ALTER SEQUENCE public.eth_accounts_id_seq OWNED BY public.eth_accounts.id;
 
 
 --
+-- Name: eth_login_challenges; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eth_login_challenges (
+    id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    nonce character varying(255) NOT NULL,
+    message text NOT NULL,
+    expires_at timestamp(0) without time zone NOT NULL,
+    used_at timestamp(0) without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: eth_login_challenges_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.eth_login_challenges_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: eth_login_challenges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.eth_login_challenges_id_seq OWNED BY public.eth_login_challenges.id;
+
+
+--
 -- Name: exchange_addresses; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6334,6 +6369,13 @@ ALTER TABLE ONLY public.eth_accounts ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: eth_login_challenges id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eth_login_challenges ALTER COLUMN id SET DEFAULT nextval('public.eth_login_challenges_id_seq'::regclass);
+
+
+--
 -- Name: exchange_addresses id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7474,6 +7516,14 @@ ALTER TABLE ONLY public.email_list_consents
 
 ALTER TABLE ONLY public.eth_accounts
     ADD CONSTRAINT eth_accounts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: eth_login_challenges eth_login_challenges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eth_login_challenges
+    ADD CONSTRAINT eth_login_challenges_pkey PRIMARY KEY (id);
 
 
 --
@@ -8965,6 +9015,27 @@ CREATE UNIQUE INDEX email_token_uk ON public.newsletter_tokens USING btree (emai
 --
 
 CREATE UNIQUE INDEX eth_accounts_address_index ON public.eth_accounts USING btree (address);
+
+
+--
+-- Name: eth_login_challenges_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eth_login_challenges_address_index ON public.eth_login_challenges USING btree (address);
+
+
+--
+-- Name: eth_login_challenges_expires_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eth_login_challenges_expires_at_index ON public.eth_login_challenges USING btree (expires_at);
+
+
+--
+-- Name: eth_login_challenges_nonce_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX eth_login_challenges_nonce_index ON public.eth_login_challenges USING btree (nonce);
 
 
 --
@@ -12514,3 +12585,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261027140423);
 INSERT INTO public."schema_migrations" (version) VALUES (20261028145234);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20261102134701);

@@ -385,6 +385,11 @@ config :sanbase, SanbaseWeb.Graphql.Middlewares.PublicRateLimit,
   chat_message: [
     anonymous: [{5, :timer.minutes(1)}, {30, :timer.hours(1)}, {100, :timer.hours(24)}],
     authenticated: [{20, :timer.minutes(1)}, {200, :timer.hours(1)}, {1_000, :timer.hours(24)}]
+  ],
+  # ethLoginChallenge: every call stores a row. A person needs one per wallet login.
+  eth_login_challenge: [
+    anonymous: [{30, :timer.minutes(1)}, {300, :timer.hours(1)}],
+    authenticated: [{30, :timer.minutes(1)}, {300, :timer.hours(1)}]
   ]
 
 # Import environment specific config. This must remain at the bottom

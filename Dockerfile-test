@@ -17,6 +17,9 @@ RUN apt-get install -y make \
   openssl \
   wget
 
+# Same ImageMagick policy as the prod image, so tests run against it
+COPY rel/imagemagick-policy.xml /etc/ImageMagick-6/policy.xml
+
 ENV MIX_ENV=test
 
 RUN mix local.hex --force

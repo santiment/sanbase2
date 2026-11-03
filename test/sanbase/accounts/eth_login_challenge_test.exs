@@ -16,25 +16,35 @@ defmodule Sanbase.Accounts.EthLoginChallengeTest do
       assert DateTime.diff(expires_at, DateTime.utc_now()) in 290..300
     end
 
-    test "every challenge has a different nonce" do
-      {:ok, %{nonce: nonce1}} = EthLoginChallenge.create(@address)
-      {:ok, %{nonce: nonce2}} = EthLoginChallenge.create(@address)
+    test "an open challenge is handed out again, so others cannot lock the wallet out" do
+      {:ok, first} = EthLoginChallenge.create(@address)
 
+      for _ <- 1..20 do
+        assert {:ok, ^first} = EthLoginChallenge.create(String.upcase(@address) |> fix_prefix())
+      end
+
+      assert Sanbase.Repo.aggregate(EthLoginChallenge, :count) == 1
+    end
+
+    test "a used challenge is not handed out again" do
+      {:ok, %{nonce: nonce1}} = EthLoginChallenge.create(@address)
+      :ok = EthLoginChallenge.consume(@address, nonce1)
+
+      {:ok, %{nonce: nonce2}} = EthLoginChallenge.create(@address)
+      assert nonce1 != nonce2
+    end
+
+    test "a challenge about to expire is not handed out again" do
+      {:ok, %{nonce: nonce1}} = EthLoginChallenge.create(@address)
+      expire!(nonce1, 60)
+
+      {:ok, %{nonce: nonce2}} = EthLoginChallenge.create(@address)
       assert nonce1 != nonce2
     end
 
     test "rejects something that is not a wallet address" do
       assert {:error, "Invalid wallet address"} = EthLoginChallenge.create("not-an-address")
       assert {:error, "Invalid wallet address"} = EthLoginChallenge.create("0x1234")
-    end
-
-    test "caps the number of open challenges per address" do
-      for _ <- 1..10, do: {:ok, _} = EthLoginChallenge.create(@address)
-
-      assert {:error, "Too many wallet login attempts" <> _} = EthLoginChallenge.create(@address)
-
-      # Other addresses are not affected.
-      assert {:ok, _} = EthLoginChallenge.create("0x" <> String.duplicate("a", 40))
     end
 
     test "removes expired challenges" do
@@ -86,11 +96,15 @@ defmodule Sanbase.Accounts.EthLoginChallengeTest do
     end
   end
 
-  defp expire!(nonce) do
-    past = DateTime.utc_now() |> DateTime.add(-1, :second) |> DateTime.truncate(:second)
+  defp fix_prefix("0X" <> rest), do: "0x" <> rest
+
+  # Move the expiry to `seconds_left` from now (in the past by default).
+  defp expire!(nonce, seconds_left \\ -1) do
+    expires_at =
+      DateTime.utc_now() |> DateTime.add(seconds_left, :second) |> DateTime.truncate(:second)
 
     Sanbase.Repo.get_by!(EthLoginChallenge, nonce: nonce)
-    |> Ecto.Changeset.change(expires_at: past)
+    |> Ecto.Changeset.change(expires_at: expires_at)
     |> Sanbase.Repo.update!()
   end
 end

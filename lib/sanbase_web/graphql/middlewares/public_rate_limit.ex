@@ -24,6 +24,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.PublicRateLimit do
           authenticated: [{60, :timer.minutes(1)}]
         ]
 
+  A caller with neither a user nor a remote IP (GraphQL over the websocket) is
+  not rate limited, unless the field passes `limit_unidentified: true`: then all
+  such callers share one anonymous counter.
+
   A bucket or caller kind with no configured windows is not rate limited. The
   counters live in the node-local `Sanbase.RateLimit` ETS backend: with N pods
   the effective limit is up to N times the configured one, and a deploy resets
@@ -41,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PublicRateLimit do
   def call(%Resolution{context: context} = resolution, opts) do
     bucket = Keyword.fetch!(opts, :bucket)
 
-    with {kind, key} <- caller(context),
+    with {kind, key} <- caller(context, opts),
          windows when windows != [] <- windows_for(bucket, kind),
          {:deny, retry_after_ms} <- hit_all(bucket, key, windows) do
       Logger.info("[PublicRateLimit] bucket=#{bucket} caller=#{key} limited")
@@ -49,8 +53,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PublicRateLimit do
       Resolution.put_result(
         resolution,
         {:error,
-         "Rate limit exceeded. Try again in #{format_wait(retry_after_ms)}, " <>
-           "or authenticate with an API key for a higher limit."}
+         "Rate limit exceeded. Try again in #{format_wait(retry_after_ms)}" <> hint(bucket, kind)}
       )
     else
       _ -> resolution
@@ -74,12 +77,24 @@ defmodule SanbaseWeb.Graphql.Middlewares.PublicRateLimit do
     end)
   end
 
-  defp caller(%{auth: %{current_user: %{id: user_id}}}), do: {:authenticated, "user:#{user_id}"}
+  # An API key helps an anonymous caller only if the authenticated limit is higher.
+  defp hint(bucket, :anonymous) do
+    if windows_for(bucket, :anonymous) == windows_for(bucket, :authenticated),
+      do: ".",
+      else: ", or authenticate with an API key for a higher limit."
+  end
 
-  defp caller(%{remote_ip: remote_ip}) when is_tuple(remote_ip),
+  defp hint(_bucket, _kind), do: ", or authenticate with an API key for a higher limit."
+
+  defp caller(%{auth: %{current_user: %{id: user_id}}}, _opts),
+    do: {:authenticated, "user:#{user_id}"}
+
+  defp caller(%{remote_ip: remote_ip}, _opts) when is_tuple(remote_ip),
     do: {:anonymous, "ip:#{Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)}"}
 
-  defp caller(_context), do: nil
+  defp caller(_context, opts) do
+    if Keyword.get(opts, :limit_unidentified, false), do: {:anonymous, "unidentified"}
+  end
 
   defp windows_for(bucket, kind) do
     :sanbase

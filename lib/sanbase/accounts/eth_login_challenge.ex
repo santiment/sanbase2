@@ -12,6 +12,11 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
   against the stored message and marks the nonce as used (`consume/2`), so every
   signature works once and only for `@ttl_seconds`.
 
+  While an address has an open challenge with enough time left to sign, `create/1`
+  returns that same challenge instead of a new one. The nonce is not a secret (only
+  the wallet can sign it), so handing it to another caller is harmless, and nobody
+  can block a wallet's login by asking for challenges for its address.
+
   Rows are stored in Postgres, so a challenge created on one node can be used on
   any other.
   """
@@ -23,7 +28,8 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
   alias Sanbase.Repo
 
   @ttl_seconds 300
-  @max_open_challenges_per_address 10
+  # An open challenge is handed out again only if the wallet still has this long to sign it.
+  @min_seconds_left_to_reuse 120
   @delete_expired_batch 1000
 
   schema "eth_login_challenges" do
@@ -39,8 +45,11 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
   def ttl_seconds(), do: @ttl_seconds
 
   @doc ~s"""
-  Create a new challenge for `address`. Returns the message the wallet must
-  sign, the nonce to send back with `ethLogin`, and when it expires.
+  Get a challenge for `address`. Returns the message the wallet must sign, the
+  nonce to send back with `ethLogin`, and when it expires.
+
+  Reuses the address's newest open challenge while it has at least
+  `@min_seconds_left_to_reuse` seconds left, otherwise creates a new one.
   """
   @spec create(String.t()) ::
           {:ok, %{message: String.t(), nonce: String.t(), expires_at: DateTime.t()}}
@@ -48,26 +57,32 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
   def create(address) when is_binary(address) do
     address = String.trim(address)
 
-    with :ok <- validate_address(address),
-         :ok <- check_open_challenges(address) do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      expires_at = DateTime.add(now, @ttl_seconds, :second)
-      nonce = :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
-      message = build_message(address, nonce, now, expires_at)
-
-      delete_expired()
-
-      %__MODULE__{
-        address: normalize(address),
-        nonce: nonce,
-        message: message,
-        expires_at: expires_at
-      }
-      |> Repo.insert()
-      |> case do
-        {:ok, _} -> {:ok, %{message: message, nonce: nonce, expires_at: expires_at}}
-        {:error, _} -> {:error, "Could not create a wallet login challenge"}
+    with :ok <- validate_address(address) do
+      case reusable_challenge(address) do
+        nil -> insert_challenge(address)
+        challenge -> {:ok, challenge}
       end
+    end
+  end
+
+  defp insert_challenge(address) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    expires_at = DateTime.add(now, @ttl_seconds, :second)
+    nonce = :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
+    message = build_message(address, nonce, now, expires_at)
+
+    delete_expired()
+
+    %__MODULE__{
+      address: normalize(address),
+      nonce: nonce,
+      message: message,
+      expires_at: expires_at
+    }
+    |> Repo.insert()
+    |> case do
+      {:ok, _} -> {:ok, %{message: message, nonce: nonce, expires_at: expires_at}}
+      {:error, _} -> {:error, "Could not create a wallet login challenge"}
     end
   end
 
@@ -129,20 +144,20 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
       else: {:error, "Invalid wallet address"}
   end
 
-  # Without a cap, anyone could fill the table by asking for challenges in a loop.
-  defp check_open_challenges(address) do
-    now = DateTime.utc_now()
+  # Handing out the open challenge again keeps at most a few rows per address, so
+  # asking for challenges in a loop neither fills the table nor locks the owner out.
+  defp reusable_challenge(address) do
+    reuse_until = DateTime.utc_now() |> DateTime.add(@min_seconds_left_to_reuse, :second)
 
-    open =
-      from(c in __MODULE__,
-        where: c.address == ^normalize(address) and is_nil(c.used_at) and c.expires_at > ^now,
-        select: count(c.id)
-      )
-      |> Repo.one()
-
-    if open >= @max_open_challenges_per_address,
-      do: {:error, "Too many wallet login attempts, try again in a few minutes"},
-      else: :ok
+    from(c in __MODULE__,
+      where:
+        c.address == ^normalize(address) and is_nil(c.used_at) and
+          c.expires_at > ^reuse_until,
+      order_by: [desc: c.expires_at],
+      limit: 1,
+      select: %{message: c.message, nonce: c.nonce, expires_at: c.expires_at}
+    )
+    |> Repo.one()
   end
 
   # Expired challenges are useless, so every new challenge removes some of them. Used

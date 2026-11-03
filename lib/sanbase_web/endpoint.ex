@@ -66,6 +66,8 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   plug(Plug.RequestId)
+  # Real client IP behind Cloudflare. Before everything that reads conn.remote_ip.
+  plug(SanbaseWeb.Plug.ClientIp)
   plug(SanbaseWeb.Plug.RequestContextPlug)
   plug(Plug.Logger)
 

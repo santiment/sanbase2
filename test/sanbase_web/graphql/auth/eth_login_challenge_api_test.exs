@@ -87,11 +87,41 @@ defmodule SanbaseWeb.Graphql.EthLoginChallengeApiTest do
     end)
   end
 
-  test "an unknown or expired nonce is rejected", context do
+  test "an unknown nonce is rejected", context do
     with_login_mocks(true, fn ->
       capture_log(fn ->
         assert eth_login(context.conn, %{nonce: "unknown"}) |> first_error() == @failed
       end)
+    end)
+  end
+
+  test "an expired nonce is rejected", context do
+    %{"nonce" => nonce} =
+      challenge(context.conn, @address) |> get_in(["data", "ethLoginChallenge"])
+
+    past = DateTime.utc_now() |> DateTime.add(-1, :second) |> DateTime.truncate(:second)
+
+    Sanbase.Repo.get_by!(EthLoginChallenge, nonce: nonce)
+    |> Ecto.Changeset.change(expires_at: past)
+    |> Sanbase.Repo.update!()
+
+    with_login_mocks(true, fn ->
+      capture_log(fn ->
+        assert eth_login(context.conn, %{nonce: nonce}) |> first_error() == @failed
+      end)
+    end)
+  end
+
+  test "an address with surrounding spaces logs in to the same wallet", context do
+    %{"nonce" => nonce} =
+      challenge(context.conn, " #{@address} ") |> get_in(["data", "ethLoginChallenge"])
+
+    with_login_mocks(true, fn ->
+      result =
+        eth_login(context.conn, %{nonce: nonce, address: " #{@address} "})
+        |> get_in(["data", "ethLogin"])
+
+      assert result["user"]["ethAccounts"] |> hd() |> Map.get("address") == @address
     end)
   end
 
@@ -164,6 +194,8 @@ defmodule SanbaseWeb.Graphql.EthLoginChallengeApiTest do
   end
 
   defp eth_login(conn, extra) do
+    {address, extra} = Map.pop(extra, :address, @address)
+
     extra_args =
       Enum.map_join(extra, " ", fn
         {:nonce, v} -> ~s(nonce: "#{v}")
@@ -172,9 +204,9 @@ defmodule SanbaseWeb.Graphql.EthLoginChallengeApiTest do
 
     mutation = """
     mutation {
-      ethLogin(signature: "#{@signature}", address: "#{@address}" #{extra_args}) {
+      ethLogin(signature: "#{@signature}", address: "#{address}" #{extra_args}) {
         accessToken
-        user { id }
+        user { id ethAccounts { address } }
       }
     }
     """

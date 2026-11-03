@@ -43,6 +43,9 @@ defmodule Sanbase.Accounts.Auth do
         %{signature: _, address: address} = args,
         %{issue_tokens: issue_tokens, origin_url: origin_url}
       ) do
+    # `EthLoginChallenge.create/1` trims the address, so the login must too.
+    address = String.trim(address)
+    args = %{args | address: address}
     event_args = %{login_origin: :eth_login, origin_url: origin_url}
 
     with :ok <- verify_wallet_signature(args),

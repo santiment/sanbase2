@@ -24,6 +24,7 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
 
   @ttl_seconds 300
   @max_open_challenges_per_address 10
+  @delete_expired_batch 1000
 
   schema "eth_login_challenges" do
     field(:address, :string)
@@ -144,12 +145,21 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
       else: :ok
   end
 
-  # Expired challenges are useless, so every new challenge removes them. Used ones are
-  # kept until they expire, as a short record of which nonce logged in.
+  # Expired challenges are useless, so every new challenge removes some of them. Used
+  # ones are kept until they expire, as a short record of which nonce logged in. The
+  # batch is bounded so a create after a burst does not delete a huge backlog at once;
+  # each create removes more rows than it adds, so the backlog still drains.
   defp delete_expired() do
     now = DateTime.utc_now()
 
-    from(c in __MODULE__, where: c.expires_at <= ^now)
+    expired_ids =
+      from(c in __MODULE__,
+        where: c.expires_at <= ^now,
+        select: c.id,
+        limit: @delete_expired_batch
+      )
+
+    from(c in __MODULE__, where: c.id in subquery(expired_ids))
     |> Repo.delete_all()
   end
 end

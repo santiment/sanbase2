@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
     CreateOrDeleteSession,
     DeleteSession,
     JWTAuth,
+    PublicRateLimit,
     RefreshTokenAgeCheck
   }
 
@@ -86,6 +87,7 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
     field :eth_login_challenge, :eth_login_challenge do
       arg(:address, non_null(:string))
 
+      middleware(PublicRateLimit, bucket: :eth_login_challenge)
       resolve(&AuthResolver.eth_login_challenge/3)
     end
 

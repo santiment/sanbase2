@@ -71,6 +71,10 @@ defmodule SanbaseWeb.Endpoint do
   plug(SanbaseWeb.Plug.RequestContextPlug)
   plug(Plug.Logger)
 
+  # Reject `Content-Encoding: br` request bodies with 415 - nothing in the stack decodes them.
+  # Header-only check, so it runs before every plug that reads the body.
+  plug(SanbaseWeb.Plug.RejectBrotliBody)
+
   # Before Plug.Parsers: it reads the request body, which can only be read once.
   plug(SanbaseWeb.Plug.VerifyStripeWebhook)
 

@@ -25,7 +25,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.UtilsTest do
   end
 
   test "missing or invalid retry-after defaults to 1 second" do
-    for headers <- [[], [{"retry-after", "soon"}]] do
+    for headers <- [[], [{"retry-after", "soon"}], [{"retry-after", "120garbage"}]] do
       datetime = Utils.retry_after_datetime(%Tesla.Env{headers: headers})
       assert_in_delta DateTime.diff(datetime, DateTime.utc_now()), 1, 1
     end

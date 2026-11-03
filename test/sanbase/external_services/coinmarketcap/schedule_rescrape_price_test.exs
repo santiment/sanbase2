@@ -18,6 +18,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePriceTest do
       source_slug_mappings: [build(:source_slug_mapping, %{source: "cryptocompare", slug: "X"})]
     })
 
+    # Mapped to coinmarketcap, but without a coinmarketcap integer id
+    insert(:latest_cmc_data, %{coinmarketcap_id: "no_cmc_id", coinmarketcap_integer_id: nil})
+    insert(:project, %{slug: "no_cmc_id", name: "No CMC Id", ticker: "NOID"})
+
     [bitcoin: bitcoin, ethereum: ethereum]
   end
 
@@ -35,6 +39,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePriceTest do
 
     assert {:ok, %{priority: :high}} = ScheduleRescrapePrice.update_priority(srp, "high")
     assert {:error, _} = ScheduleRescrapePrice.update_priority(srp, "urgent")
+  end
+
+  test "a rescrape changed after it was loaded is not resumed", context do
+    srp = create_rescrape(context.bitcoin)
+    {:ok, _} = ScheduleRescrapePrice.cancel(srp)
+    stale = reload(srp)
+
+    {:ok, srp} = ScheduleRescrapePrice.resume(stale)
+    {:ok, _} = ScheduleRescrapePrice.mark_finished(srp)
+
+    assert {:error, "Only failed or cancelled rescrapes can be resumed"} =
+             ScheduleRescrapePrice.resume(stale)
+
+    assert %{status: :finished} = reload(srp)
   end
 
   test "a rescrape cannot be resumed while another one is active", context do
@@ -102,7 +120,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePriceTest do
     assert slugs(ScheduleRescrapePrice.search_projects("BTC", 10)) == ["bitcoin"]
     assert slugs(ScheduleRescrapePrice.search_projects("eum", 10)) == ["ethereum"]
     assert slugs(ScheduleRescrapePrice.search_projects("_", 10)) == []
-    assert slugs(ScheduleRescrapePrice.projects_by_slugs(["ethereum", "not_cmc"])) == ["ethereum"]
+    assert slugs(ScheduleRescrapePrice.search_projects("NOID", 10)) == []
+
+    assert slugs(ScheduleRescrapePrice.projects_by_slugs(["ethereum", "not_cmc", "no_cmc_id"])) ==
+             ["ethereum"]
   end
 
   defp create_rescrape(project) do

@@ -28,6 +28,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
   @priorities [:low, :normal, :high]
   @statuses [:pending, :running, :finished, :failed, :cancelled]
   @active_statuses [:pending, :running]
+  @resumable_statuses [:failed, :cancelled]
+  @not_resumable "Only failed or cancelled rescrapes can be resumed"
 
   schema "schedule_rescrape_prices" do
     belongs_to(:project, Project)
@@ -189,22 +191,36 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
   @doc ~s"""
   Move a failed or cancelled rescrape back to pending. The rescrape continues
   from its cursor.
+
+  The row is locked and its status checked again, so a rescrape whose status
+  was changed after `srp` was loaded is not resumed.
   """
   @spec resume(%ScheduleRescrapePrice{}) ::
           {:ok, %ScheduleRescrapePrice{}} | {:error, Ecto.Changeset.t() | String.t()}
-  def resume(%ScheduleRescrapePrice{status: status} = srp) when status in [:failed, :cancelled] do
-    srp
-    |> changeset(%{status: :pending})
-    |> put_change(:finished_at, nil)
-    |> put_change(:last_error, nil)
-    |> Repo.update()
+  def resume(%ScheduleRescrapePrice{status: status} = srp) when status in @resumable_statuses do
+    Repo.transaction(fn ->
+      query =
+        from(s in ScheduleRescrapePrice,
+          where: s.id == ^srp.id and s.status in ^@resumable_statuses,
+          lock: "FOR UPDATE"
+        )
+
+      with %ScheduleRescrapePrice{} = locked <- Repo.one(query),
+           {:ok, srp} <- locked |> update_changeset(%{status: :pending}) |> Repo.update() do
+        srp
+      else
+        nil -> Repo.rollback(@not_resumable)
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
   end
 
-  def resume(%ScheduleRescrapePrice{}),
-    do: {:error, "Only failed or cancelled rescrapes can be resumed"}
+  def resume(%ScheduleRescrapePrice{}), do: {:error, @not_resumable}
 
   @doc ~s"""
-  Change the priority of a rescrape. The scheduler picks it up within a few seconds.
+  Change the priority of a rescrape. The scheduler picks it up within a few
+  seconds. The days of the rescrape that are already being fetched keep the
+  old priority.
   """
   @spec update_priority(%ScheduleRescrapePrice{}, atom() | String.t()) ::
           {:ok, %ScheduleRescrapePrice{}} | {:error, Ecto.Changeset.t()}
@@ -363,12 +379,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
     where(query, [project: p], ilike(p.slug, ^pattern) or ilike(p.name, ^pattern))
   end
 
+  # Only the projects with a coinmarketcap integer id can be rescraped, see
+  # coinmarketcap_integer_ids/1
   defp cmc_projects_query() do
     from(p in Project,
       join: ssm in assoc(p, :source_slug_mappings),
       on: ssm.source == "coinmarketcap",
-      left_join: cmc in Sanbase.Model.LatestCoinmarketcapData,
-      on: cmc.coinmarketcap_id == ssm.slug,
+      join: cmc in LatestCoinmarketcapData,
+      on: cmc.coinmarketcap_id == ssm.slug and not is_nil(cmc.coinmarketcap_integer_id),
       order_by: [asc_nulls_last: cmc.rank, asc: p.slug],
       select: %{id: p.id, slug: p.slug, name: p.name, ticker: p.ticker, rank: cmc.rank}
     )

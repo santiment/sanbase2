@@ -3,7 +3,7 @@ defmodule Sanbase.Mix.Helper.ScheduleRescrapeHelpers do
   alias Sanbase.ExternalServices.Coinmarketcap.{ScheduleRescrapePrice, PriceScrapingProgress}
 
   @doc ~s"""
-  Schedule a rescrape in the [from, to] interval for all the projects that are
+  Schedule a rescrape in the [from, to) interval for all the projects that are
   scraped from coinmarketcap (see `all_projects/0`), or for the projects in
   `opts[:projects]`.
   The priority is set with `opts[:priority]` (:normal by default).

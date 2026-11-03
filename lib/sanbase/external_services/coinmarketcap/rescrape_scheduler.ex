@@ -12,11 +12,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
   rescrape first among equal priorities). Up to 2 days of a rescrape are
   fetched in parallel, so a :high priority rescrape always has a request
   waiting in the rate limiter while the previous response is processed. The
-  cursor moves only over contiguous fetched days.
+  cursor moves only over contiguous fetched days. Only the points in the
+  [from, to) interval of the rescrape are exported.
+
+  A priority change applies to the days started after it. The days already in
+  flight (at most 2 per rescrape) keep the priority they were started with.
 
   A failed day is retried from the cursor after a minute. After 20 consecutive
-  failures the rescrape is marked as failed. A restart loses only the days
-  that were in flight, the running rescrapes continue from their cursor.
+  failures the rescrape is marked as failed. The failures are counted in
+  memory, so a restart of the scheduler, or a change of the rescrape from
+  outside (e.g. a cancel and resume), starts the count from 0 again. A restart
+  loses only the days that were in flight, the running rescrapes continue from
+  their cursor.
 
   The scheduler is isolated from the other scrapers, see `isolated_child_spec/1`.
   Errors while working on a rescrape (e.g. the DB is unavailable) are logged and
@@ -286,7 +293,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
 
   defp start_next_day(state, entry) do
     %{srp: srp, cmc_integer_id: cmc_integer_id, next_from: from} = entry
-    interval = interval(from, end_unix(srp))
+    interval = {from, min(from + @interval_seconds, end_unix(srp))}
 
     task =
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
@@ -373,7 +380,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
   end
 
   defp fetch_and_export(project, cmc_integer_id, interval, opts) do
-    with {:ok, price_points} <- WebApi.fetch_price_points(cmc_integer_id, interval, opts),
+    with {:ok, price_points} <-
+           WebApi.fetch_price_points(cmc_integer_id, request_interval(interval), opts),
+         price_points = Enum.filter(price_points, &in_interval?(&1, interval)),
          {:export, :ok} <- {:export, WebApi.export_price_points(project, price_points)} do
       {:ok, interval}
     else
@@ -411,12 +420,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeScheduler do
     min(to_unix(srp.to), DateTime.utc_now() |> DateTime.to_unix())
   end
 
-  # A day starting at `from`. A too short last interval is extended backwards.
-  # Exporting the overlapping points again is harmless, the regular scraper
-  # does the same.
-  defp interval(from, end_unix) do
-    to = min(from + @interval_seconds, end_unix)
-    {min(from, to - @min_interval_seconds), to}
+  # The interval requested from coinmarketcap. A too short last interval is
+  # extended backwards. The extra points are dropped, see in_interval?/2.
+  defp request_interval({from, to}), do: {min(from, to - @min_interval_seconds), to}
+
+  # The intervals of the days are [from, to), so a point at the end of a day is
+  # exported only once, with the next day, and the rescrape exports only the
+  # points in its own [from, to) interval
+  defp in_interval?(%{datetime: datetime}, {from, to}) do
+    unix = DateTime.to_unix(datetime)
+    unix >= from and unix < to
   end
 
   defp to_unix(%NaiveDateTime{} = ndt),

@@ -64,6 +64,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RescrapeSchedulerTest do
     assert %{status: :finished} = reload(srp)
   end
 
+  test "exports only the points in the interval of the rescrape", context do
+    # The only point in the response is at 2023-07-19 00:00
+    mock_cmc_success()
+    srp = create_rescrape(context.project, ~N[2023-07-19 00:30:00], ~N[2023-07-19 00:40:00])
+
+    run_scheduler()
+
+    # The short interval is extended backwards to 1 hour, before the start of the rescrape
+    assert requested_ranges() == [{~U[2023-07-18 23:40:00Z], ~U[2023-07-19 00:40:00Z]}]
+    assert %{status: :finished} = reload(srp)
+    assert Sanbase.InMemoryKafka.Producer.get_state() |> Map.get("asset_prices", []) == []
+  end
+
   test "skips cancelled rescrapes and fails the ones without a coinmarketcap id", context do
     mock_cmc_success()
     cancelled = create_rescrape(context.project, ~N[2023-07-19 00:00:00], ~N[2023-07-21 00:00:00])

@@ -37,7 +37,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
            {:ok, datetime} <- parse_http_date(value) do
         datetime
       else
-        {:seconds, {seconds, _}} -> DateTime.add(now, seconds, :second)
+        {:seconds, {seconds, ""}} -> DateTime.add(now, seconds, :second)
         _ -> DateTime.add(now, 1, :second)
       end
 

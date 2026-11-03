@@ -99,12 +99,17 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
     `nonce` here. Without `nonce`, the legacy fixed message
     "Login in Santiment with address <address>" and its `messageHash` are
     expected; that flow can be switched off by the server.
+
+    `token` is the Cloudflare Turnstile token, as in `emailLogin`. It is
+    optional for now and will become required. When given, an invalid token
+    is rejected.
     """
     field :eth_login, :login do
       arg(:signature, non_null(:string))
       arg(:address, non_null(:string))
       arg(:message_hash, :string)
       arg(:nonce, :string)
+      arg(:token, :string)
 
       resolve(&AuthResolver.eth_login/3)
       middleware(CreateOrDeleteSession)

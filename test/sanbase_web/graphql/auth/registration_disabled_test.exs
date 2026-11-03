@@ -121,6 +121,7 @@ defmodule SanbaseWeb.Graphql.RegistrationDisabledTest do
       users_count_before = Sanbase.Repo.aggregate(User, :count)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.Turnstile.validate/2, :ok)
       |> Sanbase.Mock.run_with_mocks(fn ->
         log =
           capture_log(fn ->
@@ -144,6 +145,7 @@ defmodule SanbaseWeb.Graphql.RegistrationDisabledTest do
       {:ok, _} = FeatureToggle.disable_user_registration()
 
       Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.Turnstile.validate/2, :ok)
       |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v2/1, false)
       |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v3/1, false)
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -171,6 +173,7 @@ defmodule SanbaseWeb.Graphql.RegistrationDisabledTest do
       users_count_before = Sanbase.Repo.aggregate(User, :count)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.Turnstile.validate/2, :ok)
       |> Sanbase.Mock.run_with_mocks(fn ->
         capture_log(fn ->
           error_msg =
@@ -191,6 +194,7 @@ defmodule SanbaseWeb.Graphql.RegistrationDisabledTest do
       {:ok, _} = FeatureToggle.disable_eth_registration()
 
       Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.Turnstile.validate/2, :ok)
       |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v2/1, false)
       |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v3/1, false)
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -226,7 +230,8 @@ defmodule SanbaseWeb.Graphql.RegistrationDisabledTest do
       ethLogin(
         signature: "#{@signature}"
         address: "#{@address}"
-        messageHash: "#{@message_hash}"){
+        messageHash: "#{@message_hash}"
+        token: "test-token"){
           user{ id }
           accessToken
         }

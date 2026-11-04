@@ -172,6 +172,48 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
       assert Sanbase.FeatureToggle.user_registration_enabled?()
     end
 
+    test "turning the reduced Business allowance on and off from the admin panel", context do
+      # The migration inserts this row; structure.sql has no data.
+      toggle =
+        Sanbase.Repo.get_by(Sanbase.FeatureToggle, name: "business_reduced_api_calls") ||
+          Sanbase.Repo.insert!(%Sanbase.FeatureToggle{
+            name: "business_reduced_api_calls",
+            enabled: false
+          })
+
+      customer = insert(:user, email: "business-admin-toggle@example.com")
+      editor_conn = sign_in(:role_admin_panel_editor)
+
+      update_toggle(editor_conn, toggle, %{"enabled" => "true"})
+      assert %DateTime{} = Sanbase.FeatureToggle.business_reduced_api_calls_since()
+
+      # Subscribes after the toggle went on, so is on the reduced allowance.
+      insert(:subscription_pro,
+        user: customer,
+        plan_id: context.plans.plan_business_pro_monthly.id,
+        status: :active,
+        stripe_id: "sub_" <> Ecto.UUID.generate(),
+        inserted_at: NaiveDateTime.add(NaiveDateTime.utc_now(), 60)
+      )
+
+      {:ok, _} = Sanbase.ApiCallLimit.update_user_plan(customer)
+      assert acl_month(customer) == 50_000
+
+      conn = update_toggle(editor_conn, toggle, %{"enabled" => "false"})
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "successfully"
+      assert Sanbase.FeatureToggle.business_reduced_api_calls_since() == nil
+
+      # Turning it off refreshed the customer without any subscription event.
+      assert acl_month(customer) == 600_000
+    end
+
+    defp acl_month(user) do
+      Sanbase.ApiCallLimit
+      |> Sanbase.Repo.get_by!(user_id: user.id)
+      |> Sanbase.ApiCallLimit.acl_to_api_call_limits()
+      |> Map.fetch!(:month)
+    end
+
     test "the name cannot be changed from the admin panel", %{toggle: toggle} do
       update_toggle(sign_in(:role_admin_panel_editor), toggle, %{
         "enabled" => "false",

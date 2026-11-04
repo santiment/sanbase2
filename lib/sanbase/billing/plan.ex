@@ -357,6 +357,16 @@ defmodule Sanbase.Billing.Plan do
         nil
 
       month ->
+        # The catalog shows what subscribing now gets: once the reduced Business
+        # allowance is in force, that is the reduced figure, even though existing
+        # subscribers keep the old one.
+        # The reducible check comes first so other plans never read the toggle.
+        month =
+          if Sanbase.ApiCallLimit.BusinessAllowance.reducible_plan?(key) and
+               Sanbase.ApiCallLimit.BusinessAllowance.active?(),
+             do: Sanbase.ApiCallLimit.BusinessAllowance.reduced_month(key),
+             else: month
+
         %{
           month: month,
           hour: Map.fetch!(Sanbase.ApiCallLimit.Restrictions.call_limits_per_hour(), key),

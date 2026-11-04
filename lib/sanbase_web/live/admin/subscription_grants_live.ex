@@ -30,6 +30,7 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
   import Ecto.Query
 
   alias Sanbase.Accounts.User
+  alias Sanbase.ApiCallLimit.BusinessAllowance
   alias Sanbase.Billing.Plan.Bundle.Package
   alias Sanbase.Billing.Plan.Bundle.PackageSnapshot
   alias Sanbase.Billing.Subscription
@@ -348,12 +349,29 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
         Sanbase.Billing.Subscription.plan_name(subscription)
       )
 
-    base = Sanbase.ApiCallLimit.Restrictions.call_limits_per_month()[plan_key]
+    plan_base = Sanbase.ApiCallLimit.Restrictions.call_limits_per_month()[plan_key]
     extra = subscription |> Subscription.grant() |> Grant.extra_api_calls()
+
+    {base, allowance} = business_allowance(subscription, plan_key, plan_base)
 
     case base do
       nil -> nil
-      base -> %{base: base, extra: extra, total: base + extra}
+      base -> %{base: base, extra: extra, total: base + extra, allowance: allowance}
+    end
+  end
+
+  # Mirrors what the quota path stores for this subscription, so the page never shows
+  # a Business customer a figure they are not actually metered at.
+  defp business_allowance(subscription, plan_key, plan_base) do
+    cond do
+      BusinessAllowance.reduced?(subscription, plan_key) ->
+        {BusinessAllowance.reduced_month(plan_key), :reduced}
+
+      BusinessAllowance.reducible_plan?(plan_key) and not is_nil(BusinessAllowance.cutoff()) ->
+        {plan_base, :grandfathered}
+
+      true ->
+        {plan_base, nil}
     end
   end
 
@@ -482,6 +500,20 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
             <span :if={calls.extra == 0} class="text-base-content/60">
               (from the plan; nothing granted)
             </span>
+            <div
+              :if={calls.allowance == :reduced}
+              id="business-allowance-reduced"
+              class="text-xs text-base-content/60"
+            >
+              Reduced Business allowance: subscribed on or after {BusinessAllowance.cutoff()}.
+            </div>
+            <div
+              :if={calls.allowance == :grandfathered}
+              id="business-allowance-grandfathered"
+              class="text-xs text-base-content/60"
+            >
+              Grandfathered: subscribed before {BusinessAllowance.cutoff()}, keeps the old allowance.
+            </div>
           </div>
 
           <div :if={is_nil(calls)} class="text-sm text-base-content/60">

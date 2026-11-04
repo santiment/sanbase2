@@ -7,6 +7,7 @@ defmodule Sanbase.ApiCallLimit do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.Product
   alias Sanbase.Billing.Subscription
+  alias Sanbase.ApiCallLimit.BusinessAllowance
   alias Sanbase.ApiCallLimit.Restrictions
 
   require Logger
@@ -414,10 +415,12 @@ defmodule Sanbase.ApiCallLimit do
   # `nil` for every plan whose limits follow from its name and that has no add-on -
   # storing them would freeze numbers the plan tables should keep owning.
   #
-  # Two cases store something instead. A bundle always does, because every bundle is
-  # named `BUNDLE` while the numbers differ per customer. Anything else does only when
-  # a grant adds calls on top (§8 task GR); Institutional is what that is for, but
-  # nothing here is Institutional-specific and a granted bundle picks it up too.
+  # Three cases store something instead. A bundle always does, because every bundle is
+  # named `BUNDLE` while the numbers differ per customer. A Business subscription on the
+  # reduced allowance does, because its month is below what its plan name says (see
+  # `BusinessAllowance`). Anything else does only when a grant adds calls on top (§8 task
+  # GR); Institutional is what that is for, but nothing here is Institutional-specific
+  # and a granted bundle picks it up too.
   #
   # A bundle with no entitlement yet stores `nil` rather than raising: this runs on every
   # plan change, and failing would leave a stale plan name behind. The read path is loud.
@@ -437,19 +440,35 @@ defmodule Sanbase.ApiCallLimit do
             nil
         end
 
-      _other when extra_calls > 0 ->
+      _other ->
         # `plan_has_limits?/1` first: an unlimited plan has no number to add to, and
         # `plan_to_api_call_limits/1` would raise trying to read one.
-        if plan_has_limits?(plan_name) do
-          plan_name
-          |> plan_to_api_call_limits()
-          |> add_extra_calls(extra_calls)
-        end
+        cond do
+          not plan_has_limits?(plan_name) ->
+            nil
 
-      _other ->
-        nil
+          # A Business subscription created after the cutoff: the stored month replaces
+          # the plan's instead of having to beat it. See `BusinessAllowance`.
+          BusinessAllowance.reduced?(sub, plan_name) ->
+            plan_name
+            |> plan_to_api_call_limits()
+            |> Map.put(:month, BusinessAllowance.reduced_month(plan_name))
+            |> add_extra_calls(extra_calls)
+            |> mark_exact_month()
+
+          extra_calls > 0 ->
+            plan_name
+            |> plan_to_api_call_limits()
+            |> add_extra_calls(extra_calls)
+
+          true ->
+            nil
+        end
     end
   end
+
+  defp mark_exact_month(%{} = limits), do: Map.put(limits, "exact_month", true)
+  defp mark_exact_month(nil), do: nil
 
   # String keys, so what is written matches what jsonb reads back. Grants only ever add
   # to the monthly allowance: hour and minute are burst protection for the
@@ -663,6 +682,19 @@ defmodule Sanbase.ApiCallLimit do
   #
   # Hour and minute always come from the plan. They are burst protection for the
   # infrastructure rather than something sold, so buying calls must not widen them.
+  #
+  # The one exception is a row marked `"exact_month"`: a Business subscription on the
+  # reduced allowance, whose stored month is deliberately below the plan's. Only
+  # `subscription_to_resolved_api_call_limits/1` writes the marker, and it rewrites the
+  # whole map on every plan change, so it cannot outlive the subscription it was for.
+  defp granted_or_plan_api_call_limits(
+         %__MODULE__{resolved_api_call_limits: %{"exact_month" => true, "month" => month}},
+         plan
+       )
+       when is_integer(month) do
+    %{plan_to_api_call_limits(plan) | month: month}
+  end
+
   defp granted_or_plan_api_call_limits(%__MODULE__{resolved_api_call_limits: limits}, plan)
        when is_map(limits) do
     plan_limits = plan_to_api_call_limits(plan)

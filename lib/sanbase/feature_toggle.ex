@@ -1,8 +1,8 @@
 defmodule Sanbase.FeatureToggle do
   @moduledoc """
   On/off switches stored in the `feature_toggles` table. Toggles are read from
-  the database on every check, so a change (also one made with plain SQL)
-  applies immediately. A toggle without a row has its default value.
+  the database on every check, so a change applies immediately. A toggle without
+  a row has its default value.
 
   Toggles:
     - `user_registration` (default: enabled) - when disabled, no new users can
@@ -21,7 +21,9 @@ defmodule Sanbase.FeatureToggle do
       get the reduced monthly API call allowance; older ones keep the old one.
       The moment is stored in `enabled_at`. See
       `Sanbase.ApiCallLimit.BusinessAllowance`, which is also what to call from
-      IEx: turning it off there refreshes the affected customers' limits.
+      IEx: turning it off there refreshes the affected customers' limits. Change
+      it only from the admin panel or IEx, never with SQL: an `UPDATE` neither
+      stamps nor clears `enabled_at` and skips that refresh.
 
   `enabled_at` is when a toggle was last turned on, `nil` while it is off. It is
   stamped only on an actual off-to-on change, so saving an enabled toggle again
@@ -29,7 +31,8 @@ defmodule Sanbase.FeatureToggle do
 
   Toggle them in the admin panel (Feature Toggles), from IEx with
   `enable_user_registration/0` / `disable_user_registration/0` (and the
-  `eth_registration` and `eth_login_legacy` equivalents), or with SQL.
+  `eth_registration` and `eth_login_legacy` equivalents), or with SQL (except
+  `business_reduced_api_calls`, see above).
   """
 
   use Ecto.Schema
@@ -69,16 +72,29 @@ defmodule Sanbase.FeatureToggle do
 
   # Only an off-to-on change stamps the time; turning off clears it. A save that does
   # not change `enabled` leaves `enabled_at` alone.
+  #
+  # The column holds whole seconds, so the time is rounded up rather than truncated:
+  # `enabled_at` is a cutoff, and truncating would put it up to a second before the
+  # toggle was actually turned on.
   defp stamp_enabled_at(changeset) do
     case fetch_change(changeset, :enabled) do
       {:ok, true} ->
-        put_change(changeset, :enabled_at, DateTime.utc_now() |> DateTime.truncate(:second))
+        put_change(changeset, :enabled_at, ceil_to_second(DateTime.utc_now()))
 
       {:ok, false} ->
         put_change(changeset, :enabled_at, nil)
 
       :error ->
         changeset
+    end
+  end
+
+  defp ceil_to_second(%DateTime{} = datetime) do
+    truncated = DateTime.truncate(datetime, :second)
+
+    case DateTime.compare(datetime, truncated) do
+      :gt -> DateTime.add(truncated, 1, :second)
+      _ -> truncated
     end
   end
 

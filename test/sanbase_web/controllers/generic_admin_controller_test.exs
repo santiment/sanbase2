@@ -7,6 +7,7 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
   """
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import Sanbase.Factory
 
   alias Sanbase.Model.Infrastructure
@@ -205,6 +206,44 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
 
       # Turning it off refreshed the customer without any subscription event.
       assert acl_month(customer) == 600_000
+    end
+
+    test "a failed refresh after turning it off is reported, and the toggle stays off",
+         context do
+      toggle =
+        Sanbase.Repo.get_by(Sanbase.FeatureToggle, name: "business_reduced_api_calls") ||
+          Sanbase.Repo.insert!(%Sanbase.FeatureToggle{
+            name: "business_reduced_api_calls",
+            enabled: false
+          })
+
+      customer = insert(:user, email: "business-admin-fail@example.com")
+      editor_conn = sign_in(:role_admin_panel_editor)
+
+      update_toggle(editor_conn, toggle, %{"enabled" => "true"})
+
+      insert(:subscription_pro,
+        user: customer,
+        plan_id: context.plans.plan_business_pro_monthly.id,
+        status: :active,
+        stripe_id: "sub_" <> Ecto.UUID.generate(),
+        inserted_at: NaiveDateTime.add(NaiveDateTime.utc_now(), 60)
+      )
+
+      {:ok, _} = Sanbase.ApiCallLimit.update_user_plan(customer)
+      assert acl_month(customer) == 50_000
+
+      conn =
+        with_mock Sanbase.ApiCallLimit, [:passthrough],
+          update_user_plan: fn _user -> {:error, :db_down} end do
+          update_toggle(editor_conn, toggle, %{"enabled" => "false"})
+        end
+
+      # Saved before the hook ran, so off it stays; the admin is told who was missed.
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "#{customer.id}"
+      assert Sanbase.FeatureToggle.business_reduced_api_calls_since() == nil
+      refute Sanbase.Repo.get!(Sanbase.FeatureToggle, toggle.id).enabled
+      assert acl_month(customer) == 50_000
     end
 
     defp acl_month(user) do

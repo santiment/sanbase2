@@ -48,6 +48,9 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
   Turning it off refreshes every row on the reduced allowance (`refresh_reduced/0`),
   so those customers go back to the old one at once instead of at their next
   subscription event. `disable/0` does that, and so does the admin page.
+
+  Only change the toggle through those two. An `UPDATE` in SQL neither stamps nor
+  clears `enabled_at` and does not run the refresh.
   """
 
   import Ecto.Query
@@ -60,6 +63,11 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
   alias Sanbase.Repo
 
   require Logger
+
+  # Advisory locks share one namespace across the database; 8412 and 8413 are taken by
+  # the purchase lock and the invoice mirror sync.
+  @lock_namespace 8414
+  @lock_key 1
 
   @doc ~s"""
   The cutoff as a `NaiveDateTime`, or `nil` when the reduction is off.
@@ -101,6 +109,8 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
   """
   @spec refresh_reduced() :: %{refreshed: non_neg_integer(), failed: [integer()]}
   def refresh_reduced() do
+    wait_for_plan_updates()
+
     user_ids =
       from(acl in ApiCallLimit,
         where:
@@ -113,7 +123,7 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
     from(u in User, where: u.id in ^user_ids)
     |> Repo.all()
     |> Enum.reduce(%{refreshed: 0, failed: []}, fn user, acc ->
-      case ApiCallLimit.update_user_plan(user) do
+      case refresh_user(user) do
         {:ok, _} ->
           %{acc | refreshed: acc.refreshed + 1}
 
@@ -125,6 +135,37 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
           %{acc | failed: [user.id | acc.failed]}
       end
     end)
+  end
+
+  # One customer's failure must not stop the rest from being refreshed.
+  defp refresh_user(user) do
+    ApiCallLimit.update_user_plan(user)
+  rescue
+    exception -> {:error, exception}
+  end
+
+  @doc ~s"""
+  Taken (shared) by `Sanbase.ApiCallLimit.update_user_plan/1` inside its transaction,
+  before it reads the plan state and until it writes the row. Must be called inside a
+  transaction; it is released at the commit.
+  """
+  @spec lock_for_plan_update() :: :ok
+  def lock_for_plan_update() do
+    Repo.query!("SELECT pg_advisory_xact_lock_shared($1, $2)", [@lock_namespace, @lock_key])
+    :ok
+  end
+
+  # Takes the lock exclusively and lets go of it at once: that returns only after every
+  # plan update in flight has committed. Called after the toggle is turned off, every
+  # update that could still have read it as on has then written its row, so the query
+  # that follows finds it, and every later update reads the toggle as off.
+  defp wait_for_plan_updates() do
+    {:ok, _} =
+      Repo.transaction(fn ->
+        Repo.query!("SELECT pg_advisory_xact_lock($1, $2)", [@lock_namespace, @lock_key])
+      end)
+
+    :ok
   end
 
   @doc ~s"""

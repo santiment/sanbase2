@@ -74,7 +74,43 @@ defmodule Sanbase.ApiCallLimit do
     |> foreign_key_constraint(:user_id)
   end
 
+  # Runs in a transaction holding the `BusinessAllowance.lock_for_plan_update/0` lock, from
+  # before the plan state (and so the reduced-allowance toggle) is read until the row is
+  # written. `BusinessAllowance.refresh_reduced/0` takes it exclusively before
+  # it looks for reduced rows, so a refresh after the toggle is turned off waits for every
+  # update that may have read it as still on. It also makes the `FOR UPDATE` row lock
+  # hold until the write, which outside a transaction it did not.
   def update_user_plan(%User{} = user) do
+    result =
+      Repo.transaction(fn ->
+        BusinessAllowance.lock_for_plan_update()
+
+        case do_update_user_plan(user) do
+          {:ok, {acl, changeset}} -> {acl, changeset}
+          {:error, error} -> Repo.rollback(error)
+        end
+      end)
+
+    case result do
+      {:ok, {acl, changeset}} ->
+        # After the commit, so a reader cannot cache the row as it was before the write.
+        # Clear the in-memory data so the new restrictions apply sooner.
+        __MODULE__.ETS.clear_data(:user, user)
+
+        if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
+          Logger.info(
+            "Updating ApiCallLimit record for user with id #{user.id}. Was: #{changeset.data.api_calls_limit_plan}, now: #{new_plan}"
+          )
+        end
+
+        {:ok, acl}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp do_update_user_plan(user) do
     %__MODULE__{} = acl = get_by_and_lock(:user, user)
 
     {plan, subscription_status, resolved_api_call_limits} = user_to_plan_state(user)
@@ -98,21 +134,8 @@ defmodule Sanbase.ApiCallLimit do
       })
 
     case Repo.update(changeset) do
-      {:ok, _} = result ->
-        # Clear the in-memory data so the new restrictions apply sooner. Only on a real
-        # plan change.
-        __MODULE__.ETS.clear_data(:user, user)
-
-        if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
-          Logger.info(
-            "Updating ApiCallLimit record for user with id #{user.id}. Was: #{acl.api_calls_limit_plan}, now: #{new_plan}"
-          )
-        end
-
-        result
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, updated} -> {:ok, {updated, changeset}}
+      {:error, error} -> {:error, error}
     end
   end
 

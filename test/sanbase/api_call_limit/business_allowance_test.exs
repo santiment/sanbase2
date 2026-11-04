@@ -9,6 +9,7 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowanceTest do
 
   use Sanbase.DataCase, async: false
 
+  import Mock
   import Sanbase.Factory
 
   alias Sanbase.ApiCallLimit
@@ -201,9 +202,11 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowanceTest do
 
       {:ok, _} = BusinessAllowance.enable()
 
+      # Rounded up to the next whole second, never down: a cutoff before the moment
+      # it was turned on would catch a subscription created just before it.
       cutoff = BusinessAllowance.cutoff()
       assert NaiveDateTime.compare(cutoff, before_enable) != :lt
-      assert BusinessAllowance.active?()
+      assert NaiveDateTime.diff(cutoff, before_enable) <= 2
 
       # Everyone who subscribed before it is grandfathered.
       subscribe(context.user, context.pro, @created_after)
@@ -232,6 +235,29 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowanceTest do
       assert acl_limits(context.user).month == 600_000
       assert acl_limits(other).month == 1_200_000
       assert acl(context.user).resolved_api_call_limits == nil
+    end
+
+    test "a refresh that raises counts as that customer's failure, not the whole run",
+         context do
+      other = insert(:user, email: "business-raise@example.com")
+      subscribe(context.user, context.pro, @created_after)
+      subscribe(other, context.pro, @created_after)
+      set_cutoff(nil)
+
+      failing_id = other.id
+
+      result =
+        with_mock ApiCallLimit, [:passthrough],
+          update_user_plan: fn
+            %{id: ^failing_id} -> raise "boom"
+            user -> passthrough([user])
+          end do
+          BusinessAllowance.refresh_reduced()
+        end
+
+      assert result == %{refreshed: 1, failed: [other.id]}
+      assert acl_limits(context.user).month == 600_000
+      assert acl_limits(other).month == 50_000
     end
 
     test "turning it off leaves grandfathered and granted rows alone", context do

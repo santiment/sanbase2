@@ -147,7 +147,46 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLiveTest do
     assert grant.note == "INV-typed-fast"
   end
 
+  test "a Business customer's total is the one their stored limits row meters", context do
+    %{conn: conn} = context
+    customer = insert(:user, email: "business#{System.unique_integer([:positive])}@example.com")
+
+    put_reduced_toggle(true, ~U[2026-11-01 00:00:00Z])
+
+    insert(:subscription_pro,
+      user_id: customer.id,
+      plan_id: context.plans.plan_business_pro_monthly.id,
+      status: :active,
+      stripe_id: "sub_" <> Ecto.UUID.generate(),
+      inserted_at: ~N[2026-11-02 00:00:00]
+    )
+
+    {:ok, _} = ApiCallLimit.update_user_plan(customer)
+
+    # Off without the refresh, as a failed one would leave it: the customer is still
+    # metered at the reduced figure, and the page must say so rather than derive 600,000
+    # from the toggle.
+    put_reduced_toggle(false, nil)
+
+    view = select_customer(conn, customer)
+
+    assert has_element?(view, "#business-allowance-reduced")
+    assert render(view) =~ ~r/50000\s*<\/span>\s*API calls a month/
+  end
+
   # ── Helpers ─────────────────────────────────────────────────────────────
+
+  defp put_reduced_toggle(enabled, enabled_at) do
+    Repo.insert!(
+      %Sanbase.FeatureToggle{
+        name: Sanbase.FeatureToggle.business_reduced_api_calls_name(),
+        enabled: enabled,
+        enabled_at: enabled_at
+      },
+      on_conflict: {:replace, [:enabled, :enabled_at]},
+      conflict_target: :name
+    )
+  end
 
   defp submit_grant(view, params) do
     view |> form("form[phx-submit=apply_grant]", params) |> render_submit()

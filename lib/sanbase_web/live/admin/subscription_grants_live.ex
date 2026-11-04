@@ -30,6 +30,7 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
   import Ecto.Query
 
   alias Sanbase.Accounts.User
+  alias Sanbase.ApiCallLimit
   alias Sanbase.ApiCallLimit.BusinessAllowance
   alias Sanbase.Billing.Plan.Bundle.Package
   alias Sanbase.Billing.Plan.Bundle.PackageSnapshot
@@ -352,27 +353,63 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
     plan_base = Sanbase.ApiCallLimit.Restrictions.call_limits_per_month()[plan_key]
     extra = subscription |> Subscription.grant() |> Grant.extra_api_calls()
 
-    {base, allowance} = business_allowance(subscription, plan_key, plan_base)
+    case plan_base do
+      nil ->
+        nil
 
-    case base do
-      nil -> nil
-      base -> %{base: base, extra: extra, total: base + extra, allowance: allowance}
+      plan_base ->
+        stored = stored_limits(subscription, plan_key)
+        {base, allowance} = business_allowance(subscription, plan_key, plan_base, stored)
+        total = if stored, do: stored.month, else: base + extra
+
+        %{
+          base: base,
+          extra: extra,
+          total: total,
+          allowance: allowance,
+          in_sync?: total == base + extra
+        }
     end
   end
 
-  # Mirrors what the quota path stores for this subscription, so the page never shows
-  # a Business customer a figure they are not actually metered at.
-  defp business_allowance(subscription, plan_key, plan_base) do
-    cond do
-      BusinessAllowance.reduced?(subscription, plan_key) ->
-        {BusinessAllowance.reduced_month(plan_key), :reduced}
+  # The customer's `api_call_limits` row, read as the quota path reads it - the figure
+  # they are actually metered at. `nil` when there is no row, or the row is for another
+  # plan (the user has several subscriptions, or it has not been refreshed since a plan
+  # change), so the page then falls back to deriving the figure from the plan.
+  defp stored_limits(%Subscription{user_id: user_id}, plan_key) do
+    case Repo.get_by(ApiCallLimit, user_id: user_id) do
+      %ApiCallLimit{api_calls_limit_plan: ^plan_key} = acl ->
+        %{
+          month: ApiCallLimit.acl_to_api_call_limits(acl).month,
+          exact_month?: match?(%{"exact_month" => true}, acl.resolved_api_call_limits)
+        }
 
-      BusinessAllowance.reducible_plan?(plan_key) and not is_nil(BusinessAllowance.cutoff()) ->
-        {plan_base, :grandfathered}
-
-      true ->
-        {plan_base, nil}
+      _ ->
+        nil
     end
+  end
+
+  # The base and status follow the stored row when there is one: whether the customer is
+  # on the reduced allowance is what was written for them, not what the cutoff would say
+  # today. Without a row, they are derived the way the quota path would derive them.
+  defp business_allowance(_subscription, plan_key, plan_base, %{exact_month?: true}) do
+    {BusinessAllowance.reduced_month(plan_key) || plan_base, :reduced}
+  end
+
+  defp business_allowance(_subscription, plan_key, plan_base, %{exact_month?: false}) do
+    {plan_base, grandfathered_or_nil(plan_key)}
+  end
+
+  defp business_allowance(subscription, plan_key, plan_base, nil) do
+    if BusinessAllowance.reduced?(subscription, plan_key),
+      do: {BusinessAllowance.reduced_month(plan_key), :reduced},
+      else: {plan_base, grandfathered_or_nil(plan_key)}
+  end
+
+  defp grandfathered_or_nil(plan_key) do
+    if BusinessAllowance.reducible_plan?(plan_key) and not is_nil(BusinessAllowance.cutoff()),
+      do: :grandfathered,
+      else: nil
   end
 
   # ── Render ──────────────────────────────────────────────────────────────
@@ -513,6 +550,14 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
               class="text-xs text-base-content/60"
             >
               Grandfathered: subscribed before {BusinessAllowance.cutoff()}, keeps the old allowance.
+            </div>
+            <div
+              :if={!calls.in_sync?}
+              id="api-call-limits-not-in-sync"
+              class="text-xs text-warning"
+            >
+              The customer is metered at {calls.total}, which does not match the plan and grant
+              above: their API call limits have not been refreshed since the last change.
             </div>
           </div>
 

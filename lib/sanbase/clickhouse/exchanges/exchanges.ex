@@ -1,11 +1,12 @@
 defmodule Sanbase.Clickhouse.Exchanges do
   alias Sanbase.ClickhouseRepo, as: ClickhouseRepo
   alias Sanbase.Clickhouse.MetricAdapter.Registry
+  alias Sanbase.Clickhouse.MetricAdapter.LabeledBalance
 
   import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]
 
-  def top_exchanges_by_balance(%{slug: slug}, limit, _opts \\ []) when is_binary(slug) do
-    case top_exchanges_by_balance_query(slug, limit) do
+  def top_exchanges_by_balance(%{slug: slug}, limit, opts \\ []) when is_binary(slug) do
+    case top_exchanges_by_balance_query(slug, limit, opts) do
       {:error, _} = error ->
         error
 
@@ -99,14 +100,76 @@ defmodule Sanbase.Clickhouse.Exchanges do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp top_exchanges_by_balance_query(slug, limit) do
+  defp top_exchanges_by_balance_query(slug, limit, opts) do
     case Sanbase.Project.slug_to_blockchain(slug) do
-      {:error, _} = error -> error
-      blockchain -> do_top_exchanges_by_balance_query(slug, limit, blockchain)
+      {:error, _} = error ->
+        error
+
+      blockchain ->
+        balances_sql =
+          case LabeledBalance.slugs_source([slug], opts) do
+            :delta -> balances_from_delta_sql(slug)
+            :legacy -> balances_sql(slug)
+          end
+
+        do_top_exchanges_by_balance_query(slug, limit, blockchain, balances_sql)
     end
   end
 
-  defp do_top_exchanges_by_balance_query(slug, limit, blockchain) do
+  # The balances are computed from `combined_labeled_balance_delta`. The balance N days
+  # ago is the sum of the deltas before that day.
+  defp balances_from_delta_sql(slug) do
+    """
+    interesting_metrics AS (
+        SELECT label_id, dt, argMax(value, computed_at) AS delta
+        FROM labeled_intraday_metrics_v2
+        WHERE
+            label_id IN (SELECT label_id FROM exchange_label_ids)
+            AND blockchain = {{blockchain}}
+            AND #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
+            AND metric_id = dictGet(metrics_by_name, 'metric_id', 'combined_labeled_balance_delta')
+        GROUP BY label_id, dt
+    ),
+    all_balances AS (
+        SELECT
+            label_id,
+            sum(delta) AS latest_balance,
+            sumIf(delta, dt < today() - INTERVAL 1 DAY) AS balance_1d,
+            sumIf(delta, dt < today() - INTERVAL 7 DAY) AS balance_7d,
+            sumIf(delta, dt < today() - INTERVAL 30 DAY) AS balance_30d,
+            min(dt) AS first_seen
+        FROM interesting_metrics
+        GROUP BY label_id
+    )
+    """
+  end
+
+  defp balances_sql(slug) do
+    """
+    interesting_metrics AS (
+        SELECT label_id, dt, value
+        FROM labeled_intraday_metrics_v2
+        WHERE
+            label_id IN (SELECT label_id FROM exchange_label_ids)
+            AND blockchain = {{blockchain}}
+            AND #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
+            AND metric_id = dictGet(metrics_by_name, 'metric_id', 'combined_labeled_balance')
+    ),
+    all_balances AS (
+        SELECT
+            label_id,
+            argMax(value, dt) AS latest_balance,
+            argMinIfOrNull(value, dt, dt >= today() - INTERVAL 1 DAY) AS balance_1d,
+            argMinIfOrNull(value, dt, dt >= today() - INTERVAL 7 DAY) AS balance_7d,
+            argMinIfOrNull(value, dt, dt >= today() - INTERVAL 30 DAY) AS balance_30d,
+            min(dt) AS first_seen
+        FROM interesting_metrics
+        GROUP BY label_id
+    )
+    """
+  end
+
+  defp do_top_exchanges_by_balance_query(slug, limit, blockchain, balances_sql) do
     params = %{
       slug: slug,
       limit: limit,
@@ -139,26 +202,7 @@ defmodule Sanbase.Clickhouse.Exchanges do
             AND cityHash64(address) IN (SELECT address_hash FROM address_hashes)
             AND dictGet('labels', 'value', label_id) != ''
     ),
-    interesting_metrics AS (
-        SELECT label_id, dt, value
-        FROM labeled_intraday_metrics_v2
-        WHERE
-            label_id IN (SELECT label_id FROM exchange_label_ids)
-            AND blockchain = {{blockchain}}
-            AND #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
-            AND metric_id = dictGet(metrics_by_name, 'metric_id', 'combined_labeled_balance')
-    ),
-    all_balances AS (
-        SELECT
-            label_id,
-            argMax(value, dt) AS latest_balance,
-            argMinIfOrNull(value, dt, dt >= today() - INTERVAL 1 DAY) AS balance_1d,
-            argMinIfOrNull(value, dt, dt >= today() - INTERVAL 7 DAY) AS balance_7d,
-            argMinIfOrNull(value, dt, dt >= today() - INTERVAL 30 DAY) AS balance_30d,
-            min(dt) AS first_seen
-        FROM interesting_metrics
-        GROUP BY label_id
-    )
+    #{balances_sql}
     SELECT DISTINCT
         dictGet(labels, 'value', all_balances.label_id) AS owner,
         exchange_label_ids.cex_or_dex_label,

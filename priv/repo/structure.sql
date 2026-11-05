@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict TLGDVffcJP7DqUEWwi7gju2eN4U58wIwd05EpMPzI0CI4uQQL37uKZndat2dY3f
+\restrict UBJaEJNfiMRvr2rvtiri7iN2VC38wqdNDzMdpAWUINgTY9dg3DlM2z4F2FK9IRC
 
 -- Dumped from database version 17.10 (Homebrew)
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -458,6 +458,58 @@ CREATE SEQUENCE public.ai_gen_code_id_seq
 --
 
 ALTER SEQUENCE public.ai_gen_code_id_seq OWNED BY public.ai_gen_code.id;
+
+
+--
+-- Name: ai_review_issue_turns; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_review_issue_turns (
+    issue_id bigint NOT NULL,
+    ai_context_id bigint NOT NULL,
+    inserted_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: ai_review_issues; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_review_issues (
+    id bigint NOT NULL,
+    signature character varying(255) NOT NULL,
+    flag character varying(255) NOT NULL,
+    status character varying(255) DEFAULT 'open'::character varying NOT NULL,
+    occurrences integer DEFAULT 0 NOT NULL,
+    recurrences integer DEFAULT 0 NOT NULL,
+    first_seen_at timestamp(0) without time zone NOT NULL,
+    last_seen_at timestamp(0) without time zone NOT NULL,
+    last_ai_context_id bigint,
+    resolved_at timestamp(0) without time zone,
+    resolved_by_id bigint,
+    resolution_note text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ai_review_issues_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_review_issues_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ai_review_issues_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_review_issues_id_seq OWNED BY public.ai_review_issues.id;
 
 
 --
@@ -1811,7 +1863,8 @@ CREATE TABLE public.feature_toggles (
     name character varying(255) NOT NULL,
     enabled boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    enabled_at timestamp(0) without time zone
 );
 
 
@@ -6152,6 +6205,13 @@ ALTER TABLE ONLY public.ai_gen_code ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: ai_review_issues id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_review_issues ALTER COLUMN id SET DEFAULT nextval('public.ai_review_issues_id_seq'::regclass);
+
+
+--
 -- Name: alpha_naratives_emails id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7212,6 +7272,14 @@ ALTER TABLE ONLY public.ai_context
 
 ALTER TABLE ONLY public.ai_gen_code
     ADD CONSTRAINT ai_gen_code_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_review_issues ai_review_issues_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_review_issues
+    ADD CONSTRAINT ai_review_issues_pkey PRIMARY KEY (id);
 
 
 --
@@ -8595,6 +8663,34 @@ CREATE INDEX ai_context_inserted_at_index ON public.ai_context USING btree (inse
 --
 
 CREATE INDEX ai_context_status_index ON public.ai_context USING btree (status) WHERE ((status)::text <> 'ok'::text);
+
+
+--
+-- Name: ai_review_issue_turns_ai_context_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ai_review_issue_turns_ai_context_id_index ON public.ai_review_issue_turns USING btree (ai_context_id);
+
+
+--
+-- Name: ai_review_issue_turns_issue_id_ai_context_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ai_review_issue_turns_issue_id_ai_context_id_index ON public.ai_review_issue_turns USING btree (issue_id, ai_context_id);
+
+
+--
+-- Name: ai_review_issues_signature_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ai_review_issues_signature_index ON public.ai_review_issues USING btree (signature);
+
+
+--
+-- Name: ai_review_issues_updated_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ai_review_issues_updated_at_index ON public.ai_review_issues USING btree (updated_at);
 
 
 --
@@ -10498,6 +10594,38 @@ ALTER TABLE ONLY public.ai_gen_code
 
 
 --
+-- Name: ai_review_issue_turns ai_review_issue_turns_ai_context_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_review_issue_turns
+    ADD CONSTRAINT ai_review_issue_turns_ai_context_id_fkey FOREIGN KEY (ai_context_id) REFERENCES public.ai_context(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ai_review_issue_turns ai_review_issue_turns_issue_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_review_issue_turns
+    ADD CONSTRAINT ai_review_issue_turns_issue_id_fkey FOREIGN KEY (issue_id) REFERENCES public.ai_review_issues(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ai_review_issues ai_review_issues_last_ai_context_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_review_issues
+    ADD CONSTRAINT ai_review_issues_last_ai_context_id_fkey FOREIGN KEY (last_ai_context_id) REFERENCES public.ai_context(id) ON DELETE SET NULL;
+
+
+--
+-- Name: ai_review_issues ai_review_issues_resolved_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_review_issues
+    ADD CONSTRAINT ai_review_issues_resolved_by_id_fkey FOREIGN KEY (resolved_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: api_call_limits api_call_limits_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11957,7 +12085,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict TLGDVffcJP7DqUEWwi7gju2eN4U58wIwd05EpMPzI0CI4uQQL37uKZndat2dY3f
+\unrestrict UBJaEJNfiMRvr2rvtiri7iN2VC38wqdNDzMdpAWUINgTY9dg3DlM2z4F2FK9IRC
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -12586,3 +12714,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261028145234);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102134701);
+INSERT INTO public."schema_migrations" (version) VALUES (20261104135841);
+INSERT INTO public."schema_migrations" (version) VALUES (20261105115831);

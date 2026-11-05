@@ -287,7 +287,13 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
          %{metric: metric, from: from, to: to, page: page, page_size: page_size} = params,
          frame
        ) do
-    with {:ok, metadata} <- Sanbase.Metric.metadata(metric) do
+    # Resolved once, so the filters, the ranking and the returned values all
+    # use the same window. Rounded up to 5 minutes, as the screener does, so
+    # repeated calls hit its filter cache.
+    {from, to} = {resolve_datetime(from), resolve_datetime(to)}
+
+    with {:ok, metadata} <- Sanbase.Metric.metadata(metric),
+         {:ok, extra_filters} <- extra_filters(params[:filters], from, to) do
       aggregation = to_aggregation(Map.get(params, :aggregation), metadata.default_aggregation)
 
       operator = if operator = params[:operator], do: safe_existing_atom(operator)
@@ -301,7 +307,7 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
           []
         end
 
-      filters = filters ++ extra_filters(params[:filters], from, to)
+      filters = filters ++ extra_filters
 
       pagination = %{page: page, page_size: page_size}
 
@@ -330,7 +336,7 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
 
           result = %{
             assets: slugs,
-            values: values(slugs, metric, aggregation, params),
+            values: values(slugs, metric, aggregation, from, to, params),
             page: page,
             page_size: page_size,
             total_assets: total_projects_count
@@ -361,14 +367,20 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
     }
   end
 
-  defp extra_filters(nil, _from, _to), do: []
+  defp extra_filters(nil, _from, _to), do: {:ok, []}
 
   defp extra_filters(filters, from, to) do
-    Enum.map(filters, fn filter ->
-      {:ok, metadata} = Sanbase.Metric.metadata(filter.metric)
-      aggregation = to_aggregation(filter[:aggregation], metadata.default_aggregation)
-      operator = safe_existing_atom(filter.operator)
-      metric_filter(filter.metric, from, to, aggregation, operator, filter.threshold)
+    Enum.reduce_while(filters, {:ok, []}, fn filter, {:ok, acc} ->
+      case Sanbase.Metric.metadata(filter.metric) do
+        {:ok, metadata} ->
+          aggregation = to_aggregation(filter[:aggregation], metadata.default_aggregation)
+          operator = safe_existing_atom(filter.operator)
+          filter = metric_filter(filter.metric, from, to, aggregation, operator, filter.threshold)
+          {:cont, {:ok, acc ++ [filter]}}
+
+        {:error, _} ->
+          {:halt, {:error, "Filter metric '#{filter.metric}' is not available right now."}}
+      end
     end)
   end
 
@@ -379,15 +391,22 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
 
   # One row per asset on the page, in ranking order. Only the page's slugs are
   # queried (at most @max_page_size), one aggregated query per metric.
-  defp values([], _metric, _aggregation, _params), do: []
+  defp values([], _metric, _aggregation, _from, _to, _params), do: []
 
-  defp values(slugs, metric, aggregation, params) do
-    {from, to} = {to_datetime(params.from), to_datetime(params.to)}
+  defp values(slugs, metric, aggregation, from, to, params) do
     value_aggregation = params[:value_aggregation]
+
+    # The ranked metric is always a column. Asking for it again as a value
+    # metric would overwrite that column under the same key, so it is skipped,
+    # except for percent_change, which has its own key.
+    value_metrics =
+      (params[:value_metrics] || [])
+      |> Enum.uniq()
+      |> Enum.reject(&(&1 == metric and value_aggregation != "percent_change"))
 
     columns =
       [{metric, aggregated_values(metric, slugs, from, to, aggregation)}] ++
-        Enum.map(Enum.uniq(params[:value_metrics] || []), fn value_metric ->
+        Enum.map(value_metrics, fn value_metric ->
           value_column(value_metric, slugs, from, to, value_aggregation)
         end)
 
@@ -409,9 +428,14 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   end
 
   defp value_column(metric, slugs, from, to, value_aggregation) do
-    {:ok, metadata} = Sanbase.Metric.metadata(metric)
-    aggregation = to_aggregation(value_aggregation, metadata.default_aggregation)
-    {metric, aggregated_values(metric, slugs, from, to, aggregation)}
+    case Sanbase.Metric.metadata(metric) do
+      {:ok, metadata} ->
+        aggregation = to_aggregation(value_aggregation, metadata.default_aggregation)
+        {metric, aggregated_values(metric, slugs, from, to, aggregation)}
+
+      {:error, _} ->
+        {metric, %{}}
+    end
   end
 
   defp percent_change(first, last)
@@ -421,38 +445,56 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   defp percent_change(_first, _last), do: nil
 
   # A failed lookup leaves the column empty (null values) rather than failing
-  # the ranking, which the caller already has. Some metrics (social ones) do
-  # not take a list of slugs; they can still be the ranked metric, so they are
-  # fetched per slug.
+  # the ranking, which the caller already has. Metrics that do not take a list
+  # of slugs (social ones, `supports_many_slugs: false`) can still be the
+  # ranked metric, so they are fetched per slug. Any other batch failure is not
+  # retried per slug: that would only repeat the failure up to 100 times.
   defp aggregated_values(metric, slugs, from, to, aggregation) do
-    opts = [aggregation: aggregation]
+    if supports_many_slugs?(metric),
+      do: fetch_aggregated(metric, slugs, from, to, aggregation),
+      else: fetch_aggregated_per_slug(metric, slugs, from, to, aggregation)
+  end
 
-    case Sanbase.Metric.aggregated_timeseries_data(metric, %{slug: slugs}, from, to, opts) do
-      {:ok, %{} = values} ->
-        values
+  defp fetch_aggregated(metric, slug_or_slugs, from, to, aggregation) do
+    selector = %{slug: slug_or_slugs}
 
-      _ ->
-        slugs
-        |> Sanbase.Parallel.map(
-          fn slug ->
-            case Sanbase.Metric.aggregated_timeseries_data(metric, %{slug: slug}, from, to, opts) do
-              {:ok, %{} = values} -> values
-              _ -> %{}
-            end
-          end,
-          max_concurrency: 10,
-          timeout: 30_000,
-          on_timeout: :kill_task
-        )
-        |> Enum.filter(&is_map/1)
-        |> Enum.reduce(%{}, &Map.merge/2)
+    case Sanbase.Metric.aggregated_timeseries_data(metric, selector, from, to,
+           aggregation: aggregation
+         ) do
+      {:ok, %{} = values} -> values
+      _ -> %{}
     end
   end
 
-  defp to_datetime("utc_now" <> _ = value),
-    do: Sanbase.Utils.DateTime.utc_now_string_to_datetime!(value)
+  defp fetch_aggregated_per_slug(metric, slugs, from, to, aggregation) do
+    slugs
+    |> Sanbase.Parallel.map(&fetch_aggregated(metric, &1, from, to, aggregation),
+      max_concurrency: 10,
+      timeout: 30_000,
+      on_timeout: :kill_task
+    )
+    |> Enum.filter(&is_map/1)
+    |> Enum.reduce(%{}, &Map.merge/2)
+  end
 
-  defp to_datetime(value), do: Sanbase.Utils.DateTime.from_iso8601!(value)
+  defp supports_many_slugs?(metric) do
+    match?(
+      %{supports_many_slugs: true},
+      Enum.find(DataCatalog.available_metrics(), &(&1.name == metric))
+    )
+  end
+
+  defp resolve_datetime("utc_now" <> _ = value) do
+    value
+    |> Sanbase.Utils.DateTime.utc_now_string_to_datetime!()
+    |> Sanbase.Utils.DateTime.round_datetime(rounding: :up)
+  end
+
+  defp resolve_datetime(value) do
+    value
+    |> Sanbase.Utils.DateTime.from_iso8601!()
+    |> Sanbase.Utils.DateTime.round_datetime(rounding: :up)
+  end
 
   defp validate_filters(nil), do: :ok
   defp validate_filters([]), do: :ok

@@ -208,11 +208,13 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
   end
 
   test "extra filters narrow the ranking to assets that pass all of them", _context do
+    # Matching on the operator and threshold makes the test fail if a filter
+    # reaches the screener with the wrong predicate.
     slugs_by_filter = fn
-      "price_usd", _from, _to, _operator, _threshold, _opts ->
+      "price_usd", _from, _to, :percent_down, 5, _opts ->
         {:ok, ["bitcoin", "ethereum", "maker"]}
 
-      "daily_active_addresses", _from, _to, _operator, _threshold, _opts ->
+      "daily_active_addresses", _from, _to, :greater_than, 1000, _opts ->
         {:ok, ["ethereum", "maker", "solana"]}
     end
 
@@ -239,6 +241,61 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
 
       assert response["assets"] == ["ethereum", "maker"]
       assert response["total_assets"] == 2
+    end)
+  end
+
+  test "fetches a ranked metric that takes no slug list one slug at a time", _context do
+    # social_volume_total has supports_many_slugs: false, so its values are
+    # fetched per slug and merged.
+    aggregated = fn
+      "social_volume_total", %{slug: slug}, _from, _to, _opts when is_binary(slug) ->
+        {:ok, %{slug => %{"bitcoin" => 900, "ethereum" => 400}[slug]}}
+    end
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/5, {:ok, ["bitcoin", "ethereum"]})
+    |> Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, aggregated)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      response =
+        call_tool(%{
+          metric: "social_volume_total",
+          from: "utc_now-1d",
+          to: "utc_now",
+          page: 1,
+          page_size: 2,
+          sort: "desc"
+        })
+
+      assert response["values"] == [
+               %{"slug" => "bitcoin", "social_volume_total" => 900},
+               %{"slug" => "ethereum", "social_volume_total" => 400}
+             ]
+    end)
+  end
+
+  test "asking for the ranked metric again keeps its ranked value", _context do
+    aggregated = fn "price_usd", _selector, _from, _to, opts ->
+      case Keyword.get(opts, :aggregation) do
+        :last -> {:ok, %{"bitcoin" => 105.0}}
+        :max -> {:ok, %{"bitcoin" => 110.0}}
+      end
+    end
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/5, {:ok, ["bitcoin"]})
+    |> Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, aggregated)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      response =
+        call_tool(%{
+          metric: "price_usd",
+          from: "utc_now-1d",
+          to: "utc_now",
+          page: 1,
+          page_size: 1,
+          sort: "desc",
+          value_metrics: ["price_usd"],
+          value_aggregation: "max"
+        })
+
+      assert response["values"] == [%{"slug" => "bitcoin", "price_usd" => 105.0}]
     end)
   end
 

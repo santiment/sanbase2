@@ -132,6 +132,7 @@ defmodule Sanbase.DiscordBot.AiContext do
   def create(params) do
     changeset(%__MODULE__{}, params)
     |> Repo.insert()
+    |> record_review_issues()
   end
 
   @doc """
@@ -179,6 +180,7 @@ defmodule Sanbase.DiscordBot.AiContext do
     ai_context
     |> changeset(%{delivery_status: "failed", delivery_error: delivery_error(reason)})
     |> Repo.update()
+    |> record_review_issues()
   end
 
   defp delivery_error(reason) when is_binary(reason), do: String.slice(reason, 0, 2000)
@@ -191,7 +193,18 @@ defmodule Sanbase.DiscordBot.AiContext do
 
     changeset(context, %{votes: updated_votes})
     |> Repo.update()
+    |> record_review_issues()
   end
+
+  # Keeps the review issues (`Sanbase.DiscordBot.AiReviewIssues`) in step with
+  # the turn as soon as it is written or a later change (failed delivery, a
+  # vote) adds a problem. Recording never fails the write.
+  defp record_review_issues({:ok, %__MODULE__{} = context} = result) do
+    Sanbase.DiscordBot.AiReviewIssues.record(context)
+    result
+  end
+
+  defp record_review_issues(result), do: result
 
   def check_limits(args) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)

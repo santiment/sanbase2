@@ -81,7 +81,15 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
   object :subscription_plan do
     field(:id, :id)
     field(:user, :user)
-    field(:plan, :plan)
+
+    @desc ~s"""
+    The subscription's plan. Its `apiCallLimits` are this subscription's: a Business
+    subscription from before the reduced allowance keeps the old monthly figure.
+    """
+    field :plan, :plan do
+      resolve(&BillingResolver.subscription_plan/3)
+    end
+
     field(:type, :subscription_type)
     field(:current_period_end, :datetime)
     field(:cancel_at_period_end, :boolean)

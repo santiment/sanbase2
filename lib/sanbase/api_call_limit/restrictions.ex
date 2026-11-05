@@ -62,6 +62,19 @@ defmodule Sanbase.ApiCallLimit.Restrictions do
     }
   end
 
+  @doc ~s"""
+  The monthly allowance of Business subscriptions created on or after the cutoff
+  in `Sanbase.ApiCallLimit.BusinessAllowance`. Subscriptions created before it keep
+  the figures in `call_limits_per_month/0`, which is why those are not lowered.
+  Extra calls are sold on top as add-ons.
+  """
+  def reduced_business_call_limits_per_month() do
+    %{
+      "sanapi_business_pro" => 50_000,
+      "sanapi_business_max" => 50_000
+    }
+  end
+
   def call_limits_per_hour() do
     %{
       "sanbase_basic" => 500,

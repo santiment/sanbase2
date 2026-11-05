@@ -16,6 +16,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     Plan.product_with_plans(include_new_offering: visible?)
   end
 
+  @doc ~s"""
+  The `plan` of a subscription, carrying the subscription so its `apiCallLimits`
+  answer for this customer (`Plan.api_call_limits/1`) instead of the catalog.
+  """
+  def subscription_plan(%Subscription{} = subscription, _args, _resolution) do
+    case Sanbase.Repo.preload(subscription, :plan) do
+      %Subscription{plan: %Plan{} = plan} = subscription ->
+        {:ok, %Plan{plan | metered_subscription: subscription}}
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  def subscription_plan(%{plan: plan}, _args, _resolution), do: {:ok, plan}
+  def subscription_plan(_source, _args, _resolution), do: {:ok, nil}
+
   def plan_api_call_limits(%Plan{} = plan, _args, _resolution) do
     {:ok, Plan.api_call_limits(plan)}
   end

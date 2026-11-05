@@ -51,6 +51,11 @@ defmodule Sanbase.Billing.Plan do
     field(:has_custom_restrictions, :boolean)
     embeds_one(:restrictions, CustomPlan.Restrictions, on_replace: :update)
 
+    # Set only when the plan is read through a subscription (the `plan` of a GraphQL
+    # `subscription_plan`), so `api_call_limits/1` answers for that subscription
+    # rather than for someone subscribing now. See `standard_api_call_limits/1`.
+    field(:metered_subscription, :any, virtual: true)
+
     belongs_to(:product, Product)
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
   end
@@ -357,12 +362,32 @@ defmodule Sanbase.Billing.Plan do
         nil
 
       month ->
+        month = business_month(plan, key, month)
+
         %{
           month: month,
           hour: Map.fetch!(Sanbase.ApiCallLimit.Restrictions.call_limits_per_hour(), key),
           minute: Map.fetch!(Sanbase.ApiCallLimit.Restrictions.call_limits_per_minute(), key)
         }
     end
+  end
+
+  # Read through a subscription, the plan answers with that subscription's allowance:
+  # a grandfathered Business customer keeps the old figure.
+  defp business_month(%__MODULE__{metered_subscription: %Subscription{} = sub}, key, month) do
+    if Sanbase.ApiCallLimit.BusinessAllowance.reduced?(sub, key),
+      do: Sanbase.ApiCallLimit.BusinessAllowance.reduced_month(key),
+      else: month
+  end
+
+  # The catalog shows what subscribing now gets: once the reduced Business allowance is
+  # in force, that is the reduced figure, even though existing subscribers keep the old
+  # one. The reducible check comes first so other plans never read the toggle.
+  defp business_month(_plan, key, month) do
+    if Sanbase.ApiCallLimit.BusinessAllowance.reducible_plan?(key) and
+         Sanbase.ApiCallLimit.BusinessAllowance.active?(),
+       do: Sanbase.ApiCallLimit.BusinessAllowance.reduced_month(key),
+       else: month
   end
 
   def plan_full_name(plan) do

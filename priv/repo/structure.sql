@@ -1811,7 +1811,8 @@ CREATE TABLE public.feature_toggles (
     name character varying(255) NOT NULL,
     enabled boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    enabled_at timestamp(0) without time zone
 );
 
 
@@ -12586,3 +12587,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261028145234);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102134701);
+INSERT INTO public."schema_migrations" (version) VALUES (20261104135841);

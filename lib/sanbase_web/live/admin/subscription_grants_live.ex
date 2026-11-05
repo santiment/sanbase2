@@ -30,6 +30,8 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
   import Ecto.Query
 
   alias Sanbase.Accounts.User
+  alias Sanbase.ApiCallLimit
+  alias Sanbase.ApiCallLimit.BusinessAllowance
   alias Sanbase.Billing.Plan.Bundle.Package
   alias Sanbase.Billing.Plan.Bundle.PackageSnapshot
   alias Sanbase.Billing.Subscription
@@ -348,12 +350,93 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
         Sanbase.Billing.Subscription.plan_name(subscription)
       )
 
-    base = Sanbase.ApiCallLimit.Restrictions.call_limits_per_month()[plan_key]
+    plan_base = Sanbase.ApiCallLimit.Restrictions.call_limits_per_month()[plan_key]
     extra = subscription |> Subscription.grant() |> Grant.extra_api_calls()
 
-    case base do
+    case plan_base do
       nil -> nil
-      base -> %{base: base, extra: extra, total: base + extra}
+      plan_base -> monthly_calls(subscription, plan_key, plan_base, extra)
+    end
+  end
+
+  # `base` and `expected` are what the current policy gives this subscription; `total`
+  # is what the customer is actually metered at, read from their `api_call_limits` row.
+  # The two differ when the row has not been refreshed since a change - including a
+  # reduced row left behind after the reduction was turned off - and the page says so.
+  defp monthly_calls(subscription, plan_key, plan_base, extra) do
+    base =
+      if BusinessAllowance.reduced?(subscription, plan_key),
+        do: BusinessAllowance.reduced_month(plan_key),
+        else: plan_base
+
+    expected = base + extra
+
+    case stored_row(subscription, plan_key) do
+      # The row is for this subscription and its plan: it is what the customer gets.
+      {:applies, %ApiCallLimit{} = acl} ->
+        total = ApiCallLimit.acl_to_api_call_limits(acl).month
+        exact_month? = match?(%{"exact_month" => true}, acl.resolved_api_call_limits)
+
+        %{
+          base: base,
+          extra: extra,
+          total: total,
+          allowance: allowance(subscription, plan_key, exact_month?),
+          in_sync?: total == expected
+        }
+
+      # The row is for this subscription but still on another plan: not refreshed.
+      :stale ->
+        %{
+          base: base,
+          extra: extra,
+          total: expected,
+          allowance: allowance(subscription, plan_key, false),
+          in_sync?: false
+        }
+
+      # No row yet, or this is not the subscription the row meters.
+      :none ->
+        %{
+          base: base,
+          extra: extra,
+          total: expected,
+          allowance: allowance(subscription, plan_key, false),
+          in_sync?: true
+        }
+    end
+  end
+
+  # The row meters the customer's current subscription - the API one first, then
+  # Sanbase, as `ApiCallLimit` picks it - so it only says something about that one. A
+  # second subscription on the same plan (monthly and yearly) shares the plan key, so
+  # the key alone cannot tell which subscription the row is for.
+  defp stored_row(%Subscription{id: id, user_id: user_id}, plan_key) do
+    current =
+      Subscription.current_subscription(user_id, Sanbase.Billing.Product.product_api()) ||
+        Subscription.current_subscription(user_id, Sanbase.Billing.Product.product_sanbase())
+
+    with %Subscription{id: ^id} <- current,
+         %ApiCallLimit{} = acl <- Repo.get_by(ApiCallLimit, user_id: user_id) do
+      if acl.api_calls_limit_plan == plan_key, do: {:applies, acl}, else: :stale
+    else
+      _ -> :none
+    end
+  end
+
+  # `:reduced` when the customer is metered at the reduced allowance - by policy, or by a
+  # row still marked so - and `:grandfathered` when the reduction is on and this
+  # subscription predates it.
+  defp allowance(subscription, plan_key, exact_month?) do
+    cond do
+      exact_month? or BusinessAllowance.reduced?(subscription, plan_key) ->
+        :reduced
+
+      BusinessAllowance.reducible_plan?(plan_key) and not is_nil(BusinessAllowance.cutoff()) ->
+        :grandfathered
+
+      true ->
+        nil
     end
   end
 
@@ -474,7 +557,7 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
           <% calls = resolved_monthly_calls(@selected) %>
 
           <div :if={calls} class="text-sm">
-            <span class="font-mono">{calls.total}</span>
+            <span id="monthly-calls-total" class="font-mono">{calls.total}</span>
             API calls a month
             <span :if={calls.extra > 0} class="text-base-content/60">
               ({calls.base} from the plan + {calls.extra} granted)
@@ -482,6 +565,33 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLive do
             <span :if={calls.extra == 0} class="text-base-content/60">
               (from the plan; nothing granted)
             </span>
+            <div
+              :if={calls.allowance == :reduced}
+              id="business-allowance-reduced"
+              class="text-xs text-base-content/60"
+            >
+              <%= if cutoff = BusinessAllowance.cutoff() do %>
+                Reduced Business allowance: subscribed on or after {cutoff}.
+              <% else %>
+                Reduced Business allowance: the reduction is off, but this customer stays on the
+                reduced allowance until their API call limits are next refreshed.
+              <% end %>
+            </div>
+            <div
+              :if={calls.allowance == :grandfathered}
+              id="business-allowance-grandfathered"
+              class="text-xs text-base-content/60"
+            >
+              Grandfathered: subscribed before {BusinessAllowance.cutoff()}, keeps the old allowance.
+            </div>
+            <div
+              :if={!calls.in_sync?}
+              id="api-call-limits-not-in-sync"
+              class="text-xs text-warning"
+            >
+              The customer is metered at {calls.total}, which does not match the plan and grant
+              above: their API call limits have not been refreshed since the last change.
+            </div>
           </div>
 
           <div :if={is_nil(calls)} class="text-sm text-base-content/60">

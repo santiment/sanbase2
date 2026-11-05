@@ -987,6 +987,55 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
     end)
   end
 
+  test "fetch metric skips unknown slugs and fetches the rest", _context do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.timeseries_data_per_slug/5,
+      {:ok,
+       [
+         %{
+           datetime: ~U[2020-01-01 00:00:00Z],
+           data: [%{slug: "bitcoin", value: 1.5}, %{slug: "ethereum", value: 10.5}]
+         }
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      {:ok, %Anubis.MCP.Response{is_error: false, result: %{"content" => [%{"text" => json}]}}} =
+        try_few_times(
+          fn ->
+            Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+              slugs: ["bitcoin", "not_a_slug", "ethereum"],
+              metric: "price_usd"
+            })
+          end,
+          attempts: 3,
+          sleep: 250
+        )
+
+      response = Jason.decode!(json)
+
+      assert response["slugs"] == ["bitcoin", "ethereum"]
+      assert response["invalid_slugs"] == ["not_a_slug"]
+      assert response["invalid_slugs_notice"] =~ "No data for not_a_slug"
+      assert Map.keys(response["data"]) |> Enum.sort() == ["bitcoin", "ethereum"]
+    end)
+  end
+
+  test "fetch metric with only unknown slugs names all of them" do
+    {:ok, %Anubis.MCP.Response{is_error: true, result: %{"content" => [%{"text" => text}]}}} =
+      try_few_times(
+        fn ->
+          Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+            slugs: ["not_a_slug", "also_not_a_slug"],
+            metric: "price_usd"
+          })
+        end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    assert text =~ "Slugs 'not_a_slug', 'also_not_a_slug' mistyped or not supported."
+  end
+
   describe "preliminary social data notice" do
     test "is added for social dominance datapoints in the last hours", _context do
       now = DateTime.utc_now() |> DateTime.truncate(:second)

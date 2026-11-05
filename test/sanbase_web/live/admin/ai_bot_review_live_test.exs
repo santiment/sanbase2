@@ -100,6 +100,64 @@ defmodule SanbaseWeb.Admin.AiBotReviewLiveTest do
     refute has_element?(view, "#review-details")
   end
 
+  describe "issues" do
+    test "a viewer sees the issues and their status but cannot resolve", %{conn: conn} do
+      turn = create_turn(%{tool_issues: ["fetch_metric_data_tool:invalid_slug"]})
+      [issue] = Sanbase.DiscordBot.AiReviewIssues.list_for_review()
+
+      {:ok, view, _html} = live(conn, "/admin/ai_bot_review")
+
+      assert has_element?(
+               view,
+               "#issues-#{issue.id}",
+               "tool_issue:fetch_metric_data_tool:invalid_slug"
+             )
+
+      assert has_element?(view, "#issues-#{issue.id}", "Open")
+      assert has_element?(view, "#rows-#{turn.id}", "Open")
+      refute has_element?(view, "#resolve-form-#{issue.id}")
+    end
+
+    test "an editor resolves an issue with a note and reopens it" do
+      conn = conn_with_role(:role_admin_panel_editor)
+      turn = create_turn(%{tool_issues: ["fetch_metric_data_tool:invalid_slug"]})
+      [issue] = Sanbase.DiscordBot.AiReviewIssues.list_for_review()
+
+      {:ok, view, _html} = live(conn, "/admin/ai_bot_review")
+
+      view
+      |> form("#issues #resolve-form-#{issue.id}", resolve: %{note: "PR 5413"})
+      |> render_submit()
+
+      # Resolved issues leave the panel until resolved ones are shown.
+      refute has_element?(view, "#issues-#{issue.id}")
+      assert has_element?(view, "#rows-#{turn.id}", "Resolved")
+
+      view |> element("#toggle-resolved") |> render_click()
+      assert has_element?(view, "#issues-#{issue.id}", "PR 5413")
+
+      view |> element("#issues #reopen-#{issue.id}") |> render_click()
+      assert has_element?(view, "#issues-#{issue.id}", "Open")
+    end
+
+    test "the turn details list its issues", %{conn: conn} do
+      turn = create_turn(%{tool_issues: ["search_tweets:empty"]})
+
+      {:ok, view, _html} = live(conn, "/admin/ai_bot_review")
+      view |> element("#show-#{turn.id}") |> render_click()
+
+      assert has_element?(view, "#turn-issues", "tool_issue:search_tweets:empty")
+    end
+  end
+
+  defp conn_with_role(role_factory) do
+    user = insert(:user)
+    role = insert(role_factory)
+    {:ok, _user_role} = Sanbase.Accounts.UserRole.create(user.id, role.id)
+    {:ok, jwt_tokens} = SanbaseWeb.Guardian.get_jwt_tokens(user)
+    Plug.Test.init_test_session(build_conn(), jwt_tokens)
+  end
+
   test "export downloads the filtered rows as JSONL", %{conn: conn} do
     failed = create_turn(%{delivery_status: "failed"})
     _clean = create_turn(%{delivery_status: "sent"})

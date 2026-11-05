@@ -111,6 +111,22 @@ defmodule SanbaseWeb.Router do
     plug(Sanbase.MCP.AuthPlug)
   end
 
+  # AI bot review issues for a poller: admin pod (VPN) only, API key or OAuth
+  # token, Admin Panel role.
+  pipeline :ai_review_api do
+    plug(:accepts, ["json"])
+    plug(SanbaseWeb.Plug.AiReviewApiAuth)
+  end
+
+  scope "/admin_api/ai_review", SanbaseWeb.Admin do
+    pipe_through([:admin_pod_only, :ai_review_api])
+
+    get("/issues", AiReviewApiController, :index)
+    get("/issues/:id", AiReviewApiController, :show)
+    post("/issues/:id/resolve", AiReviewApiController, :resolve)
+    post("/issues/:id/reopen", AiReviewApiController, :reopen)
+  end
+
   scope "/mcp" do
     pipe_through(:mcp_auth)
     forward("/", Sanbase.MCP.StreamableHTTPPlug)

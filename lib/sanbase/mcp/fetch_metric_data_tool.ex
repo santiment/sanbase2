@@ -60,7 +60,8 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
       List of slug identifiers (e.g., ["bitcoin"], ["bitcoin", "ethereum"], etc.).
 
-      Accepts at most #{@slugs_per_call_limit} slugs at a time.
+      Accepts at most #{@slugs_per_call_limit} slugs at a time. Unknown slugs are skipped and
+      listed in `invalid_slugs`; the others are still fetched.
 
       Only metrics that have `supports_many_slugs: true` can accept more than one slug.
       Check the `supports_many_slugs` field in the metrics_and_assets_discovery_tool response
@@ -158,9 +159,9 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   defp validate_target(metric, params) do
     case normalize_target(Map.get(params, :slugs), Map.get(params, :text)) do
       {slugs, nil} when is_list(slugs) ->
-        with :ok <- validate_slugs(slugs),
-             :ok <- validate_many_slugs_supported(metric, slugs),
-             do: {:ok, {:slugs, slugs}}
+        with {:ok, valid_slugs, invalid_slugs} <- validate_slugs(slugs),
+             :ok <- validate_many_slugs_supported(metric, valid_slugs),
+             do: {:ok, {:slugs, valid_slugs, invalid_slugs}}
 
       {nil, text} when is_binary(text) ->
         with {:ok, text} <- validate_text(text),
@@ -222,7 +223,19 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     )
   end
 
-  defp put_target(data, {:slugs, slugs}), do: Map.put(data, :slugs, slugs)
+  defp put_target(data, {:slugs, slugs, []}), do: Map.put(data, :slugs, slugs)
+
+  defp put_target(data, {:slugs, slugs, invalid_slugs}) do
+    data
+    |> Map.put(:slugs, slugs)
+    |> Map.put(:invalid_slugs, invalid_slugs)
+    |> Map.put(
+      :invalid_slugs_notice,
+      "No data for #{Enum.join(invalid_slugs, ", ")}: mistyped or not supported. The other " <>
+        "slugs were fetched. Use the metrics_and_assets_discovery_tool to resolve valid slugs."
+    )
+  end
+
   defp put_target(data, {:text, text}), do: Map.put(data, :text, text)
 
   defp limit_datapoints(data) do
@@ -286,7 +299,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
             "documents for the latest buckets are still arriving, this share can swing sharply " <>
             "and settle later."
 
-        {true, {:slugs, _}} ->
+        {true, {:slugs, _, _}} ->
           notice <>
             " Social dominance divides the asset's social volume by the combined social volume " <>
             "of the 100 largest assets by market cap. While the other assets' volumes are still " <>
@@ -339,22 +352,30 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
      ToolError.permanent("The list of slugs can contain at most #{@slugs_per_call_limit} slugs")}
   end
 
+  # One unknown slug used to fail the whole call, so a batch of 10 lost the 9
+  # valid ones and the error named only the first bad slug. Now the valid slugs
+  # are fetched and the rest are reported; only an all-invalid list is an error.
   defp validate_slugs(slugs) when is_list(slugs) do
-    Enum.reduce_while(slugs, :ok, fn slug, _acc ->
-      if DataCatalog.valid_slug?(slug) do
-        {:cont, :ok}
-      else
-        {:halt,
-         {:error,
-          ToolError.permanent(
-            "Slug '#{slug}' mistyped or not supported. Use the " <>
-              "metrics_and_assets_discovery_tool to resolve valid asset slugs."
-          )}}
-      end
-    end)
+    slugs = Enum.uniq(slugs)
+
+    case Enum.split_with(slugs, &DataCatalog.valid_slug?/1) do
+      {[], invalid_slugs} ->
+        {:error,
+         ToolError.permanent(
+           "#{slugs_label(invalid_slugs)} #{Enum.map_join(invalid_slugs, ", ", &"'#{&1}'")} " <>
+             "mistyped or not supported. Use the metrics_and_assets_discovery_tool to " <>
+             "resolve valid asset slugs."
+         )}
+
+      {valid_slugs, invalid_slugs} ->
+        {:ok, valid_slugs, invalid_slugs}
+    end
   end
 
-  defp fetch_metric_data(metric, {:slugs, slugs}, from, to, interval),
+  defp slugs_label([_]), do: "Slug"
+  defp slugs_label(_), do: "Slugs"
+
+  defp fetch_metric_data(metric, {:slugs, slugs, _invalid_slugs}, from, to, interval),
     do: fetch_metric_data(metric, slugs, from, to, interval)
 
   defp fetch_metric_data(metric, {:text, text}, from, to, interval) do

@@ -43,6 +43,10 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
       &Sanbase.Metric.slugs_order/5,
       {:ok, ["bitcoin", "solana", "ethereum", "maker", "santiment"]}
     )
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.aggregated_timeseries_data/5,
+      {:ok, %{"bitcoin" => 100_000, "solana" => 200, "ethereum" => 3000, "maker" => 1500}}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         try_few_times(
@@ -78,6 +82,13 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
 
       assert Jason.decode!(json_text) == %{
                "assets" => ["bitcoin", "solana", "ethereum", "maker", "santiment"],
+               "values" => [
+                 %{"slug" => "bitcoin", "price_usd" => 100_000},
+                 %{"slug" => "solana", "price_usd" => 200},
+                 %{"slug" => "ethereum", "price_usd" => 3000},
+                 %{"slug" => "maker", "price_usd" => 1500},
+                 %{"slug" => "santiment", "price_usd" => nil}
+               ],
                "page" => 1,
                "page_size" => 5,
                "total_assets" => 5
@@ -93,6 +104,10 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
     |> Sanbase.Mock.prepare_mock2(
       &Sanbase.Metric.slugs_order/5,
       {:ok, ["bitcoin", "solana", "ethereum", "maker"]}
+    )
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.aggregated_timeseries_data/5,
+      {:ok, %{"bitcoin" => 100_000, "solana" => 200, "ethereum" => 3000}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
@@ -131,10 +146,188 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
 
       assert Jason.decode!(json_text) == %{
                "assets" => ["bitcoin", "solana", "ethereum"],
+               "values" => [
+                 %{"slug" => "bitcoin", "price_usd" => 100_000},
+                 %{"slug" => "solana", "price_usd" => 200},
+                 %{"slug" => "ethereum", "price_usd" => 3000}
+               ],
                "page" => 1,
                "page_size" => 3,
                "total_assets" => 4
              }
     end)
+  end
+
+  test "returns value_metrics as percent change next to the ranked metric", _context do
+    # The first/last values of price_usd in the window give the change; the
+    # ranked marketcap_usd comes with its default aggregation.
+    aggregated = fn
+      "marketcap_usd", _selector, _from, _to, _opts ->
+        {:ok, %{"bitcoin" => 2.0e12, "ethereum" => 4.0e11, "solana" => 9.0e10}}
+
+      "price_usd", _selector, _from, _to, opts ->
+        case Keyword.get(opts, :aggregation) do
+          :first -> {:ok, %{"bitcoin" => 100.0, "ethereum" => 50.0, "solana" => 0}}
+          :last -> {:ok, %{"bitcoin" => 104.8, "ethereum" => 49.5, "solana" => 10.0}}
+        end
+    end
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.slugs_order/5,
+      {:ok, ["bitcoin", "ethereum", "solana"]}
+    )
+    |> Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, aggregated)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      response =
+        call_tool(%{
+          metric: "marketcap_usd",
+          from: "utc_now-1d",
+          to: "utc_now",
+          page: 1,
+          page_size: 3,
+          sort: "desc",
+          value_metrics: ["price_usd"],
+          value_aggregation: "percent_change"
+        })
+
+      assert response["values"] == [
+               %{
+                 "slug" => "bitcoin",
+                 "marketcap_usd" => 2.0e12,
+                 "price_usd_percent_change" => 4.8
+               },
+               %{
+                 "slug" => "ethereum",
+                 "marketcap_usd" => 4.0e11,
+                 "price_usd_percent_change" => -1.0
+               },
+               # A zero start value has no percent change.
+               %{"slug" => "solana", "marketcap_usd" => 9.0e10, "price_usd_percent_change" => nil}
+             ]
+    end)
+  end
+
+  test "extra filters narrow the ranking to assets that pass all of them", _context do
+    # Matching on the operator and threshold makes the test fail if a filter
+    # reaches the screener with the wrong predicate.
+    slugs_by_filter = fn
+      "price_usd", _from, _to, :percent_down, 5, _opts ->
+        {:ok, ["bitcoin", "ethereum", "maker"]}
+
+      "daily_active_addresses", _from, _to, :greater_than, 1000, _opts ->
+        {:ok, ["ethereum", "maker", "solana"]}
+    end
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :slugs_by_filter, slugs_by_filter)
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.slugs_order/5,
+      {:ok, ["bitcoin", "solana", "ethereum", "maker", "santiment"]}
+    )
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Metric.aggregated_timeseries_data/5, {:ok, %{}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      response =
+        call_tool(%{
+          metric: "marketcap_usd",
+          from: "utc_now-7d",
+          to: "utc_now",
+          page: 1,
+          page_size: 10,
+          sort: "desc",
+          filters: [
+            %{metric: "price_usd", operator: "percent_down", threshold: 5},
+            %{metric: "daily_active_addresses", operator: "greater_than", threshold: 1000}
+          ]
+        })
+
+      assert response["assets"] == ["ethereum", "maker"]
+      assert response["total_assets"] == 2
+    end)
+  end
+
+  test "fetches a ranked metric that takes no slug list one slug at a time", _context do
+    # social_volume_total has supports_many_slugs: false, so its values are
+    # fetched per slug and merged.
+    aggregated = fn
+      "social_volume_total", %{slug: slug}, _from, _to, _opts when is_binary(slug) ->
+        {:ok, %{slug => %{"bitcoin" => 900, "ethereum" => 400}[slug]}}
+    end
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/5, {:ok, ["bitcoin", "ethereum"]})
+    |> Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, aggregated)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      response =
+        call_tool(%{
+          metric: "social_volume_total",
+          from: "utc_now-1d",
+          to: "utc_now",
+          page: 1,
+          page_size: 2,
+          sort: "desc"
+        })
+
+      assert response["values"] == [
+               %{"slug" => "bitcoin", "social_volume_total" => 900},
+               %{"slug" => "ethereum", "social_volume_total" => 400}
+             ]
+    end)
+  end
+
+  test "asking for the ranked metric again keeps its ranked value", _context do
+    aggregated = fn "price_usd", _selector, _from, _to, opts ->
+      case Keyword.get(opts, :aggregation) do
+        :last -> {:ok, %{"bitcoin" => 105.0}}
+        :max -> {:ok, %{"bitcoin" => 110.0}}
+      end
+    end
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_order/5, {:ok, ["bitcoin"]})
+    |> Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, aggregated)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      response =
+        call_tool(%{
+          metric: "price_usd",
+          from: "utc_now-1d",
+          to: "utc_now",
+          page: 1,
+          page_size: 1,
+          sort: "desc",
+          value_metrics: ["price_usd"],
+          value_aggregation: "max"
+        })
+
+      assert response["values"] == [%{"slug" => "bitcoin", "price_usd" => 105.0}]
+    end)
+  end
+
+  test "rejects a value metric that cannot be fetched for many assets", _context do
+    {:ok, %Anubis.MCP.Response{is_error: true, result: %{"content" => [%{"text" => text}]}}} =
+      try_few_times(
+        fn ->
+          Sanbase.MCP.Client.call_tool("assets_by_metric_tool", %{
+            metric: "marketcap_usd",
+            from: "utc_now-1d",
+            to: "utc_now",
+            page: 1,
+            page_size: 10,
+            sort: "desc",
+            value_metrics: ["social_volume_total"]
+          })
+        end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    assert text =~ "Value metric 'social_volume_total' cannot be fetched for many assets"
+  end
+
+  defp call_tool(args) do
+    {:ok, %Anubis.MCP.Response{is_error: false, result: %{"content" => [%{"text" => json}]}}} =
+      try_few_times(
+        fn -> Sanbase.MCP.Client.call_tool("assets_by_metric_tool", args) end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    Jason.decode!(json)
   end
 end

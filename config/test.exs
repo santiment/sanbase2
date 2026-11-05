@@ -5,6 +5,9 @@ import Config
 
 config :phoenix, :stacktrace_depth, 20
 
+# `Mockery.Macro.mockable/1` returns a mockable proxy only when this is set
+config :mockery, enable: true
+
 config :sanbase,
   available_slugs_module: Sanbase.DirectAvailableSlugs
 

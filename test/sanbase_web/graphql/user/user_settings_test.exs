@@ -332,8 +332,11 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
           {"stage", :metric_updates_stage},
           {"prod", :metric_updates}
         ] do
+      # Passed as a tag, not unquoted: a literal lets the type checker flag the
+      # `if` branches not taken for that env as dead code.
+      @tag deployment_env: deployment_env
       test "metric updates toggle uses the #{list} list in #{deployment_env || "dev"}", context do
-        deployment_env = unquote(deployment_env)
+        deployment_env = context.deployment_env
         previous = System.get_env("DEPLOYMENT_ENVIRONMENT")
 
         if deployment_env,

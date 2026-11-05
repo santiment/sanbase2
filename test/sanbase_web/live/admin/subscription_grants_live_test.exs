@@ -164,14 +164,39 @@ defmodule SanbaseWeb.Admin.SubscriptionGrantsLiveTest do
     {:ok, _} = ApiCallLimit.update_user_plan(customer)
 
     # Off without the refresh, as a failed one would leave it: the customer is still
-    # metered at the reduced figure, and the page must say so rather than derive 600,000
-    # from the toggle.
+    # metered at the reduced figure, the page must say so rather than derive 600,000 from
+    # the toggle, and it must flag that the row disagrees with the policy.
     put_reduced_toggle(false, nil)
 
     view = select_customer(conn, customer)
 
-    assert has_element?(view, "#business-allowance-reduced")
-    assert render(view) =~ ~r/50000\s*<\/span>\s*API calls a month/
+    assert has_element?(view, "#monthly-calls-total", "50000")
+    assert has_element?(view, "#business-allowance-reduced", "until their API call limits")
+    assert has_element?(view, "#api-call-limits-not-in-sync")
+  end
+
+  test "a Business customer on the reduced allowance with the reduction on is in sync",
+       context do
+    %{conn: conn} = context
+    customer = insert(:user, email: "business#{System.unique_integer([:positive])}@example.com")
+
+    put_reduced_toggle(true, ~U[2026-11-01 00:00:00Z])
+
+    insert(:subscription_pro,
+      user_id: customer.id,
+      plan_id: context.plans.plan_business_pro_monthly.id,
+      status: :active,
+      stripe_id: "sub_" <> Ecto.UUID.generate(),
+      inserted_at: ~N[2026-11-02 00:00:00]
+    )
+
+    {:ok, _} = ApiCallLimit.update_user_plan(customer)
+
+    view = select_customer(conn, customer)
+
+    assert has_element?(view, "#monthly-calls-total", "50000")
+    assert has_element?(view, "#business-allowance-reduced", "on or after")
+    refute has_element?(view, "#api-call-limits-not-in-sync")
   end
 
   # ── Helpers ─────────────────────────────────────────────────────────────

@@ -45,6 +45,26 @@ defmodule SanbaseWeb.Graphql.Billing.BusinessAllowanceApiTest do
     assert subscription_month(context.conn) == 50_000
   end
 
+  test "the catalog shows the reduced figure for someone subscribing now", context do
+    query = """
+    {
+      productsWithPlans {
+        plans { name apiCallLimits { month } }
+      }
+    }
+    """
+
+    months =
+      context.conn
+      |> execute_query(query, "productsWithPlans")
+      |> Enum.flat_map(& &1["plans"])
+      |> Enum.filter(&(&1["name"] == "BUSINESS_PRO"))
+      |> Enum.map(&get_in(&1, ["apiCallLimits", "month"]))
+
+    assert months != []
+    assert Enum.all?(months, &(&1 == 50_000))
+  end
+
   defp subscribe(context, inserted_at) do
     insert(:subscription_pro,
       user: context.user,

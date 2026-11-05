@@ -166,17 +166,27 @@ defmodule Sanbase.FeatureToggle do
   @spec set(String.t(), boolean()) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def set(name, enabled) when is_binary(name) and is_boolean(enabled) do
     # Read first so `enabled_at` is stamped only on a real off-to-on change, which an
-    # upsert cannot tell apart from re-enabling an enabled toggle.
-    case Repo.get_by(__MODULE__, name: name) do
-      nil ->
-        %__MODULE__{}
-        |> changeset(%{name: name, enabled: enabled})
-        |> Repo.insert()
+    # upsert cannot tell apart from re-enabling an enabled toggle. The row is locked so
+    # two concurrent callers turning it on serialize: the second sees it already on and
+    # leaves `enabled_at` as the first one stamped it.
+    Repo.transaction(fn ->
+      result =
+        case Repo.one(from(t in __MODULE__, where: t.name == ^name, lock: "FOR UPDATE")) do
+          nil ->
+            %__MODULE__{}
+            |> changeset(%{name: name, enabled: enabled})
+            |> Repo.insert()
 
-      %__MODULE__{} = toggle ->
-        toggle
-        |> update_changeset(%{enabled: enabled})
-        |> Repo.update()
-    end
+          %__MODULE__{} = toggle ->
+            toggle
+            |> update_changeset(%{enabled: enabled})
+            |> Repo.update()
+        end
+
+      case result do
+        {:ok, toggle} -> toggle
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
   end
 end

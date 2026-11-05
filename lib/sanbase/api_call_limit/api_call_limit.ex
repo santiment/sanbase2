@@ -248,7 +248,23 @@ defmodule Sanbase.ApiCallLimit do
 
   defp create(type, entity)
 
+  # Reads the plan state like `update_user_plan/1` does, so it takes the same lock: the
+  # first request of a new Business customer must not write a reduced row after a
+  # `BusinessAllowance.refresh_reduced/0` sweep has already looked for them.
   defp create(:user, %User{} = user) do
+    Repo.transaction(fn ->
+      BusinessAllowance.lock_for_plan_update()
+
+      case create_user_row(user) do
+        {:ok, acl} -> acl
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp create(:remote_ip, remote_ip), do: create_remote_ip_row(remote_ip)
+
+  defp create_user_row(%User{} = user) do
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
 
     api_calls = %{month_str => 0, hour_str => 0, minute_str => 0}
@@ -301,7 +317,7 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp create(:remote_ip, remote_ip) do
+  defp create_remote_ip_row(remote_ip) do
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
 
     api_calls = %{month_str => 0, hour_str => 0, minute_str => 0}

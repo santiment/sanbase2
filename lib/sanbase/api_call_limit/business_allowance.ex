@@ -46,8 +46,15 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
   grandfathers more customers.
 
   Turning it off refreshes every row on the reduced allowance (`refresh_reduced/0`),
-  so those customers go back to the old one at once instead of at their next
-  subscription event. `disable/0` does that, and so does the admin page.
+  so those customers go back to the old one without waiting for their next
+  subscription event. `disable/0` does that, and so does the admin page. Turning it
+  on runs the same refresh: a row a failed refresh left on the reduced allowance
+  belongs to a subscription from before the new cutoff, so it is grandfathered now.
+
+  The refresh rewrites the rows in the database and clears the quota cached on the
+  node that runs it. Other API nodes keep the quota they cached until it reloads
+  from the database, so the change reaches them shortly after, not at the same
+  instant.
 
   Only change the toggle through those two. An `UPDATE` in SQL neither stamps nor
   clears `enabled_at` and does not run the refresh.
@@ -80,19 +87,28 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
     end
   end
 
+  @type refresh_result ::
+          %{refreshed: non_neg_integer(), failed: [integer()]} | {:error, String.t()}
+
   @doc ~s"""
   Turn the reduction on. The cutoff is now.
+
+  Also refreshes any row still on the reduced allowance from before (one a failed
+  refresh left behind when it was last turned off): its subscription predates the new
+  cutoff, so it goes back to the old allowance.
   """
-  @spec enable() :: {:ok, %FeatureToggle{}} | {:error, Ecto.Changeset.t()}
-  def enable(), do: FeatureToggle.enable_business_reduced_api_calls()
+  @spec enable() :: {:ok, %FeatureToggle{}, refresh_result()} | {:error, Ecto.Changeset.t()}
+  def enable() do
+    with {:ok, toggle} <- FeatureToggle.enable_business_reduced_api_calls() do
+      {:ok, toggle, refresh_reduced()}
+    end
+  end
 
   @doc ~s"""
   Turn the reduction off and put every customer on the reduced allowance back on
   the old one.
   """
-  @spec disable() ::
-          {:ok, %FeatureToggle{}, %{refreshed: non_neg_integer(), failed: [integer()]}}
-          | {:error, Ecto.Changeset.t()}
+  @spec disable() :: {:ok, %FeatureToggle{}, refresh_result()} | {:error, Ecto.Changeset.t()}
   def disable() do
     with {:ok, toggle} <- FeatureToggle.disable_business_reduced_api_calls() do
       {:ok, toggle, refresh_reduced()}
@@ -105,12 +121,18 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
 
   Returns how many were refreshed and the ids of those that failed. A failure is
   logged and leaves that row on the reduced allowance until its next subscription
-  event, so it is worth re-running.
+  event, so it is worth re-running. If it cannot first wait for the plan updates in
+  flight, nothing is refreshed and it returns `{:error, message}`.
   """
-  @spec refresh_reduced() :: %{refreshed: non_neg_integer(), failed: [integer()]}
+  @spec refresh_reduced() :: refresh_result()
   def refresh_reduced() do
-    wait_for_plan_updates()
+    case wait_for_plan_updates() do
+      :ok -> refresh_reduced_rows()
+      {:error, _} = error -> error
+    end
+  end
 
+  defp refresh_reduced_rows() do
     user_ids =
       from(acl in ApiCallLimit,
         where:
@@ -166,6 +188,15 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowance do
       end)
 
     :ok
+  rescue
+    exception ->
+      Logger.error(
+        "[BusinessAllowance] Could not wait for in-flight plan updates: #{Exception.message(exception)}"
+      )
+
+      {:error,
+       "could not wait for in-flight API call limit updates, so no customer was refreshed; " <>
+         "run the refresh again"}
   end
 
   @doc ~s"""

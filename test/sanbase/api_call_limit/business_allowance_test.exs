@@ -200,13 +200,13 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowanceTest do
       set_cutoff(nil)
       before_enable = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
-      {:ok, _} = BusinessAllowance.enable()
+      {:ok, _, _} = BusinessAllowance.enable()
 
       # Rounded up to the next whole second, never down: a cutoff before the moment
       # it was turned on would catch a subscription created just before it.
       cutoff = BusinessAllowance.cutoff()
       assert NaiveDateTime.compare(cutoff, before_enable) != :lt
-      assert NaiveDateTime.diff(cutoff, before_enable) <= 2
+      assert NaiveDateTime.diff(cutoff, NaiveDateTime.utc_now()) <= 1
 
       # Everyone who subscribed before it is grandfathered.
       subscribe(context.user, context.pro, @created_after)
@@ -216,7 +216,7 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowanceTest do
     test "saving it on again does not move the cutoff" do
       set_cutoff(@cutoff)
 
-      {:ok, _} = BusinessAllowance.enable()
+      {:ok, _, _} = BusinessAllowance.enable()
 
       assert BusinessAllowance.cutoff() == @cutoff
     end
@@ -258,6 +258,37 @@ defmodule Sanbase.ApiCallLimit.BusinessAllowanceTest do
       assert result == %{refreshed: 1, failed: [other.id]}
       assert acl_limits(context.user).month == 600_000
       assert acl_limits(other).month == 50_000
+    end
+
+    test "turning it on again restores a row a failed refresh left reduced", context do
+      subscribe(context.user, context.pro, @created_after)
+      # Off without the refresh, as a failed one would leave it.
+      set_cutoff(nil)
+      assert acl_limits(context.user).month == 50_000
+
+      assert {:ok, _toggle, %{refreshed: 1, failed: []}} = BusinessAllowance.enable()
+
+      # The new cutoff is now, so the subscription predates it and is grandfathered.
+      assert acl_limits(context.user).month == 600_000
+    end
+
+    test "if it cannot wait for in-flight updates, it refreshes nobody and says so",
+         context do
+      subscribe(context.user, context.pro, @created_after)
+      set_cutoff(nil)
+
+      result =
+        with_mock Repo, [:passthrough],
+          query!: fn
+            "SELECT pg_advisory_xact_lock($1, $2)", _params -> raise "lock timeout"
+            sql, params -> passthrough([sql, params])
+          end do
+          BusinessAllowance.refresh_reduced()
+        end
+
+      assert {:error, message} = result
+      assert message =~ "no customer was refreshed"
+      assert acl_limits(context.user).month == 50_000
     end
 
     test "turning it off leaves grandfathered and granted rows alone", context do

@@ -220,6 +220,56 @@ defmodule Sanbase.ApiCallLimit do
      }}
   end
 
+  @doc ~s"""
+  The user's limits, usage in the current month/hour/minute (UTC) and, when they are
+  blocked right now, why and until when. For support tooling: unlike
+  `usage_and_limits/2` it never creates the row, and returns `{:error, :not_found}`
+  for a user who has never made an authenticated API call.
+
+  Everything is evaluated at `now`: `as_of` is that instant and `period_starts` the
+  windows the usage is counted in.
+
+  Usage is what has been flushed to the database. Every API node keeps a batch of
+  calls in memory before writing it, so the counts can trail the real ones.
+  """
+  @spec status(:user, %User{}, DateTime.t()) :: {:ok, map()} | {:error, :not_found}
+  def status(:user, %User{id: user_id}, now \\ DateTime.utc_now()) do
+    case Repo.get_by(__MODULE__, user_id: user_id) do
+      nil -> {:error, :not_found}
+      %__MODULE__{} = acl -> {:ok, acl_status(acl, now)}
+    end
+  end
+
+  defp acl_status(%__MODULE__{} = acl, now) do
+    {api_calls_made, api_calls_remaining, api_calls_limits} =
+      case has_limits?(acl) do
+        true -> get_api_calls_maps(acl, now)
+        false -> {get_api_calls_made_map(acl, now), nil, nil}
+      end
+
+    blocked =
+      case do_get_quota(acl, now) do
+        {:error, %{reason: reason, blocked_until: until, blocked_for_seconds: seconds}} ->
+          %{reason: reason, blocked_until: until, blocked_for_seconds: seconds}
+
+        {:ok, _} ->
+          nil
+      end
+
+    %{
+      as_of: now,
+      period_starts: period_starts(now),
+      plan: acl.api_calls_limit_plan,
+      subscription_status: acl.api_calls_limit_subscription_status,
+      has_limits: has_limits?(acl),
+      api_calls_made: api_calls_made,
+      api_calls_limits: api_calls_limits,
+      api_calls_remaining: api_calls_remaining,
+      response_size_mb: get_response_sizes_in_mb_map(acl, now),
+      blocked: blocked
+    }
+  end
+
   # Private functions
 
   defp create(type, entity)
@@ -377,14 +427,27 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp get_time_str_keys() do
-    now = DateTime.utc_now()
-
+  @doc ~s"""
+  The start of the calendar month, hour and minute (UTC) that `now` falls in - the
+  windows API calls are counted and limited in.
+  """
+  @spec period_starts(DateTime.t()) :: %{
+          month: DateTime.t(),
+          hour: DateTime.t(),
+          minute: DateTime.t()
+        }
+  def period_starts(%DateTime{} = now) do
     %{
-      month_str: now |> Timex.beginning_of_month() |> to_string(),
-      hour_str: %{now | :minute => 0, :second => 0, :microsecond => {0, 0}} |> to_string(),
-      minute_str: %{now | :second => 0, :microsecond => {0, 0}} |> to_string()
+      month: Timex.beginning_of_month(now),
+      hour: %{now | :minute => 0, :second => 0, :microsecond => {0, 0}},
+      minute: %{now | :second => 0, :microsecond => {0, 0}}
     }
+  end
+
+  defp get_time_str_keys(now \\ DateTime.utc_now()) do
+    %{month: month, hour: hour, minute: minute} = period_starts(now)
+
+    %{month_str: to_string(month), hour_str: to_string(hour), minute_str: to_string(minute)}
   end
 
   def subscription_to_plan_name(%Subscription{plan: %{product: %{id: id}}} = sub)
@@ -410,6 +473,42 @@ defmodule Sanbase.ApiCallLimit do
         {"sanapi_free", "active", nil}
     end
   end
+
+  @doc ~s"""
+  The API call limits a subscription's plan gives, grants included: a map with
+  `:month`, `:hour` and `:minute`, `:unlimited`, `:bundle_not_synced` for a bundle
+  whose entitlement was never computed, or `nil` for a product that sets no API
+  limits. Only one subscription is enforced - the current SanAPI one, else the
+  current Sanbase one - and superusers and team members are not limited by any plan.
+
+  Expects the plan and its product preloaded.
+  """
+  @spec subscription_api_call_limits(%Subscription{}) ::
+          %{month: non_neg_integer(), hour: non_neg_integer(), minute: non_neg_integer()}
+          | :unlimited
+          | :bundle_not_synced
+          | nil
+  def subscription_api_call_limits(%Subscription{plan: %{product: %{id: id}}} = sub)
+      when id in [@product_api_id, @product_sanbase_id] do
+    plan_name = subscription_to_plan_name(sub)
+
+    with true <- plan_has_limits?(plan_name),
+         %{"month" => month, "hour" => hour, "minute" => minute} <-
+           subscription_to_resolved_api_call_limits(sub) do
+      %{month: month, hour: hour, minute: minute}
+    else
+      false ->
+        :unlimited
+
+      nil ->
+        case Sanbase.Billing.Plan.type_of_api_call_limit_plan(plan_name) do
+          :bundle -> :bundle_not_synced
+          _other -> plan_to_api_call_limits(plan_name)
+        end
+    end
+  end
+
+  def subscription_api_call_limits(_sub), do: nil
 
   # `nil` for every plan whose limits follow from its name and that has no add-on -
   # storing them would freeze numbers the plan tables should keep owning.
@@ -461,33 +560,35 @@ defmodule Sanbase.ApiCallLimit do
 
   defp add_extra_calls(_limits, _extra), do: nil
 
-  defp do_get_quota(%__MODULE__{has_limits_no_matter_plan: false}) do
+  defp do_get_quota(acl, now \\ DateTime.utc_now())
+
+  defp do_get_quota(%__MODULE__{has_limits_no_matter_plan: false}, _now) do
     {:ok, %{quota: :infinity}}
   end
 
-  defp do_get_quota(%__MODULE__{has_limits: false}) do
+  defp do_get_quota(%__MODULE__{has_limits: false}, _now) do
     {:ok, %{quota: :infinity}}
   end
 
-  defp do_get_quota(%__MODULE__{} = acl) do
-    with :ok <- check_result_size_limits(acl) do
-      check_api_calls_limits(acl)
+  defp do_get_quota(%__MODULE__{} = acl, now) do
+    with :ok <- check_result_size_limits(acl, now) do
+      check_api_calls_limits(acl, now)
     end
   end
 
   defp check_result_size_limits(
          %__MODULE__{api_calls_limit_subscription_status: status, api_calls_limit_plan: plan} =
-           acl
+           acl,
+         now
        )
        when status in ["trialing"] or plan == "sanapi_free" do
     %{api_calls_responses_size_mb: api_calls_responses_size_mb, api_calls_limit_plan: plan} = acl
-    %{month_str: month_str} = get_time_str_keys()
+    %{month_str: month_str} = get_time_str_keys(now)
 
     size_limits = plan_to_response_size_limits(plan)
-    now = DateTime.utc_now()
 
     if (api_calls_responses_size_mb[month_str] || 0) > size_limits.month do
-      blocked_for_seconds = DateTime.diff(Timex.end_of_month(now), now, :second)
+      blocked_for_seconds = seconds_until_next_month(now)
 
       {:error,
        %{
@@ -500,21 +601,28 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp check_result_size_limits(_acl), do: :ok
+  defp check_result_size_limits(_acl, _now), do: :ok
 
-  defp check_api_calls_limits(%__MODULE__{} = acl) do
-    {_api_calls_made, api_calls_remaining, api_calls_limits} = get_api_calls_maps(acl)
+  # The monthly counters reset at the next month's start, not at `Timex.end_of_month/1`
+  # (23:59:59.999999). Rounded up, so a blocked caller is never told to wait 0 seconds.
+  defp seconds_until_next_month(now) do
+    next_month = now |> Timex.beginning_of_month() |> Timex.shift(months: 1)
+    microseconds = DateTime.diff(next_month, now, :microsecond)
+
+    div(microseconds + 999_999, 1_000_000)
+  end
+
+  defp check_api_calls_limits(%__MODULE__{} = acl, now) do
+    {_api_calls_made, api_calls_remaining, api_calls_limits} = get_api_calls_maps(acl, now)
 
     # The min remaining calls among the minute, hour and values
     min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
 
     case min(get_quota(), min_remaining) do
       0 ->
-        now = DateTime.utc_now()
-
         blocked_for_seconds =
           cond do
-            api_calls_remaining.month == 0 -> DateTime.diff(Timex.end_of_month(now), now, :second)
+            api_calls_remaining.month == 0 -> seconds_until_next_month(now)
             api_calls_remaining.hour == 0 -> 3600 - (now.minute * 60 + now.second)
             api_calls_remaining.minute == 0 -> 60 - now.second
           end
@@ -534,7 +642,7 @@ defmodule Sanbase.ApiCallLimit do
            quota: quota,
            api_calls_remaining: api_calls_remaining,
            api_calls_limits: api_calls_limits,
-           api_calls_responses_size_mb: get_response_sizes_in_mb_map(acl)
+           api_calls_responses_size_mb: get_response_sizes_in_mb_map(acl, now)
          }}
     end
   end
@@ -555,9 +663,9 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp get_api_calls_maps(%__MODULE__{} = acl) do
+  defp get_api_calls_maps(%__MODULE__{} = acl, now \\ DateTime.utc_now()) do
     api_calls_limits = acl_to_api_call_limits(acl)
-    api_calls_made = get_api_calls_made_map(acl)
+    api_calls_made = get_api_calls_made_map(acl, now)
 
     api_calls_remaining = %{
       month: max(api_calls_limits.month - api_calls_made.month, 0),
@@ -568,8 +676,8 @@ defmodule Sanbase.ApiCallLimit do
     {api_calls_made, api_calls_remaining, api_calls_limits}
   end
 
-  defp get_api_calls_made_map(%__MODULE__{api_calls: api_calls_made}) do
-    keys = get_time_str_keys()
+  defp get_api_calls_made_map(%__MODULE__{api_calls: api_calls_made}, now \\ DateTime.utc_now()) do
+    keys = get_time_str_keys(now)
 
     %{
       month: Map.get(api_calls_made, keys.month_str, 0),
@@ -581,10 +689,11 @@ defmodule Sanbase.ApiCallLimit do
   defp has_limits?(%__MODULE__{has_limits_no_matter_plan: false}), do: false
   defp has_limits?(%__MODULE__{has_limits: has_limits}), do: has_limits
 
-  defp get_response_sizes_in_mb_map(%__MODULE__{
-         api_calls_responses_size_mb: api_calls_responses_size_mb
-       }) do
-    keys = get_time_str_keys()
+  defp get_response_sizes_in_mb_map(
+         %__MODULE__{api_calls_responses_size_mb: api_calls_responses_size_mb},
+         now
+       ) do
+    keys = get_time_str_keys(now)
 
     %{
       month: Map.get(api_calls_responses_size_mb, keys.month_str, 0),

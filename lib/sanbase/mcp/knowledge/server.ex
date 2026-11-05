@@ -17,6 +17,7 @@ defmodule Sanbase.MCP.Knowledge.Server do
   component(Sanbase.MCP.Knowledge.AnswerQuestionTool)
   component(Sanbase.MCP.Knowledge.CreateFaqDraftTool)
   component(Sanbase.MCP.Knowledge.UpdateFaqDraftTool)
+  component(Sanbase.MCP.Knowledge.GetUserAccountTool)
 
   @impl true
   def server_instructions() do
@@ -33,6 +34,10 @@ defmodule Sanbase.MCP.Knowledge.Server do
     When the knowledge base has no good answer and the team provides the missing information,
     offer to save it with `create_faq_draft`. Drafts are reviewed by a person before they are
     published, and are never used in answers until then.
+
+    For a question about one user's account (subscription, billing, API rate limits), call
+    `get_user_account` with their user id, email or username. Its data is personal: never put
+    it in FAQ drafts.
     """
   end
 

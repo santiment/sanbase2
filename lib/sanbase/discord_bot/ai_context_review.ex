@@ -39,7 +39,25 @@ defmodule Sanbase.DiscordBot.AiContextReview do
     devanagari: ~r/\p{Devanagari}/u
   ]
 
+  @flag_labels %{
+    "delivery_failed" => "Delivery failed",
+    "error" => "Error",
+    "degraded" => "Degraded",
+    "tool_issue" => "Tool issue",
+    "language_mismatch" => "Wrong language",
+    "downvoted" => "Downvoted",
+    "slow" => "Slow"
+  }
+
+  @default_langfuse_traces_url "http://langfuse.production.san:31080/project/cmkgxdule0006yr077uhnzh1m/traces/"
+
   def flags(), do: @flags
+
+  def flag_labels(), do: @flag_labels
+
+  def langfuse_trace_url(trace_id) do
+    System.get_env("AI_SERVER_LANGFUSE_TRACES_URL", @default_langfuse_traces_url) <> trace_id
+  end
 
   @doc """
   Turns in `[from, to)`, newest first, each as `%{context: row, flags: [...]}`.

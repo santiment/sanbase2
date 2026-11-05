@@ -5,6 +5,10 @@ defmodule Sanbase.MCP.DataCatalog do
 
   @available_metrics Sanbase.MCP.DataCatalog.AvailableMetrics.list()
 
+  # Sanbase.AvailableSlugs (an ETS table of all projects) in prod and dev, a
+  # direct DB lookup in tests where projects are inserted on the fly.
+  @available_slugs_module Application.compile_env(:sanbase, :available_slugs_module)
+
   @spec get_all_projects() :: list(map())
   def get_all_projects() do
     cache_key = {__MODULE__, :get_all_projects} |> Sanbase.Cache.hash()
@@ -179,8 +183,15 @@ defmodule Sanbase.MCP.DataCatalog do
       " Use the metrics_and_assets_discovery_tool to see all available metrics."
   end
 
-  @doc "Validate if a slug exists"
-  def valid_slug?(slug), do: slug in available_slugs()
+  @doc """
+  Validate if a slug exists.
+
+  Checks every project, not only the top-500 list the discovery tool shows:
+  `assets_by_metric_tool` ranks the whole asset universe, and a slug it returns
+  (e.g. `steth`, which may have no CMC rank) must be accepted by the other tools.
+  """
+  def valid_slug?(slug) when is_binary(slug), do: @available_slugs_module.valid_slug?(slug)
+  def valid_slug?(_slug), do: false
 
   @doc "Validate metric and slug combination"
   def validate_metric_slug_combination(metric, slug) do

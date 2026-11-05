@@ -12,17 +12,7 @@ defmodule SanbaseWeb.Admin.AiBotReviewLive do
 
   @page_size 100
 
-  @default_langfuse_traces_url "http://langfuse.production.san:31080/project/cmkgxdule0006yr077uhnzh1m/traces/"
-
-  @flag_labels %{
-    "delivery_failed" => "Delivery failed",
-    "error" => "Error",
-    "degraded" => "Degraded",
-    "tool_issue" => "Tool issue",
-    "language_mismatch" => "Wrong language",
-    "downvoted" => "Downvoted",
-    "slow" => "Slow"
-  }
+  @flag_labels AiContextReview.flag_labels()
 
   @impl true
   def mount(_params, _session, socket) do
@@ -260,7 +250,7 @@ defmodule SanbaseWeb.Admin.AiBotReviewLive do
     ~H"""
     <a
       :if={@trace_id}
-      href={langfuse_trace_url(@trace_id)}
+      href={AiContextReview.langfuse_trace_url(@trace_id)}
       target="_blank"
       rel="noopener"
       class="link link-primary"
@@ -348,8 +338,4 @@ defmodule SanbaseWeb.Admin.AiBotReviewLive do
     do: :erlang.float_to_binary(seconds / 1, decimals: 1)
 
   defp format_seconds(_seconds), do: "-"
-
-  defp langfuse_trace_url(trace_id) do
-    System.get_env("AI_SERVER_LANGFUSE_TRACES_URL", @default_langfuse_traces_url) <> trace_id
-  end
 end

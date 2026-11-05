@@ -119,6 +119,12 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "15 4 * * *",
       task: {Sanbase.Email.ApiBusinessOnboardingList, :reconcile, []}
     ],
+    # 09:00 Europe/Berlin is 08:00 UTC in winter and 07:00 UTC in summer; the
+    # task sends only from the run that falls at 9 o'clock Berlin time.
+    send_ai_bot_review_digest: [
+      schedule: "0 7,8 * * *",
+      task: {Sanbase.DiscordBot.AiContextReviewDigest, :maybe_send, []}
+    ],
     update_all_uniswap_san_staked_users: [
       schedule: "4-59/30 * * * *",
       task: {Sanbase.Accounts.User.UniswapStaking, :update_all_uniswap_san_staked_users, []}

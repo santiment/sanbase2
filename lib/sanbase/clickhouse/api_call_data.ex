@@ -66,6 +66,65 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     end)
   end
 
+  @doc ~s"""
+  Per-query usage of a single user since `from`: the number of calls split by
+  auth method and the datetime of the last call. Metric and signal calls are
+  recorded as `getMetric|<metric>` and `getSignal|<signal>`, so each metric
+  gets its own row. Sorted by total calls, descending, capped at `limit` rows.
+  """
+  @spec user_queries_usage(non_neg_integer(), DateTime.t(), non_neg_integer()) ::
+          {:ok,
+           list(%{
+             query: String.t(),
+             apikey_calls: non_neg_integer(),
+             jwt_calls: non_neg_integer(),
+             other_calls: non_neg_integer(),
+             total_calls: non_neg_integer(),
+             last_called_at: DateTime.t()
+           })}
+          | {:error, String.t()}
+  def user_queries_usage(user_id, from, limit \\ 1000) do
+    query_struct = user_queries_usage_query(user_id, from, limit)
+
+    ClickhouseRepo.query_transform(query_struct, fn [query, apikey, jwt, other, total, last] ->
+      %{
+        query: query,
+        apikey_calls: apikey,
+        jwt_calls: jwt,
+        other_calls: other,
+        total_calls: total,
+        last_called_at: DateTime.from_unix!(last)
+      }
+    end)
+  end
+
+  @doc ~s"""
+  Daily activity of a single user since `from`, one row per day and auth
+  method: the number of calls and the number of distinct metrics called
+  (`getMetric|<metric>` queries). Sorted by day, newest first.
+  """
+  @spec user_daily_usage(non_neg_integer(), DateTime.t()) ::
+          {:ok,
+           list(%{
+             date: Date.t(),
+             auth_method: String.t(),
+             calls: non_neg_integer(),
+             distinct_metrics: non_neg_integer()
+           })}
+          | {:error, String.t()}
+  def user_daily_usage(user_id, from) do
+    query_struct = user_daily_usage_query(user_id, from)
+
+    ClickhouseRepo.query_transform(query_struct, fn [day, auth_method, calls, metrics] ->
+      %{
+        date: day |> DateTime.from_unix!() |> DateTime.to_date(),
+        auth_method: auth_method,
+        calls: calls,
+        distinct_metrics: metrics
+      }
+    end)
+  end
+
   @spec active_users_count(DateTime.t(), DateTime.t()) ::
           {:ok, number()} | {:error, String.t()}
   def active_users_count(from, to) do
@@ -212,6 +271,41 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     FROM #{@table}
     WHERE dt >= toDateTime({{from}}) AND user_id = {{user_id}}
     GROUP BY auth_method
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, %{user_id: user_id, from: from})
+  end
+
+  defp user_queries_usage_query(user_id, from, limit) do
+    sql = """
+    SELECT
+      query,
+      toUInt64(countIf(auth_method = 'apikey')),
+      toUInt64(countIf(auth_method = 'jwt')),
+      toUInt64(countIf(auth_method NOT IN ('apikey', 'jwt'))),
+      toUInt64(count()) AS total,
+      toUnixTimestamp(max(dt))
+    FROM #{@table}
+    WHERE dt >= toDateTime({{from}}) AND user_id = {{user_id}}
+    GROUP BY query
+    ORDER BY total DESC
+    LIMIT {{limit}}
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, %{user_id: user_id, from: from, limit: limit})
+  end
+
+  defp user_daily_usage_query(user_id, from) do
+    sql = """
+    SELECT
+      toUnixTimestamp(toStartOfDay(dt)) AS day,
+      auth_method,
+      toUInt64(count()),
+      toUInt64(uniqExactIf(query, startsWith(query, 'getMetric|')))
+    FROM #{@table}
+    WHERE dt >= toDateTime({{from}}) AND user_id = {{user_id}}
+    GROUP BY day, auth_method
+    ORDER BY day DESC, auth_method
     """
 
     Sanbase.Clickhouse.Query.new(sql, %{user_id: user_id, from: from})

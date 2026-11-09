@@ -91,9 +91,10 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     * `failed_payment?` - the business subscription is `past_due` or `unpaid`, so a
       card charge failed;
-    * `unpaid_invoice?` - an open business invoice older than
+    * `unpaid_invoice?` - an open or uncollectible business invoice older than
       #{@unpaid_invoice_after_days} days, typically a wire or crypto invoice not paid
-      yet, or an uncollectible one with no business invoice paid after it;
+      yet, unless a paid business line overlaps its period or, for an uncollectible
+      one, a business invoice was paid after it;
     * `last_web_active_at`, `last_api_call_at` and `last_active_at`, the later of the
       two.
 
@@ -556,7 +557,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     %{
       subscriptions: subscriptions_by_user(user_ids, Map.keys(data.plans)),
-      unpaid_invoices: users_with_unpaid_invoices(user_ids, data.users, Map.keys(data.plans)),
+      unpaid_invoices: users_with_unpaid_invoices(user_ids, data),
       status: manual_status_by_user(data.entries_by_user, user_ids, as_of),
       retention: retention_users(data.entries_by_user, user_ids, as_of, data.settings),
       api_calls: api_calls,
@@ -710,35 +711,58 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   # Users with a business invoice left unpaid: open or uncollectible past the first
   # days, with a line on one of the plans. An unpaid invoice for something else is not
   # the client's. Not a failed payment: a wire or crypto invoice stays open until the
-  # money arrives. An uncollectible invoice is written off, so a business invoice paid
-  # after it settles it - e.g. a monthly invoice written off after a trial and a yearly
-  # plan bought instead. An open one is still owed whatever was paid since.
-  defp users_with_unpaid_invoices([], _users, _plan_ids), do: MapSet.new()
+  # money arrives.
+  #
+  # An unpaid invoice is settled when one of the client's countable business lines - the
+  # same paid lines the revenue is counted from - overlaps its period: it was replaced,
+  # e.g. a monthly invoice left after a trial and a yearly plan bought instead. Stripe
+  # does not link the two, they are on different subscriptions. A skipped month between
+  # paid ones does not overlap them and still counts. An uncollectible invoice is written
+  # off, so any business line paid after it settles it too.
+  defp users_with_unpaid_invoices([], _data), do: MapSet.new()
 
-  defp users_with_unpaid_invoices(user_ids, users, plan_ids) do
+  defp users_with_unpaid_invoices(user_ids, data) do
     cutoff = DateTime.add(DateTime.utc_now(), -@unpaid_invoice_after_days, :day)
-    invoices = business_invoices(user_ids, users, plan_ids)
 
-    last_paid =
-      for %{status: "paid", total: total} = invoice <- invoices, total > 0, reduce: %{} do
-        acc ->
-          Map.update(acc, invoice.user_id, invoice.invoiced_at, &latest(&1, invoice.invoiced_at))
-      end
-
-    for %{status: status, invoiced_at: invoiced_at} = invoice <- invoices,
-        status in ["open", "uncollectible"],
-        DateTime.before?(invoiced_at, cutoff),
-        status == "open" or not paid_after?(Map.get(last_paid, invoice.user_id), invoiced_at),
+    for line <- unpaid_business_lines(user_ids, data.users, Map.keys(data.plans)),
+        line.net > 0,
+        eligible_line?(line, data),
+        DateTime.before?(line.invoiced_at, cutoff),
+        paid =
+          data.lines_by_user |> Map.get(line.user_id, []) |> Enum.filter(&Periods.countable?/1),
+        not settled?(line, paid),
         into: MapSet.new(),
-        do: invoice.user_id
+        do: line.user_id
   end
 
-  defp paid_after?(nil, _invoiced_at), do: false
-  defp paid_after?(paid_at, invoiced_at), do: DateTime.after?(paid_at, invoiced_at)
+  # The same rule as for revenue: a business plan line always counts, an email plan
+  # line only when the user's email or override qualifies.
+  defp eligible_line?(line, data) do
+    Map.fetch!(data.plans, line.plan_id).kind == :business or
+      email_eligible?(Map.get(data.users, line.user_id), data.overrides, data.settings)
+  end
 
-  # The users' invoices with a line on one of the plans - found by user id or by the
-  # Stripe customer when the invoice has no user - with the user resolved.
-  defp business_invoices(user_ids, users, plan_ids) do
+  defp settled?(unpaid, paid_lines) do
+    Enum.any?(paid_lines, fn paid ->
+      overlaps?(paid, unpaid) or
+        (unpaid.status == "uncollectible" and
+           DateTime.after?(paid.invoiced_at, unpaid.invoiced_at))
+    end)
+  end
+
+  # A paid line's period is in dates; the unpaid line's still in datetimes.
+  defp overlaps?(%{period_start: %Date{}, period_end: %Date{}} = paid, unpaid)
+       when is_struct(unpaid.period_start, DateTime) and is_struct(unpaid.period_end, DateTime) do
+    Date.before?(paid.period_start, to_date(unpaid.period_end)) and
+      Date.after?(paid.period_end, to_date(unpaid.period_start))
+  end
+
+  defp overlaps?(_a, _b), do: false
+
+  # The users' open and uncollectible invoice lines on one of the plans, with their
+  # invoice's status and date - found by user id or by the Stripe customer when the
+  # invoice has no user, with the user resolved.
+  defp unpaid_business_lines(user_ids, users, plan_ids) do
     customer_to_user =
       for id <- user_ids,
           customer = get_in(users, [id, :stripe_customer_id]),
@@ -748,23 +772,21 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     customer_ids = Map.keys(customer_to_user)
 
-    business_line =
-      from([line: l, price_plan: p] in lines_with_plan(),
-        where: l.invoice_id == parent_as(:invoice).id and coalesce(l.plan_id, p.id) in ^plan_ids,
-        select: 1
-      )
-
-    from(i in Invoice,
-      as: :invoice,
-      where: i.status in ["open", "uncollectible", "paid"],
+    from([line: l, price_plan: p] in lines_with_plan(),
+      join: i in Invoice,
+      on: i.id == l.invoice_id,
+      where: coalesce(l.plan_id, p.id) in ^plan_ids,
+      where: i.status in ["open", "uncollectible"],
       where: i.user_id in ^user_ids or i.stripe_customer_id in ^customer_ids,
-      where: exists(business_line),
       select: %{
         user_id: i.user_id,
         customer: i.stripe_customer_id,
         status: i.status,
         invoiced_at: i.invoiced_at,
-        total: i.total_excluding_tax
+        plan_id: coalesce(l.plan_id, p.id),
+        period_start: l.period_start,
+        period_end: l.period_end,
+        net: l.amount_excluding_tax - l.discount
       }
     )
     |> Repo.all()

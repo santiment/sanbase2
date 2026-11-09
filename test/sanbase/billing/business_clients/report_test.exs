@@ -210,8 +210,9 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
         paid_out_of_band: true
       )
 
-      invoice(user, [{@business_pro_monthly, Date.add(today, -20), Date.add(today, 10), 1}],
-        status: "open"
+      invoice(user, [{@business_pro_monthly, Date.add(today, 20), Date.add(today, 50), 1}],
+        status: "open",
+        invoiced_at: at(Date.add(today, -20))
       )
 
       assert [client] = list_clients()
@@ -225,24 +226,50 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       refute client.failed_payment?
     end
 
-    test "an uncollectible invoice followed by a paid one is settled, an open one is not",
+    test "an unpaid invoice replaced by a paid plan over the same period is settled",
          %{today: today} do
-      user = user("trial@corp.com")
+      # A monthly invoice written off after a trial, then a yearly plan.
+      written_off = user("trial@corp.com")
       start = Date.add(today, -60)
 
-      invoice(user, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}],
+      invoice(written_off, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}],
         status: "uncollectible",
         subscription: "sub_monthly"
       )
 
-      invoice(user, [{@business_pro_yearly, Date.add(start, 25), Date.add(start, 390), 478_800}])
+      invoice(written_off, [
+        {@business_pro_yearly, Date.add(start, 25), Date.add(start, 390), 478_800}
+      ])
 
-      assert [%{unpaid_invoice?: false, tcv: 478_800}] = list_clients()
+      # A monthly invoice left open after a trial, then a yearly plan paid out of band
+      # two days later.
+      left_open = user("wire@corp.com")
 
-      invoice(user, [{@business_pro_monthly, Date.add(today, -15), Date.add(today, 15), 42_000}],
+      invoice(left_open, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}],
         status: "open",
-        subscription: "sub_monthly"
+        subscription: "sub_left_open"
       )
+
+      invoice(
+        left_open,
+        [{@business_pro_yearly, Date.add(start, 2), Date.add(start, 367), 600_000}],
+        paid_out_of_band: true
+      )
+
+      assert [%{unpaid_invoice?: false}, %{unpaid_invoice?: false}] = list_clients()
+    end
+
+    test "an open month between paid months still counts as unpaid", %{today: today} do
+      user = user("skipped@corp.com")
+      start = Date.add(today, -75)
+
+      invoice(user, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}])
+
+      invoice(user, [{@business_pro_monthly, Date.add(start, 30), Date.add(start, 60), 42_000}],
+        status: "open"
+      )
+
+      invoice(user, [{@business_pro_monthly, Date.add(start, 60), Date.add(start, 90), 42_000}])
 
       assert [%{unpaid_invoice?: true}] = list_clients()
     end

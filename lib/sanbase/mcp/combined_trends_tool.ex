@@ -19,11 +19,14 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
   - `time_period` - Time period for trending data (e.g., '1h', '6h', '1d', '7d'). Defaults to '1h' (last hour).
   - `size` - Number of items per category to return (max 10). Defaults to 10.
 
-  Only the 2 most recent trend periods are returned, whatever
-  `time_period` is. A period is 1 hour for time_period up to 1d, 6 hours up to 7d,
-  and 1 day beyond that, so e.g. '2d' returns only the last 12 hours. When
-  older periods are dropped, `metadata.notice` says so and
-  `metadata.returned_since` gives the start of the oldest period returned.
+  Trends are computed every hour, and each hourly snapshot already ranks what
+  trended over the 24 hours before it (hype score against the previous 14
+  days). So the tool returns snapshots 24 hours apart, oldest first:
+  one for a time_period up to '1d', one per day beyond that (e.g. '3d' gives 3),
+  at most 7. Together they cover the whole window. The more snapshots, the
+  fewer items each holds (`size` for one or two, down to 3 for a week).
+  `metadata.coverage` says what the snapshots cover and `metadata.covered_since`
+  where coverage starts; past 7 days, older days are not covered.
   - `include_stories` - Include trending stories in response. Defaults to true.
   - `include_words` - Include trending words in response. Defaults to true.
 
@@ -70,7 +73,13 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
 
   require Logger
 
-  @max_trend_periods 2
+  # Each hourly snapshot ranks the 24 hours before it.
+  @snapshot_span_hours 24
+  # One snapshot per day of the window, up to a week.
+  @max_snapshots 7
+  # Items across all snapshots, so a week costs about what two snapshots did.
+  @items_budget 20
+  @min_items_per_snapshot 3
 
   @impl true
   def annotations do
@@ -87,9 +96,8 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
       required: false,
       description: """
       Time period for trending data (e.g., '1h', '6h', '1d', '7d').
-      This parameter defines how far back to look for trending data.
-      Only the 2 most recent trend periods are returned
-      (1h periods up to '1d', 6h periods up to '7d', 1d periods beyond).
+      Each returned snapshot covers the 24 hours before its datetime, so up to
+      '1d' one snapshot is returned, and one per day beyond that (max 7).
 
       Defaults to '1h' (last hour).
       """
@@ -146,8 +154,6 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
           include_words
         )
 
-      {trends_data, dropped?} = limit_trend_periods(trends_data)
-
       response_data =
         %{
           trends: trends_data,
@@ -159,7 +165,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
               period_end: DateTime.to_iso8601(to_datetime),
               included_data_types: build_included_types(include_stories, include_words)
             }
-            |> maybe_add_dropped_periods_notice(trends_data, dropped?, from_datetime, to_datetime),
+            |> add_coverage(trends_data, from_datetime, to_datetime),
           errors: errors
         }
         |> Utils.truncate_response()
@@ -178,7 +184,19 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
          include_stories,
          include_words
        ) do
-    interval = determine_interval(from_datetime, to_datetime)
+    # Hourly snapshots, from at least one span back so a short window still
+    # finds the latest snapshot despite social data latency. Snapshots are
+    # picked before the words are enriched: enrichment fetches documents and
+    # calls an LLM for every word it gets.
+    interval = "1h"
+    snapshots = snapshot_count(from_datetime, to_datetime)
+    per_snapshot = items_per_snapshot(snapshots, size)
+
+    from_datetime =
+      Enum.min(
+        [from_datetime, DateTime.add(to_datetime, -@snapshot_span_hours * 3600, :second)],
+        DateTime
+      )
 
     # Launch parallel tasks for data fetching with explicit tracking
     stories_task =
@@ -209,6 +227,9 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     # Process results and collect errors using explicit data type identification
     {stories_data, stories_errors} = extract_typed_result(results, :stories, include_stories)
     {words_data, words_errors} = extract_typed_result(results, :words, include_words)
+
+    stories_data = pick_snapshots(stories_data, :top_stories, snapshots, per_snapshot)
+    words_data = pick_snapshots(words_data, :top_words, snapshots, per_snapshot)
 
     # Fetch documents for trending words
     {enriched_words, document_errors} = enrich_words_with_documents(words_data)
@@ -558,17 +579,6 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     "AI summarization temporarily unavailable. #{doc_count} documents found discussing this trending word."
   end
 
-  defp determine_interval(from_datetime, to_datetime) do
-    diff_hours = DateTime.diff(to_datetime, from_datetime, :hour)
-
-    cond do
-      diff_hours <= 24 -> "1h"
-      # 1 week
-      diff_hours <= 168 -> "6h"
-      true -> "1d"
-    end
-  end
-
   defp format_story(story) do
     %{
       title: story.title,
@@ -607,46 +617,83 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     types
   end
 
-  # Returns the limited data and whether any older periods were dropped.
-  defp limit_trend_periods(trends_data) do
-    {trends_data, stories_dropped?} =
-      maybe_take_recent(trends_data, :trending_stories, @max_trend_periods)
+  defp snapshot_count(from_datetime, to_datetime) do
+    hours = DateTime.diff(to_datetime, from_datetime, :second) / 3600
 
-    {trends_data, words_dropped?} =
-      maybe_take_recent(trends_data, :trending_words, @max_trend_periods)
-
-    {trends_data, stories_dropped? or words_dropped?}
+    hours
+    |> Kernel./(@snapshot_span_hours)
+    |> Float.ceil()
+    |> trunc()
+    |> max(1)
+    |> min(@max_snapshots)
   end
 
-  defp maybe_take_recent(data, key, max) do
-    case Map.get(data, key) do
-      list when is_list(list) and length(list) > max ->
-        {Map.put(data, key, Enum.take(list, -max)), true}
-
-      _ ->
-        {data, false}
-    end
+  defp items_per_snapshot(snapshots, size) do
+    @items_budget |> div(snapshots) |> max(@min_items_per_snapshot) |> min(size)
   end
 
-  defp maybe_add_dropped_periods_notice(metadata, _trends_data, false, _from, _to), do: metadata
+  # `periods` is ascending by datetime. Keeps the newest snapshot and then, going
+  # back, the newest one at least a span older than the last kept, so the kept
+  # snapshots are about a day apart and do not overlap.
+  defp pick_snapshots(periods, items_key, count, per_snapshot) when is_list(periods) do
+    periods
+    |> Enum.reverse()
+    |> Enum.reduce([], fn period, kept ->
+      cond do
+        length(kept) >= count -> kept
+        kept == [] -> [period]
+        far_enough_back?(period, hd(kept)) -> [period | kept]
+        true -> kept
+      end
+    end)
+    |> Enum.map(fn period ->
+      Map.update(period, items_key, [], fn items ->
+        items |> Enum.sort_by(&(&1[:score] || 0), :desc) |> Enum.take(per_snapshot)
+      end)
+    end)
+  end
 
-  defp maybe_add_dropped_periods_notice(metadata, trends_data, true, from, to) do
-    returned_since =
+  defp pick_snapshots(other, _items_key, _count, _per_snapshot), do: other
+
+  defp far_enough_back?(period, newer_period) do
+    DateTime.diff(snapshot_datetime(newer_period), snapshot_datetime(period), :second) >=
+      @snapshot_span_hours * 3600
+  end
+
+  defp snapshot_datetime(%{datetime: datetime}),
+    do: Sanbase.Utils.DateTime.from_iso8601!(datetime)
+
+  defp add_coverage(metadata, trends_data, from, to) do
+    datetimes =
       [:trending_stories, :trending_words]
       |> Enum.flat_map(&List.wrap(Map.get(trends_data, &1)))
-      |> Enum.map(&Sanbase.Utils.DateTime.from_iso8601!(&1.datetime))
-      |> Enum.min(DateTime, fn -> nil end)
+      |> Enum.map(&snapshot_datetime/1)
 
-    period_str = if returned_since, do: DateTime.to_iso8601(returned_since), else: "unknown"
+    case datetimes do
+      [] ->
+        metadata
 
-    metadata
-    |> Map.put(:returned_since, period_str)
-    |> Map.put(
-      :notice,
-      "Only the #{@max_trend_periods} most recent #{determine_interval(from, to)} trend " <>
-        "periods are returned, starting at #{period_str}. Trends earlier in the requested " <>
-        "time_period are not included."
-    )
+      _ ->
+        earliest = Enum.min(datetimes, DateTime)
+        latest = Enum.max(datetimes, DateTime)
+        covered_since = DateTime.add(earliest, -@snapshot_span_hours * 3600, :second)
+
+        shortfall =
+          if DateTime.compare(covered_since, from) == :gt and
+               DateTime.diff(to, from, :hour) > @snapshot_span_hours * @max_snapshots,
+             do:
+               " The requested time_period is longer than #{@max_snapshots} days; earlier days are not covered.",
+             else: ""
+
+        metadata
+        |> Map.put(:covered_since, DateTime.to_iso8601(covered_since))
+        |> Map.put(
+          :coverage,
+          "Each snapshot ranks what trended over the #{@snapshot_span_hours} hours before its " <>
+            "datetime. Together they cover #{DateTime.to_iso8601(covered_since)} to " <>
+            "#{DateTime.to_iso8601(latest)}." <> shortfall
+        )
+    end
   end
 
   defp openai_client do

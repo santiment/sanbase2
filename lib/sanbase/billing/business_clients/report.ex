@@ -726,12 +726,20 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     for line <- unpaid_business_lines(user_ids, data.users, Map.keys(data.plans)),
         line.net > 0,
+        eligible_line?(line, data),
         DateTime.before?(line.invoiced_at, cutoff),
         paid =
           data.lines_by_user |> Map.get(line.user_id, []) |> Enum.filter(&Periods.countable?/1),
         not settled?(line, paid),
         into: MapSet.new(),
         do: line.user_id
+  end
+
+  # The same rule as for revenue: a business plan line always counts, an email plan
+  # line only when the user's email or override qualifies.
+  defp eligible_line?(line, data) do
+    Map.fetch!(data.plans, line.plan_id).kind == :business or
+      email_eligible?(Map.get(data.users, line.user_id), data.overrides, data.settings)
   end
 
   defp settled?(unpaid, paid_lines) do
@@ -775,6 +783,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
         customer: i.stripe_customer_id,
         status: i.status,
         invoiced_at: i.invoiced_at,
+        plan_id: coalesce(l.plan_id, p.id),
         period_start: l.period_start,
         period_end: l.period_end,
         net: l.amount_excluding_tax - l.discount

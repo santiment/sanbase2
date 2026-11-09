@@ -304,6 +304,52 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert flags == %{gmail.id => true, trial.id => false}
     end
 
+    test "an unpaid email plan invoice of a user whose email does not count is not theirs",
+         %{today: today} do
+      gmail = user("owner@gmail.com")
+      invoice(gmail, [{@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}])
+
+      invoice(gmail, [{@sanbase_pro, Date.add(today, -60), Date.add(today, -30), 4_900}],
+        status: "open",
+        subscription: "sub_pro"
+      )
+
+      assert [%{unpaid_invoice?: false}] = list_clients()
+    end
+
+    test "a paid proration or a $0 paid line over the period does not settle it",
+         %{today: today} do
+      unpaid_period = {Date.add(today, -60), Date.add(today, -30)}
+
+      for {email, settling_line} <- [
+            {"proration@corp.com", {42_000, [proration: true]}},
+            {"zero@corp.com", {0, []}}
+          ] do
+        client = user(email)
+
+        invoice(client, [
+          {@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}
+        ])
+
+        invoice(
+          client,
+          [{@business_pro_monthly, elem(unpaid_period, 0), elem(unpaid_period, 1), 42_000}],
+          status: "open",
+          subscription: "sub_open_#{email}"
+        )
+
+        {amount, opts} = settling_line
+
+        invoice(
+          client,
+          [{@business_pro_monthly, elem(unpaid_period, 0), elem(unpaid_period, 1), amount, opts}],
+          subscription: "sub_paid_#{email}"
+        )
+      end
+
+      assert [%{unpaid_invoice?: true}, %{unpaid_invoice?: true}] = list_clients()
+    end
+
     test "an open month between paid months still counts as unpaid", %{today: today} do
       user = user("skipped@corp.com")
       start = Date.add(today, -75)

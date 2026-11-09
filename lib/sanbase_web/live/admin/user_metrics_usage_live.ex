@@ -29,7 +29,8 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLive do
      |> assign(:user, nil)
      |> assign(:days, @default_days)
      |> assign(:kind, @default_kind)
-     |> assign(:usage, nil)}
+     |> assign(:usage, nil)
+     |> assign(:daily, nil)}
   end
 
   @impl true
@@ -52,6 +53,7 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLive do
          socket
          |> assign(:user, nil)
          |> assign(:usage, nil)
+         |> assign(:daily, nil)
          |> assign(:error, "User #{inspect(user_id)} not found")}
     end
   end
@@ -78,6 +80,12 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLive do
       |> assign_async(:usage, fn ->
         case ApiCallData.user_queries_usage(user.id, from, @row_limit) do
           {:ok, rows} -> {:ok, %{usage: Enum.map(rows, &classify/1)}}
+          {:error, reason} -> {:error, reason}
+        end
+      end)
+      |> assign_async(:daily, fn ->
+        case ApiCallData.user_daily_usage(user.id, from) do
+          {:ok, rows} -> {:ok, %{daily: rows}}
           {:error, reason} -> {:error, reason}
         end
       end)
@@ -178,6 +186,17 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLive do
         </:failed>
 
         <.usage_summary rows={rows} days={@days} />
+
+        <.async_result :let={daily} assign={@daily}>
+          <:loading>
+            <div class="h-24 bg-base-300 rounded animate-pulse"></div>
+          </:loading>
+          <:failed :let={reason}>
+            <div class="alert alert-error">Could not load daily activity: {inspect(reason)}</div>
+          </:failed>
+          <.daily_table rows={daily} />
+        </.async_result>
+
         <.usage_table rows={filter_rows(rows, @kind)} kind={@kind} />
 
         <p :if={length(rows) >= @row_limit} class="text-xs text-warning">
@@ -185,7 +204,7 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLive do
         </p>
         <p class="text-xs text-base-content/50">
           Source: ClickHouse api_call_data, last {@days} days. API key = external API
-          (scripts, Sansheets); JWT = Sanbase webapp. Failed calls are not recorded.
+          (scripts, Sansheets); JWT = Sanbase webapp.
         </p>
       </.async_result>
     </div>
@@ -214,6 +233,53 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLive do
     </div>
     """
   end
+
+  attr :rows, :list, required: true
+
+  defp daily_table(assigns) do
+    ~H"""
+    <section class="space-y-1">
+      <h2 class="text-sm font-semibold text-base-content/70">Daily activity</h2>
+      <div class="max-h-72 overflow-y-auto bg-base-100 border border-base-300 rounded">
+        <table id="metrics-usage-daily" class="table table-sm table-pin-rows">
+          <thead>
+            <tr>
+              <th>Day (UTC)</th>
+              <th>Auth</th>
+              <th class="text-right">Calls</th>
+              <th class="text-right">Distinct metrics</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :if={@rows == []}>
+              <td colspan="4" class="text-center text-base-content/50 py-4">
+                No calls in this period.
+              </td>
+            </tr>
+            <tr
+              :for={row <- @rows}
+              id={"daily-row-#{row.date}-#{row.auth_method}"}
+              class="hover"
+            >
+              <td class="tabular-nums whitespace-nowrap">{Date.to_iso8601(row.date)}</td>
+              <td>
+                <span class={["badge badge-sm", auth_class(row.auth_method)]}>
+                  {row.auth_method}
+                </span>
+              </td>
+              <td class="text-right tabular-nums">{format_int(row.calls)}</td>
+              <td class="text-right tabular-nums">{format_int(row.distinct_metrics)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    """
+  end
+
+  defp auth_class("apikey"), do: "badge-primary"
+  defp auth_class("jwt"), do: "badge-ghost"
+  defp auth_class(_), do: "badge-neutral"
 
   attr :rows, :list, required: true
   attr :kind, :string, required: true

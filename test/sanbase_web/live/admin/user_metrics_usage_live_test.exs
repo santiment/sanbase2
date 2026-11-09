@@ -38,13 +38,21 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLiveTest do
     ]
   end
 
+  defp daily do
+    [
+      %{date: ~D[2026-10-29], auth_method: "jwt", calls: 28, distinct_metrics: 0},
+      %{date: ~D[2026-10-28], auth_method: "apikey", calls: 20_233, distinct_metrics: 1_238}
+    ]
+  end
+
   setup do
     %{conn: sign_in(), target: insert(:user, email: "target@example.com")}
   end
 
   test "lists the metrics the user called", %{conn: conn, target: target} do
     with_mock Sanbase.Clickhouse.ApiCallData, [:passthrough],
-      user_queries_usage: fn _user_id, _from, _limit -> {:ok, rows()} end do
+      user_queries_usage: fn _user_id, _from, _limit -> {:ok, rows()} end,
+      user_daily_usage: fn _user_id, _from -> {:ok, daily()} end do
       {:ok, view, _html} = live(conn, ~p"/admin/user_metrics_usage?user_id=#{target.id}")
       render_async(view)
 
@@ -55,6 +63,9 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLiveTest do
       refute has_element?(view, "#usage-row-signal-anomaly")
       refute has_element?(view, "#usage-row-query-allProjects")
       assert has_element?(view, "#metrics-usage-summary", "Distinct metrics")
+      assert has_element?(view, "#daily-row-2026-10-28-apikey", "20,233")
+      assert has_element?(view, "#daily-row-2026-10-28-apikey", "1,238")
+      assert has_element?(view, "#daily-row-2026-10-29-jwt")
     end
   end
 
@@ -66,7 +77,8 @@ defmodule SanbaseWeb.Admin.UserMetricsUsageLiveTest do
       user_queries_usage: fn _user_id, _from, _limit ->
         send(test_pid, :queried)
         {:ok, rows()}
-      end do
+      end,
+      user_daily_usage: fn _user_id, _from -> {:ok, daily()} end do
       {:ok, view, _html} = live(conn, ~p"/admin/user_metrics_usage?user_id=#{target.id}")
       render_async(view)
       assert_received :queried

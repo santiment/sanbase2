@@ -75,6 +75,25 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
     end)
   end
 
+  test "clickhouse returns daily usage of a user", context do
+    day = ~U[2026-10-28 00:00:00Z]
+    rows = [[DateTime.to_unix(day), "apikey", 20_233, 1_238]]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert ApiCallData.user_daily_usage(context.user.id, ~U[2026-10-01 00:00:00Z]) ==
+               {:ok,
+                [
+                  %{
+                    date: ~D[2026-10-28],
+                    auth_method: "apikey",
+                    calls: 20_233,
+                    distinct_metrics: 1_238
+                  }
+                ]}
+    end)
+  end
+
   test "clickhouse returns empty list", context do
     dt1 = ~U[2019-01-01 00:00:00Z]
     dt2 = ~U[2019-01-03 00:00:00Z]

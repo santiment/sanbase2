@@ -61,6 +61,26 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
              [%{"slug" => "gold"}]
   end
 
+  test "getMetric accepts inline fragments in the selection", %{conn: conn} do
+    query = """
+    {
+      getMetric(metric: "price_usd"){
+        ... on Metric {
+          metadata{ metric }
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+
+    refute Map.has_key?(result, "errors")
+    assert get_in(result, ["data", "getMetric", "metadata", "metric"]) == "price_usd"
+  end
+
   defp available_non_crypto_assets(conn, metric) do
     query = """
     {

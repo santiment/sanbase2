@@ -557,7 +557,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
     %{
       subscriptions: subscriptions_by_user(user_ids, Map.keys(data.plans)),
-      unpaid_invoices: users_with_unpaid_invoices(user_ids, data.users, Map.keys(data.plans)),
+      unpaid_invoices: users_with_unpaid_invoices(user_ids, data),
       status: manual_status_by_user(data.entries_by_user, user_ids, as_of),
       retention: retention_users(data.entries_by_user, user_ids, as_of, data.settings),
       api_calls: api_calls,
@@ -713,24 +713,23 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   # the client's. Not a failed payment: a wire or crypto invoice stays open until the
   # money arrives.
   #
-  # An unpaid invoice is settled when a paid business line overlaps its period - it was
-  # replaced, e.g. a monthly invoice left after a trial and a yearly plan bought instead.
-  # A skipped month between paid ones does not overlap them and still counts. An
-  # uncollectible invoice is written off, so any business invoice paid after it settles
-  # it too.
-  defp users_with_unpaid_invoices([], _users, _plan_ids), do: MapSet.new()
+  # An unpaid invoice is settled when one of the client's countable business lines - the
+  # same paid lines the revenue is counted from - overlaps its period: it was replaced,
+  # e.g. a monthly invoice left after a trial and a yearly plan bought instead. Stripe
+  # does not link the two, they are on different subscriptions. A skipped month between
+  # paid ones does not overlap them and still counts. An uncollectible invoice is written
+  # off, so any business line paid after it settles it too.
+  defp users_with_unpaid_invoices([], _data), do: MapSet.new()
 
-  defp users_with_unpaid_invoices(user_ids, users, plan_ids) do
+  defp users_with_unpaid_invoices(user_ids, data) do
     cutoff = DateTime.add(DateTime.utc_now(), -@unpaid_invoice_after_days, :day)
-    lines = business_invoice_lines(user_ids, users, plan_ids)
 
-    paid_by_user =
-      lines |> Enum.filter(&(&1.status == "paid" and &1.net > 0)) |> Enum.group_by(& &1.user_id)
-
-    for %{status: status} = line <- lines,
-        status in ["open", "uncollectible"],
+    for line <- unpaid_business_lines(user_ids, data.users, Map.keys(data.plans)),
+        line.net > 0,
         DateTime.before?(line.invoiced_at, cutoff),
-        not settled?(line, Map.get(paid_by_user, line.user_id, [])),
+        paid =
+          data.lines_by_user |> Map.get(line.user_id, []) |> Enum.filter(&Periods.countable?/1),
+        not settled?(line, paid),
         into: MapSet.new(),
         do: line.user_id
   end
@@ -743,18 +742,19 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     end)
   end
 
-  defp overlaps?(%{period_start: %DateTime{}, period_end: %DateTime{}} = a, b)
-       when is_struct(b.period_start, DateTime) and is_struct(b.period_end, DateTime) do
-    DateTime.before?(a.period_start, b.period_end) and
-      DateTime.after?(a.period_end, b.period_start)
+  # A paid line's period is in dates; the unpaid line's still in datetimes.
+  defp overlaps?(%{period_start: %Date{}, period_end: %Date{}} = paid, unpaid)
+       when is_struct(unpaid.period_start, DateTime) and is_struct(unpaid.period_end, DateTime) do
+    Date.before?(paid.period_start, to_date(unpaid.period_end)) and
+      Date.after?(paid.period_end, to_date(unpaid.period_start))
   end
 
   defp overlaps?(_a, _b), do: false
 
-  # The users' business invoice lines - lines on one of the plans, with their invoice's
-  # status and date - found by user id or by the Stripe customer when the invoice has no
-  # user, with the user resolved.
-  defp business_invoice_lines(user_ids, users, plan_ids) do
+  # The users' open and uncollectible invoice lines on one of the plans, with their
+  # invoice's status and date - found by user id or by the Stripe customer when the
+  # invoice has no user, with the user resolved.
+  defp unpaid_business_lines(user_ids, users, plan_ids) do
     customer_to_user =
       for id <- user_ids,
           customer = get_in(users, [id, :stripe_customer_id]),
@@ -768,7 +768,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       join: i in Invoice,
       on: i.id == l.invoice_id,
       where: coalesce(l.plan_id, p.id) in ^plan_ids,
-      where: i.status in ["open", "uncollectible", "paid"],
+      where: i.status in ["open", "uncollectible"],
       where: i.user_id in ^user_ids or i.stripe_customer_id in ^customer_ids,
       select: %{
         user_id: i.user_id,

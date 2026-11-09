@@ -259,6 +259,51 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert [%{unpaid_invoice?: false}, %{unpaid_invoice?: false}] = list_clients()
     end
 
+    test "an uncollectible invoice is settled by a later payment for another period",
+         %{today: today} do
+      user = user("later@corp.com")
+      start = Date.add(today, -60)
+
+      invoice(user, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}],
+        status: "uncollectible"
+      )
+
+      invoice(user, [{@business_pro_monthly, Date.add(start, 40), Date.add(start, 70), 42_000}])
+
+      assert [%{unpaid_invoice?: false}] = list_clients()
+    end
+
+    test "only the client's countable business lines settle, and a $0 unpaid line owes nothing",
+         %{today: today} do
+      # A business plan client with a gmail address: their paid Sanbase PRO line does not
+      # count for them, so it does not settle the open business invoice it overlaps.
+      gmail = user("someone@gmail.com")
+      invoice(gmail, [{@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}])
+
+      invoice(
+        gmail,
+        [{@business_pro_monthly, Date.add(today, -50), Date.add(today, -20), 42_000}],
+        status: "open",
+        subscription: "sub_open"
+      )
+
+      invoice(gmail, [{@sanbase_pro, Date.add(today, -50), Date.add(today, -20), 4_900}],
+        subscription: "sub_pro"
+      )
+
+      # A $0 trial line left open owes nothing.
+      trial = user("trial-open@corp.com")
+      invoice(trial, [{@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}])
+
+      invoice(trial, [{@business_pro_monthly, Date.add(today, -60), Date.add(today, -30), 0}],
+        status: "open",
+        subscription: "sub_trial"
+      )
+
+      flags = list_clients() |> Map.new(&{&1.user_id, &1.unpaid_invoice?})
+      assert flags == %{gmail.id => true, trial.id => false}
+    end
+
     test "an open month between paid months still counts as unpaid", %{today: today} do
       user = user("skipped@corp.com")
       start = Date.add(today, -75)

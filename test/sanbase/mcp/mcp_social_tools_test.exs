@@ -135,24 +135,27 @@ defmodule SanbaseWeb.Graphql.MCPSocialToolsTest do
   end
 
   describe "combined_trends_tool" do
-    test "says when older trend periods were dropped" do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
+    # Hourly snapshots over the last `hours`, each with `per_snapshot` stories.
+    defp hourly_stories(now, hours, per_snapshot \\ 1) do
+      for hours_ago <- 0..(hours - 1), into: %{} do
+        stories =
+          for rank <- 1..per_snapshot do
+            %{
+              title: "Story #{hours_ago}h ago ##{rank}",
+              summary: "Summary",
+              score: 100.0 - rank,
+              search_text: "query",
+              related_tokens: [],
+              bullish_ratio: 0.5,
+              bearish_ratio: 0.5
+            }
+          end
 
-      stories =
-        for hours_ago <- [18, 12, 6], into: %{} do
-          story = %{
-            title: "Story #{hours_ago}",
-            summary: "Summary",
-            score: 1.0,
-            search_text: "query",
-            related_tokens: [],
-            bullish_ratio: 0.5,
-            bearish_ratio: 0.5
-          }
+        {DateTime.add(now, -hours_ago * 3600, :second), stories}
+      end
+    end
 
-          {DateTime.add(now, -hours_ago * 3600, :second), [story]}
-        end
-
+    defp stories_for(time_period, stories) do
       Sanbase.Mock.prepare_mock2(
         &Sanbase.SocialData.TrendingStories.get_trending_stories/4,
         {:ok, stories}
@@ -160,19 +163,64 @@ defmodule SanbaseWeb.Graphql.MCPSocialToolsTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert {:ok, response} =
                  call_tool("combined_trends_tool", %{
-                   time_period: "2d",
+                   time_period: time_period,
                    include_words: false
                  })
 
         %{"metadata" => metadata, "trends" => %{"trending_stories" => periods}} =
           decode(response)
 
-        assert length(periods) == 2
-
-        expected_since = DateTime.add(now, -12 * 3600, :second) |> DateTime.to_iso8601()
-        assert metadata["returned_since"] == expected_since
-        assert metadata["notice"] =~ "Only the 2 most recent 6h trend periods"
+        {metadata, periods}
       end)
+    end
+
+    defp period_hours_ago(now, %{"datetime" => datetime}) do
+      {:ok, datetime, _} = DateTime.from_iso8601(datetime)
+      div(DateTime.diff(now, datetime, :second), 3600)
+    end
+
+    test "a window up to a day returns the latest snapshot, which covers the day" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      {metadata, periods} = stories_for("1d", hourly_stories(now, 30, 10))
+
+      assert [period] = periods
+      assert period_hours_ago(now, period) == 0
+      assert length(period["top_stories"]) == 10
+      assert metadata["coverage"] =~ "24 hours before its datetime"
+      refute Map.has_key?(metadata, "notice")
+    end
+
+    test "a short window still finds a snapshot older than the window" do
+      # Social data lags: the newest snapshot can be older than a 1h window.
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      stories =
+        now |> hourly_stories(30) |> Map.reject(fn {dt, _} -> DateTime.diff(now, dt) < 7200 end)
+
+      {_metadata, periods} = stories_for("1h", stories)
+      assert [period] = periods
+      assert period_hours_ago(now, period) == 2
+    end
+
+    test "a multi-day window returns one snapshot per day, a day apart" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      {metadata, periods} = stories_for("3d", hourly_stories(now, 80, 10))
+
+      assert Enum.map(periods, &period_hours_ago(now, &1)) == [48, 24, 0]
+      # Three snapshots share the item budget.
+      assert Enum.all?(periods, &(length(&1["top_stories"]) == 6))
+
+      expected_since = now |> DateTime.add(-72 * 3600, :second) |> DateTime.to_iso8601()
+      assert metadata["covered_since"] == expected_since
+    end
+
+    test "past a week only the last seven days are covered, and it says so" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      {metadata, periods} = stories_for("10d", hourly_stories(now, 240, 10))
+
+      assert length(periods) == 7
+      assert Enum.all?(periods, &(length(&1["top_stories"]) == 3))
+      assert metadata["coverage"] =~ "longer than 7 days"
     end
 
     test "rejects size above 10" do

@@ -108,6 +108,18 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
       assert redirected_to(conn) == "/admin/user_overview?user_id=#{target.id}"
     end
 
+    test "a viewer can open the user's metrics usage page" do
+      target = insert(:user)
+
+      conn =
+        get(
+          sign_in(:role_admin_panel_viewer),
+          show_action_path("view_user_metrics_usage", target.id)
+        )
+
+      assert redirected_to(conn) == "/admin/user_metrics_usage?user_id=#{target.id}"
+    end
+
     test "an action the resource does not declare is refused, not dispatched" do
       target = insert(:user)
 

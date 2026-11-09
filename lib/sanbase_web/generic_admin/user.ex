@@ -61,12 +61,13 @@ defmodule SanbaseWeb.GenericAdmin.User do
   @doc """
   Custom show-page actions, mapped to the permission each needs.
   `GenericAdminController.show_action/2` dispatches only what is listed here.
-  `view_user_overview` gets `:show` because it only redirects to a page with its
-  own role gate; everything else mutates the user.
+  `view_user_overview` and `view_user_metrics_usage` get `:show` because they only
+  redirect to a page with its own role gate; everything else mutates the user.
   """
   def show_actions() do
     %{
       view_user_overview: :show,
+      view_user_metrics_usage: :show,
       reset_api_call_limits: :edit,
       reset_queries_credits_spent: :edit,
       mcp_ban_user: :edit,
@@ -193,6 +194,16 @@ defmodule SanbaseWeb.GenericAdmin.User do
         actions: [:view_user_overview]
       },
       %{
+        name: "Metrics Usage",
+        fields: [
+          %{
+            field_name: "metrics usage",
+            data: "Metrics, signals and queries called (API key and webapp), from api_call_data"
+          }
+        ],
+        actions: [:view_user_metrics_usage]
+      },
+      %{
         name: "Api Calls Limits",
         fields: [
           %{
@@ -268,6 +279,10 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
   def view_user_overview(conn, %{id: id}) do
     Phoenix.Controller.redirect(conn, to: "/admin/user_overview?user_id=#{id}")
+  end
+
+  def view_user_metrics_usage(conn, %{id: id}) do
+    Phoenix.Controller.redirect(conn, to: "/admin/user_metrics_usage?user_id=#{id}")
   end
 
   def reset_api_call_limits(conn, %{id: id}) do

@@ -47,6 +47,34 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
     end)
   end
 
+  test "clickhouse returns per-query usage of a user", context do
+    last = ~U[2026-11-01 10:00:00Z]
+
+    rows = [
+      ["getMetric|price_usd", 1200, 30, 0, 1230, DateTime.to_unix(last)],
+      ["allProjects", 10, 5, 1, 16, DateTime.to_unix(last)]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      from = ~U[2026-10-01 00:00:00Z]
+
+      assert {:ok, [first, second]} = ApiCallData.user_queries_usage(context.user.id, from)
+
+      assert first == %{
+               query: "getMetric|price_usd",
+               apikey_calls: 1200,
+               jwt_calls: 30,
+               other_calls: 0,
+               total_calls: 1230,
+               last_called_at: last
+             }
+
+      assert second.query == "allProjects"
+      assert second.other_calls == 1
+    end)
+  end
+
   test "clickhouse returns empty list", context do
     dt1 = ~U[2019-01-01 00:00:00Z]
     dt2 = ~U[2019-01-03 00:00:00Z]

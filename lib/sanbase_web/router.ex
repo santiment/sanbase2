@@ -405,6 +405,7 @@ defmodule SanbaseWeb.Router do
       live("/business_clients", Admin.BusinessClientsLive)
       live("/business_clients/:user_id", Admin.BusinessClientLive)
       live("/user_overview", Admin.UserOverviewLive)
+      live("/user_metrics_usage", Admin.UserMetricsUsageLive)
       live("/user_rankings", Admin.UserRankingsLive)
     end
 

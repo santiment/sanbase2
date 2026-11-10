@@ -295,13 +295,16 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     Sanbase.Clickhouse.Query.new(sql, %{user_id: user_id, from: from, limit: limit})
   end
 
+  # `query` is Nullable(String). Passing it to `uniqExactIf` as-is fails on
+  # production ClickHouse with CANNOT_CONVERT_TYPE (Nullable vs non-Nullable
+  # aggregate state), so both arguments are made non-nullable explicitly.
   defp user_daily_usage_query(user_id, from) do
     sql = """
     SELECT
       toUnixTimestamp(toStartOfDay(dt)) AS day,
       auth_method,
       toUInt64(count()),
-      toUInt64(uniqExactIf(query, startsWith(query, 'getMetric|')))
+      toUInt64(uniqExactIf(assumeNotNull(query), startsWith(ifNull(query, ''), 'getMetric|')))
     FROM #{@table}
     WHERE dt >= toDateTime({{from}}) AND user_id = {{user_id}}
     GROUP BY day, auth_method

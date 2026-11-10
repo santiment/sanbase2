@@ -468,4 +468,13 @@ defmodule Sanbase.ProjectListSelectorTest do
       assert slugs == [p2.slug]
     end
   end
+
+  describe "unsupported filters" do
+    test "projects/1 returns an error instead of raising" do
+      args = %{selector: %{filters: [%{name: "no_such_filter", args: %{}}]}}
+
+      assert {:error, error} = ListSelector.projects(args)
+      assert error =~ "not supported"
+    end
+  end
 end

@@ -337,6 +337,10 @@ defmodule Sanbase.Project.ListSelector do
     end
   end
 
+  defp slugs_by_filter(filter) do
+    {:error, "The :project filter #{inspect(filter)} is not supported or has mistyped fields."}
+  end
+
   defp ordered_slugs_by_order_by(nil, slugs), do: {:ok, slugs}
 
   defp ordered_slugs_by_order_by(order_by, slugs) do

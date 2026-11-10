@@ -71,6 +71,10 @@ defmodule Sanbase.BlockchainAddress do
     end
   end
 
+  def by_selector(_selector) do
+    {:error, "The selector must provide either an id or both an address and an infrastructure."}
+  end
+
   @doc ~s"""
   Convert an address or addresses to the internal format used in our databases.
 

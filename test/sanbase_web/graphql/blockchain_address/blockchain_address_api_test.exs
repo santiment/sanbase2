@@ -107,6 +107,14 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     end)
   end
 
+  test "an address without infrastructure returns an error", context do
+    result =
+      blockchain_address(context.conn, %{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"})
+
+    [error] = result["errors"]
+    assert error["message"] =~ "infrastructure"
+  end
+
   defp blockchain_address(conn, selector) do
     query = """
     {

@@ -76,6 +76,12 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
     assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed to delete"
   end
 
+  test "showing a record of an unknown resource returns 404 rather than raising" do
+    conn = get(sign_in(:role_admin_panel_viewer), ~p"/admin/generic/1?resource=no_such_resource")
+
+    assert html_response(conn, 404) =~ "resource"
+  end
+
   describe "show_action" do
     defp show_action_path(action, id),
       do: ~p"/admin/generic/show_action?#{[action: action, resource: "users", id: id]}"

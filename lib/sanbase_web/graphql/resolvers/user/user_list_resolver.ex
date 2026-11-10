@@ -36,6 +36,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.fetch_public_user_lists(current_user, type)
   end
 
+  def fetch_public_user_lists(_root, _args, _resolution) do
+    {:error, "Only logged in users can call this method"}
+  end
+
   def fetch_all_public_user_lists(_root, %{} = args, _resolution) do
     type = Map.get(args, :type) || :project
     UserList.fetch_all_public_lists(type)

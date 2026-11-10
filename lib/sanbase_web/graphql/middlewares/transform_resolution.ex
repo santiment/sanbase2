@@ -54,14 +54,19 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   ]
   defp get_selectors(%Resolution{} = resolution) do
     resolution.definition.selections
-    |> Enum.map(fn %{name: name} = field ->
-      case Sanbase.Utils.Inflect.camelize(name, :lower) do
-        name when name in @fields_with_selector ->
-          argument_data_to_selector(field.argument_data)
+    |> Enum.map(fn
+      %Absinthe.Blueprint.Document.Field{name: name} = field ->
+        case Sanbase.Utils.Inflect.camelize(name, :lower) do
+          name when name in @fields_with_selector ->
+            argument_data_to_selector(field.argument_data)
 
-        _ ->
-          nil
-      end
+          _ ->
+            nil
+        end
+
+      # Inline fragments and fragment spreads carry no selector
+      _ ->
+        nil
     end)
     |> Enum.reject(&is_nil/1)
   end

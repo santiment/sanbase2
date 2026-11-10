@@ -386,12 +386,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       {:ok, user} ->
         {:ok, user}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {
           :error,
           message: "Cannot update current user's terms and conditions",
           details: changeset_errors(changeset)
         }
+
+      {:error, _error} ->
+        {:error, "Cannot update current user's terms and conditions"}
     end
   end
 

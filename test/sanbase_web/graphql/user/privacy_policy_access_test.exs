@@ -147,4 +147,22 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     assert json_response(result, 200)["data"]["updateTermsAndConditions"]["privacyPolicyAccepted"] ==
              true
   end
+
+  test "returns an error when the update fails with a non-changeset error", %{conn: conn} do
+    update_mutation = """
+    mutation {
+      updateTermsAndConditions(privacyPolicyAccepted: true){
+        privacyPolicyAccepted
+      }
+    }
+    """
+
+    with_mock Sanbase.Accounts, [:passthrough],
+      update_terms_and_conditions: fn _user, _args -> {:error, :user_not_found} end do
+      result = conn |> post("/graphql", mutation_skeleton(update_mutation))
+
+      [error] = json_response(result, 200)["errors"]
+      assert error["message"] == "Cannot update current user's terms and conditions"
+    end
+  end
 end

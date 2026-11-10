@@ -102,8 +102,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
       %{
         datetime: DateTime.from_unix!(timestamp),
         value:
-          Enum.map(value, fn {pool, int} ->
-            %{staking_pool: pool, valuation: int}
+          Enum.map(value, fn {pool, valuation} ->
+            # ClickHouse round() returns a float, the GraphQL field is an integer
+            %{staking_pool: pool, valuation: Sanbase.Math.to_integer(valuation)}
           end)
       }
     end)

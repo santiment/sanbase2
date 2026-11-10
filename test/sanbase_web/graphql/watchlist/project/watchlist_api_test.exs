@@ -395,6 +395,18 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     assert user_lists["user"]["id"] == user.id |> to_string()
   end
 
+  test "fetch public watchlists without a logged in user returns an error" do
+    query = query("fetchPublicWatchlists")
+
+    result =
+      build_conn()
+      |> post("/graphql", query_skeleton(query, "fetchPublicWatchlists"))
+      |> json_response(200)
+
+    [error] = result["errors"]
+    assert error["message"] =~ "Only logged in users"
+  end
+
   test "fetch all public watchlists", %{user: user, user2: user2, conn: conn} do
     {:ok, _} = UserList.create_user_list(user, %{name: "My Test List", is_public: true})
     {:ok, _} = UserList.create_user_list(user2, %{name: "My Test List", is_public: true})

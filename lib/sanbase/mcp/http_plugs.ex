@@ -87,8 +87,8 @@ defmodule Sanbase.MCP.AuthPlug do
       nil
     else
       with {:ok, oauth_token} <- Authorization.AccessToken.authorize(value: token),
-           {:ok, user} <-
-             Sanbase.Accounts.User.by_id(Sanbase.Math.to_integer(oauth_token.sub)) do
+           {:ok, user_id} <- parse_user_id(oauth_token.sub),
+           {:ok, user} <- Sanbase.Accounts.User.by_id(user_id) do
         {:ok, user}
       else
         _ -> nil
@@ -97,6 +97,17 @@ defmodule Sanbase.MCP.AuthPlug do
   end
 
   defp try_oauth(_), do: nil
+
+  # Tokens without a user (e.g. issued with client credentials) have no
+  # numeric sub and cannot authenticate a user.
+  defp parse_user_id(sub) when is_binary(sub) do
+    case Integer.parse(sub) do
+      {user_id, ""} -> {:ok, user_id}
+      _ -> :error
+    end
+  end
+
+  defp parse_user_id(_), do: :error
 
   defp try_apikey(header_value) do
     case extract_apikey(header_value) do

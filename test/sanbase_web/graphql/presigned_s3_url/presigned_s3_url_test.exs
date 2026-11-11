@@ -63,6 +63,17 @@ defmodule SanbaseWeb.Graphql.PresignedS3UrlTest do
     end)
   end
 
+  test "a whitespace-only object returns an error and no URL is generated", context do
+    Sanbase.Mock.prepare_mock2(&PresignedS3Url.S3.generate_presigned_url/3, {:ok, @url})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result = get_presigned_s3_url(context.conn, "   ")
+
+      assert get_in(result, ["data", "getPresignedS3Url"]) == nil
+      assert get_in(result, ["errors", Access.at(0), "message"]) =~ "object can't be blank"
+      refute called(PresignedS3Url.S3.generate_presigned_url(:_, :_, :_))
+    end)
+  end
+
   defp get_presigned_s3_url(conn, object) do
     query = """
     {

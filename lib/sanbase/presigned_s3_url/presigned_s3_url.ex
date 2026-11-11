@@ -46,9 +46,13 @@ defmodule Sanbase.PresignedS3Url do
   to an object in a private S3 bucket. A user can generate one URL per object.
   To track this, presigned S3 URLs are stored in a database table.
   """
-  def get_presigned_s3_url(_user_id, ""), do: {:error, "The object can't be blank."}
-
   def get_presigned_s3_url(user_id, object) do
+    if String.trim(object) == "",
+      do: {:error, "The object can't be blank."},
+      else: do_get_presigned_s3_url(user_id, object)
+  end
+
+  defp do_get_presigned_s3_url(user_id, object) do
     query = from(url in __MODULE__, where: url.user_id == ^user_id and url.object == ^object)
 
     case Sanbase.Repo.one(query) do

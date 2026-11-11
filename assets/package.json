@@ -19,12 +19,17 @@
     "graphql": "^16.13.1",
     "jquery": "^3.7.1",
     "lightweight-charts": "^5.1.0",
-    "moment": "^2.29.4",
+    "moment": "^2.31.0",
     "phoenix": "file:../deps/phoenix",
     "phoenix_html": "file:../deps/phoenix_html",
     "phoenix_live_view": "file:../deps/phoenix_live_view",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "sortablejs": "^1.15.6"
+  },
+  "overrides": {
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "^6.1.5"
+    }
   }
 }

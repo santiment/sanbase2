@@ -175,4 +175,38 @@ defmodule Sanbase.Knowledge.ContextTest do
       assert length(Regex.scan(~r/<a /, html)) == 1
     end
   end
+
+  describe "inline_label/1" do
+    test "folds newlines so a title cannot start a raw-HTML markdown block" do
+      label = Context.inline_label("hello\n<img src=x onerror=alert(1)>")
+
+      refute label =~ "\n"
+      html = Earmark.as_html!("- [#{label}](https://x)")
+      refute html =~ "<img"
+    end
+
+    test "escapes link delimiters so a title cannot forge a link target" do
+      label = Context.inline_label("x](javascript:alert(1)) [y")
+      html = Earmark.as_html!("- [#{label}](https://x)")
+
+      refute html =~ ~s(href="javascript:)
+      assert length(Regex.scan(~r/<a /, html)) == 1
+    end
+
+    test "renders nil as an empty label" do
+      assert Context.inline_label(nil) == ""
+    end
+  end
+
+  describe "safe_url/1" do
+    test "keeps http(s) URLs and encodes link-target delimiters" do
+      assert Context.safe_url("https://x/a b(c)") == "https://x/a%20b%28c%29"
+    end
+
+    test "collapses non-web schemes to #" do
+      for url <- ["javascript:alert(1)", "data:text/html,x", "//evil.example", "", nil] do
+        assert Context.safe_url(url) == "#"
+      end
+    end
+  end
 end

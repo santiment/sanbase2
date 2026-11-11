@@ -240,7 +240,7 @@ defmodule SanbaseWeb.AcademyQAComponents do
       </div>
 
       <div class="prose prose-sm max-w-none">
-        {raw(markdown_to_html(@answer_data.answer))}
+        {raw(SanbaseWeb.KnowledgeAnswerHTML.to_html(@answer_data.answer))}
       </div>
     </div>
     """
@@ -459,14 +459,4 @@ defmodule SanbaseWeb.AcademyQAComponents do
   end
 
   defp format_date(_), do: ""
-
-  defp markdown_to_html(markdown) when is_binary(markdown) do
-    case Earmark.as_html(markdown) do
-      {:ok, html, _} -> html
-      {:error, _html, _errors} -> markdown
-      _ -> markdown
-    end
-  end
-
-  defp markdown_to_html(_), do: ""
 end

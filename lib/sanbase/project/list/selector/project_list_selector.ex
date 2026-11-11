@@ -286,7 +286,7 @@ defmodule Sanbase.Project.ListSelector do
     end
   end
 
-  defp slugs_by_filter(%{name: "market_segments", args: args}) do
+  defp slugs_by_filter(%{name: "market_segments", args: %{market_segments: _} = args}) do
     combinator = Map.get(args, :market_segments_combinator, "and")
 
     projects =

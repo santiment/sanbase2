@@ -476,5 +476,12 @@ defmodule Sanbase.ProjectListSelectorTest do
       assert {:error, error} = ListSelector.projects(args)
       assert error =~ "not supported"
     end
+
+    test "a market_segments filter without market_segments returns an error" do
+      args = %{selector: %{filters: [%{name: "market_segments", args: %{}}]}}
+
+      assert {:error, error} = ListSelector.projects(args)
+      assert error =~ "not supported"
+    end
   end
 end

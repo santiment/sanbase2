@@ -311,7 +311,7 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def show(%Plug.Conn{} = conn, %{"resource" => resource, "id" => id}) do
     case module_from_resource(conn, resource) do
-      nil -> conn |> put_status(:not_found) |> render("error.html")
+      nil -> conn |> put_status(:not_found) |> render("error.html", message: "Unknown resource.")
       module -> do_show(conn, resource, module, id)
     end
   end

@@ -79,7 +79,13 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
   test "showing a record of an unknown resource returns 404 rather than raising" do
     conn = get(sign_in(:role_admin_panel_viewer), ~p"/admin/generic/1?resource=no_such_resource")
 
-    assert html_response(conn, 404) =~ "resource"
+    assert html_response(conn, 404) =~ "Unknown resource."
+  end
+
+  test "the index page without a resource still asks for one" do
+    conn = get(sign_in(:role_admin_panel_viewer), ~p"/admin/generic")
+
+    assert html_response(conn, 200) =~ "You need to provide a resource!"
   end
 
   describe "show_action" do

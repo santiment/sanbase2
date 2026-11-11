@@ -477,6 +477,36 @@ defmodule Sanbase.ProjectListSelectorTest do
       assert error =~ "not supported"
     end
 
+    test "a filter with nil args returns an error" do
+      args = %{selector: %{filters: [%{name: "metric", args: nil}]}}
+
+      assert {:error, error} = ListSelector.projects(args)
+      assert error =~ "not supported"
+    end
+
+    test "a metric filter with missing fields returns an error" do
+      args = %{selector: %{filters: [%{name: "metric", args: %{metric: "nvt"}}]}}
+
+      assert {:error, error} = ListSelector.projects(args)
+      assert error =~ "not supported"
+    end
+
+    test "a top-level metric filter with missing fields returns an error" do
+      args = %{selector: %{filters: [%{metric: "nvt"}]}}
+
+      assert {:error, error} = ListSelector.projects(args)
+      assert error =~ "not supported"
+    end
+
+    test "a filter with dynamic_from but no dynamic_to returns that error" do
+      args = %{
+        selector: %{filters: [%{name: "metric", args: %{metric: "nvt", dynamic_from: "1d"}}]}
+      }
+
+      assert {:error, error} = ListSelector.projects(args)
+      assert error == "Cannot use 'dynamic_from' without 'dynamic_to'."
+    end
+
     test "a market_segments filter without market_segments returns an error" do
       args = %{selector: %{filters: [%{name: "market_segments", args: %{}}]}}
 

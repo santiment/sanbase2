@@ -61,7 +61,7 @@ defmodule Sanbase.BlockchainAddress do
   def by_selector(%{id: id}) when not is_nil(id), do: by_id(id)
 
   def by_selector(%{infrastructure: infrastructure, address: address})
-      when not is_nil(infrastructure) do
+      when not is_nil(infrastructure) and is_binary(address) and address != "" do
     with {:ok, %{id: infrastructure_id}} <- Sanbase.Model.Infrastructure.by_code(infrastructure),
          {:ok, addr} <-
            maybe_create(%{
@@ -142,6 +142,7 @@ defmodule Sanbase.BlockchainAddress do
     |> Sanbase.Repo.transaction()
     |> case do
       {:ok, result} -> {:ok, Map.values(result)}
+      {:error, _operation, error, _changes_so_far} -> {:error, error}
       {:error, error} -> {:error, error}
     end
   end

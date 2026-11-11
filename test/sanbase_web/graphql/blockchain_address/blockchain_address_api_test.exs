@@ -140,6 +140,20 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     assert error["message"] =~ "infrastructure"
   end
 
+  test "a null address returns an error", context do
+    result = blockchain_address_raw(context.conn, ~s|{address: null, infrastructure: "ETH"}|)
+
+    [error] = result["errors"]
+    assert error["message"] =~ "address"
+  end
+
+  test "a whitespace-only address returns an error", context do
+    result = blockchain_address_raw(context.conn, ~s|{address: "   ", infrastructure: "ETH"}|)
+
+    [error] = result["errors"]
+    assert error["message"] =~ "address"
+  end
+
   test "a null id with no other selector fields returns an error", context do
     result = blockchain_address_raw(context.conn, "{id: null}")
 

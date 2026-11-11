@@ -206,7 +206,7 @@ defmodule Sanbase.Knowledge do
 
     faqs_text =
       Enum.map(faq_entries, fn entry ->
-        "- [#{format_similarity.(entry.similarity)}] [#{entry.question}](#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{entry.id})"
+        "- [#{format_similarity.(entry.similarity)}] [#{Context.inline_label(entry.question)}](#{Context.safe_url(Context.faq_admin_url(entry.id))})"
       end)
       |> Enum.join("\n")
 
@@ -214,7 +214,7 @@ defmodule Sanbase.Knowledge do
 
     insights_text =
       Enum.map(insights, fn insight ->
-        "- [#{format_similarity.(insight.similarity)}] [#{insight.post_title}](#{SanbaseWeb.Endpoint.insight_url(insight.post_id)}) {{date:#{format_published_at(Map.get(insight, :published_at))}}}"
+        "- [#{format_similarity.(insight.similarity)}] [#{Context.inline_label(insight.post_title)}](#{Context.safe_url(SanbaseWeb.Endpoint.insight_url(insight.post_id))}) {{date:#{format_published_at(Map.get(insight, :published_at))}}}"
       end)
       |> Enum.join("\n")
 
@@ -222,7 +222,7 @@ defmodule Sanbase.Knowledge do
 
     academy_text =
       Enum.map(academy_articles, fn article ->
-        "- [#{format_similarity.(article.similarity)}] [#{article.title}](#{article.url})"
+        "- [#{format_similarity.(article.similarity)}] [#{Context.inline_label(article.title)}](#{Context.safe_url(article.url)})"
       end)
       |> Enum.join("\n")
 

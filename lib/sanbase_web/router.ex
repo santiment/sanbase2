@@ -443,7 +443,6 @@ defmodule SanbaseWeb.Router do
       SanbaseWeb.Graphql.GraphiqlPlug,
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
-      socket: SanbaseWeb.UserSocket,
       document_providers: [
         SanbaseWeb.Graphql.DocumentProvider,
         Absinthe.Plug.DocumentProvider.Default

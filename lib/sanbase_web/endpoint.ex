@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Endpoint do
   use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :sanbase
   use SanbaseWeb.Endpoint.ErrorHandler
-  use Absinthe.Phoenix.Endpoint
 
   alias Sanbase.Utils.Config
 

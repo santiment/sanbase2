@@ -13,9 +13,6 @@ defmodule Sanbase.Application.Web do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
-      # Start GraphQL subscriptions
-      {Absinthe.Subscription, SanbaseWeb.Endpoint},
-
       # Sweeping the Guardian JWT refresh tokens
       {Guardian.DB.Sweeper, [interval: 20 * 60 * 1000]},
 

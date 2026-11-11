@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.UserSocket do
+  # No `Absinthe.Phoenix.Socket` here: the schema has no GraphQL subscriptions,
+  # and GraphQL documents pushed over this socket ran outside the HTTP /graphql
+  # pipeline — no auth context, rate limiting, complexity limit or API call
+  # export. GraphQL is served over HTTP only.
   use Phoenix.Socket
-  use Absinthe.Phoenix.Socket, schema: SanbaseWeb.Graphql.Schema
 
   import SanbaseWeb.ChannelUtils, only: [params_to_user: 1]
 

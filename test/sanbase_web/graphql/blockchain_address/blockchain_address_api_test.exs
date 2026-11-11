@@ -115,6 +115,53 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     assert error["message"] =~ "infrastructure"
   end
 
+  test "a null id falls back to the address and infrastructure", context do
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Label.get_address_labels/2, {:ok, %{}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        blockchain_address_raw(
+          context.conn,
+          ~s|{id: null, address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", infrastructure: "ETH"}|
+        )
+
+      refute Map.has_key?(result, "errors")
+      assert result["data"]["blockchainAddress"]["infrastructure"] == "ETH"
+    end)
+  end
+
+  test "a null infrastructure returns an error", context do
+    result =
+      blockchain_address_raw(
+        context.conn,
+        ~s|{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", infrastructure: null}|
+      )
+
+    [error] = result["errors"]
+    assert error["message"] =~ "infrastructure"
+  end
+
+  test "a null id with no other selector fields returns an error", context do
+    result = blockchain_address_raw(context.conn, "{id: null}")
+
+    [error] = result["errors"]
+    assert error["message"] =~ "infrastructure"
+  end
+
+  defp blockchain_address_raw(conn, selector_str) do
+    query = """
+    {
+      blockchainAddress(selector: #{selector_str}){
+        id
+        infrastructure
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
   defp blockchain_address(conn, selector) do
     query = """
     {

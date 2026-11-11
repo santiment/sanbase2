@@ -58,9 +58,10 @@ defmodule Sanbase.BlockchainAddress do
     end
   end
 
-  def by_selector(%{id: id}), do: by_id(id)
+  def by_selector(%{id: id}) when not is_nil(id), do: by_id(id)
 
-  def by_selector(%{infrastructure: infrastructure, address: address}) do
+  def by_selector(%{infrastructure: infrastructure, address: address})
+      when not is_nil(infrastructure) do
     with {:ok, %{id: infrastructure_id}} <- Sanbase.Model.Infrastructure.by_code(infrastructure),
          {:ok, addr} <-
            maybe_create(%{

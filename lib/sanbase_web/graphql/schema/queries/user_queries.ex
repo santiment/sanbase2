@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   }
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.PublicRateLimit
   alias SanbaseWeb.Graphql.Middlewares.UserAuth
 
   object :user_queries do
@@ -81,15 +82,33 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     end
 
     @desc ~s"""
-    Add the given `address` for the currently logged in user. The `signature` and
-    `message_hash` are passed to the `web3.eth.accounts.recover` function to recover
-    the Ethereum address. If it is the same as the passed in the argument then the
-    user has access to this address and has indeed signed the message
+    Get a one-time message for linking the wallet `address` to the currently
+    logged in user. Sign the returned `message` exactly as it is
+    (personal_sign), then call `addUserEthAddress(address, signature, nonce)`.
+    The message names this account, so the signature cannot link the wallet to
+    any other account, and it cannot be used to log in.
+    """
+    field :eth_address_link_challenge, :eth_login_challenge do
+      arg(:address, non_null(:string))
+
+      middleware(JWTAuth)
+      middleware(PublicRateLimit, bucket: :eth_login_challenge, limit_unidentified: true)
+      resolve(&UserResolver.eth_address_link_challenge/3)
+    end
+
+    @desc ~s"""
+    Add the given `address` for the currently logged in user.
+
+    Preferred: get a message with `ethAddressLinkChallenge`, sign it and pass its
+    `nonce` here. Without `nonce`, the legacy fixed message
+    "Login in Santiment with address <address>" is expected; that flow is
+    switched off together with the legacy wallet login (`eth_login_legacy`).
     """
     field :add_user_eth_address, :user do
       arg(:signature, non_null(:string))
       arg(:address, non_null(:string))
-      arg(:message_hash, non_null(:string))
+      arg(:message_hash, :string)
+      arg(:nonce, :string)
 
       middleware(JWTAuth)
       resolve(&UserResolver.add_user_eth_address/3)

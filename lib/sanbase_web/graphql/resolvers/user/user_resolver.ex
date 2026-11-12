@@ -6,7 +6,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [requested_fields: 1]
 
   alias Sanbase.Accounts
-  alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.User
   alias Sanbase.Accounts.UserFollower
   alias Sanbase.Accounts.UserSettings
@@ -330,18 +329,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     end
   end
 
+  def eth_address_link_challenge(_root, %{address: address}, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
+    Sanbase.Accounts.EthLoginChallenge.create_link(address, user.id)
+  end
+
   def add_user_eth_address(
         _root,
-        %{signature: signature, address: address, message_hash: _message_hash},
+        %{signature: _, address: _} = args,
         %{context: %{auth: %{auth_method: :user_token, current_user: user}}}
       ) do
-    with true <- Ethauth.valid_signature?(address, signature),
-         {:ok, _} <- Sanbase.Accounts.EthAccount.create(user.id, address) do
-      {:ok, user}
-    else
+    case Sanbase.Accounts.Auth.add_eth_address(user, args) do
+      {:ok, user} ->
+        {:ok, user}
+
       false ->
         {:error,
          "Could not add an ethereum address for user #{user.id}. Reason: Invalid signature"}
+
+      {:error, :invalid_challenge} ->
+        {:error,
+         "Could not add an ethereum address for user #{user.id}. Reason: Invalid or expired challenge"}
+
+      {:error, :legacy_eth_login_disabled} ->
+        {:error,
+         "Could not add an ethereum address for user #{user.id}. Reason: Sign a challenge from ethAddressLinkChallenge and pass its nonce"}
 
       {:error, error_or_changeset} ->
         reason =

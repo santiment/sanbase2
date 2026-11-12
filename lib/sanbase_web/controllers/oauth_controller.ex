@@ -144,13 +144,22 @@ defmodule SanbaseWeb.OAuthController do
 
   # --- Dynamic Client Registration (RFC 7591) ---
 
+  # Grant types a dynamically registered client may request. Matches
+  # `grant_types_supported` in the metadata above.
+  @registration_grant_types ["authorization_code", "refresh_token"]
+
+  # Since boruta 2.3.7, Boruta.Openid.register_client/3 only casts a small
+  # allowlist of registration attributes, so it would drop the server-side
+  # settings below (pkce, public_refresh_token, TTLs, grant types). The client
+  # is therefore created through the admin API instead, from parameters that are
+  # either fixed here or taken from an allowlist of request fields.
   def register(%Plug.Conn{} = conn, params) do
     Logger.info("[OAuth] register — all params: #{inspect(params)}")
 
     registration_params =
       %{
         redirect_uris: params["redirect_uris"] || [],
-        supported_grant_types: params["grant_types"] || ["authorization_code"],
+        supported_grant_types: registration_grant_types(params["grant_types"]),
         pkce: true,
         public_refresh_token: true,
         confidential: false,
@@ -158,11 +167,15 @@ defmodule SanbaseWeb.OAuthController do
         authorization_code_ttl: 60,
         refresh_token_ttl: 30 * 86_400
       }
-      |> maybe_put(:client_name, params["client_name"])
+      |> maybe_put(:name, params["client_name"])
       |> maybe_put_auth_method(params["token_endpoint_auth_method"])
 
     conn = put_cors_headers(conn)
-    Boruta.Openid.register_client(conn, registration_params, __MODULE__)
+
+    case Boruta.Ecto.Admin.create_client(registration_params) do
+      {:ok, client} -> client_registered(conn, client)
+      {:error, changeset} -> registration_failure(conn, changeset)
+    end
   end
 
   # --- Boruta AuthorizeApplication callbacks ---
@@ -442,7 +455,19 @@ defmodule SanbaseWeb.OAuthController do
   # Since we already set confidential: false + pkce: true, just drop "none".
   defp maybe_put_auth_method(map, "none"), do: map
   defp maybe_put_auth_method(map, nil), do: map
-  defp maybe_put_auth_method(map, method), do: Map.put(map, :token_endpoint_auth_method, method)
+
+  defp maybe_put_auth_method(map, method),
+    do: Map.put(map, :token_endpoint_auth_methods, [method])
+
+  # Dynamically registered clients always get the authorization code grant, plus
+  # refresh_token when requested. Anything else (client_credentials, password,
+  # implicit, ...) is dropped; RFC 7591 lets the server replace requested values
+  # and the response reports the grant types actually assigned.
+  defp registration_grant_types(requested) when is_list(requested) do
+    Enum.filter(@registration_grant_types, &(&1 == "authorization_code" or &1 in requested))
+  end
+
+  defp registration_grant_types(_), do: ["authorization_code"]
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)

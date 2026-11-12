@@ -40,29 +40,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
     Comment.delete(comment_id, user.id)
   end
 
-  def comments(
-        _root,
-        %{entity_type: entity_type, id: id} = args,
-        _resolution
-      ) do
-    comments = EntityComment.get_comments(entity_type, id, args) |> Enum.map(& &1.comment)
+  # Comments inherit the visibility of their entity: private entities' comments
+  # are readable only by the entity owner (see EntityComment.get_comments/4).
+  def comments(_root, %{entity_type: entity_type} = args, resolution) do
+    comments =
+      EntityComment.get_comments(
+        entity_type,
+        Map.get(args, :id),
+        args,
+        current_user_id(resolution)
+      )
+      |> Enum.map(& &1.comment)
 
     {:ok, comments}
   end
 
-  def comments(
-        _root,
-        %{entity_type: entity_type} = args,
-        _resolution
-      ) do
-    comments = EntityComment.get_comments(entity_type, nil, args) |> Enum.map(& &1.comment)
-
-    {:ok, comments}
+  def subcomments(_root, %{comment_id: comment_id, limit: limit}, resolution) do
+    with {:ok, comment_id} <- Sanbase.Utils.EctoCommon.cast_id(comment_id),
+         {entity_type, entity_id} <- EntityComment.entity_of_comment(comment_id),
+         true <-
+           EntityComment.can_read_comments?(entity_type, entity_id, current_user_id(resolution)) do
+      {:ok, Comment.get_subcomments(comment_id, limit)}
+    else
+      _ -> {:ok, []}
+    end
   end
 
-  def subcomments(_root, %{comment_id: comment_id, limit: limit}, _resolution) do
-    {:ok, Comment.get_subcomments(comment_id, limit)}
-  end
+  defp current_user_id(%{context: %{auth: %{current_user: %{id: user_id}}}}), do: user_id
+  defp current_user_id(_resolution), do: nil
 
   def comments_feed(
         _root,

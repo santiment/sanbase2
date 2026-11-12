@@ -126,16 +126,72 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.delete_all()
   end
 
-  @spec get_comments(entity_type, entity_id | nil, map()) :: [%Comment{}]
-  def get_comments(entity_type, entity_id, %{limit: limit} = args) do
-    cursor = Map.get(args, :cursor) || %{}
-    order = Map.get(cursor, :order, :asc)
+  @doc ~s"""
+  Get the comments of one entity, or of all entities of a type when
+  `entity_id` is nil.
 
-    entity_comments_query(entity_type, entity_id)
-    |> apply_cursor(cursor)
-    |> order_by([c], [{^order, c.inserted_at}])
-    |> limit(^limit)
-    |> Repo.all()
+  Comments inherit the visibility of their entity:
+  - for a single entity, they are returned only if the entity is public or
+    owned by `querying_user_id`; otherwise the result is empty;
+  - the listing across all entities of a type (`entity_id` nil) includes only
+    the comments of public entities.
+  """
+  @spec get_comments(entity_type, entity_id | nil, map(), non_neg_integer() | nil) ::
+          [comment_struct]
+  def get_comments(entity_type, entity_id, %{limit: _} = args, querying_user_id) do
+    case entity_id do
+      nil ->
+        entity_comments_query(entity_type, nil)
+        |> only_public_entities(entity_type)
+        |> paginate(args)
+
+      _ ->
+        if can_read_comments?(entity_type, entity_id, querying_user_id),
+          do: entity_comments_query(entity_type, entity_id) |> paginate(args),
+          else: []
+    end
+  end
+
+  @doc ~s"""
+  Whether the user (nil for anonymous) can read the comments of the entity:
+  the entity must be public or owned by the user. Blockchain addresses have no
+  owner or visibility, so their comments are always readable.
+  """
+  @spec can_read_comments?(entity_type, entity_id | String.t(), non_neg_integer() | nil) ::
+          boolean()
+  def can_read_comments?(:blockchain_address, _entity_id, _querying_user_id), do: true
+
+  def can_read_comments?(entity_type, entity_id, querying_user_id) do
+    with {:ok, entity_id} <- Sanbase.Utils.EctoCommon.cast_id(entity_id),
+         {:ok, visibility} <- Sanbase.Entity.get_visibility_data(entity_type, entity_id) do
+      visibility.is_public == true or
+        (not is_nil(querying_user_id) and visibility.user_id == querying_user_id)
+    else
+      _ -> false
+    end
+  end
+
+  @doc ~s"""
+  Return `{entity_type, entity_id}` of the entity a comment (top-level or
+  reply) is linked to, or nil if it is not linked to any.
+  """
+  @spec entity_of_comment(non_neg_integer()) :: {entity_type, entity_id} | nil
+  def entity_of_comment(comment_id) do
+    [
+      {:insight, PostComment, :post_id},
+      {:watchlist, WatchlistComment, :watchlist_id},
+      {:dashboard, DashboardComment, :dashboard_id},
+      {:chart_configuration, ChartConfigurationComment, :chart_configuration_id},
+      {:blockchain_address, BlockchainAddressComment, :blockchain_address_id}
+    ]
+    |> Enum.find_value(fn {entity_type, schema, field} ->
+      from(c in schema, where: c.comment_id == ^comment_id, select: field(c, ^field), limit: 1)
+      |> Repo.one()
+      |> case do
+        nil -> nil
+        entity_id -> {entity_type, entity_id}
+      end
+    end)
   end
 
   def get_comments(%{limit: limit} = args) do
@@ -154,6 +210,53 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   # Private Functions
+
+  defp paginate(query, %{limit: limit} = args) do
+    cursor = Map.get(args, :cursor) || %{}
+    order = Map.get(cursor, :order, :asc)
+
+    query
+    |> apply_cursor(cursor)
+    |> order_by([c], [{^order, c.inserted_at}])
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  # Keep only the comments whose entity is public. Mirrors the per-entity
+  # `get_visibility_data/1` definitions of `is_public`.
+  defp only_public_entities(query, :insight) do
+    from(c in query,
+      join: post in Sanbase.Insight.Post,
+      on: post.id == c.post_id,
+      where: post.state == "approved" and post.ready_state == "published"
+    )
+  end
+
+  defp only_public_entities(query, :watchlist) do
+    from(c in query,
+      join: watchlist in Sanbase.UserList,
+      on: watchlist.id == c.watchlist_id,
+      where: watchlist.is_public == true
+    )
+  end
+
+  defp only_public_entities(query, :dashboard) do
+    from(c in query,
+      join: dashboard in Sanbase.Dashboards.Dashboard,
+      on: dashboard.id == c.dashboard_id,
+      where: dashboard.is_public == true
+    )
+  end
+
+  defp only_public_entities(query, :chart_configuration) do
+    from(c in query,
+      join: config in Sanbase.Chart.Configuration,
+      on: config.id == c.chart_configuration_id,
+      where: config.is_public == true
+    )
+  end
+
+  defp only_public_entities(query, :blockchain_address), do: query
 
   defp maybe_emit_event({:ok, comment}, event_type, entity_type, entity_id, parent_id) do
     with false <- entity_type in [:blockchain_address],

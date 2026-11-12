@@ -15,7 +15,12 @@ defmodule Sanbase.CommentTest do
       EntityComment.create_and_link(@insight_entity_type, post.id, user.id, nil, "some comment")
 
     post_comments =
-      EntityComment.get_comments(@insight_entity_type, post.id, %{cursor: nil, limit: 100})
+      EntityComment.get_comments(
+        @insight_entity_type,
+        post.id,
+        %{cursor: nil, limit: 100},
+        user.id
+      )
 
     assert length(post_comments) == 1
     assert [%{comment: %{id: post_comment_id}}] = post_comments
@@ -37,7 +42,7 @@ defmodule Sanbase.CommentTest do
       )
 
     watchlist_comments =
-      EntityComment.get_comments(:watchlist, watchlist.id, %{cursor: nil, limit: 100})
+      EntityComment.get_comments(:watchlist, watchlist.id, %{cursor: nil, limit: 100}, user.id)
 
     assert length(watchlist_comments) == 1
     assert [%{comment: %{id: watchlist_id}}] = watchlist_comments
@@ -59,10 +64,15 @@ defmodule Sanbase.CommentTest do
       )
 
     chart_configuration_comments =
-      EntityComment.get_comments(:chart_configuration, chart_configuration.id, %{
-        cursor: nil,
-        limit: 100
-      })
+      EntityComment.get_comments(
+        :chart_configuration,
+        chart_configuration.id,
+        %{
+          cursor: nil,
+          limit: 100
+        },
+        user.id
+      )
 
     assert length(chart_configuration_comments) == 1
     assert [%{comment: %{id: chart_configuration_id}}] = chart_configuration_comments
@@ -83,10 +93,15 @@ defmodule Sanbase.CommentTest do
       )
 
     blockchain_address_comments =
-      EntityComment.get_comments(:blockchain_address, blockchain_address.id, %{
-        cursor: nil,
-        limit: 100
-      })
+      EntityComment.get_comments(
+        :blockchain_address,
+        blockchain_address.id,
+        %{
+          cursor: nil,
+          limit: 100
+        },
+        user.id
+      )
 
     assert length(blockchain_address_comments) == 1
     [%{comment: %{id: blockchain_address_comment_id}}] = blockchain_address_comments

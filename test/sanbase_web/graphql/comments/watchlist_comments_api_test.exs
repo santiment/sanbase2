@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
     clean_task_supervisor_children()
 
     user = insert(:user)
-    watchlist = insert(:watchlist, user: user)
+    watchlist = insert(:watchlist, user: user, is_public: true)
     conn = setup_jwt_auth(build_conn(), user)
 
     %{conn: conn, user: user, watchlist: watchlist}

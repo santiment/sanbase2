@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   @renewal_soon_days 30
   @sort_keys %{"mrr" => :mrr, "acv" => :acv, "renewal_date" => :renewal_date}
   @statuses [:healthy, :at_risk, :high_risk]
+  @risk_levels [:high_risk, :at_risk, :healthy, :unknown]
   @reasons [:plan, :business_email, :override]
   @segments [:plan, :business_email]
   @monthly_segments %{"total" => :total, "plan" => :plan, "business_email" => :business_email}
@@ -41,6 +42,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     :client_renewal,
     :revenue_renewal,
     :at_risk,
+    :risk,
     :retention,
     :churned,
     :usage
@@ -99,6 +101,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     filters = %{
       plan: params["plan"] || "all",
       status: parse_choice(params["status"], @statuses),
+      risk: parse_choice(params["risk"], @risk_levels),
       reason: parse_choice(params["reason"], @reasons),
       renewal_within: parse_int(params["renewal_within"], nil),
       query: String.trim(params["query"] || "")
@@ -375,7 +378,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   # ─── Filtering and sorting ───────────────────────────────────────────────
 
   defp default_filters do
-    %{plan: "all", status: :all, reason: :all, renewal_within: nil, query: ""}
+    %{plan: "all", status: :all, risk: :all, reason: :all, renewal_within: nil, query: ""}
   end
 
   defp default_dir(:renewal_date), do: :asc
@@ -402,10 +405,16 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
 
   defp matches?(client, filters, today) do
     (filters.plan == "all" or client.plan_name == filters.plan) and
-      (filters.status == :all or client.manual_status == filters.status) and
+      matches_level?(client, filters) and
       (filters.reason == :all or client.business_reason == filters.reason) and
       renews_within?(client, filters.renewal_within, today) and
       matches_query?(client, filters.query)
+  end
+
+  # The manual status and the automatic risk level are separate filters.
+  defp matches_level?(client, filters) do
+    (filters.status == :all or client.manual_status == filters.status) and
+      (filters.risk == :all or client.risk_level == filters.risk)
   end
 
   defp renews_within?(_client, nil, _today), do: true
@@ -548,6 +557,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   def status_label(:high_risk), do: "High Risk"
   def status_label(other), do: to_string(other)
 
+  def risk_label(:unknown), do: "Unknown"
+  def risk_label(level), do: status_label(level)
+
   def reason_label(:plan), do: "Business plan"
   def reason_label(:business_email), do: "Business email"
   def reason_label(:override), do: "Override"
@@ -588,6 +600,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
 
   def note_keys, do: @note_keys
   def statuses, do: @statuses
+  def risk_levels, do: @risk_levels
   def reasons, do: @reasons
   def segments, do: @segments
 
@@ -600,12 +613,38 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   def note_label(:client_renewal), do: "Client renewal"
   def note_label(:revenue_renewal), do: "Revenue renewal"
   def note_label(:at_risk), do: "At risk"
+  def note_label(:risk), do: "Risk level"
   def note_label(:retention), do: "Retention actions"
   def note_label(:churned), do: "Recently churned"
   def note_label(:usage), do: "API usage"
   def note_label(other), do: to_string(other)
 
   # ─── Shared components ───────────────────────────────────────────────────
+
+  attr(:level, :atom, required: true)
+  attr(:reasons, :list, default: [])
+  attr(:id, :string, default: nil)
+
+  @doc """
+  The automatic risk level with its reasons underneath.
+  """
+  def risk_level(assigns) do
+    ~H"""
+    <div id={@id} class="min-w-36 max-w-64">
+      <span
+        :if={@level == :unknown}
+        class="badge badge-sm badge-ghost whitespace-nowrap"
+        title="The usage could not be read, so the level is not known"
+      >
+        {risk_label(@level)}
+      </span>
+      <.status_badge :if={@level != :unknown} status={@level} />
+      <ul :if={@reasons != [] and @level != :unknown} class="mt-1 text-xs text-base-content/70">
+        <li :for={reason <- @reasons}>{reason}</li>
+      </ul>
+    </div>
+    """
+  end
 
   attr(:status, :atom, required: true)
 
@@ -1188,6 +1227,15 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             />
             <.input
               type="select"
+              name="risk"
+              id="filter-risk"
+              label="Risk level"
+              value={@filters.risk}
+              options={[{"Any level", :all} | Enum.map(risk_levels(), &{risk_label(&1), &1})]}
+              outer_div_class="w-40"
+            />
+            <.input
+              type="select"
               name="reason"
               id="filter-reason"
               label="Business because"
@@ -1433,14 +1481,15 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
             <th>Paid by</th>
             <th>API calls</th>
             <th>Last active</th>
-            <th>Status</th>
+            <th title="Automatic, from tenure and usage - see the formula notes">Risk level</th>
+            <th title="Set by hand in the client log">Manual status</th>
             <th class="text-right">Open</th>
             <th :if={@can_edit}><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody id="clients-rows" phx-update="stream">
           <tr id="clients-empty" class="hidden only:table-row">
-            <td colspan={if @can_edit, do: 14, else: 13} class="text-center text-base-content/60 py-6">
+            <td colspan={if @can_edit, do: 15, else: 14} class="text-center text-base-content/60 py-6">
               No client matches these filters.
             </td>
           </tr>
@@ -1521,6 +1570,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
               >
                 {activity_source(c)}
               </span>
+            </td>
+            <td>
+              <.risk_level id={"risk-#{c.user_id}"} level={c.risk_level} reasons={c.risk_reasons} />
             </td>
             <td>
               <span class="inline-flex items-center gap-1">
@@ -1778,6 +1830,37 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
               type="number"
               label="API usage window (days)"
               min="1"
+            />
+            <.input
+              field={@form[:risk_new_client_days]}
+              type="number"
+              label="Risk: a new client is in the first (days)"
+              min="0"
+            />
+            <.input
+              field={@form[:risk_high_active_days]}
+              type="number"
+              label="Risk: low activity, at or below (active days)"
+              min="0"
+            />
+            <.input
+              field={@form[:risk_low_active_days]}
+              type="number"
+              label="Risk: moderate activity, at or below (active days)"
+              min="0"
+            />
+            <.input
+              field={@form[:risk_usage_drop_percent]}
+              type="number"
+              label="Risk: usage is down from (%)"
+              min="1"
+              max="100"
+            />
+            <.input
+              field={@form[:risk_renewal_days]}
+              type="number"
+              label="Risk: yearly renewal within (days)"
+              min="0"
             />
             <.input
               field={@form[:renewal_upgrades_full_value]}

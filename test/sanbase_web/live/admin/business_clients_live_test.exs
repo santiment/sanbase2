@@ -55,6 +55,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         unpaid_invoice?: false,
         api_calls: 1_200,
         api_calls_prev: 900,
+        active_days: 25,
+        active_days_prev: 24,
+        risk_level: :healthy,
+        risk_reasons: [],
         last_active_at: ~U[2026-10-20 10:00:00Z],
         last_web_active_at: ~U[2026-10-20 10:00:00Z],
         last_api_call_at: nil,
@@ -133,7 +137,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         renewal_date: Date.add(today(), 10),
         manual_status: :at_risk,
         open_entries_count: 2,
-        failed_payment?: true
+        failed_payment?: true,
+        risk_level: :high_risk,
+        risk_reasons: ["No activity in the last 30 days"]
       ),
       client(
         user_id: 103,
@@ -146,7 +152,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         stripe_customer_id: nil,
         renewal_date: nil,
         manual_status: :high_risk,
-        unpaid_invoice?: true
+        unpaid_invoice?: true,
+        risk_level: :unknown,
+        risk_reasons: ["Usage data is not available"]
       ),
       # Monthly: renews within days every month, so never highlighted.
       client(
@@ -156,7 +164,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         interval: "month",
         mrr: 500,
         acv: 6_000,
-        renewal_date: Date.add(today(), 5)
+        renewal_date: Date.add(today(), 5),
+        risk_level: :at_risk,
+        risk_reasons: ["New client (40 days)"]
       )
     ]
   end
@@ -469,7 +479,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
 
         # A monthly renewal is always within 30 days: shown plain.
         assert has_element?(view, "#client-104", Date.to_iso8601(Date.add(today(), 5)))
-        refute has_element?(view, "#client-104 .badge-warning")
+        refute has_element?(view, ~s(#client-104 .badge-warning[title="Renews within 30 days"]))
       end
     end
 
@@ -582,6 +592,47 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         assert has_element?(view, "#client-101")
         assert has_element?(view, "#client-102")
         assert has_element?(view, "#client-103")
+      end
+    end
+
+    test "shows the automatic risk level with its reasons, apart from the manual status" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(view, "#risk-101", "Healthy")
+        assert has_element?(view, "#risk-102", "High Risk")
+        assert has_element?(view, "#risk-102", "No activity in the last 30 days")
+        assert has_element?(view, "#risk-104", "At Risk")
+        assert has_element?(view, "#risk-104", "New client (40 days)")
+        # Usage unreadable: no level, and no reason dressed up as a finding.
+        assert has_element?(view, "#risk-103", "Unknown")
+        refute has_element?(view, "#risk-103 li")
+      end
+    end
+
+    test "filters by the automatic risk level" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        view |> form("#client-filters", %{"risk" => "high_risk"}) |> render_change()
+        assert row_ids(view) == ["client-102"]
+
+        view |> form("#client-filters", %{"risk" => "unknown"}) |> render_change()
+        assert row_ids(view) == ["client-103"]
+
+        # The manual status is a separate filter: 103 is High Risk by hand only.
+        view
+        |> form("#client-filters", %{"risk" => "all", "status" => "high_risk"})
+        |> render_change()
+
+        assert row_ids(view) == ["client-103"]
+
+        view |> element("#clear-filters") |> render_click()
+        assert length(row_ids(view)) == 4
       end
     end
 
@@ -790,6 +841,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         |> form("#settings-form", %{
           "settings" => %{
             "churn_window_months" => "6",
+            "risk_high_active_days" => "5",
+            "risk_new_client_days" => "60",
             "business_email_product_ids" => "2, 5",
             "issue_types" => "Complaint\nRetention action\nCall",
             "types_without_severity" => "Retention action",
@@ -800,6 +853,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
 
         settings = BusinessClients.settings()
         assert settings.churn_window_months == 6
+        assert settings.risk_high_active_days == 5
+        assert settings.risk_new_client_days == 60
         assert settings.business_email_product_ids == [2, 5]
         assert settings.issue_types == ["Complaint", "Retention action", "Call"]
         assert has_element?(view, "#settings-last-change", user.email)

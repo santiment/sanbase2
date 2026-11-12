@@ -18,7 +18,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
                     Enum.map(@paid_by_keys, &"paid_by_#{&1}_usd") ++
                     ~w(subscription_status failed_payment unpaid_invoice api_calls
                        api_calls_prev last_active_at last_web_active_at last_api_call_at
-                       manual_status open_entries_count retention_action)
+                       manual_status open_entries_count retention_action
+                       active_days active_days_prev risk_level risk_reasons)
 
   @churned_headers ~w(user_id email username stripe_customer_id business_reason
                       last_plan_name interval joined_on churned_on lost_mrr_usd tcv_usd
@@ -130,7 +131,11 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
         datetime(c.last_api_call_at),
         c.manual_status,
         c.open_entries_count,
-        c.retention_action?
+        c.retention_action?,
+        c.active_days,
+        c.active_days_prev,
+        c.risk_level,
+        Enum.join(c.risk_reasons, "; ")
       ]
   end
 

@@ -32,19 +32,85 @@ defmodule Sanbase.Queries.Executor.Result do
   In order to reduce the size of data sent from the frontend to the backend
   when storing cached values.
   """
-  @spec decode_and_decompress(String.t()) :: {:ok, String.t()} | {:error, String.t()}
-  def decode_and_decompress(base64_gzip) when is_binary(base64_gzip) do
-    with {:ok, gzip} <- Base.decode64(base64_gzip),
-         decompressed when is_binary(decompressed) <- :zlib.gunzip(gzip) do
-      {:ok, decompressed}
-    else
-      :error ->
-        {:error, "The provided value is not a valid base64-encoded binary"}
+  # The input comes from the client, so it is a decompression-bomb vector: a few
+  # MB of gzip can inflate to GBs and exhaust the node's memory. Both the
+  # encoded input and the decompressed output are capped. A cacheable result is
+  # at most 500KB compressed (see `Sanbase.Queries.Cache`), so these limits are
+  # far above any legitimate value.
+  @max_encoded_bytes 10 * 1024 * 1024
+  @max_decompressed_bytes 50 * 1024 * 1024
+  @invalid_gzip_error "The provided value is not a valid gzip binary"
+
+  @spec decode_and_decompress(String.t(), Keyword.t()) ::
+          {:ok, String.t()} | {:error, String.t()}
+  def decode_and_decompress(base64_gzip, opts \\ []) when is_binary(base64_gzip) do
+    max_encoded = Keyword.get(opts, :max_encoded_bytes, @max_encoded_bytes)
+    max_decompressed = Keyword.get(opts, :max_decompressed_bytes, @max_decompressed_bytes)
+
+    with :ok <- check_encoded_size(base64_gzip, max_encoded),
+         {:ok, gzip} <- decode64(base64_gzip) do
+      bounded_gunzip(gzip, max_decompressed)
     end
-  rescue
-    _e in [ErlangError] ->
-      {:error, "The provided value is not a valid gzip binary"}
   end
+
+  defp check_encoded_size(data, max_bytes) when byte_size(data) <= max_bytes, do: :ok
+
+  defp check_encoded_size(_data, max_bytes) do
+    {:error, "The provided value is over the limit of #{format_bytes(max_bytes)}"}
+  end
+
+  defp decode64(data) do
+    case Base.decode64(data) do
+      {:ok, decoded} -> {:ok, decoded}
+      :error -> {:error, "The provided value is not a valid base64-encoded binary"}
+    end
+  end
+
+  # Inflate chunk by chunk with `:zlib.safeInflate/2`, stopping as soon as the
+  # output goes over `max_bytes`, instead of `:zlib.gunzip/1`, which inflates
+  # everything into memory first.
+  defp bounded_gunzip(gzip, max_bytes) do
+    z = :zlib.open()
+
+    try do
+      # windowBits 16 + 15: expect a gzip header and trailer.
+      :ok = :zlib.inflateInit(z, 31)
+      inflate_chunks(z, :zlib.safeInflate(z, gzip), [], 0, max_bytes)
+    rescue
+      _e in [ErlangError] -> {:error, @invalid_gzip_error}
+    after
+      :zlib.close(z)
+    end
+  end
+
+  defp inflate_chunks(z, {status, output}, acc, size, max_bytes) do
+    output_size = IO.iodata_length(output)
+    size = size + output_size
+
+    cond do
+      size > max_bytes ->
+        {:error, "The decompressed value is over the limit of #{format_bytes(max_bytes)}"}
+
+      # `:finished` only means the input was consumed. `inflateEnd/1` raises
+      # `data_error` (rescued above) if the gzip stream did not actually end,
+      # i.e. the input was truncated.
+      status == :finished ->
+        :ok = :zlib.inflateEnd(z)
+        {:ok, IO.iodata_to_binary(Enum.reverse([output | acc]))}
+
+      # No progress while asking for more output: the stream is truncated.
+      status == :continue and output_size == 0 ->
+        {:error, @invalid_gzip_error}
+
+      status == :continue ->
+        inflate_chunks(z, :zlib.safeInflate(z, []), [output | acc], size, max_bytes)
+    end
+  end
+
+  defp inflate_chunks(_z, _other, _acc, _size, _max_bytes), do: {:error, @invalid_gzip_error}
+
+  defp format_bytes(bytes) when bytes >= 1024 * 1024, do: "#{div(bytes, 1024 * 1024)}MB"
+  defp format_bytes(bytes), do: "#{bytes} bytes"
 
   def compress_and_encode(%__MODULE__{} = result) do
     result

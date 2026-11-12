@@ -37,11 +37,29 @@
 
     <div class="mt-2">
       <span :for={action <- bt.actions}>
-        {link(to_string(action),
-          to:
-            ~p"/admin/generic/show_action?#{[action: action, resource: @resource, id: @data.id]}",
-          class: "link link-primary text-xs mr-2"
-        )}
+        <%!-- Read-only actions navigate with GET. Mutating actions are a POST
+             form so the CSRF token is checked (a GET link is a CSRF vector). --%>
+        <%= if action.read_only? do %>
+          {link(to_string(action.name),
+            to:
+              ~p"/admin/generic/show_action?#{[action: action.name, resource: @resource, id: @data.id]}",
+            class: "link link-primary text-xs mr-2"
+          )}
+        <% else %>
+          <.form
+            for={%{}}
+            id={"show-action-#{action.name}"}
+            action={
+              ~p"/admin/generic/show_action?#{[action: action.name, resource: @resource, id: @data.id]}"
+            }
+            method="post"
+            class="inline"
+          >
+            <button type="submit" class="link link-primary text-xs mr-2">
+              {to_string(action.name)}
+            </button>
+          </.form>
+        <% end %>
       </span>
     </div>
   </div>

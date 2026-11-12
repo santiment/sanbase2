@@ -384,7 +384,10 @@ defmodule SanbaseWeb.Router do
 
     get("/generic/search", GenericAdminController, :search)
     get("/generic/export", GenericAdminController, :export)
+    # GET serves only read-only (`:show`) actions; anything that changes data
+    # must be a POST so `protect_from_forgery` checks the CSRF token.
     get("/generic/show_action", GenericAdminController, :show_action)
+    post("/generic/show_action", GenericAdminController, :show_action)
 
     live_session :promo_trials_admin, on_mount: @admin_panel_on_mount do
       live "/promo_trials", Admin.PromoTrialLive.Index, :index

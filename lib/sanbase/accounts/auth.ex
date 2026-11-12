@@ -266,6 +266,8 @@ defmodule Sanbase.Accounts.Auth do
     # burn it. `consume/2` is atomic, so of two requests with the same valid
     # signature only one logs in.
     with {:ok, message} <- EthLoginChallenge.get_open(address, nonce),
+         # A link challenge must not log in (see `add_eth_address/2`).
+         true <- EthLoginChallenge.login_message?(message) || {:error, :invalid_challenge},
          true <- Ethauth.valid_signature?(address, signature, message),
          :ok <- EthLoginChallenge.consume(address, nonce) do
       :ok
@@ -287,6 +289,46 @@ defmodule Sanbase.Accounts.Auth do
           true -> :ok
           other -> other
         end
+    end
+  end
+
+  @doc ~s"""
+  Link the wallet `address` to `user` (`addUserEthAddress`).
+
+  Preferred: `nonce` from `EthLoginChallenge.create_link/2`, whose message names
+  the account, so the signature is single-use, expires, and can only link the
+  wallet to this account. Without `nonce` the legacy fixed login message is
+  accepted, and only while `eth_login_legacy` is enabled - a fixed-message
+  signature never expires, so whoever obtained one could otherwise attach the
+  victim's wallet (and its SAN balance / NFT privileges) to their own account.
+  """
+  @spec add_eth_address(User.t(), map()) :: {:ok, User.t()} | {:error, any()} | false
+  def add_eth_address(%User{} = user, %{address: address} = args) do
+    with :ok <- verify_link_signature(user, args),
+         {:ok, _} <- EthAccount.create(user.id, address) do
+      {:ok, user}
+    end
+  end
+
+  defp verify_link_signature(user, %{nonce: nonce, address: address, signature: signature})
+       when is_binary(nonce) do
+    with {:ok, message} <- EthLoginChallenge.get_open(address, nonce),
+         true <-
+           EthLoginChallenge.link_message_for?(message, user.id) || {:error, :invalid_challenge},
+         true <- Ethauth.valid_signature?(address, signature, message),
+         :ok <- EthLoginChallenge.consume(address, nonce) do
+      :ok
+    end
+  end
+
+  defp verify_link_signature(_user, %{address: address, signature: signature}) do
+    if FeatureToggle.eth_login_legacy_enabled?() do
+      case Ethauth.valid_signature?(address, signature) do
+        true -> :ok
+        other -> other
+      end
+    else
+      {:error, :legacy_eth_login_disabled}
     end
   end
 

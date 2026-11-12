@@ -49,6 +49,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsControllerTest do
     unpaid_invoice?: true,
     api_calls: 10,
     api_calls_prev: nil,
+    active_days: 4,
+    active_days_prev: 12,
+    risk_level: :high_risk,
+    risk_reasons: ["Active on 4 of the last 30 days"],
     last_active_at: ~U[2026-10-01 00:00:00Z],
     last_web_active_at: nil,
     last_api_call_at: ~U[2026-10-01 00:00:00Z],
@@ -156,6 +160,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsControllerTest do
       assert record["paid_by_stripe_credit_usd"] == "-12.50"
       assert record["renewal_date"] == "2027-01-01"
       assert record["manual_status"] == "at_risk"
+      assert record["active_days"] == "4"
+      assert record["active_days_prev"] == "12"
+      assert record["risk_level"] == "high_risk"
+      assert record["risk_reasons"] == "Active on 4 of the last 30 days"
       assert record["api_calls_prev"] == ""
       assert record["retention_action"] == "true"
       assert record["failed_payment"] == "false"

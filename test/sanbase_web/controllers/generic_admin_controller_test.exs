@@ -174,6 +174,17 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
 
       assert set_cookie =~ ~r/SameSite=Lax/i
       assert set_cookie =~ ~r/HttpOnly/i
+
+      # Locally the cookie is host-only, so the session works on localhost:4000
+      # as well as on an /etc/hosts alias of the admin host.
+      refute set_cookie =~ ~r/domain=/i
+    end
+
+    test "the session cookie has no Domain locally, whatever SANTIMENT_ROOT_DOMAIN says" do
+      System.put_env("SANTIMENT_ROOT_DOMAIN", "sanbase-admin.stage.san")
+      on_exit(fn -> System.delete_env("SANTIMENT_ROOT_DOMAIN") end)
+
+      assert SanbaseWeb.Plug.SessionPlug.cookie_domain() == nil
     end
 
     test "the user page renders mutating actions as POST forms and read-only ones as links" do

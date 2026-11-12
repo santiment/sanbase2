@@ -20,6 +20,7 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
       activity_source: 1,
       severity_label: 1,
       status_badge: 1,
+      risk_level: 1,
       reason_badge: 1,
       note_mark: 1,
       formula_notes: 1,
@@ -436,6 +437,29 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
                         detail.client.last_api_call_at
                       )})
                     </span>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="text-base-content/60 font-normal">
+                    Active days<.note_mark key={:risk} notes={@notes} />
+                  </th>
+                  <td id="active-days" class="tabular-nums">
+                    {format_number(detail.client.active_days)}
+                    <span class="text-base-content/60">
+                      (previous window: {format_number(detail.client.active_days_prev)})
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="text-base-content/60 font-normal align-top">
+                    Risk level<.note_mark key={:risk} notes={@notes} />
+                  </th>
+                  <td>
+                    <.risk_level
+                      id="risk-level"
+                      level={detail.client.risk_level}
+                      reasons={detail.client.risk_reasons}
+                    />
                   </td>
                 </tr>
                 <tr>

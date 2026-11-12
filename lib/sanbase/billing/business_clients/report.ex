@@ -24,7 +24,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Plan, Subscription}
   alias Sanbase.Billing.BusinessClients
-  alias Sanbase.Billing.BusinessClients.{LogEntry, MetricsSnapshot, Periods, Settings}
+  alias Sanbase.Billing.BusinessClients.{LogEntry, MetricsSnapshot, Periods, Risk, Settings}
   alias Sanbase.Billing.BusinessClients.{Snapshots, Usage}
   alias Sanbase.Billing.CreditPayments.CreditInvoice
   alias Sanbase.Billing.InvoiceMirror.{Invoice, InvoiceLine}
@@ -96,7 +96,12 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       yet, unless a paid business line overlaps its period or, for an uncollectible
       one, a business invoice was paid after it;
     * `last_web_active_at`, `last_api_call_at` and `last_active_at`, the later of the
-      two.
+      two;
+    * `active_days` and `active_days_prev` - the days with any API or web activity in
+      the usage window and in the window before;
+    * `risk_level` and `risk_reasons` - the automatic risk level of
+      `Sanbase.Billing.BusinessClients.Risk`, `:unknown` when the usage could not be
+      read. It is separate from `manual_status`, which comes from the client log.
 
   Usage comes from ClickHouse and is `nil` when the query fails.
   """
@@ -328,8 +333,9 @@ defmodule Sanbase.Billing.BusinessClients.Report do
           "(#{window}, #{grace}). #{upgrades} Split by the plan of the period due.",
       at_risk:
         "Clients whose most severe open log entry is at risk or high risk. " <>
-          "Set by hand in the client log; there are no automatic rules yet. Split by the " <>
-          "client's segment today.",
+          "Set by hand in the client log; the automatic risk level is shown separately " <>
+          "and does not count here. Split by the client's segment today.",
+      risk: risk_note(settings, usage_days),
       retention:
         "Share of at-risk clients with at least one \"#{settings.retention_action_type}\" " <>
           "entry in their log. Split by the client's segment today.",
@@ -353,6 +359,24 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   # of every user grouped by user, users, overrides, log entries and the credit sources
   # of their invoices. The log entries are filtered by date in memory, so computing many
   # months from one load queries them once.
+  defp risk_note(settings, usage_days) do
+    "Automatic, from tenure and usage; it ranks clients and does not predict - most " <>
+      "High Risk clients stay. Active days are the days with any API or web " <>
+      "activity in the last #{usage_days} days; usage is down when API calls or " <>
+      "active days fell #{settings.risk_usage_drop_percent}% or more against the " <>
+      "#{usage_days} days before; a new client is in the first " <>
+      "#{settings.risk_new_client_days} days. " <>
+      "Business plan, monthly - High Risk: active on " <>
+      "#{settings.risk_high_active_days} days or fewer, or a new client with usage " <>
+      "down; At Risk: a new client, or active on #{settings.risk_low_active_days} " <>
+      "days or fewer, or usage down. " <>
+      "Business email, monthly - High Risk: no activity, or a new client active on " <>
+      "#{settings.risk_low_active_days} days or fewer; At Risk: a new client, or " <>
+      "active on #{settings.risk_high_active_days} days or fewer. " <>
+      "Yearly - At Risk when the renewal is #{settings.risk_renewal_days} days away " <>
+      "or closer. Failed payments are not part of the level."
+  end
+
   defp load(settings, user_ids \\ nil) do
     plans = classify_plans(settings)
     rows = line_rows(Map.keys(plans), user_ids)
@@ -556,6 +580,9 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     {api_calls, last_web, last_api} = usage(user_ids, as_of, data.settings)
 
     %{
+      as_of: as_of,
+      settings: data.settings,
+      active_days: active_days(user_ids, as_of, data.settings),
       subscriptions: subscriptions_by_user(user_ids, Map.keys(data.plans)),
       unpaid_invoices: users_with_unpaid_invoices(user_ids, data),
       status: manual_status_by_user(data.entries_by_user, user_ids, as_of),
@@ -575,15 +602,36 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     {calls, calls_prev} = context.api_calls.(id)
     last_web = Map.get(context.last_web, id)
     last_api = Map.get(context.last_api, id)
+    active_days = context.active_days.(id)
+    renewal_date = renewal_date(subscription, client)
+
+    risk =
+      Risk.assess(
+        %{
+          segment: if(client.business_reason == :plan, do: :plan, else: :business_email),
+          interval: client.interval,
+          tenure_days: Date.diff(context.as_of, client.start_date),
+          active_days: active_days,
+          api_calls: {calls, calls_prev},
+          days_to_renewal: renewal_date && Date.diff(renewal_date, context.as_of)
+        },
+        context.settings
+      )
+
+    {active_days, active_days_prev} = active_days || {nil, nil}
 
     client
     |> Map.merge(%{
       subscription_status: sub_status,
-      renewal_date: renewal_date(subscription, client),
+      renewal_date: renewal_date,
       failed_payment?: sub_status in @failed_statuses,
       unpaid_invoice?: MapSet.member?(context.unpaid_invoices, id),
       api_calls: calls,
       api_calls_prev: calls_prev,
+      active_days: active_days,
+      active_days_prev: active_days_prev,
+      risk_level: risk.level,
+      risk_reasons: risk.reasons,
       last_web_active_at: last_web,
       last_api_call_at: last_api,
       last_active_at: latest(last_web, last_api),
@@ -843,6 +891,20 @@ defmodule Sanbase.Billing.BusinessClients.Report do
         else: &Map.get(calls, &1, {0, 0})
 
     {lookup, Usage.last_web_activity(user_ids), Usage.last_api_call(user_ids, until)}
+  end
+
+  # Returns a lookup of `{active days, previous active days}` per user, `nil` for every
+  # user when the query failed. The windows are whole days: up to yesterday for today's
+  # numbers, as today is not over.
+  defp active_days([], _as_of, _settings), do: fn _ -> nil end
+
+  defp active_days(user_ids, as_of, settings) do
+    last_day = if current?(as_of), do: Date.add(Date.utc_today(), -1), else: as_of
+
+    case Usage.active_days_two_windows(user_ids, settings.usage_window_days, last_day) do
+      {:ok, days} -> &Map.get(days, &1, {0, 0})
+      :error -> fn _ -> nil end
+    end
   end
 
   defp latest(nil, other), do: other

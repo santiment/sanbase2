@@ -456,6 +456,92 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert client.api_calls_prev == 80
     end
 
+    test "the automatic risk level comes from tenure, active days and API calls",
+         %{today: today} do
+      new_client = user("new@corp.com")
+      quiet = user("quiet@corp.com")
+      steady = user("steady@corp.com")
+
+      invoice(new_client, [
+        {@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}
+      ])
+
+      for u <- [quiet, steady], month <- 0..6 do
+        start = Date.add(today, -200 + month * 30)
+        invoice(u, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}])
+      end
+
+      clients =
+        Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, fn sql, _args, _opts ->
+          cond do
+            sql =~ "sanbase_user_events" ->
+              {:ok, %{rows: [[new_client.id, 5, 0], [quiet.id, 3, 20], [steady.id, 25, 24]]}}
+
+            sql =~ "max(dt)" ->
+              {:ok, %{rows: []}}
+
+            true ->
+              {:ok, %{rows: [[steady.id, 5_000, 5_100], [quiet.id, 10, 2_000]]}}
+          end
+        end)
+        |> Sanbase.Mock.run_with_mocks(fn -> Report.list_clients() end)
+        |> Map.new(&{&1.user_id, &1})
+
+      assert %{risk_level: :healthy, risk_reasons: [], active_days: 25, active_days_prev: 24} =
+               clients[steady.id]
+
+      assert %{risk_level: :high_risk, active_days: 3, active_days_prev: 20} = clients[quiet.id]
+
+      assert clients[quiet.id].risk_reasons == [
+               "Active on 3 of the last 30 days",
+               "Usage down 100% (API calls)"
+             ]
+
+      assert clients[new_client.id].risk_level == :high_risk
+
+      assert clients[new_client.id].risk_reasons ==
+               ["Active on 5 of the last 30 days", "New client (5 days)"]
+
+      # The manual status is untouched by the automatic level.
+      assert Enum.all?(Map.values(clients), &(&1.manual_status == :healthy))
+    end
+
+    test "a client nobody saw active is High Risk, but unknown when the usage query fails",
+         %{today: today} do
+      user = user("silent@corp.com")
+
+      for month <- 0..6 do
+        start = Date.add(today, -200 + month * 30)
+        invoice(user, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}])
+      end
+
+      assert [%{risk_level: :high_risk, active_days: 0, active_days_prev: 0} = client] =
+               with_usage([], fn -> Report.list_clients() end)
+
+      assert client.risk_reasons == ["No activity in the last 30 days"]
+
+      assert [%{risk_level: :unknown, active_days: nil, active_days_prev: nil}] =
+               Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:error, "timeout"})
+               |> Sanbase.Mock.run_with_mocks(fn -> Report.list_clients() end)
+    end
+
+    test "a yearly client is only flagged ahead of the renewal", %{today: today} do
+      soon = user("soon@corp.com")
+      later = user("later@corp.com")
+
+      invoice(soon, [{@business_pro_yearly, Date.add(today, -300), Date.add(today, 65), 478_800}])
+
+      invoice(later, [
+        {@business_pro_yearly, Date.add(today, -100), Date.add(today, 265), 478_800}
+      ])
+
+      clients =
+        with_usage([], fn -> Report.list_clients() end) |> Map.new(&{&1.user_id, &1})
+
+      assert %{risk_level: :at_risk, risk_reasons: ["Renews in 65 day(s)"]} = clients[soon.id]
+      assert %{risk_level: :healthy, risk_reasons: []} = clients[later.id]
+    end
+
     test "last active is the later of the last web session and the last API call",
          %{today: today} do
       web_user = user("web@corp.com")
@@ -915,10 +1001,12 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert notes.client_churn =~ "rolling 6 months"
       assert notes.client_renewal =~ "14-day grace"
       assert notes.churned =~ "rolling 6 months"
+      assert notes.risk =~ "first 92 days"
+      assert notes.risk =~ "active on 7 days or fewer"
 
       assert Map.keys(notes) |> Enum.sort() ==
                Enum.sort(~w(business_client mrr acv tcv client_churn revenue_churn client_renewal
-                            revenue_renewal at_risk retention churned usage)a)
+                            revenue_renewal at_risk risk retention churned usage)a)
     end
   end
 end

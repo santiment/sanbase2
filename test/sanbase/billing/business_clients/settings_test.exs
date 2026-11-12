@@ -23,4 +23,33 @@ defmodule Sanbase.Billing.BusinessClients.SettingsTest do
     assert {:ok, settings} = Settings.update(%{free_email_domains: "Gmail.com, ACME.io"}, nil)
     assert settings.free_email_domains == ["gmail.com", "acme.io"]
   end
+
+  test "the risk thresholds default to the backtested values and can be changed" do
+    assert %{
+             risk_new_client_days: 92,
+             risk_high_active_days: 7,
+             risk_low_active_days: 15,
+             risk_usage_drop_percent: 30,
+             risk_renewal_days: 90
+           } = Settings.get()
+
+    assert {:ok, settings} =
+             Settings.update(%{risk_high_active_days: 5, risk_usage_drop_percent: 50}, nil)
+
+    assert settings.risk_high_active_days == 5
+    assert settings.risk_usage_drop_percent == 50
+    assert settings.risk_low_active_days == 15
+  end
+
+  test "rejects risk thresholds that make no sense" do
+    assert {:error, changeset} = Settings.update(%{risk_usage_drop_percent: 0}, nil)
+    assert errors_on(changeset).risk_usage_drop_percent != []
+
+    # The High Risk bound of active days cannot be above the At Risk one.
+    assert {:error, changeset} =
+             Settings.update(%{risk_high_active_days: 20, risk_low_active_days: 10}, nil)
+
+    assert errors_on(changeset).risk_low_active_days != []
+    assert Settings.get().risk_high_active_days == 7
+  end
 end

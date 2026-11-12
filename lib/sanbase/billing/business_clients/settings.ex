@@ -40,6 +40,14 @@ defmodule Sanbase.Billing.BusinessClients.Settings do
     renewal_grace_days: 30,
     renewal_upgrades_full_value: true,
     usage_window_days: 30,
+    # The automatic risk level, see `Sanbase.Billing.BusinessClients.Risk`. The defaults
+    # come from the cancellations of the two years before November 2026 and assume a
+    # 30 day usage window.
+    risk_new_client_days: 92,
+    risk_high_active_days: 7,
+    risk_low_active_days: 15,
+    risk_usage_drop_percent: 30,
+    risk_renewal_days: 90,
     issue_types: [
       "Complaint",
       "Product / data issue",
@@ -142,6 +150,11 @@ defmodule Sanbase.Billing.BusinessClients.Settings do
       renewal_grace_days: :integer,
       renewal_upgrades_full_value: :boolean,
       usage_window_days: :integer,
+      risk_new_client_days: :integer,
+      risk_high_active_days: :integer,
+      risk_low_active_days: :integer,
+      risk_usage_drop_percent: :integer,
+      risk_renewal_days: :integer,
       issue_types: {:array, :string},
       types_without_severity: {:array, :string},
       retention_action_type: :string
@@ -152,12 +165,29 @@ defmodule Sanbase.Billing.BusinessClients.Settings do
     |> validate_number(:churn_window_months, greater_than: 0, less_than_or_equal_to: 36)
     |> validate_number(:renewal_grace_days, greater_than_or_equal_to: 0, less_than: 366)
     |> validate_number(:usage_window_days, greater_than: 0, less_than: 366)
+    |> validate_number(:risk_new_client_days, greater_than_or_equal_to: 0, less_than: 3660)
+    |> validate_number(:risk_high_active_days, greater_than_or_equal_to: 0, less_than: 366)
+    |> validate_number(:risk_low_active_days, greater_than_or_equal_to: 0, less_than: 366)
+    |> validate_number(:risk_usage_drop_percent, greater_than: 0, less_than_or_equal_to: 100)
+    |> validate_number(:risk_renewal_days, greater_than_or_equal_to: 0, less_than: 366)
+    |> validate_risk_active_days()
     |> validate_subset(:renewal_intervals, ~w(month year))
     |> validate_length(:issue_types, min: 1)
     |> validate_retention_type()
     |> update_change(:free_email_domains, fn domains ->
       domains |> Enum.map(&String.downcase(String.trim(&1))) |> Enum.uniq()
     end)
+  end
+
+  defp validate_risk_active_days(changeset) do
+    high = get_field(changeset, :risk_high_active_days)
+    low = get_field(changeset, :risk_low_active_days)
+
+    if is_integer(high) and is_integer(low) and high > low do
+      add_error(changeset, :risk_low_active_days, "must not be below the High Risk active days")
+    else
+      changeset
+    end
   end
 
   defp validate_retention_type(changeset) do

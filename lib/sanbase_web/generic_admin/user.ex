@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.GenericAdmin.User do
   @behaviour SanbaseWeb.GenericAdmin
   alias Sanbase.Accounts.User
-  alias SanbaseWeb.GenericAdminController
 
   @schema_module User
 
@@ -62,7 +61,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
   Custom show-page actions, mapped to the permission each needs.
   `GenericAdminController.show_action/2` dispatches only what is listed here.
   `view_user_overview` and `view_user_metrics_usage` get `:show` because they only
-  redirect to a page with its own role gate; everything else mutates the user.
+  redirect to a page with its own role gate; everything else mutates the user, so
+  the controller runs it only on POST (CSRF-checked), never on GET.
   """
   def show_actions() do
     %{
@@ -291,38 +291,46 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
     Sanbase.ApiCallLimit.reset(user)
 
-    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
+    redirect_to_user(conn, user.id, "API call limits reset.")
   end
 
   def reset_queries_credits_spent(conn, %{id: user_id}) do
     Sanbase.Math.to_integer(user_id)
     |> Sanbase.ModeratorQueries.reset_user_monthly_credits()
 
-    GenericAdminController.show(conn, %{"resource" => "users", "id" => user_id})
+    redirect_to_user(conn, user_id, "Queries credits spent reset.")
   end
 
   def mcp_ban_user(conn, %{id: id}) do
     {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
     User.mcp_ban!(user, "Banned via admin")
-    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
+    redirect_to_user(conn, user.id, "User banned from MCP.")
   end
 
   def mcp_unban_user(conn, %{id: id}) do
     {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
     User.mcp_unban!(user)
-    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
+    redirect_to_user(conn, user.id, "User unbanned from MCP.")
   end
 
   def hide_activity_traces_user(conn, %{id: id}) do
     {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
     User.hide_activity_traces!(user)
-    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
+    redirect_to_user(conn, user.id, "Activity traces hidden.")
   end
 
   def unhide_activity_traces_user(conn, %{id: id}) do
     {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
     User.unhide_activity_traces!(user)
-    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
+    redirect_to_user(conn, user.id, "Activity traces unhidden.")
+  end
+
+  # Mutating actions arrive as a POST: redirect back to the user page
+  # (post/redirect/get) so a browser refresh does not resubmit the action.
+  defp redirect_to_user(conn, user_id, message) do
+    conn
+    |> Phoenix.Controller.put_flash(:info, message)
+    |> Phoenix.Controller.redirect(to: "/admin/generic/#{user_id}?resource=users")
   end
 
   def user_link(row) do

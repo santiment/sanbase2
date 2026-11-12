@@ -95,20 +95,105 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
     test "a viewer cannot run a mutating custom action" do
       target = insert(:user, is_mcp_banned: false)
 
-      conn = get(sign_in(:role_admin_panel_viewer), show_action_path("mcp_ban_user", target.id))
+      conn = post(sign_in(:role_admin_panel_viewer), show_action_path("mcp_ban_user", target.id))
 
       assert redirected_to(conn) == ~p"/admin/generic?resource=users"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed"
       refute Sanbase.Repo.get(Sanbase.Accounts.User, target.id).is_mcp_banned
     end
 
-    test "an editor can run a mutating custom action" do
+    test "an editor can run a mutating custom action with POST" do
       target = insert(:user, is_mcp_banned: false)
 
-      conn = get(sign_in(:role_admin_panel_editor), show_action_path("mcp_ban_user", target.id))
+      conn = post(sign_in(:role_admin_panel_editor), show_action_path("mcp_ban_user", target.id))
 
-      assert html_response(conn, 200)
+      # post/redirect/get: back to the user page, so a refresh does not resubmit.
+      assert redirected_to(conn) == "/admin/generic/#{target.id}?resource=users"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "banned from MCP"
       assert Sanbase.Repo.get(Sanbase.Accounts.User, target.id).is_mcp_banned
+    end
+
+    # SECURITY_ANALYSIS.md A2: a GET link to a mutating action is a CSRF vector —
+    # the SameSite=Lax session cookie is sent on a cross-site link click and
+    # `protect_from_forgery` does not check GET.
+    for action <- ~w(reset_api_call_limits reset_queries_credits_spent mcp_ban_user
+                     mcp_unban_user hide_activity_traces_user unhide_activity_traces_user) do
+      @action action
+      test "#{@action} is refused over GET, even for an owner" do
+        target =
+          insert(:user,
+            is_mcp_banned: @action == "mcp_unban_user",
+            are_activity_traces_hidden: false
+          )
+
+        before = Sanbase.Repo.get(Sanbase.Accounts.User, target.id)
+
+        conn = get(sign_in(:role_admin_panel_owner), show_action_path(@action, target.id))
+
+        assert redirected_to(conn) == "/admin/generic/#{target.id}?resource=users"
+        assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "must be submitted with POST"
+
+        after_get = Sanbase.Repo.get(Sanbase.Accounts.User, target.id)
+        assert after_get.is_mcp_banned == before.is_mcp_banned
+        assert after_get.are_activity_traces_hidden == before.are_activity_traces_hidden
+      end
+    end
+
+    test "a mutating action runs on POST but not on GET" do
+      target = insert(:user)
+      parent = self()
+      # One signed-in conn (the role factory has a fixed id, so sign in once).
+      conn = sign_in(:role_admin_panel_owner)
+
+      Sanbase.Mock.prepare_mock(Sanbase.ApiCallLimit, :reset, fn user ->
+        send(parent, {:reset_called, user.id})
+        :ok
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        get(conn, show_action_path("reset_api_call_limits", target.id))
+        refute_received {:reset_called, _}
+
+        post(conn, show_action_path("reset_api_call_limits", target.id))
+        assert_received {:reset_called, user_id}
+        assert user_id == target.id
+      end)
+    end
+
+    # Cross-site POSTs are blocked by the browser: the session cookie is
+    # SameSite=Lax, which is sent on a cross-site top-level GET but never on a
+    # cross-site POST. (The CSRF token check itself is skipped on the admin pod,
+    # see SanbaseWeb.Plug.AdminPodOnly and SECURITY_ANALYSIS.md A6.)
+    test "the session cookie is SameSite=Lax and HttpOnly" do
+      conn = get(sign_in(:role_admin_panel_owner), ~p"/admin/generic?resource=users")
+      cookie_key = Sanbase.Utils.Config.module_get(SanbaseWeb.Plug.SessionPlug, :session_key)
+
+      set_cookie =
+        conn
+        |> Plug.Conn.get_resp_header("set-cookie")
+        |> Enum.find(&String.starts_with?(&1, cookie_key <> "="))
+
+      assert set_cookie =~ ~r/SameSite=Lax/i
+      assert set_cookie =~ ~r/HttpOnly/i
+    end
+
+    test "the user page renders mutating actions as POST forms and read-only ones as links" do
+      target = insert(:user)
+
+      html =
+        get(sign_in(:role_admin_panel_owner), ~p"/admin/generic/#{target.id}?resource=users")
+        |> html_response(200)
+
+      document = LazyHTML.from_document(html)
+
+      form = LazyHTML.query(document, "form#show-action-mcp_ban_user")
+      assert LazyHTML.attribute(form, "method") == ["post"]
+
+      assert [_token] =
+               LazyHTML.query(form, "input[name=_csrf_token]") |> LazyHTML.attribute("value")
+
+      refute LazyHTML.query(document, "a[href*='action=mcp_ban_user']") |> Enum.any?()
+
+      assert LazyHTML.query(document, "a[href*='action=view_user_overview']") |> Enum.any?()
     end
 
     test "a viewer can still run a read-only custom action" do

@@ -18,7 +18,8 @@ defmodule SanbaseWeb.GenericAdminController do
   | `update`      | PATCH  | `/admin/generic/:id?resource=X` | Update existing record |
   | `delete`      | DELETE | `/admin/generic/:id?resource=X` | Delete record |
   | `search`      | GET    | `/admin/generic/search?resource=X&search[...]` | Filtered listing |
-  | `show_action` | GET    | `/admin/generic/show_action?resource=X&id=Y&action=Z` | Custom action |
+  | `show_action` | GET    | `/admin/generic/show_action?resource=X&id=Y&action=Z` | Read-only custom action (`:show` permission) |
+  | `show_action` | POST   | `/admin/generic/show_action?resource=X&id=Y&action=Z` | Any custom action; required for mutating ones |
 
   ## Request lifecycle
 
@@ -66,14 +67,32 @@ defmodule SanbaseWeb.GenericAdminController do
 
     case Map.fetch(declared_show_actions(conn, resource), action) do
       {:ok, {function, permission}} ->
-        if show_action_permitted?(conn, permission),
-          do: assign(conn, :show_action_function, function),
-          else: forbid_action(conn, resource, function)
+        cond do
+          not show_action_permitted?(conn, permission) ->
+            forbid_action(conn, resource, function)
+
+          # A mutating action over GET is a CSRF vector: the SameSite=Lax session
+          # cookie is sent on a cross-site link click, and `protect_from_forgery`
+          # does not check GET. Only POST (CSRF-checked) may change data.
+          conn.method != "POST" and not read_only_show_action?(permission) ->
+            conn
+            |> put_flash(:error, "#{function} changes data and must be submitted with POST.")
+            |> redirect(to: ~p"/admin/generic/#{conn.params["id"] || ""}?resource=#{resource}")
+            |> halt()
+
+          true ->
+            assign(conn, :show_action_function, function)
+        end
 
       :error ->
         forbid_action(conn, resource, "run that action on")
     end
   end
+
+  # `:show` actions only navigate (they redirect to a page with its own role
+  # gate), so they may stay plain GET links.
+  defp read_only_show_action?(:show), do: true
+  defp read_only_show_action?(_permission), do: false
 
   # String-keyed, so an unknown param never reaches `String.to_existing_atom/1`.
   defp declared_show_actions(%Plug.Conn{} = conn, resource) do
@@ -442,12 +461,19 @@ defmodule SanbaseWeb.GenericAdminController do
   defp filter_belongs_to_actions(belongs_to, %Plug.Conn{} = conn, resource) do
     declared = declared_show_actions(conn, resource)
 
+    # Each surviving action carries whether it is read-only, so the template can
+    # render it as a GET link or as a CSRF-protected POST form.
     Enum.map(belongs_to, fn section ->
       Map.update(section, :actions, [], fn actions ->
-        Enum.filter(actions, fn action ->
+        Enum.flat_map(actions, fn action ->
           case Map.fetch(declared, Atom.to_string(action)) do
-            {:ok, {_function, permission}} -> show_action_permitted?(conn, permission)
-            :error -> false
+            {:ok, {_function, permission}} ->
+              if show_action_permitted?(conn, permission),
+                do: [%{name: action, read_only?: read_only_show_action?(permission)}],
+                else: []
+
+            :error ->
+              []
           end
         end)
       end)

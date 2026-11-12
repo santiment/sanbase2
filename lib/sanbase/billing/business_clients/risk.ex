@@ -19,9 +19,12 @@ defmodule Sanbase.Billing.BusinessClients.Risk do
     * `:api_calls` - `{current, previous}` API key calls in the same windows; either
       may be `nil` when unknown
     * `:days_to_renewal` - days until the renewal date, `nil` when there is none
+    * `:cancellation_on` - optional, the date a scheduled cancellation takes effect
 
-  Monthly clients are scored on tenure and usage. Yearly clients are too few to score
-  on usage and are only flagged ahead of their renewal.
+  A client who scheduled a cancellation is High Risk whatever else is known: they
+  leave unless somebody acts. Otherwise monthly clients are scored on tenure and
+  usage. Yearly clients are too few to score on usage and are only flagged ahead of
+  their renewal.
 
   Business plan, monthly:
 
@@ -52,7 +55,8 @@ defmodule Sanbase.Billing.BusinessClients.Risk do
           required(:tenure_days) => integer() | nil,
           required(:active_days) => {non_neg_integer(), non_neg_integer()} | nil,
           required(:api_calls) => {non_neg_integer() | nil, non_neg_integer() | nil},
-          required(:days_to_renewal) => integer() | nil
+          required(:days_to_renewal) => integer() | nil,
+          optional(:cancellation_on) => Date.t() | nil
         }
 
   @doc ~s"""
@@ -60,15 +64,27 @@ defmodule Sanbase.Billing.BusinessClients.Risk do
   client is scored on could not be read.
   """
   @spec assess(facts(), map()) :: %{level: level(), reasons: [String.t()]}
-  def assess(%{interval: "year"} = facts, settings) do
-    facts.days_to_renewal |> renewal_signals(settings) |> result()
+  def assess(facts, settings) do
+    case {cancellation_signal(facts), signals(facts, settings)} do
+      {nil, :unknown} -> %{level: :unknown, reasons: ["Usage data is not available"]}
+      {cancellation, :unknown} -> result([cancellation])
+      {cancellation, signals} -> result([cancellation | signals])
+    end
   end
 
-  def assess(%{active_days: nil}, _settings) do
-    %{level: :unknown, reasons: ["Usage data is not available"]}
-  end
+  defp cancellation_signal(%{cancellation_on: %Date{} = date}),
+    do: {:high_risk, "Cancellation scheduled for #{Date.to_iso8601(date)}"}
 
-  def assess(%{segment: :plan} = facts, settings) do
+  defp cancellation_signal(_facts), do: nil
+
+  # The signals of the usage and renewal rules, `:unknown` when the usage a monthly
+  # client is scored on could not be read.
+  defp signals(%{interval: "year"} = facts, settings),
+    do: renewal_signals(facts.days_to_renewal, settings)
+
+  defp signals(%{active_days: nil}, _settings), do: :unknown
+
+  defp signals(%{segment: :plan} = facts, settings) do
     {active, _previous} = facts.active_days
     new? = new_client?(facts, settings)
     drop = usage_drop(facts, settings)
@@ -78,10 +94,9 @@ defmodule Sanbase.Billing.BusinessClients.Risk do
         active_signal(active, settings, :at_risk, settings.risk_low_active_days),
       tenure_and_drop_signal(new?, drop, facts)
     ]
-    |> result()
   end
 
-  def assess(facts, settings) do
+  defp signals(facts, settings) do
     {active, _previous} = facts.active_days
     new? = new_client?(facts, settings)
     activity = activity_text(active, settings)
@@ -104,7 +119,7 @@ defmodule Sanbase.Billing.BusinessClients.Risk do
           nil
       end
 
-    result([signal])
+    [signal]
   end
 
   defp renewal_signals(days, settings) when is_integer(days) do
@@ -131,7 +146,8 @@ defmodule Sanbase.Billing.BusinessClients.Risk do
 
   defp tenure_and_drop_signal(false, nil, _facts), do: nil
 
-  defp drop_text({percent, what}), do: "#{percent}% (#{what})"
+  # The threshold is compared with the exact drop; only the text is rounded.
+  defp drop_text({percent, what}), do: "#{round(percent)}% (#{what})"
 
   defp new_client?(%{tenure_days: days}, settings) when is_integer(days),
     do: days <= settings.risk_new_client_days
@@ -158,7 +174,7 @@ defmodule Sanbase.Billing.BusinessClients.Risk do
 
   defp drop_percent(current, previous, min_previous)
        when is_integer(current) and is_integer(previous) and previous >= min_previous,
-       do: round((1 - current / previous) * 100)
+       do: (previous - current) * 100 / previous
 
   defp drop_percent(_current, _previous, _min_previous), do: nil
 

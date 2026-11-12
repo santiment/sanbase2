@@ -525,6 +525,71 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
                |> Sanbase.Mock.run_with_mocks(fn -> Report.list_clients() end)
     end
 
+    test "a scheduled cancellation is High Risk, however active the client",
+         %{today: today} do
+      leaving = user("leaving@corp.com")
+      staying = user("staying@corp.com")
+
+      for u <- [leaving, staying], month <- 0..6 do
+        start = Date.add(today, -200 + month * 30)
+        invoice(u, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}])
+      end
+
+      period_end = DateTime.new!(Date.add(today, 10), ~T[00:00:00], "Etc/UTC")
+
+      insert(:subscription_pro_sanbase,
+        user: leaving,
+        plan_id: @business_pro_monthly,
+        current_period_end: period_end,
+        cancel_at_period_end: true
+      )
+
+      insert(:subscription_pro_sanbase,
+        user: staying,
+        plan_id: @business_pro_monthly,
+        current_period_end: period_end
+      )
+
+      clients =
+        with_usage([[leaving.id, 25, 25], [staying.id, 25, 25]], fn -> Report.list_clients() end)
+        |> Map.new(&{&1.user_id, &1})
+
+      assert clients[leaving.id].risk_level == :high_risk
+
+      assert clients[leaving.id].risk_reasons ==
+               ["Cancellation scheduled for #{Date.to_iso8601(Date.add(today, 10))}"]
+
+      assert %{risk_level: :healthy, risk_reasons: []} = clients[staying.id]
+    end
+
+    test "for a past date the renewal is the end of the period paid then, not today's",
+         %{today: today} do
+      user = user("yearly@corp.com")
+      first_end = Date.add(today, -20)
+
+      invoice(user, [{@business_pro_yearly, Date.add(first_end, -365), first_end, 478_800}])
+      invoice(user, [{@business_pro_yearly, first_end, Date.add(first_end, 365), 478_800}])
+
+      # Today's subscription: renews in almost a year and is set to cancel.
+      insert(:subscription_pro_sanbase,
+        user: user,
+        plan_id: @business_pro_yearly,
+        current_period_end: DateTime.new!(Date.add(first_end, 365), ~T[00:00:00], "Etc/UTC"),
+        cancel_at_period_end: true
+      )
+
+      past = Date.add(today, -60)
+
+      assert [then] = with_usage([], fn -> Report.list_clients(as_of: past) end)
+      assert then.renewal_date == first_end
+      assert then.risk_level == :at_risk
+      assert then.risk_reasons == ["Renews in 40 day(s)"]
+
+      assert [now] = with_usage([], fn -> Report.list_clients() end)
+      assert now.renewal_date == Date.add(first_end, 365)
+      assert now.risk_level == :high_risk
+    end
+
     test "a yearly client is only flagged ahead of the renewal", %{today: today} do
       soon = user("soon@corp.com")
       later = user("later@corp.com")
@@ -598,6 +663,61 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
   # ─── metrics/1 ───────────────────────────────────────────────────────────
 
   describe "metrics/1" do
+    test "at risk counts the automatic level and the clients marked by hand",
+         %{today: today} do
+      quiet = user("quiet@corp.com")
+      marked = user("marked@corp.com")
+      fine = user("fine@corp.com")
+      author = user("admin@santiment.net")
+
+      for u <- [quiet, marked, fine], month <- 0..6 do
+        start = Date.add(today, -200 + month * 30)
+        invoice(u, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}])
+      end
+
+      {:ok, _} =
+        BusinessClients.create_entry(marked.id, author.id, %{
+          type: "Complaint",
+          severity: "at_risk"
+        })
+
+      {:ok, _} = BusinessClients.create_entry(quiet.id, author.id, %{type: "Retention action"})
+
+      # `quiet` was active on 3 days; the other two on 25.
+      usage = [[quiet.id, 3, 3], [marked.id, 25, 25], [fine.id, 25, 25]]
+
+      metrics = with_usage(usage, fn -> Report.metrics() end)
+
+      assert metrics.client_count == 3
+      assert metrics.at_risk_count == 2
+      assert metrics.retention_action_pct == 50.0
+      assert metrics.segments.plan.at_risk_count == 2
+      assert metrics.segments.business_email.at_risk_count == 0
+
+      # The page shows the same number next to the clients it comes from.
+      page = with_usage(usage, fn -> Report.page(months: 2) end)
+      assert page.metrics.at_risk_count == 2
+
+      assert page.clients |> Enum.filter(&(&1.risk_level == :high_risk)) |> Enum.map(& &1.user_id) ==
+               [quiet.id]
+    end
+
+    test "a month computed for the table has no at-risk numbers", %{today: today} do
+      user = user("monthly@corp.com")
+
+      for month <- 0..6 do
+        start = Date.add(today, -200 + month * 30)
+        invoice(user, [{@business_pro_monthly, start, Date.add(start, 30), 42_000}])
+      end
+
+      for row <- with_usage([], fn -> Report.monthly_metrics(months: 3) end) do
+        assert row.source == :computed
+        assert row.at_risk_count == nil
+        assert row.retention_action_pct == nil
+        assert row.segments.plan.at_risk_count == nil
+      end
+    end
+
     test "churn and renewal over the window", %{today: today} do
       stays = user("stays@corp.com")
       leaves = user("leaves@corp.com")
@@ -866,7 +986,8 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
         assert %{clients: clients, metrics: metrics} = Report.page(as_of: past)
         assert %{manual_status: :high_risk} = Enum.find(clients, &(&1.user_id == leaves.id))
         assert %{retention_action?: false} = Enum.find(clients, &(&1.user_id == stays.id))
-        assert metrics.at_risk_count == 1
+        # Both were clients then: one marked by hand, and neither showed any activity.
+        assert metrics.at_risk_count == 2
       end)
     end
   end

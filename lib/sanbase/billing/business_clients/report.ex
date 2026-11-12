@@ -73,11 +73,12 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     as_of = Keyword.get(opts, :as_of, Date.utc_today())
     months = last_months(Keyword.get(opts, :months, 12))
     data = load(Settings.get())
+    clients = build_clients(data, as_of)
 
     %{
-      clients: build_clients(data, as_of),
+      clients: clients,
       churned: build_churned(data, as_of),
-      metrics: metrics_for(data, as_of),
+      metrics: metrics_for(data, as_of, at_risk_users(clients)),
       monthly: monthly_from(months, metrics_snapshots(months), data)
     }
   end
@@ -101,7 +102,8 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       the usage window and in the window before;
     * `risk_level` and `risk_reasons` - the automatic risk level of
       `Sanbase.Billing.BusinessClients.Risk`, `:unknown` when the usage could not be
-      read. It is separate from `manual_status`, which comes from the client log.
+      read. It is separate from `manual_status`, which comes from the client log; the
+      at-risk count of `metrics/1` takes both.
 
   Usage comes from ClickHouse and is `nil` when the query fails.
   """
@@ -141,6 +143,10 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   client and revenue churn, client and revenue renewal. Rates are fractions, `nil` when there
   is nothing to divide by.
 
+  A client is at risk when the automatic `risk_level` is At Risk or High Risk, or the
+  client log marks them so by hand. For a past `as_of` the level uses the usage of
+  that day but today's subscriptions.
+
   `segments` holds the same numbers per segment, `%{plan: ..., business_email: ...}`.
   The counts split by the client's segment on `as_of`, churn by the segment on the
   cohort date, renewal by the due line's plan (see `Periods.segment/2`). The segments
@@ -150,15 +156,16 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   def metrics(opts \\ []) do
     as_of = Keyword.get(opts, :as_of, Date.utc_today())
 
-    Settings.get()
-    |> load()
-    |> metrics_for(as_of)
+    data = load(Settings.get())
+
+    metrics_for(data, as_of, at_risk_users(build_clients(data, as_of)))
   end
 
   @doc ~s"""
   `metrics/1` on the first day of each of the last `months` months (default 12),
   newest first. A month with a stored `MetricsSnapshot` returns it
-  (`source: :snapshot`); any other month is computed now (`source: :computed`).
+  (`source: :snapshot`); any other month is computed now (`source: :computed`),
+  without the at-risk numbers: `at_risk_count` and `retention_action_pct` are `nil`.
   """
   @spec monthly_metrics(Keyword.t()) :: [map()]
   def monthly_metrics(opts \\ []) do
@@ -191,7 +198,9 @@ defmodule Sanbase.Billing.BusinessClients.Report do
           stored |> Snapshots.metrics_from_data() |> Map.merge(%{month: month, source: :snapshot})
 
         :error ->
-          data |> metrics_for(month) |> Map.merge(%{month: month, source: :computed})
+          # The risk level needs the usage and the subscriptions of that day, which
+          # are only read for one day at a time: not for every month of a table.
+          data |> metrics_for(month, nil) |> Map.merge(%{month: month, source: :computed})
       end
     end)
   end
@@ -332,9 +341,10 @@ defmodule Sanbase.Billing.BusinessClients.Report do
         "The new ACV of the renewed #{intervals} periods over the old ACV of all due ones " <>
           "(#{window}, #{grace}). #{upgrades} Split by the plan of the period due.",
       at_risk:
-        "Clients whose most severe open log entry is at risk or high risk. " <>
-          "Set by hand in the client log; the automatic risk level is shown separately " <>
-          "and does not count here. Split by the client's segment today.",
+        "Clients whose automatic risk level is At Risk or High Risk, plus the clients " <>
+          "marked at risk or high risk by hand in the client log. A past month shows a " <>
+          "number only when a snapshot was stored for it, as the level depends on the " <>
+          "usage and the subscriptions of that day. Split by the client's segment today.",
       risk: risk_note(settings, usage_days),
       retention:
         "Share of at-risk clients with at least one \"#{settings.retention_action_type}\" " <>
@@ -361,8 +371,10 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   # months from one load queries them once.
   defp risk_note(settings, usage_days) do
     "Automatic, from tenure and usage; it ranks clients and does not predict - most " <>
-      "High Risk clients stay. Active days are the days with any API or web " <>
-      "activity in the last #{usage_days} days; usage is down when API calls or " <>
+      "High Risk clients stay. A client who scheduled a cancellation is High Risk. " <>
+      "Active days are the days with any API or web " <>
+      "activity in the last #{usage_days} whole days, up to yesterday; API calls are " <>
+      "counted over the last #{usage_days} days up to now. Usage is down when API calls or " <>
       "active days fell #{settings.risk_usage_drop_percent}% or more against the " <>
       "#{usage_days} days before; a new client is in the first " <>
       "#{settings.risk_new_client_days} days. " <>
@@ -603,7 +615,14 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     last_web = Map.get(context.last_web, id)
     last_api = Map.get(context.last_api, id)
     active_days = context.active_days.(id)
-    renewal_date = renewal_date(subscription, client)
+    current? = current?(context.as_of)
+
+    # The subscription describes today. For a past date the renewal is the end of the
+    # period paid for then, and whether a cancellation was scheduled is not known.
+    renewal_date =
+      if current?, do: renewal_date(subscription, client), else: client.period_end
+
+    cancellation_on = if current?, do: cancellation_on(subscription, renewal_date)
 
     risk =
       Risk.assess(
@@ -613,7 +632,8 @@ defmodule Sanbase.Billing.BusinessClients.Report do
           tenure_days: Date.diff(context.as_of, client.start_date),
           active_days: active_days,
           api_calls: {calls, calls_prev},
-          days_to_renewal: renewal_date && Date.diff(renewal_date, context.as_of)
+          days_to_renewal: renewal_date && Date.diff(renewal_date, context.as_of),
+          cancellation_on: cancellation_on
         },
         context.settings
       )
@@ -640,7 +660,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       retention_action?: MapSet.member?(context.retention, id),
       override: Map.get(context.overrides, id)
     })
-    |> Map.delete(:last_period_end)
+    |> Map.drop([:last_period_end, :period_end])
   end
 
   # The revenue part of every client active on `as_of`.
@@ -677,6 +697,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       tcv: to_date |> Enum.map(& &1.amount) |> Enum.sum(),
       start_date: countable |> Enum.map(& &1.period_start) |> Enum.min(Date),
       last_period_end: countable |> Enum.map(& &1.period_end) |> Enum.max(Date),
+      period_end: current |> Enum.map(& &1.period_end) |> Enum.max(Date),
       paid_by: paid_by(to_date, credit_sources)
     }
   end
@@ -741,7 +762,12 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     from(s in Subscription,
       where: s.user_id in ^user_ids and s.plan_id in ^plan_ids,
       order_by: [desc: s.id],
-      select: %{user_id: s.user_id, status: s.status, current_period_end: s.current_period_end}
+      select: %{
+        user_id: s.user_id,
+        status: s.status,
+        current_period_end: s.current_period_end,
+        cancel_at_period_end: s.cancel_at_period_end
+      }
     )
     |> Repo.all()
     |> Enum.group_by(& &1.user_id)
@@ -755,6 +781,13 @@ defmodule Sanbase.Billing.BusinessClients.Report do
        do: DateTime.to_date(end_at)
 
   defp renewal_date(_subscription, client), do: client.last_period_end
+
+  # The day a live subscription set to cancel at the period end stops.
+  defp cancellation_on(%{status: status, cancel_at_period_end: true}, renewal_date)
+       when status in @live_statuses,
+       do: renewal_date
+
+  defp cancellation_on(_subscription, _renewal_date), do: nil
 
   # Users with a business invoice left unpaid: open or uncollectible past the first
   # days, with a line on one of the plans. An unpaid invoice for something else is not
@@ -984,7 +1017,9 @@ defmodule Sanbase.Billing.BusinessClients.Report do
 
   # ─── Metrics ─────────────────────────────────────────────────────────────
 
-  defp metrics_for(data, as_of) do
+  # `at_risk` is the set of at-risk users on `as_of`, or `nil` to leave the at-risk
+  # numbers out.
+  defp metrics_for(data, as_of, at_risk) do
     window = data.settings.churn_window_months
     cohort_date = Periods.months_before(as_of, window)
     clients = base_clients(data, as_of)
@@ -1000,26 +1035,25 @@ defmodule Sanbase.Billing.BusinessClients.Report do
             Periods.segment(lines, cohort_date) == segment
           end)
 
-        {segment, metric_fields(data, as_of, segment_clients, cohort_lines, segment)}
+        {segment, metric_fields(data, as_of, segment_clients, cohort_lines, segment, at_risk)}
       end)
 
     %{as_of: as_of, window: %{from: cohort_date, to: as_of}}
-    |> Map.merge(metric_fields(data, as_of, clients, data.lines_by_user, nil))
+    |> Map.merge(metric_fields(data, as_of, clients, data.lines_by_user, nil, at_risk))
     |> Map.merge(%{segments: segments, settings: data.settings})
   end
 
   # The headline numbers over `clients` (counts), `churn_lines` (the churn cohort) and
   # the due lines of `segment` (`nil` for all).
-  defp metric_fields(data, as_of, clients, churn_lines, segment) do
+  defp metric_fields(data, as_of, clients, churn_lines, segment, at_risk_users) do
     settings = data.settings
     window = settings.churn_window_months
-    user_ids = Enum.map(clients, & &1.user_id)
-    status = manual_status_by_user(data.entries_by_user, user_ids, as_of)
 
     at_risk =
-      for {user_id, {manual_status, _count}} <- status, manual_status != :healthy, do: user_id
+      at_risk_users &&
+        for %{user_id: id} <- clients, MapSet.member?(at_risk_users, id), do: id
 
-    retention = retention_users(data.entries_by_user, at_risk, as_of, settings)
+    retention = retention_users(data.entries_by_user, at_risk || [], as_of, settings)
     churn = Periods.churn(churn_lines, as_of, window)
 
     renewal =
@@ -1034,14 +1068,22 @@ defmodule Sanbase.Billing.BusinessClients.Report do
     %{
       client_count: length(clients),
       mrr: clients |> Enum.map(& &1.mrr) |> Enum.sum(),
-      at_risk_count: length(at_risk),
+      at_risk_count: at_risk && length(at_risk),
       retention_action_pct:
-        if(at_risk == [], do: nil, else: MapSet.size(retention) / length(at_risk) * 100),
+        if(at_risk in [nil, []], do: nil, else: MapSet.size(retention) / length(at_risk) * 100),
       client_churn: churn.client,
       revenue_churn: churn.revenue,
       client_renewal: renewal.client,
       revenue_renewal: renewal.revenue
     }
+  end
+
+  # At risk: the automatic level says so, or somebody marked the client by hand.
+  defp at_risk_users(clients) do
+    for client <- clients,
+        client.risk_level in [:at_risk, :high_risk] or client.manual_status != :healthy,
+        into: MapSet.new(),
+        do: client.user_id
   end
 
   # An override or the business-email rule both put a client in the email segment.

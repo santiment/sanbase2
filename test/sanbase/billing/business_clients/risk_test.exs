@@ -58,6 +58,12 @@ defmodule Sanbase.Billing.BusinessClients.RiskTest do
       assert reasons(active_days: {17, 25}) == ["Usage down 32% (active days)"]
     end
 
+    test "the threshold is compared with the exact drop, not the rounded one" do
+      # 29.5% rounds to 30 but is below the threshold.
+      assert level(api_calls: {705, 1_000}) == :healthy
+      assert reasons(api_calls: {695, 1_000}) == ["Usage down 31% (API calls)"]
+    end
+
     test "the larger of the two drops is the one reported" do
       assert reasons(api_calls: {600, 1_000}, active_days: {16, 25}) ==
                ["Usage down 40% (API calls)"]
@@ -123,6 +129,28 @@ defmodule Sanbase.Billing.BusinessClients.RiskTest do
 
     test "no renewal date and no usage data are both fine" do
       assert level(interval: "year", days_to_renewal: nil, active_days: nil) == :healthy
+    end
+  end
+
+  describe "a scheduled cancellation" do
+    test "is High Risk for a healthy client, monthly or yearly" do
+      on = ~D[2026-12-01]
+
+      assert Risk.assess(facts(cancellation_on: on), @settings) ==
+               %{level: :high_risk, reasons: ["Cancellation scheduled for 2026-12-01"]}
+
+      assert level(interval: "year", days_to_renewal: 200, cancellation_on: on) == :high_risk
+      assert level(cancellation_on: nil) == :healthy
+    end
+
+    test "comes first among the reasons and stands in for unreadable usage" do
+      on = ~D[2026-12-01]
+
+      assert reasons(cancellation_on: on, tenure_days: 40) ==
+               ["Cancellation scheduled for 2026-12-01", "New client (40 days)"]
+
+      assert Risk.assess(facts(cancellation_on: on, active_days: nil), @settings) ==
+               %{level: :high_risk, reasons: ["Cancellation scheduled for 2026-12-01"]}
     end
   end
 

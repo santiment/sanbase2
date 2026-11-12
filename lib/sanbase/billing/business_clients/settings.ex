@@ -170,6 +170,8 @@ defmodule Sanbase.Billing.BusinessClients.Settings do
     |> validate_number(:risk_low_active_days, greater_than_or_equal_to: 0, less_than: 366)
     |> validate_number(:risk_usage_drop_percent, greater_than: 0, less_than_or_equal_to: 100)
     |> validate_number(:risk_renewal_days, greater_than_or_equal_to: 0, less_than: 366)
+    |> validate_required(~w(risk_new_client_days risk_high_active_days risk_low_active_days
+                             risk_usage_drop_percent risk_renewal_days)a)
     |> validate_risk_active_days()
     |> validate_subset(:renewal_intervals, ~w(month year))
     |> validate_length(:issue_types, min: 1)
@@ -183,10 +185,26 @@ defmodule Sanbase.Billing.BusinessClients.Settings do
     high = get_field(changeset, :risk_high_active_days)
     low = get_field(changeset, :risk_low_active_days)
 
-    if is_integer(high) and is_integer(low) and high > low do
-      add_error(changeset, :risk_low_active_days, "must not be below the High Risk active days")
-    else
-      changeset
+    window = get_field(changeset, :usage_window_days)
+
+    cond do
+      not (is_integer(high) and is_integer(low)) ->
+        changeset
+
+      high > low ->
+        add_error(changeset, :risk_low_active_days, "must not be below the High Risk active days")
+
+      # A bound at or above the window would put every client at risk, however active.
+      is_integer(window) and low >= window ->
+        add_error(
+          changeset,
+          :risk_low_active_days,
+          "must be below the usage window of %{days} days",
+          days: window
+        )
+
+      true ->
+        changeset
     end
   end
 

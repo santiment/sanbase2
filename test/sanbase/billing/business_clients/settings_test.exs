@@ -52,4 +52,28 @@ defmodule Sanbase.Billing.BusinessClients.SettingsTest do
     assert errors_on(changeset).risk_low_active_days != []
     assert Settings.get().risk_high_active_days == 7
   end
+
+  test "a risk threshold cannot be emptied" do
+    assert {:error, changeset} = Settings.update(%{"risk_new_client_days" => ""}, nil)
+    assert errors_on(changeset).risk_new_client_days == ["can't be blank"]
+    assert Settings.get().risk_new_client_days == 92
+  end
+
+  test "the active-day bounds must stay below the usage window" do
+    # With a 10 day window nobody can be active on more than 10 days, so a bound of 15
+    # would put every client at risk.
+    assert {:error, changeset} = Settings.update(%{usage_window_days: 10}, nil)
+
+    assert errors_on(changeset).risk_low_active_days == [
+             "must be below the usage window of 10 days"
+           ]
+
+    assert {:ok, settings} =
+             Settings.update(
+               %{usage_window_days: 10, risk_high_active_days: 2, risk_low_active_days: 5},
+               nil
+             )
+
+    assert settings.usage_window_days == 10
+  end
 end

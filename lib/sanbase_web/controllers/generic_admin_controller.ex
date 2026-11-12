@@ -310,8 +310,14 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def show(%Plug.Conn{} = conn, %{"resource" => resource, "id" => id}) do
+    case module_from_resource(conn, resource) do
+      nil -> conn |> put_status(:not_found) |> render("error.html", message: "Unknown resource.")
+      module -> do_show(conn, resource, module, id)
+    end
+  end
+
+  defp do_show(%Plug.Conn{} = conn, resource, module, id) do
     resource_config = resource_module_map(conn)[resource]
-    module = module_from_resource(conn, resource)
     admin_module = resource_config[:admin_module]
     data = Repo.get(module, id) |> Repo.preload(resource_config[:preloads] || [])
 

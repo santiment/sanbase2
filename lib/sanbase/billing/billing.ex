@@ -415,6 +415,8 @@ defmodule Sanbase.Billing do
          do: {:ok, %{client_secret: setup_intent.client_secret}}
   end
 
+  def san_credit_balance(%User{stripe_customer_id: nil}), do: 0.00
+
   def san_credit_balance(%User{} = user) do
     with {:ok, customer} <- StripeApi.retrieve_customer(user),
          true <- customer.balance < 0 do

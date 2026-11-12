@@ -10,6 +10,13 @@ defmodule Sanbase.BillingTest do
     %{user: insert(:user), plans: plans}
   end
 
+  describe "san_credit_balance/1" do
+    test "is zero for a user without a Stripe customer", %{user: user} do
+      assert user.stripe_customer_id == nil
+      assert Billing.san_credit_balance(user) === 0.0
+    end
+  end
+
   describe "eligible_for_sanbase_trial?/1" do
     test "returns true when user has no sanbase subscriptions", %{user: user} do
       assert Billing.eligible_for_sanbase_trial?(user.id)

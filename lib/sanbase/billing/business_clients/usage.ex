@@ -1,11 +1,12 @@
 defmodule Sanbase.Billing.BusinessClients.Usage do
   @moduledoc ~s"""
   Usage signals shown next to each business client: API calls made with an API key,
-  the last API key call and the last web session activity.
+  the days with any activity, the last API key call and the last web session activity.
 
-  Display only - nothing here feeds a metric. Every function answers for all the given
-  users in one query and returns `%{}` when the query fails, so a slow or unreachable
-  ClickHouse never takes the page down.
+  Nothing here feeds a revenue metric; the calls and the active days feed the automatic
+  risk level. Every function answers for all the given users in one query and never
+  raises on a failed query, so a slow or unreachable ClickHouse never takes the page
+  down.
   """
 
   require Logger
@@ -70,6 +71,64 @@ defmodule Sanbase.Billing.BusinessClients.Usage do
       Map.put(acc, user_id, {current, previous})
     end)
     |> ok_or_empty("api_calls_two_windows")
+  end
+
+  @doc ~s"""
+  The days with any activity per user in the `days` up to and including `last_day`,
+  and in the `days` before that. A day counts when the user made an API call with an
+  API key or from a web session, or left a web event.
+
+  Returns `{:ok, %{user_id => {current, previous}}}`, users without activity absent,
+  or `:error` when the query failed - unlike an empty map, which means nobody was
+  active.
+  """
+  @spec active_days_two_windows([integer()], pos_integer(), Date.t()) ::
+          {:ok, %{integer() => {non_neg_integer(), non_neg_integer()}}} | :error
+  def active_days_two_windows([], _days, _last_day), do: {:ok, %{}}
+
+  def active_days_two_windows(user_ids, days, last_day) do
+    until = DateTime.new!(Date.add(last_day, 1), ~T[00:00:00], "Etc/UTC")
+    middle = DateTime.add(until, -days, :day)
+    from = DateTime.add(middle, -days, :day)
+
+    sql = """
+    SELECT
+      user_id,
+      toUInt32(uniqExactIf(day, day >= toDate(toDateTime({{middle}})))),
+      toUInt32(uniqExactIf(day, day < toDate(toDateTime({{middle}}))))
+    FROM (
+      SELECT user_id, toDate(dt) AS day
+      FROM api_call_data
+      WHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{until}})
+        AND auth_method IN ('apikey', 'jwt') AND user_id IN ({{user_ids}})
+      GROUP BY user_id, day
+      UNION ALL
+      SELECT user_id, toDate(dt) AS day
+      FROM sanbase_user_events
+      WHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{until}})
+        AND user_id IN ({{user_ids}})
+      GROUP BY user_id, day
+    )
+    GROUP BY user_id
+    """
+
+    params = %{from: from, middle: middle, until: until, user_ids: user_ids}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+    |> ClickhouseRepo.query_reduce(%{}, fn [user_id, current, previous], acc ->
+      Map.put(acc, user_id, {current, previous})
+    end)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        Logger.warning(
+          "[BusinessClients.Usage] active_days_two_windows failed: #{inspect(error)}"
+        )
+
+        :error
+    end
   end
 
   @doc ~s"""

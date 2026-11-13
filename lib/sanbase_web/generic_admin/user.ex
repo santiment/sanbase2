@@ -150,8 +150,9 @@ defmodule SanbaseWeb.GenericAdmin.User do
       %{
         resource: "user_apikey_tokens",
         resource_name: "Apikey tokens",
+        actions: [:delete],
         rows: Sanbase.Accounts.UserApikeyToken.user_tokens_structs(user) |> elem(1),
-        fields: [:id, :token],
+        fields: [:id, :token, :inserted_at],
         funcs: %{},
         create_link_kv: []
       },

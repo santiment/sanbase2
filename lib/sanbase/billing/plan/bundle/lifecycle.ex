@@ -865,13 +865,10 @@ defmodule Sanbase.Billing.Plan.Bundle.Lifecycle do
   defp counterpart_interval("year"), do: {:ok, "month"}
   defp counterpart_interval(_), do: {:error, "Unknown interval"}
 
-  # `items_to_switch/1` already refuses a switch with nothing staying. Restated here
-  # because the deletions go out first: an empty re-price is refused by Stripe only after
-  # items were already dropped.
-  defp swap_stripe_items(_sub, [], _leaving, _new_prices) do
-    {:error, "This subscription has no items to switch"}
-  end
-
+  # `items_to_switch/1` refuses a switch with nothing staying, so `staying` is never empty
+  # here. That matters because the deletions go out first: an empty re-price is refused by
+  # Stripe only after items were already dropped.
+  #
   # Items scheduled for removal are dropped rather than re-priced: carrying them over
   # would undo the customer's removal. Two requests, because Stripe applies one
   # `proration_behavior` per request - re-pricing has to prorate, and a deletion prorating

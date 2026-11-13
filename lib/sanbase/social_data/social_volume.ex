@@ -1,8 +1,8 @@
 defmodule Sanbase.SocialData.SocialVolume do
+  use Mockery.Macro
+
   import Sanbase.Utils.ErrorHandling
   import Sanbase.SocialData.Utils, only: [maybe_add_and_rename_field: 4]
-
-  require Mockery.Macro
 
   alias Sanbase.Utils.Config
 
@@ -12,7 +12,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
+  defp http_client(), do: mockable(HTTPoison)
 
   @recv_timeout 25_000
   def social_volume(selector, from, to, interval, source, opts \\ [])

@@ -268,10 +268,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     else
       {:error, {:invalid_argument, message}} ->
         {:error, message}
-
-      {:error, reason} ->
-        Logger.error("academyAutocompleteQuestions failed: #{inspect(reason)}")
-        {:error, "Academy question suggestions are temporarily unavailable"}
     end
   end
 

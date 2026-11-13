@@ -1,5 +1,5 @@
 defmodule Sanbase.Messaging.Insight do
-  require Mockery.Macro
+  use Mockery.Macro
   alias Sanbase.Utils.Config
   require Logger
 
@@ -75,5 +75,5 @@ defmodule Sanbase.Messaging.Insight do
 
   defp posts_url(id), do: "#{insights_url()}/read/#{id}"
   defp insights_url(), do: Config.module_get(SanbaseWeb.Endpoint, :insights_url)
-  defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
+  defp http_client(), do: mockable(HTTPoison)
 end

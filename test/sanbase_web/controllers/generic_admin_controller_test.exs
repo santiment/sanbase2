@@ -212,4 +212,53 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
       assert Sanbase.FeatureToggle.user_registration_enabled?()
     end
   end
+
+  describe "user_apikey_tokens" do
+    setup do
+      user = insert(:user)
+      {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+      [token] = Sanbase.Repo.all(Sanbase.Accounts.UserApikeyToken)
+
+      %{user: user, apikey: apikey, token: token}
+    end
+
+    test "the show page of a token renders", %{token: token, user: user} do
+      conn =
+        get(
+          sign_in(:role_admin_panel_viewer),
+          ~p"/admin/generic/#{token.id}?resource=user_apikey_tokens"
+        )
+
+      html = html_response(conn, 200)
+      assert html =~ token.token
+      assert html =~ user.email
+    end
+
+    test "an editor can delete a token, which revokes the apikey", ctx do
+      assert {:ok, _} = Sanbase.Accounts.Apikey.apikey_to_user(ctx.apikey)
+
+      conn =
+        delete(
+          sign_in(:role_admin_panel_editor),
+          ~p"/admin/generic/#{ctx.token.id}?resource=user_apikey_tokens"
+        )
+
+      assert redirected_to(conn) == ~p"/admin/generic?resource=user_apikey_tokens"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "deleted successfully"
+      refute Sanbase.Repo.get(Sanbase.Accounts.UserApikeyToken, ctx.token.id)
+      assert {:error, _} = Sanbase.Accounts.Apikey.apikey_to_user(ctx.apikey)
+    end
+
+    test "a viewer cannot delete a token", %{token: token, apikey: apikey} do
+      conn =
+        delete(
+          sign_in(:role_admin_panel_viewer),
+          ~p"/admin/generic/#{token.id}?resource=user_apikey_tokens"
+        )
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed to delete"
+      assert Sanbase.Repo.get(Sanbase.Accounts.UserApikeyToken, token.id)
+      assert {:ok, _} = Sanbase.Accounts.Apikey.apikey_to_user(apikey)
+    end
+  end
 end

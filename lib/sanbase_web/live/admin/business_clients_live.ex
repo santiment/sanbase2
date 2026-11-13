@@ -519,6 +519,51 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   def format_datetime(nil), do: "-"
   def format_datetime(dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M")
 
+  @doc ~s"""
+  How long ago the client was last active, in whole days: `"today"`, `"yesterday"`,
+  `"12 days ago"`, or `"never"` without any activity.
+  """
+  def days_ago(nil, _today), do: "never"
+
+  def days_ago(at, today) do
+    case Date.diff(today, Date.new!(at.year, at.month, at.day)) do
+      days when days <= 0 -> "today"
+      1 -> "yesterday"
+      days -> "#{days} days ago"
+    end
+  end
+
+  @doc ~s"""
+  How long a client has been one, in whole years and months since `start`: `"3y 4mo"`
+  with `:short`, `"3 years and 4 months"` with `:long`. Under a month it is in days.
+  """
+  def tenure(start, today, style \\ :short)
+  def tenure(nil, _today, _style), do: "-"
+
+  def tenure(%Date{} = start, %Date{} = today, style) do
+    partial = if today.day < start.day, do: 1, else: 0
+    months = max((today.year - start.year) * 12 + today.month - start.month - partial, 0)
+
+    case {div(months, 12), rem(months, 12)} do
+      {0, 0} -> tenure_part(max(Date.diff(today, start), 0), :day, style)
+      {years, 0} -> tenure_part(years, :year, style)
+      {0, months} -> tenure_part(months, :month, style)
+      {years, months} -> tenure_join(years, months, style)
+    end
+  end
+
+  defp tenure_join(years, months, :short),
+    do: "#{tenure_part(years, :year, :short)} #{tenure_part(months, :month, :short)}"
+
+  defp tenure_join(years, months, :long),
+    do: "#{tenure_part(years, :year, :long)} and #{tenure_part(months, :month, :long)}"
+
+  defp tenure_part(n, :year, :short), do: "#{n}y"
+  defp tenure_part(n, :month, :short), do: "#{n}mo"
+  defp tenure_part(n, :day, :short), do: "#{n}d"
+  defp tenure_part(1, unit, :long), do: "1 #{unit}"
+  defp tenure_part(n, unit, :long), do: "#{n} #{unit}s"
+
   def renewal_soon?(nil, _today), do: false
 
   def renewal_soon?(date, today) do
@@ -1470,30 +1515,26 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
           <tr>
             <th>Client</th>
             <th>Plan</th>
-            <th>Business because</th>
+            <th title="Automatic, from tenure and usage - see the formula notes">Risk level</th>
             <.sort_header by="mrr" sort_by={@sort_by} sort_dir={@sort_dir} class="text-right">
               MRR
             </.sort_header>
             <.sort_header by="acv" sort_by={@sort_by} sort_dir={@sort_dir} class="text-right">
               ACV
             </.sort_header>
-            <th class="text-right">TCV</th>
-            <th>Start</th>
+            <th title="Time since the first paid business period">Client for</th>
             <.sort_header by="renewal_date" sort_by={@sort_by} sort_dir={@sort_dir}>
               Renewal
             </.sort_header>
             <th>Paid by</th>
             <th>API calls</th>
-            <th>Last active</th>
-            <th title="Automatic, from tenure and usage - see the formula notes">Risk level</th>
             <th title="Set by hand in the client log">Manual status</th>
-            <th class="text-right">Open</th>
             <th :if={@can_edit}><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody id="clients-rows" phx-update="stream">
           <tr id="clients-empty" class="hidden only:table-row">
-            <td colspan={if @can_edit, do: 15, else: 14} class="text-center text-base-content/60 py-6">
+            <td colspan={if @can_edit, do: 11, else: 10} class="text-center text-base-content/60 py-6">
               No client matches these filters.
             </td>
           </tr>
@@ -1516,18 +1557,37 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
               <div :if={c.username && c.email} class="text-xs text-base-content/60">
                 {c.username}
               </div>
+              <div
+                id={"last-active-#{c.user_id}"}
+                class="text-xs text-base-content/50 whitespace-nowrap"
+                title={"Last web session: #{format_datetime(c.last_web_active_at)}, last API call: #{format_datetime(c.last_api_call_at)}"}
+              >
+                <%= if c.last_active_at do %>
+                  Active {days_ago(c.last_active_at, @today)}
+                  <span :if={activity_source(c)}>· {activity_source(c)}</span>
+                <% else %>
+                  Never active
+                <% end %>
+              </div>
             </td>
             <td class="whitespace-nowrap">
               <div class="font-medium">{c.plan_name}</div>
               <div class="text-xs text-base-content/60">
                 {c.interval}{if c.subscription_status, do: " · #{c.subscription_status}"}
               </div>
+              <div class="mt-1">
+                <.reason_badge reason={c.business_reason} override={c.override} />
+              </div>
             </td>
-            <td><.reason_badge reason={c.business_reason} override={c.override} /></td>
+            <td>
+              <.risk_level id={"risk-#{c.user_id}"} level={c.risk_level} reasons={c.risk_reasons} />
+            </td>
             <td class="text-right tabular-nums font-medium">{money(c.mrr)}</td>
             <td class="text-right tabular-nums">{money(c.acv)}</td>
-            <td class="text-right tabular-nums text-base-content/70">{money(c.tcv)}</td>
-            <td class="whitespace-nowrap">{format_date(c.start_date)}</td>
+            <td id={"tenure-#{c.user_id}"} class="whitespace-nowrap">
+              <div>{tenure(c.start_date, @today)}</div>
+              <div class="text-xs text-base-content/60">since {format_date(c.start_date)}</div>
+            </td>
             <td class="whitespace-nowrap">
               <span
                 :if={renewal_highlight?(c, @renewal_intervals, @today)}
@@ -1565,19 +1625,6 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
               </div>
             </td>
             <td><.usage_trend now={c.api_calls} prev={c.api_calls_prev} /></td>
-            <td class="whitespace-nowrap text-base-content/70">
-              {format_datetime(c.last_active_at)}
-              <span
-                :if={activity_source(c)}
-                class="badge badge-xs badge-ghost ml-1"
-                title={"Last web session: #{format_datetime(c.last_web_active_at)}, last API call: #{format_datetime(c.last_api_call_at)}"}
-              >
-                {activity_source(c)}
-              </span>
-            </td>
-            <td>
-              <.risk_level id={"risk-#{c.user_id}"} level={c.risk_level} reasons={c.risk_reasons} />
-            </td>
             <td>
               <span class="inline-flex items-center gap-1">
                 <.status_badge status={c.manual_status} />
@@ -1586,13 +1633,15 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
                   name="hero-lifebuoy"
                   class="w-4 h-4 text-info"
                 />
+                <span
+                  :if={c.open_entries_count > 0}
+                  id={"open-entries-#{c.user_id}"}
+                  class="badge badge-xs badge-neutral tabular-nums"
+                  title={"#{c.open_entries_count} open log entr(ies)"}
+                >
+                  {c.open_entries_count}
+                </span>
               </span>
-            </td>
-            <td class="text-right tabular-nums">
-              <span :if={c.open_entries_count > 0} class="badge badge-sm badge-neutral">
-                {c.open_entries_count}
-              </span>
-              <span :if={c.open_entries_count == 0} class="text-base-content/40">0</span>
             </td>
             <td :if={@can_edit} class="text-right">
               <.link

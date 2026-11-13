@@ -489,10 +489,38 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
       with_mocks report_mocks() do
         view = open_page(conn)
 
-        assert has_element?(view, "#client-101", "2026-10-21 08:00")
-        assert has_element?(view, "#client-101 .badge", "API")
-        assert has_element?(view, "#client-102 .badge", "web")
+        days = Date.diff(today(), ~D[2026-10-21])
+        assert has_element?(view, "#last-active-101", "Active #{days} days ago")
+        assert has_element?(view, "#last-active-101", "API")
+        assert has_element?(view, "#last-active-102", "web")
+        assert has_element?(view, ~s(#last-active-101[title*="2026-10-21 08:00"]))
       end
+    end
+
+    test "shows how long the client has been one and the open entries by the status" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        tenure = SanbaseWeb.Admin.BusinessClientsLive.tenure(~D[2024-01-15], today())
+        assert has_element?(view, "#tenure-101", tenure)
+        assert has_element?(view, "#tenure-101", "since 2024-01-15")
+        assert has_element?(view, "#open-entries-102", "2")
+        refute has_element?(view, "#open-entries-101")
+      end
+    end
+
+    test "tenure is in whole years and months, days under a month" do
+      tenure = &SanbaseWeb.Admin.BusinessClientsLive.tenure/3
+
+      assert tenure.(~D[2023-07-10], ~D[2026-11-13], :short) == "3y 4mo"
+      assert tenure.(~D[2023-07-10], ~D[2026-11-13], :long) == "3 years and 4 months"
+      assert tenure.(~D[2023-07-20], ~D[2026-11-13], :short) == "3y 3mo"
+      assert tenure.(~D[2025-11-13], ~D[2026-11-13], :long) == "1 year"
+      assert tenure.(~D[2026-10-01], ~D[2026-11-13], :long) == "1 month"
+      assert tenure.(~D[2026-11-01], ~D[2026-11-13], :short) == "12d"
+      assert tenure.(nil, ~D[2026-11-13], :short) == "-"
     end
 
     test "an editor gets a Log link to the client's add-entry form; a viewer does not" do

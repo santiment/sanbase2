@@ -215,6 +215,10 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     {:noreply, assign_settings_form(socket, changeset)}
   end
 
+  # While the fieldset is disabled the browser sends no fields, for example when the
+  # form is recovered after a reconnect.
+  def handle_event("validate_settings", _params, socket), do: {:noreply, socket}
+
   def handle_event("save_settings", %{"settings" => params}, socket) do
     if owner?(socket.assigns) do
       params = normalize_settings_params(params)

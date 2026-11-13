@@ -13,6 +13,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias __MODULE__.HistogramMetric
+  alias __MODULE__.LabeledBalance
   alias __MODULE__.TableMetric
   alias __MODULE__.Registry
 
@@ -78,8 +79,23 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     opts = resolve_fixed_parameters(opts, metric)
     filters = get_filters(metric, opts)
 
-    timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts)
-    |> exec_timeseries_data_query()
+    case LabeledBalance.source(metric, selector, opts) do
+      :delta ->
+        LabeledBalance.timeseries_data(
+          metric,
+          selector,
+          from,
+          to,
+          interval,
+          aggregation,
+          filters,
+          opts
+        )
+
+      :legacy ->
+        timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts)
+        |> exec_timeseries_data_query()
+    end
   end
 
   def timeseries_data(_metric, selector, _from, _to, _interval, _opts) when is_map(selector) do
@@ -87,13 +103,37 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
+  def timeseries_data_per_slug(metric, %{slug: slug} = selector, from, to, interval, opts) do
     aggregation =
       Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
 
     opts = resolve_fixed_parameters(opts, metric)
     filters = get_filters(metric, opts)
 
+    case LabeledBalance.source(metric, selector, opts) do
+      :delta ->
+        LabeledBalance.timeseries_data_per_slug(
+          metric,
+          selector,
+          from,
+          to,
+          interval,
+          aggregation,
+          filters,
+          opts
+        )
+
+      :legacy ->
+        get_timeseries_data_per_slug(metric, slug, from, to, interval, aggregation, filters, opts)
+    end
+  end
+
+  def timeseries_data_per_slug(_metric, selector, _from, _to, _interval, _opts)
+      when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
+  defp get_timeseries_data_per_slug(metric, slug, from, to, interval, aggregation, filters, opts) do
     timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters, opts)
     |> ClickhouseRepo.query_reduce(
       %{},
@@ -113,11 +153,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       list
       |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
     end)
-  end
-
-  def timeseries_data_per_slug(_metric, selector, _from, _to, _interval, _opts)
-      when is_map(selector) do
-    {:error, unsupported_selector_error(selector)}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -140,7 +175,22 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     opts = resolve_fixed_parameters(opts, metric)
     filters = Keyword.get(opts, :additional_filters, [])
     slugs = List.wrap(slug_or_slugs)
-    get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)
+
+    case LabeledBalance.source(metric, %{slug: slugs}, opts) do
+      :delta ->
+        LabeledBalance.aggregated_timeseries_data(
+          metric,
+          slugs,
+          from,
+          to,
+          aggregation,
+          filters,
+          opts
+        )
+
+      :legacy ->
+        get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)
+    end
   end
 
   def aggregated_timeseries_data(_metric, selector, _from, _to, _opts)
@@ -150,6 +200,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def slugs_by_filter(metric, from, to, operator, threshold, opts) do
+    if LabeledBalance.enabled_for_all_slugs?(metric) do
+      {:error, slugs_by_filter_not_supported_error(metric)}
+    else
+      do_slugs_by_filter(metric, from, to, operator, threshold, opts)
+    end
+  end
+
+  defp do_slugs_by_filter(metric, from, to, operator, threshold, opts) do
     aggregation =
       Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
 
@@ -161,6 +219,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def slugs_order(metric, from, to, direction, opts) do
+    if LabeledBalance.enabled_for_all_slugs?(metric) do
+      {:error, slugs_by_filter_not_supported_error(metric)}
+    else
+      do_slugs_order(metric, from, to, direction, opts)
+    end
+  end
+
+  defp do_slugs_order(metric, from, to, direction, opts) do
     aggregation =
       Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
 
@@ -248,6 +314,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         |> maybe_apply_function(&List.flatten/1)
 
       Map.get(Registry.table_map(), metric) == "labeled_intraday_metrics_v2" ->
+        metric =
+          if LabeledBalance.enabled_for_all_slugs?(metric),
+            do: LabeledBalance.delta_metric(),
+            else: metric
+
         query_struct = available_label_fqns_for_labeled_intraday_metrics_query(metric)
         Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
 
@@ -269,6 +340,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         |> maybe_apply_function(&List.flatten/1)
 
       Map.get(Registry.table_map(), metric) == "labeled_intraday_metrics_v2" ->
+        metric = LabeledBalance.metadata_metric(metric, %{slug: slug}, [])
         query_struct = available_label_fqns_for_labeled_intraday_metrics_query(metric, slug)
         Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
 
@@ -393,6 +465,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     if metric in Registry.metrics_mapset_with_data_type(:histogram) do
       HistogramMetric.first_datetime(metric, selector, opts)
     else
+      metric = LabeledBalance.metadata_metric(metric, selector || %{}, opts)
+
       first_datetime_query(metric, selector, opts)
       |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
       |> maybe_unwrap_ok_value()
@@ -404,6 +478,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     if metric in Registry.metrics_mapset_with_data_type(:histogram) do
       HistogramMetric.last_datetime_computed_at(metric, selector, opts)
     else
+      metric = LabeledBalance.metadata_metric(metric, selector, opts)
+
       last_datetime_computed_at_query(metric, selector, opts)
       |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
       |> maybe_unwrap_ok_value()
@@ -454,6 +530,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       value = if has_changed == 1, do: value, else: nil
       Map.put(acc, slug, value)
     end)
+  end
+
+  # Computing the balances from the deltas for all assets is too expensive
+  defp slugs_by_filter_not_supported_error(metric) do
+    "Filtering and ordering assets by #{metric} is not supported"
   end
 
   defp unsupported_selector_error(selector) do

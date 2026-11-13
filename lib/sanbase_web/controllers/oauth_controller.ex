@@ -308,7 +308,7 @@ defmodule SanbaseWeb.OAuthController do
     errors =
       Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
         Enum.reduce(opts, msg, fn {key, value}, acc ->
-          String.replace(acc, "%{#{key}}", to_string(value))
+          String.replace(acc, "%{#{key}}", error_opt_to_string(value))
         end)
       end)
 
@@ -318,6 +318,12 @@ defmodule SanbaseWeb.OAuthController do
   end
 
   # --- Private ---
+
+  # Changeset error opts are not always printable, for example `type: {:array, :string}`.
+  defp error_opt_to_string(value) when is_binary(value) or is_atom(value) or is_number(value),
+    do: to_string(value)
+
+  defp error_opt_to_string(value), do: inspect(value)
 
   defp current_user_from_session(conn) do
     access_token = get_session(conn, :access_token)

@@ -797,6 +797,22 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
       end
     end
 
+    test "a change event from the locked form, which sends no fields, is ignored" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(view, "#settings-fields[disabled]")
+
+        # A browser leaves out the inputs of a disabled fieldset, so the event has no fields.
+        render_hook(view, "validate_settings", %{})
+
+        assert has_element?(view, "#settings-fields[disabled]")
+        assert has_element?(view, "#settings-read-only")
+      end
+    end
+
     test "an owner unlocks the settings with Edit and Cancel locks them again" do
       {_user, conn} = sign_in(:role_admin_panel_owner)
 

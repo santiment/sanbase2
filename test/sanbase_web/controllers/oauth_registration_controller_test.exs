@@ -66,4 +66,18 @@ defmodule SanbaseWeb.OAuthRegistrationControllerTest do
 
     assert conn.status in 400..499
   end
+
+  test "dynamic registration rejects redirect uris that are not a list", %{conn: conn} do
+    response =
+      conn
+      |> put_req_header("content-type", "application/json")
+      |> post("/oauth/register", %{
+        "client_name" => "MCP test client",
+        "redirect_uris" => @redirect_uri
+      })
+      |> json_response(400)
+
+    assert response["error"] == "invalid_client_metadata"
+    assert response["error_description"] =~ "redirect_uris"
+  end
 end

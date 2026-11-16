@@ -109,12 +109,21 @@ defmodule SanbaseWeb.AuthController do
               "success_redirect_from_session=#{inspect(success_redirect_from_session)}"
           )
 
-          redirect_url =
-            success_redirect_from_session
-            |> extend_if_first_login(first_login)
-            |> maybe_extend_with_jwt_tokens(jwt_tokens_map, include_jwt_in_redirect_url)
+          redirect_url_without_jwt =
+            extend_if_first_login(success_redirect_from_session, first_login)
 
-          Logger.info("OAuth callback: final redirect_url=#{redirect_url}")
+          redirect_url =
+            maybe_extend_with_jwt_tokens(
+              redirect_url_without_jwt,
+              jwt_tokens_map,
+              include_jwt_in_redirect_url
+            )
+
+          # Log the URL before the tokens are appended: the JWTs must never reach the logs.
+          Logger.info(
+            "OAuth callback: final redirect_url=#{redirect_url_without_jwt}, " <>
+              "jwt_in_redirect_url=#{redirect_url != redirect_url_without_jwt}"
+          )
 
           conn
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
@@ -151,12 +160,21 @@ defmodule SanbaseWeb.AuthController do
               "success_redirect_from_session=#{inspect(success_redirect_from_session)}"
           )
 
-          redirect_url =
-            success_redirect_from_session
-            |> extend_if_first_login(first_login)
-            |> maybe_extend_with_jwt_tokens(jwt_tokens_map, include_jwt_in_redirect_url)
+          redirect_url_without_jwt =
+            extend_if_first_login(success_redirect_from_session, first_login)
 
-          Logger.info("OAuth callback: final redirect_url=#{redirect_url}")
+          redirect_url =
+            maybe_extend_with_jwt_tokens(
+              redirect_url_without_jwt,
+              jwt_tokens_map,
+              include_jwt_in_redirect_url
+            )
+
+          # Log the URL before the tokens are appended: the JWTs must never reach the logs.
+          Logger.info(
+            "OAuth callback: final redirect_url=#{redirect_url_without_jwt}, " <>
+              "jwt_in_redirect_url=#{redirect_url != redirect_url_without_jwt}"
+          )
 
           conn
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
@@ -236,12 +254,17 @@ defmodule SanbaseWeb.AuthController do
     end
   end
 
-  defp maybe_extend_with_jwt_tokens(
-         redirect_url,
-         jwt_tokens_map,
-         include_jwt_in_redirect_url
-       ) do
-    if include_jwt_in_redirect_url do
+  # The tokens are appended only to the mobile app deep link (`sanbase://`). A web
+  # login already carries them in the session cookie, and tokens in an https URL
+  # leak through browser history, the Referer header and analytics. The flag is a
+  # plain query param on a GET anyone can link to, so it must not be enough alone.
+  @doc false
+  def maybe_extend_with_jwt_tokens(
+        redirect_url,
+        jwt_tokens_map,
+        include_jwt_in_redirect_url
+      ) do
+    if include_jwt_in_redirect_url == true and URI.parse(redirect_url).scheme == "sanbase" do
       redirect_url
       |> URI.parse()
       |> URI.append_query(

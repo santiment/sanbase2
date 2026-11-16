@@ -142,6 +142,30 @@ defmodule SanbaseWeb.AuthControllerTest do
     end
   end
 
+  describe "maybe_extend_with_jwt_tokens/3" do
+    @tokens %{access_token: "access.jwt", refresh_token: "refresh.jwt"}
+
+    test "appends the tokens to a sanbase:// deep link when requested" do
+      url = AuthController.maybe_extend_with_jwt_tokens("sanbase://home?tab=x", @tokens, true)
+
+      assert url == "sanbase://home?tab=x&access_token=access.jwt&refresh_token=refresh.jwt"
+    end
+
+    test "never appends the tokens to an https URL, even when requested" do
+      url = "https://app.santiment.net/dashboards?signup=true"
+
+      assert AuthController.maybe_extend_with_jwt_tokens(url, @tokens, true) == url
+    end
+
+    test "does not append the tokens when not requested" do
+      assert AuthController.maybe_extend_with_jwt_tokens("sanbase://home", @tokens, false) ==
+               "sanbase://home"
+
+      assert AuthController.maybe_extend_with_jwt_tokens("sanbase://home", @tokens, nil) ==
+               "sanbase://home"
+    end
+  end
+
   describe "validate_redirect_url/1" do
     test "accepts sanbase:// scheme with any path" do
       assert AuthController.validate_redirect_url("sanbase://home") == true

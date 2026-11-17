@@ -502,6 +502,24 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       refute private_query.id in other_ids
       assert public_query.id in other_ids
     end
+
+    test "without userId every user gets their own queries", context do
+      {:ok, private_query} = Sanbase.Queries.create_query(%{is_public: false}, context.user.id)
+      {:ok, other_query} = Sanbase.Queries.create_query(%{is_public: false}, context.user2.id)
+
+      get_ids = fn conn ->
+        conn
+        |> post("/graphql", query_skeleton("{ getUserQueries(page: 1, pageSize: 10) { id } }"))
+        |> json_response(200)
+        |> get_in(["data", "getUserQueries"])
+        |> Enum.map(& &1["id"])
+      end
+
+      # Same arguments, different callers: the key of a cache built from the
+      # arguments alone would not even contain a user id.
+      assert get_ids.(context.conn) == [private_query.id]
+      assert get_ids.(context.conn2) == [other_query.id]
+    end
   end
 
   describe "Caching" do

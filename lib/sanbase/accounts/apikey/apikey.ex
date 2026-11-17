@@ -71,14 +71,14 @@ defmodule Sanbase.Accounts.Apikey do
   end
 
   @doc ~s"""
-  Revokes the given apikey by removing its corresponding
+  Revokes the given apikey. Its token row is kept with `revoked_at` set.
   """
   @spec revoke_apikey(%User{}, String.t()) :: :ok | {:error, String.t()}
   def revoke_apikey(user, apikey) do
     with {:ok, {token, _rest}} <- Hmac.split_apikey(apikey),
          true <- Hmac.apikey_valid?(token, apikey),
          true <- UserApikeyToken.user_has_token?(user, token) do
-      UserApikeyToken.remove_user_token(user, token)
+      UserApikeyToken.revoke_user_token(user, token)
       emit_event({:ok, %UserApikeyToken{token: token}}, :revoke_apikey, %{user: user})
 
       :ok

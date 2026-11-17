@@ -379,7 +379,7 @@ defmodule SanbaseWeb.Admin.UserOverview do
   end
 
   defp count_api_keys(user_id) do
-    from(t in "user_api_key_tokens", where: t.user_id == ^user_id)
+    from(t in "user_api_key_tokens", where: t.user_id == ^user_id and is_nil(t.revoked_at))
     |> Repo.aggregate(:count)
   end
 

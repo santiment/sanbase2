@@ -2,9 +2,9 @@ defmodule SanbaseWeb.GenericAdmin.UserApikeyToken do
   @moduledoc """
   Admin resource for the tokens backing users' API keys.
 
-  Deleting a row revokes the API key generated from that token: the key is
-  derived from the token and a server secret, so without the row the key no
-  longer resolves to a user.
+  The delete action revokes the API key generated from that token: it sets
+  `revoked_at` and keeps the row, so the record stays. A revoked token no longer
+  resolves to a user.
   """
   @behaviour SanbaseWeb.GenericAdmin
 
@@ -17,7 +17,7 @@ defmodule SanbaseWeb.GenericAdmin.UserApikeyToken do
   def resource() do
     %{
       actions: [:delete],
-      index_fields: [:id, :user_id, :token, :inserted_at, :updated_at],
+      index_fields: [:id, :user_id, :token, :revoked_at, :inserted_at, :updated_at],
       preloads: [:user],
       fields_override: %{
         user_id: %{
@@ -25,6 +25,13 @@ defmodule SanbaseWeb.GenericAdmin.UserApikeyToken do
         }
       }
     }
+  end
+
+  @doc """
+  Revoke instead of deleting, see `Sanbase.Accounts.UserApikeyToken.revoke/1`.
+  """
+  def delete_record(%Sanbase.Accounts.UserApikeyToken{} = token) do
+    Sanbase.Accounts.UserApikeyToken.revoke(token)
   end
 
   @doc """

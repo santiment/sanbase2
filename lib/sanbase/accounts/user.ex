@@ -417,7 +417,7 @@ defmodule Sanbase.Accounts.User do
         u in __MODULE__,
         inner_join: uat in Sanbase.Accounts.UserApikeyToken,
         on: u.id == uat.user_id,
-        where: uat.token == ^token
+        where: uat.token == ^token and is_nil(uat.revoked_at)
       )
       |> maybe_join_preload(Keyword.put_new(opts, :join_preloads, true))
 

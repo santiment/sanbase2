@@ -37,6 +37,30 @@ defmodule Sanbase.Accounts.ApiKeyTest do
     assert error =~ "Cannot create more than #{limit} API keys"
   end
 
+  test "revoking keeps the token row and the key stops working", %{user: user} do
+    {:ok, apikey} = Apikey.generate_apikey(user)
+    {:ok, {token, _}} = Sanbase.Accounts.Hmac.split_apikey(apikey)
+
+    assert :ok = Apikey.revoke_apikey(user, apikey)
+
+    row = Sanbase.Repo.get_by(Sanbase.Accounts.UserApikeyToken, token: token)
+    assert %DateTime{} = row.revoked_at
+    assert {:error, _} = Apikey.apikey_to_user(apikey)
+    assert {:ok, []} = Apikey.apikeys_list(user)
+    assert {:error, _} = Apikey.revoke_apikey(user, apikey)
+  end
+
+  test "revoked keys do not count towards the limit", %{user: user} do
+    limit = Sanbase.Accounts.UserApikeyToken.api_keys_per_user_limit()
+
+    for _ <- 1..limit do
+      {:ok, apikey} = Apikey.generate_apikey(user)
+      :ok = Apikey.revoke_apikey(user, apikey)
+    end
+
+    assert {:ok, _} = Apikey.generate_apikey(user)
+  end
+
   # Will find th token in the db but will fail at the hmac part
   test "fail when apikey second part is invalid", %{user: user} do
     {:ok, apikey} = Apikey.generate_apikey(user)

@@ -234,7 +234,7 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
       assert html =~ user.email
     end
 
-    test "an editor can delete a token, which revokes the apikey", ctx do
+    test "an editor's delete revokes the apikey and keeps the row", ctx do
       assert {:ok, _} = Sanbase.Accounts.Apikey.apikey_to_user(ctx.apikey)
 
       conn =
@@ -245,7 +245,8 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
 
       assert redirected_to(conn) == ~p"/admin/generic?resource=user_apikey_tokens"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "deleted successfully"
-      refute Sanbase.Repo.get(Sanbase.Accounts.UserApikeyToken, ctx.token.id)
+      token = Sanbase.Repo.get(Sanbase.Accounts.UserApikeyToken, ctx.token.id)
+      assert %DateTime{} = token.revoked_at
       assert {:error, _} = Sanbase.Accounts.Apikey.apikey_to_user(ctx.apikey)
     end
 

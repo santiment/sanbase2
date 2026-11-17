@@ -397,9 +397,15 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def delete(%Plug.Conn{} = conn, %{"id" => id, "resource" => resource}) do
     resource_config = resource_module_map(conn)[resource]
+    record = Repo.get(resource_config[:module], id)
 
-    Repo.get(resource_config[:module], id)
-    |> Repo.delete()
+    # A resource can replace the hard delete, e.g. to revoke and keep the row.
+    resource_config[:admin_module]
+    |> GenericAdmin.call_module_function_or_default(:delete_record, [record], nil)
+    |> case do
+      nil -> Repo.delete(record)
+      result -> result
+    end
     |> case do
       {:ok, record} ->
         {kind, message} =

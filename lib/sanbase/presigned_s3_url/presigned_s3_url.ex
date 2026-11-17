@@ -47,9 +47,24 @@ defmodule Sanbase.PresignedS3Url do
   To track this, presigned S3 URLs are stored in a database table.
   """
   def get_presigned_s3_url(user_id, object) do
-    if String.trim(object) == "",
-      do: {:error, "The object can't be blank."},
-      else: do_get_presigned_s3_url(user_id, object)
+    cond do
+      String.trim(object) == "" -> {:error, "The object can't be blank."}
+      not valid_object_key?(object) -> {:error, "The object is not a valid dataset name."}
+      true -> do_get_presigned_s3_url(user_id, object)
+    end
+  end
+
+  # The key comes from the caller and is signed for the private bucket, and every
+  # call stores a row. Only plain dataset paths are signed: S3-safe characters,
+  # no leading slash, no empty, "." or ".." segments, bounded length.
+  @max_object_key_length 512
+  @object_key_regex ~r/\A[A-Za-z0-9._\-]+(\/[A-Za-z0-9._\-]+)*\z/
+
+  @doc false
+  def valid_object_key?(object) when is_binary(object) do
+    byte_size(object) <= @max_object_key_length and
+      Regex.match?(@object_key_regex, object) and
+      object |> String.split("/") |> Enum.all?(&(&1 not in [".", ".."]))
   end
 
   defp do_get_presigned_s3_url(user_id, object) do

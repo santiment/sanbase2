@@ -74,6 +74,35 @@ defmodule SanbaseWeb.Graphql.PresignedS3UrlTest do
     end)
   end
 
+  test "an object key that is not a plain dataset path is rejected", context do
+    Sanbase.Mock.prepare_mock2(&PresignedS3Url.S3.generate_presigned_url/3, {:ok, @url})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      for object <- [
+            "/dataset",
+            "a//b",
+            "../dataset",
+            "datasets/../other",
+            "./dataset",
+            "data set",
+            "dataset?x=1",
+            String.duplicate("a", 513)
+          ] do
+        result = get_presigned_s3_url(context.conn, object)
+
+        assert get_in(result, ["data", "getPresignedS3Url"]) == nil
+        assert get_in(result, ["errors", Access.at(0), "message"]) =~ "not a valid dataset name"
+      end
+
+      refute called(PresignedS3Url.S3.generate_presigned_url(:_, :_, :_))
+    end)
+  end
+
+  test "plain dataset paths are accepted" do
+    for object <- ["dataset", "datasets/2024/prices.csv.gz", "a-b_c.d/e"] do
+      assert PresignedS3Url.valid_object_key?(object)
+    end
+  end
+
   defp get_presigned_s3_url(conn, object) do
     query = """
     {

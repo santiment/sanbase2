@@ -811,7 +811,12 @@ defmodule SanbaseWeb.GenericAdminController do
         dynamic([m], ilike(field(m, ^field), ^value))
 
       true ->
-        dynamic([m], field(m, ^field) == ^value)
+        # A value that cannot be cast to the field type (e.g. a slug for an
+        # id field) cannot match any row.
+        case Ecto.Type.cast(field_type, value) do
+          {:ok, _} -> dynamic([m], field(m, ^field) == ^value)
+          _ -> dynamic(false)
+        end
     end
   end
 

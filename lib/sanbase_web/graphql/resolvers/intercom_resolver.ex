@@ -54,6 +54,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
     end
   end
 
+  def track_events(_, _params, _resolution),
+    do: {:error, "The list of events contains invalid event(s)"}
+
   # Private functions
 
   # Get the user_id and anonymous_user_id. They cannot be NULL as primary key

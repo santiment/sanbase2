@@ -229,6 +229,8 @@ if config_env() == :prod do
       oban: [
         # Capture errors:
         capture_errors: true,
+        # Skip the failed attempts that are retried, for the workers listed there
+        should_report_error_callback: &Sanbase.Sentry.ObanFilter.report?/2,
         # Monitor cron jobs:
         cron: [enabled: true]
       ]

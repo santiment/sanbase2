@@ -3402,7 +3402,9 @@ CREATE TABLE public.oauth_clients (
     jwks_uri character varying(255),
     id_token_kid character varying(255),
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
-    logo_uri character varying(255)
+    logo_uri character varying(255),
+    trusted_authorities text DEFAULT ''::text NOT NULL,
+    trusted_hosts text[] DEFAULT ARRAY[]::text[] NOT NULL
 );
 
 
@@ -12716,3 +12718,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261102130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261102134701);
 INSERT INTO public."schema_migrations" (version) VALUES (20261104135841);
 INSERT INTO public."schema_migrations" (version) VALUES (20261105115831);
+INSERT INTO public."schema_migrations" (version) VALUES (20261112100000);
+INSERT INTO public."schema_migrations" (version) VALUES (20261112100001);

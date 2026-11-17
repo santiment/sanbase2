@@ -16,6 +16,7 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
       format_number: 1,
       format_date: 1,
       format_datetime: 1,
+      tenure: 3,
       renewal_highlight?: 3,
       activity_source: 1,
       severity_label: 1,
@@ -324,6 +325,9 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
               <div class="text-2xl font-bold tabular-nums">{money(detail.client.tcv)}</div>
               <div class="text-xs text-base-content/60">
                 since {format_date(detail.client.start_date)}
+              </div>
+              <div id="client-tenure" class="text-xs text-base-content/60">
+                client for {tenure(detail.client.start_date, @today, :long)}
               </div>
             </div>
             <div class="card bg-base-100 border border-base-300 p-4">

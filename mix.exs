@@ -62,7 +62,7 @@ defmodule Sanbase.Mixfile do
       {:ch, "~> 0.7"},
       {:con_cache, "~> 1.0"},
       {:cowboy, "~> 2.0"},
-      {:cowlib, ">= 2.16.0 and < 3.0.0", override: true},
+      {:cowlib, ">= 2.22.0 and < 3.0.0", override: true},
       {:crc32cer, github: "zmstone/crc32cer", submodules: true, override: true},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dataloader, "~> 2.0.0"},
@@ -96,7 +96,13 @@ defmodule Sanbase.Mixfile do
       {:guardian_db, "~> 3.0"},
       {:guardian, "~> 2.3"},
       {:gun, "~> 2.0", override: true},
-      {:hackney, "~> 1.17", override: true},
+      # hackney stays on 1.x for httpoison 2.x / stripity_stripe / waffle / tzdata
+      # (moving to 4.x means upgrading all of those). 1.23 fixes CVE-2025-1211;
+      # 1.24 and 1.25 introduce CVE-2026-115693 (critical, fixed only in 4.9),
+      # so do not bump past 1.23.x. hackney 1.23 pins certifi ~> 2.14.0, so
+      # certifi is overridden to keep the newer CA bundle that was already locked.
+      {:hackney, "~> 1.23.0", override: true},
+      {:certifi, "~> 2.14", override: true},
       {:hammer, "~> 7.0"},
       {:htmd, "~> 0.2.0"},
       {:html_sanitize_ex, "~> 1.4"},

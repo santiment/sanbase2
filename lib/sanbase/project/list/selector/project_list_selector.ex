@@ -286,7 +286,7 @@ defmodule Sanbase.Project.ListSelector do
     end
   end
 
-  defp slugs_by_filter(%{name: "market_segments", args: args}) do
+  defp slugs_by_filter(%{name: "market_segments", args: %{market_segments: _} = args}) do
     combinator = Map.get(args, :market_segments_combinator, "and")
 
     projects =
@@ -299,31 +299,10 @@ defmodule Sanbase.Project.ListSelector do
     {:ok, slugs}
   end
 
-  defp slugs_by_filter(%{name: "metric", args: args}) do
-    args = Sanbase.Utils.ListSelector.Transform.maybe_shift_to_datetime(args)
+  defp slugs_by_filter(%{name: "metric", args: %{} = args} = filter),
+    do: metric_slugs_by_filter(args, filter)
 
-    Sanbase.Metric.slugs_by_filter(
-      args.metric,
-      args.from,
-      args.to,
-      args.operator,
-      args.threshold,
-      aggregation: args.aggregation
-    )
-  end
-
-  defp slugs_by_filter(%{metric: _} = filter) do
-    filter = Sanbase.Utils.ListSelector.Transform.maybe_shift_to_datetime(filter)
-
-    Sanbase.Metric.slugs_by_filter(
-      filter.metric,
-      filter.from,
-      filter.to,
-      filter.operator,
-      filter.threshold,
-      aggregation: filter.aggregation
-    )
-  end
+  defp slugs_by_filter(%{metric: _} = filter), do: metric_slugs_by_filter(filter, filter)
 
   defp slugs_by_filter(%{name: "traded_on_exchanges", args: args}) do
     combinator = Map.get(args, :exchanges_combinator, "and")
@@ -335,6 +314,33 @@ defmodule Sanbase.Project.ListSelector do
       "or" ->
         Sanbase.Market.slugs_by_exchange_any_of(args[:exchanges])
     end
+  end
+
+  # A filter whose dynamic datetimes could not be resolved
+  defp slugs_by_filter({:error, error}), do: {:error, error}
+
+  defp slugs_by_filter(filter), do: unsupported_filter_error(filter)
+
+  @metric_filter_fields [:metric, :from, :to, :operator, :threshold, :aggregation]
+  defp metric_slugs_by_filter(args, filter) do
+    args = Sanbase.Utils.ListSelector.Transform.maybe_shift_to_datetime(args)
+
+    if Enum.all?(@metric_filter_fields, &Map.has_key?(args, &1)) do
+      Sanbase.Metric.slugs_by_filter(
+        args.metric,
+        args.from,
+        args.to,
+        args.operator,
+        args.threshold,
+        aggregation: args.aggregation
+      )
+    else
+      unsupported_filter_error(filter)
+    end
+  end
+
+  defp unsupported_filter_error(filter) do
+    {:error, "The :project filter #{inspect(filter)} is not supported or has mistyped fields."}
   end
 
   defp ordered_slugs_by_order_by(nil, slugs), do: {:ok, slugs}

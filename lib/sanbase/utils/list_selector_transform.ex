@@ -85,7 +85,7 @@ defmodule Sanbase.Utils.ListSelector.Transform do
 
   def update_dynamic_datetimes(nil), do: nil
 
-  def update_dynamic_datetimes(%{args: args} = filter) do
+  def update_dynamic_datetimes(%{args: %{} = args} = filter) do
     case update_dynamic_datetimes(args) do
       %{} = updated_args ->
         %{filter | args: updated_args}

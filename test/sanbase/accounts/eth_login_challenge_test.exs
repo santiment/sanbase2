@@ -47,13 +47,14 @@ defmodule Sanbase.Accounts.EthLoginChallengeTest do
       assert {:error, "Invalid wallet address"} = EthLoginChallenge.create("0x1234")
     end
 
-    test "removes expired challenges" do
+    test "keeps expired challenges as a record" do
       {:ok, %{nonce: nonce}} = EthLoginChallenge.create(@address)
       expire!(nonce)
 
-      {:ok, _} = EthLoginChallenge.create(@address)
+      {:ok, %{nonce: new_nonce}} = EthLoginChallenge.create(@address)
 
-      refute Sanbase.Repo.get_by(EthLoginChallenge, nonce: nonce)
+      assert new_nonce != nonce
+      assert Sanbase.Repo.get_by(EthLoginChallenge, nonce: nonce)
     end
   end
 

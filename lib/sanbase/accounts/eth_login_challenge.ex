@@ -18,7 +18,9 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
   can block a wallet's login by asking for challenges for its address.
 
   Rows are stored in Postgres, so a challenge created on one node can be used on
-  any other.
+  any other. Rows are never deleted: they record which addresses asked to log in
+  and when, and are kept as evidence. Handing out the open challenge again (see
+  `create/1`) keeps the growth to a few rows per address.
   """
 
   use Ecto.Schema
@@ -30,7 +32,6 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
   @ttl_seconds 300
   # An open challenge is handed out again only if the wallet still has this long to sign it.
   @min_seconds_left_to_reuse 120
-  @delete_expired_batch 1000
 
   schema "eth_login_challenges" do
     field(:address, :string)
@@ -70,8 +71,6 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
     expires_at = DateTime.add(now, @ttl_seconds, :second)
     nonce = :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
     message = build_message(address, nonce, now, expires_at)
-
-    delete_expired()
 
     %__MODULE__{
       address: normalize(address),
@@ -158,23 +157,5 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
       select: %{message: c.message, nonce: c.nonce, expires_at: c.expires_at}
     )
     |> Repo.one()
-  end
-
-  # Expired challenges are useless, so every new challenge removes some of them. Used
-  # ones are kept until they expire, as a short record of which nonce logged in. The
-  # batch is bounded so a create after a burst does not delete a huge backlog at once;
-  # each create removes more rows than it adds, so the backlog still drains.
-  defp delete_expired() do
-    now = DateTime.utc_now()
-
-    expired_ids =
-      from(c in __MODULE__,
-        where: c.expires_at <= ^now,
-        select: c.id,
-        limit: @delete_expired_batch
-      )
-
-    from(c in __MODULE__, where: c.id in subquery(expired_ids))
-    |> Repo.delete_all()
   end
 end

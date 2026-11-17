@@ -36,8 +36,9 @@ defmodule Sanbase.Utils.IP do
   Returns `true` when the host resolves to a private, reserved or otherwise
   blocked address. An extra SSRF guard for user-supplied URLs - the URL
   validation checks the host literal, not what it resolves to (DNS
-  rebinding). Unresolvable hosts return `false` - connecting to them fails
-  on its own.
+  rebinding). A host that does not resolve returns `true`: the HTTP client
+  resolves it again when connecting and may get an internal address then, so
+  a request to a host that could not be checked is not sent.
   """
   def resolves_to_blocked_ip?(host) when is_binary(host) do
     charlist = to_charlist(host)
@@ -49,7 +50,10 @@ defmodule Sanbase.Utils.IP do
         {:error, _} -> []
       end
     end)
-    |> Enum.any?(&private_or_reserved?/1)
+    |> case do
+      [] -> true
+      addrs -> Enum.any?(addrs, &private_or_reserved?/1)
+    end
   end
 
   @doc ~s"""
@@ -95,17 +99,32 @@ defmodule Sanbase.Utils.IP do
   def private_or_reserved?({192, 0, 0, _}), do: true
   def private_or_reserved?({192, 168, _, _}), do: true
   def private_or_reserved?({100, b, _, _}) when b in 64..127, do: true
+  def private_or_reserved?({192, 88, 99, _}), do: true
+  def private_or_reserved?({192, 0, 2, _}), do: true
+  def private_or_reserved?({198, b, _, _}) when b in 18..19, do: true
+  def private_or_reserved?({198, 51, 100, _}), do: true
+  def private_or_reserved?({203, 0, 113, _}), do: true
   def private_or_reserved?({a, _, _, _}) when a >= 224, do: true
 
-  # IPv6 unspecified, loopback, link-local (fe80::/10), unique-local (fc00::/7)
+  # IPv6 unspecified, loopback, unique-local (fc00::/7), link-local (fe80::/10),
+  # the deprecated site-local (fec0::/10) and multicast (ff00::/8)
   def private_or_reserved?({0, 0, 0, 0, 0, 0, 0, 0}), do: true
   def private_or_reserved?({0, 0, 0, 0, 0, 0, 0, 1}), do: true
-  def private_or_reserved?({a, _, _, _, _, _, _, _}) when a >= 0xFE80 and a <= 0xFEBF, do: true
   def private_or_reserved?({a, _, _, _, _, _, _, _}) when a >= 0xFC00 and a <= 0xFDFF, do: true
+  def private_or_reserved?({a, _, _, _, _, _, _, _}) when a >= 0xFE80, do: true
 
-  # IPv4-mapped IPv6: ::ffff:a.b.c.d
-  def private_or_reserved?({0, 0, 0, 0, 0, 0xFFFF, ab, cd}),
-    do: private_or_reserved?({div(ab, 256), rem(ab, 256), div(cd, 256), rem(cd, 256)})
+  # IPv6 forms that carry an IPv4 address: check the IPv4 address.
+  # IPv4-mapped ::ffff:a.b.c.d
+  def private_or_reserved?({0, 0, 0, 0, 0, 0xFFFF, ab, cd}), do: embedded_ipv4_blocked?(ab, cd)
+  # IPv4-compatible ::a.b.c.d (deprecated)
+  def private_or_reserved?({0, 0, 0, 0, 0, 0, ab, cd}), do: embedded_ipv4_blocked?(ab, cd)
+  # NAT64 64:ff9b::a.b.c.d
+  def private_or_reserved?({0x64, 0xFF9B, 0, 0, 0, 0, ab, cd}), do: embedded_ipv4_blocked?(ab, cd)
+  # 6to4 2002:a.b.c.d::/48
+  def private_or_reserved?({0x2002, ab, cd, _, _, _, _, _}), do: embedded_ipv4_blocked?(ab, cd)
 
   def private_or_reserved?(_), do: false
+
+  defp embedded_ipv4_blocked?(ab, cd),
+    do: private_or_reserved?({div(ab, 256), rem(ab, 256), div(cd, 256), rem(cd, 256)})
 end

@@ -113,7 +113,9 @@ defmodule Sanbase.Utils.Validation do
 
   @doc ~s"""
   Like `valid_public_url?/2` but stricter, for webhook destinations: https
-  only and no IP address hosts.
+  only, no IP address hosts and no user info (`user@host`). URLs with user
+  info can be parsed differently by the validator and the HTTP client, so the
+  request could go to another host than the one validated.
   """
   def valid_webhook_url?(url, opts \\ []) do
     with :ok <- valid_public_url?(url, opts) do
@@ -122,6 +124,9 @@ defmodule Sanbase.Utils.Validation do
       cond do
         uri.scheme != "https" ->
           {:error, "URL '#{url}' must use the https scheme"}
+
+        raw_authority_has_at?(url) ->
+          {:error, "URL '#{url}' must not contain user info"}
 
         Sanbase.Utils.IP.ip_address?(uri.host) ->
           {:error, "URL host '#{uri.host}' is an IP address. Webhook URLs must use a domain name"}
@@ -133,6 +138,17 @@ defmodule Sanbase.Utils.Validation do
   end
 
   # Private functions
+
+  # True when an "@" appears before the first "/" after the scheme. That covers
+  # user info (https://user@host) and forms like https://a.example?@b.internal/,
+  # which URI.parse/1 reads as host a.example but some HTTP clients send to
+  # b.internal.
+  defp raw_authority_has_at?(url) do
+    case String.split(url, "://", parts: 2) do
+      [_scheme, rest] -> rest |> String.split("/", parts: 2) |> hd() |> String.contains?("@")
+      _ -> String.contains?(url, "@")
+    end
+  end
 
   defp time_window_format_check(time_window) do
     case Regex.match?(~r/^\d+[smhdw]$/, time_window) do

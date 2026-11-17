@@ -177,5 +177,61 @@ defmodule Sanbase.Utils.ValidationTest do
     test "public IP literals are not blocked" do
       assert Sanbase.Utils.IP.resolves_to_blocked_ip?("8.8.8.8") == false
     end
+
+    test "hosts that do not resolve are blocked" do
+      assert Sanbase.Utils.IP.resolves_to_blocked_ip?("does-not-exist.invalid") == true
+    end
+  end
+
+  describe "valid_webhook_url?/1 user info" do
+    test "rejects user info and an @ before the path" do
+      assert {:error, _} = Validation.valid_webhook_url?("https://user@example.com/hook")
+      assert {:error, _} = Validation.valid_webhook_url?("https://user:pass@example.com/hook")
+      assert {:error, _} = Validation.valid_webhook_url?("https://example.com?@internal.host/x")
+      assert {:error, _} = Validation.valid_webhook_url?("https://example.com#@internal.host/x")
+    end
+
+    test "allows an @ in the path or the query after the path" do
+      assert :ok = Validation.valid_webhook_url?("https://example.com/hook/@user")
+      assert :ok = Validation.valid_webhook_url?("https://example.com/hook?to=@user")
+    end
+  end
+
+  describe "IP.private_or_reserved?/1" do
+    alias Sanbase.Utils.IP
+
+    test "IPv6 forms that carry a private IPv4 address are blocked" do
+      # ::ffff:169.254.169.254, ::169.254.169.254, 64:ff9b::169.254.169.254, 2002:a9fe:a9fe::
+      assert IP.private_or_reserved?({0, 0, 0, 0, 0, 0xFFFF, 0xA9FE, 0xA9FE})
+      assert IP.private_or_reserved?({0, 0, 0, 0, 0, 0, 0xA9FE, 0xA9FE})
+      assert IP.private_or_reserved?({0x64, 0xFF9B, 0, 0, 0, 0, 0xA9FE, 0xA9FE})
+      assert IP.private_or_reserved?({0x2002, 0xA9FE, 0xA9FE, 0, 0, 0, 0, 1})
+      assert IP.private_or_reserved?({0x2002, 0x0A00, 0x0001, 0, 0, 0, 0, 1})
+    end
+
+    test "IPv6 forms that carry a public IPv4 address are not blocked" do
+      # 64:ff9b::8.8.8.8 and 2002:808:808::1
+      refute IP.private_or_reserved?({0x64, 0xFF9B, 0, 0, 0, 0, 0x0808, 0x0808})
+      refute IP.private_or_reserved?({0x2002, 0x0808, 0x0808, 0, 0, 0, 0, 1})
+    end
+
+    test "IPv6 site-local and multicast are blocked" do
+      assert IP.private_or_reserved?({0xFEC0, 0, 0, 0, 0, 0, 0, 1})
+      assert IP.private_or_reserved?({0xFF02, 0, 0, 0, 0, 0, 0, 1})
+    end
+
+    test "IPv4 benchmark and documentation ranges are blocked" do
+      assert IP.private_or_reserved?({198, 18, 0, 1})
+      assert IP.private_or_reserved?({198, 19, 255, 1})
+      assert IP.private_or_reserved?({192, 0, 2, 1})
+      assert IP.private_or_reserved?({198, 51, 100, 1})
+      assert IP.private_or_reserved?({203, 0, 113, 1})
+      refute IP.private_or_reserved?({198, 20, 0, 1})
+      refute IP.private_or_reserved?({8, 8, 8, 8})
+    end
+
+    test "a public IPv6 address is not blocked" do
+      refute IP.private_or_reserved?({0x2606, 0x4700, 0, 0, 0, 0, 0, 0x1111})
+    end
   end
 end

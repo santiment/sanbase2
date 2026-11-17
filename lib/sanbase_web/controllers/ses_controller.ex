@@ -170,13 +170,24 @@ defmodule SanbaseWeb.SESController do
 
   defp parse_timestamp(_), do: DateTime.utc_now()
 
-  defp valid_sns_url?(url) do
+  # The SubscribeURL comes from the request body, so only an exact SNS regional
+  # endpoint (sns.<region>.amazonaws.com) on the default https port is fetched.
+  # An "@" before the path is rejected, as some HTTP clients read the host of
+  # such URLs differently than URI.parse/1.
+  @sns_host_regex ~r/\Asns\.[a-z0-9-]+\.amazonaws\.com(\.cn)?\z/
+
+  @doc false
+  def valid_sns_url?(url) when is_binary(url) do
+    authority = url |> String.split("://", parts: 2) |> List.last() |> String.split("/", parts: 2)
+
     case URI.parse(url) do
-      %URI{scheme: "https", host: host} when is_binary(host) ->
-        String.starts_with?(host, "sns.") and String.ends_with?(host, ".amazonaws.com")
+      %URI{scheme: "https", host: host, port: 443, userinfo: nil} when is_binary(host) ->
+        Regex.match?(@sns_host_regex, host) and not String.contains?(hd(authority), "@")
 
       _ ->
         false
     end
   end
+
+  def valid_sns_url?(_), do: false
 end

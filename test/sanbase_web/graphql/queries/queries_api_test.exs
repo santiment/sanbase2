@@ -474,6 +474,36 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     end
   end
 
+  describe "getUserQueries" do
+    test "another user does not get the owner's private queries", context do
+      {:ok, private_query} = Sanbase.Queries.create_query(%{is_public: false}, context.user.id)
+      {:ok, public_query} = Sanbase.Queries.create_query(%{is_public: true}, context.user.id)
+
+      get_ids = fn conn ->
+        conn
+        |> post(
+          "/graphql",
+          query_skeleton(
+            "{ getUserQueries(userId: #{context.user.id}, page: 1, pageSize: 10) { id } }"
+          )
+        )
+        |> json_response(200)
+        |> get_in(["data", "getUserQueries"])
+        |> Enum.map(& &1["id"])
+      end
+
+      # The owner asks first, so a result cached by the arguments alone would hold
+      # the private query when the other user asks with the same arguments.
+      owner_ids = get_ids.(context.conn)
+      assert private_query.id in owner_ids
+      assert public_query.id in owner_ids
+
+      other_ids = get_ids.(context.conn2)
+      refute private_query.id in other_ids
+      assert public_query.id in other_ids
+    end
+  end
+
   describe "Caching" do
     test "cache query executions", context do
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)

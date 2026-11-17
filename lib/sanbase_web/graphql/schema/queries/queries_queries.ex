@@ -46,7 +46,9 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:page, non_null(:integer))
       arg(:page_size, non_null(:integer))
 
-      cache_resolve(&QueriesResolver.get_user_queries/3, ttl: 10, max_ttl_offset: 20)
+      # Not cached: the result depends on who asks (the owner also gets the private
+      # queries), but the cache key has only the arguments.
+      resolve(&QueriesResolver.get_user_queries/3)
     end
 
     @desc ~s"""
@@ -137,10 +139,9 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(UserAuth)
 
-      cache_resolve(&QueriesResolver.compute_raw_clickhouse_query/3,
-        ttl: 10,
-        max_ttl_offset: 10
-      )
+      # Not cached: the cache key has no user, so a cache hit would skip the plan,
+      # credit and rate-limit checks of the resolver.
+      resolve(&QueriesResolver.compute_raw_clickhouse_query/3)
     end
 
     @desc ~s"""
@@ -817,10 +818,9 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(UserAuth)
 
-      cache_resolve(&QueriesResolver.compute_raw_clickhouse_query/3,
-        ttl: 10,
-        max_ttl_offset: 10
-      )
+      # Not cached: the cache key has no user, so a cache hit would skip the plan,
+      # credit and rate-limit checks of the resolver.
+      resolve(&QueriesResolver.compute_raw_clickhouse_query/3)
     end
   end
 end

@@ -27,7 +27,12 @@ defmodule Sanbase.Accounts.User.UniswapStakingTransientErrorTest do
 
   for {name, error} <- [
         {"a 502 HTML page", Macro.escape(@bad_gateway_error)},
-        {"a transport error", Macro.escape({:error, %Mint.TransportError{reason: :closed}})}
+        {"a transport error", Macro.escape({:error, %Mint.TransportError{reason: :closed}})},
+        {"a Finch transport error",
+         Macro.escape(
+           {:error,
+            %Finch.TransportError{reason: :closed, source: %Mint.TransportError{reason: :closed}}}
+         )}
       ] do
     test "a single transient error (#{name}) is retried and not reported", %{user: user} do
       test_pid = self()

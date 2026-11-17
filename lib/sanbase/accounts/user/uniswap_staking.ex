@@ -168,6 +168,7 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   defp transient_error?(%Mint.TransportError{}), do: true
   defp transient_error?(%Mint.HTTPError{}), do: true
   defp transient_error?(%Finch.Error{}), do: true
+  defp transient_error?(%Finch.TransportError{}), do: true
   defp transient_error?({:invalid_json, _}), do: true
   defp transient_error?(_), do: false
 

@@ -283,6 +283,18 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
       refute html_response(conn, 200) =~ contract.address
     end
 
+    test "a non-numeric id finds nothing", %{contract: contract} do
+      conn = search(sign_in(:role_admin_panel_viewer), "id", "not-a-number")
+
+      refute html_response(conn, 200) =~ contract.address
+    end
+
+    test "a valid id finds the row", %{contract: contract} do
+      conn = search(sign_in(:role_admin_panel_viewer), "id", to_string(contract.id))
+
+      assert html_response(conn, 200) =~ contract.address
+    end
+
     test "a valid value still finds the row", %{project: project, contract: contract} do
       conn = search(sign_in(:role_admin_panel_viewer), "project_id", to_string(project.id))
 

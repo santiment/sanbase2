@@ -833,15 +833,8 @@ defmodule SanbaseWeb.GenericAdminController do
       |> Enum.map(&elem(&1, 1))
 
     Enum.reduce(filters_list, base_query, fn %{"field" => field, "value" => value}, query ->
-      case field do
-        "id" ->
-          {id, ""} = Integer.parse(value)
-          where(query, [m], m.id == ^id)
-
-        field ->
-          condition = build_field_condition(field, value, module)
-          where(query, ^condition)
-      end
+      condition = build_field_condition(field, value, module)
+      where(query, ^condition)
     end)
   end
 

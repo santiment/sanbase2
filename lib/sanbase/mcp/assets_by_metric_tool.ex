@@ -348,7 +348,10 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
           {:reply, Response.error(Response.tool(), error), frame}
 
         {:error, error} ->
-          {:reply, Response.error(Response.tool(), inspect(error)), frame}
+          message =
+            Sanbase.Utils.ErrorHandling.internal_error_message("Failed to fetch assets", error)
+
+          {:reply, Response.error(Response.tool(), message), frame}
       end
     end
   end

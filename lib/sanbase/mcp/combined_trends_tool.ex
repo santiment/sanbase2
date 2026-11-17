@@ -269,19 +269,31 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
           {data, []}
 
         {_task, {:ok, {^data_type, data}}} ->
-          error_msg = "Unexpected data format for #{data_type}: #{inspect(data)}"
-          Logger.warning(error_msg)
-          {[], [error_msg]}
+          {[],
+           [
+             Sanbase.Utils.ErrorHandling.internal_error_message(
+               "Unexpected data format for #{data_type}",
+               data
+             )
+           ]}
 
         {_task, {^data_type, data}} ->
-          error_msg = "Unexpected data format for #{data_type}: #{inspect(data)}"
-          Logger.warning(error_msg)
-          {[], [error_msg]}
+          {[],
+           [
+             Sanbase.Utils.ErrorHandling.internal_error_message(
+               "Unexpected data format for #{data_type}",
+               data
+             )
+           ]}
 
         {_task, {:error, error}} ->
-          error_msg = "Failed to fetch #{data_type}: #{inspect(error)}"
-          Logger.warning(error_msg)
-          {[], [error_msg]}
+          {[],
+           [
+             Sanbase.Utils.ErrorHandling.internal_error_message(
+               "Failed to fetch #{data_type}",
+               error
+             )
+           ]}
 
         {_task, nil} ->
           error_msg = "Timeout fetching #{data_type}"
@@ -294,9 +306,13 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
           {[], [error_msg]}
 
         other ->
-          error_msg = "Unexpected result format for #{data_type}: #{inspect(other)}"
-          Logger.warning(error_msg)
-          {[], [error_msg]}
+          {[],
+           [
+             Sanbase.Utils.ErrorHandling.internal_error_message(
+               "Unexpected result format for #{data_type}",
+               other
+             )
+           ]}
       end
     else
       {[], []}

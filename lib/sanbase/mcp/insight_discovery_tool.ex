@@ -140,7 +140,8 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
     {:ok, insights}
   rescue
     error ->
-      {:error, "Failed to fetch insights: #{inspect(error)}"}
+      {:error,
+       Sanbase.Utils.ErrorHandling.internal_error_message("Failed to fetch insights", error)}
   end
 
   defp format_insight_summary(post) do

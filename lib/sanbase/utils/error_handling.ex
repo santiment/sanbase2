@@ -43,6 +43,18 @@ defmodule Sanbase.Utils.ErrorHandling do
     {:error, "[#{log_id}] Error executing #{query_name}. See logs for details."}
   end
 
+  @doc ~s"""
+  Log `details` (any term) with a new log id and return a message for the caller
+  that has only `public_message` and the log id. Use it where an internal error
+  (an exception, a database or HTTP error) would otherwise reach the caller.
+  """
+  @spec internal_error_message(String.t(), any()) :: String.t()
+  def internal_error_message(public_message, details) do
+    log_id = UUID.uuid4()
+    Logger.error("[#{log_id}] #{public_message}: #{inspect(details)}")
+    "[#{log_id}] #{public_message}. See logs for details."
+  end
+
   def warn_result(message, query_name \\ "query") do
     log_id = UUID.uuid4()
     Logger.warning("[#{log_id}] #{message}")

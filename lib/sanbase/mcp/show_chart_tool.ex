@@ -98,9 +98,15 @@ defmodule Sanbase.MCP.ShowChartTool do
         ]
         |> Task.async_stream(& &1.(), timeout: 30_000, on_timeout: :kill_task, ordered: true)
         |> Enum.map(fn
-          {:ok, result} -> result
-          {:exit, :timeout} -> {:error, "data fetch timed out"}
-          {:exit, reason} -> {:error, "data fetch failed: #{inspect(reason)}"}
+          {:ok, result} ->
+            result
+
+          {:exit, :timeout} ->
+            {:error, "data fetch timed out"}
+
+          {:exit, reason} ->
+            {:error,
+             Sanbase.Utils.ErrorHandling.internal_error_message("data fetch failed", reason)}
         end)
 
       case primary_result do
@@ -234,7 +240,9 @@ defmodule Sanbase.MCP.ShowChartTool do
         {:error, "Failed to fetch OHLC for #{slug}: #{inspect(reason)}"}
     end
   rescue
-    e -> {:error, "Failed to fetch OHLC for #{slug}: #{Exception.message(e)}"}
+    e ->
+      {:error,
+       Sanbase.Utils.ErrorHandling.internal_error_message("Failed to fetch OHLC for #{slug}", e)}
   end
 
   # ── Overlay (catalog metric line/area/histogram) ─────────────────────────
@@ -281,7 +289,12 @@ defmodule Sanbase.MCP.ShowChartTool do
         {:error, "Failed to fetch #{metric_name} for #{slug}: #{inspect(reason)}"}
     end
   rescue
-    e -> {:error, "Failed to fetch #{metric_name} for #{slug}: #{Exception.message(e)}"}
+    e ->
+      {:error,
+       Sanbase.Utils.ErrorHandling.internal_error_message(
+         "Failed to fetch #{metric_name} for #{slug}",
+         e
+       )}
   end
 
   # ── Summary ──────────────────────────────────────────────────────────────

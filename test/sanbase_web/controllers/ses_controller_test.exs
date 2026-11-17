@@ -378,4 +378,27 @@ defmodule SanbaseWeb.SESControllerTest do
       receive do: ({:DOWN, ^ref, :process, ^pid, _} -> :ok)
     end)
   end
+
+  describe "valid_sns_url?/1" do
+    test "accepts an SNS regional endpoint" do
+      assert SanbaseWeb.SESController.valid_sns_url?(
+               "https://sns.eu-central-1.amazonaws.com/?Action=ConfirmSubscription&Token=x"
+             )
+    end
+
+    test "rejects other hosts and forms" do
+      for url <- [
+            "http://sns.eu-central-1.amazonaws.com/",
+            "https://sns.attacker.example.amazonaws.com.evil.com/",
+            "https://sns.x.y.amazonaws.com/",
+            "https://sns.eu-central-1.amazonaws.com:8080/",
+            "https://user@sns.eu-central-1.amazonaws.com/",
+            "https://sns.eu-central-1.amazonaws.com?@internal.host/",
+            "https://s3.eu-central-1.amazonaws.com/",
+            nil
+          ] do
+        refute SanbaseWeb.SESController.valid_sns_url?(url), "accepted #{inspect(url)}"
+      end
+    end
+  end
 end

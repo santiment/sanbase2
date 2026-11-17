@@ -152,7 +152,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
         resource_name: "Apikey tokens",
         actions: [:delete],
         rows: Sanbase.Accounts.UserApikeyToken.user_tokens_structs(user) |> elem(1),
-        fields: [:id, :token, :inserted_at],
+        fields: [:id, :token, :revoked_at, :inserted_at],
         funcs: %{},
         create_link_kv: []
       },

@@ -195,7 +195,7 @@ defmodule SanbaseWeb.Admin.UserRankings do
       SELECT user_id, COUNT(*) AS cnt FROM blockchain_address_user_pairs GROUP BY user_id
     ),
     c_apikeys AS (
-      SELECT user_id, COUNT(*) AS cnt FROM user_api_key_tokens GROUP BY user_id
+      SELECT user_id, COUNT(*) AS cnt FROM user_api_key_tokens WHERE revoked_at IS NULL GROUP BY user_id
     ),
     -- Last web/app session activity: guardian_tokens stores refresh tokens, and
     -- `last_exchanged_at` is bumped on each access-token exchange (at most once

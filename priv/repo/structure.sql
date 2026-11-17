@@ -5524,7 +5524,8 @@ CREATE TABLE public.user_api_key_tokens (
     user_id bigint,
     token character varying(255) NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    revoked_at timestamp(0) without time zone
 );
 
 
@@ -12720,3 +12721,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261104135841);
 INSERT INTO public."schema_migrations" (version) VALUES (20261105115831);
 INSERT INTO public."schema_migrations" (version) VALUES (20261112100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261112100001);
+INSERT INTO public."schema_migrations" (version) VALUES (20261117100213);

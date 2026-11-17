@@ -194,7 +194,8 @@ defmodule Sanbase.MCP.Knowledge.GetUserAccountTool do
   end
 
   defp api_keys_count(%User{id: user_id}) do
-    from(t in UserApikeyToken, where: t.user_id == ^user_id) |> Repo.aggregate(:count)
+    from(t in UserApikeyToken, where: t.user_id == ^user_id and is_nil(t.revoked_at))
+    |> Repo.aggregate(:count)
   end
 
   defp subscriptions(%User{id: user_id}) do

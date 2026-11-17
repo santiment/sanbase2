@@ -1,4 +1,11 @@
 defmodule Sanbase.Accounts.UserApikeyToken do
+  @moduledoc ~s"""
+  The tokens backing users' API keys.
+
+  Revoking a key sets `revoked_at` and keeps the row, so there is a record of
+  which keys existed and when they were revoked. A revoked token no longer
+  resolves to a user and does not count towards the per-user limit.
+  """
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
@@ -12,6 +19,7 @@ defmodule Sanbase.Accounts.UserApikeyToken do
 
   schema "user_api_key_tokens" do
     field(:token, :string)
+    field(:revoked_at, :utc_datetime)
 
     belongs_to(:user, User)
 
@@ -29,7 +37,7 @@ defmodule Sanbase.Accounts.UserApikeyToken do
     query =
       from(
         pair in UserApikeyToken,
-        where: pair.user_id == ^user_id,
+        where: pair.user_id == ^user_id and is_nil(pair.revoked_at),
         select: count(pair.id)
       )
 
@@ -46,13 +54,16 @@ defmodule Sanbase.Accounts.UserApikeyToken do
     query =
       from(
         pair in UserApikeyToken,
-        where: pair.user_id == ^user_id,
+        where: pair.user_id == ^user_id and is_nil(pair.revoked_at),
         select: pair.token
       )
 
     {:ok, Sanbase.Repo.all(query)}
   end
 
+  @doc ~s"""
+  All token rows of the user, revoked ones included.
+  """
   def user_tokens_structs(%User{id: user_id}) do
     query =
       from(
@@ -69,26 +80,43 @@ defmodule Sanbase.Accounts.UserApikeyToken do
     |> Repo.insert()
   end
 
-  def remove_user_token(%User{id: user_id}, token) do
+  @doc ~s"""
+  Revoke the user's token. The row is kept with `revoked_at` set.
+  """
+  def revoke_user_token(%User{id: user_id}, token) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
     from(
       pair in UserApikeyToken,
-      where: pair.token == ^token and pair.user_id == ^user_id
+      where: pair.token == ^token and pair.user_id == ^user_id and is_nil(pair.revoked_at)
     )
-    |> Repo.delete_all()
+    |> Repo.update_all(set: [revoked_at: now, updated_at: DateTime.to_naive(now)])
   end
 
+  @doc ~s"""
+  Revoke a token row. Revoking an already revoked row keeps its first `revoked_at`.
+  """
+  def revoke(%UserApikeyToken{revoked_at: nil} = token) do
+    token
+    |> change(revoked_at: DateTime.utc_now() |> DateTime.truncate(:second))
+    |> Repo.update()
+  end
+
+  def revoke(%UserApikeyToken{} = token), do: {:ok, token}
+
+  @doc ~s"""
+  Whether `token` exists and is not revoked.
+  """
   def has_token?(token) do
-    case Repo.get_by(UserApikeyToken, token: token) do
-      nil -> false
-      _ -> true
-    end
+    from(pair in UserApikeyToken, where: pair.token == ^token and is_nil(pair.revoked_at))
+    |> Repo.exists?()
   end
 
   def user_has_token?(%User{id: user_id}, token) do
     query =
       from(
         pair in UserApikeyToken,
-        where: pair.user_id == ^user_id and pair.token == ^token
+        where: pair.user_id == ^user_id and pair.token == ^token and is_nil(pair.revoked_at)
       )
 
     case Repo.all(query) do

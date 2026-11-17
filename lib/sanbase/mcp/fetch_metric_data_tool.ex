@@ -130,6 +130,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     interval = Map.get(params, :interval, "1d")
 
     with :ok <- validate_metric(metric),
+         :ok <- validate_interval(interval),
          {:ok, target} <- validate_target(metric, params),
          {:ok, {from, to}} <- Utils.parse_time_period(time_period),
          {:ok, data} <- fetch_metric_data(metric, target, from, to, interval) do
@@ -322,6 +323,15 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
       :ok
     else
       {:error, ToolError.permanent(DataCatalog.metric_not_found_error(metric))}
+    end
+  end
+
+  defp validate_interval(interval) do
+    if Sanbase.Utils.DateTime.valid_interval?(interval) do
+      :ok
+    else
+      {:error,
+       ToolError.permanent("Invalid interval format. Use format like '5m', '1h', '1d', '7d'")}
     end
   end
 

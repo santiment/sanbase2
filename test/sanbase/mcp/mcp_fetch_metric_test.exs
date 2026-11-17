@@ -813,6 +813,31 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
            } = result
   end
 
+  for interval <- ["abc", "1x"] do
+    test "fetch metric with invalid interval #{interval} returns an error", context do
+      result =
+        try_few_times(
+          fn ->
+            Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+              slugs: [context.p1.slug],
+              metric: "price_usd",
+              interval: unquote(interval)
+            })
+          end,
+          attempts: 3,
+          sleep: 250
+        )
+
+      assert {:ok,
+              %Anubis.MCP.Response{
+                is_error: true,
+                result: %{"content" => [%{"text" => error_text, "type" => "text"}]}
+              }} = result
+
+      assert error_text =~ "Invalid interval format"
+    end
+  end
+
   test "fetch metric with wrong metric name", context do
     result =
       try_few_times(

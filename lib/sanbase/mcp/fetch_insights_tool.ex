@@ -95,7 +95,11 @@ defmodule Sanbase.MCP.FetchInsightsTool do
     {:ok, insights}
   rescue
     error ->
-      {:error, "Failed to fetch insight details: #{inspect(error)}"}
+      {:error,
+       Sanbase.Utils.ErrorHandling.internal_error_message(
+         "Failed to fetch insight details",
+         error
+       )}
   end
 
   defp truncate_text(nil), do: nil

@@ -139,7 +139,11 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
     end
   rescue
     error ->
-      {:error, "Failed to fetch trending stories: #{inspect(error)}"}
+      {:error,
+       Sanbase.Utils.ErrorHandling.internal_error_message(
+         "Failed to fetch trending stories",
+         error
+       )}
   end
 
   defp determine_interval(from_datetime, to_datetime) do

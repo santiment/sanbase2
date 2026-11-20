@@ -16,6 +16,7 @@ defmodule Sanbase.MCP.Knowledge.SearchKnowledgeTool do
 
   alias Anubis.Server.Response
   alias Sanbase.Knowledge
+  alias Sanbase.Knowledge.Context
   alias Sanbase.Knowledge.Faq
   alias Sanbase.Knowledge.PlanRestrictions
   alias Sanbase.MCP.Knowledge.Format
@@ -167,8 +168,17 @@ defmodule Sanbase.MCP.Knowledge.SearchKnowledgeTool do
   defp log_search(question, sources, response, frame) do
     answer =
       case response.excerpts do
-        [] -> "No excerpts found"
-        excerpts -> Enum.map_join(excerpts, "\n", &"[#{&1.n}] #{&1.type}: #{&1.title}")
+        [] ->
+          "No excerpts found"
+
+        # Titles are user-controlled and this log is rendered as markdown in the
+        # admin panel: keep each title on one inert line.
+        excerpts ->
+          Enum.map_join(
+            excerpts,
+            "\n",
+            &"[#{&1.n}] #{&1.type}: #{Context.inline_label(&1.title)}"
+          )
       end
 
     Sanbase.Knowledge.QuestionAnswerLog.create(%{

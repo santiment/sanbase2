@@ -207,4 +207,36 @@ defmodule Sanbase.Knowledge.Context do
     |> String.replace("(", "\\(")
     |> String.replace(")", "\\)")
   end
+
+  @doc """
+  A user-controlled label (post/article title, FAQ question) made safe for a
+  single markdown line: whitespace runs (incl. newlines) are folded, so the label
+  cannot start a raw-HTML block, and link delimiters are escaped.
+  """
+  @spec inline_label(String.t() | nil) :: String.t()
+  def inline_label(label), do: label |> clean_label() |> escape_label()
+
+  @doc """
+  Make a URL safe to interpolate into the `(...)` target of a markdown link.
+
+  Allow only http(s); collapse anything else to "#", and percent-encode the
+  characters that are significant inside a markdown link target so a URL
+  carrying a `)` cannot break out of the link or forge its target.
+  """
+  @spec safe_url(String.t() | nil) :: String.t()
+  def safe_url(url) do
+    url = to_string(url)
+
+    case URI.parse(url) do
+      %URI{scheme: scheme} when scheme in ["http", "https"] ->
+        url
+        |> String.replace("\\", "%5C")
+        |> String.replace("(", "%28")
+        |> String.replace(")", "%29")
+        |> String.replace(" ", "%20")
+
+      _ ->
+        "#"
+    end
+  end
 end

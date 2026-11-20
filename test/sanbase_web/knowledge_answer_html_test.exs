@@ -32,6 +32,41 @@ defmodule SanbaseWeb.KnowledgeAnswerHTMLTest do
       assert KnowledgeAnswerHTML.to_html(nil) == ""
     end
 
+    test "strips block-level raw HTML (script / event handlers) from the answer" do
+      html =
+        KnowledgeAnswerHTML.to_html(
+          "[1] insight: hello\n<script>alert(1)</script>\n<img src=x onerror=alert(2)>\n" <>
+            "<div onclick=\"alert(3)\">x</div>\n[2] faq: q"
+        )
+
+      refute html =~ "<script"
+      refute html =~ "onerror"
+      refute html =~ "onclick"
+      assert html =~ "[1] insight: hello"
+    end
+
+    test "drops javascript: link targets" do
+      html = KnowledgeAnswerHTML.to_html("- [x](javascript:alert(document.domain)) and more")
+
+      refute html =~ "javascript:"
+    end
+
+    test "sanitizes malformed markdown instead of returning the raw source" do
+      html = KnowledgeAnswerHTML.to_html("```\nunclosed fence\n<script>alert(1)</script>")
+
+      refute html =~ "<script"
+    end
+
+    test "still expands the date sentinel after sanitizing" do
+      html =
+        KnowledgeAnswerHTML.to_html(
+          "- [t](https://s/insight/1) {{date:2026-01-02}}\n<script>alert(1)</script>"
+        )
+
+      refute html =~ "<script"
+      assert html =~ ~s(<span style="color: #9ca3af; white-space: nowrap">(2026-01-02\)</span>)
+    end
+
     test "does not expand a malformed date token (only our own emitted shape)" do
       html = KnowledgeAnswerHTML.to_html("{{date:not-a-date}}")
 

@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationCommentsApiTest do
     clean_task_supervisor_children()
 
     user = insert(:user)
-    chart_configuration = insert(:chart_configuration, user: user)
+    chart_configuration = insert(:chart_configuration, user: user, is_public: true)
     conn = setup_jwt_auth(build_conn(), user)
 
     %{conn: conn, user: user, chart_configuration: chart_configuration}

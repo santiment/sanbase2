@@ -8,9 +8,14 @@ defmodule SanbaseWeb.Graphql.SubcommentsApiTest do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
+    # Comments are always linked to an entity; subcomments inherit its visibility.
+    insight = insert(:published_post, user: user)
     {:ok, root} = Sanbase.Comment.create(user.id, "root comment", nil)
     {:ok, sub1} = Sanbase.Comment.create(user.id, "sub 1", root.id)
     {:ok, sub2} = Sanbase.Comment.create(user.id, "sub 2", sub1.id)
+
+    for comment <- [root, sub1, sub2],
+        do: {:ok, _} = Sanbase.Comments.EntityComment.link(:insight, insight.id, comment.id)
 
     %{conn: conn, root: root, sub1: sub1, sub2: sub2}
   end

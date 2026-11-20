@@ -193,24 +193,6 @@ defmodule Sanbase.Knowledge.Citations do
   end
 
   # The label is escaped, but the URL is interpolated into the `(...)` of a
-  # markdown link too. A URL carrying a `)` (or a non-web scheme like
-  # `javascript:`) would otherwise break out of the link or forge its target.
-  # Allow only http(s); collapse anything else to "#", and percent-encode the
-  # characters that are significant inside a markdown link target so the URL
-  # stays inert.
-  defp safe_url(url) do
-    url = to_string(url)
-
-    case URI.parse(url) do
-      %URI{scheme: scheme} when scheme in ["http", "https"] ->
-        url
-        |> String.replace("\\", "%5C")
-        |> String.replace("(", "%28")
-        |> String.replace(")", "%29")
-        |> String.replace(" ", "%20")
-
-      _ ->
-        "#"
-    end
-  end
+  # markdown link too, so it goes through `Context.safe_url/1`.
+  defp safe_url(url), do: Context.safe_url(url)
 end

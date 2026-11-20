@@ -1,8 +1,10 @@
 # Seed Sanbase.Project.SourceSlugMapping rows for the Hyperliquid BBO scraper.
 #
-# Each entry is a {hl_coin, sanbase_slug} pair. A row is inserted with
-# source = "hyperliquid" and slug = the HL coin, linked to the project found
-# by the Sanbase slug.
+# Reads {hl_coin, sanbase_slug} pairs from a CSV file. First column is the
+# Hyperliquid slug, second column is the Santiment slug; remaining columns
+# are ignored. Lines starting with `#` and blank lines are skipped. A row is
+# inserted with source = "hyperliquid" and slug = the HL coin, linked to the
+# project found by the Sanbase slug.
 #
 # Behavior:
 #   - if no project exists for a slug (e.g. on stage), report PROJECT_MISSING
@@ -15,11 +17,11 @@
 # Two ways to run:
 #
 #   1. As a script:
-#        mix run scripts/seed_hyperliquid_source_slug_mappings.exs
+#        mix run scripts/seed_hyperliquid_source_slug_mappings.exs path/to/mappings.csv
 #
 #   2. Paste into iex:
 #        Paste the whole `defmodule ... end` block, then call:
-#        SeedHyperliquidSourceSlugMappings.run()
+#        SeedHyperliquidSourceSlugMappings.run("path/to/mappings.csv")
 
 defmodule SeedHyperliquidSourceSlugMappings do
   alias Sanbase.Project
@@ -27,43 +29,12 @@ defmodule SeedHyperliquidSourceSlugMappings do
 
   @source "hyperliquid"
 
-  @mappings [
-    {"HYPE", "hyperliquid"},
-    {"ONDO", "ondo-finance"},
-    {"BTC", "bitcoin"},
-    {"ZEC", "zcash"},
-    {"TAO", "bittensor"},
-    {"XRP", "xrp"},
-    {"SOL", "solana"},
-    {"DOGE", "dogecoin"},
-    {"ETH", "ethereum"},
-    {"BNB", "binance-coin"},
-    {"PENGU", "pudgy-penguins"},
-    {"ALGO", "algorand"},
-    # {"MANA", "decentraland"}, # not supported
-    {"LTC", "litecoin"},
-    {"ADA", "cardano"},
-    {"XMR", "monero"},
-    {"ZRO", "layerzero"},
-    {"AAVE", "aave"},
-    {"ATOM", "cosmos"},
-    {"LINK", "chainlink"},
-    {"AVAX", "avalanche"},
-    # on Hyperliquid it's kPEPE
-    {"kPEPE", "pepe"},
-    {"DASH", "dash"},
-    # {"ENJ", "enjin-coin"}, # not supported
-    {"SUI", "sui"},
-    {"NEAR", "near-protocol"},
-    {"USELESS", "theuselesscoin"},
-    {"UNI", "uniswap"},
-    {"BCH", "bitcoin-cash"},
-    {"PUMP", "sol-pump-fun"},
-    # {"TON", "toncoin"},
-    {"JTO", "jito"}
-  ]
+  def run(csv_path) when is_binary(csv_path) do
+    mappings = load_csv(csv_path)
+    run_with_mappings(mappings)
+  end
 
-  def run(mappings \\ @mappings) do
+  defp run_with_mappings(mappings) do
     {deduped, duplicates} = validate_and_dedupe(mappings)
 
     slugs = Enum.map(deduped, fn {_, slug} -> slug end)
@@ -78,6 +49,36 @@ defmodule SeedHyperliquidSourceSlugMappings do
       duplicates: duplicates,
       summary: summarize(results)
     }
+  end
+
+  defp load_csv(path) do
+    File.exists?(path) || raise "CSV file not found: #{path}"
+
+    path
+    |> File.stream!()
+    |> Enum.with_index(1)
+    |> Enum.flat_map(fn {line, idx} ->
+      case line |> String.trim() |> String.split(",") do
+        [""] ->
+          []
+
+        ["#" <> _ | _] ->
+          []
+
+        [coin, slug | _] ->
+          coin = String.trim(coin)
+          slug = String.trim(slug)
+
+          if coin == "" or slug == "" do
+            raise "Invalid CSV row at line #{idx}: required columns `coin` and `slug` must be non-empty"
+          else
+            [{coin, slug}]
+          end
+
+        _ ->
+          raise "Invalid CSV row at line #{idx}: #{inspect(line)}"
+      end
+    end)
   end
 
   defp validate_and_dedupe(mappings) do
@@ -217,6 +218,18 @@ defmodule SeedHyperliquidSourceSlugMappings do
 end
 
 # When loaded via `mix run`, kick it off. In iex, paste the defmodule block
-# above and call SeedHyperliquidSourceSlugMappings.run() yourself (this line
-# is harmless to paste too — it will run once).
-SeedHyperliquidSourceSlugMappings.run()
+# above and call SeedHyperliquidSourceSlugMappings.run("path/to.csv") yourself.
+case System.argv() do
+  [csv_path | _] ->
+    SeedHyperliquidSourceSlugMappings.run(csv_path)
+
+  [] ->
+    IO.puts(:stderr, """
+    Usage: mix run scripts/seed_hyperliquid_source_slug_mappings.exs <csv_path>
+
+    CSV format: first column = Hyperliquid slug, second column = Santiment slug.
+    Extra columns ignored. Lines starting with `#` and blank lines are skipped.
+    """)
+
+    System.halt(1)
+end

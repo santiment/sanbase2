@@ -3,8 +3,8 @@ defmodule Sanbase.MCP.ChartUI do
   MCP App UI resource for the `show_chart` tool.
 
   Serves the self-contained, single-file chart widget bundled into this app at
-  `priv/mcp_widgets/chart.html` (built by the `santiment/san-mcp-apps` repo via
-  `pnpm build:single`). See `Sanbase.MCP.WidgetAsset`.
+  `priv/mcp_widgets/chart.html` (built from `assets/mcp_widgets/` via
+  `mix mcp.widgets.build`). See `Sanbase.MCP.WidgetAsset`.
   """
 
   use Anubis.Server.Component,

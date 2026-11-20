@@ -95,14 +95,34 @@ defmodule Sanbase.Accounts.UserApikeyToken do
 
   @doc ~s"""
   Revoke a token row. Revoking an already revoked row keeps its first `revoked_at`.
+
+  The update only matches a row that is not revoked yet, so when two requests
+  revoke the same token at once, the second one does not replace the timestamp
+  the first one stored.
   """
-  def revoke(%UserApikeyToken{revoked_at: nil} = token) do
-    token
-    |> change(revoked_at: DateTime.utc_now() |> DateTime.truncate(:second))
-    |> Repo.update()
+  def revoke(%UserApikeyToken{id: id, revoked_at: nil}) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    from(pair in UserApikeyToken,
+      where: pair.id == ^id and is_nil(pair.revoked_at),
+      select: pair
+    )
+    |> Repo.update_all(set: [revoked_at: now, updated_at: DateTime.to_naive(now)])
+    |> case do
+      {1, [revoked_token]} -> {:ok, revoked_token}
+      {0, _} -> fetch_revoked(id)
+    end
   end
 
   def revoke(%UserApikeyToken{} = token), do: {:ok, token}
+
+  # Another request revoked the row first: return it as it is stored.
+  defp fetch_revoked(id) do
+    case Repo.get(UserApikeyToken, id) do
+      %UserApikeyToken{} = token -> {:ok, token}
+      nil -> {:error, "The API key token does not exist"}
+    end
+  end
 
   @doc ~s"""
   Whether `token` exists and is not revoked.

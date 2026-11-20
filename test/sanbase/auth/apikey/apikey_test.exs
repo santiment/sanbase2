@@ -50,6 +50,27 @@ defmodule Sanbase.Accounts.ApiKeyTest do
     assert {:error, _} = Apikey.revoke_apikey(user, apikey)
   end
 
+  test "revoking a row that another request already revoked keeps the first revoked_at",
+       %{user: user} do
+    import Ecto.Query
+
+    {:ok, apikey} = Apikey.generate_apikey(user)
+    {:ok, {token, _}} = Sanbase.Accounts.Hmac.split_apikey(apikey)
+
+    # Loaded before the other request revokes it, so it still has revoked_at: nil
+    stale_row = Sanbase.Repo.get_by(Sanbase.Accounts.UserApikeyToken, token: token)
+    first_revoked_at = ~U[2026-01-01 00:00:00Z]
+
+    from(t in Sanbase.Accounts.UserApikeyToken, where: t.id == ^stale_row.id)
+    |> Sanbase.Repo.update_all(set: [revoked_at: first_revoked_at])
+
+    assert {:ok, row} = Sanbase.Accounts.UserApikeyToken.revoke(stale_row)
+    assert row.revoked_at == first_revoked_at
+
+    assert Sanbase.Repo.get(Sanbase.Accounts.UserApikeyToken, stale_row.id).revoked_at ==
+             first_revoked_at
+  end
+
   test "revoked keys do not count towards the limit", %{user: user} do
     limit = Sanbase.Accounts.UserApikeyToken.api_keys_per_user_limit()
 

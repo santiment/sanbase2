@@ -175,7 +175,7 @@ defmodule Sanbase.Comments.NotificationTest do
       refute Map.has_key?(Notification.notify_users_map(), context.author.email)
     end
 
-    test "skips a likes-only recipient unsubscribed from likes emails", context do
+    test "skips a likes-only recipient unsubscribed from likes emails" do
       liked_post = insert(:post)
       insert(:vote, post: liked_post, user: build(:user))
 

@@ -197,9 +197,11 @@ defmodule SanbaseWeb.Graphql.AcademySearchApiTest do
           assert is_list(execute_query(ip_conn, search_query("mvrv", 5), "academySearch"))
         end
 
+        # The 4th call is under the per-minute limit of 5, so the 24h window
+        # denies it. Don't assert the wait unit: fixed windows end at 00:00 UTC,
+        # so near midnight the wait is minutes or seconds, not hours.
         error = execute_query_with_error(ip_conn, search_query("mvrv", 5), "academySearch")
-        assert error =~ "Rate limit exceeded. Try again in"
-        assert error =~ "hours"
+        assert error =~ ~r/Rate limit exceeded\. Try again in \d+ (hours|minutes|seconds)/
       end)
     end
 

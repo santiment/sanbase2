@@ -6,7 +6,6 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
   import Sanbase.TestHelpers
 
   alias Sanbase.Tag
-  alias Sanbase.Vote
   alias Sanbase.Insight.Post
   alias Sanbase.Project
   alias Sanbase.Repo

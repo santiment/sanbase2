@@ -1,12 +1,13 @@
 defmodule Sanbase.SocialData.Community do
+  use Mockery.Macro
+
   import Sanbase.Utils.ErrorHandling
 
   alias Sanbase.Utils.Config
 
   require Logger
-  require Mockery.Macro
 
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
+  defp http_client(), do: mockable(HTTPoison)
 
   @recv_timeout 25_000
   @sources [:telegram, :reddit]

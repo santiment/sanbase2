@@ -20,7 +20,9 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
   Rows are stored in Postgres, so a challenge created on one node can be used on
   any other. Rows are never deleted: they record which addresses asked to log in
   and when, and are kept as evidence. Handing out the open challenge again (see
-  `create/1`) keeps the growth to a few rows per address.
+  `create/1`) limits how often a new row is added for an address: at most one
+  every `@ttl_seconds - @min_seconds_left_to_reuse` seconds. It does not limit
+  how many rows an address has in total, which keeps growing over time.
   """
 
   use Ecto.Schema
@@ -143,8 +145,9 @@ defmodule Sanbase.Accounts.EthLoginChallenge do
       else: {:error, "Invalid wallet address"}
   end
 
-  # Handing out the open challenge again keeps at most a few rows per address, so
-  # asking for challenges in a loop neither fills the table nor locks the owner out.
+  # Handing out the open challenge again means asking for challenges in a loop adds
+  # a new row only once the open one is close to expiring, and never locks the owner
+  # out. The total number of rows per address is not limited.
   defp reusable_challenge(address) do
     reuse_until = DateTime.utc_now() |> DateTime.add(@min_seconds_left_to_reuse, :second)
 

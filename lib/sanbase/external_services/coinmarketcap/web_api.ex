@@ -5,15 +5,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   require Logger
 
-  import Sanbase.ExternalServices.Coinmarketcap.Utils, only: [wait_rate_limit: 2]
-
   alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
+  alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress, Utils}
+  alias Sanbase.ExternalServices.RateLimiting.PriorityServer
   alias Sanbase.Project
 
   @rate_limiting_server :graph_coinmarketcap_rate_limiter
   plug(Tesla.Middleware.Logger)
-  plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: @rate_limiting_server)
+  plug(Sanbase.ExternalServices.RateLimiting.PriorityMiddleware, name: @rate_limiting_server)
   plug(Sanbase.ExternalServices.ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://web-api.coinmarketcap.com")
   plug(Tesla.Middleware.Compression, max_body_size: 32 * 1024 * 1024)
@@ -49,7 +48,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     Logger.error(error_msg)
 
-    # This should not really happen because we have wait_rate_limit/2.
+    # This should not really happen because we have handle_rate_limit/1.
     # If we reach here (retries exceeded) then probably there's some issue
     # with out rate limit waits
     Sentry.capture_message("CMC scraper max rate limit retries exceeded",
@@ -65,7 +64,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp, @rate_limiting_server)
+        handle_rate_limit(resp)
         get_first_datetime(id, retries + 1)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -123,8 +122,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         |> Stream.take(10)
         |> Enum.reduce_while(:ok, fn
           {:ok, result, interval}, acc ->
-            store_price_points(project, result, interval)
-            {:cont, acc}
+            case store_price_points(project, result, interval) do
+              {:ok, _} -> {:cont, acc}
+              error -> {:halt, {:error, "Error storing prices for project: #{inspect(error)}"}}
+            end
 
           error, _acc ->
             {:halt, {:error, "Error in fetch_and_store_prices/2 for project: #{inspect(error)}"}}
@@ -144,12 +145,43 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> Stream.take(10)
     |> Enum.reduce_while(:ok, fn
       {:ok, result, interval}, acc ->
-        store_price_points("TOTAL_MARKET", result, interval)
-        {:cont, acc}
+        case store_price_points("TOTAL_MARKET", result, interval) do
+          {:ok, _} -> {:cont, acc}
+          error -> {:halt, {:error, "Error storing prices for TOTAL_MARKET: #{inspect(error)}"}}
+        end
 
       error, _acc ->
         {:halt, {:error, "Error in fetch_and_store_prices/2 for TOTAL_MARKET: #{inspect(error)}"}}
     end)
+  end
+
+  @doc ~s"""
+  Fetch the price points of a coinmarketcap integer id in the [from_unix, to_unix]
+  interval. Does not store anything. Used by the rescrapes, which keep their
+  own progress.
+
+  Options:
+    - :priority - the rate limiter priority of the request. Defaults to :normal
+  """
+  @spec fetch_price_points(non_neg_integer(), {integer(), integer()}, Keyword.t()) ::
+          {:ok, [%PricePoint{}]} | {:error, String.t()}
+  def fetch_price_points(cmc_integer_id, {from_unix, to_unix} = interval, opts \\ [])
+      when is_integer(cmc_integer_id) and is_integer(from_unix) and is_integer(to_unix) do
+    case do_extract_price_points(cmc_integer_id, interval, 0, opts) do
+      {:ok, price_points, _interval} -> {:ok, price_points}
+      {:error, _} = error -> error
+    end
+  end
+
+  @doc ~s"""
+  Apply the sanity filters to the price points and export them to Kafka.
+  """
+  @spec export_price_points(%Project{}, [%PricePoint{}]) :: :ok | {:error, any()}
+  def export_price_points(%Project{}, []), do: :ok
+
+  def export_price_points(%Project{slug: slug} = project, price_points) do
+    price_points = PricePoint.sanity_filters(price_points, slug)
+    export_prices_to_kafka(project, price_points)
   end
 
   # In case there is gap in the data store the end of the interval. This is done
@@ -181,9 +213,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     price_points = PricePoint.sanity_filters(price_points, slug)
     %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
 
-    export_prices_to_kafka(project, price_points)
-
-    PriceScrapingProgress.store_progress(slug, @source, latest_datetime)
+    with :ok <- export_prices_to_kafka(project, price_points) do
+      PriceScrapingProgress.store_progress(slug, @source, latest_datetime)
+    end
   end
 
   defp store_price_points("TOTAL_MARKET", price_points, _) do
@@ -191,9 +223,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
 
-    export_prices_to_kafka("TOTAL_MARKET", price_points)
-
-    PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, latest_datetime)
+    with :ok <- export_prices_to_kafka("TOTAL_MARKET", price_points) do
+      PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, latest_datetime)
+    end
   end
 
   defp export_prices_to_kafka(%Project{slug: slug}, price_points) do
@@ -318,10 +350,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   end
 
   defp extract_price_points_for_interval(identifier, interval) do
-    do_extract_price_points(identifier, interval, _retries = 0)
+    do_extract_price_points(identifier, interval, _retries = 0, _opts = [])
   end
 
-  defp do_extract_price_points(identifier, interval, retries)
+  defp do_extract_price_points(identifier, interval, retries, _opts)
        when retries >= @max_rate_limit_retries do
     error_msg =
       "[CMC] Max rate limit retries (#{@max_rate_limit_retries}) exceeded " <>
@@ -337,7 +369,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     {:error, error_msg}
   end
 
-  defp do_extract_price_points("TOTAL_MARKET", {from_unix, to_unix}, _retries)
+  defp do_extract_price_points("TOTAL_MARKET", {from_unix, to_unix}, _retries, _opts)
        when to_unix - from_unix < 3600 do
     Logger.info(
       "[CMC] Skipping price points extraction for TOTAL_MARKET, " <>
@@ -351,14 +383,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   defp do_extract_price_points(
          "TOTAL_MARKET" = total_market,
          {from_unix, to_unix} = interval,
-         retries
+         retries,
+         opts
        ) do
-    "https://api.coinmarketcap.com/data-api/v3/global-metrics/quotes/historical?format=chart&interval=5m&timeEnd=#{to_unix}&timeStart=#{from_unix}"
-    |> get()
-    |> case do
+    url =
+      "https://api.coinmarketcap.com/data-api/v3/global-metrics/quotes/historical?format=chart&interval=5m&timeEnd=#{to_unix}&timeStart=#{from_unix}"
+
+    response = get(url, request_opts(opts))
+
+    case response do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp, @rate_limiting_server)
-        do_extract_price_points(total_market, interval, retries + 1)
+        handle_rate_limit(resp)
+        do_extract_price_points(total_market, interval, retries + 1, opts)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         json_to_price_points(body, total_market, interval)
@@ -380,7 +416,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     end
   end
 
-  defp do_extract_price_points(id, {from_unix, to_unix}, _retries)
+  defp do_extract_price_points(id, {from_unix, to_unix}, _retries, _opts)
        when is_integer(id) and to_unix - from_unix < 3600 do
     Logger.info(
       "[CMC] Skipping price points extraction for CMC id #{id}, " <>
@@ -391,19 +427,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     {:ok, [], {from_unix, to_unix}}
   end
 
-  defp do_extract_price_points(id, {from_unix, to_unix} = interval, retries)
+  defp do_extract_price_points(id, {from_unix, to_unix} = interval, retries, opts)
        when is_integer(id) do
     Logger.info(
       "[CMC] Extracting price points for CMC id #{id}, " <>
         "interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]"
     )
 
-    "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=#{id}&range=#{from_unix}~#{to_unix}"
-    |> get()
-    |> case do
+    url =
+      "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=#{id}&range=#{from_unix}~#{to_unix}"
+
+    response = get(url, request_opts(opts))
+
+    case response do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp, @rate_limiting_server)
-        do_extract_price_points(id, interval, retries + 1)
+        handle_rate_limit(resp)
+        do_extract_price_points(id, interval, retries + 1, opts)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         json_to_price_points(body, id, interval)
@@ -423,6 +462,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         Logger.error(error_msg)
         {:error, error_msg}
     end
+  end
+
+  defp request_opts(opts) do
+    [opts: [rate_limit_priority: Keyword.get(opts, :priority, :normal)]]
+  end
+
+  defp handle_rate_limit(%Tesla.Env{status: 429} = resp) do
+    PriorityServer.wait_until(@rate_limiting_server, Utils.retry_after_datetime(resp))
   end
 
   defp identify(id) when is_integer(id), do: "CMC id #{id}"

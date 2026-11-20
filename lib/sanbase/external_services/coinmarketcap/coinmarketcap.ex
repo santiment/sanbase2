@@ -9,14 +9,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Utils.Config
   require Logger
 
-  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Project
-
-  alias Sanbase.ExternalServices.Coinmarketcap.{
-    WebApi,
-    ScheduleRescrapePrice,
-    PriceScrapingProgress
-  }
+  alias Sanbase.ExternalServices.Coinmarketcap.{WebApi, PriceScrapingProgress}
 
   alias Sanbase.ExternalServices.ProjectInfo
 
@@ -30,9 +24,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   def init(_arg) do
     if Config.module_get(__MODULE__, :sync_enabled, false) do
-      Process.send(self(), :rescrape_prices, [])
-
-      # Give `:rescrape_prices` some time to schedule different `last_updated` times
       Process.send_after(self(), :fetch_total_market, 15_000)
       Process.send_after(self(), :fetch_prices, 20_000)
       Process.send_after(self(), :fetch_missing_info, 25_000)
@@ -43,12 +34,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       # There are many projects for which the missing info is not available. The
       # missing info could become available at any time so the scraping attempts
       # should continue. This is made to speed the scraping as the API is rate limited.
+      #
+      # The price rescrapes are not done here, see `RescrapeScheduler`.
       {:ok,
        %{
          missing_info_update_interval: update_interval * 10,
          total_market_update_interval: update_interval,
          prices_update_interval: update_interval,
-         rescrape_prices: update_interval,
          total_market_task_pid: nil
        }}
     else
@@ -87,6 +79,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     # If we have a running task for fetching the total market cap do not run it again
     if total_market_task_pid && Process.alive?(total_market_task_pid) do
+      Process.send_after(self(), :fetch_total_market, update_interval)
       {:noreply, state}
     else
       # Start the task under the supervisor in a way that does not need await.
@@ -122,119 +115,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     {:noreply, state}
   end
 
-  def handle_info(:rescrape_prices, %{rescrape_prices: update_interval} = state) do
-    schedule_rescrapes()
-    finish_rescrapes()
-    Process.send_after(self(), :rescrape_prices, update_interval)
-
-    {:noreply, state}
-  end
-
   def handle_info(msg, state) do
-    Logger.warning("[CMC] Unknown message received in #{__MODULE__}: #{msg}")
+    Logger.warning("[CMC] Unknown message received in #{__MODULE__}: #{inspect(msg)}")
     {:noreply, state}
   end
 
   # Private functions
-
-  # For all rescrapes that are not started the following will be done:
-  # 1. If there is a running task for scraping that project it will be killed
-  # 2. The `last_updated` time will be fetched and recorded in the database so it can be later restored
-  # 3. Set the `last_updated` time to the scheduled `from`
-  defp schedule_rescrapes() do
-    rescrapes = ScheduleRescrapePrice.all_not_started()
-    Logger.info("[CMC] Check if project price rescraping need to be scheduled.")
-
-    if rescrapes != [] do
-      Logger.info("[CMC] Price rescraping will be scheduled for #{length(rescrapes)} projects.")
-    end
-
-    for %ScheduleRescrapePrice{project: project, from: from} = srp <- rescrapes do
-      with {:ok, original_last_updated} <- get_last_scraped_datetime(project) do
-        kill_scheduled_scraping(project)
-
-        {:ok, _} = PriceScrapingProgress.store_progress(project.slug, @source, from)
-
-        srp
-        |> ScheduleRescrapePrice.changeset(%{
-          in_progress: true,
-          finished: false,
-          original_last_updated: original_last_updated
-        })
-        |> ScheduleRescrapePrice.update()
-      end
-    end
-  end
-
-  defp get_last_scraped_datetime(project) do
-    case PriceScrapingProgress.last_scraped(project.slug, @source) do
-      nil -> WebApi.first_datetime(project)
-      %DateTime{} = dt -> {:ok, dt}
-    end
-  end
-
-  defp finish_rescrapes() do
-    Logger.info(
-      "[CMC] Check if project price rescraping is done and the original `last_updated` timestamp will be returned."
-    )
-
-    rescrapes = ScheduleRescrapePrice.all_in_progress()
-
-    for %ScheduleRescrapePrice{} = srp <- rescrapes do
-      maybe_mark_rescrape_as_finished(srp)
-      maybe_remove_impossible_rescrape(srp)
-      maybe_restart_lost_scrape(srp)
-    end
-  end
-
-  defp maybe_mark_rescrape_as_finished(%ScheduleRescrapePrice{} = srp) do
-    %ScheduleRescrapePrice{project: project, to: to} = srp
-
-    to = DateTime.from_naive!(to, "Etc/UTC")
-    last_updated = PriceScrapingProgress.last_scraped(project.slug, @source)
-
-    if last_updated && DateTime.compare(last_updated, to) == :gt do
-      mark_rescrape_as_finished(srp)
-    end
-  end
-
-  defp mark_rescrape_as_finished(%ScheduleRescrapePrice{} = srp) do
-    %ScheduleRescrapePrice{project: project} = srp
-
-    kill_scheduled_scraping(project)
-
-    {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
-
-    PriceScrapingProgress.store_progress(project.slug, @source, original_last_update)
-
-    srp
-    |> ScheduleRescrapePrice.changeset(%{finished: true, in_progress: false})
-    |> ScheduleRescrapePrice.update()
-  end
-
-  defp maybe_remove_impossible_rescrape(srp) do
-    case LatestCoinmarketcapData.coinmarketcap_integer_id(srp.project) do
-      nil ->
-        # If the project does not have a coinmarketcap integer id the rescrape
-        # can not be done. Just mark it as finished in this case
-        mark_rescrape_as_finished(srp)
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp maybe_restart_lost_scrape(srp) do
-    case project_rescrape_registry_entry(srp.project) do
-      [{_pid, :running}] ->
-        :ok
-
-      [] ->
-        # if we reach here, then this is a rescrape in progress for which there is
-        # no running task.
-        do_fetch_prices(srp.project)
-    end
-  end
 
   # Fetch project info from Coinmarketcap and Etherscan. Fill only missing info
   # and does not override existing info.
@@ -266,15 +152,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   defp do_fetch_prices(project) do
     key = price_scraping_registry_key(project)
 
-    if Registry.lookup(Sanbase.Registry, key) == [] do
-      Registry.register(Sanbase.Registry, key, :running)
-      Logger.info("[CMC] Fetch and process prices for #{project.slug}")
+    # The registry lock guards against scraping the same project concurrently,
+    # e.g. by a run started by a restarted GenServer while the old one still runs
+    case Registry.register(Sanbase.Registry, key, :running) do
+      {:ok, _} ->
+        Logger.info("[CMC] Fetch and process prices for #{project.slug}")
+        fetch_and_store_prices_and_unregister(project, key)
 
-      fetch_and_store_prices_and_unregister(project, key)
-    else
-      Logger.info(
-        "[CMC] Fetch and process job for project #{project.slug} is already running. Won't start it again"
-      )
+      {:error, {:already_registered, _}} ->
+        Logger.info(
+          "[CMC] Fetch and process job for project #{project.slug} is already running. Won't start it again"
+        )
     end
   end
 
@@ -333,17 +221,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       error ->
         Logger.error("[CMC] Error fetching TOTAL_MARKET data: #{inspect(error)}")
         error
-    end
-  end
-
-  defp project_rescrape_registry_entry(project) do
-    Registry.lookup(Sanbase.Registry, price_scraping_registry_key(project))
-  end
-
-  defp kill_scheduled_scraping(project) do
-    case project_rescrape_registry_entry(project) do
-      [{pid, :running}] -> Process.exit(pid, :kill)
-      _ -> :ok
     end
   end
 end

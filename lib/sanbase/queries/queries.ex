@@ -113,20 +113,37 @@ defmodule Sanbase.Queries do
   @spec run_query_internal(Query.t(), QueryMetadata.t(), Keyword.t()) ::
           {:ok, Executor.Result.t()} | {:error, String.t()}
   def run_query_internal(%Query{} = query, query_metadata, opts \\ []) do
-    # Set max access dynamic repo
-    Process.put(:queries_dynamic_repo, max_access_dynamic_repo())
-
     system_user = %User{id: -1}
 
-    with {:ok, environment} <- Environment.new(query, system_user),
-         {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
-      maybe_store_execution_data_async(result, system_user.id, opts)
+    with_max_access_dynamic_repo(fn ->
+      with {:ok, environment} <- Environment.new(query, system_user),
+           {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
+        maybe_store_execution_data_async(result, system_user.id, opts)
 
-      # Remove the dynamic repo from the process
-      Process.delete(:queries_dynamic_repo)
+        {:ok, result}
+      end
+    end)
+  end
 
-      # Return the result
-      {:ok, result}
+  # The max access repo must not outlive this call: the executor also sets it
+  # as Ecto's dynamic repo (`ClickhouseRepo.put_dynamic_repo/1`), so every later
+  # ClickhouseRepo call in the same process would otherwise keep using it.
+  # Both values are restored on success, on error and on exception.
+  defp with_max_access_dynamic_repo(fun) do
+    previous_queries_repo = Process.get(:queries_dynamic_repo)
+    previous_clickhouse_repo = Sanbase.ClickhouseRepo.get_dynamic_repo()
+
+    Process.put(:queries_dynamic_repo, max_access_dynamic_repo())
+
+    try do
+      fun.()
+    after
+      case previous_queries_repo do
+        nil -> Process.delete(:queries_dynamic_repo)
+        repo -> Process.put(:queries_dynamic_repo, repo)
+      end
+
+      Sanbase.ClickhouseRepo.put_dynamic_repo(previous_clickhouse_repo)
     end
   end
 

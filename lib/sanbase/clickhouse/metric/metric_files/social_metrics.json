@@ -1437,7 +1437,7 @@
   {
     "human_readable_name": "Unique Social Volume Telegram (1h)",
     "name": "unique_social_volume_telegram_1h",
-    "metric": "unique_social_telegram_1h",
+    "metric": "unique_social_volume_telegram_1h",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1491,7 +1491,7 @@
   {
     "human_readable_name": "Unique Social Volume Reddit (1h)",
     "name": "unique_social_volume_reddit_1h",
-    "metric": "unique_social_reddit_1h",
+    "metric": "unique_social_volume_reddit_1h",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1545,7 +1545,7 @@
   {
     "human_readable_name": "Unique Social Volume Twitter (1h)",
     "name": "unique_social_volume_twitter_1h",
-    "metric": "unique_social_twitter_1h",
+    "metric": "unique_social_volume_twitter_1h",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1599,7 +1599,7 @@
   {
     "human_readable_name": "Unique Social Volume Bitcointalk (1h)",
     "name": "unique_social_volume_bitcointalk_1h",
-    "metric": "unique_social_bitcointalk_1h",
+    "metric": "unique_social_volume_bitcointalk_1h",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1653,7 +1653,7 @@
   {
     "human_readable_name": "Unique Social Volume 4chan (1h)",
     "name": "unique_social_volume_4chan_1h",
-    "metric": "unique_social_4chan_1h",
+    "metric": "unique_social_volume_4chan_1h",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],

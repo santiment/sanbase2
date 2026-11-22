@@ -304,6 +304,11 @@ defmodule Sanbase.Accounts.Auth do
   """
   @spec add_eth_address(User.t(), map()) :: {:ok, User.t()} | {:error, any()} | false
   def add_eth_address(%User{} = user, %{address: address} = args) do
+    # `EthLoginChallenge.create_link/2` trims the address, so the challenge lookup
+    # must use the trimmed address too.
+    address = String.trim(address)
+    args = %{args | address: address}
+
     with :ok <- verify_link_signature(user, args),
          {:ok, _} <- EthAccount.create(user.id, address) do
       {:ok, user}

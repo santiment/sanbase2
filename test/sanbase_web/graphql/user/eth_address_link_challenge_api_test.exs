@@ -77,6 +77,18 @@ defmodule SanbaseWeb.Graphql.EthAddressLinkChallengeApiTest do
     assert user_id == context.user.id
   end
 
+  test "an address with surrounding whitespace is trimmed in both mutations", context do
+    padded = "  #{@address} "
+    %{"message" => message, "nonce" => nonce} = link_challenge(context.conn, padded)
+
+    with_signature_mocks(fn ->
+      assert %{"data" => %{"addUserEthAddress" => %{"ethAccounts" => [%{"address" => @address}]}}} =
+               add_address(context.conn, %{nonce: nonce}, padded)
+    end)
+
+    assert_received {:verified, @address, @signature, ^message}
+  end
+
   test "a link challenge can be used once", context do
     %{"nonce" => nonce} = link_challenge(context.conn)
 
@@ -150,26 +162,26 @@ defmodule SanbaseWeb.Graphql.EthAddressLinkChallengeApiTest do
 
   defp first_error(response), do: get_in(response, ["errors", Access.at(0), "message"])
 
-  defp link_challenge(conn) do
-    link_challenge_response(conn) |> get_in(["data", "ethAddressLinkChallenge"])
+  defp link_challenge(conn, address \\ @address) do
+    link_challenge_response(conn, address) |> get_in(["data", "ethAddressLinkChallenge"])
   end
 
-  defp link_challenge_response(conn) do
+  defp link_challenge_response(conn, address \\ @address) do
     mutation = """
     mutation {
-      ethAddressLinkChallenge(address: "#{@address}") { message nonce expiresAt }
+      ethAddressLinkChallenge(address: "#{address}") { message nonce expiresAt }
     }
     """
 
     conn |> post("/graphql", mutation_skeleton(mutation)) |> json_response(200)
   end
 
-  defp add_address(conn, extra) do
+  defp add_address(conn, extra, address \\ @address) do
     extra_args = extra |> map_to_args()
 
     mutation = """
     mutation {
-      addUserEthAddress(address: "#{@address}", signature: "#{@signature}" #{extra_args}) {
+      addUserEthAddress(address: "#{address}", signature: "#{@signature}" #{extra_args}) {
         ethAccounts { address }
       }
     }

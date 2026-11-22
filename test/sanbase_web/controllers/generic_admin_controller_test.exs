@@ -92,10 +92,24 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
     defp show_action_path(action, id),
       do: ~p"/admin/generic/show_action?#{[action: action, resource: "users", id: id]}"
 
+    # Phoenix.ConnTest skips the CSRF check, but show_action re-enables it for POST,
+    # so send a token like the show page form does.
+    defp post_with_csrf(conn, path) do
+      token = Plug.CSRFProtection.get_csrf_token()
+
+      conn
+      |> Plug.Test.init_test_session(%{"_csrf_token" => Plug.CSRFProtection.dump_state()})
+      |> post(path, %{"_csrf_token" => token})
+    end
+
     test "a viewer cannot run a mutating custom action" do
       target = insert(:user, is_mcp_banned: false)
 
-      conn = post(sign_in(:role_admin_panel_viewer), show_action_path("mcp_ban_user", target.id))
+      conn =
+        post_with_csrf(
+          sign_in(:role_admin_panel_viewer),
+          show_action_path("mcp_ban_user", target.id)
+        )
 
       assert redirected_to(conn) == ~p"/admin/generic?resource=users"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Not allowed"
@@ -105,7 +119,11 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
     test "an editor can run a mutating custom action with POST" do
       target = insert(:user, is_mcp_banned: false)
 
-      conn = post(sign_in(:role_admin_panel_editor), show_action_path("mcp_ban_user", target.id))
+      conn =
+        post_with_csrf(
+          sign_in(:role_admin_panel_editor),
+          show_action_path("mcp_ban_user", target.id)
+        )
 
       # post/redirect/get: back to the user page, so a refresh does not resubmit.
       assert redirected_to(conn) == "/admin/generic/#{target.id}?resource=users"
@@ -153,16 +171,33 @@ defmodule SanbaseWeb.GenericAdminControllerTest do
         get(conn, show_action_path("reset_api_call_limits", target.id))
         refute_received {:reset_called, _}
 
-        post(conn, show_action_path("reset_api_call_limits", target.id))
+        post_with_csrf(conn, show_action_path("reset_api_call_limits", target.id))
         assert_received {:reset_called, user_id}
         assert user_id == target.id
       end)
     end
 
+    # The admin scope skips the CSRF check (SanbaseWeb.Plug.AdminPodOnly), but
+    # show_action checks the token of a POST itself: SameSite=Lax blocks only
+    # cross-site POSTs, not ones from a same-site origin.
+    test "a mutating action is refused on POST without a valid CSRF token" do
+      target = insert(:user, is_mcp_banned: false)
+      conn = sign_in(:role_admin_panel_owner)
+
+      assert_raise Plug.CSRFProtection.InvalidCSRFTokenError, fn ->
+        post(conn, show_action_path("mcp_ban_user", target.id))
+      end
+
+      assert_raise Plug.CSRFProtection.InvalidCSRFTokenError, fn ->
+        post(conn, show_action_path("mcp_ban_user", target.id), %{"_csrf_token" => "forged"})
+      end
+
+      refute Sanbase.Repo.get(Sanbase.Accounts.User, target.id).is_mcp_banned
+    end
+
     # Cross-site POSTs are blocked by the browser: the session cookie is
     # SameSite=Lax, which is sent on a cross-site top-level GET but never on a
-    # cross-site POST. (The CSRF token check itself is skipped on the admin pod,
-    # see SanbaseWeb.Plug.AdminPodOnly and SECURITY_ANALYSIS.md A6.)
+    # cross-site POST.
     test "the session cookie is SameSite=Lax and HttpOnly" do
       conn = get(sign_in(:role_admin_panel_owner), ~p"/admin/generic?resource=users")
       cookie_key = Sanbase.Utils.Config.module_get(SanbaseWeb.Plug.SessionPlug, :session_key)

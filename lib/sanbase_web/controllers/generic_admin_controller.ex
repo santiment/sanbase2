@@ -40,6 +40,7 @@ defmodule SanbaseWeb.GenericAdminController do
   @action_permission %{new: :new, create: :new, edit: :edit, update: :edit, delete: :delete}
 
   plug(:require_action_allowed when action in [:new, :create, :edit, :update, :delete])
+  plug(:require_csrf_token when action == :show_action)
   plug(:require_show_action_allowed when action == :show_action)
 
   # The resource's `:actions` list, already narrowed to what the caller's admin
@@ -59,6 +60,18 @@ defmodule SanbaseWeb.GenericAdminController do
     end
   end
 
+  # The admin scope skips CSRF protection (`SanbaseWeb.Plug.AdminPodOnly`), but
+  # every mutating custom action goes through POST show_action, so check the token
+  # here. The SameSite=Lax session cookie blocks only cross-site POSTs, not ones
+  # from a same-site origin. The show page form sends the token.
+  defp require_csrf_token(%Plug.Conn{method: "POST"} = conn, _opts) do
+    conn
+    |> put_private(:plug_skip_csrf_protection, false)
+    |> Plug.CSRFProtection.call(Plug.CSRFProtection.init([]))
+  end
+
+  defp require_csrf_token(%Plug.Conn{} = conn, _opts), do: conn
+
   # Custom show-page actions can't live in `:actions`, which only ever holds
   # [:show, :new, :edit, :delete], so they come from `show_actions/0` instead.
   defp require_show_action_allowed(%Plug.Conn{} = conn, _opts) do
@@ -72,8 +85,8 @@ defmodule SanbaseWeb.GenericAdminController do
             forbid_action(conn, resource, function)
 
           # A mutating action over GET is a CSRF vector: the SameSite=Lax session
-          # cookie is sent on a cross-site link click, and `protect_from_forgery`
-          # does not check GET. Only POST (CSRF-checked) may change data.
+          # cookie is sent on a cross-site link click, and no CSRF token is checked
+          # on GET. Only POST (CSRF-checked by `require_csrf_token/2`) may change data.
           conn.method != "POST" and not read_only_show_action?(permission) ->
             conn
             |> put_flash(:error, "#{function} changes data and must be submitted with POST.")

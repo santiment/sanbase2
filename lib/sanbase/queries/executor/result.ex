@@ -73,8 +73,10 @@ defmodule Sanbase.Queries.Executor.Result do
     z = :zlib.open()
 
     try do
-      # windowBits 16 + 15: expect a gzip header and trailer.
-      :ok = :zlib.inflateInit(z, 31)
+      # windowBits 16 + 15: expect a gzip header and trailer. `:reset` decodes every
+      # member of a concatenated gzip, like `:zlib.gunzip/1` (`:cut` keeps only the
+      # first). The output limit is checked across all members.
+      :ok = :zlib.inflateInit(z, 31, :reset)
       inflate_chunks(z, :zlib.safeInflate(z, gzip), [], 0, max_bytes)
     rescue
       _e in [ErlangError] -> {:error, @invalid_gzip_error}
@@ -98,10 +100,8 @@ defmodule Sanbase.Queries.Executor.Result do
         :ok = :zlib.inflateEnd(z)
         {:ok, IO.iodata_to_binary(Enum.reverse([output | acc]))}
 
-      # No progress while asking for more output: the stream is truncated.
-      status == :continue and output_size == 0 ->
-        {:error, @invalid_gzip_error}
-
+      # Empty output is not a sign of truncation: a long gzip header is consumed
+      # without producing any. Truncation is caught by `inflateEnd/1` above.
       status == :continue ->
         inflate_chunks(z, :zlib.safeInflate(z, []), [output | acc], size, max_bytes)
     end

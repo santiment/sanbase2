@@ -60,6 +60,10 @@ defmodule Sanbase.Comments.EntityComment do
       fn _repo, _changes -> Comment.user_can_comment_entity?(entity_type, entity_id, user_id) end
     )
     |> Ecto.Multi.run(
+      :check_parent_entity,
+      fn _repo, _changes -> check_parent_entity(entity_type, entity_id, parent_id) end
+    )
+    |> Ecto.Multi.run(
       :create_comment,
       fn _repo, _changes -> Comment.create(user_id, content, parent_id) end
     )
@@ -210,6 +214,21 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   # Private Functions
+
+  # A reply must be linked to the same entity as its parent. `subcomments` checks
+  # only the root comment's entity, so a reply linked to another (private) entity
+  # would be shown in the parent's (public) thread.
+  defp check_parent_entity(_entity_type, _entity_id, nil), do: {:ok, nil}
+
+  defp check_parent_entity(entity_type, entity_id, parent_id) do
+    with {:ok, parent_id} <- Sanbase.Utils.EctoCommon.cast_id(parent_id),
+         {:ok, entity_id} <- Sanbase.Utils.EctoCommon.cast_id(entity_id),
+         {^entity_type, ^entity_id} <- entity_of_comment(parent_id) do
+      {:ok, parent_id}
+    else
+      _ -> {:error, "The parent comment does not belong to the same entity"}
+    end
+  end
 
   defp paginate(query, %{limit: limit} = args) do
     cursor = Map.get(args, :cursor) || %{}

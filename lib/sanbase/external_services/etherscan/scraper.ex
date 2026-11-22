@@ -129,8 +129,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
       match ->
         Floki.text(match)
         |> parse_total_supply()
-        |> Decimal.round()
-        |> Decimal.to_integer()
+        |> Sanbase.Math.to_integer()
     end
   end
 
@@ -160,6 +159,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> String.split()
     |> Enum.find(fn x -> String.starts_with?(x, "Supply") end)
     |> (fn supply -> String.trim(supply, "Supply:") end).()
-    |> Decimal.new()
+    # Supplies with 18 decimals easily exceed decimal's default 34-digit limit
+    |> Decimal.new(max_digits: :infinity)
   end
 end

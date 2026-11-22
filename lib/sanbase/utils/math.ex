@@ -85,6 +85,14 @@ defmodule Sanbase.Math do
       2
       iex> Sanbase.Math.to_integer(Decimal.new(2))
       2
+      iex> Sanbase.Math.to_integer(Decimal.new("-2.5"))
+      -3
+      iex> Sanbase.Math.to_integer(Decimal.new("1234567890123456789012345678901234.5", max_digits: :infinity))
+      1234567890123456789012345678901235
+      iex> Sanbase.Math.to_integer(Decimal.new("1E+40"))
+      10000000000000000000000000000000000000000
+      iex> Sanbase.Math.to_integer(Decimal.new(1, 0, 1_000_000_000))
+      0
       iex> Sanbase.Math.to_integer(500)
       500
   """
@@ -93,7 +101,7 @@ defmodule Sanbase.Math do
   def to_integer(nil, default_when_nil), do: default_when_nil
   def to_integer(x, _) when is_integer(x), do: x
   def to_integer(f, _) when is_float(f), do: f |> round() |> trunc()
-  def to_integer(%Decimal{} = d, _), do: d |> Decimal.round() |> Decimal.to_integer()
+  def to_integer(%Decimal{} = d, _), do: decimal_to_integer(d)
 
   def to_integer(str, _) when is_binary(str) do
     case String.trim(str) |> Integer.parse() do
@@ -368,4 +376,25 @@ defmodule Sanbase.Math do
 
     {:ok, result}
   end
+
+  # Exact half-up (away from zero) rounding, like `Decimal.round/1`. Decimal 3.x
+  # raises from `Decimal.round/1` when the result has more digits than the
+  # context precision (34), e.g. for big supplies stored as Postgres numerics.
+  # Zero is handled first so a zero with a huge exponent (0E+1000000000) does
+  # not build a power of ten of that size.
+  defp decimal_to_integer(%Decimal{coef: 0}), do: 0
+
+  defp decimal_to_integer(%Decimal{sign: sign, coef: coef, exp: exp})
+       when is_integer(coef) and exp >= 0,
+       do: sign * coef * Integer.pow(10, exp)
+
+  defp decimal_to_integer(%Decimal{sign: sign, coef: coef, exp: exp}) when is_integer(coef) do
+    divisor = Integer.pow(10, -exp)
+    quotient = div(coef, divisor)
+    quotient = if rem(coef, divisor) * 2 >= divisor, do: quotient + 1, else: quotient
+    sign * quotient
+  end
+
+  # NaN and Infinity: let Decimal raise its own error.
+  defp decimal_to_integer(%Decimal{} = d), do: Decimal.to_integer(d)
 end

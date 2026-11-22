@@ -385,7 +385,9 @@ defmodule SanbaseWeb.Router do
     get("/generic/search", GenericAdminController, :search)
     get("/generic/export", GenericAdminController, :export)
     # GET serves only read-only (`:show`) actions; anything that changes data
-    # must be a POST so `protect_from_forgery` checks the CSRF token.
+    # must be a POST. The admin scope skips `protect_from_forgery` (see
+    # SanbaseWeb.Plug.AdminPodOnly), so GenericAdminController checks the CSRF
+    # token of this POST itself.
     get("/generic/show_action", GenericAdminController, :show_action)
     post("/generic/show_action", GenericAdminController, :show_action)
 

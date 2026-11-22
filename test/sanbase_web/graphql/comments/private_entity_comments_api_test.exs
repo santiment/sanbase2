@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.PrivateEntityCommentsApiTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+  import SanbaseWeb.CommentsApiHelper
 
   alias Sanbase.Comments.EntityComment
 
@@ -116,6 +117,32 @@ defmodule SanbaseWeb.Graphql.PrivateEntityCommentsApiTest do
 
       assert [%{"content" => "secret reply"}] =
                subcomments(context.owner_conn, private_root.id)
+
+      assert [%{"content" => "public reply"}] = subcomments(context.anon_conn, public_root.id)
+    end
+  end
+
+  test "a reply cannot be linked to another entity than its parent", context do
+    for {entity_type, _enum, private, public} <- entities(context.owner),
+        entity_type != :insight do
+      public_root = comment_on(context.owner, entity_type, public.id, "public root")
+
+      # Reply to the public thread, but link the reply to the owner's private entity.
+      error =
+        create_comment_with_error(context.owner_conn, private.id, "secret reply",
+          entity_type: entity_type,
+          parent_id: public_root.id
+        )
+
+      assert error =~ "does not belong to the same entity", "#{entity_type}"
+      assert subcomments(context.anon_conn, public_root.id) == [], "#{entity_type}"
+
+      # A reply on the parent's own entity still works.
+      assert %{"content" => "public reply"} =
+               create_comment(context.owner_conn, public.id, "public reply",
+                 entity_type: entity_type,
+                 parent_id: public_root.id
+               )
 
       assert [%{"content" => "public reply"}] = subcomments(context.anon_conn, public_root.id)
     end

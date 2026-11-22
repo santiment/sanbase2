@@ -87,6 +87,20 @@ defmodule SanbaseWeb.AuthControllerTest do
       assert get_session(conn, :__san_include_jwt_in_redirect_url) == false
     end
 
+    test "logs the redirect URLs without their query", %{conn: conn} do
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          conn
+          |> Plug.Test.init_test_session(%{})
+          |> get("/auth/google", %{
+            "success_redirect_url" => "sanbase://home?access_token=client-secret"
+          })
+        end)
+
+      assert log =~ "success_redirect_url_stored=sanbase://home"
+      refute log =~ "client-secret"
+    end
+
     test "handles URL-encoded sanbase:// URLs", %{conn: conn} do
       # This is what actually happens in production!
       # The URL comes in as "sanbase%3A%2F%2Fauth%2F%3Fauth%3Dgoogle"

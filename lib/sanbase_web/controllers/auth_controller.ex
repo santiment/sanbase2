@@ -37,8 +37,8 @@ defmodule SanbaseWeb.AuthController do
 
     Logger.info(
       "OAuth request: provider=#{provider}, " <>
-        "success_redirect_url_param=#{inspect(params["success_redirect_url"])}, " <>
-        "success_redirect_url_stored=#{success_redirect_url}"
+        "success_redirect_url_param=#{redact_url(params["success_redirect_url"])}, " <>
+        "success_redirect_url_stored=#{redact_url(success_redirect_url)}"
     )
 
     {fail_redirect_url, origin_url} =
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.AuthController do
 
           Logger.info(
             "OAuth callback: provider=google, " <>
-              "success_redirect_from_session=#{inspect(success_redirect_from_session)}"
+              "success_redirect_from_session=#{redact_url(success_redirect_from_session)}"
           )
 
           redirect_url_without_jwt =
@@ -119,9 +119,10 @@ defmodule SanbaseWeb.AuthController do
               include_jwt_in_redirect_url
             )
 
-          # Log the URL before the tokens are appended: the JWTs must never reach the logs.
+          # Log the URL before the tokens are appended, and without the client-supplied
+          # query: neither the JWTs nor tokens put in the query must reach the logs.
           Logger.info(
-            "OAuth callback: final redirect_url=#{redirect_url_without_jwt}, " <>
+            "OAuth callback: final redirect_url=#{redact_url(redirect_url_without_jwt)}, " <>
               "jwt_in_redirect_url=#{redirect_url != redirect_url_without_jwt}"
           )
 
@@ -157,7 +158,7 @@ defmodule SanbaseWeb.AuthController do
 
           Logger.info(
             "OAuth callback: provider=twitter, " <>
-              "success_redirect_from_session=#{inspect(success_redirect_from_session)}"
+              "success_redirect_from_session=#{redact_url(success_redirect_from_session)}"
           )
 
           redirect_url_without_jwt =
@@ -170,9 +171,10 @@ defmodule SanbaseWeb.AuthController do
               include_jwt_in_redirect_url
             )
 
-          # Log the URL before the tokens are appended: the JWTs must never reach the logs.
+          # Log the URL before the tokens are appended, and without the client-supplied
+          # query: neither the JWTs nor tokens put in the query must reach the logs.
           Logger.info(
-            "OAuth callback: final redirect_url=#{redirect_url_without_jwt}, " <>
+            "OAuth callback: final redirect_url=#{redact_url(redirect_url_without_jwt)}, " <>
               "jwt_in_redirect_url=#{redirect_url != redirect_url_without_jwt}"
           )
 
@@ -377,7 +379,7 @@ defmodule SanbaseWeb.AuthController do
         if valid_sanbase_deeplink_host?(host) do
           true
         else
-          Logger.warning("Rejecting sanbase:// redirect with suspicious host: #{url}")
+          Logger.warning("Rejecting sanbase:// redirect with suspicious host: #{redact_url(url)}")
           {:error, "Invalid redirect URL"}
         end
 
@@ -401,6 +403,9 @@ defmodule SanbaseWeb.AuthController do
         {:error, "Invalid redirect URL"}
     end
   end
+
+  # Drops userinfo, query and fragment, the URL parts that can carry credentials.
+  defp redact_url(nil), do: "nil"
 
   defp redact_url(url) do
     url

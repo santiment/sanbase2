@@ -58,4 +58,37 @@ defmodule Sanbase.Queries.Executor.ResultDecompressTest do
     assert Result.decode_and_decompress(truncated) ==
              {:error, "The provided value is not a valid gzip binary"}
   end
+
+  test "decodes every member of a concatenated gzip, like :zlib.gunzip/1" do
+    encoded = (:zlib.gzip("{\"rows\":") <> :zlib.gzip("[[1]]}")) |> Base.encode64()
+
+    assert Result.decode_and_decompress(encoded) == {:ok, "{\"rows\":[[1]]}"}
+  end
+
+  test "the output limit spans all members of a concatenated gzip" do
+    member = :zlib.gzip(:binary.copy(<<0>>, 600))
+    encoded = (member <> member) |> Base.encode64()
+
+    assert {:error, error} = Result.decode_and_decompress(encoded, max_decompressed_bytes: 1_000)
+    assert error =~ "decompressed value is over the limit"
+  end
+
+  test "accepts a valid gzip whose header is consumed without producing output" do
+    # A 9000-byte FNAME header: the first inflate calls consume input but output nothing.
+    data = "small"
+    z = :zlib.open()
+    :ok = :zlib.deflateInit(z, :default, :deflated, -15, 8, :default)
+    raw_deflate = z |> :zlib.deflate(data, :finish) |> IO.iodata_to_binary()
+    :zlib.close(z)
+
+    gzip =
+      <<0x1F, 0x8B, 8, 0x08, 0::32, 0, 3>> <>
+        :binary.copy("a", 9000) <>
+        <<0>> <>
+        raw_deflate <>
+        <<:erlang.crc32(data)::little-32, byte_size(data)::little-32>>
+
+    assert :zlib.gunzip(gzip) == data
+    assert Result.decode_and_decompress(Base.encode64(gzip)) == {:ok, data}
+  end
 end

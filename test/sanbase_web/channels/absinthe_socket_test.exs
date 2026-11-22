@@ -129,6 +129,9 @@ defmodule SanbaseWeb.AbsintheSocketTest do
         Application.delete_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled)
       end)
 
+      # Deliver records an earlier test left in the exporter's buffer, so the
+      # reset below clears them too.
+      Sanbase.KafkaExporter.flush(:api_call_exporter)
       Sanbase.InMemoryKafka.Producer.clear_state()
       Sanbase.ApiCallLimit.ETS.clear_all()
 
@@ -179,6 +182,9 @@ defmodule SanbaseWeb.AbsintheSocketTest do
          context do
       %{user: user, apikey: apikey} = context
 
+      {:ok, %{api_calls_remaining: remaining_before_http}} =
+        Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+
       # HTTP: exported to the `api_call_exporter` Kafka topic and counted.
       assert %{"data" => %{"allProjects" => [_ | _]}} =
                http_api_call(apikey) |> Phoenix.ConnTest.json_response(200)
@@ -189,6 +195,8 @@ defmodule SanbaseWeb.AbsintheSocketTest do
 
       {:ok, %{api_calls_remaining: remaining_after_http}} =
         Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+
+      assert remaining_after_http.minute < remaining_before_http.minute
 
       # Socket: GraphQL cannot be pushed, so nothing runs uncounted.
       assert_graphql_over_socket_rejected(authenticated_socket(user))

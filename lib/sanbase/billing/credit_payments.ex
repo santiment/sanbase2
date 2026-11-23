@@ -6,8 +6,7 @@ defmodule Sanbase.Billing.CreditPayments do
   The manual flow is: add credit to the customer's Stripe balance with the payment
   reference (an etherscan link, a wire reference) in the adjustment's internal note,
   then let the invoice be paid from that balance. Such an invoice produces no charge,
-  which is why `Sanbase.Billing.StripeSync` - it exports charges - never sees this
-  revenue.
+  so this revenue never shows up in a listing of Stripe charges.
 
   Stripe has no global endpoint for customer balance transactions; they can only be
   listed one customer at a time. The money is therefore found in two passes:

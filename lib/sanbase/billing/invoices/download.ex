@@ -146,7 +146,7 @@ defmodule Sanbase.Billing.Invoices.Download do
     invoices = list_invoices([], %{created: %{gte: from, lte: to}, limit: 100, status: "paid"})
     IO.puts("Total paid invoices: #{length(invoices)}")
 
-    # Get charges (payments) - using similar logic from stripe_sync.ex
+    # Get charges (payments)
     charges = list_charges([], %{created: %{gte: from, lte: to}, limit: 100})
     IO.puts("Total charges/payments: #{length(charges)}")
 

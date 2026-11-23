@@ -17,4 +17,18 @@ defmodule SanbaseWeb.Graphql.MetricshubDataloaderErrorTest do
              }
     end)
   end
+
+  test "a non-200 response is an error for every id instead of raising" do
+    response = %Req.Response{status: 400, body: "<html>Bad Request</html>"}
+
+    Sanbase.Mock.prepare_mock2(&Req.get/2, {:ok, response})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      data = MapSet.new([["1"], ["2"]])
+
+      assert %{"1" => {:error, error}, "2" => {:error, error}} =
+               MetricshubDataloader.query(:social_documents_by_ids, data, nil)
+
+      assert is_binary(error)
+    end)
+  end
 end

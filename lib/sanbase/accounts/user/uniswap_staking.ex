@@ -173,8 +173,10 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   defp transient_error?(_), do: false
 
   defp fetch_uniswap_san_staked(users) when is_list(users) do
+    # An invalid stored address would crash the batch call for every user
     addresses =
       Enum.flat_map(users, fn user -> Enum.map(user.eth_accounts, fn acc -> acc.address end) end)
+      |> Enum.filter(&Sanbase.SmartContracts.Utils.valid_address?/1)
 
     UniswapPair.all_pair_contracts()
     |> Enum.reduce_while({:ok, %{}}, fn contract, {:ok, acc} ->

@@ -56,6 +56,33 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtilsTest do
     end
   end
 
+  describe "header name case" do
+    # Over HTTP/2 (negotiated by hackney 4 via ALPN) header names arrive lowercase.
+    test "detects the rate limit when the headers are lowercase" do
+      remaining =
+        "100, 5;window=1, 5;window=60, 0;window=3600, 5000;window=86400, 99999;window=2592000"
+
+      resp = %HTTPoison.Response{
+        status_code: 429,
+        body: "",
+        headers: [
+          {"x-ratelimit-remaining-all", remaining},
+          {"x-ratelimit-reset-all", @reset}
+        ]
+      }
+
+      assert {:error_limited, %{time_period: 3600}} = HTTPHeaderUtils.rate_limited?(resp)
+      assert HTTPHeaderUtils.rate_limit_reset_seconds(resp) == 2000
+    end
+
+    test "get_header/2 matches regardless of case" do
+      resp = %HTTPoison.Response{headers: [{"x-ratelimit-reset-all", "value"}]}
+
+      assert {"x-ratelimit-reset-all", "value"} =
+               HTTPHeaderUtils.get_header(resp, "X-RateLimit-Reset-All")
+    end
+  end
+
   describe "missing or malformed rate limit headers" do
     test "rate_limited?/1 returns false when the Remaining-All header is missing" do
       resp = %HTTPoison.Response{status_code: 200, body: "", headers: []}

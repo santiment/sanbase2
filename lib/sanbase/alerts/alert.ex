@@ -321,7 +321,12 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp handle_chart_preview_response({:ok, response}, channel, reply_to_message_id, image_url) do
-    content_type = response.headers |> Enum.into(%{}) |> Map.get("Content-Type")
+    # Header names are lowercased: over HTTP/2 they always arrive lowercase,
+    # over HTTP/1.1 they keep whatever case the server sent.
+    content_type =
+      response.headers
+      |> Map.new(fn {name, value} -> {String.downcase(name), value} end)
+      |> Map.get("content-type")
 
     case content_type do
       "image/jpeg" ->

@@ -78,7 +78,9 @@ defmodule Sanbase.OpenAI.SQL do
         handle_retry(prompt, opts, retries, error_msg)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
-        error_msg = "[openai_chat] HTTP error: #{reason} for prompt: #{prompt}"
+        # inspect/1: the reason can be a tuple (e.g. HTTP/2 {:goaway, code}),
+        # which does not implement String.Chars
+        error_msg = "[openai_chat] HTTP error: #{inspect(reason)} for prompt: #{prompt}"
         Logger.error(error_msg)
         handle_retry(prompt, opts, retries, error_msg)
     end

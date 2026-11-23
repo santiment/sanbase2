@@ -27,7 +27,8 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTransientErrorsTest do
       {name, response} <- [
         {"503 Service Unavailable",
          {:ok, %HTTPoison.Response{status_code: 503, body: "Service Unavailable", headers: []}}},
-        {"HTTP timeout", {:error, %HTTPoison.Error{reason: :timeout}}}
+        {"HTTP timeout", {:error, %HTTPoison.Error{reason: :timeout}}},
+        {"HTTP/2 GOAWAY", {:error, %HTTPoison.Error{reason: {:goaway, :no_error}}}}
       ] do
     @worker worker
     @response response
@@ -46,6 +47,31 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTransientErrorsTest do
     test "returns a permanent error instead of snoozing" do
       assert Sanbase.Cryptocompare.Handler.handle_job_error("API error: bad instrument", 1, "x") ==
                {:error, "API error: bad instrument"}
+    end
+
+    # hackney 4 negotiates HTTP/2, whose connection-level failures (server
+    # shutting the connection down, a stream reset or refused) are transient.
+    for reason <- [
+          {:goaway, :no_error},
+          {:goaway, :internal_error},
+          {:stream_reset, :refused_stream},
+          {:stream_error, :internal_error}
+        ] do
+      @reason reason
+
+      @tag capture_log: true
+      test "snoozes on the HTTP/2 error #{inspect(reason)}" do
+        error = %HTTPoison.Error{reason: @reason}
+
+        assert {:snooze, 60} = Sanbase.Cryptocompare.Handler.handle_job_error(error, 1, "x")
+      end
+    end
+
+    @tag capture_log: true
+    test "does not snooze on an unknown HTTP error reason" do
+      error = %HTTPoison.Error{reason: :nxdomain}
+
+      assert Sanbase.Cryptocompare.Handler.handle_job_error(error, 1, "x") == {:error, error}
     end
 
     @tag capture_log: true

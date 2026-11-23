@@ -83,7 +83,7 @@ defmodule Sanbase.Mixfile do
       {:event_bus, "~> 1.7.0"},
       {:ex_abi, "~> 0.6"},
       {:ex_aws_s3, "~> 2.0"},
-      {:ex_aws, "~> 2.0"},
+      {:ex_aws, "~> 2.7"},
       {:ex_aws_ses, "~> 2.4"},
       {:gen_smtp, "~> 1.2"},
       {:ex_json_schema, "~> 0.11.5"},
@@ -99,17 +99,18 @@ defmodule Sanbase.Mixfile do
       {:guardian_db, "~> 3.0"},
       {:guardian, "~> 2.3"},
       {:gun, "~> 2.0", override: true},
-      # hackney stays on 1.x for httpoison 2.x / stripity_stripe / waffle / tzdata
-      # (moving to 4.x means upgrading all of those). 1.23 fixes CVE-2025-1211;
-      # 1.24 and 1.25 introduce CVE-2026-115693 (critical, fixed only in 4.9),
-      # so do not bump past 1.23.x. hackney 1.23 pins certifi ~> 2.14.0, so
-      # certifi is overridden to keep the newer CA bundle that was already locked.
-      {:hackney, "~> 1.23.0", override: true},
-      {:certifi, "~> 2.14", override: true},
+      # hackney 4.9+ fixes CVE-2026-115693 (critical, present in 1.24/1.25).
+      # The override is needed only because stripity_stripe is pinned to 3.2.x,
+      # which declares hackney ~> 1.18. stripity_stripe 3.2 only uses hackney
+      # APIs that still exist in 4.x (request/5 with :with_body, hackney_pool
+      # child_spec, hackney_headers). Drop the override once stripity_stripe is
+      # upgraded to 3.3+ (see the stripity_stripe comment below).
+      {:hackney, "~> 4.10", override: true},
       {:hammer, "~> 7.0"},
       {:htmd, "~> 0.2.0"},
       {:html_sanitize_ex, "~> 1.4"},
-      {:httpoison, "~> 2.0", override: true},
+      # Override because ueberauth_twitter 0.4.1 (latest) still declares httpoison ~> 1.0
+      {:httpoison, "~> 3.0", override: true},
       {:jason, "~> 1.4"},
       {:jose, "~> 1.11"},
       {:kino_db, "~> 0.4", only: :dev},
@@ -151,7 +152,11 @@ defmodule Sanbase.Mixfile do
       {:rexbug, ">= 1.0.0"},
       {:sentry, "~> 13.0"},
       {:stream_data, "~> 1.1", only: :test, override: true},
-      {:stripity_stripe, "~> 3.2"},
+      # Pinned to 3.2.x: 3.3 moves the Stripe API version from 2022-11-15 to
+      # 2025-11-17.clover (removes Invoice.payment_intent/paid/charge,
+      # Subscription.current_period_end/start and Invoice.upcoming), which
+      # needs a dedicated billing migration.
+      {:stripity_stripe, "~> 3.2.0"},
       {:sweet_xml, "~> 0.6"},
       {:swoosh, "~> 1.7"},
       {:table_rex, "~> 4.0"},
@@ -164,7 +169,7 @@ defmodule Sanbase.Mixfile do
       # uuid was renamed to elixir_uuid
       {:elixir_uuid, "~> 1.2", override: true},
       {:vex, "~> 0.9", override: true},
-      {:waffle, "~> 1.1"},
+      {:waffle, "~> 2.1"},
       {:websockex, "~> 0.5.1"},
       {:mox, "~> 1.2", only: :test},
       {:ex_audit, "~> 0.10.0"},

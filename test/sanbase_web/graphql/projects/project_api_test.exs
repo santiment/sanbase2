@@ -175,6 +175,21 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
              }
   end
 
+  test "fetching a project by a non-integer id returns an error", context do
+    query = """
+    {
+      project(id: "abc") {
+        name
+      }
+    }
+    """
+
+    result = context.conn |> post("/graphql", query_skeleton(query, "project"))
+
+    assert %{"data" => %{"project" => nil}, "errors" => [error]} = json_response(result, 200)
+    assert error["message"] == "Project with id 'abc' not found."
+  end
+
   test "fetch project by coinmarketcap id", context do
     project = insert(:random_project)
 

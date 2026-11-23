@@ -18,7 +18,6 @@ defmodule Sanbase.Billing.Invoices.Download do
     response =
       HTTPoison.get!(url, [],
         follow_redirect: true,
-        hackney: [{:force_redirect, true}],
         timeout: 20_000,
         recv_timeout: 20_000
       )
@@ -224,10 +223,12 @@ defmodule Sanbase.Billing.Invoices.Download do
   end
 
   def extract_filename(response) do
+    # Header names are lowercased: over HTTP/2 they always arrive lowercase,
+    # over HTTP/1.1 they keep whatever case the server sent.
     header =
       response.headers
-      |> Enum.into(%{})
-      |> Map.get("Content-Disposition")
+      |> Map.new(fn {name, value} -> {String.downcase(name), value} end)
+      |> Map.get("content-disposition")
 
     Regex.run(~r/filename=\"([^"]+)\"/, header)
     |> Enum.at(1)

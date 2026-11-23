@@ -112,7 +112,14 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
     end
   end
 
+  @doc ~s"""
+  Find a response header by name, ignoring case.
+
+  Header names are lowercased before comparing: over HTTP/2 they always arrive
+  lowercase, while over HTTP/1.1 they keep whatever case the server sent.
+  """
   def get_header(%HTTPoison.Response{} = resp, header) do
-    Enum.find(resp.headers, &match?({^header, _}, &1))
+    header = String.downcase(header)
+    Enum.find(resp.headers, fn {name, _value} -> String.downcase(name) == header end)
   end
 end

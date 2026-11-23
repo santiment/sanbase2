@@ -81,12 +81,16 @@ defmodule Sanbase.Cryptocompare.Handler do
   # Snoozes bump attempt and max_attempts in OSS Oban, so worker error retries are not consumed
   @max_transient_snooze_attempts 8
   @transient_http_reasons [:timeout, :connect_timeout, :closed, :econnrefused]
+  # HTTP/2 (negotiated by hackney 4 via ALPN) connection-level failures: the
+  # server shutting the connection down (GOAWAY, also sent on graceful restarts)
+  # or a stream being reset/refused.
+  @transient_http2_reasons [:goaway, :stream_reset, :stream_error]
 
   @doc ~s"""
   Turn an error returned by get_data/3 into the result of a historical worker job.
 
-  Transient errors (503 Service Unavailable, HTTP timeouts and connection errors)
-  are snoozed with an exponential backoff (1 minute, doubling, capped at 1 hour)
+  Transient errors (503 Service Unavailable, HTTP timeouts, connection errors and
+  HTTP/2 GOAWAY/stream resets) are snoozed with an exponential backoff (1 minute, doubling, capped at 1 hour)
   for the first #{@max_transient_snooze_attempts} attempts. Every other error, and
   a transient error after that, is returned as is.
   """
@@ -108,6 +112,11 @@ defmodule Sanbase.Cryptocompare.Handler do
   end
 
   defp transient_error?(:service_unavailable), do: true
+
+  defp transient_error?(%HTTPoison.Error{reason: {kind, _code}})
+       when kind in @transient_http2_reasons,
+       do: true
+
   defp transient_error?(%HTTPoison.Error{reason: reason}), do: reason in @transient_http_reasons
   defp transient_error?(_), do: false
 

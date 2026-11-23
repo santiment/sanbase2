@@ -53,7 +53,6 @@ defmodule Sanbase.MCP.Dev.DescribeTablesTool do
 
   @impl true
   def execute(%{tables: tables}, frame) do
-    # A JSON null in the list passes the schema.
     {names, invalid} = Enum.split_with(tables, &is_binary/1)
     tables = names |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == "")) |> Enum.uniq()
 

@@ -35,7 +35,7 @@ defmodule Sanbase.Queries.Executor do
            query_id: query.id,
            clickhouse_query_id: map.query_id,
            summary: make_summary_values_numbers(map.summary),
-           rows: map.rows,
+           rows: Clickhouse.JsonSafe.rows(map.rows, map.column_types),
            compressed_rows: nil,
            columns: map.column_names,
            column_types: map.column_types,

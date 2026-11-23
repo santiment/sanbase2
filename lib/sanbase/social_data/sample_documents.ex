@@ -92,8 +92,6 @@ defmodule Sanbase.SocialData.SampleDocuments do
         "is unknown whether there are messages about it. #{message}"}}
   end
 
-  # `checked` says how the asset was queried, so an empty result's note is accurate:
-  # `:slug_and_text` (a slug-shaped asset, retried as free text) or `:text_only`.
   defp finalize(result, checked \\ :slug_and_text)
 
   defp finalize({:ok, data}, checked) do
@@ -157,7 +155,6 @@ defmodule Sanbase.SocialData.SampleDocuments do
     end
   end
 
-  # A JSON null in the list passes the schema; keep it and report it as unknown below.
   defp normalize_source(source) when is_binary(source),
     do: source |> String.trim() |> String.downcase()
 

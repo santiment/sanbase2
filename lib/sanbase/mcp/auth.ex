@@ -61,8 +61,7 @@ defmodule Sanbase.MCP.Auth do
     end
   end
 
-  # A client_credentials token has no user, so its `sub` is nil. It must not reach
-  # `User.by_id/1`, which raises on nil.
+  # client_credentials tokens have a nil sub.
   defp parse_user_id(sub) when is_integer(sub), do: {:ok, sub}
 
   defp parse_user_id(sub) when is_binary(sub) do

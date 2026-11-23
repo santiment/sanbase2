@@ -37,8 +37,7 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
     {:ok, opts}
   end
 
-  # An integer `pool_size` given in the child spec, e.g. `{Repo, pool_size: 3}`, wins.
-  # Otherwise use the configured `{:system, "CLICKHOUSE_READONLY_POOL_SIZE", _}` value.
+  # A pool_size passed in the child spec wins over the configured one.
   defp pool_size(opts) do
     case Keyword.get(opts, :pool_size) do
       size when is_integer(size) and size > 0 ->

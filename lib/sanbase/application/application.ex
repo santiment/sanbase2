@@ -274,8 +274,7 @@ defmodule Sanbase.Application do
         )
       end
 
-    # The `mcp` container needs only BusinessMaxUser, for the dev MCP SQL tools, so it
-    # starts that one repo with a small pool. `web` and `all` start it above.
+    # mcp only needs BusinessMaxUser, for the dev MCP SQL tools.
     clickhouse_mcp_children =
       start_in_and_if(
         fn -> {Sanbase.ClickhouseRepo.BusinessMaxUser, pool_size: 3} end,

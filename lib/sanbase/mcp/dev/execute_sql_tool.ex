@@ -90,7 +90,6 @@ defmodule Sanbase.MCP.Dev.ExecuteSqlTool do
 
   @default_max_rows 200
   @max_rows_limit 5_000
-  # Caps the uncompressed result ClickHouse sends back, for very wide rows.
   @max_result_bytes 32 * 1024 * 1024
 
   def name(), do: "execute_sql"
@@ -147,10 +146,7 @@ defmodule Sanbase.MCP.Dev.ExecuteSqlTool do
     end
   end
 
-  # Limit the result in ClickHouse so a query without a LIMIT is not loaded in full.
-  # Asking for one row more than `max_rows` shows whether there are more. With 'break'
-  # ClickHouse stops at a block boundary, so it can send more rows than the limit (the
-  # rest of the block). `format/2` trims them.
+  # One extra row detects truncation. 'break' can overshoot by a block; format/2 trims.
   defp result_limits(max_rows) do
     [
       max_result_rows: max_rows + 1,
@@ -165,7 +161,7 @@ defmodule Sanbase.MCP.Dev.ExecuteSqlTool do
     %{
       columns: result.columns,
       column_types: result.column_types,
-      rows: SQL.json_safe_rows(rows, result.column_types),
+      rows: rows,
       row_count: length(rows),
       truncated: length(result.rows) > max_rows,
       clickhouse_query_id: result.clickhouse_query_id,
@@ -173,8 +169,7 @@ defmodule Sanbase.MCP.Dev.ExecuteSqlTool do
     }
   end
 
-  # The logger filter for users with hidden activity traces does not rewrite this line,
-  # so leave the SQL out for them.
+  # The hidden-traces logger filter does not rewrite this line.
   defp log_query(user, sql) do
     if ActivityTracesConfig.hidden?(:hide_logger, RequestContext.current()) do
       Logger.info("[MCP Dev] User #{user.id} execute_sql")

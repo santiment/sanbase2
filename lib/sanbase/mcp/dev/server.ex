@@ -59,9 +59,7 @@ defmodule Sanbase.MCP.Dev.Server do
     end
   end
 
-  # Seed the request context so ClickHouse queries carry the member's user_id in
-  # log_comment, and so the masking for users with hidden activity traces applies.
-  # The saved metadata is restored (not merged) so nothing leaks to the next request.
+  # As in Sanbase.MCP.Server: user_id in CH log_comment and hidden-traces masking.
   defp with_request_context(frame, fun) do
     old_metadata = Logger.metadata()
     RequestContext.put_logger_metadata(RequestContext.from_mcp_frame(frame))

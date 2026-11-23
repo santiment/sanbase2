@@ -461,8 +461,7 @@ defmodule Sanbase.Queries do
     opts = get_store_execution_opts(opts)
 
     if opts[:store_execution_details] do
-      # Storing needs only the ids, timestamps and summary. Drop the rows so the spawned
-      # process does not copy and hold a large result while it waits.
+      # Storing does not need the rows; don't copy them into the spawned process.
       result = %{result | rows: [], compressed_rows: nil}
 
       store = fn ->

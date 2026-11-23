@@ -69,7 +69,6 @@ defmodule Sanbase.SocialData.MetricsHubClient do
   defp parse_body(%{"data" => data}), do: {:ok, data}
   defp parse_body(body), do: unexpected(body)
 
-  # The trace in `{error, trace}` belongs in metrics-hub's own logs.
   defp error_detail(%{"error" => error}) when not is_nil(error), do: truncate(error)
   defp error_detail(%{"message" => message}) when not is_nil(message), do: truncate(message)
   defp error_detail(body), do: truncate(body)

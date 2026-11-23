@@ -56,8 +56,6 @@ defmodule Sanbase.MCP.AuthTest do
       assert Auth.headers_list_to_user([]) == nil
     end
 
-    # A client_credentials token has no user: its sub is nil, which used to raise in
-    # User.by_id/1 and turn the 401 into a 500.
     test "returns nil for an OAuth token without a sub" do
       {:ok, client} =
         %Boruta.Ecto.Client{}

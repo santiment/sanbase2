@@ -39,10 +39,8 @@ defmodule Sanbase.Clickhouse.Query do
 
   The SQL is parametrized by templating and named parameters.
 
-  The `:settings` option is a keyword list of extra ClickHouse settings, e.g.
-  `[max_result_rows: 1000, result_overflow_mode: "break"]`, added to the query's
-  SETTINGS clause. `log_comment` and `log_queries` are always set by this module and
-  cannot be overridden this way.
+  `:settings` adds ClickHouse settings, e.g. `[max_result_rows: 1000]`. `log_comment`
+  and `log_queries` cannot be overridden.
 
     ## Examples
     iex> Sanbase.Clickhouse.Query.new(
@@ -280,7 +278,6 @@ defmodule Sanbase.Clickhouse.Query do
 
     log_queries_str = if activity_traces_hidden?, do: " log_queries=0"
 
-    # The privacy settings above always win: callers cannot set them.
     extra_settings_strs =
       (settings || [])
       |> Keyword.drop([:log_comment, :log_queries])
@@ -299,8 +296,6 @@ defmodule Sanbase.Clickhouse.Query do
     %{query | sql: sql <> settings_str}
   end
 
-  # Settings come from code, not user input, but a bad name or value must not be able
-  # to inject SQL, so anything unexpected raises.
   defp setting_name!(key) when is_atom(key) do
     name = Atom.to_string(key)
 

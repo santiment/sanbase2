@@ -74,13 +74,8 @@ defmodule Sanbase.SocialData.TweetsByAuthor do
   end
 
   @doc """
-  Parse a `screen_name` argument into the account part of the metrics-hub request:
-  `%{screen_name: handle}` or `%{author_id: id}`.
-
-  Accepts a handle, `@handle` or an x.com/twitter.com link: a profile or post URL
-  (`x.com/<handle>/...`), `x.com/i/user/<id>`, or an intent link with `screen_name=` or
-  `user_id=`. Other x.com links (`x.com/i/web/status/...`, `x.com/search`, ...) name no
-  account and are rejected.
+  Parse a handle, `@handle` or x.com/twitter.com link into `%{screen_name: _}` or
+  `%{author_id: _}`. Links that name no account are rejected.
   """
   @spec parse_screen_name(String.t()) ::
           {:ok, %{screen_name: String.t()} | %{author_id: String.t()}} | {:error, error()}
@@ -173,7 +168,6 @@ defmodule Sanbase.SocialData.TweetsByAuthor do
     end
   end
 
-  # A JSON null in the list passes the schema; keep it and report it as unknown below.
   defp normalize_source(source) when is_binary(source),
     do: source |> String.trim() |> String.downcase()
 

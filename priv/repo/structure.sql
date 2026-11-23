@@ -4379,7 +4379,9 @@ CREATE TABLE public.san_burn_credit_transactions (
     trx_datetime timestamp(0) without time zone,
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    status character varying(255) DEFAULT 'credited'::character varying NOT NULL,
+    stripe_credit_id character varying(255)
 );
 
 
@@ -9939,7 +9941,7 @@ CREATE INDEX queries_user_id_index ON public.queries USING btree (user_id);
 -- Name: san_burn_credit_transactions_trx_hash_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_credit_transactions USING btree (trx_hash);
+CREATE UNIQUE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_credit_transactions USING btree (trx_hash);
 
 
 --
@@ -12722,3 +12724,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261105115831);
 INSERT INTO public."schema_migrations" (version) VALUES (20261112100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261112100001);
 INSERT INTO public."schema_migrations" (version) VALUES (20261117100213);
+INSERT INTO public."schema_migrations" (version) VALUES (20261123063334);

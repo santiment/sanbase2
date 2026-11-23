@@ -1,14 +1,18 @@
 defmodule Sanbase.Billing.Subscription.SanbaseNFT do
   alias Sanbase.Accounts.EthAccount
+  alias Sanbase.Accounts.User
+  alias Sanbase.Repo
   alias Sanbase.SmartContracts.SanbaseNFTInterface
   alias Sanbase.SmartContracts.SanbaseNFT
+  alias Sanbase.SmartContracts.Utils
   alias Sanbase.Billing.Subscription
 
   @doc ~s"""
   Create NFT subscription for users who have valid NFTs and no active Sanbase subscription
   """
   def maybe_create() do
-    eth_accounts = EthAccount.all()
+    # An invalid stored address would crash the batch call for every user
+    eth_accounts = EthAccount.all() |> Enum.filter(&Utils.valid_address?(&1.address))
     addresses = eth_accounts |> Enum.map(& &1.address)
     address_to_user_id_map = Map.new(eth_accounts, &{&1.address, &1.user_id})
 
@@ -63,7 +67,17 @@ defmodule Sanbase.Billing.Subscription.SanbaseNFT do
     SanbaseNFT.balances_of(addresses)
   end
 
+  # Invalid stored addresses are dropped here, so they cannot crash the
+  # per-address contract calls. The GraphQL resolver path is left as it is.
   defp nft_subscriptions(user_id) do
-    SanbaseNFTInterface.nft_subscriptions(user_id)
+    case User.by_id(user_id) do
+      {:ok, user} ->
+        user = Repo.preload(user, :eth_accounts)
+        eth_accounts = Enum.filter(user.eth_accounts, &Utils.valid_address?(&1.address))
+        SanbaseNFTInterface.nft_subscriptions(%{user | eth_accounts: eth_accounts})
+
+      {:error, _} ->
+        SanbaseNFTInterface.nft_subscriptions(user_id)
+    end
   end
 end

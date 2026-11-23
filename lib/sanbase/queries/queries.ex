@@ -71,7 +71,8 @@ defmodule Sanbase.Queries do
   to fetch the execution details (they are not part of the query result).
   """
   @type run_query_option ::
-          {:store_execution_details, boolean()}
+          {:clickhouse_settings, Keyword.t()}
+          | {:store_execution_details, boolean()}
           | {:wait_fetching_details_ms, non_neg_integer()}
 
   @type run_query_opts :: [run_query_option]
@@ -95,8 +96,10 @@ defmodule Sanbase.Queries do
   def run_query(%Query{} = query, user, query_metadata, opts \\ []) do
     query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user.id)
 
+    executor_opts = [settings: Keyword.get(opts, :clickhouse_settings, [])]
+
     with {:ok, environment} <- Environment.new(query, user),
-         {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
+         {:ok, result} <- Queries.Executor.run(query, query_metadata, environment, executor_opts) do
       maybe_store_execution_data_async(result, user.id, opts)
 
       {:ok, result}
@@ -458,6 +461,10 @@ defmodule Sanbase.Queries do
     opts = get_store_execution_opts(opts)
 
     if opts[:store_execution_details] do
+      # Storing needs only the ids, timestamps and summary. Drop the rows so the spawned
+      # process does not copy and hold a large result while it waits.
+      result = %{result | rows: [], compressed_rows: nil}
+
       store = fn ->
         QueryExecution.store_execution(result, user_id, opts[:wait_fetching_details_ms])
       end

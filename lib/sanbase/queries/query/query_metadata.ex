@@ -60,6 +60,14 @@ defmodule Sanbase.Queries.QueryMetadata do
     }
   end
 
+  def from_mcp_dev(user_id) when is_integer(user_id) do
+    %{
+      sanbase_user_id: user_id,
+      product: "MCP_DEV",
+      query_ran_from_prod_marker: @prod?
+    }
+  end
+
   def system_user do
     %Sanbase.Accounts.User{id: -1}
   end

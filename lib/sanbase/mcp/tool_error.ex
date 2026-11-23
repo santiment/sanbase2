@@ -37,4 +37,21 @@ defmodule Sanbase.MCP.ToolError do
   """
   @spec transient(String.t()) :: String.t()
   def transient(message) when is_binary(message), do: "[transient] " <> message
+
+  @doc """
+  Tag a message by its permanence. `:unknown` leaves it untagged, for the client to
+  classify.
+
+  ## Examples
+
+      iex> Sanbase.MCP.ToolError.tag(:transient, "Upstream request timed out")
+      "[transient] Upstream request timed out"
+
+      iex> Sanbase.MCP.ToolError.tag(:unknown, "Upstream error")
+      "Upstream error"
+  """
+  @spec tag(:permanent | :transient | :unknown, String.t()) :: String.t()
+  def tag(:permanent, message), do: permanent(message)
+  def tag(:transient, message), do: transient(message)
+  def tag(:unknown, message) when is_binary(message), do: message
 end

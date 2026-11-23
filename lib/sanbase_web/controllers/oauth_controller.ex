@@ -40,6 +40,8 @@ defmodule SanbaseWeb.OAuthController do
   def knowledge_protected_resource(conn, _params),
     do: protected_resource_json(conn, "/mcp_knowledge")
 
+  def dev_protected_resource(conn, _params), do: protected_resource_json(conn, "/mcp_dev")
+
   defp protected_resource_json(conn, path) do
     backend_url = Config.module_get(SanbaseWeb.Endpoint, :backend_url)
 

@@ -56,6 +56,27 @@ defmodule Sanbase.MCP.AuthTest do
       assert Auth.headers_list_to_user([]) == nil
     end
 
+    # A client_credentials token has no user: its sub is nil, which used to raise in
+    # User.by_id/1 and turn the 401 into a 500.
+    test "returns nil for an OAuth token without a sub" do
+      {:ok, client} =
+        %Boruta.Ecto.Client{}
+        |> Boruta.Ecto.Client.create_changeset(%{redirect_uris: ["http://localhost/cb"]})
+        |> Sanbase.Repo.insert()
+
+      {:ok, token} =
+        %Boruta.Ecto.Token{}
+        |> Boruta.Ecto.Token.changeset(%{
+          client_id: client.id,
+          sub: nil,
+          scope: "",
+          access_token_ttl: client.access_token_ttl
+        })
+        |> Sanbase.Repo.insert()
+
+      assert Auth.headers_list_to_user([{"authorization", "Bearer #{token.value}"}]) == nil
+    end
+
     test "returns nil for invalid OAuth token" do
       headers = [{"authorization", "Bearer invalid_token"}]
       assert Auth.headers_list_to_user(headers) == nil

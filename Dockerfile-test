@@ -8,14 +8,15 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-RUN apt-get install -y make \
+RUN apt-get update -y && apt-get install -y make \
   cmake \
   g++ \
   git \
   postgresql-client \
   imagemagick \
   openssl \
-  wget
+  wget \
+  && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Same ImageMagick policy as the prod image, so tests run against it
 COPY rel/imagemagick-policy.xml /etc/ImageMagick-6/policy.xml

@@ -80,17 +80,14 @@ defmodule Sanbase.MCP.Dev.ExecuteSqlTool do
 
   use Anubis.Server.Component, type: :tool
 
-  require Logger
-
   alias Anubis.Server.Response
-  alias Sanbase.Accounts.ActivityTracesConfig
-  alias Sanbase.MCP.Dev.SQL
-  alias Sanbase.RequestContext
+  alias Sanbase.MCP.Dev.{Server, SQL}
   alias Sanbase.MCP.ToolError
 
   @default_max_rows 200
   @max_rows_limit 5_000
   @max_result_bytes 32 * 1024 * 1024
+  @max_execution_time_seconds 60
 
   def name(), do: "execute_sql"
 
@@ -126,7 +123,7 @@ defmodule Sanbase.MCP.Dev.ExecuteSqlTool do
     parameters = Map.get(params, :parameters) || %{}
     max_rows = params |> Map.get(:max_rows) |> clamp_max_rows()
 
-    log_query(user, sql)
+    Server.log_tool_call(user, "execute_sql", sql)
 
     cond do
       String.trim(sql) == "" ->
@@ -151,7 +148,8 @@ defmodule Sanbase.MCP.Dev.ExecuteSqlTool do
     [
       max_result_rows: max_rows + 1,
       max_result_bytes: @max_result_bytes,
-      result_overflow_mode: "break"
+      result_overflow_mode: "break",
+      max_execution_time: @max_execution_time_seconds
     ]
   end
 
@@ -163,22 +161,16 @@ defmodule Sanbase.MCP.Dev.ExecuteSqlTool do
       column_types: result.column_types,
       rows: rows,
       row_count: length(rows),
-      truncated: length(result.rows) > max_rows,
+      truncated: length(result.rows) > max_rows or byte_limit_reached?(result.summary),
       clickhouse_query_id: result.clickhouse_query_id,
       summary: result.summary
     }
   end
 
-  # The hidden-traces logger filter does not rewrite this line.
-  defp log_query(user, sql) do
-    if ActivityTracesConfig.hidden?(:hide_logger, RequestContext.current()) do
-      Logger.info("[MCP Dev] User #{user.id} execute_sql")
-    else
-      Logger.info(
-        "[MCP Dev] User #{user.id} execute_sql: #{inspect(String.slice(sql, 0, 2_000))}"
-      )
-    end
-  end
+  defp byte_limit_reached?(%{"result_bytes" => bytes}) when is_number(bytes),
+    do: bytes >= @max_result_bytes
+
+  defp byte_limit_reached?(_summary), do: false
 
   defp clamp_max_rows(n) when is_integer(n) and n > 0, do: min(n, @max_rows_limit)
   defp clamp_max_rows(_), do: @default_max_rows

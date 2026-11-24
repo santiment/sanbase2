@@ -9,8 +9,11 @@ defmodule Sanbase.MCP.Knowledge.Server do
     version: "1.0.0",
     capabilities: [:tools]
 
+  alias Sanbase.Accounts.User
   alias Sanbase.MCP.Auth
   alias Sanbase.MCP.Knowledge.Access
+
+  @required_scope "mcp:knowledge"
 
   component(Sanbase.MCP.Knowledge.SearchKnowledgeTool)
   component(Sanbase.MCP.Knowledge.FetchEntryTool)
@@ -60,10 +63,25 @@ defmodule Sanbase.MCP.Knowledge.Server do
 
   defp assign_current_user(%Anubis.Server.Frame{} = frame) do
     headers = frame.context.headers || []
-    user = frame.assigns[:current_user] || Auth.headers_list_to_user(headers)
+
+    user =
+      if Auth.has_authorization_header?(headers) do
+        Auth.headers_list_to_user(headers, required_scope: @required_scope)
+      else
+        reload_user(frame.assigns[:current_user])
+      end
 
     frame
     |> assign(:current_user, user)
     |> assign(:is_authenticated, not is_nil(user))
   end
+
+  defp reload_user(%User{id: id}) when is_integer(id) do
+    case User.by_id(id) do
+      {:ok, user} -> user
+      _ -> nil
+    end
+  end
+
+  defp reload_user(_), do: nil
 end

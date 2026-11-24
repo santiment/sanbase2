@@ -144,7 +144,8 @@ defmodule SanbaseWeb.Router do
   pipeline :mcp_knowledge_auth do
     plug(Sanbase.MCP.TeamAuthPlug,
       resource_path: "/mcp_knowledge",
-      access: Sanbase.MCP.Knowledge.Access
+      access: Sanbase.MCP.Knowledge.Access,
+      scope: "mcp:knowledge"
     )
   end
 
@@ -155,7 +156,11 @@ defmodule SanbaseWeb.Router do
 
   # Team-only dev MCP (ClickHouse SQL, social messages from metrics-hub)
   pipeline :mcp_dev_auth do
-    plug(Sanbase.MCP.TeamAuthPlug, resource_path: "/mcp_dev", access: Sanbase.MCP.Dev.Access)
+    plug(Sanbase.MCP.TeamAuthPlug,
+      resource_path: "/mcp_dev",
+      access: Sanbase.MCP.Dev.Access,
+      scope: "mcp:dev"
+    )
   end
 
   scope "/mcp_dev" do

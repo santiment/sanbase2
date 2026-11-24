@@ -46,6 +46,7 @@ defmodule Sanbase.MCP.Knowledge.AuthTest do
       refute Access.allowed?(build(:user, email: "someone@gmail.com"))
       refute Access.allowed?(build(:user, email: "x@evilsantiment.net"))
       refute Access.allowed?(build(:user, email: "x@santiment.net.evil.com"))
+      refute Access.allowed?(build(:user, email: "support@santiment.net", is_mcp_banned: true))
       refute Access.allowed?(build(:user, email: nil))
       refute Access.allowed?(nil)
     end
@@ -89,7 +90,12 @@ defmodule Sanbase.MCP.Knowledge.AuthTest do
   test "serves path-suffixed protected resource metadata", %{conn: conn} do
     conn = get(conn, "/.well-known/oauth-protected-resource/mcp_knowledge")
 
-    assert %{"resource" => resource, "authorization_servers" => [_]} = json_response(conn, 200)
+    assert %{
+             "resource" => resource,
+             "authorization_servers" => [_],
+             "scopes_supported" => ["mcp:knowledge"]
+           } = json_response(conn, 200)
+
     assert String.ends_with?(resource, "/mcp_knowledge")
   end
 end

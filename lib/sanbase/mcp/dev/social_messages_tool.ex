@@ -26,9 +26,8 @@ defmodule Sanbase.MCP.Dev.SocialMessagesTool do
 
   use Anubis.Server.Component, type: :tool
 
-  require Logger
-
   alias Anubis.Server.Response
+  alias Sanbase.MCP.Dev.Server
   alias Sanbase.MCP.ToolError
   alias Sanbase.SocialData.SampleDocuments
 
@@ -77,7 +76,7 @@ defmodule Sanbase.MCP.Dev.SocialMessagesTool do
 
   @impl true
   def execute(%{asset: asset} = params, frame) do
-    Logger.info("[MCP Dev] User #{frame.assigns.current_user.id} social_messages: #{asset}")
+    Server.log_tool_call(frame.assigns.current_user, "social_messages", asset)
 
     opts = [
       from: params[:from],

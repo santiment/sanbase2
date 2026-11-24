@@ -2487,7 +2487,8 @@ CREATE TABLE public.mcp_tool_invocations (
     session_id character varying(128),
     kind character varying(255) DEFAULT 'tool'::character varying NOT NULL,
     product_code character varying(16),
-    plan_name character varying(32)
+    plan_name character varying(32),
+    server character varying(32) DEFAULT 'mcp'::character varying NOT NULL
 );
 
 
@@ -12722,3 +12723,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20261105115831);
 INSERT INTO public."schema_migrations" (version) VALUES (20261112100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20261112100001);
 INSERT INTO public."schema_migrations" (version) VALUES (20261117100213);
+INSERT INTO public."schema_migrations" (version) VALUES (20261123161103);

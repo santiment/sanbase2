@@ -9,14 +9,19 @@ defmodule Sanbase.MCP.Knowledge.Access do
   @domain "@santiment.net"
 
   @spec allowed?(User.t() | nil) :: boolean()
-  def allowed?(%User{email: email}) when is_binary(email) do
+  def allowed?(%User{is_mcp_banned: true}), do: false
+  def allowed?(%User{email: email}) when is_binary(email), do: team_email?(email)
+  def allowed?(_), do: false
+
+  @spec team_email?(String.t() | nil) :: boolean()
+  def team_email?(email) when is_binary(email) do
     email
     |> String.trim()
     |> String.downcase()
     |> String.ends_with?(@domain)
   end
 
-  def allowed?(_), do: false
+  def team_email?(_), do: false
 
   @spec denied_message() :: String.t()
   def denied_message() do

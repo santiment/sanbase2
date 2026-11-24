@@ -85,11 +85,21 @@ defmodule Sanbase.MCP.Dev.ToolsTest do
 
         assert sql =~ "max_result_rows=3"
         assert sql =~ "result_overflow_mode='break'"
+        assert sql =~ "max_execution_time=60"
         assert args |> Map.values() |> Enum.member?("a")
       end)
 
       refute Process.get(:queries_dynamic_repo)
       assert Sanbase.ClickhouseRepo.get_dynamic_repo() == Sanbase.ClickhouseRepo
+    end
+
+    test "reports truncation when the byte limit stopped the query", %{frame: frame} do
+      result = %{ch_result(["n"], [[1]]) | summary: %{"result_bytes" => "40000000"}}
+
+      with_ch([{:ok, result}], fn ->
+        assert {:ok, %{"row_count" => 1, "truncated" => true}} =
+                 call(Dev.ExecuteSqlTool, %{sql: "SELECT n FROM t"}, frame)
+      end)
     end
 
     test "returns ClickHouse errors as tool errors", %{frame: frame} do
@@ -438,6 +448,41 @@ defmodule Sanbase.MCP.Dev.ToolsTest do
           assert {:error, "[permanent] " <> _} = call(Dev.TweetsByAuthorTool, params, frame)
         end
       end
+    end
+  end
+
+  describe "log_tool_call/3" do
+    test "redacts detail when activity traces are hidden and escapes newlines otherwise", %{
+      user: user
+    } do
+      on_exit(fn -> Logger.reset_metadata([]) end)
+
+      Sanbase.RequestContext.put_logger_metadata(%Sanbase.RequestContext{
+        origin: :mcp,
+        user_id: user.id,
+        activity_traces_hidden: true
+      })
+
+      hidden_log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          Dev.Server.log_tool_call(user, "social_messages", "secret-coin")
+        end)
+
+      assert hidden_log =~ "[MCP Dev] User #{user.id} social_messages"
+      refute hidden_log =~ "secret-coin"
+
+      Sanbase.RequestContext.put_logger_metadata(%Sanbase.RequestContext{
+        origin: :mcp,
+        user_id: user.id,
+        activity_traces_hidden: false
+      })
+
+      visible_log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          Dev.Server.log_tool_call(user, "social_messages", "btc\nforged")
+        end)
+
+      assert visible_log =~ ~s("btc\\nforged")
     end
   end
 end

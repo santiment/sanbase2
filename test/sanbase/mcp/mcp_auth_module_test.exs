@@ -84,6 +84,41 @@ defmodule Sanbase.MCP.AuthTest do
       headers = [{"authorization", "Apikey invalid_apikey"}]
       assert Auth.headers_list_to_user(headers) == nil
     end
+
+    test "enforces required_scope on OAuth bearer tokens while allowing API keys", context do
+      {:ok, client} =
+        %Boruta.Ecto.Client{}
+        |> Boruta.Ecto.Client.create_changeset(%{redirect_uris: ["http://localhost/cb"]})
+        |> Sanbase.Repo.insert()
+
+      {:ok, dev_token} =
+        %Boruta.Ecto.Token{}
+        |> Boruta.Ecto.Token.changeset(%{
+          client_id: client.id,
+          sub: to_string(context.user.id),
+          scope: "mcp:dev",
+          access_token_ttl: client.access_token_ttl
+        })
+        |> Sanbase.Repo.insert()
+
+      # Token without mcp:dev (scope: "") is rejected when mcp:dev is required
+      assert Auth.headers_list_to_user(
+               [{"authorization", "Bearer #{context.bearer_token}"}],
+               required_scope: "mcp:dev"
+             ) == nil
+
+      # Token with mcp:dev is accepted
+      assert Auth.headers_list_to_user(
+               [{"authorization", "Bearer #{dev_token.value}"}],
+               required_scope: "mcp:dev"
+             ).id == context.user.id
+
+      # API key is accepted regardless of OAuth required_scope
+      assert Auth.headers_list_to_user(
+               [{"authorization", "Apikey #{context.apikey}"}],
+               required_scope: "mcp:dev"
+             ).id == context.user.id
+    end
   end
 
   describe "get_apikey/1" do

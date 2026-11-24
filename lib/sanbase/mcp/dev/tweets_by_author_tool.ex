@@ -22,9 +22,8 @@ defmodule Sanbase.MCP.Dev.TweetsByAuthorTool do
 
   use Anubis.Server.Component, type: :tool
 
-  require Logger
-
   alias Anubis.Server.Response
+  alias Sanbase.MCP.Dev.Server
   alias Sanbase.MCP.ToolError
   alias Sanbase.SocialData.TweetsByAuthor
 
@@ -80,9 +79,7 @@ defmodule Sanbase.MCP.Dev.TweetsByAuthorTool do
   def execute(params, frame) do
     account = [screen_name: params[:screen_name], author_id: params[:author_id]]
 
-    Logger.info(
-      "[MCP Dev] User #{frame.assigns.current_user.id} tweets_by_author: #{inspect(account)}"
-    )
+    Server.log_tool_call(frame.assigns.current_user, "tweets_by_author", account)
 
     opts = [
       from: params[:from],

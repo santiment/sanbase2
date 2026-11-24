@@ -31,13 +31,20 @@ defmodule Sanbase.OAuth.ResourceOwners do
     {:error, "Password grant not supported."}
   end
 
+  @base_scopes ~w(openid profile email offline_access read write mcp)
+  @team_scopes ~w(mcp:knowledge mcp:dev)
+
   @impl Boruta.Oauth.ResourceOwners
-  def authorized_scopes(%ResourceOwner{}) do
-    # Return a broad set of scopes so that any scope requested by MCP clients
-    # (Claude Desktop, Claude Code, etc.) is accepted. The actual access control
-    # is enforced at the MCP tool level, not via OAuth scopes.
-    ~w(openid profile email offline_access read write mcp)
-    |> Enum.map(fn name -> %Boruta.Oauth.Scope{name: name} end)
+  def authorized_scopes(%ResourceOwner{username: email}) do
+    # Return a broad set of base scopes so any scope requested by public MCP
+    # clients is accepted, and grant team-only MCP resource scopes only to
+    # `@santiment.net` accounts.
+    scopes =
+      if Sanbase.MCP.Knowledge.Access.team_email?(email),
+        do: @base_scopes ++ @team_scopes,
+        else: @base_scopes
+
+    Enum.map(scopes, fn name -> %Boruta.Oauth.Scope{name: name} end)
   end
 
   @impl Boruta.Oauth.ResourceOwners

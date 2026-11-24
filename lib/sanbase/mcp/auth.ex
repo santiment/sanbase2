@@ -5,13 +5,16 @@ defmodule Sanbase.MCP.Auth do
   Tries OAuth first, then falls back to API key.
   """
   alias Boruta.Oauth.Authorization
+  alias Boruta.Oauth.Scope
 
-  @spec headers_list_to_user([{String.t(), String.t()}]) ::
+  @spec headers_list_to_user([{String.t(), String.t()}], Keyword.t()) ::
           Sanbase.Accounts.User.t() | nil
-  def headers_list_to_user(headers) do
+  def headers_list_to_user(headers, opts \\ []) do
+    required_scope = Keyword.get(opts, :required_scope)
+
     case get_header(headers, "authorization") do
       {"authorization", header_value} ->
-        oauth_to_user(header_value) || apikey_to_user(header_value)
+        oauth_to_user(header_value, required_scope) || apikey_to_user(header_value)
 
       _ ->
         nil
@@ -49,16 +52,23 @@ defmodule Sanbase.MCP.Auth do
     end
   end
 
-  defp oauth_to_user(header_value) do
+  defp oauth_to_user(header_value, required_scope) do
     with "Bearer " <> token <- header_value,
          false <- String.starts_with?(token, "Apikey "),
          {:ok, oauth_token} <- Authorization.AccessToken.authorize(value: token),
+         true <- has_required_scope?(oauth_token.scope, required_scope),
          {:ok, user_id} <- parse_user_id(oauth_token.sub),
          {:ok, user} <- Sanbase.Accounts.User.by_id(user_id) do
       user
     else
       _ -> nil
     end
+  end
+
+  defp has_required_scope?(_token_scope, nil), do: true
+
+  defp has_required_scope?(token_scope, required_scope) when is_binary(required_scope) do
+    required_scope in Scope.split(token_scope)
   end
 
   # client_credentials tokens have a nil sub.

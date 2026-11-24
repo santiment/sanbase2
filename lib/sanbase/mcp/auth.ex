@@ -2,7 +2,8 @@ defmodule Sanbase.MCP.Auth do
   @doc """
   Resolves the user from the Authorization header.
   Supports both OAuth bearer tokens and API key authentication.
-  Tries OAuth first, then falls back to API key.
+  Tries OAuth first, then falls back to API key. With `required_scope:` only an
+  OAuth token that has that scope is accepted.
   """
   alias Boruta.Oauth.Authorization
   alias Boruta.Oauth.Scope
@@ -13,8 +14,13 @@ defmodule Sanbase.MCP.Auth do
     required_scope = Keyword.get(opts, :required_scope)
 
     case get_header(headers, "authorization") do
+      # A required scope can only be carried by an OAuth token, so API keys are
+      # not accepted there.
+      {"authorization", header_value} when is_binary(required_scope) ->
+        oauth_to_user(header_value, required_scope)
+
       {"authorization", header_value} ->
-        oauth_to_user(header_value, required_scope) || apikey_to_user(header_value)
+        oauth_to_user(header_value, nil) || apikey_to_user(header_value)
 
       _ ->
         nil

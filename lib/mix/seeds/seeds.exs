@@ -1,6 +1,7 @@
 # Run with:
 # INSIGHTS_DISCORD_NOTIFICATION_ENABLED=false CLICKHOUSE_REPO_ENABLED=false mix run lib/mix/seeds/seeds.exs
 :ok = Mix.Task.run("database_safety", [])
+Sanbase.Seeds.LocalOnly.ensure!()
 
 import Sanbase.Factory
 import Sanbase.Factory.Helper

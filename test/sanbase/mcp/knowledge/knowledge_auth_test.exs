@@ -3,7 +3,9 @@ defmodule Sanbase.MCP.Knowledge.AuthTest do
 
   import Sanbase.Factory
 
+  alias Sanbase.Accounts.UserRole
   alias Sanbase.MCP.Knowledge.Access
+  alias Sanbase.TestHelpers
 
   @moduletag capture_log: true
 
@@ -20,6 +22,11 @@ defmodule Sanbase.MCP.Knowledge.AuthTest do
 
   @tools_list %{"jsonrpc" => "2.0", "id" => 2, "method" => "tools/list"}
 
+  setup do
+    role = insert(:role_mcp_knowledge_access)
+    %{role: role}
+  end
+
   defp mcp_request(conn, body, authorization \\ nil) do
     conn =
       conn
@@ -32,53 +39,87 @@ defmodule Sanbase.MCP.Knowledge.AuthTest do
     post(conn, "/mcp_knowledge", Jason.encode!(body))
   end
 
-  defp apikey(email) do
+  defp team_user(role, email \\ "support@santiment.net") do
     user = insert(:user, email: email)
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
-    apikey
+    {:ok, _} = UserRole.create(user.id, role.id)
+    user
+  end
+
+  defp bearer(user, scope), do: "Bearer " <> TestHelpers.setup_mcp_oauth_client(user, scope)
+
+  defp assert_oauth_challenge(conn) do
+    assert conn.status == 401
+    assert [www_authenticate] = get_resp_header(conn, "www-authenticate")
+    assert www_authenticate =~ "/.well-known/oauth-protected-resource/mcp_knowledge"
+    assert www_authenticate =~ ~s(scope="mcp:knowledge")
   end
 
   describe "Access.allowed?/1" do
-    test "allows only @santiment.net emails" do
-      assert Access.allowed?(build(:user, email: "support@santiment.net"))
-      assert Access.allowed?(build(:user, email: " Support@Santiment.NET "))
+    test "requires a @santiment.net email and the knowledge role", %{role: role} do
+      assert Access.allowed?(team_user(role))
+      assert Access.allowed?(team_user(role, " Ops@Santiment.NET "))
 
-      refute Access.allowed?(build(:user, email: "someone@gmail.com"))
-      refute Access.allowed?(build(:user, email: "x@evilsantiment.net"))
-      refute Access.allowed?(build(:user, email: "x@santiment.net.evil.com"))
-      refute Access.allowed?(build(:user, email: "support@santiment.net", is_mcp_banned: true))
+      refute Access.allowed?(insert(:user, email: "norole@santiment.net"))
+      refute Access.allowed?(team_user(role, "someone@gmail.com"))
+      refute Access.allowed?(team_user(role, "x@evilsantiment.net"))
+      refute Access.allowed?(team_user(role, "x@santiment.net.evil.com"))
       refute Access.allowed?(build(:user, email: nil))
+
+      banned = team_user(role, "banned@santiment.net")
+      refute Access.allowed?(%{banned | is_mcp_banned: true})
       refute Access.allowed?(nil)
     end
   end
 
   describe "/mcp_knowledge gate" do
-    test "rejects requests without credentials with 401 and OAuth discovery", %{conn: conn} do
+    test "rejects requests without credentials with 401 and an OAuth challenge", %{conn: conn} do
       for body <- [@initialize, @tools_list] do
-        conn = mcp_request(conn, body)
-
-        assert conn.status == 401
-
-        assert [www_authenticate] = get_resp_header(conn, "www-authenticate")
-        assert www_authenticate =~ "/.well-known/oauth-protected-resource/mcp_knowledge"
+        conn |> mcp_request(body) |> assert_oauth_challenge()
       end
     end
 
     test "rejects invalid credentials with 401", %{conn: conn} do
-      conn = mcp_request(conn, @initialize, "Apikey not-a-real-key")
-      assert conn.status == 401
+      conn |> mcp_request(@initialize, "Bearer not-a-real-token") |> assert_oauth_challenge()
     end
 
-    test "rejects non-team users with 403 and no OAuth retry", %{conn: conn} do
-      conn = mcp_request(conn, @initialize, "Apikey #{apikey("someone@gmail.com")}")
+    test "rejects the API key of a user with the role", %{conn: conn, role: role} do
+      {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(team_user(role))
+
+      for authorization <- ["Apikey #{apikey}", "Bearer Apikey #{apikey}", "Bearer #{apikey}"] do
+        conn |> mcp_request(@initialize, authorization) |> assert_oauth_challenge()
+      end
+    end
+
+    test "rejects a token without mcp:knowledge, such as one issued for /mcp or /mcp_dev",
+         %{conn: conn, role: role} do
+      user = team_user(role)
+
+      for scope <- ["", "mcp", "mcp:dev", "openid profile email offline_access read write mcp"] do
+        conn = mcp_request(conn, @initialize, bearer(user, scope))
+
+        assert_oauth_challenge(conn)
+      end
+    end
+
+    test "rejects a knowledge token of a user without the role with 403", %{conn: conn} do
+      user = insert(:user, email: "norole@santiment.net")
+      conn = mcp_request(conn, @initialize, bearer(user, "mcp:knowledge"))
 
       assert conn.status == 403
       assert get_resp_header(conn, "www-authenticate") == []
       assert %{"error" => "forbidden"} = Jason.decode!(conn.resp_body)
     end
 
-    test "lets @santiment.net users through to the MCP server", %{conn: conn} do
-      conn = mcp_request(conn, @initialize, "Apikey #{apikey("support@santiment.net")}")
+    test "rejects a knowledge token after the role is revoked", %{conn: conn, role: role} do
+      user = team_user(role)
+      authorization = bearer(user, "mcp:knowledge")
+      UserRole.delete(user.id, role.id)
+
+      assert mcp_request(conn, @initialize, authorization).status == 403
+    end
+
+    test "lets a knowledge token of a user with the role through", %{conn: conn, role: role} do
+      conn = mcp_request(conn, @initialize, bearer(team_user(role), "mcp mcp:knowledge"))
 
       assert conn.status == 200
 
@@ -87,7 +128,8 @@ defmodule Sanbase.MCP.Knowledge.AuthTest do
     end
   end
 
-  test "serves path-suffixed protected resource metadata", %{conn: conn} do
+  test "serves path-suffixed protected resource metadata with the knowledge scope",
+       %{conn: conn} do
     conn = get(conn, "/.well-known/oauth-protected-resource/mcp_knowledge")
 
     assert %{
@@ -97,5 +139,17 @@ defmodule Sanbase.MCP.Knowledge.AuthTest do
            } = json_response(conn, 200)
 
     assert String.ends_with?(resource, "/mcp_knowledge")
+  end
+
+  test "does not advertise the knowledge scope for /mcp", %{conn: conn} do
+    refute conn
+           |> get("/.well-known/oauth-protected-resource")
+           |> json_response(200)
+           |> Map.has_key?("scopes_supported")
+
+    %{"scopes_supported" => scopes} =
+      conn |> get("/.well-known/oauth-authorization-server") |> json_response(200)
+
+    refute "mcp:knowledge" in scopes
   end
 end

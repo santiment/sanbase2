@@ -15,8 +15,8 @@ defmodule Sanbase.TestHelpers do
   end
 
   @doc "Creates a Boruta OAuth client and access token for the given user, returning the token string."
-  @spec setup_mcp_oauth_client(map()) :: String.t()
-  def setup_mcp_oauth_client(user) do
+  @spec setup_mcp_oauth_client(map(), String.t()) :: String.t()
+  def setup_mcp_oauth_client(user, scope \\ "") do
     {:ok, oauth_client} =
       %Boruta.Ecto.Client{}
       |> Boruta.Ecto.Client.create_changeset(%{
@@ -29,7 +29,7 @@ defmodule Sanbase.TestHelpers do
       |> Boruta.Ecto.Token.changeset(%{
         client_id: oauth_client.id,
         sub: to_string(user.id),
-        scope: "",
+        scope: scope,
         access_token_ttl: oauth_client.access_token_ttl
       })
       |> Sanbase.Repo.insert()

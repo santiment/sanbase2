@@ -85,7 +85,7 @@ defmodule Sanbase.MCP.AuthTest do
       assert Auth.headers_list_to_user(headers) == nil
     end
 
-    test "enforces required_scope on OAuth bearer tokens while allowing API keys", context do
+    test "with required_scope accepts only OAuth tokens that have the scope", context do
       {:ok, client} =
         %Boruta.Ecto.Client{}
         |> Boruta.Ecto.Client.create_changeset(%{redirect_uris: ["http://localhost/cb"]})
@@ -113,11 +113,16 @@ defmodule Sanbase.MCP.AuthTest do
                required_scope: "mcp:dev"
              ).id == context.user.id
 
-      # API key is accepted regardless of OAuth required_scope
-      assert Auth.headers_list_to_user(
-               [{"authorization", "Apikey #{context.apikey}"}],
-               required_scope: "mcp:dev"
-             ).id == context.user.id
+      # An API key carries no scope, so it is rejected when a scope is required
+      for authorization <- ["Apikey #{context.apikey}", "Bearer #{context.apikey}"] do
+        assert Auth.headers_list_to_user([{"authorization", authorization}],
+                 required_scope: "mcp:dev"
+               ) == nil
+      end
+
+      # Without a required scope the API key still works, as on the public /mcp
+      assert Auth.headers_list_to_user([{"authorization", "Apikey #{context.apikey}"}]).id ==
+               context.user.id
     end
   end
 

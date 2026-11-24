@@ -1,3 +1,5 @@
+Sanbase.Seeds.LocalOnly.ensure!()
+
 Sanbase.Repo.query!("""
 INSERT INTO products (id, name, code) VALUES
   (1, 'Sanapi by Santiment', 'SANAPI'),

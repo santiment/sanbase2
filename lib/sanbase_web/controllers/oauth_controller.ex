@@ -405,7 +405,7 @@ defmodule SanbaseWeb.OAuthController do
   defp consent_html(user, conn, response) do
     user_display = Sanbase.Accounts.User.get_name(user)
     client_name = response.client.name || conn.params["client_id"] || "Unknown"
-    scope_row = consent_scope_row(response.scope)
+    scope_row = consent_scope_row(response.scope) <> team_scope_warning(response.scope)
     csrf_token = Plug.CSRFProtection.get_csrf_token()
     query_string = conn.query_string
 
@@ -421,6 +421,7 @@ defmodule SanbaseWeb.OAuthController do
       .card dt { font-weight: 500; font-size: 0.75em; color: #9faac4; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 16px; }
       .card dt:first-child { margin-top: 0; }
       .card dd { margin: 4px 0 0 0; font-size: 1.05em; color: #2f354a; }
+      .card dd.warning { color: #c0392b; font-weight: 500; }
       .actions { display: flex; gap: 12px; margin-top: 28px; width: 100%; }
       button { padding: 12px 32px; border-radius: 8px; border: 1px solid #e7eaf3; cursor: pointer; font-size: 1em; font-weight: 500; transition: all 0.15s; }
       .approve { background: #14c393; color: white; border-color: #14c393; }
@@ -454,6 +455,26 @@ defmodule SanbaseWeb.OAuthController do
   end
 
   defp consent_scope_row(_), do: ""
+
+  @team_scope_descriptions [
+    {"mcp:knowledge", "the internal Santiment knowledge MCP, including customer account data"},
+    {"mcp:dev", "the internal Santiment dev MCP, which runs SQL on Santiment data"}
+  ]
+
+  defp team_scope_warning(scope) when is_binary(scope) do
+    scopes = String.split(scope)
+
+    case for({name, text} <- @team_scope_descriptions, name in scopes, do: text) do
+      [] ->
+        ""
+
+      texts ->
+        "\n        <dt>Access</dt><dd class=\"warning\">Grants access to " <>
+          Enum.join(texts, " and ") <> ". Approve only for your own AI client.</dd>"
+    end
+  end
+
+  defp team_scope_warning(_), do: ""
 
   defp denied_html(retry_path) do
     """

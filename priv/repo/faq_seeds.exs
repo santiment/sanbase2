@@ -1,3 +1,5 @@
+Sanbase.Seeds.LocalOnly.ensure!()
+
 faqs = [
   %{
     question: "Do you use REST, GraphQL or something else?",

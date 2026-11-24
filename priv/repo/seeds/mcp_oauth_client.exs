@@ -1,3 +1,5 @@
+Sanbase.Seeds.LocalOnly.ensure!()
+
 alias Boruta.Ecto.Admin.Clients
 
 # Look up existing client by name first for idempotency

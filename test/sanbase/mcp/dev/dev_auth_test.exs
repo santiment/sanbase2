@@ -30,11 +30,20 @@ defmodule Sanbase.MCP.Dev.AuthTest do
     post(conn, "/mcp_dev", Jason.encode!(body))
   end
 
-  defp apikey(email) do
-    user = insert(:user, email: email)
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
-    apikey
+  setup do
+    %{
+      dev_role: insert(:role_mcp_dev_access),
+      knowledge_role: insert(:role_mcp_knowledge_access)
+    }
   end
+
+  defp user_with_roles(email, roles, attrs \\ []) do
+    user = insert(:user, Keyword.put(attrs, :email, email))
+    for role <- roles, do: {:ok, _} = Sanbase.Accounts.UserRole.create(user.id, role.id)
+    user
+  end
+
+  defp dev_bearer(user), do: "Bearer " <> oauth_token(user, "mcp:dev")
 
   defp oauth_token(user, scope) do
     {:ok, client} =
@@ -55,17 +64,24 @@ defmodule Sanbase.MCP.Dev.AuthTest do
     token.value
   end
 
-  test "uses the same team rule as the knowledge MCP" do
-    for email <- ["support@santiment.net", "someone@gmail.com", "x@evilsantiment.net", nil] do
-      user = build(:user, email: email)
+  test "requires a @santiment.net email and the Dev MCP User role", context do
+    assert Sanbase.MCP.Dev.Access.allowed?(
+             user_with_roles("dev@santiment.net", [context.dev_role])
+           )
 
-      assert Sanbase.MCP.Dev.Access.allowed?(user) ==
-               Sanbase.MCP.Knowledge.Access.allowed?(user)
-    end
+    refute Sanbase.MCP.Dev.Access.allowed?(user_with_roles("norole@santiment.net", []))
 
     refute Sanbase.MCP.Dev.Access.allowed?(
-             build(:user, email: "dev@santiment.net", is_mcp_banned: true)
+             user_with_roles("knowledge@santiment.net", [context.knowledge_role])
            )
+
+    refute Sanbase.MCP.Dev.Access.allowed?(user_with_roles("dev@gmail.com", [context.dev_role]))
+
+    refute Sanbase.MCP.Dev.Access.allowed?(
+             user_with_roles("banned@santiment.net", [context.dev_role], is_mcp_banned: true)
+           )
+
+    refute Sanbase.MCP.Dev.Access.allowed?(nil)
   end
 
   describe "/mcp_dev gate" do
@@ -85,8 +101,8 @@ defmodule Sanbase.MCP.Dev.AuthTest do
       assert conn.status == 401
     end
 
-    test "rejects OAuth tokens issued for /mcp without mcp:dev scope", %{conn: conn} do
-      user = insert(:user, email: "dev@santiment.net")
+    test "rejects OAuth tokens issued for /mcp without mcp:dev scope", %{conn: conn} = context do
+      user = user_with_roles("dev@santiment.net", [context.dev_role])
       public_mcp_token = oauth_token(user, "mcp")
 
       conn = mcp_request(conn, @initialize, "Bearer #{public_mcp_token}")
@@ -95,19 +111,43 @@ defmodule Sanbase.MCP.Dev.AuthTest do
       assert www_authenticate =~ ~s(scope="mcp:dev")
     end
 
-    test "accepts OAuth tokens with mcp:dev scope for team members", %{conn: conn} do
-      user = insert(:user, email: "dev@santiment.net")
-      dev_token = oauth_token(user, "mcp:dev")
+    test "rejects the knowledge scope and API keys", %{conn: conn} = context do
+      user = user_with_roles("dev@santiment.net", [context.dev_role, context.knowledge_role])
+      {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
 
-      conn = mcp_request(conn, @initialize, "Bearer #{dev_token}")
-      assert conn.status == 200
+      for authorization <- [
+            "Bearer " <> oauth_token(user, "mcp:knowledge"),
+            "Apikey #{apikey}",
+            "Bearer #{apikey}"
+          ] do
+        conn = mcp_request(conn, @initialize, authorization)
+        assert conn.status == 401
+        assert [www_authenticate] = get_resp_header(conn, "www-authenticate")
+        assert www_authenticate =~ ~s(scope="mcp:dev")
+      end
     end
 
-    test "rejects MCP-banned team members with 403", %{conn: conn} do
-      user = insert(:user, email: "banned@santiment.net", is_mcp_banned: true)
-      {:ok, key} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    test "rejects team members without the Dev MCP User role with 403", %{conn: conn} do
+      user = user_with_roles("norole@santiment.net", [])
 
-      conn = mcp_request(conn, @initialize, "Apikey #{key}")
+      conn = mcp_request(conn, @initialize, dev_bearer(user))
+      assert conn.status == 403
+      assert get_resp_header(conn, "www-authenticate") == []
+    end
+
+    test "rejects a token after the role is revoked", %{conn: conn} = context do
+      user = user_with_roles("dev@santiment.net", [context.dev_role])
+      authorization = dev_bearer(user)
+      Sanbase.Accounts.UserRole.delete(user.id, context.dev_role.id)
+
+      assert mcp_request(conn, @initialize, authorization).status == 403
+    end
+
+    test "rejects MCP-banned team members with 403", %{conn: conn} = context do
+      user =
+        user_with_roles("banned@santiment.net", [context.dev_role], is_mcp_banned: true)
+
+      conn = mcp_request(conn, @initialize, dev_bearer(user))
       assert conn.status == 403
       assert get_resp_header(conn, "www-authenticate") == []
 
@@ -117,8 +157,9 @@ defmodule Sanbase.MCP.Dev.AuthTest do
       assert desc =~ "banned"
     end
 
-    test "rejects non-team users with 403 and no OAuth retry", %{conn: conn} do
-      conn = mcp_request(conn, @initialize, "Apikey #{apikey("someone@gmail.com")}")
+    test "rejects non-team users with 403 and no OAuth retry", %{conn: conn} = context do
+      user = user_with_roles("someone@gmail.com", [context.dev_role])
+      conn = mcp_request(conn, @initialize, dev_bearer(user))
 
       assert conn.status == 403
       assert get_resp_header(conn, "www-authenticate") == []
@@ -129,8 +170,9 @@ defmodule Sanbase.MCP.Dev.AuthTest do
       assert description =~ "dev MCP"
     end
 
-    test "lets @santiment.net users through to the dev MCP server", %{conn: conn} do
-      conn = mcp_request(conn, @initialize, "Apikey #{apikey("dev@santiment.net")}")
+    test "lets a Dev MCP User with an mcp:dev token through", %{conn: conn} = context do
+      user = user_with_roles("dev@santiment.net", [context.dev_role])
+      conn = mcp_request(conn, @initialize, dev_bearer(user))
 
       assert conn.status == 200
 
@@ -139,8 +181,9 @@ defmodule Sanbase.MCP.Dev.AuthTest do
     end
   end
 
-  test "Dev.Server rejects a user banned mid-session even when cached in frame assigns" do
-    user = insert(:user, email: "dev@santiment.net")
+  test "Dev.Server rejects a user banned mid-session even when cached in frame assigns",
+       context do
+    user = user_with_roles("dev@santiment.net", [context.dev_role])
     frame = Anubis.Server.Frame.new(%{current_user: user})
 
     Sanbase.Accounts.User.mcp_ban!(user, "compromised")
@@ -149,29 +192,32 @@ defmodule Sanbase.MCP.Dev.AuthTest do
              Sanbase.MCP.Dev.Server.handle_request(@tools_list, frame)
   end
 
-  test "ResourceOwners grants team MCP scopes only to @santiment.net users" do
-    team_scopes =
-      Sanbase.OAuth.ResourceOwners.authorized_scopes(%Boruta.Oauth.ResourceOwner{
-        sub: "1",
-        username: "dev@santiment.net"
-      })
+  test "ResourceOwners grants each team MCP scope only to holders of its role", context do
+    scopes = fn user ->
+      %Boruta.Oauth.ResourceOwner{sub: to_string(user.id), username: user.email}
+      |> Sanbase.OAuth.ResourceOwners.authorized_scopes()
       |> Enum.map(& &1.name)
+    end
 
-    outsider_scopes =
-      Sanbase.OAuth.ResourceOwners.authorized_scopes(%Boruta.Oauth.ResourceOwner{
-        sub: "2",
-        username: "someone@gmail.com"
-      })
-      |> Enum.map(& &1.name)
+    dev = scopes.(user_with_roles("dev@santiment.net", [context.dev_role]))
+    assert "mcp:dev" in dev
+    refute "mcp:knowledge" in dev
 
-    assert "mcp:dev" in team_scopes
-    assert "mcp:knowledge" in team_scopes
-    refute "mcp:dev" in outsider_scopes
-    refute "mcp:knowledge" in outsider_scopes
+    knowledge = scopes.(user_with_roles("support@santiment.net", [context.knowledge_role]))
+    assert "mcp:knowledge" in knowledge
+    refute "mcp:dev" in knowledge
+
+    for user <- [
+          user_with_roles("norole@santiment.net", []),
+          user_with_roles("outsider@gmail.com", [context.dev_role, context.knowledge_role])
+        ] do
+      refute "mcp:dev" in scopes.(user)
+      refute "mcp:knowledge" in scopes.(user)
+    end
   end
 
-  test "records ToolInvocation and enforces rate limit on dev tools/call" do
-    user = insert(:user, email: "dev@santiment.net")
+  test "records ToolInvocation and enforces rate limit on dev tools/call", context do
+    user = user_with_roles("dev@santiment.net", [context.dev_role])
     frame = Anubis.Server.Frame.new(%{current_user: user})
 
     Application.put_env(:sanbase, :mcp_dev_rate_limit_per_minute, 1)
@@ -204,8 +250,9 @@ defmodule Sanbase.MCP.Dev.AuthTest do
     assert [] = Sanbase.MCP.ToolInvocation.list_invocations(server: "mcp")
   end
 
-  test "lists the dev tools to team members", %{conn: conn} do
-    conn = mcp_request(conn, @tools_list, "Apikey #{apikey("dev@santiment.net")}")
+  test "lists the dev tools to team members", %{conn: conn} = context do
+    user = user_with_roles("dev@santiment.net", [context.dev_role])
+    conn = mcp_request(conn, @tools_list, dev_bearer(user))
 
     assert %{"result" => %{"tools" => tools}} = Jason.decode!(conn.resp_body)
 

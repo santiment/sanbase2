@@ -41,6 +41,12 @@ defmodule Sanbase.SocialData.SocialDocument do
         )
 
       {:ok, result}
+    else
+      {:error, error} ->
+        {:error, error}
+
+      _ ->
+        {:error, "Failed to fetch social documents: unexpected response from the data source."}
     end
   end
 

@@ -93,6 +93,19 @@ defmodule SanbaseWeb.UserChannelTest do
                subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:#{context.user.id}", %{})
     end
 
+    test "cannot join a channel whose subtopic is not an integer", context do
+      assert {:ok, socket} =
+               connect(
+                 SanbaseWeb.UserSocket,
+                 %{
+                   "access_token" => context.conn.private.plug_session["access_token"]
+                 }
+               )
+
+      assert {:error, "The channel subtopic must be the authenticated user id"} =
+               subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:abc", %{})
+    end
+
     test "test my_username", context do
       socket = get_socket(context)
 

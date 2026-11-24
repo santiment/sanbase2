@@ -16,12 +16,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def project(_parent, %{id: id}, _resolution) do
-    case Project.by_id(id) do
-      nil ->
-        {:error, "Project with id '#{id}' not found."}
-
-      project ->
-        {:ok, project}
+    # A non-integer ID cannot match any project, and casting it in the query raises
+    with {int_id, ""} <- Integer.parse(to_string(id)),
+         %Project{} = project <- Project.by_id(int_id) do
+      {:ok, project}
+    else
+      _ -> {:error, "Project with id '#{id}' not found."}
     end
   end
 

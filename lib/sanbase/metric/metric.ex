@@ -352,6 +352,31 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @single_threshold_operators [
+    :less_than,
+    :less_than_or_equal_to,
+    :greater_than,
+    :greater_than_or_equal_to,
+    :percent_up,
+    :percent_down
+  ]
+
+  @channel_operators [
+    :inside_channel,
+    :outside_channel,
+    :inside_channel_inclusive,
+    :inside_channel_exclusive,
+    :outside_channel_inclusive,
+    :outside_channel_exclusive
+  ]
+
+  # The operator and threshold shapes the SQL comparison builders support
+  defguardp is_valid_filter_comparison(operation, threshold)
+            when (operation in @single_threshold_operators and is_number(threshold)) or
+                   (operation in @channel_operators and is_list(threshold) and
+                      length(threshold) == 2 and is_number(hd(threshold)) and
+                      is_number(hd(tl(threshold))))
+
   @doc ~s"""
   Get a list of all slugs that satisfy a given filter
 
@@ -379,6 +404,11 @@ defmodule Sanbase.Metric do
     case get_module(metric, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
+
+      _module when not is_valid_filter_comparison(operation, threshold) ->
+        {:error,
+         "The #{inspect(operation)} operator with threshold #{inspect(threshold)} " <>
+           "is not supported for the metric #{metric}."}
 
       module when is_atom(module) ->
         if operation in [:percent_up, :percent_down] and

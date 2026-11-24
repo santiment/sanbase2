@@ -11,11 +11,11 @@ defmodule SanbaseWeb.UserChannel do
   end
 
   def join("users:" <> user_id, _params, socket) do
-    case String.to_integer(user_id) == socket.assigns.user_id do
-      true ->
+    case Integer.parse(user_id) do
+      {user_id, ""} when user_id == socket.assigns.user_id ->
         {:ok, assign(socket, :user_joined_own_channel, true)}
 
-      false ->
+      _ ->
         {:error, "The channel subtopic must be the authenticated user id"}
     end
   end

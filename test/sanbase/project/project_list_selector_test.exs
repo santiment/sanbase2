@@ -498,6 +498,24 @@ defmodule Sanbase.ProjectListSelectorTest do
       assert error =~ "not supported"
     end
 
+    for {operator, threshold} <- [{:greater_than, [1, 2]}, {:inside_channel, 5}, {:equal, 5}] do
+      test "a metric filter with operator #{operator} and threshold #{inspect(threshold)} returns an error" do
+        filter = %{
+          metric: "nvt",
+          dynamic_from: "1d",
+          dynamic_to: "now",
+          aggregation: :last,
+          operator: unquote(operator),
+          threshold: unquote(threshold)
+        }
+
+        args = %{selector: %{filters: [%{name: "metric", args: filter}]}}
+
+        assert {:error, error} = ListSelector.projects(args)
+        assert error =~ "operator with threshold"
+      end
+    end
+
     test "a filter with dynamic_from but no dynamic_to returns that error" do
       args = %{
         selector: %{filters: [%{name: "metric", args: %{metric: "nvt", dynamic_from: "1d"}}]}

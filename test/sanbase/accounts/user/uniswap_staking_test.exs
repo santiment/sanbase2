@@ -88,6 +88,30 @@ defmodule Sanbase.Accounts.User.UniswapStakingTest do
         assert message =~ ":nxdomain"
       end)
     end
+
+    test "an invalid stored address is skipped instead of failing the update", %{user: user} do
+      {:ok, _} =
+        EthAccount.create(insert(:user).id, "0x9024d48cc7be15343dfd76ef051fa5264cfbf7a9_invalid")
+
+      Sanbase.Mock.prepare_mock(
+        Sanbase.SmartContracts.Utils,
+        :call_contract_batch,
+        fn _contract, _function, args, _return_types, _opts ->
+          Enum.map(args, fn _ -> [2 * Integer.pow(10, 18)] end)
+        end
+      )
+      |> Sanbase.Mock.prepare_mock2(&UniswapPair.total_supply/1, 10.0)
+      |> Sanbase.Mock.prepare_mock2(&UniswapPair.reserves/1, {5.0, 3.0})
+      |> Sanbase.Mock.prepare_mock2(&UniswapPair.get_san_position/1, 0)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, {1, _}} = UniswapStaking.update_all_uniswap_san_staked_users()
+
+        assert [%UniswapStaking{user_id: user_id, san_staked: 2.0}] =
+                 UniswapStaking.fetch_all_uniswap_staked_users()
+
+        assert user_id == user.id
+      end)
+    end
   end
 
   defp prepare_sentry_exception_mock(mock_state, test_pid) do

@@ -104,6 +104,16 @@ defmodule Sanbase.SmartContracts.Utils do
     number / Integer.pow(10, decimals)
   end
 
+  @doc ~s"""
+  Check that the address is a 0x-prefixed, 40 hex characters Ethereum address,
+  so it can be passed to `format_address/1`.
+  """
+  @spec valid_address?(any()) :: boolean()
+  def valid_address?(address) when is_binary(address),
+    do: Regex.match?(~r/\A0x[0-9a-fA-F]{40}\z/, address)
+
+  def valid_address?(_), do: false
+
   def format_address(address) do
     {:ok, address} =
       address

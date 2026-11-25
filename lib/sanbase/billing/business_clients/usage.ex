@@ -132,6 +132,80 @@ defmodule Sanbase.Billing.BusinessClients.Usage do
   end
 
   @doc ~s"""
+  API key calls per user and calendar month (UTC), from the month of `first_month` up
+  to `until`. Returns `{:ok, %{user_id => %{first_day_of_month => calls}}}`, months
+  without calls absent, or `:error` when the query failed.
+
+  The monthly API call limit counts the same calls, but only the successful ones, and
+  only those of the API product: these counts can be a little higher.
+  """
+  @spec monthly_api_calls([integer()], Date.t(), DateTime.t()) ::
+          {:ok, %{integer() => %{Date.t() => non_neg_integer()}}} | :error
+  def monthly_api_calls([], _first_month, _until), do: {:ok, %{}}
+
+  def monthly_api_calls(user_ids, first_month, until) do
+    from = DateTime.new!(Date.beginning_of_month(first_month), ~T[00:00:00], "Etc/UTC")
+
+    sql = """
+    SELECT user_id, toUnixTimestamp(toStartOfMonth(dt)) AS month, toUInt64(count())
+    FROM api_call_data
+    WHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{until}})
+      AND auth_method = 'apikey' AND user_id IN ({{user_ids}})
+    GROUP BY user_id, month
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, %{from: from, until: until, user_ids: user_ids})
+    |> ClickhouseRepo.query_reduce(%{}, fn [user_id, month, calls], acc ->
+      month = month |> DateTime.from_unix!() |> DateTime.to_date()
+      Map.update(acc, user_id, %{month => calls}, &Map.put(&1, month, calls))
+    end)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        Logger.warning("[BusinessClients.Usage] monthly_api_calls failed: #{inspect(error)}")
+        :error
+    end
+  end
+
+  @doc ~s"""
+  Each user's monthly API call limit as the API enforces it today: the plan's, a grant
+  on top of it, or a custom or package plan's own. `:unlimited` for a user without
+  limits. Users who never made an authenticated API call have no limit row and are
+  absent, and so is a row whose limit cannot be worked out.
+  """
+  @spec monthly_api_call_limits([integer()]) :: %{integer() => pos_integer() | :unlimited}
+  def monthly_api_call_limits([]), do: %{}
+
+  def monthly_api_call_limits(user_ids) do
+    import Ecto.Query, only: [from: 2]
+
+    from(a in Sanbase.ApiCallLimit, where: a.user_id in ^user_ids)
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn acl, acc ->
+      case monthly_limit(acl) do
+        nil -> acc
+        limit -> Map.put(acc, acl.user_id, limit)
+      end
+    end)
+  end
+
+  defp monthly_limit(%{has_limits_no_matter_plan: false}), do: :unlimited
+  defp monthly_limit(%{has_limits: false}), do: :unlimited
+
+  defp monthly_limit(acl) do
+    case Sanbase.ApiCallLimit.acl_to_api_call_limits(acl) do
+      %{month: month} when is_integer(month) and month > 0 -> month
+      _ -> nil
+    end
+  rescue
+    # A package plan whose limits were never stored raises on purpose; it has no
+    # number to show.
+    _error -> nil
+  end
+
+  @doc ~s"""
   The last API key call per user before `until`, looking back at most `lookback_days`
   (default #{@last_api_call_lookback_days}) so the scan stays bounded. Returns
   `%{user_id => DateTime}`; users without calls in the lookback are absent.

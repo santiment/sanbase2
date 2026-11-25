@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   alias Phoenix.LiveView.AsyncResult
   alias Sanbase.Admin.Permissions
   alias Sanbase.Billing.BusinessClients
-  alias Sanbase.Billing.BusinessClients.Settings
+  alias Sanbase.Billing.BusinessClients.{PlanLimit, Settings}
   alias Sanbase.Billing.CreditPayments
   alias Sanbase.Billing.InvoiceMirror
   alias Sanbase.Billing.InvoiceMirror.SyncJob
@@ -45,7 +45,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
     :risk,
     :retention,
     :churned,
-    :usage
+    :usage,
+    :plan_limit
   ]
 
   @impl true
@@ -104,6 +105,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
       risk: parse_choice(params["risk"], @risk_levels),
       reason: parse_choice(params["reason"], @reasons),
       renewal_within: parse_int(params["renewal_within"], nil),
+      upsell: params["upsell"] == "yes",
       query: String.trim(params["query"] || "")
     }
 
@@ -382,7 +384,15 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   # ─── Filtering and sorting ───────────────────────────────────────────────
 
   defp default_filters do
-    %{plan: "all", status: :all, risk: :all, reason: :all, renewal_within: nil, query: ""}
+    %{
+      plan: "all",
+      status: :all,
+      risk: :all,
+      reason: :all,
+      renewal_within: nil,
+      upsell: false,
+      query: ""
+    }
   end
 
   defp default_dir(:renewal_date), do: :asc
@@ -412,6 +422,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
       matches_level?(client, filters) and
       (filters.reason == :all or client.business_reason == filters.reason) and
       renews_within?(client, filters.renewal_within, today) and
+      (not filters.upsell or client.upsell?) and
       matches_query?(client, filters.query)
   end
 
@@ -666,6 +677,7 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
   def note_label(:retention), do: "Retention actions"
   def note_label(:churned), do: "Recently churned"
   def note_label(:usage), do: "API usage"
+  def note_label(:plan_limit), do: "Monthly API limit"
   def note_label(other), do: to_string(other)
 
   # ─── Shared components ───────────────────────────────────────────────────
@@ -1303,6 +1315,15 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
               phx-debounce="300"
               outer_div_class="w-40"
             />
+            <.input
+              type="select"
+              name="upsell"
+              id="filter-upsell"
+              label="Upsell"
+              value={if @filters.upsell, do: "yes", else: "all"}
+              options={[{"Any client", "all"}, {"Upsell candidates", "yes"}]}
+              outer_div_class="w-44"
+            />
             <button
               id="clear-filters"
               type="button"
@@ -1624,7 +1645,25 @@ defmodule SanbaseWeb.Admin.BusinessClientsLive do
                 </span>
               </div>
             </td>
-            <td><.usage_trend now={c.api_calls} prev={c.api_calls_prev} /></td>
+            <td>
+              <.usage_trend now={c.api_calls} prev={c.api_calls_prev} />
+              <div
+                :if={c.plan_limit && c.plan_limit.last_month.share}
+                id={"limit-use-#{c.user_id}"}
+                class="text-xs text-base-content/60 whitespace-nowrap"
+                title="Share of the monthly API call limit used last month"
+              >
+                {PlanLimit.percent(c.plan_limit.last_month.share)} of limit
+              </div>
+              <span
+                :if={c.upsell?}
+                id={"upsell-#{c.user_id}"}
+                class="badge badge-xs badge-success whitespace-nowrap"
+                title={c.plan_limit.upsell_reason}
+              >
+                <.icon name="hero-arrow-trending-up" class="w-3 h-3" /> upsell
+              </span>
+            </td>
             <td>
               <span class="inline-flex items-center gap-1">
                 <.status_badge status={c.manual_status} />

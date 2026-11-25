@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
 
   alias Sanbase.Admin.Permissions
   alias Sanbase.Billing.BusinessClients
-  alias Sanbase.Billing.BusinessClients.{LogEntry, Override}
+  alias Sanbase.Billing.BusinessClients.{ClientUsage, LogEntry, Override, PlanLimit}
   alias Sanbase.Billing.CreditPayments
 
   @impl true
@@ -55,6 +55,7 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
           |> load_entries()
           |> load_override()
           |> load_detail()
+          |> load_usage()
 
         {:ok, socket}
 
@@ -170,6 +171,25 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
     end)
   end
 
+  # What the client does with the product, read once per visit: the API, the web app
+  # and what they built, side by side so one slow source does not hold the others.
+  defp load_usage(socket) do
+    %{user_id: user_id, today: today} = socket.assigns
+
+    assign_async(socket, :usage, fn ->
+      [api, web, creations] =
+        [
+          fn -> ClientUsage.api(user_id, today) end,
+          fn -> ClientUsage.web(user_id, today) end,
+          fn -> ClientUsage.creations(user_id, today) end
+        ]
+        |> Enum.map(&Task.async/1)
+        |> Task.await_many(30_000)
+
+      {:ok, %{usage: %{api: api, web: web, creations: creations}}}
+    end)
+  end
+
   defp load_entries(socket) do
     entries = BusinessClients.list_entries(socket.assigns.user_id)
 
@@ -216,6 +236,42 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
   defp override_applies?(nil, _override), do: true
   defp override_applies?(%{business_reason: :plan}, nil), do: false
   defp override_applies?(_client, _override), do: true
+
+  defp change_label(0, 0), do: "-"
+  defp change_label(_current, 0), do: "new"
+  defp change_label(current, previous), do: "#{round((current - previous) * 100 / previous)}%"
+
+  defp change_class(current, previous) when previous > 0 and current <= previous * 0.5,
+    do: "text-error"
+
+  defp change_class(current, previous) when previous > 0 and current >= previous * 1.5,
+    do: "text-success"
+
+  defp change_class(_current, _previous), do: "text-base-content/60"
+
+  # Queries the client relied on before and dropped: at least 2% of the earlier calls,
+  # down by 90% or more.
+  defp stopped_queries(%{queries: queries, calls: %{previous: total}}) when total > 0 do
+    queries
+    |> Enum.filter(&(&1.previous >= total * 0.02 and &1.current <= &1.previous * 0.1))
+    |> Enum.sort_by(& &1.previous, :desc)
+    |> Enum.take(8)
+  end
+
+  defp stopped_queries(_api), do: []
+
+  defp top(rows, count), do: rows |> Enum.filter(&(&1.current > 0)) |> Enum.take(count)
+
+  defp at_risk?(%{risk_level: level}), do: level in [:at_risk, :high_risk]
+  defp at_risk?(_client), do: false
+
+  defp limit_label(:unlimited), do: "no limit"
+  defp limit_label(nil), do: "unknown"
+  defp limit_label(limit), do: "#{format_number(limit)} calls a month"
+
+  defp month_label(date), do: Calendar.strftime(date, "%b %Y")
+
+  defp percent(share), do: PlanLimit.percent(share)
 
   defp user_label(nil), do: "-"
   defp user_label(user), do: user.email || user.username || "user ##{user.id}"
@@ -287,6 +343,50 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
             customer_id={detail.client.stripe_customer_id}
             show_id
           />
+        </div>
+
+        <%!-- ── Brief ─────────────────────────────────────────────────── --%>
+        <div
+          id="usage-brief"
+          class={[
+            "rounded-box border p-4 mb-6",
+            if(at_risk?(detail.client),
+              do: "border-warning bg-warning/5",
+              else: "border-base-300 bg-base-100"
+            )
+          ]}
+        >
+          <h2 class="text-sm font-semibold uppercase text-base-content/60 mb-2">
+            Before you contact them
+          </h2>
+          <.async_result :let={usage} assign={@usage}>
+            <:loading>
+              <div class="flex items-center gap-2 text-sm text-base-content/60">
+                <span class="loading loading-spinner loading-xs"></span> Reading their usage...
+              </div>
+            </:loading>
+            <:failed>
+              <p class="text-sm text-error">Their usage could not be read.</p>
+            </:failed>
+            <ul class="list-disc list-inside space-y-1 text-sm">
+              <li
+                :for={
+                  line <-
+                    ClientUsage.summary(detail.client || %{}, usage.api, usage.web, usage.creations)
+                }
+                class="brief-line"
+              >
+                {line}
+              </li>
+            </ul>
+            <p
+              :if={Enum.any?([usage.api, usage.web, usage.creations], &(&1 == :error))}
+              id="usage-partial"
+              class="text-xs text-warning mt-2"
+            >
+              Part of the usage could not be read; the summary may miss something.
+            </p>
+          </.async_result>
         </div>
 
         <div
@@ -487,6 +587,263 @@ defmodule SanbaseWeb.Admin.BusinessClientLive do
             </table>
           </div>
         </div>
+
+        <%!-- ── Plan limit ───────────────────────────────────────────── --%>
+        <div
+          :if={detail.client && detail.client.plan_limit}
+          id="plan-limit"
+          class="card bg-base-100 border border-base-300 p-4 mb-8"
+        >
+          <div class="flex flex-wrap items-baseline gap-3 mb-1">
+            <h2 class="text-lg font-semibold">
+              Monthly API limit<.note_mark key={:plan_limit} notes={@notes} />
+            </h2>
+            <span class="text-sm text-base-content/60">
+              {limit_label(detail.client.plan_limit.limit)}
+            </span>
+            <span
+              :if={detail.client.plan_limit.upsell?}
+              id="upsell-badge"
+              class="badge badge-sm badge-success"
+              title={detail.client.plan_limit.upsell_reason}
+            >
+              <.icon name="hero-arrow-trending-up" class="w-3 h-3" /> upsell candidate
+            </span>
+          </div>
+          <p
+            :if={detail.client.plan_limit.upsell_reason}
+            class="text-sm text-base-content/70 mb-3"
+          >
+            {detail.client.plan_limit.upsell_reason}.
+          </p>
+          <div class="overflow-x-auto">
+            <table id="plan-limit-months" class="table table-xs">
+              <thead>
+                <tr>
+                  <th :for={m <- detail.client.plan_limit.months}>{month_label(m.month)}</th>
+                  <th>This month (pace)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="tabular-nums">
+                  <td :for={m <- detail.client.plan_limit.months}>
+                    <div>{format_number(m.calls)}</div>
+                    <div class={[
+                      "text-xs",
+                      if((m.share || 0) >= 0.8,
+                        do: "text-success font-semibold",
+                        else: "text-base-content/60"
+                      )
+                    ]}>
+                      {percent(m.share)}
+                    </div>
+                  </td>
+                  <td>
+                    <div>{format_number(detail.client.plan_limit.pace.calls)}</div>
+                    <div class="text-xs text-base-content/60">
+                      {percent(detail.client.plan_limit.pace.share)}{if detail.client.plan_limit.pace.partial?,
+                        do: " (early in the month)"}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <%!-- ── Usage ────────────────────────────────────────────────── --%>
+        <.async_result :let={usage} assign={@usage}>
+          <:loading></:loading>
+          <:failed></:failed>
+          <div id="api-usage" class="mb-8">
+            <h2 class="text-xl font-semibold mb-1">API usage</h2>
+            <p class="text-sm text-base-content/60 mb-3">
+              API key calls in the last {ClientUsage.window_days()} whole days against the {ClientUsage.window_days()} days before.
+            </p>
+            <%= case usage.api do %>
+              <% :error -> %>
+                <p class="text-sm text-error">The API usage could not be read.</p>
+              <% {:ok, %{calls: %{current: 0, previous: 0}}} -> %>
+                <p id="no-api-calls" class="text-sm text-base-content/60">
+                  No API key calls in the last {2 * ClientUsage.window_days()} days.
+                </p>
+              <% {:ok, api} -> %>
+                <div class="flex flex-wrap gap-6 text-sm mb-4">
+                  <div>
+                    <span class="text-base-content/60">Calls:</span>
+                    <span class="font-semibold tabular-nums">{format_number(api.calls.current)}</span>
+                    <span class="text-base-content/60">
+                      (was {format_number(api.calls.previous)}, <span class={
+                        change_class(api.calls.current, api.calls.previous)
+                      }>
+                        {change_label(api.calls.current, api.calls.previous)}
+                      </span>)
+                    </span>
+                  </div>
+                  <div>
+                    <span class="text-base-content/60">Failed calls:</span>
+                    <span class="font-semibold tabular-nums">{format_number(api.errors)}</span>
+                  </div>
+                  <div id="api-connections">
+                    <span class="text-base-content/60">Connects with:</span>
+                    <span
+                      :for={c <- Enum.take(api.connections, 3)}
+                      class="badge badge-sm badge-ghost ml-1"
+                    >
+                      {c.label} {percent(c.share)}
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  :if={stopped_queries(api) != []}
+                  id="stopped-queries"
+                  class="alert alert-warning mb-4 text-sm"
+                >
+                  <.icon name="hero-exclamation-triangle" class="w-5 h-5" />
+                  <div>
+                    <div class="font-semibold">Stopped or almost stopped using</div>
+                    <span :for={q <- stopped_queries(api)} class="mr-3 whitespace-nowrap">
+                      {ClientUsage.query_label(q.name)}
+                      <span class="tabular-nums">
+                        ({format_number(q.previous)} → {format_number(q.current)})
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div class="lg:col-span-2 rounded-box border border-base-300 overflow-x-auto">
+                    <table id="api-queries" class="table table-xs">
+                      <thead>
+                        <tr>
+                          <th>Metric or query</th>
+                          <th class="text-right">Last {ClientUsage.window_days()} days</th>
+                          <th class="text-right">Before</th>
+                          <th class="text-right">Change</th>
+                          <th class="text-right">Failed</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr :for={q <- top(api.queries, 15)} class="tabular-nums">
+                          <td class="font-mono text-xs break-all">
+                            {ClientUsage.query_label(q.name)}
+                          </td>
+                          <td class="text-right">{format_number(q.current)}</td>
+                          <td class="text-right text-base-content/60">{format_number(q.previous)}</td>
+                          <td class={["text-right", change_class(q.current, q.previous)]}>
+                            {change_label(q.current, q.previous)}
+                          </td>
+                          <td class={["text-right", q.errors > 0 && "text-error"]}>
+                            {format_number(q.errors)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="rounded-box border border-base-300 overflow-x-auto">
+                    <table id="api-assets" class="table table-xs">
+                      <thead>
+                        <tr>
+                          <th>Asset</th>
+                          <th class="text-right">Last {ClientUsage.window_days()} days</th>
+                          <th class="text-right">Change</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr :for={a <- top(api.assets, 15)} class="tabular-nums">
+                          <td class="break-all">{a.slug}</td>
+                          <td class="text-right">{format_number(a.current)}</td>
+                          <td class={["text-right", change_class(a.current, a.previous)]}>
+                            {change_label(a.current, a.previous)}
+                          </td>
+                        </tr>
+                        <tr :if={top(api.assets, 15) == []}>
+                          <td colspan="3" class="text-base-content/60">No asset-specific calls.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+            <% end %>
+          </div>
+
+          <div id="sanbase-usage" class="mb-8">
+            <h2 class="text-xl font-semibold mb-1">Sanbase usage</h2>
+            <p class="text-sm text-base-content/60 mb-3">
+              Page views per area of the app, SQL queries run, and what they have built.
+            </p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div class="rounded-box border border-base-300 overflow-x-auto">
+                <%= case usage.web do %>
+                  <% :error -> %>
+                    <p class="p-4 text-sm text-error">The web app usage could not be read.</p>
+                  <% {:ok, web} -> %>
+                    <table id="web-areas" class="table table-xs">
+                      <thead>
+                        <tr>
+                          <th>Area</th>
+                          <th class="text-right">Views, last {ClientUsage.window_days()} days</th>
+                          <th class="text-right">Before</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr :for={a <- web.areas} class="tabular-nums">
+                          <td>{a.area}</td>
+                          <td class="text-right">{format_number(a.current)}</td>
+                          <td class="text-right text-base-content/60">{format_number(a.previous)}</td>
+                        </tr>
+                        <tr id="sql-runs" class="tabular-nums">
+                          <td>SQL queries run</td>
+                          <td class="text-right">{format_number(web.sql_runs.current)}</td>
+                          <td class="text-right text-base-content/60">
+                            {format_number(web.sql_runs.previous)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p :if={web.areas == []} class="px-4 pb-3 text-sm text-base-content/60">
+                      No page views in the last {2 * ClientUsage.window_days()} days.
+                    </p>
+                <% end %>
+              </div>
+              <div class="rounded-box border border-base-300 overflow-x-auto">
+                <%= case usage.creations do %>
+                  <% :error -> %>
+                    <p class="p-4 text-sm text-error">What they built could not be read.</p>
+                  <% {:ok, creations} -> %>
+                    <table id="creations" class="table table-xs">
+                      <thead>
+                        <tr>
+                          <th>Built</th>
+                          <th class="text-right">Total</th>
+                          <th class="text-right">Changed, last {ClientUsage.window_days()} days</th>
+                          <th>Last changed</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr
+                          :for={c <- ClientUsage.sort_creations(creations)}
+                          id={"creation-#{c.kind}"}
+                          class="tabular-nums"
+                        >
+                          <td>
+                            {c.label}
+                            <div :if={c.kind == :alerts} class="text-xs text-base-content/60">
+                              {c.active || 0} on, last fired {format_datetime(c.last_fired_at)}
+                            </div>
+                          </td>
+                          <td class="text-right">{format_number(c.total)}</td>
+                          <td class="text-right">{format_number(c.changed_recently)}</td>
+                          <td class="whitespace-nowrap">{format_datetime(c.last_changed_at)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </.async_result>
 
         <%!-- ── Override ─────────────────────────────────────────────── --%>
         <div

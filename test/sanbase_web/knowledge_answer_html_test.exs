@@ -39,11 +39,15 @@ defmodule SanbaseWeb.KnowledgeAnswerHTMLTest do
             "<div onclick=\"alert(3)\">x</div>\n[2] faq: q"
         )
 
-      refute html =~ "<script"
-      refute html =~ "<img"
-      refute html =~ "<div"
-      assert html =~ "&lt;script&gt;"
-      assert html =~ "[1] insight: hello"
+      doc = LazyHTML.from_fragment(html)
+
+      for tag <- ["script", "img", "div"] do
+        assert Enum.empty?(LazyHTML.query(doc, tag)), "unexpected <#{tag}> element"
+      end
+
+      text = LazyHTML.text(doc)
+      assert text =~ "<script>alert(1)</script>"
+      assert text =~ "[1] insight: hello"
     end
 
     test "drops javascript: link targets" do

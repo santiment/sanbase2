@@ -285,9 +285,17 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
 
   @doc """
   Converts markdown content to HTML.
+
+  The markdown renderer percent-encodes link targets, so the Mailjet
+  `[[UNSUB_LINK_EN]]` placeholder is restored afterwards for Mailjet to substitute.
   """
   def markdown_to_html(markdown) when is_binary(markdown) do
-    {:ok, Sanbase.Markdown.to_html(markdown)}
+    html =
+      markdown
+      |> Sanbase.Markdown.to_html()
+      |> String.replace("%5B%5BUNSUB_LINK_EN%5D%5D", "[[UNSUB_LINK_EN]]")
+
+    {:ok, html}
   end
 
   def markdown_to_html(_), do: {:error, :invalid_markdown}

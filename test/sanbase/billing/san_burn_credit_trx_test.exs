@@ -180,7 +180,7 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
 
   describe "double credit reproduction" do
     setup do
-      ledger = start_supervised!({Agent, fn -> %{credits: [], calls: 0} end})
+      ledger = start_supervised!({Agent, fn -> %{credits: [], calls: 0, keys: %{}} end})
       %{ledger: ledger}
     end
 
@@ -188,12 +188,12 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
          %{rows: rows, ledger: ledger} do
       test_pid = self()
 
-      create_fun = fn customer, params ->
+      create_fun = fn customer, params, opts ->
         assert [%{trx_hash: @trx_hash, status: "pending"}] = SanBurnCreditTransaction.all()
         send(test_pid, {:stripe_call, self()})
 
         receive do
-          :continue -> fake_stripe_create(ledger, customer, params)
+          :continue -> fake_stripe_create(ledger, customer, params, opts)
         end
       end
 
@@ -219,8 +219,8 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
 
     test "a credit that Stripe applied but reported as failed is not applied again",
          %{rows: rows, ledger: ledger} do
-      create_fun = fn customer, params ->
-        result = fake_stripe_create(ledger, customer, params)
+      create_fun = fn customer, params, opts ->
+        result = fake_stripe_create(ledger, customer, params, opts)
 
         case Agent.get_and_update(ledger, &{&1.calls, %{&1 | calls: &1.calls + 1}}) do
           0 -> {:error, :timeout}
@@ -254,8 +254,8 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
 
       Agent.update(ledger, &%{&1 | credits: [manual_credit]})
 
-      create_fun = fn customer, params ->
-        fake_stripe_create(ledger, customer, params)
+      create_fun = fn customer, params, opts ->
+        fake_stripe_create(ledger, customer, params, opts)
       end
 
       base_mocks(rows)
@@ -269,6 +269,183 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
         assert burn_trx.credit_amount == 4000.0
         assert burn_trx.status == "credited"
         assert burn_trx.stripe_credit_id == "cbtxn_manual"
+      end)
+    end
+
+    test "a stale takeover during a stalled Stripe call does not credit twice",
+         %{rows: rows, ledger: ledger} do
+      test_pid = self()
+
+      create_fun = fn customer, params, opts ->
+        call = Agent.get_and_update(ledger, &{&1.calls, %{&1 | calls: &1.calls + 1}})
+
+        if call == 0 do
+          send(test_pid, {:stripe_call, self()})
+
+          receive do
+            :continue -> :ok
+          end
+        end
+
+        fake_stripe_create(ledger, customer, params, opts)
+      end
+
+      base_mocks(rows)
+      |> stripe_mocks(ledger, create_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        first_task = Task.async(&SanBurnCreditTransaction.run/0)
+        assert_receive {:stripe_call, first_pid}, 5_000
+
+        # The first run stalls past the stale threshold, so a second run takes over.
+        make_stale()
+        SanBurnCreditTransaction.run()
+
+        send(first_pid, :continue)
+        Task.await(first_task, 10_000)
+
+        assert [credit] = ledger_credits(ledger)
+        assert Agent.get(ledger, & &1.calls) == 2
+
+        assert [%{status: "credited", stripe_credit_id: stripe_credit_id}] =
+                 SanBurnCreditTransaction.all()
+
+        assert stripe_credit_id == credit.id
+      end)
+    end
+  end
+
+  test "the Stripe credit is sent with an idempotency key derived from the burn hash" do
+    create_fun = fn "s1", _params, opts ->
+      send(self(), {:idempotency_key, opts[:idempotency_key]})
+      {:ok, %{id: "cbtxn_1"}}
+    end
+
+    Sanbase.Mock.prepare_mock(Stripe.CustomerBalanceTransaction, :create, create_fun)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Sanbase.StripeApi.add_credit("s1", -100, String.upcase(@trx_hash))
+      expected = "san-burn-credit-#{@trx_hash}"
+      assert_received {:idempotency_key, ^expected}
+    end)
+  end
+
+  test "a retry credits the stored amount, not one from a changed price", %{
+    user: user,
+    rows: rows
+  } do
+    insert_claim(user, "failed")
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Price.last_record_before/2,
+      {:ok, %{@price_data | price_usd: 10}}
+    )
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.StripeApi.add_credit/3, {:ok, %{id: "cbtxn_1"}})
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.StripeApi.list_all_customer_balance_transactions/1,
+      {:ok, []}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      SanBurnCreditTransaction.run()
+
+      assert [%{status: "credited", credit_amount: 8000.0, san_price: 4.0}] =
+               SanBurnCreditTransaction.all()
+
+      assert :meck.num_calls(Sanbase.StripeApi, :add_credit, ["s1", -800_000, @trx_hash]) == 1
+    end)
+  end
+
+  describe "a claim whose address moved to another user" do
+    setup %{user: user} do
+      Repo.delete_all(EthAccount)
+
+      other_user =
+        insert(:user, eth_accounts: [%EthAccount{address: "0x1"}], stripe_customer_id: "s2")
+
+      %{user: user, other_user: other_user}
+    end
+
+    test "a failed claim is left failed and nothing is credited", %{user: user, rows: rows} do
+      insert_claim(user, "failed")
+
+      mocks(rows, {:ok, %{id: "cbtxn_1"}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        SanBurnCreditTransaction.run()
+
+        assert [%{status: "failed", user_id: user_id, stripe_credit_id: nil}] =
+                 SanBurnCreditTransaction.all()
+
+        assert user_id == user.id
+        assert :meck.num_calls(Sanbase.StripeApi, :add_credit, :_) == 0
+      end)
+    end
+
+    test "a stale pending claim is marked failed and nothing is credited", %{
+      user: user,
+      rows: rows
+    } do
+      insert_claim(user, "pending")
+      make_stale()
+
+      mocks(rows, {:ok, %{id: "cbtxn_1"}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        SanBurnCreditTransaction.run()
+
+        assert [%{status: "failed", user_id: user_id}] = SanBurnCreditTransaction.all()
+        assert user_id == user.id
+        assert :meck.num_calls(Sanbase.StripeApi, :add_credit, :_) == 0
+      end)
+    end
+  end
+
+  describe "retrying claims outside the ClickHouse window" do
+    test "a failed claim from the last 7 days is retried", %{user: user} do
+      insert_claim(user, "failed", trx_datetime: days_ago(3))
+
+      mocks([], {:ok, %{id: "cbtxn_1"}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        SanBurnCreditTransaction.run()
+
+        assert [%{status: "credited", stripe_credit_id: "cbtxn_1"}] =
+                 SanBurnCreditTransaction.all()
+
+        assert :meck.num_calls(Sanbase.StripeApi, :add_credit, ["s1", -800_000, @trx_hash]) == 1
+      end)
+    end
+
+    test "a stale pending claim from the last 7 days is retried", %{user: user} do
+      insert_claim(user, "pending", trx_datetime: days_ago(3))
+      make_stale()
+
+      mocks([], {:ok, %{id: "cbtxn_1"}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        SanBurnCreditTransaction.run()
+
+        assert [%{status: "credited"}] = SanBurnCreditTransaction.all()
+        assert :meck.num_calls(Sanbase.StripeApi, :add_credit, :_) == 1
+      end)
+    end
+
+    test "a fresh pending claim is not retried", %{user: user} do
+      insert_claim(user, "pending", trx_datetime: days_ago(3))
+
+      mocks([], {:ok, %{id: "cbtxn_1"}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        SanBurnCreditTransaction.run()
+
+        assert [%{status: "pending"}] = SanBurnCreditTransaction.all()
+        assert :meck.num_calls(Sanbase.StripeApi, :add_credit, :_) == 0
+      end)
+    end
+
+    test "a failed claim older than 7 days is not retried", %{user: user} do
+      insert_claim(user, "failed", trx_datetime: days_ago(8))
+
+      mocks([], {:ok, %{id: "cbtxn_1"}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        SanBurnCreditTransaction.run()
+
+        assert [%{status: "failed"}] = SanBurnCreditTransaction.all()
+        assert :meck.num_calls(Sanbase.StripeApi, :add_credit, :_) == 0
       end)
     end
   end
@@ -308,17 +485,59 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
     |> Sanbase.Mock.prepare_mock(Stripe.CustomerBalanceTransaction, :create, create_fun)
   end
 
-  defp fake_stripe_create(ledger, customer, params) do
-    Agent.get_and_update(ledger, fn state ->
-      credit = %{
-        id: "cbtxn_#{length(state.credits) + 1}",
-        customer: customer,
-        amount: params.amount,
-        description: params.description
-      }
+  # Mirrors Stripe idempotency: a request with a key seen before returns the
+  # credit of the first request instead of creating a new one.
+  defp fake_stripe_create(ledger, customer, params, opts) do
+    key = Keyword.fetch!(opts, :idempotency_key)
 
-      {{:ok, credit}, %{state | credits: [credit | state.credits]}}
+    Agent.get_and_update(ledger, fn state ->
+      case Map.fetch(state.keys, key) do
+        {:ok, credit} ->
+          {{:ok, credit}, state}
+
+        :error ->
+          credit = %{
+            id: "cbtxn_#{length(state.credits) + 1}",
+            customer: customer,
+            amount: params.amount,
+            description: params.description
+          }
+
+          {{:ok, credit},
+           %{state | credits: [credit | state.credits], keys: Map.put(state.keys, key, credit)}}
+      end
     end)
+  end
+
+  defp insert_claim(user, status, opts \\ []) do
+    {:ok, record} =
+      SanBurnCreditTransaction.create(%{
+        address: "0x1",
+        trx_hash: @trx_hash,
+        san_amount: 1000,
+        san_price: 4,
+        credit_amount: 8000,
+        trx_datetime: Keyword.get(opts, :trx_datetime, ~U[2022-05-23 05:43:40Z]),
+        status: status,
+        user_id: user.id
+      })
+
+    record
+  end
+
+  defp make_stale() do
+    stale_time =
+      NaiveDateTime.utc_now()
+      |> NaiveDateTime.add(-600, :second)
+      |> NaiveDateTime.truncate(:second)
+
+    Repo.update_all(SanBurnCreditTransaction, set: [updated_at: stale_time])
+  end
+
+  defp days_ago(days) do
+    DateTime.utc_now()
+    |> DateTime.add(-days * 86_400, :second)
+    |> DateTime.truncate(:second)
   end
 
   defp ledger_credits(ledger), do: Agent.get(ledger, & &1.credits)

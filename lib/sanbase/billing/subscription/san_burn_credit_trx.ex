@@ -15,6 +15,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   @san_burn_address "0x000000000000000000000000000000000000dead"
   @san_burn_coeff 2
   @pending_stale_seconds 300
+  @retry_max_age_seconds 7 * 86_400
   @statuses ~w(pending credited failed)
 
   schema "san_burn_credit_transactions" do
@@ -69,7 +70,9 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   def run() do
     {:ok, burn_trxs} = fetch_burn_trxs()
 
-    do_run(burn_trxs)
+    (burn_trxs ++ fetch_retryable_trxs())
+    |> Enum.uniq_by(& &1.trx_hash)
+    |> do_run()
   end
 
   def do_run(burn_trxs) do
@@ -102,10 +105,37 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   end
 
   @doc ~s"""
+  Failed and stale pending claims whose burn happened in the last 7 days.
+  `fetch_burn_trxs/0` only covers the last day, so these are retried from the
+  stored rows. Older claims are left for manual review.
+  """
+  def fetch_retryable_trxs() do
+    oldest =
+      DateTime.utc_now()
+      |> DateTime.add(-@retry_max_age_seconds, :second)
+      |> DateTime.truncate(:second)
+
+    from(t in reclaimable_query(),
+      where: t.trx_datetime > ^oldest,
+      select: %{
+        trx_datetime: t.trx_datetime,
+        address: t.address,
+        san_amount: t.san_amount,
+        trx_hash: t.trx_hash
+      }
+    )
+    |> Repo.all()
+  end
+
+  @doc ~s"""
   Credit the user that made the burn and record it. A pending row is committed
   first so the unique index on `trx_hash` claims the burn before any Stripe call.
   A Stripe credit whose description includes the full hash is recorded without
   adding a new credit.
+
+  A retry of a failed or stale claim credits the user and amount stored on the
+  claim. If the address now belongs to a different user, the claim is marked
+  failed and nothing is credited, so the burn can be resolved manually.
   """
   def save(burn_trx) do
     san_price = fetch_san_pice(burn_trx.trx_datetime)
@@ -114,7 +144,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
     result =
       with {:ok, user} <- fetch_user_by_address(burn_trx.address),
            {:ok, record} <- claim_burn(user, credit_amount, san_price, burn_trx) do
-        credit_and_finalize(record, user, credit_amount, burn_trx)
+        credit_and_finalize(record, user, burn_trx)
       end
 
     case result do
@@ -123,6 +153,9 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
 
       {:error, :already_claimed} = error ->
         Logger.info("SAN burn transaction #{burn_trx.trx_hash} is already claimed, skipping")
+        error
+
+      {:error, :recipient_changed} = error ->
         error
 
       error ->
@@ -146,40 +179,60 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
 
       {:error, %Ecto.Changeset{} = changeset} = error ->
         if unique_trx_hash_error?(changeset) do
-          reclaim_burn(burn_trx.trx_hash, user, credit_amount, san_price)
+          reclaim_burn(burn_trx.trx_hash, user)
         else
           error
         end
     end
   end
 
-  defp reclaim_burn(trx_hash, user, credit_amount, san_price) do
+  # Only the stored recipient can reclaim. The stored `user_id`, `credit_amount`
+  # and `san_price` are kept, so a retry sends Stripe the same request as the
+  # first attempt and the idempotency key returns its credit.
+  defp reclaim_burn(trx_hash, user) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    stale_before = NaiveDateTime.add(now, -@pending_stale_seconds, :second)
+    reclaimable = from(t in reclaimable_query(), where: t.trx_hash == ^trx_hash)
 
-    query =
-      from(t in __MODULE__,
-        where:
-          t.trx_hash == ^trx_hash and
-            (t.status == "failed" or (t.status == "pending" and t.updated_at < ^stale_before)),
-        select: t
-      )
+    query = from(t in reclaimable, where: t.user_id == ^user.id, select: t)
 
-    case Repo.update_all(query,
-           set: [
-             status: "pending",
-             user_id: user.id,
-             credit_amount: credit_amount,
-             san_price: san_price,
-             updated_at: now
-           ]
-         ) do
+    case Repo.update_all(query, set: [status: "pending", updated_at: now]) do
       {1, [record]} -> {:ok, record}
-      {0, _} -> {:error, :already_claimed}
+      {0, _} -> fail_if_recipient_changed(reclaimable, user, now)
     end
   end
 
-  defp credit_and_finalize(record, user, credit_amount, burn_trx) do
+  defp fail_if_recipient_changed(reclaimable, user, now) do
+    query = from(t in reclaimable, select: t)
+
+    case Repo.update_all(query, set: [status: "failed", updated_at: now]) do
+      {0, _} ->
+        {:error, :already_claimed}
+
+      {1, [record]} ->
+        Logger.error(
+          "SAN burn transaction #{record.trx_hash} was claimed for user #{record.user_id}, " <>
+            "but its address #{record.address} now belongs to user #{user.id}. " <>
+            "Not crediting it, resolve it manually."
+        )
+
+        {:error, :recipient_changed}
+    end
+  end
+
+  defp reclaimable_query() do
+    stale_before =
+      NaiveDateTime.utc_now()
+      |> NaiveDateTime.add(-@pending_stale_seconds, :second)
+      |> NaiveDateTime.truncate(:second)
+
+    from(t in __MODULE__,
+      where: t.status == "failed" or (t.status == "pending" and t.updated_at < ^stale_before)
+    )
+  end
+
+  defp credit_and_finalize(record, user, burn_trx) do
+    credit_amount = round(record.credit_amount)
+
     with {:ok, user} <- Sanbase.Billing.create_or_update_stripe_customer(user),
          {:ok, existing_credit} <-
            find_stripe_credit(user.stripe_customer_id, burn_trx.trx_hash),

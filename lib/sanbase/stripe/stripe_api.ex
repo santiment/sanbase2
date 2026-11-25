@@ -393,6 +393,9 @@ defmodule Sanbase.StripeApi do
     end
   end
 
+  # The idempotency key is derived from the burn hash, so a retry of the same
+  # burn within Stripe's idempotency window (at least 24 hours) returns the
+  # credit created by the first request instead of adding a second one.
   def add_credit(customer_id, amount, trx_id) do
     Stripe.CustomerBalanceTransaction.create(
       customer_id,
@@ -400,7 +403,8 @@ defmodule Sanbase.StripeApi do
         amount: amount,
         currency: "USD",
         description: "https://etherscan.io/tx/#{trx_id}"
-      }
+      },
+      idempotency_key: "san-burn-credit-#{String.downcase(trx_id)}"
     )
   end
 

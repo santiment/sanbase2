@@ -24,7 +24,8 @@ defmodule Sanbase.Billing.BusinessClients.Report do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Plan, Subscription}
   alias Sanbase.Billing.BusinessClients
-  alias Sanbase.Billing.BusinessClients.{LogEntry, MetricsSnapshot, Periods, Risk, Settings}
+  alias Sanbase.Billing.BusinessClients.{LogEntry, MetricsSnapshot, Periods, PlanLimit, Risk}
+  alias Sanbase.Billing.BusinessClients.Settings
   alias Sanbase.Billing.BusinessClients.{Snapshots, Usage}
   alias Sanbase.Billing.CreditPayments.CreditInvoice
   alias Sanbase.Billing.InvoiceMirror.{Invoice, InvoiceLine}
@@ -359,8 +360,19 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       usage:
         "API key calls in the last #{usage_days} days against the #{usage_days} days before, " <>
           "and the last activity: the later of the last web session and the last API key " <>
-          "call (within a year). Shown for context only; no number depends on them."
+          "call (within a year). Shown for context only; no number depends on them.",
+      plan_limit: plan_limit_note()
     }
+  end
+
+  defp plan_limit_note do
+    "API key calls per calendar month against the monthly API call limit the client has " <>
+      "today: the plan's, a grant on top of it, or a custom or package plan's own. The " <>
+      "limit counts only successful calls of the API product, so the share shown can be " <>
+      "a little high. This month is shown at its pace: the calls so far spread over the " <>
+      "whole month. An upsell candidate used 80% or more of the limit in 2 or more of the " <>
+      "last 6 full months and still 50% or more last month or at this month's pace, or is " <>
+      "on pace for 90% or more this month (from the 7th of the month)."
   end
 
   # ─── Loading ─────────────────────────────────────────────────────────────
@@ -595,6 +607,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       as_of: as_of,
       settings: data.settings,
       active_days: active_days(user_ids, as_of, data.settings),
+      plan_limits: plan_limits(user_ids, as_of),
       subscriptions: subscriptions_by_user(user_ids, Map.keys(data.plans)),
       unpaid_invoices: users_with_unpaid_invoices(user_ids, data),
       status: manual_status_by_user(data.entries_by_user, user_ids, as_of),
@@ -639,6 +652,7 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       )
 
     {active_days, active_days_prev} = active_days || {nil, nil}
+    plan_limit = context.plan_limits.(id)
 
     client
     |> Map.merge(%{
@@ -652,6 +666,8 @@ defmodule Sanbase.Billing.BusinessClients.Report do
       active_days_prev: active_days_prev,
       risk_level: risk.level,
       risk_reasons: risk.reasons,
+      plan_limit: plan_limit,
+      upsell?: (plan_limit && plan_limit.upsell?) || false,
       last_web_active_at: last_web,
       last_api_call_at: last_api,
       last_active_at: latest(last_web, last_api),
@@ -924,6 +940,27 @@ defmodule Sanbase.Billing.BusinessClients.Report do
         else: &Map.get(calls, &1, {0, 0})
 
     {lookup, Usage.last_web_activity(user_ids), Usage.last_api_call(user_ids, until)}
+  end
+
+  # Returns a lookup of each user's use of the monthly API call limit
+  # (`PlanLimit.assess/3`), `nil` for every user when the calls could not be read.
+  defp plan_limits([], _as_of), do: fn _ -> nil end
+
+  defp plan_limits(user_ids, as_of) do
+    until = if current?(as_of), do: DateTime.utc_now(), else: end_of_day(as_of)
+    first_month = Date.shift(Date.beginning_of_month(as_of), month: -6)
+
+    case Usage.monthly_api_calls(user_ids, first_month, until) do
+      {:ok, calls} ->
+        limits = Usage.monthly_api_call_limits(user_ids)
+
+        fn id ->
+          PlanLimit.assess(Map.get(calls, id, %{}), Map.get(limits, id), as_of)
+        end
+
+      :error ->
+        fn _ -> nil end
+    end
   end
 
   # Returns a lookup of `{active days, previous active days}` per user, `nil` for every

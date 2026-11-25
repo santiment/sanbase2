@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
 
   alias Sanbase.Accounts.UserRole
   alias Sanbase.Billing.BusinessClients
-  alias Sanbase.Billing.BusinessClients.{LogEntry, Report}
+  alias Sanbase.Billing.BusinessClients.{ClientUsage, LogEntry, Report}
   alias Sanbase.Repo
 
   defp sign_in(role_factory) do
@@ -58,6 +58,8 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
         active_days_prev: 12,
         risk_level: :high_risk,
         risk_reasons: ["Active on 4 of the last 30 days"],
+        plan_limit: nil,
+        upsell?: false,
         last_active_at: ~U[2026-10-19 12:00:00Z],
         last_web_active_at: ~U[2026-10-10 09:00:00Z],
         last_api_call_at: ~U[2026-10-19 12:00:00Z],
@@ -111,6 +113,55 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
      ]}
   end
 
+  defp usage_mock(api, web, creations) do
+    {ClientUsage, [:passthrough],
+     [
+       api: fn _user_id, _today -> api end,
+       web: fn _user_id, _today -> web end,
+       creations: fn _user_id, _today -> creations end
+     ]}
+  end
+
+  @api {:ok,
+        %{
+          calls: %{current: 600, previous: 4_000},
+          errors: 0,
+          queries: [
+            %{name: "getMetric|mvrv_usd", current: 600, previous: 1_600, errors: 0},
+            %{name: "getMetric|exchange_inflow", current: 0, previous: 2_400, errors: 0}
+          ],
+          assets: [%{slug: "bitcoin", current: 600, previous: 4_000}],
+          connections: [%{label: "Python", calls: 600, share: 1.0}]
+        }}
+
+  @web {:ok,
+        %{
+          areas: [%{area: "Charts", current: 12, previous: 30}],
+          sql_runs: %{current: 3, previous: 0}
+        }}
+
+  @creations {:ok,
+              [
+                %{
+                  kind: :watchlists,
+                  label: "Watchlists",
+                  total: 2,
+                  active: nil,
+                  changed_recently: 1,
+                  last_changed_at: ~N[2026-11-01 10:00:00],
+                  last_fired_at: nil
+                },
+                %{
+                  kind: :alerts,
+                  label: "Alerts",
+                  total: 5,
+                  active: 3,
+                  changed_recently: 0,
+                  last_changed_at: ~N[2026-09-01 10:00:00],
+                  last_fired_at: ~U[2026-11-20 08:00:00Z]
+                }
+              ]}
+
   defp open_page(conn, user) do
     {:ok, view, _html} = live(conn, "/admin/business_clients/#{user.id}")
     render_async(view, @async_timeout)
@@ -151,6 +202,68 @@ defmodule SanbaseWeb.Admin.BusinessClientLiveTest do
       assert has_element?(view, "#invoice-in_detail_1", "$300.00")
       assert has_element?(view, "#invoice-in_detail_1", "Crypto")
       assert has_element?(view, "#invoice-in_detail_1", "2026-03-01 - 2027-03-01")
+    end
+  end
+
+  test "shows what the client does with the product, with a brief for the call" do
+    {_admin, conn} = sign_in(:role_admin_panel_viewer)
+    user = insert(:user, email: "boss@acme.com")
+
+    plan_limit = %{
+      limit: 600_000,
+      months:
+        for(
+          i <- 6..1//-1,
+          do: %{month: Date.shift(~D[2026-11-01], month: -i), calls: 0, share: 0.0}
+        ),
+      last_month: %{month: ~D[2026-10-01], calls: 0, share: 0.0},
+      pace: %{calls: 1_000, share: 0.0017, partial?: false},
+      months_at_high: 0,
+      upsell?: false,
+      upsell_reason: nil
+    }
+
+    with_mocks [
+      detail_mock(user, %{plan_limit: plan_limit}),
+      usage_mock(@api, @web, @creations)
+    ] do
+      view = open_page(conn, user)
+
+      # The brief: a client at risk gets it highlighted.
+      assert has_element?(view, "#usage-brief.border-warning")
+      assert has_element?(view, "#usage-brief", "Active on 4 of the last 30 days, was 12.")
+      assert has_element?(view, "#usage-brief", "API calls down 85%")
+      assert has_element?(view, "#usage-brief", "Stopped calling exchange_inflow")
+      assert has_element?(view, "#usage-brief", "Has built 3 active alert(s), 2 watchlist(s).")
+      refute has_element?(view, "#usage-partial")
+
+      assert has_element?(view, "#plan-limit", "600,000 calls a month")
+      refute has_element?(view, "#upsell-badge")
+
+      assert has_element?(view, "#stopped-queries", "exchange_inflow")
+      assert has_element?(view, "#api-queries", "mvrv_usd")
+      assert has_element?(view, "#api-queries", "-63%")
+      assert has_element?(view, "#api-assets", "bitcoin")
+      assert has_element?(view, "#api-connections", "Python 100%")
+
+      assert has_element?(view, "#web-areas", "Charts")
+      assert has_element?(view, "#sql-runs", "3")
+      assert has_element?(view, "#creation-alerts", "3 on, last fired 2026-11-20 08:00")
+      assert has_element?(view, "#creation-watchlists", "2")
+    end
+  end
+
+  test "a usage source that failed is said so, and the rest still shows" do
+    {_admin, conn} = sign_in(:role_admin_panel_viewer)
+    user = insert(:user, email: "boss@acme.com")
+
+    with_mocks [detail_mock(user), usage_mock(:error, @web, @creations)] do
+      view = open_page(conn, user)
+
+      assert has_element?(view, "#usage-partial")
+      assert has_element?(view, "#api-usage", "could not be read")
+      assert has_element?(view, "#web-areas", "Charts")
+      refute has_element?(view, "#plan-limit")
     end
   end
 

@@ -32,7 +32,7 @@ defmodule SanbaseWeb.KnowledgeAnswerHTMLTest do
       assert KnowledgeAnswerHTML.to_html(nil) == ""
     end
 
-    test "strips block-level raw HTML (script / event handlers) from the answer" do
+    test "raw HTML in the answer (script / event handlers) is escaped, never rendered" do
       html =
         KnowledgeAnswerHTML.to_html(
           "[1] insight: hello\n<script>alert(1)</script>\n<img src=x onerror=alert(2)>\n" <>
@@ -40,8 +40,9 @@ defmodule SanbaseWeb.KnowledgeAnswerHTMLTest do
         )
 
       refute html =~ "<script"
-      refute html =~ "onerror"
-      refute html =~ "onclick"
+      refute html =~ "<img"
+      refute html =~ "<div"
+      assert html =~ "&lt;script&gt;"
       assert html =~ "[1] insight: hello"
     end
 

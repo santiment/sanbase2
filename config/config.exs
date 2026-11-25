@@ -206,11 +206,6 @@ config :sentry,
     ]
   ]
 
-config :earmark,
-  # disable using parallel map die to timeout errors
-  timeout: nil,
-  mapper: &Enum.map/2
-
 config :tesla,
   adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
 

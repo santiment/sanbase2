@@ -8,8 +8,8 @@ defmodule SanbaseWeb.KnowledgeAnswerHTML do
   `{{date:YYYY-MM-DD}}` sentinel rather than as literal markdown, so the date
   span can be styled without letting markdown carry raw HTML.
 
-  Earmark does NOT sanitize: block-level raw HTML (`<script>`, `<img onerror>`)
-  and `javascript:` link targets pass through. Answers embed user-generated
+  `Sanbase.Markdown` escapes raw HTML and drops `javascript:` link targets, but it
+  is not a sanitizer. Answers embed user-generated
   insight titles and LLM output, and are injected with `raw/1`, so the rendered
   HTML is always sanitized first. The sentinel is expanded AFTER sanitizing, so
   the span it produces is our own trusted markup.
@@ -28,15 +28,11 @@ defmodule SanbaseWeb.KnowledgeAnswerHTML do
   @doc """
   Render answer markdown to sanitized HTML, expanding `{{date:...}}` sentinels
   into a muted grey, non-wrapping date span. `nil` renders as empty.
-
-  `as_html/1`, not the bang: on a parse error Earmark still returns best-effort
-  HTML, which goes through the same sanitizer (never the raw source).
   """
   @spec to_html(String.t() | nil) :: String.t()
   def to_html(answer) do
-    {_status, html, _messages} = Earmark.as_html(answer || "")
-
-    html
+    (answer || "")
+    |> Sanbase.Markdown.to_html()
     |> HtmlSanitizeEx.markdown_html()
     |> String.replace(
       @date_sentinel,

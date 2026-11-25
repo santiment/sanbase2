@@ -168,7 +168,7 @@ defmodule Sanbase.Knowledge.ContextTest do
       label = "Click here](https://phishing.example) and [more"
       escaped = Context.escape_label(label)
 
-      html = Earmark.as_html!("[#{escaped}](https://academy.santiment.net/mvrv)")
+      html = Sanbase.Markdown.to_html("[#{escaped}](https://academy.santiment.net/mvrv)")
 
       assert html =~ ~s(href="https://academy.santiment.net/mvrv")
       refute html =~ ~s(href="https://phishing.example")
@@ -181,13 +181,13 @@ defmodule Sanbase.Knowledge.ContextTest do
       label = Context.inline_label("hello\n<img src=x onerror=alert(1)>")
 
       refute label =~ "\n"
-      html = Earmark.as_html!("- [#{label}](https://x)")
+      html = Sanbase.Markdown.to_html("- [#{label}](https://x)")
       refute html =~ "<img"
     end
 
     test "escapes link delimiters so a title cannot forge a link target" do
       label = Context.inline_label("x](javascript:alert(1)) [y")
-      html = Earmark.as_html!("- [#{label}](https://x)")
+      html = Sanbase.Markdown.to_html("- [#{label}](https://x)")
 
       refute html =~ ~s(href="javascript:)
       assert length(Regex.scan(~r/<a /, html)) == 1

@@ -81,23 +81,12 @@ defmodule Sanbase.Knowledge.FaqEntry do
         changeset
 
       markdown ->
-        case Earmark.as_html(markdown) do
-          {:ok, html} ->
-            sanitized_html = HtmlSanitizeEx.html5(html)
-            put_change(changeset, :answer_html, sanitized_html)
+        html =
+          markdown
+          |> Sanbase.Markdown.to_html()
+          |> HtmlSanitizeEx.html5()
 
-          {:ok, html, _warnings} ->
-            sanitized_html = HtmlSanitizeEx.html5(html)
-            put_change(changeset, :answer_html, sanitized_html)
-
-          {:error, html, _warnings} ->
-            # Even with errors, Earmark still provides HTML output
-            sanitized_html = HtmlSanitizeEx.html5(html)
-            put_change(changeset, :answer_html, sanitized_html)
-
-          {:error, _reason} ->
-            add_error(changeset, :answer_markdown, "contains invalid markdown")
-        end
+        put_change(changeset, :answer_html, html)
     end
   end
 end

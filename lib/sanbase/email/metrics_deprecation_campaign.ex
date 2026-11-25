@@ -77,13 +77,13 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   "social_dominance_youtube_videos_24h_moving_average"
   ```
 
-  **Your raw, 5-minute granular data (e.g.,** social_dominance_total**, etc.) will remain fully available and will be our core focus moving forward.**
+  **Your raw, 5-minute granular data (e.g.,** social_dominance_total, **etc.) will remain fully available and will be our core focus moving forward.**
 
   **Why are we making this change?**
 
   - **Enhanced Data Quality:** By concentrating on our core metrics, we can dedicate more resources to ensuring their accuracy, consistency, and uptime, which are foundational to your success.
   - **Increased Flexibility:** You will gain the ability to compute custom derivatives tailored precisely to your unique ML models and analytical needs, removing any limitations from our pre-defined aggregations.
-  - **What Action is Required?** You will need to **update your data pipelines and ML models** to compute these derivative metrics directly from our raw 5-minute data. **The deadline for this transition is {{DATE_HUMAN_READABLE}} **. Any calls to the deprecated API endpoints after this date will cease to function.
+  - **What Action is Required?** You will need to **update your data pipelines and ML models** to compute these derivative metrics directly from our raw 5-minute data. **The deadline for this transition is {{DATE_HUMAN_READABLE}}**. Any calls to the deprecated API endpoints after this date will cease to function.
 
   **We are here to help you every step of the way:** We have prepared a **comprehensive "Migration Kit"** to make this transition as smooth as possible, which includes ready-to-use functions in Python (Pandas, NumPy) and R to replicate common derivative metric logic.
 
@@ -284,20 +284,10 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   end
 
   @doc """
-  Converts markdown content to HTML using Earmark.
+  Converts markdown content to HTML.
   """
   def markdown_to_html(markdown) when is_binary(markdown) do
-    case Earmark.as_html(markdown) do
-      {:ok, html, _} ->
-        {:ok, html}
-
-      {:error, _html, errors} ->
-        Logger.error("Failed to convert markdown to HTML: #{inspect(errors)}")
-        {:error, {:markdown_conversion_failed, errors}}
-
-      _ ->
-        {:error, :unknown_markdown_error}
-    end
+    {:ok, Sanbase.Markdown.to_html(markdown)}
   end
 
   def markdown_to_html(_), do: {:error, :invalid_markdown}

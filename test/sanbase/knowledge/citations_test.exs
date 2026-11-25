@@ -40,7 +40,7 @@ defmodule Sanbase.Knowledge.CitationsTest do
                "Social volume can signal a top. [Academy: Getting Started for Traders](https://s/academy/3)"
 
       # and it renders as exactly one anchor pointing at the real url
-      html = Earmark.as_html!(rendered)
+      html = Sanbase.Markdown.to_html(rendered)
       assert html =~ ~s(href="https://s/academy/3")
     end
 
@@ -203,7 +203,7 @@ defmodule Sanbase.Knowledge.CitationsTest do
       content =
         json(%{"answer" => "Claim [1].", "source_ids" => [1], "financial_disclaimer" => false})
 
-      html = content |> Citations.render(reg) |> Earmark.as_html!()
+      html = content |> Citations.render(reg) |> Sanbase.Markdown.to_html()
 
       assert html =~ ~s(href="https://s/academy/1")
       refute html =~ ~s(href="https://phish.example")

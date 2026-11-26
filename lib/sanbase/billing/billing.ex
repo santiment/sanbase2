@@ -92,20 +92,6 @@ defmodule Sanbase.Billing do
   @sanbase_trial_plans ~w(PRO)
   @api_trial_plans ~w(BASIC ESSENTIAL PRO)
 
-  # Rank of the plans a trialing subscription may move *down* to without losing
-  # anything for us: the trial carries over, so the target must give no more access
-  # than the plan the trial is on. Unlisted plans (PREMIUM, CUSTOM*, INSTITUTIONAL,
-  # ENTERPRISE, bundles) are unranked and never a downgrade target.
-  @sanbase_plan_rank %{"FREE" => 0, "BASIC" => 1, "PRO" => 2, "PRO_PLUS" => 3, "MAX" => 4}
-  @api_plan_rank %{
-    "FREE" => 0,
-    "BASIC" => 1,
-    "ESSENTIAL" => 1,
-    "PRO" => 2,
-    "BUSINESS_PRO" => 3,
-    "BUSINESS_MAX" => 4
-  }
-
   @doc ~s"""
   Whether `plan` is one the free trial can be on, regardless of who subscribes.
 
@@ -119,39 +105,6 @@ defmodule Sanbase.Billing do
       product_id == Product.product_sanbase() -> name in @sanbase_trial_plans
       product_id == Product.product_api() -> name in @api_trial_plans
       true -> false
-    end
-  end
-
-  @doc ~s"""
-  Whether a trialing subscription on plan `from` may be moved to plan `to`.
-
-  Stripe keeps `trial_end` when a subscription's price changes, so the trial moves
-  with it - and nothing is charged until the trial ends. That is fine when `to` is
-  itself a trial plan, the same plan on another billing interval, or a lower plan of
-  the same product. Anything else (Sanbase PRO to MAX, SanAPI PRO to BUSINESS_MAX or
-  PREMIUM) would hand out a plan that is never trialled for free, so it has to wait
-  for the trial to end.
-  """
-  @spec trial_plan_change_allowed?(%Plan{}, %Plan{}) :: boolean()
-  def trial_plan_change_allowed?(%Plan{} = from, %Plan{} = to) do
-    from.product_id == to.product_id and
-      (trial_plan?(to) or from.name == to.name or not_higher_plan?(from, to))
-  end
-
-  defp not_higher_plan?(%Plan{product_id: product_id} = from, %Plan{} = to) do
-    ranks =
-      cond do
-        product_id == Product.product_sanbase() -> @sanbase_plan_rank
-        product_id == Product.product_api() -> @api_plan_rank
-        true -> %{}
-      end
-
-    case {Map.get(ranks, from.name), Map.get(ranks, to.name)} do
-      {from_rank, to_rank} when is_integer(from_rank) and is_integer(to_rank) ->
-        to_rank <= from_rank
-
-      _ ->
-        false
     end
   end
 

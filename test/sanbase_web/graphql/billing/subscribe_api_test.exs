@@ -580,70 +580,64 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       end
     end
 
-    test "a trialing Sanbase PRO subscription cannot be moved to MAX", context do
+    test "a trialing Sanbase PRO subscription cannot change plan at all", context do
       subscription = insert_trialing(:subscription_pro_sanbase, context.user)
-      query = update_subscription_mutation(subscription.id, context.plans.plan_max_sanbase.id)
-
-      assert capture_log(fn ->
-               assert execute_mutation_with_error(context.conn, query) =~
-                        "is not available during the free trial"
-             end) =~ "is not available during the free trial"
-
-      assert_not_called(StripeApi.upgrade_downgrade(:_, :_))
-    end
-
-    test "a trialing Sanbase PRO subscription cannot be moved up to PRO_PLUS", context do
-      subscription = insert_trialing(:subscription_pro_sanbase, context.user)
-
-      query =
-        update_subscription_mutation(subscription.id, context.plans.plan_pro_plus_sanbase.id)
-
-      capture_log(fn ->
-        assert execute_mutation_with_error(context.conn, query) =~
-                 "is not available during the free trial"
-      end)
-
-      assert_not_called(StripeApi.upgrade_downgrade(:_, :_))
-    end
-
-    test "a trialing subscription can be downgraded, keeping the trial and charging nothing",
-         context do
-      subscription = insert_trialing(:subscription_pro_sanbase, context.user)
-      basic = context.plans.plan_basic_sanbase
-
-      query = update_subscription_mutation(subscription.id, basic.id)
-      execute_mutation(context.conn, query, "updateSubscription")
-
-      assert_called(StripeApi.upgrade_downgrade(:_, %{id: basic.id}))
-      assert_not_called(StripeApi.update_subscription(:_, %{trial_end: "now"}))
-    end
-
-    test "a trialing subscription on a plan that is never trialled can change interval",
-         context do
-      # A promo trial can be on any paid plan.
-      subscription = insert_trialing(:subscription_business_max_monthly, context.user)
-      yearly = context.plans.plan_business_max_yearly
-
-      query = update_subscription_mutation(subscription.id, yearly.id)
-      execute_mutation(context.conn, query, "updateSubscription")
-
-      assert_called(StripeApi.upgrade_downgrade(:_, %{id: yearly.id}))
-      assert_not_called(StripeApi.update_subscription(:_, %{trial_end: "now"}))
-    end
-
-    test "a trialing SanAPI PRO subscription cannot be moved to Business", context do
-      subscription = insert_trialing(:subscription_pro, context.user)
 
       for plan <- [
-            context.plans.plan_business_pro_monthly,
-            context.plans.plan_business_max_monthly
+            context.plans.plan_pro_sanbase_yearly,
+            context.plans.plan_basic_sanbase,
+            context.plans.plan_pro_plus_sanbase,
+            context.plans.plan_max_sanbase,
+            context.plans.plan_free_sanbase
           ] do
-        query = update_subscription_mutation(subscription.id, plan.id)
+        assert_trial_plan_change_refused(context.conn, subscription, plan)
+      end
 
-        capture_log(fn ->
-          assert execute_mutation_with_error(context.conn, query) =~
-                   "is not available during the free trial"
-        end)
+      assert_not_called(StripeApi.upgrade_downgrade(:_, :_))
+    end
+
+    test "a trialing SanAPI subscription cannot change plan at all", context do
+      for {factory, targets} <- [
+            {:subscription_pro,
+             [
+               context.plans.plan_pro_yearly,
+               context.plans.plan_essential,
+               context.plans.plan_business_pro_monthly,
+               context.plans.plan_business_max_monthly,
+               context.plans.plan_free
+             ]},
+            {:subscription_essential,
+             [
+               context.plans.plan_essential_yearly,
+               context.plans.plan_pro,
+               context.plans.plan_pro_yearly,
+               context.plans.plan_free
+             ]}
+          ] do
+        subscription =
+          insert(factory,
+            user: context.user,
+            stripe_id: "stripe_id_#{factory}",
+            status: :trialing,
+            trial_end: DateTime.utc_now() |> DateTime.add(10, :day) |> DateTime.truncate(:second)
+          )
+
+        for plan <- targets do
+          assert_trial_plan_change_refused(context.conn, subscription, plan)
+        end
+      end
+
+      assert_not_called(StripeApi.upgrade_downgrade(:_, :_))
+    end
+
+    test "a promo trial on a plan that is never trialled cannot change plan either", context do
+      subscription = insert_trialing(:subscription_business_max_monthly, context.user)
+
+      for plan <- [
+            context.plans.plan_business_max_yearly,
+            context.plans.plan_business_pro_monthly
+          ] do
+        assert_trial_plan_change_refused(context.conn, subscription, plan)
       end
 
       assert_not_called(StripeApi.upgrade_downgrade(:_, :_))
@@ -659,24 +653,29 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           trial_end: DateTime.utc_now() |> DateTime.add(3, :day) |> DateTime.truncate(:second)
         )
 
-      query = update_subscription_mutation(subscription.id, context.plans.plan_max_sanbase.id)
-
-      capture_log(fn ->
-        assert execute_mutation_with_error(context.conn, query) =~
-                 "is not available during the free trial"
-      end)
+      assert_trial_plan_change_refused(
+        context.conn,
+        subscription,
+        context.plans.plan_pro_sanbase_yearly
+      )
 
       assert_not_called(StripeApi.upgrade_downgrade(:_, :_))
     end
 
-    test "a trialing subscription can move between trialled plans", context do
-      subscription = insert_trialing(:subscription_pro_sanbase, context.user)
+    test "a subscription whose trial has ended can change interval", context do
+      subscription =
+        insert(:subscription_pro_sanbase,
+          user: context.user,
+          stripe_id: "stripe_id",
+          status: :active,
+          trial_end: DateTime.utc_now() |> DateTime.add(-3, :day) |> DateTime.truncate(:second)
+        )
 
-      query =
-        update_subscription_mutation(subscription.id, context.plans.plan_pro_sanbase_yearly.id)
+      yearly = context.plans.plan_pro_sanbase_yearly
+      query = update_subscription_mutation(subscription.id, yearly.id)
 
       execute_mutation(context.conn, query, "updateSubscription")
-      assert_called(StripeApi.upgrade_downgrade(:_, :_))
+      assert_called(StripeApi.upgrade_downgrade(:_, %{id: yearly.id}))
     end
 
     test "a non-trialing Sanbase PRO subscription can be upgraded to MAX", context do
@@ -1070,6 +1069,16 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       }
     }
     """
+  end
+
+  defp assert_trial_plan_change_refused(conn, subscription, plan) do
+    query = update_subscription_mutation(subscription.id, plan.id)
+
+    capture_log(fn ->
+      assert execute_mutation_with_error(conn, query) =~
+               "Plan changes are not available during the free trial",
+             "#{plan.name} (#{plan.interval}) must be refused"
+    end)
   end
 
   defp insert_trialing(factory, user) do

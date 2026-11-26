@@ -41,6 +41,39 @@ defmodule SanbaseWeb.DataControllerTest do
     assert project_data(context.p3, context) in result
   end
 
+  test "fetch non-crypto assets data", context do
+    gold = insert(:non_crypto_asset, slug: "gold-test", name: "Gold", ticker: "XAU")
+
+    spx =
+      insert(:non_crypto_asset,
+        slug: "spx-test",
+        name: "S&P 500",
+        ticker: nil,
+        asset_type: :index
+      )
+
+    hidden = insert(:non_crypto_asset, slug: "hidden-test", is_hidden: true)
+
+    result =
+      context.conn
+      |> get("/non_crypto_assets_data")
+      |> response(200)
+      |> String.split("\n", trim: true)
+      |> Enum.map(&Jason.decode!/1)
+
+    assert %{
+             "slug" => gold.slug,
+             "name" => "Gold",
+             "ticker" => "XAU",
+             "asset_type" => "commodity"
+           } in result
+
+    assert %{"slug" => spx.slug, "name" => "S&P 500", "ticker" => nil, "asset_type" => "index"} in result
+
+    refute Enum.any?(result, &(&1["slug"] == hidden.slug))
+    refute Enum.any?(result, &(&1["slug"] == context.p1.slug))
+  end
+
   defp project_data(project, context) do
     infrastructure = Project.infrastructure(project)
     {:ok, contract, decimals} = Project.contract_info(project)

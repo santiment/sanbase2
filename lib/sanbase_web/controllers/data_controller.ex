@@ -59,6 +59,21 @@ defmodule SanbaseWeb.DataController do
     |> Plug.Conn.send_resp(200, data)
   end
 
+  @doc ~s"""
+  Non-hidden non-crypto assets, one JSON object per line, used to build the
+  non_crypto_assets clickhouse dictionary:
+  {"slug": "gold", "name": "Gold", "ticker": "XAU", "asset_type": "commodity"}
+  """
+  @spec non_crypto_assets_data(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def non_crypto_assets_data(conn, _params) do
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_non_crypto_assets_data/0)
+
+    conn
+    |> put_resp_header("content-type", "application/json; charset=utf-8")
+    |> Plug.Conn.send_resp(200, data)
+  end
+
   def projects_twitter_handles(conn, _params) do
     cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
     {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_twitter_handles_list/0)
@@ -319,6 +334,25 @@ defmodule SanbaseWeb.DataController do
           |> Jason.encode!()
 
         [project_json, "\n"]
+      end)
+
+    {:ok, data}
+  end
+
+  defp get_non_crypto_assets_data() do
+    data =
+      Sanbase.NonCryptoAsset.list()
+      |> Enum.map(fn asset ->
+        asset_json =
+          %{
+            slug: asset.slug,
+            name: asset.name,
+            ticker: asset.ticker,
+            asset_type: to_string(asset.asset_type)
+          }
+          |> Jason.encode!()
+
+        [asset_json, "\n"]
       end)
 
     {:ok, data}

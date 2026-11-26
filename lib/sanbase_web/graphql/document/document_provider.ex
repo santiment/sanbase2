@@ -33,6 +33,10 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
       SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth
     )
     |> Absinthe.Pipeline.insert_before(
+      Absinthe.Phase.Document.Validation.Result,
+      SanbaseWeb.Graphql.Phase.Document.Validation.ProvidedNonNullArgumentsInFragments
+    )
+    |> Absinthe.Pipeline.insert_before(
       Absinthe.Phase.Document.Complexity.Analysis,
       SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess
     )

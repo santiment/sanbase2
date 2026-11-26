@@ -32,6 +32,26 @@ defmodule SanbaseWeb.Graphql.ShortUrlApiTest do
              "slug=santiment&from=2020-01-01&to=2020-02-02&interval=10d&isHidden=true&isCartesian=true"
   end
 
+  test "short url creation rejects unsafe full urls", context do
+    for full_url <- [
+          "javascript:alert(1)",
+          "http://santiment.net/charts",
+          "https://evil.example/login",
+          "https://santiment.net.evil.example/",
+          "https://user@app.santiment.net/",
+          "//evil.example/x",
+          "http://169.254.169.254/latest"
+        ] do
+      assert create_short_url(context.conn, %{full_url: full_url, data: "a=b"}) == nil
+    end
+  end
+
+  test "short url creation accepts relative paths and santiment urls", context do
+    for full_url <- ["/charts?slug=bitcoin", "https://app.santiment.net/charts", "https://santiment.net"] do
+      assert is_binary(create_short_url(context.conn, %{full_url: full_url, data: "a=b"}))
+    end
+  end
+
   test "update short url", context do
     short_url =
       insert(:short_url, full_url: "/something", data: "slug=santiment", user: context.user)

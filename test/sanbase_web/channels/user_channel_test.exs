@@ -42,6 +42,48 @@ defmodule SanbaseWeb.UserChannelTest do
                ]
     end
 
+    test "short patterns and bare wildcards return no users" do
+      insert(:user, username: "test_short")
+      socket = get_socket()
+
+      for pattern <- ["%", "%%", "te", "%t%", "_"] do
+        ref = push(socket, "users_by_username_pattern", %{"username_pattern" => pattern})
+        assert_reply(ref, :ok, %{"users" => []})
+      end
+    end
+
+    test "LIKE wildcards in the pattern are matched literally" do
+      insert(:user, username: "abcdef")
+      socket = get_socket()
+
+      ref = push(socket, "users_by_username_pattern", %{"username_pattern" => "a_c"})
+      assert_reply(ref, :ok, %{"users" => []})
+    end
+
+    test "size is capped and invalid size falls back to the default" do
+      max = Sanbase.Accounts.Search.max_size()
+      for i <- 1..(max + 5), do: insert(:user, username: "capuser#{i}")
+      socket = get_socket()
+
+      ref =
+        push(socket, "users_by_username_pattern", %{
+          "username_pattern" => "capuser",
+          "size" => 10_000_000
+        })
+
+      assert_reply(ref, :ok, %{"users" => users})
+      assert length(users) == max
+
+      ref =
+        push(socket, "users_by_username_pattern", %{
+          "username_pattern" => "capuser",
+          "size" => "all"
+        })
+
+      assert_reply(ref, :ok, %{"users" => users})
+      assert length(users) == 20
+    end
+
     test "test username validation" do
       socket = get_socket()
 

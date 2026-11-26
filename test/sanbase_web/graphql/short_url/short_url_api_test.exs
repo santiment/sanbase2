@@ -47,7 +47,11 @@ defmodule SanbaseWeb.Graphql.ShortUrlApiTest do
   end
 
   test "short url creation accepts relative paths and santiment urls", context do
-    for full_url <- ["/charts?slug=bitcoin", "https://app.santiment.net/charts", "https://santiment.net"] do
+    for full_url <- [
+          "/charts?slug=bitcoin",
+          "https://app.santiment.net/charts",
+          "https://santiment.net"
+        ] do
       assert is_binary(create_short_url(context.conn, %{full_url: full_url, data: "a=b"}))
     end
   end

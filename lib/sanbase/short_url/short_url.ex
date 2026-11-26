@@ -53,6 +53,7 @@ defmodule Sanbase.ShortUrl do
     case URI.parse(url) do
       %URI{scheme: "https", host: host, userinfo: nil} when is_binary(host) ->
         host = String.downcase(host)
+
         (host == @allowed_host_suffix or String.ends_with?(host, "." <> @allowed_host_suffix)) and
           not String.match?(url, ~r/[\x00-\x20\x7f\\]/)
 

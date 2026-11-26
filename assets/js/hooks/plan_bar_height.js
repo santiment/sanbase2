@@ -9,13 +9,25 @@ export const PlanBarHeight = {
       document.documentElement.style.setProperty("--plan-bar-h", `${height}px`)
     }
 
+    // Below md the plan options scroll sideways in one row: bring the selected
+    // one into view, without scrolling the page.
+    this.revealSelected = () => {
+      const selected = this.el.querySelector("#plan-picker [aria-current=true]")
+      const row = selected && selected.parentElement
+      if (!row || row.scrollWidth <= row.clientWidth) return
+      const left = selected.offsetLeft - row.offsetLeft
+      row.scrollLeft = left - (row.clientWidth - selected.offsetWidth) / 2
+    }
+
     this.publish()
+    this.revealSelected()
     this.observer = new ResizeObserver(this.publish)
     this.observer.observe(this.el)
   },
 
   updated() {
     this.publish()
+    this.revealSelected()
   },
 
   destroyed() {

@@ -1385,6 +1385,41 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
     end
   end
 
+  describe "mobile (below md only)" do
+    test "plan view rows stack: the metric on top, the two channels side by side", ctx do
+      {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
+      row = "##{ctx.mvrv_row}"
+
+      # Below md only the column-name row is hidden; the caption row (bar key and
+      # "What do these mean?") stays.
+      refute has_element?(view, "#plan-table thead.max-md\\:hidden")
+      assert has_element?(view, "#plan-table.max-md\\:block thead tr.max-md\\:hidden #th-metric")
+      refute has_element?(view, "#plan-table thead tr.max-md\\:hidden #bar-help-button")
+      assert has_element?(view, "#plan-table thead tr.max-md\\:block #bar-help-button")
+      assert has_element?(view, "#{row}.max-md\\:grid.max-md\\:grid-cols-2")
+      assert has_element?(view, "#{row} > td.max-md\\:col-span-2 a", "mvrv_usd")
+      assert has_element?(view, "#{row} > td.max-md\\:hidden ##{ctx.mvrv_row}-category")
+
+      # A label above each bar, drawn from the cell's data-label (CSS only, so
+      # it adds no text and nothing at md and up).
+      assert has_element?(view, "#{row}-sanbase[data-label='In Sanbase']")
+      assert has_element?(view, "#{row}-api[data-label='Via API']")
+      assert text(view, "#{row}-api") == "1y · 30d"
+    end
+
+    test "the plan options scroll sideways in one row; the plan view drops the channel line",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/metrics_access")
+
+      assert has_element?(view, "#plan-picker.max-md\\:flex-nowrap.max-md\\:overflow-x-auto")
+      assert has_element?(view, ".max-md\\:hidden #channel-switch[data-mode=both]")
+
+      # The compare view keeps its channel toggle.
+      {:ok, view, _html} = live(conn, ~p"/metrics_access?view=compare")
+      refute has_element?(view, ".max-md\\:hidden #channel-switch")
+    end
+  end
+
   test "bogus params fall back to defaults", %{conn: conn} do
     {:ok, view, _html} =
       live(

@@ -99,12 +99,19 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       class="sticky top-[env(safe-area-inset-top,0px)] z-30 -mx-1 bg-base-100 px-1 pt-3 pb-2"
     >
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border border-base-300 bg-base-100 px-4 py-3 shadow-sm">
-        <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+        <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 max-md:w-full max-md:flex-nowrap">
           <span id="plan-label" class="text-sm font-semibold">Plan</span>
           <nav
             id="plan-picker"
             aria-labelledby="plan-label"
-            class="flex flex-wrap items-stretch gap-0.5 rounded-lg border border-base-300 bg-base-200 p-0.5"
+            class={
+              [
+                "flex flex-wrap items-stretch gap-0.5 rounded-lg border border-base-300 bg-base-200 p-0.5",
+                # Below md: one row that scrolls sideways, without a scrollbar.
+                "max-md:min-w-0 max-md:flex-nowrap max-md:overflow-x-auto",
+                "max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden"
+              ]
+            }
           >
             <.link
               :for={plan <- @plans}
@@ -116,7 +123,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
             >
               {plan.label}
             </.link>
-            <span aria-hidden="true" class="mx-0.5 my-1.5 hidden w-px bg-base-300 xl:block" />
+            <span aria-hidden="true" class="mx-0.5 my-1.5 hidden w-px shrink-0 bg-base-300 xl:block" />
             <.link
               id="view-compare"
               patch={@compare_path}
@@ -128,7 +135,11 @@ defmodule SanbaseWeb.MetricsAccessComponents do
           </nav>
         </div>
 
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <%!-- The plan view's channel line is informational: hidden below md. --%>
+        <div class={[
+          "flex flex-wrap items-center gap-x-3 gap-y-2",
+          @view == :plan && "max-md:hidden"
+        ]}>
           <span id="channel-label" class="text-sm text-base-content/70">
             {if @view == :compare, do: "Showing access via", else: "Showing access in"}
           </span>
@@ -212,7 +223,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
 
   defp plan_option_class(current?) do
     [
-      "inline-flex h-9 cursor-pointer items-center whitespace-nowrap rounded-md px-3 text-sm outline-none",
+      "inline-flex h-9 cursor-pointer items-center whitespace-nowrap rounded-md px-3 text-sm outline-none max-md:shrink-0",
       "transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary",
       if(current?,
         do: "bg-primary font-semibold text-primary-content shadow-sm",
@@ -720,6 +731,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   line. The full wording is the cell's `title` and the bar's label.
   """
   attr :id, :string, required: true
+  attr :channel_label, :string, required: true, doc: "shown above the bar below md"
   attr :access, :any, required: true
   attr :dates, :atom, required: true
   attr :today, Date, required: true
@@ -734,8 +746,18 @@ defmodule SanbaseWeb.MetricsAccessComponents do
     <td
       id={@id}
       data-locked={locked?(@access) && "true"}
+      data-label={@channel_label}
       title={@label}
-      class="px-3 py-2.5 text-center align-middle md:px-4"
+      class={
+        [
+          "px-3 py-2.5 text-center align-middle md:px-4",
+          # Below md the row stacks: the channel's name above its bar, from the
+          # data-label (no text in the cell, nothing at md and up).
+          "max-md:before:mb-1 max-md:before:block max-md:before:text-[10px] max-md:before:font-medium",
+          "max-md:before:uppercase max-md:before:tracking-wider max-md:before:text-base-content/60",
+          "max-md:before:content-[attr(data-label)]"
+        ]
+      }
     >
       <.access_glyph access={@access} label={@label} dates={@dates} today={@today} />
       <span
@@ -892,16 +914,24 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   """
   attr :colspan, :integer, required: true
   attr :today, Date, required: true
+
+  attr :block_below_md?, :boolean,
+    default: false,
+    doc: "below md, a block spanning the table (the plan view's stacked rows)"
+
   slot :inner_block, required: true
 
   def caption_row(assigns) do
     assigns = assign(assigns, states: @key_states)
 
     ~H"""
-    <tr>
+    <tr class={@block_below_md? && "max-md:block"}>
       <th
         colspan={@colspan}
-        class="relative rounded-t-xl bg-base-100 px-4 py-2 text-left font-normal shadow-[inset_0_-1px_0_var(--color-base-300)]"
+        class={[
+          "relative rounded-t-xl bg-base-100 px-4 py-2 text-left font-normal shadow-[inset_0_-1px_0_var(--color-base-300)]",
+          @block_below_md? && "max-md:block"
+        ]}
       >
         <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <p id="table-caption" class="text-xs text-base-content/70">{render_slot(@inner_block)}</p>
@@ -1131,6 +1161,8 @@ defmodule SanbaseWeb.MetricsAccessComponents do
           # Below md the table scrolls sideways, so the column keeps a readable
           # width; from md it takes what the fixed-width columns leave.
           "min-w-[10rem] px-3 py-2.5 align-middle text-sm leading-5 md:min-w-0 md:px-4",
+          # Plan view below md: the stacked row's first line, across both columns.
+          @crumb? && "max-md:col-span-2 max-md:pb-1",
           @sticky? && sticky_cell()
         ]
       }
@@ -1233,11 +1265,12 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       data-locked={@item.locked? && "true"}
       class={[
         "border-b border-base-200 transition-colors duration-150 last:border-b-0 hover:bg-base-200/50",
+        "max-md:grid max-md:grid-cols-2",
         @item.locked? && "bg-base-200/40"
       ]}
     >
       <.metric_cell item={@item} crumb?={true} />
-      <td class="px-0 py-2.5 align-middle lg:px-4">
+      <td class="px-0 py-2.5 align-middle max-md:hidden lg:px-4">
         <div class="hidden lg:block">
           <.category_crumb
             id={"#{@item.id}-category"}
@@ -1250,6 +1283,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       <.access_cell
         :for={channel <- @channels}
         id={"#{@item.id}-#{channel.key}"}
+        channel_label={channel.label}
         access={@item.access[channel.key]}
         dates={@dates}
         today={@today}

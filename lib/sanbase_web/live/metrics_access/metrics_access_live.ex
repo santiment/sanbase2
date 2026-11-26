@@ -401,7 +401,7 @@ defmodule SanbaseWeb.MetricsAccessLive do
             <table
               :if={@filter.view == :plan}
               id="plan-table"
-              class="w-full text-left md:table-fixed"
+              class="w-full text-left max-md:block md:table-fixed"
             >
               <%!-- A fixed layout takes the widths from here (its first row is the
                    full-width caption). The category column is zero wide below lg,
@@ -411,11 +411,14 @@ defmodule SanbaseWeb.MetricsAccessLive do
                 <col id="col-category" class="w-0 lg:w-[15rem]" />
                 <col :for={_channel <- @channels} class="md:w-[136px]" />
               </colgroup>
-              <thead class={sticky_thead()}>
-                <.caption_row colspan={4} today={@today}>
+              <%!-- Below md the rows stack (metric, then both channels side by
+                   side, each labelled), so the column-name row is hidden; the
+                   caption row (bar key, "What do these mean?") stays. --%>
+              <thead class={[sticky_thead(), "max-md:block"]}>
+                <.caption_row colspan={4} today={@today} block_below_md?={true}>
                   Access on {@plan.label}, in Sanbase and via the API
                 </.caption_row>
-                <tr>
+                <tr class="max-md:hidden">
                   <th
                     id="th-metric"
                     scope="col"
@@ -467,7 +470,7 @@ defmodule SanbaseWeb.MetricsAccessLive do
                   </th>
                 </tr>
               </thead>
-              <tbody id="plan-metric-rows" phx-update="stream">
+              <tbody id="plan-metric-rows" phx-update="stream" class="max-md:block">
                 <.metric_row
                   :for={{_dom_id, item} <- @streams.rows}
                   item={item}

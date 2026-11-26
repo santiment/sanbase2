@@ -19,7 +19,11 @@ defmodule SanbaseWeb.Graphql.EmailSubscribeApiTest do
   end
 
   test "verify email for newsletter is limited per recipient", context do
-    assert execute_mutation(context.conn, verify_email_query(context.email), "verifyEmailNewsletter")
+    assert execute_mutation(
+             context.conn,
+             verify_email_query(context.email),
+             "verifyEmailNewsletter"
+           )
 
     error_msg =
       execute_mutation_with_error(context.conn, verify_email_query(context.email))

@@ -333,22 +333,6 @@ defmodule SanbaseWeb.Router do
       get("/download/:id", Admin.InvoiceDownloadController, :download)
     end
 
-    scope "/tweets_prediction" do
-      live_session :tweets_prediction_authenticated_user,
-        on_mount: [
-          {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
-          {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles}
-        ] do
-        live("/", TweetsPredictionLive)
-      end
-    end
-
-    scope "/price_predictions" do
-      live_session :price_predictions_admin, on_mount: @admin_panel_on_mount do
-        live("/", PricePredictionsLive)
-      end
-    end
-
     scope "/disagreement_tweets" do
       live_session :disagreement_tweets_authenticated_user,
         on_mount: [

@@ -335,6 +335,26 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
            ] == json_response(result, 200)["data"]["allInsights"]
   end
 
+  test "allInsights rejects non-positive page and pageSize", %{user: user} do
+    insert(:published_post, user: user, state: Post.approved_state())
+
+    for {page, page_size} <- [{1, -1}, {1, 0}, {0, 10}, {-1, 10}] do
+      query = """
+      {
+        allInsights(page: #{page}, pageSize: #{page_size}) { id }
+      }
+      """
+
+      result =
+        build_conn()
+        |> post("/graphql", query_skeleton(query, "allInsights"))
+        |> json_response(200)
+
+      assert %{"errors" => [%{"message" => message}]} = result
+      assert message == "The page and page_size arguments must be positive integers."
+    end
+  end
+
   test "Excluding draft and not approved insights from allInsights", %{
     conn: conn,
     user: user,

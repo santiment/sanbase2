@@ -56,8 +56,9 @@ defmodule Sanbase.PresignedS3Url do
 
   # The key comes from the caller and is signed for the private bucket, and every
   # call stores a row. Only plain dataset paths are signed: S3-safe characters,
-  # no leading slash, no empty, "." or ".." segments, bounded length.
-  @max_object_key_length 512
+  # no leading slash, no empty, "." or ".." segments, and no longer than the
+  # varchar(255) `object` column.
+  @max_object_key_length 255
   @object_key_regex ~r/\A[A-Za-z0-9._\-]+(\/[A-Za-z0-9._\-]+)*\z/
 
   @doc false

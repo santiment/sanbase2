@@ -19,7 +19,9 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
                     ~w(subscription_status failed_payment unpaid_invoice api_calls
                        api_calls_prev last_active_at last_web_active_at last_api_call_at
                        manual_status open_entries_count retention_action
-                       active_days active_days_prev risk_level risk_reasons)
+                       active_days active_days_prev risk_level risk_reasons
+                       api_call_limit limit_used_last_month_pct limit_pace_pct upsell
+                       upsell_reason)
 
   @churned_headers ~w(user_id email username stripe_customer_id business_reason
                       last_plan_name interval joined_on churned_on lost_mrr_usd tcv_usd
@@ -136,8 +138,23 @@ defmodule SanbaseWeb.Admin.BusinessClientsController do
         c.active_days_prev,
         c.risk_level,
         Enum.join(c.risk_reasons, "; ")
-      ]
+      ] ++ plan_limit_cells(c.plan_limit)
   end
+
+  defp plan_limit_cells(nil), do: [nil, nil, nil, false, nil]
+
+  defp plan_limit_cells(limit) do
+    [
+      limit.limit,
+      pct(limit.last_month.share),
+      pct(limit.pace.share),
+      limit.upsell?,
+      limit.upsell_reason
+    ]
+  end
+
+  defp pct(nil), do: nil
+  defp pct(share), do: :erlang.float_to_binary(share * 100, decimals: 1)
 
   defp churned_row(c) do
     [

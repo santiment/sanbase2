@@ -53,6 +53,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsControllerTest do
     active_days_prev: 12,
     risk_level: :high_risk,
     risk_reasons: ["Active on 4 of the last 30 days"],
+    plan_limit: nil,
+    upsell?: false,
     last_active_at: ~U[2026-10-01 00:00:00Z],
     last_web_active_at: nil,
     last_api_call_at: ~U[2026-10-01 00:00:00Z],
@@ -170,6 +172,34 @@ defmodule SanbaseWeb.Admin.BusinessClientsControllerTest do
       assert record["unpaid_invoice"] == "true"
       assert record["last_api_call_at"] == "2026-10-01T00:00:00Z"
       assert record["last_web_active_at"] == ""
+      assert record["api_call_limit"] == ""
+      assert record["upsell"] == "false"
+    end
+  end
+
+  test "exports the share of the API limit used and the upsell reason", %{conn: conn} do
+    client =
+      Map.merge(@client, %{
+        upsell?: true,
+        plan_limit: %{
+          limit: 600_000,
+          last_month: %{month: ~D[2026-10-01], calls: 540_000, share: 0.9},
+          pace: %{calls: 300_000, share: 0.5, partial?: false},
+          upsell?: true,
+          upsell_reason: "On pace for 90% of the monthly limit this month"
+        }
+      })
+
+    with_mocks [{Report, [:passthrough], [list_clients: fn _opts -> [client] end]}] do
+      conn = get(conn, ~p"/admin/business_clients/export/clients")
+      [header, row] = conn |> response(200) |> NimbleCSV.RFC4180.parse_string(skip_headers: false)
+      record = Enum.zip(header, row) |> Map.new()
+
+      assert record["api_call_limit"] == "600000"
+      assert record["limit_used_last_month_pct"] == "90.0"
+      assert record["limit_pace_pct"] == "50.0"
+      assert record["upsell"] == "true"
+      assert record["upsell_reason"] == "On pace for 90% of the monthly limit this month"
     end
   end
 

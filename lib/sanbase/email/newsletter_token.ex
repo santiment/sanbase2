@@ -1,6 +1,7 @@
 defmodule Sanbase.Email.NewsletterToken do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User.Email
@@ -27,6 +28,38 @@ defmodule Sanbase.Email.NewsletterToken do
 
   def get_by(email, token) do
     Repo.get_by(__MODULE__, email: email, token: token)
+  end
+
+  # Limits for the public verify mutation, per recipient (case-insensitive).
+  @min_seconds_between_tokens 60
+  @max_tokens_per_day 5
+
+  @doc ~s"""
+  True if no more verification tokens may be generated for this email right now:
+  one was generated in the last #{@min_seconds_between_tokens} seconds, or
+  #{@max_tokens_per_day} were generated in the last 24 hours.
+  Used to stop the public verify mutation from mail-bombing one address.
+
+  It is a read, so callers that insert a token afterwards must serialize on the
+  email (see `SanbaseWeb.Graphql.Resolvers.EmailResolver`).
+  """
+  def generation_limit_reached?(email) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    minute_ago = DateTime.add(now, -@min_seconds_between_tokens, :second)
+    day_ago = DateTime.add(now, -24 * 60 * 60, :second)
+
+    email = String.downcase(email)
+
+    {last_minute, last_day} =
+      from(t in __MODULE__,
+        where: fragment("lower(?)", t.email) == ^email and t.email_token_generated_at > ^day_ago,
+        select:
+          {fragment("count(*) FILTER (WHERE ? > ?)", t.email_token_generated_at, ^minute_ago),
+           count(t.id)}
+      )
+      |> Repo.one()
+
+    last_minute > 0 or last_day >= @max_tokens_per_day
   end
 
   def create_email_token(email) do

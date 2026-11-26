@@ -59,6 +59,8 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         active_days_prev: 24,
         risk_level: :healthy,
         risk_reasons: [],
+        plan_limit: nil,
+        upsell?: false,
         last_active_at: ~U[2026-10-20 10:00:00Z],
         last_web_active_at: ~U[2026-10-20 10:00:00Z],
         last_api_call_at: nil,
@@ -120,6 +122,13 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
     [
       client(
         user_id: 101,
+        upsell?: true,
+        plan_limit: %{
+          limit: 600_000,
+          last_month: %{month: ~D[2026-10-01], calls: 540_000, share: 0.9},
+          upsell?: true,
+          upsell_reason: "Used 80% or more of the monthly limit in 3 of the last 6 months"
+        },
         email: "big@acme.com",
         mrr: 90_000,
         acv: 1_080_000,
@@ -658,6 +667,25 @@ defmodule SanbaseWeb.Admin.BusinessClientsLiveTest do
         |> render_change()
 
         assert row_ids(view) == ["client-103"]
+
+        view |> element("#clear-filters") |> render_click()
+        assert length(row_ids(view)) == 4
+      end
+    end
+
+    test "shows the share of the API limit used and filters the upsell candidates" do
+      {_user, conn} = sign_in(:role_admin_panel_viewer)
+
+      with_mocks report_mocks() do
+        view = open_page(conn)
+
+        assert has_element?(view, "#limit-use-101", "90% of limit")
+        assert has_element?(view, "#upsell-101")
+        refute has_element?(view, "#upsell-102")
+        refute has_element?(view, "#limit-use-102")
+
+        view |> form("#client-filters", %{"upsell" => "yes"}) |> render_change()
+        assert row_ids(view) == ["client-101"]
 
         view |> element("#clear-filters") |> render_click()
         assert length(row_ids(view)) == 4

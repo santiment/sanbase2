@@ -85,6 +85,8 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
   defp line_discount({_, _, _, _, opts}), do: Keyword.get(opts, :discount, 0)
   defp line_discount(_line), do: 0
 
+  defp to_unix(date), do: date |> DateTime.new!(~T[00:00:00], "Etc/UTC") |> DateTime.to_unix()
+
   defp with_usage(rows, fun) do
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fun)
@@ -521,6 +523,65 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
       assert client.risk_reasons == ["No activity in the last 30 days"]
 
       assert [%{risk_level: :unknown, active_days: nil, active_days_prev: nil}] =
+               Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:error, "timeout"})
+               |> Sanbase.Mock.run_with_mocks(fn -> Report.list_clients() end)
+    end
+
+    test "the share of the monthly API limit used, and upsell candidates", %{today: today} do
+      busy = user("busy@corp.com")
+      quiet = user("quiet@corp.com")
+      unknown = user("unknown@corp.com")
+
+      for u <- [busy, quiet, unknown] do
+        invoice(u, [{@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}])
+      end
+
+      for u <- [busy, quiet] do
+        Repo.insert!(%Sanbase.ApiCallLimit{
+          user_id: u.id,
+          api_calls_limit_plan: "sanapi_business_pro",
+          has_limits: true
+        })
+      end
+
+      month = Date.beginning_of_month(today)
+      unix = fn shift -> month |> Date.shift(month: shift) |> to_unix() end
+
+      clients =
+        Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, fn sql, _args, _opts ->
+          if sql =~ "toStartOfMonth" do
+            {:ok,
+             %{
+               rows: [
+                 [busy.id, unix.(-2), 540_000],
+                 [busy.id, unix.(-1), 500_000],
+                 [quiet.id, unix.(-1), 60_000]
+               ]
+             }}
+          else
+            {:ok, %{rows: []}}
+          end
+        end)
+        |> Sanbase.Mock.run_with_mocks(fn -> Report.list_clients() end)
+        |> Map.new(&{&1.user_id, &1})
+
+      assert %{upsell?: true, plan_limit: %{limit: 600_000} = busy_limit} = clients[busy.id]
+      assert busy_limit.months_at_high == 2
+      assert_in_delta busy_limit.last_month.share, 0.833, 0.001
+
+      assert %{upsell?: false, plan_limit: %{limit: 600_000, last_month: %{share: 0.1}}} =
+               clients[quiet.id]
+
+      # No limit row: calls are known, shares are not.
+      assert %{upsell?: false, plan_limit: %{limit: nil, last_month: %{share: nil}}} =
+               clients[unknown.id]
+    end
+
+    test "the plan limit is unknown when the monthly calls cannot be read", %{today: today} do
+      user = user("failing@corp.com")
+      invoice(user, [{@business_pro_monthly, Date.add(today, -5), Date.add(today, 25), 42_000}])
+
+      assert [%{plan_limit: nil, upsell?: false}] =
                Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:error, "timeout"})
                |> Sanbase.Mock.run_with_mocks(fn -> Report.list_clients() end)
     end
@@ -1127,7 +1188,7 @@ defmodule Sanbase.Billing.BusinessClients.ReportTest do
 
       assert Map.keys(notes) |> Enum.sort() ==
                Enum.sort(~w(business_client mrr acv tcv client_churn revenue_churn client_renewal
-                            revenue_renewal at_risk risk retention churned usage)a)
+                            revenue_renewal at_risk risk retention churned usage plan_limit)a)
     end
   end
 end

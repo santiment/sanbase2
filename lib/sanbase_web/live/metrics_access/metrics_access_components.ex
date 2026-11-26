@@ -499,9 +499,11 @@ defmodule SanbaseWeb.MetricsAccessComponents do
     default: false,
     doc: "a search or category narrows the counts: they say \"matching\""
 
+  attr :api_limits, :map, required: true, doc: "the plan's `api_call_limits/1`"
+
   def plan_summary(assigns) do
     ~H"""
-    <div id="plan-summary" class="grid gap-3 sm:grid-cols-2">
+    <div id="plan-summary" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div
         :for={count <- @counts}
         id={"summary-#{count.key}"}
@@ -538,7 +540,109 @@ defmodule SanbaseWeb.MetricsAccessComponents do
           <% end %>
         </div>
       </div>
+      <.api_calls_card plan={@plan} limits={@api_limits} />
     </div>
+    """
+  end
+
+  # API plans' own hues, a ramp from Sanbase Max to Business Max (apart from the
+  # access colours). Text on these tints stays base-content.
+  @api_hues %{
+    "sanbase_max" => %{
+      key: "indigo",
+      card: "border-indigo-500/30 bg-indigo-500/[0.06]",
+      chip: "bg-indigo-500/15",
+      pill: "bg-indigo-500/15"
+    },
+    "business_pro" => %{
+      key: "purple",
+      card: "border-purple-500/30 bg-purple-500/[0.06]",
+      chip: "bg-purple-500/15",
+      pill: "bg-purple-500/15"
+    },
+    "business_max" => %{
+      key: "pink",
+      card: "border-pink-500/30 bg-pink-500/[0.06]",
+      chip: "bg-pink-500/15",
+      pill: "bg-pink-500/15"
+    }
+  }
+
+  # The plan view's API calls card: the monthly allowance, with per-hour and
+  # per-minute limits; plans not meant for the API say so instead.
+  attr :plan, :map, required: true
+  attr :limits, :map, required: true
+
+  defp api_calls_card(assigns) do
+    assigns = assign(assigns, hue: Map.get(@api_hues, assigns.plan.key))
+
+    ~H"""
+    <div
+      id="summary-api-calls"
+      role="group"
+      aria-label={@hue && "API calls: " <> MetricsAccessFormat.api_limits_label(@limits)}
+      data-hue={@hue && @hue.key}
+      class={[
+        "min-w-0 rounded-xl border px-4 py-3 shadow-sm",
+        if(@hue, do: @hue.card, else: "border-base-300 bg-base-100")
+      ]}
+    >
+      <div class="text-sm text-base-content/70">API calls</div>
+      <%= if @hue do %>
+        <div data-part="month" class="mt-0.5 flex items-baseline gap-x-1">
+          <span class="text-2xl font-bold tabular-nums">
+            {MetricsAccessFormat.compact_count(@limits.month)}
+          </span>
+          <span class="text-sm text-base-content/70">{" / month"}</span>
+        </div>
+        <div class="mt-1 flex flex-wrap gap-1.5 text-xs tabular-nums">
+          <span data-part="hour" class={["rounded-md px-1.5 py-0.5", @hue.chip]}>
+            {MetricsAccessFormat.compact_count(@limits.hour)} / hour
+          </span>
+          <span data-part="minute" class={["rounded-md px-1.5 py-0.5", @hue.chip]}>
+            {MetricsAccessFormat.compact_count(@limits.minute)} / min
+          </span>
+        </div>
+      <% else %>
+        <p class="mt-2 flex items-center gap-1.5 text-sm text-base-content/70">
+          <.icon name="hero-no-symbol-mini" class="size-4 shrink-0 text-base-content/50" />
+          Not meant for API access
+        </p>
+      <% end %>
+    </div>
+    """
+  end
+
+  @doc """
+  A compare-view plan header's API limits pill (API channel only): monthly and
+  per-minute calls, the full numbers in its title; "Not for API" for plans not
+  meant for it. Wraps to two lines in a narrow column.
+  """
+  attr :plan, :string, required: true
+  attr :limits, :map, required: true
+
+  def api_limits_pill(assigns) do
+    assigns = assign(assigns, hue: Map.get(@api_hues, assigns.plan))
+
+    ~H"""
+    <span
+      id={"compare-limits-#{@plan}"}
+      title={@hue && MetricsAccessFormat.api_limits_label(@limits)}
+      class={[
+        "mt-1 inline-flex flex-wrap justify-center gap-x-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-4",
+        if(@hue, do: [@hue.pill, "text-base-content"], else: "bg-base-content/5 text-base-content/60")
+      ]}
+    >
+      <%= if @hue do %>
+        <span class="whitespace-nowrap">{MetricsAccessFormat.compact_count(@limits.month)}/mo</span>
+        <%!-- Spaces inside the dot keep the text readable when copied; a flex
+             item trims them on screen. --%>
+        <span aria-hidden="true">{" · "}</span>
+        <span class="whitespace-nowrap">{MetricsAccessFormat.compact_count(@limits.minute)}/min</span>
+      <% else %>
+        Not for API
+      <% end %>
+    </span>
     """
   end
 
@@ -1195,11 +1299,5 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   defp locked?(_), do: false
 
   @doc "1234567 => \"1,234,567\""
-  def delimit(n) when is_integer(n) do
-    n
-    |> Integer.to_string()
-    |> String.reverse()
-    |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
-    |> String.reverse()
-  end
+  def delimit(n) when is_integer(n), do: MetricsAccessFormat.delimit(n)
 end

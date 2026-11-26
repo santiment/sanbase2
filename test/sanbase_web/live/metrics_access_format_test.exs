@@ -148,6 +148,26 @@ defmodule SanbaseWeb.MetricsAccessFormatTest do
     end
   end
 
+  describe "compact_count/1 and api_limits_label/1" do
+    test "compact counts" do
+      assert compact_count(100) == "100"
+      assert compact_count(600) == "600"
+      assert compact_count(1_000) == "1K"
+      assert compact_count(1_200) == "1.2K"
+      assert compact_count(5_000) == "5K"
+      assert compact_count(30_000) == "30K"
+      assert compact_count(80_000) == "80K"
+      assert compact_count(600_000) == "600K"
+      assert compact_count(1_200_000) == "1.2M"
+      assert compact_count(2_000_000) == "2M"
+    end
+
+    test "the full wording" do
+      assert api_limits_label(%{month: 600_000, hour: 30_000, minute: 600}) ==
+               "600,000 calls per month, 30,000 per hour, 600 per minute"
+    end
+  end
+
   describe "locked/1" do
     test "plan labels come from plans/0" do
       assert locked("sanbase_max") == "Requires Sanbase Max"

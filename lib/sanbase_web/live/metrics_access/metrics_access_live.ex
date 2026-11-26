@@ -35,6 +35,8 @@ defmodule SanbaseWeb.MetricsAccessLive do
      |> assign(
        page_title: "Santiment | Metrics by plan",
        plans: PlanMetricAccess.plans(),
+       api_limits:
+         Map.new(PlanMetricAccess.plans(), &{&1.key, PlanMetricAccess.api_call_limits(&1.key)}),
        channels: PlanMetricAccess.channels(),
        access_note: note,
        filter: nil,
@@ -324,6 +326,7 @@ defmodule SanbaseWeb.MetricsAccessLive do
           counts={@counts}
           unit={@unit}
           matching={@filter.q != "" or not is_nil(@filter.category)}
+          api_limits={@api_limits[@filter.plan]}
         />
       </div>
 
@@ -480,10 +483,12 @@ defmodule SanbaseWeb.MetricsAccessLive do
               id="compare-table"
               class="w-full text-left max-md:min-w-[44rem] md:table-fixed"
             >
-              <%!-- Fixed-width plan columns; the metric column takes the rest. --%>
+              <%!-- Fixed-width plan columns, wider on wider screens so plan names,
+                   subtitles and API pills fit on one line; the metric column takes
+                   the rest. --%>
               <colgroup>
                 <col />
-                <col :for={_plan <- @plans} class="md:w-[104px]" />
+                <col :for={_plan <- @plans} class="md:w-[104px] lg:w-[136px] xl:w-[160px]" />
               </colgroup>
               <thead class={sticky_thead()}>
                 <.caption_row colspan={length(@plans) + 1} today={@today}>
@@ -534,6 +539,11 @@ defmodule SanbaseWeb.MetricsAccessLive do
                       <.channel_word channel={@filter.channel} />
                       · {delimit(@plan_counts[plan.key])} included
                     </span>
+                    <.api_limits_pill
+                      :if={@filter.channel == :api}
+                      plan={plan.key}
+                      limits={@api_limits[plan.key]}
+                    />
                   </th>
                 </tr>
               </thead>

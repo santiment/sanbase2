@@ -1333,6 +1333,58 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
     end
   end
 
+  describe "API call limits" do
+    test "an API plan's card shows its limits, with the full numbers for readers", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/metrics_access?plan=business_pro")
+
+      card = "#summary-api-calls"
+      assert text(view, "#{card} [data-part=month]") == "600K / month"
+      assert text(view, "#{card} [data-part=hour]") == "30K / hour"
+      assert text(view, "#{card} [data-part=minute]") == "600 / min"
+
+      assert has_element?(
+               view,
+               "#{card}[aria-label='API calls: 600,000 calls per month, 30,000 per hour, 600 per minute']"
+             )
+
+      assert has_element?(view, "#{card}[data-hue=purple]")
+    end
+
+    test "Free and Sanbase Pro say they are not meant for API access", %{conn: conn} do
+      for plan <- ["free", "sanbase_pro"] do
+        {:ok, view, _html} = live(conn, "/metrics_access?plan=#{plan}")
+
+        assert text(view, "#summary-api-calls") =~ "Not meant for API access"
+        refute has_element?(view, "#summary-api-calls [data-part=month]")
+      end
+    end
+
+    test "the compare view's API headers carry each plan's limits", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/metrics_access?view=compare")
+
+      for {plan, pill} <- [
+            {"free", "Not for API"},
+            {"sanbase_pro", "Not for API"},
+            {"sanbase_max", "80K/mo · 100/min"},
+            {"business_pro", "600K/mo · 600/min"},
+            {"business_max", "1.2M/mo · 1.2K/min"}
+          ] do
+        assert text(view, "#compare-plan-#{plan} #compare-limits-#{plan}") == pill
+      end
+
+      assert has_element?(
+               view,
+               "#compare-limits-business_max[title='1,200,000 calls per month, 60,000 per hour, 1,200 per minute']"
+             )
+
+      # Not on the Sanbase channel.
+      {:ok, view, _html} = live(conn, ~p"/metrics_access?view=compare&channel=sanbase")
+      refute has_element?(view, "[id^=compare-limits-]")
+    end
+  end
+
   test "bogus params fall back to defaults", %{conn: conn} do
     {:ok, view, _html} =
       live(

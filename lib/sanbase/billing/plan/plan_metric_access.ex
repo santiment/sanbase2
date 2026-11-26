@@ -14,6 +14,7 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
     SanbaseAccessChecker
   }
 
+  alias Sanbase.ApiCallLimit.Restrictions
   alias Sanbase.Cache.PersistentTermTtl
   alias Sanbase.Metric.Registry
 
@@ -136,6 +137,35 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
         {:window, history, zero_to_nil(delay)}
     end
   end
+
+  @doc """
+  A plan's API call limits per month, hour and minute, read from the tables
+  that enforce them (`Sanbase.ApiCallLimit.Restrictions`). Free users are
+  metered as SANAPI Free.
+  """
+  @spec api_call_limits(plan_key) :: %{
+          month: pos_integer(),
+          hour: pos_integer(),
+          minute: pos_integer()
+        }
+  def api_call_limits(plan_key) do
+    key = api_call_limits_key(plan!(plan_key))
+
+    %{
+      month: Map.fetch!(Restrictions.call_limits_per_month(), key),
+      hour: Map.fetch!(Restrictions.call_limits_per_hour(), key),
+      minute: Map.fetch!(Restrictions.call_limits_per_minute(), key)
+    }
+  end
+
+  @doc "Whether a plan is meant for API access: not Free or Sanbase Pro."
+  @spec api_plan?(plan_key) :: boolean()
+  def api_plan?(plan_key), do: plan!(plan_key).key not in ["free", "sanbase_pro"]
+
+  defp api_call_limits_key(%{key: "free"}), do: "sanapi_free"
+
+  defp api_call_limits_key(%{subscription_product: product, plan_name: plan_name}),
+    do: Restrictions.key(product, plan_name)
 
   @doc "The plan-level window, independent of any metric: `{history_days, delay_days}`."
   @spec headline(plan_key, channel) :: {pos_integer() | nil, pos_integer() | nil}

@@ -45,6 +45,42 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
     end
   end
 
+  test "API call limits come from the enforcement tables" do
+    assert PlanMetricAccess.api_call_limits("free") == %{month: 1_000, hour: 500, minute: 100}
+
+    assert PlanMetricAccess.api_call_limits("sanbase_pro") == %{
+             month: 5_000,
+             hour: 1_000,
+             minute: 100
+           }
+
+    assert PlanMetricAccess.api_call_limits("sanbase_max") == %{
+             month: 80_000,
+             hour: 4_000,
+             minute: 100
+           }
+
+    assert PlanMetricAccess.api_call_limits("business_pro") ==
+             %{month: 600_000, hour: 30_000, minute: 600}
+
+    assert PlanMetricAccess.api_call_limits("business_max") ==
+             %{month: 1_200_000, hour: 60_000, minute: 1_200}
+
+    # Read through the real maps, not copied.
+    key = Sanbase.ApiCallLimit.Restrictions.key("SANAPI", "BUSINESS_PRO")
+
+    assert PlanMetricAccess.api_call_limits("business_pro").month ==
+             Sanbase.ApiCallLimit.Restrictions.call_limits_per_month()[key]
+  end
+
+  test "only Sanbase Max and the Business plans are meant for API access" do
+    refute PlanMetricAccess.api_plan?("free")
+    refute PlanMetricAccess.api_plan?("sanbase_pro")
+    assert PlanMetricAccess.api_plan?("sanbase_max")
+    assert PlanMetricAccess.api_plan?("business_pro")
+    assert PlanMetricAccess.api_plan?("business_max")
+  end
+
   test "headline windows match the checker modules" do
     assert PlanMetricAccess.headline("free", :sanbase) == {730, 30}
     assert PlanMetricAccess.headline("free", :api) == {365, 30}

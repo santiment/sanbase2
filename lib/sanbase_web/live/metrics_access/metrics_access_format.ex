@@ -130,6 +130,38 @@ defmodule SanbaseWeb.MetricsAccessFormat do
     }
   end
 
+  @doc ~s(A count, compact: "600", "1.2K", "80K", "1.2M".)
+  @spec compact_count(non_neg_integer()) :: String.t()
+  def compact_count(n) when n < 1_000, do: Integer.to_string(n)
+  def compact_count(n) when n < 1_000_000, do: scaled(n, 1_000) <> "K"
+  def compact_count(n), do: scaled(n, 1_000_000) <> "M"
+
+  # One decimal, dropped when it is zero: 1200 / 1000 => "1.2", 5000 / 1000 => "5".
+  defp scaled(n, unit) do
+    tenths = round(n * 10 / unit)
+
+    if rem(tenths, 10) == 0,
+      do: "#{div(tenths, 10)}",
+      else: "#{div(tenths, 10)}.#{rem(tenths, 10)}"
+  end
+
+  @doc ~s(API call limits in full: "600,000 calls per month, 30,000 per hour, 600 per minute".)
+  @spec api_limits_label(%{month: pos_integer(), hour: pos_integer(), minute: pos_integer()}) ::
+          String.t()
+  def api_limits_label(%{month: month, hour: hour, minute: minute}) do
+    "#{delimit(month)} calls per month, #{delimit(hour)} per hour, #{delimit(minute)} per minute"
+  end
+
+  @doc ~s(1234567 => "1,234,567")
+  @spec delimit(integer()) :: String.t()
+  def delimit(n) when is_integer(n) do
+    n
+    |> Integer.to_string()
+    |> String.reverse()
+    |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
+    |> String.reverse()
+  end
+
   # ["a", "b", "c"] => "a, b and c"
   defp join_naturally([only]), do: only
 

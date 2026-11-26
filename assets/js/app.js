@@ -16,6 +16,7 @@ import { KeepDetailsOpen } from "./hooks/keep_details_open"
 import { AutoGrow } from "./hooks/auto_grow"
 import { LightweightChart } from "./hooks/lightweight_chart"
 import { LoadMoreOnVisible } from "./hooks/load_more_on_visible"
+import { PlanBarHeight } from "./hooks/plan_bar_height"
 
 // Make Sortable available globally
 window.Sortable = Sortable
@@ -34,8 +35,38 @@ const Hooks = {
   KeepDetailsOpen: KeepDetailsOpen,
   AutoGrow: AutoGrow,
   LightweightChart: LightweightChart,
-  LoadMoreOnVisible: LoadMoreOnVisible
+  LoadMoreOnVisible: LoadMoreOnVisible,
+  PlanBarHeight: PlanBarHeight
 }
+
+// `JS.dispatch("metrics:focus", to: ...)`: focus without scrolling the target
+// into view (JS.focus would scroll), e.g. a popover in a sticky header.
+window.addEventListener("metrics:focus", (e) => e.target.focus({ preventScroll: true }))
+
+// Esc closes what is open and marked `data-dismiss="escape"`, and nothing else:
+// a popover runs its `data-on-escape` JS command and hands focus back to
+// `data-return-focus`; a tooltip is flagged `data-dismissed` (its CSS hides it)
+// until the pointer leaves its control or focus moves on.
+const isShown = (el) => {
+  const style = getComputedStyle(el)
+  return style.display !== "none" && style.visibility !== "hidden"
+}
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return
+  document.querySelectorAll("[data-dismiss=escape]").forEach((el) => {
+    if (!isShown(el)) return
+    if (el.dataset.onEscape) {
+      liveSocket.execJS(el, el.dataset.onEscape)
+      const back = el.dataset.returnFocus && document.getElementById(el.dataset.returnFocus)
+      if (back) back.focus({ preventScroll: true })
+    } else {
+      el.dataset.dismissed = "true"
+      const reset = () => delete el.dataset.dismissed
+      el.parentElement.addEventListener("mouseleave", reset, { once: true })
+      el.parentElement.addEventListener("focusout", reset, { once: true })
+    }
+  })
+})
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {

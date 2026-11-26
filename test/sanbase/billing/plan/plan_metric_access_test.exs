@@ -8,6 +8,12 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
 
   @metric "mvrv_usd"
 
+  # rows/0 is cached in a :persistent_term that outlives each test.
+  setup do
+    PlanMetricAccess.expire_cache!()
+    on_exit(&PlanMetricAccess.expire_cache!/0)
+  end
+
   test "plans and channels are listed in display order" do
     assert Enum.map(PlanMetricAccess.plans(), & &1.key) ==
              ["free", "sanbase_pro", "sanbase_max", "business_pro", "business_max"]
@@ -30,6 +36,15 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
            }
   end
 
+  test "an unrestricted metric is all history with no delay on every plan and channel" do
+    metric = Sanbase.Metric.free_metrics() |> Enum.sort() |> hd()
+
+    for %{key: plan} <- PlanMetricAccess.plans(),
+        %{key: channel} <- PlanMetricAccess.channels() do
+      assert PlanMetricAccess.access({:metric, metric}, plan, channel) == {:window, nil, nil}
+    end
+  end
+
   test "headline windows match the checker modules" do
     assert PlanMetricAccess.headline("free", :sanbase) == {730, 30}
     assert PlanMetricAccess.headline("free", :api) == {365, 30}
@@ -39,15 +54,6 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
     assert PlanMetricAccess.headline("business_pro", :sanbase) == {nil, nil}
     assert PlanMetricAccess.headline("business_pro", :api) == {730, nil}
     assert PlanMetricAccess.headline("business_max", :api) == {nil, nil}
-  end
-
-  test "a free metric is :free on every plan and channel" do
-    metric = Sanbase.Metric.free_metrics() |> Enum.sort() |> hd()
-
-    for %{key: plan} <- PlanMetricAccess.plans(),
-        %{key: channel} <- PlanMetricAccess.channels() do
-      assert PlanMetricAccess.access({:metric, metric}, plan, channel) == :free
-    end
   end
 
   test "a restricted metric gets the plan window" do
@@ -139,7 +145,7 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
 
     assert PlanMetricAccess.access(m, "free", :api) == {:locked, "sanbase_pro"}
     assert PlanMetricAccess.access(m, "free", :sanbase) == {:locked, "sanbase_pro"}
-    assert PlanMetricAccess.access(m, "sanbase_pro", :api) == :free
+    assert PlanMetricAccess.access(m, "sanbase_pro", :api) == {:window, nil, nil}
   end
 
   test "a metric no listed plan unlocks is {:locked, nil}" do
@@ -172,6 +178,28 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
       %{category: category, pricing: pricing, internal: internal}
     end
 
+    test "a registry-mapped category whose template raises does not break the rows", ctx do
+      registry = registry!(@template)
+
+      {:ok, _} =
+        MetricCategoryMapping.create(%{
+          metric_registry_id: registry.id,
+          category_id: ctx.category.id,
+          group_id: ctx.pricing.id,
+          display_order: 1
+        })
+
+      mock(Sanbase.Metric.Registry, :resolve_registry, fn
+        %{id: id} when id == registry.id -> raise "broken template"
+        other -> :meck.passthrough([other])
+      end)
+
+      {rows, log} = ExUnit.CaptureLog.with_log(&PlanMetricAccess.compute_rows/0)
+
+      assert length(rows) > 100
+      assert log =~ "broken template"
+    end
+
     test "registry template variants collapse into one row with a clean name" do
       registry = registry!(@template)
       variants = released_variants(registry)
@@ -184,6 +212,27 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
       assert row.metrics == Enum.sort(variants)
       assert row.name == "MVRV for coins that moved"
       refute Enum.any?(rows, &String.contains?(&1.name, ["{{", "}}"]))
+    end
+
+    test "each name of a row carries its own display name, for the expanded variants" do
+      rows = PlanMetricAccess.compute_rows()
+      row = row_for(rows, "active_addresses_24h")
+      assert length(row.metrics) > 1
+
+      assert Map.keys(row.variant_names) |> Enum.sort() == Enum.sort(row.metrics)
+
+      for metric <- row.metrics do
+        expected =
+          case Sanbase.Metric.human_readable_name(metric) do
+            {:ok, name} when is_binary(name) and name != "" -> name
+            _ -> metric
+          end
+
+        assert row.variant_names[metric] == expected
+      end
+
+      # A variant's display name is searchable too.
+      assert row.search_text =~ String.downcase(row.variant_names["active_addresses_24h"])
     end
 
     test "blank display names fall back to the metric name" do
@@ -385,7 +434,7 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
 
       odd_row = Enum.find(rows, &(&1.id == "r-#{registry.id}-#{odd}"))
       assert odd_row.metrics == [odd]
-      assert Enum.all?(odd_row.access, fn {_, access} -> access == :free end)
+      assert Enum.all?(odd_row.access, fn {_, access} -> access == {:window, nil, nil} end)
 
       rest_row = row_for(rows, hd(rest))
       assert rest_row.id == "r-#{registry.id}-#{hd(rest_row.metrics)}"
@@ -407,7 +456,17 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
 
       assert Enum.all?(rows, fn row ->
                Map.keys(row) |> Enum.sort() ==
-                 [:access, :category, :category_slug, :group, :id, :metrics, :name, :search_text]
+                 [
+                   :access,
+                   :category,
+                   :category_slug,
+                   :group,
+                   :id,
+                   :metrics,
+                   :name,
+                   :search_text,
+                   :variant_names
+                 ]
              end)
     end
 
@@ -416,51 +475,42 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
       assert us < 2_000_000
     end
 
-    test "rows/0 computes directly, without the cache, when the cache is switched off" do
-      # `:use_rehydrating_cache` is false in the test env.
-      refute Application.get_env(:sanbase, :use_rehydrating_cache)
-      mock(Sanbase.Cache.RehydratingCache, :get, fn _, _ -> flunk("cache touched") end)
+    test "rows/0 computes once, then reads the term until expire_cache!/0" do
+      PlanMetricAccess.expire_cache!()
+      on_exit(&PlanMetricAccess.expire_cache!/0)
 
-      assert PlanMetricAccess.rows() == PlanMetricAccess.compute_rows()
-      assert :meck.num_calls(Sanbase.Cache.RehydratingCache, :_, :_) == 0
+      rows = PlanMetricAccess.rows()
+      assert rows == PlanMetricAccess.compute_rows()
+
+      # Served from the :persistent_term: nothing is recomputed.
+      mock(Sanbase.Metric, :available_metrics, fn -> flunk("recomputed") end)
+      assert PlanMetricAccess.rows() == rows
+
+      # Expired: the next read rebuilds.
+      :ok = PlanMetricAccess.expire_cache!()
+      assert_raise ExUnit.AssertionError, ~r/recomputed/, &PlanMetricAccess.rows/0
     end
 
-    test "rows/0 falls back to computing, with a warning, when the cache is not running" do
-      # The RehydratingCache supervisor is not started in the test env. The fallback
-      # is kept briefly in Sanbase.Cache, which outlives the test: clear it both ways.
-      clear_fallback = fn -> Sanbase.Cache.clear({PlanMetricAccess, :rows_fallback}) end
-      clear_fallback.()
-      Application.put_env(:sanbase, :use_rehydrating_cache, true)
+    test "a registry refresh expires the rows" do
+      on_exit(&PlanMetricAccess.expire_cache!/0)
+      _ = PlanMetricAccess.rows()
 
-      on_exit(fn ->
-        Application.put_env(:sanbase, :use_rehydrating_cache, false)
-        clear_fallback.()
-      end)
+      :ok = Sanbase.Metric.Registry.refresh_stored_terms()
 
-      {rows, log} = ExUnit.CaptureLog.with_log(&PlanMetricAccess.rows/0)
-
-      assert rows == PlanMetricAccess.compute_rows()
-      assert log =~ "[PlanMetricAccess]"
-
-      # Served from the short-lived fallback cache: not recomputed, no new warning.
       mock(Sanbase.Metric, :available_metrics, fn -> flunk("recomputed") end)
-      {again, log} = ExUnit.CaptureLog.with_log(&PlanMetricAccess.rows/0)
-
-      assert again == rows
-      refute log =~ "[PlanMetricAccess]"
+      assert_raise ExUnit.AssertionError, ~r/recomputed/, &PlanMetricAccess.rows/0
     end
   end
 
   defp agrees?({:locked, _}, restriction, _days_ago, _close?),
     do: restriction.is_accessible == false
 
-  defp agrees?(:free, restriction, _days_ago, _close?),
-    do: restriction.is_accessible and restriction.is_restricted == false
-
-  defp agrees?({:window, history, lag}, restriction, days_ago, close?) do
+  # An unrestricted metric (no restricted_from/restricted_to keys at all) is
+  # {:window, nil, nil}, as is a restricted one the plan serves in full.
+  defp agrees?({:window, history, delay}, restriction, days_ago, close?) do
     restriction.is_accessible and
-      close?.(history, days_ago.(restriction.restricted_from)) and
-      close?.(lag, days_ago.(restriction.restricted_to))
+      close?.(history, days_ago.(Map.get(restriction, :restricted_from))) and
+      close?.(delay, days_ago.(Map.get(restriction, :restricted_to)))
   end
 
   defp registry!(metric) do

@@ -14,22 +14,27 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
     SanbaseAccessChecker
   }
 
-  alias Sanbase.Cache.RehydratingCache
+  alias Sanbase.Cache.PersistentTermTtl
   alias Sanbase.Metric.Registry
 
   require Logger
 
   @type plan_key :: String.t()
   @type channel :: :sanbase | :api
+  @typedoc """
+  A window (`nil` history: all of it, `nil` delay: none) or locked, with the
+  lowest listed plan that unlocks it (`nil`: none, custom plan only). A metric
+  that is not restricted at all is `{:window, nil, nil}`.
+  """
   @type access ::
-          :free
-          | {:window, history_days :: pos_integer() | nil, lag_days :: pos_integer() | nil}
+          {:window, history_days :: pos_integer() | nil, delay_days :: pos_integer() | nil}
           | {:locked, min_plan_key :: plan_key() | nil}
 
   @type row :: %{
           id: String.t(),
           name: String.t(),
           metrics: [String.t()],
+          variant_names: %{String.t() => String.t()},
           category: String.t(),
           category_slug: String.t(),
           group: String.t() | nil,
@@ -37,15 +42,8 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
           access: %{{plan_key(), channel()} => access()}
         }
 
-  @rows_cache_key {__MODULE__, :rows}
-  @rows_ttl 3600
-  @rows_refresh_time_delta 600
-  # How long a caller waits for the first hydration before computing on its own.
-  @rows_first_computation_wait 5_000
-  # Without RehydratingCache, the synchronous result is kept this long, so the page
-  # computes once per TTL and not once per request.
-  @rows_fallback_cache_key {__MODULE__, :rows_fallback}
-  @rows_fallback_ttl 300
+  @pt_key {__MODULE__, :rows}
+  @ttl_ms :timer.minutes(10)
 
   # A run of template placeholders, including ranges like "{{low}} and {{high}}".
   @placeholder_run ~r/\{\{[^}]*\}\}(?:\s*(?:and|to|-|,)\s*\{\{[^}]*\}\})*/
@@ -116,7 +114,7 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
         {:locked, lowest_unlocking_plan(query, product)}
 
       not AccessChecker.restricted?(query) ->
-        :free
+        {:window, nil, nil}
 
       true ->
         history =
@@ -127,7 +125,7 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
             plan.plan_name
           )
 
-        lag =
+        delay =
           AccessChecker.realtime_data_cut_off_in_days(
             query,
             product,
@@ -135,11 +133,11 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
             plan.plan_name
           )
 
-        {:window, history, zero_to_nil(lag)}
+        {:window, history, zero_to_nil(delay)}
     end
   end
 
-  @doc "The plan-level window, independent of any metric: `{history_days, lag_days}`."
+  @doc "The plan-level window, independent of any metric: `{history_days, delay_days}`."
   @spec headline(plan_key, channel) :: {pos_integer() | nil, pos_integer() | nil}
   def headline(plan_key, channel) do
     plan = plan!(plan_key)
@@ -153,40 +151,23 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
     }
   end
 
-  @doc ~s"""
-  The rows of the metrics access page, served from `RehydratingCache` (refreshed
-  every #{@rows_refresh_time_delta}s, kept for #{@rows_ttl}s), so visitors never wait
-  on a rebuild. Before the first hydration has finished, or when the cache is not
-  running, the rows are computed synchronously and kept in `Sanbase.Cache` for
-  #{@rows_fallback_ttl}s.
-
-  With `:use_rehydrating_cache` off (the test env) the cache is not touched at all:
-  a registered closure would outlive the test that registered it.
+  @doc """
+  The rows of the metrics access page, cached in a `:persistent_term` with a TTL
+  (as `Sanbase.Metric.Catalog.Directory` is): read on every page request without
+  a copy, rebuilt lazily when expired. `Sanbase.Metric.Registry.refresh_stored_terms/0`
+  expires it, as the rows depend on the registry and the category mappings.
   """
   @spec rows() :: [row]
   def rows() do
-    if rehydrating_cache_enabled?() do
-      case cached_rows() do
-        {:ok, rows} when is_list(rows) -> rows
-        error -> fallback_rows(error)
-      end
-    else
-      compute_rows()
-    end
+    PersistentTermTtl.get_or_store(@pt_key, @ttl_ms, fn -> {:store, compute_rows()} end)
   end
 
-  # Sanbase.Cache runs in every container; the warning is logged only when the rows
-  # are actually computed, not on every request served from the fallback.
-  defp fallback_rows(error) do
-    Sanbase.Cache.get_or_store({@rows_fallback_cache_key, @rows_fallback_ttl}, fn ->
-      Logger.warning(
-        "[PlanMetricAccess] Metrics access rows not cached (#{inspect(error)}), " <>
-          "computing them synchronously."
-      )
-
-      compute_rows()
-    end)
-  end
+  @doc """
+  Drop the cached rows so the next read rebuilds them. Used after the registry or
+  the taxonomy changes.
+  """
+  @spec expire_cache!() :: :ok
+  def expire_cache!(), do: PersistentTermTtl.expire(@pt_key)
 
   @doc ~s"""
   Build the page rows, uncached, in taxonomy order.
@@ -200,7 +181,8 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
   under "Other".
 
   Each row carries what the page filters on, computed once here: `category_slug`,
-  and `search_text`, the display and technical names downcased.
+  and `search_text`, the display and technical names downcased; and, for listing
+  the names one per row, `variant_names`: each name's own display name.
   """
   @spec compute_rows() :: [row]
   def compute_rows() do
@@ -229,34 +211,6 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
         not only_in_hidden_groups?(Map.get(categories_map, metric, [])) and
         released?(metric)
     end)
-  end
-
-  defp rehydrating_cache_enabled?() do
-    Application.get_env(:sanbase, :use_rehydrating_cache, true)
-  end
-
-  defp cached_rows() do
-    case RehydratingCache.get(@rows_cache_key, @rows_first_computation_wait) do
-      {:error, :not_registered} ->
-        # `{:error, :already_registered}` means a concurrent caller won the race,
-        # which is just as good.
-        _ =
-          RehydratingCache.register_function(
-            fn -> {:ok, compute_rows()} end,
-            @rows_cache_key,
-            @rows_ttl,
-            @rows_refresh_time_delta,
-            "metrics access page rows"
-          )
-
-        RehydratingCache.get(@rows_cache_key, @rows_first_computation_wait)
-
-      result ->
-        result
-    end
-  catch
-    # Not running (the test env), or a call timing out on an overloaded cache.
-    :exit, _ -> {:error, :unavailable}
   end
 
   defp released?(metric) do
@@ -339,15 +293,26 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
 
     Enum.map(groups, fn {access, [first | _] = metrics} ->
       id = if split?, do: "r-#{registry.id}-#{first}", else: "r-#{registry.id}"
-      %{id: id, name: name || first, metrics: metrics, access: access}
+      name = name || first
+
+      variant_names =
+        case metrics do
+          [metric] -> %{metric => name}
+          metrics -> Map.new(metrics, &{&1, code_metric_name(&1)})
+        end
+
+      %{id: id, name: name, metrics: metrics, variant_names: variant_names, access: access}
     end)
   end
 
   defp code_row(metric) do
+    name = code_metric_name(metric)
+
     %{
       id: "m-#{metric}",
-      name: code_metric_name(metric),
+      name: name,
       metrics: [metric],
+      variant_names: %{metric => name},
       access: access_map(metric)
     }
   end
@@ -401,8 +366,10 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
     |> Map.put(:category, category)
     |> Map.put(:category_slug, slugify(category))
     |> Map.put(:group, placement.group_name)
-    |> Map.put(:search_text, [name | metrics] |> Enum.join("\n") |> String.downcase())
+    |> Map.put(:search_text, search_text([name | metrics] ++ Map.values(row.variant_names)))
   end
+
+  defp search_text(names), do: names |> Enum.uniq() |> Enum.join("\n") |> String.downcase()
 
   defp slugify(name) do
     name

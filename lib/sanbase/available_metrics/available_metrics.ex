@@ -346,12 +346,7 @@ defmodule Sanbase.AvailableMetrics do
       |> Enum.uniq()
       |> Registry.by_ids()
       |> Enum.reduce(%{}, fn registry, acc ->
-        public_names =
-          registry
-          |> Registry.resolve_registry()
-          |> Enum.map(& &1.metric)
-
-        Map.put(acc, registry.id, public_names)
+        Map.put(acc, registry.id, resolved_public_names(registry))
       end)
 
     Enum.reduce(mappings, %{}, fn mapping, acc ->
@@ -391,5 +386,21 @@ defmodule Sanbase.AvailableMetrics do
         end)
       end)
     end)
+  end
+
+  # One broken template must not break every page built on the taxonomy: it is
+  # logged and its names are left out, as the registry adapter does.
+  defp resolved_public_names(registry) do
+    registry
+    |> Sanbase.Metric.Registry.resolve_registry()
+    |> Enum.map(& &1.metric)
+  rescue
+    error ->
+      Logger.warning(
+        "[AvailableMetrics] Cannot resolve metric registry row #{registry.id}: " <>
+          Exception.message(error)
+      )
+
+      []
   end
 end

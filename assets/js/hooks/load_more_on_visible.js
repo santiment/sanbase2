@@ -24,6 +24,17 @@ export const LoadMoreOnVisible = {
     if (!this.loading) this.recheck()
   },
 
+  // A request in flight when the socket drops never replies: clear the flag, or
+  // the bar would never load again.
+  disconnected() {
+    this.loading = false
+  },
+
+  reconnected() {
+    this.loading = false
+    this.recheck()
+  },
+
   destroyed() {
     if (this.observer) this.observer.disconnect()
     this.observer = null

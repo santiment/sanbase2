@@ -142,11 +142,9 @@ defmodule Sanbase.Cache.RehydratingCache do
       {:error, :timeout}
   end
 
-  # A cast, not a call, so ETS-hit reads never block on the GenServer. Callers: the GraphQL
-  # resolver, itself behind request caching, and `Sanbase.Billing.Plan.PlanMetricAccess.rows/0`,
-  # once per page load and event of the public, no-login /metrics_access page - so cast
-  # volume follows that page's traffic. If the casts ever back up the mailbox, move
-  # `last_access` to a writable ETS table.
+  # A cast, not a call, so ETS-hit reads never block on the GenServer. Cast volume is low
+  # because `get/3` is only called by the GraphQL resolver, itself behind request caching;
+  # for a high-QPS caller, move `last_access` to a writable ETS table.
   defp touch(key), do: GenServer.cast(@name, {:touch, key})
 
   defp handle_get_response(data, opts) do

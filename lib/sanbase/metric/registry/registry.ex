@@ -379,6 +379,9 @@ defmodule Sanbase.Metric.Registry do
     # The metrics directory is built from the maps refreshed above, so it is
     # dropped last and rebuilt lazily on the next read.
     :ok = Sanbase.Metric.Catalog.Directory.expire_cache!()
+    # The metrics access page rows are built from the registry and the category
+    # mappings as well.
+    :ok = Sanbase.Billing.Plan.PlanMetricAccess.expire_cache!()
 
     :ok
   end

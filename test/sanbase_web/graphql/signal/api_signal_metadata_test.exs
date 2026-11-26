@@ -30,6 +30,23 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalMetadataTest do
     end
   end
 
+  # Every signal in the registry has `access: free` today, so there is no restricted signal
+  # whose window could be asserted. This pins that the own-plan path (requested product
+  # SANAPI, subscription product SANBASE) resolves signal restrictions without crashing.
+  test "sanbase pro user calling with an apikey resolves signal restrictions" do
+    user = Sanbase.Factory.insert(:user)
+    Sanbase.Factory.insert(:subscription_pro_sanbase, user: user)
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    conn = setup_apikey_auth(build_conn(), apikey)
+
+    for signal <- Signal.available_signals() do
+      assert %{"data" => %{"getSignal" => %{"metadata" => %{"isRestricted" => restricted}}}} =
+               get_signal_metadata(conn, signal)
+
+      assert is_boolean(restricted)
+    end
+  end
+
   test "returns error for unavailable signal", %{conn: conn} do
     rand_signals = Enum.map(1..100, fn _ -> rand_str() end)
     rand_signals = rand_signals -- Signal.available_signals()
@@ -57,6 +74,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalMetadataTest do
           availableAggregations
           dataType
           signal
+          isRestricted
         }
       }
     }

@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
     %{
       plan_name: plan_name,
       product_code: product_code,
+      subscription_product: subscription_product,
       asked_for_another_plan?: asked_for_another_plan?
     } = restrictions_subject(args, context)
 
@@ -40,14 +41,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
                 product_code,
                 filter,
                 nil,
-                grant
+                grant,
+                subscription_product
               )
 
             {:ok, restrictions}
           end,
           # The grant is part of the key. Without it one granted customer's wider windows
           # would be cached under the plan name and served to everyone else on that plan.
-          {:get_access_restrictions, plan_name, product_code, filter, grant_cache_key(grant)}
+          {:get_access_restrictions, plan_name, product_code, subscription_product, filter,
+           grant_cache_key(grant)}
         ).()
     end
   end
@@ -70,6 +73,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
     %{
       plan_name: plan_name,
       product_code: Product.code_by_id(product_id),
+      # The product the caller's own plan was bought on, which is what enforcement uses.
+      # A named plan is a hypothetical one, so it has no subscription product.
+      subscription_product: if(is_nil(named_plan), do: context[:subscription_product]),
       asked_for_another_plan?: not is_nil(named_plan)
     }
   end

@@ -103,6 +103,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   def historical_data_in_days_sanbase(plan) do
     case plan do
+      "FREE" -> @free_plan_stats[:historical_data_in_days]
       "BASIC" -> @free_plan_stats[:historical_data_in_days]
       "PRO" -> @free_plan_stats[:historical_data_in_days]
       "PRO_PLUS" -> @sanbase_pro_plus_plan_stats[:historical_data_in_days]
@@ -135,6 +136,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   def realtime_data_cut_off_in_days_sanbase(plan) do
     case plan do
+      "FREE" -> @free_plan_stats[:realtime_data_cut_off_in_days]
       "BASIC" -> @free_plan_stats[:realtime_data_cut_off_in_days]
       "PRO" -> @sanbase_pro_plan_stats[:realtime_data_cut_off_in_days]
       "PRO_PLUS" -> @sanbase_pro_plus_plan_stats[:realtime_data_cut_off_in_days]

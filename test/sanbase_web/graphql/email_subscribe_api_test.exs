@@ -18,6 +18,30 @@ defmodule SanbaseWeb.Graphql.EmailSubscribeApiTest do
     assert res == true
   end
 
+  test "verify email for newsletter is limited per recipient", context do
+    assert execute_mutation(context.conn, verify_email_query(context.email), "verifyEmailNewsletter")
+
+    error_msg =
+      execute_mutation_with_error(context.conn, verify_email_query(context.email))
+
+    assert error_msg =~ "Too many requests"
+  end
+
+  test "verify email for newsletter is limited per IP", context do
+    for i <- 1..6 do
+      assert execute_mutation(
+               context.conn,
+               verify_email_query("limit#{i}@example.com"),
+               "verifyEmailNewsletter"
+             )
+    end
+
+    error_msg =
+      execute_mutation_with_error(context.conn, verify_email_query("limit7@example.com"))
+
+    assert error_msg =~ "Too many requests"
+  end
+
   test "subscribe email to newsletter", context do
     nt = insert(:newsletter_token)
 

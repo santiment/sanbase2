@@ -1,6 +1,7 @@
 defmodule Sanbase.Email.NewsletterToken do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User.Email
@@ -27,6 +28,21 @@ defmodule Sanbase.Email.NewsletterToken do
 
   def get_by(email, token) do
     Repo.get_by(__MODULE__, email: email, token: token)
+  end
+
+  @doc ~s"""
+  True if a verification token for this email was generated in the last `seconds`.
+  Used to stop the public verify mutation from mail-bombing one address.
+  """
+  def recently_generated?(email, seconds \\ 60) do
+    since = DateTime.utc_now() |> DateTime.add(-seconds, :second) |> DateTime.truncate(:second)
+
+    email = String.downcase(email)
+
+    from(t in __MODULE__,
+      where: fragment("lower(?)", t.email) == ^email and t.email_token_generated_at > ^since
+    )
+    |> Repo.exists?()
   end
 
   def create_email_token(email) do

@@ -165,7 +165,11 @@ defmodule Sanbase.Accounts.Auth do
       "[EmailLoginVerify][#{rand_id}] Start verification for #{email} with token #{String.slice(token, 0..5)}"
     )
 
-    with {:ok, user} <- User.find_or_insert_by(:email, email),
+    # Only an existing user can have a login token (it is created by `emailLogin`),
+    # so look the user up instead of inserting one for every unknown email.
+    normalized_email = User.Validation.normalize_user_identificator(:email, email)
+
+    with {:ok, user} <- User.by_email(normalized_email),
          _ <- Logger.info("[EmailLoginVerify][#{rand_id}] Found user with email #{email}"),
          first_login? <- User.RegistrationState.first_login?(user, "email_login_verify"),
          true <- User.Email.email_token_valid?(user, token),

@@ -88,6 +88,7 @@ defmodule Sanbase.Accounts.AccessAttempt do
     case type do
       "email_login" -> Sanbase.Accounts.EmailLoginAttempt.config()
       "coupon" -> Sanbase.Accounts.CouponAttempt.config()
+      "newsletter_verify" -> Sanbase.Accounts.NewsletterVerifyAttempt.config()
       _ -> raise "Unknown access attempt type: #{type}"
     end
   end

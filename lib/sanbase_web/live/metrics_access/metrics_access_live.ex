@@ -229,11 +229,7 @@ defmodule SanbaseWeb.MetricsAccessLive do
                 </th>
               </tr>
             </thead>
-            <tbody
-              id="metric-rows"
-              phx-update="stream"
-              phx-viewport-bottom={@shown < @total && "load_more"}
-            >
+            <tbody id="metric-rows" phx-update="stream">
               <.metric_row
                 :for={{_dom_id, item} <- @streams.rows}
                 item={item}
@@ -246,10 +242,14 @@ defmodule SanbaseWeb.MetricsAccessLive do
         </div>
 
         <div :if={@total == 0} id="metric-empty" class="px-6 py-12 text-center">
-          <p class="text-sm text-base-content/70">
+          <p :if={@filter.q == ""} class="text-sm text-base-content/70">
+            No metrics to show.
+          </p>
+          <p :if={@filter.q != ""} class="text-sm text-base-content/70">
             No metric matches “{@filter.q}”. Search looks at technical and display names.
           </p>
           <.link
+            :if={@filter.q != ""}
             id="clear-search"
             patch={path(%{@filter | q: ""})}
             class="mt-3 inline-block text-sm font-medium text-primary hover:underline"
@@ -258,7 +258,16 @@ defmodule SanbaseWeb.MetricsAccessLive do
           </.link>
         </div>
 
-        <div :if={@shown < @total} class="flex justify-center border-t border-base-300 py-3">
+        <%!-- The hook loads the next page as this bar nears the window's bottom edge
+             (Show more stays as the fallback). phx-viewport-bottom cannot do it: it
+             binds to the table's overflow-x-auto wrapper, which never scrolls
+             vertically. --%>
+        <div
+          :if={@shown < @total}
+          id="load-more"
+          phx-hook="LoadMoreOnVisible"
+          class="flex justify-center border-t border-base-300 py-3"
+        >
           <button
             id="show-more"
             type="button"
@@ -292,7 +301,7 @@ defmodule SanbaseWeb.MetricsAccessLive do
   end
 
   defp parse_category(slug, rows) when is_binary(slug) do
-    if Enum.any?(rows, &(slugify(&1.category) == slug)), do: slug
+    if Enum.any?(rows, &(&1.category_slug == slug)), do: slug
   end
 
   defp parse_category(_slug, _rows), do: nil
@@ -329,18 +338,26 @@ defmodule SanbaseWeb.MetricsAccessLive do
     needle = String.downcase(q)
 
     Enum.flat_map(rows, fn row ->
-      matched = Enum.filter(row.metrics, &String.contains?(String.downcase(&1), needle))
-
-      if matched != [] or String.contains?(String.downcase(row.name), needle),
-        do: [{row, matched}],
-        else: []
+      # `search_text` holds every name of the row, downcased, so one scan rules most
+      # rows out; the names are only looked at one by one for the rows it keeps.
+      if String.contains?(row.search_text, needle), do: matching(row, needle), else: []
     end)
+  end
+
+  defp matching(row, needle) do
+    matched = Enum.filter(row.metrics, &String.contains?(String.downcase(&1), needle))
+
+    # Both checks, not just `matched`: a needle spanning two of the joined names
+    # matches `search_text` but no name.
+    if matched != [] or String.contains?(String.downcase(row.name), needle),
+      do: [{row, matched}],
+      else: []
   end
 
   defp in_category(entries, nil), do: entries
 
   defp in_category(entries, slug),
-    do: Enum.filter(entries, fn {row, _matched} -> slugify(row.category) == slug end)
+    do: Enum.filter(entries, fn {row, _matched} -> row.category_slug == slug end)
 
   defp row_item({row, matched}, plan) do
     access = %{sanbase: row.access[{plan, :sanbase}], api: row.access[{plan, :api}]}
@@ -359,13 +376,6 @@ defmodule SanbaseWeb.MetricsAccessLive do
       access: access,
       locked?: Enum.all?(Map.values(access), &match?({:locked, _}, &1))
     }
-  end
-
-  defp slugify(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9]+/, "-")
-    |> String.trim("-")
   end
 
   ## Summary and category options
@@ -419,9 +429,9 @@ defmodule SanbaseWeb.MetricsAccessLive do
     counts = Enum.frequencies_by(searched, fn {row, _} -> row.category end)
 
     rows
-    |> Enum.map(& &1.category)
-    |> Enum.dedup()
-    |> Enum.uniq()
-    |> Enum.map(&%{slug: slugify(&1), name: &1, count: Map.get(counts, &1, 0)})
+    |> Enum.uniq_by(& &1.category)
+    |> Enum.map(
+      &%{slug: &1.category_slug, name: &1.category, count: Map.get(counts, &1.category, 0)}
+    )
   end
 end

@@ -31,8 +31,9 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
           name: String.t(),
           metrics: [String.t()],
           category: String.t(),
+          category_slug: String.t(),
           group: String.t() | nil,
-          categories: list(),
+          search_text: String.t(),
           access: %{{plan_key(), channel()} => access()}
         }
 
@@ -41,6 +42,10 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
   @rows_refresh_time_delta 600
   # How long a caller waits for the first hydration before computing on its own.
   @rows_first_computation_wait 5_000
+  # Without RehydratingCache, the synchronous result is kept this long, so the page
+  # computes once per TTL and not once per request.
+  @rows_fallback_cache_key {__MODULE__, :rows_fallback}
+  @rows_fallback_ttl 300
 
   # A run of template placeholders, including ranges like "{{low}} and {{high}}".
   @placeholder_run ~r/\{\{[^}]*\}\}(?:\s*(?:and|to|-|,)\s*\{\{[^}]*\}\})*/
@@ -152,7 +157,8 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
   The rows of the metrics access page, served from `RehydratingCache` (refreshed
   every #{@rows_refresh_time_delta}s, kept for #{@rows_ttl}s), so visitors never wait
   on a rebuild. Before the first hydration has finished, or when the cache is not
-  running, the rows are computed synchronously.
+  running, the rows are computed synchronously and kept in `Sanbase.Cache` for
+  #{@rows_fallback_ttl}s.
 
   With `:use_rehydrating_cache` off (the test env) the cache is not touched at all:
   a registered closure would outlive the test that registered it.
@@ -161,20 +167,25 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
   def rows() do
     if rehydrating_cache_enabled?() do
       case cached_rows() do
-        {:ok, rows} when is_list(rows) ->
-          rows
-
-        error ->
-          Logger.warning(
-            "[PlanMetricAccess] Metrics access rows not cached (#{inspect(error)}), " <>
-              "computing them synchronously."
-          )
-
-          compute_rows()
+        {:ok, rows} when is_list(rows) -> rows
+        error -> fallback_rows(error)
       end
     else
       compute_rows()
     end
+  end
+
+  # Sanbase.Cache runs in every container; the warning is logged only when the rows
+  # are actually computed, not on every request served from the fallback.
+  defp fallback_rows(error) do
+    Sanbase.Cache.get_or_store({@rows_fallback_cache_key, @rows_fallback_ttl}, fn ->
+      Logger.warning(
+        "[PlanMetricAccess] Metrics access rows not cached (#{inspect(error)}), " <>
+          "computing them synchronously."
+      )
+
+      compute_rows()
+    end)
   end
 
   @doc ~s"""
@@ -187,6 +198,9 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
   defined in the registry is its own row, `m-<metric>`. A metric mapped only to
   hidden groups is dropped (on its own, not with its row), and uncategorized rows go
   under "Other".
+
+  Each row carries what the page filters on, computed once here: `category_slug`,
+  and `search_text`, the display and technical names downcased.
   """
   @spec compute_rows() :: [row]
   def compute_rows() do
@@ -201,7 +215,8 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
     (registry_rows(registry_metrics, registry_index) ++ Enum.map(code_metrics, &code_row/1))
     |> Enum.map(&put_taxonomy(&1, categories_map))
     |> AvailableMetrics.sort_by_taxonomy()
-    |> Enum.map(&Map.delete(&1, :metric))
+    # Only the sort reads these; every page request copies the rows, so drop them.
+    |> Enum.map(&Map.drop(&1, [:metric, :categories]))
   end
 
   defp shown_metrics(categories_map) do
@@ -252,13 +267,43 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
     end
   end
 
-  # Every public name the registry defines => its registry row.
+  # Every public name the registry defines => its registry row. Should several rows
+  # resolve to one name, the one that can be shown (not deprecated, not hidden) wins,
+  # then the lowest id, and the collisions are logged once per computation.
   defp registry_index() do
+    candidates = registry_candidates()
+    log_registry_collisions(candidates)
+
+    Map.new(candidates, fn {metric, registries} ->
+      {metric, Enum.min_by(registries, &{not shown_registry?(&1), &1.id})}
+    end)
+  end
+
+  # Every public name => the distinct registry rows that resolve to it.
+  defp registry_candidates() do
     Registry.all()
     |> Enum.flat_map(fn registry ->
       registry |> resolve_registry() |> Enum.map(&{&1.metric, registry})
     end)
-    |> Map.new()
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Map.new(fn {metric, registries} -> {metric, Enum.uniq_by(registries, & &1.id)} end)
+  end
+
+  defp shown_registry?(registry), do: not (registry.is_deprecated or registry.is_hidden)
+
+  defp log_registry_collisions(candidates) do
+    collisions =
+      for {metric, [_, _ | _] = registries} <- candidates do
+        ids = registries |> Enum.map(& &1.id) |> Enum.sort() |> Enum.join(", ")
+        "#{metric} (ids #{ids})"
+      end
+
+    if collisions != [] do
+      Logger.warning(
+        "[PlanMetricAccess] Metric names that several registry rows share: " <>
+          Enum.join(Enum.sort(collisions), "; ")
+      )
+    end
   end
 
   defp resolve_registry(registry) do
@@ -277,9 +322,9 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
       # A deprecated or hidden registry row is dropped as a whole; its names are
       # indexed anyway so they never show up as code rows. Read from the DB row, so
       # an admin's change applies before the stored terms are refreshed.
-      if registry.is_deprecated or registry.is_hidden,
-        do: [],
-        else: registry_row_variants(registry, metrics)
+      if shown_registry?(registry),
+        do: registry_row_variants(registry, metrics),
+        else: []
     end)
   end
 
@@ -345,15 +390,25 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
 
   defp clean_name(_), do: nil
 
-  defp put_taxonomy(%{metrics: metrics} = row, categories_map) do
+  defp put_taxonomy(%{name: name, metrics: metrics} = row, categories_map) do
     categories = metrics |> Enum.flat_map(&Map.get(categories_map, &1, [])) |> Enum.uniq()
     placement = AvailableMetrics.taxonomy_placement(categories)
+    category = placement.category_name || "Other"
 
     row
     |> Map.put(:metric, hd(metrics))
     |> Map.put(:categories, categories)
-    |> Map.put(:category, placement.category_name || "Other")
+    |> Map.put(:category, category)
+    |> Map.put(:category_slug, slugify(category))
     |> Map.put(:group, placement.group_name)
+    |> Map.put(:search_text, [name | metrics] |> Enum.join("\n") |> String.downcase())
+  end
+
+  defp slugify(name) do
+    name
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
   end
 
   defp only_in_hidden_groups?([]), do: false

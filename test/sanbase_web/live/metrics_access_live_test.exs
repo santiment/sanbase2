@@ -31,13 +31,16 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
     map_metric("price_usd", category, pricing, @price_module)
     map_metric("mvrv_usd", category, valuation, @registry_module)
+    # Seeded with min plan SANAPI "pro", SANBASE "free".
+    map_metric("aave_v2_action_deposits", category, valuation, @registry_module)
 
     rows = PlanMetricAccess.rows()
 
     %{
       price_row: dom_id(row_for(rows, "price_usd")),
       mvrv_row: dom_id(row_for(rows, "mvrv_usd")),
-      volume_row: dom_id(row_for(rows, "volume_usd"))
+      volume_row: dom_id(row_for(rows, "volume_usd")),
+      aave_row: dom_id(row_for(rows, "aave_v2_action_deposits"))
     }
   end
 
@@ -143,6 +146,29 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
     assert has_element?(view, "#metric-rows [data-kind=row]")
   end
 
+  test "a seeded Pro-on-API metric is locked on Free via the API, without mocks", ctx do
+    {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
+
+    assert text(view, "##{ctx.aave_row}-api") == "Requires Sanbase Pro"
+    assert has_element?(view, "##{ctx.aave_row}-api[data-locked]")
+    refute has_element?(view, "##{ctx.aave_row}-sanbase[data-locked]")
+
+    view |> element("#plan-sanbase_pro") |> render_click()
+    refute has_element?(view, "##{ctx.aave_row}-api[data-locked]")
+  end
+
+  test "with no metrics at all and no search, the empty state does not quote a search", %{
+    conn: conn
+  } do
+    mock(PlanMetricAccess, :rows, fn -> [] end)
+
+    {:ok, view, _html} = live(conn, ~p"/metrics_access")
+
+    assert has_element?(view, "#metric-empty")
+    refute text(view, "#metric-empty") =~ "“"
+    refute has_element?(view, "#clear-search")
+  end
+
   test "a cell locked only in one channel does not mute the whole row", ctx do
     # Min plan "max" on the API, "free" in Sanbase. plan_has_access? reads the min
     # plan through a local call, so the check itself is mocked.
@@ -236,6 +262,10 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
     assert row_ids(view) |> length() == @page_size
     assert has_element?(view, "#show-more")
+    # Rows load on scroll through a hook on the Show more bar, watched against the
+    # window viewport; the table's horizontal scroller never scrolls vertically.
+    assert has_element?(view, "#load-more[phx-hook=LoadMoreOnVisible] #show-more")
+    refute has_element?(view, "[phx-viewport-bottom]")
 
     view |> element("#show-more") |> render_click()
 
@@ -250,6 +280,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
     assert row_ids(view) |> length() == total
     refute has_element?(view, "#show-more")
+    refute has_element?(view, "#load-more")
   end
 
   test "a plan switch keeps the loaded rows, a new search starts from one page", %{conn: conn} do

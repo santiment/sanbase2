@@ -15,6 +15,7 @@ import { Copy } from "./hooks/copy"
 import { KeepDetailsOpen } from "./hooks/keep_details_open"
 import { AutoGrow } from "./hooks/auto_grow"
 import { LightweightChart } from "./hooks/lightweight_chart"
+import { LoadMoreOnVisible } from "./hooks/load_more_on_visible"
 
 // Make Sortable available globally
 window.Sortable = Sortable
@@ -32,7 +33,8 @@ const Hooks = {
   Copy: Copy,
   KeepDetailsOpen: KeepDetailsOpen,
   AutoGrow: AutoGrow,
-  LightweightChart: LightweightChart
+  LightweightChart: LightweightChart,
+  LoadMoreOnVisible: LoadMoreOnVisible
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

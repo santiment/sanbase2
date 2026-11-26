@@ -52,30 +52,34 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
   @dangling_tail ~r/(?:[\s\-_,:;\/|(]|\b(?:and|or|of|for|the|in|between|over|past|last|with|at|to|from|by)\b)+$/i
 
   @plans [
-    %{key: "free", label: "Free", plan_name: "FREE", subscription_product: nil},
+    %{key: "free", label: "Free", plan_name: "FREE", subscription_product: nil, includes: nil},
     %{
       key: "sanbase_pro",
       label: "Sanbase Pro",
       plan_name: "PRO",
-      subscription_product: "SANBASE"
+      subscription_product: "SANBASE",
+      includes: nil
     },
     %{
       key: "sanbase_max",
       label: "Sanbase Max",
       plan_name: "MAX",
-      subscription_product: "SANBASE"
+      subscription_product: "SANBASE",
+      includes: nil
     },
     %{
       key: "business_pro",
       label: "Business Pro",
       plan_name: "BUSINESS_PRO",
-      subscription_product: "SANAPI"
+      subscription_product: "SANAPI",
+      includes: "sanbase_pro"
     },
     %{
       key: "business_max",
       label: "Business Max",
       plan_name: "BUSINESS_MAX",
-      subscription_product: "SANAPI"
+      subscription_product: "SANAPI",
+      includes: "sanbase_max"
     }
   ]
 
@@ -84,6 +88,10 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
     %{key: :api, label: "Via API", product: "SANAPI"}
   ]
 
+  @doc """
+  The plans shown on the metrics access page, in display order. `includes` is the
+  key of the Sanbase plan a Business plan comes with (its access in Sanbase), or nil.
+  """
   @spec plans() :: [map()]
   def plans(), do: @plans
 

@@ -14,8 +14,20 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
 
     assert Enum.map(PlanMetricAccess.channels(), & &1.key) == [:sanbase, :api]
 
-    assert %{label: "Business Pro", plan_name: "BUSINESS_PRO", subscription_product: "SANAPI"} =
-             Enum.find(PlanMetricAccess.plans(), &(&1.key == "business_pro"))
+    assert %{
+             label: "Business Pro",
+             plan_name: "BUSINESS_PRO",
+             subscription_product: "SANAPI",
+             includes: "sanbase_pro"
+           } = Enum.find(PlanMetricAccess.plans(), &(&1.key == "business_pro"))
+
+    assert Map.new(PlanMetricAccess.plans(), &{&1.key, &1.includes}) == %{
+             "free" => nil,
+             "sanbase_pro" => nil,
+             "sanbase_max" => nil,
+             "business_pro" => "sanbase_pro",
+             "business_max" => "sanbase_max"
+           }
   end
 
   test "headline windows match the checker modules" do

@@ -21,6 +21,22 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
   end
 
   describe "Email login verify" do
+    test "with an unknown email, fails and does not create a user", %{conn: conn} do
+      email = "unknown-#{System.unique_integer([:positive])}@santiment.net"
+
+      mutation = """
+      mutation {
+        emailLoginVerify(email: "#{email}", token: "invalid_token") {
+          user { email }
+          accessToken
+        }
+      }
+      """
+
+      assert execute_mutation_with_error(conn, mutation) == "Email Login verification failed"
+      assert {:error, _} = User.by_email(email)
+    end
+
     test "with a valid email token, succeeds login", %{conn: conn} do
       {:ok, user} =
         insert(:user_registration_not_finished, email: "example@santiment.net")

@@ -73,6 +73,12 @@ defmodule SanbaseWeb.MetricRegistryController do
     end
   end
 
+  def mark_sync_as_completed(conn, _params) do
+    conn
+    |> resp(403, "Unauthorized")
+    |> send_resp()
+  end
+
   def export_json(conn, %{"secret" => secret}) do
     case valid_secret?(secret, get_export_secret()) do
       true ->

@@ -51,4 +51,24 @@ defmodule SanbaseWeb.MetricRegistryControllerTest do
       |> response(403)
     end
   end
+
+  describe "POST /mark_metric_registry_sync_as_finished/:sync_uuid" do
+    test "returns 403 when params are missing", %{conn: conn} do
+      sync_uuid = Ecto.UUID.generate()
+
+      conn
+      |> post("/mark_metric_registry_sync_as_finished/#{sync_uuid}", %{
+        "secret" => "not_the_secret"
+      })
+      |> response(403)
+    end
+
+    test "returns 403 without secret", %{conn: conn} do
+      sync_uuid = Ecto.UUID.generate()
+
+      conn
+      |> post("/mark_metric_registry_sync_as_finished/#{sync_uuid}", %{"actual_changes" => "[]"})
+      |> response(403)
+    end
+  end
 end

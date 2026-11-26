@@ -6,6 +6,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias Sanbase.Insight.Post
   alias Sanbase.Insights
 
+  defguardp valid_page?(page, page_size)
+            when is_integer(page) and page > 0 and is_integer(page_size) and page_size > 0
+
   @list_opt_keys [:is_pulse, :is_paywall_required, :from, :to]
 
   def popular_insight_authors(_root, _args, _resolution), do: Insights.popular_authors()
@@ -25,6 +28,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     Insights.get_post(post_id, viewer_id)
   end
 
+  def all_insights(_root, %{page: page, page_size: page_size}, _context)
+      when not valid_page?(page, page_size),
+      do: invalid_page_error()
+
   def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context)
       when is_list(tags) do
     {:ok, Insights.public_insights_by_tags(tags, list_opts(args, page, page_size, :categories))}
@@ -33,6 +40,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def all_insights(_root, %{page: page, page_size: page_size} = args, _resolution) do
     {:ok, Insights.public_insights(list_opts(args, page, page_size, :categories))}
   end
+
+  def all_insights_for_user(_root, %{page: page, page_size: page_size}, _context)
+      when not valid_page?(page, page_size),
+      do: invalid_page_error()
 
   def all_insights_for_user(
         _root,
@@ -45,6 +56,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def all_insights_by_tag(_root, %{tag: tag} = args, _context) do
     {:ok, Insights.public_insights_by_tags([tag], list_opts(args))}
   end
+
+  def all_insights_by_search_term(_root, %{page: page, page_size: page_size}, _context)
+      when not valid_page?(page, page_size),
+      do: invalid_page_error()
 
   def all_insights_by_search_term(
         _root,
@@ -174,6 +189,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def create_chart_event(_root, args, %{context: %{auth: %{current_user: user}}}),
     do: Insights.create_chart_event(user.id, args)
+
+  defp invalid_page_error,
+    do: {:error, "The page and page_size arguments must be positive integers."}
 
   defp list_opts(args, page, page_size, extra_keys \\ [])
 

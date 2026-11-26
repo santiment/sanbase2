@@ -78,39 +78,6 @@ defmodule Sanbase.DiscordBot.AiServer do
 
   defp failure_reason(reason), do: String.slice(inspect(reason), 0, 500)
 
-  # postgres indexing
-  def manage_postgres_index() do
-    if prod?() do
-      url = "#{ai_server_url()}/postgres/index"
-      HTTPoison.put(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
-    end
-
-    :ok
-  end
-
-  def manage_postgres_index2() do
-    if prod?() do
-      url = "#{ai_server_url()}/postgres/index2"
-      HTTPoison.put(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
-    end
-
-    :ok
-  end
-
-  # testing
-  def search_insights(query) do
-    url = "#{ai_server_url()}/question/insights"
-
-    HTTPoison.post(url, Jason.encode!(%{query: query}), [{"Content-Type", "application/json"}])
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body |> Jason.decode!()
-
-      _ ->
-        []
-    end
-  end
-
   # helpers
   defp do_request_ai_server(url, params) do
     start_time = System.monotonic_time(:second)
@@ -178,8 +145,6 @@ defmodule Sanbase.DiscordBot.AiServer do
   defp ai_server_url() do
     System.get_env("AI_SERVER_URL")
   end
-
-  defp prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 
   @cryptos %{
     "eth" => ["eth", "ethereum"],

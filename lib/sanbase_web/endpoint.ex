@@ -68,7 +68,8 @@ defmodule SanbaseWeb.Endpoint do
   # Real client IP behind Cloudflare. Before everything that reads conn.remote_ip.
   plug(SanbaseWeb.Plug.ClientIp)
   plug(SanbaseWeb.Plug.RequestContextPlug)
-  plug(Plug.Logger)
+  # Logs like Plug.Logger but redacts the secrets embedded in some URL paths.
+  plug(SanbaseWeb.Plug.RedactedLogger)
 
   # Reject compressed request bodies (`Content-Encoding: br`, `gzip`, ...) with 415 -
   # nothing in the stack decodes them. Header-only check, so it runs before every plug

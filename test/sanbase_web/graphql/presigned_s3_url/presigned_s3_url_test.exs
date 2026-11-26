@@ -85,6 +85,7 @@ defmodule SanbaseWeb.Graphql.PresignedS3UrlTest do
             "./dataset",
             "data set",
             "dataset?x=1",
+            String.duplicate("a", 256),
             String.duplicate("a", 513)
           ] do
         result = get_presigned_s3_url(context.conn, object)
@@ -94,6 +95,17 @@ defmodule SanbaseWeb.Graphql.PresignedS3UrlTest do
       end
 
       refute called(PresignedS3Url.S3.generate_presigned_url(:_, :_, :_))
+    end)
+  end
+
+  test "an object key of the maximum length is stored", context do
+    object = String.duplicate("a", 255)
+
+    Sanbase.Mock.prepare_mock2(&PresignedS3Url.S3.generate_presigned_url/3, {:ok, @url})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result = get_presigned_s3_url(context.conn, object)
+
+      assert get_in(result, ["data", "getPresignedS3Url"]) == @url
     end)
   end
 

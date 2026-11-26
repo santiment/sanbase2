@@ -327,7 +327,13 @@ defmodule Sanbase.AvailableMetrics do
     |> Map.new(&{&1.metric, &1.available_slugs})
   end
 
-  defp metric_to_categories_map do
+  @doc ~s"""
+  Map every public metric name to the list of categorizations (category and
+  group names, ids and display orders) it is mapped to. Registry mappings are
+  expanded to all the names the registry row resolves to. Metrics that are not
+  mapped anywhere are absent from the map.
+  """
+  def metric_to_categories_map() do
     alias Sanbase.Metric.Category.MetricCategoryMapping
     alias Sanbase.Metric.Registry
 

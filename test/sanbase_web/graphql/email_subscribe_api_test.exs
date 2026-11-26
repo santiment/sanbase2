@@ -18,6 +18,68 @@ defmodule SanbaseWeb.Graphql.EmailSubscribeApiTest do
     assert res == true
   end
 
+  test "verify email for newsletter is limited per recipient", context do
+    assert execute_mutation(
+             context.conn,
+             verify_email_query(context.email),
+             "verifyEmailNewsletter"
+           )
+
+    error_msg =
+      execute_mutation_with_error(context.conn, verify_email_query(context.email))
+
+    assert error_msg =~ "Too many requests"
+  end
+
+  test "verify email for newsletter is limited per recipient per day", context do
+    # 5 tokens in the last 24h, none in the last minute: the daily cap applies.
+    for minutes_ago <- [2, 30, 120, 600, 1200] do
+      insert(:newsletter_token,
+        email: String.upcase(context.email),
+        email_token_generated_at:
+          DateTime.utc_now()
+          |> DateTime.add(-minutes_ago * 60, :second)
+          |> DateTime.truncate(:second)
+      )
+    end
+
+    error_msg =
+      execute_mutation_with_error(context.conn, verify_email_query(context.email))
+
+    assert error_msg =~ "Too many requests"
+  end
+
+  test "verify email for newsletter ignores tokens older than a day", context do
+    for _ <- 1..5 do
+      insert(:newsletter_token,
+        email: context.email,
+        email_token_generated_at:
+          DateTime.utc_now() |> DateTime.add(-25 * 60 * 60, :second) |> DateTime.truncate(:second)
+      )
+    end
+
+    assert execute_mutation(
+             context.conn,
+             verify_email_query(context.email),
+             "verifyEmailNewsletter"
+           )
+  end
+
+  test "verify email for newsletter is limited per IP", context do
+    for i <- 1..5 do
+      assert execute_mutation(
+               context.conn,
+               verify_email_query("limit#{i}@example.com"),
+               "verifyEmailNewsletter"
+             )
+    end
+
+    error_msg =
+      execute_mutation_with_error(context.conn, verify_email_query("limit6@example.com"))
+
+    assert error_msg =~ "Too many requests"
+  end
+
   test "subscribe email to newsletter", context do
     nt = insert(:newsletter_token)
 

@@ -29,8 +29,17 @@ defmodule Sanbase.Accounts.AccessAttempt do
   """
   def check_ip_attempt_limit(type, remote_ip) when is_binary(remote_ip) do
     config = get_config(type)
+    count = attempts_count(type, remote_ip)
 
-    if attempts_count(type, remote_ip) > config.allowed_ip_attempts do
+    # The count is taken before the current attempt is recorded, so `>` lets
+    # `allowed_ip_attempts + 1` requests through. Types that set
+    # `reject_at_limit: true` allow exactly `allowed_ip_attempts`.
+    too_many? =
+      if Map.get(config, :reject_at_limit, false),
+        do: count >= config.allowed_ip_attempts,
+        else: count > config.allowed_ip_attempts
+
+    if too_many? do
       {:error, :too_many_attempts}
     else
       :ok
@@ -88,6 +97,7 @@ defmodule Sanbase.Accounts.AccessAttempt do
     case type do
       "email_login" -> Sanbase.Accounts.EmailLoginAttempt.config()
       "coupon" -> Sanbase.Accounts.CouponAttempt.config()
+      "newsletter_verify" -> Sanbase.Accounts.NewsletterVerifyAttempt.config()
       _ -> raise "Unknown access attempt type: #{type}"
     end
   end

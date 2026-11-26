@@ -175,7 +175,13 @@ defmodule Sanbase.DisagreementTweets.TestData do
         simulate_votes(tweet.tweet_id, votes: votes)
 
       [] ->
-        IO.puts("❌ No disagreement tweets available. Create some first.")
+        IO.puts(
+          "❌ No disagreement tweets available. Insert one with " <>
+            "Sanbase.DisagreementTweets.create_classified_tweet/1, setting " <>
+            "review_required: true (required fields: tweet_id, timestamp, " <>
+            "screen_name, text, url, agreement, review_required)."
+        )
+
         {:error, "No tweets available"}
     end
   end
@@ -218,7 +224,13 @@ defmodule Sanbase.DisagreementTweets.TestData do
 
       case target_tweet do
         nil ->
-          IO.puts("❌ No disagreement tweets available. Create some first.")
+          IO.puts(
+            "❌ No disagreement tweets available. Insert one with " <>
+              "Sanbase.DisagreementTweets.create_classified_tweet/1, setting " <>
+              "review_required: true (required fields: tweet_id, timestamp, " <>
+              "screen_name, text, url, agreement, review_required)."
+          )
+
           {:error, "No tweets available"}
 
         tweet ->

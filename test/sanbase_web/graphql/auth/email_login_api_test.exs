@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       }
       """
 
-      assert execute_mutation_with_error(conn, mutation) != ""
+      assert execute_mutation_with_error(conn, mutation) == "Email Login verification failed"
       assert {:error, _} = User.by_email(email)
     end
 

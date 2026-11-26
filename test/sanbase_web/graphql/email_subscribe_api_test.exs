@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.EmailSubscribeApiTest do
   end
 
   test "verify email for newsletter is limited per IP", context do
-    for i <- 1..6 do
+    for i <- 1..5 do
       assert execute_mutation(
                context.conn,
                verify_email_query("limit#{i}@example.com"),
@@ -75,7 +75,7 @@ defmodule SanbaseWeb.Graphql.EmailSubscribeApiTest do
     end
 
     error_msg =
-      execute_mutation_with_error(context.conn, verify_email_query("limit7@example.com"))
+      execute_mutation_with_error(context.conn, verify_email_query("limit6@example.com"))
 
     assert error_msg =~ "Too many requests"
   end

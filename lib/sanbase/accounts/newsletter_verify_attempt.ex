@@ -11,7 +11,9 @@ defmodule Sanbase.Accounts.NewsletterVerifyAttempt do
     %{
       interval_in_minutes: 5,
       allowed_user_attempts: 5,
-      allowed_ip_attempts: 5
+      allowed_ip_attempts: 5,
+      # Allow exactly 5 requests per IP per interval, not 6.
+      reject_at_limit: true
     }
   end
 

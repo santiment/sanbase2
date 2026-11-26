@@ -37,30 +37,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.EmailResolver do
   # The limits are check-then-insert, so concurrent requests are serialized on
   # the IP and on the recipient with transaction-scoped advisory locks. Without
   # them, parallel requests all pass the checks before any of them inserts.
-  # Every request takes the IP lock first and the email lock second, so two
-  # requests can never wait on each other in a cycle.
+  # The try variant does not wait: a request that finds either lock taken is
+  # rejected at once, so a flood of parallel requests cannot queue up and hold
+  # DB pool connections while waiting.
   defp create_token_within_limits(email, remote_ip) do
     Repo.transaction(fn ->
-      Repo.query!("SELECT pg_advisory_xact_lock($1, hashtext($2))", [
-        @ip_lock_namespace,
-        remote_ip
-      ])
-
-      Repo.query!("SELECT pg_advisory_xact_lock($1, hashtext($2))", [
-        @email_lock_namespace,
-        String.downcase(email)
-      ])
-
-      with :ok <- NewsletterVerifyAttempt.check_ip_attempt_limit(remote_ip),
+      with true <- try_lock(@ip_lock_namespace, remote_ip),
+           true <- try_lock(@email_lock_namespace, String.downcase(email)),
+           :ok <- NewsletterVerifyAttempt.check_ip_attempt_limit(remote_ip),
            false <- NewsletterToken.generation_limit_reached?(email),
            {:ok, _} <- NewsletterVerifyAttempt.create(remote_ip),
            {:ok, %NewsletterToken{} = newsletter_token} <-
              NewsletterToken.create_email_token(email) do
         newsletter_token
       else
-        true -> Repo.rollback(:too_many_attempts)
+        # A lock held by a concurrent request, or a limit reached.
+        bool when is_boolean(bool) -> Repo.rollback(:too_many_attempts)
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
+  end
+
+  defp try_lock(namespace, key) do
+    %{rows: [[locked?]]} =
+      Repo.query!("SELECT pg_try_advisory_xact_lock($1, hashtext($2))", [namespace, key])
+
+    locked?
   end
 end

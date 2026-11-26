@@ -449,6 +449,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   attr :path, :string, required: true
   attr :dir, :atom, default: nil, doc: "nil, or :asc / :desc when this is the sort column"
   attr :center?, :boolean, default: false
+  attr :wrap?, :boolean, default: false, doc: "the label may wrap (narrow columns)"
   slot :inner_block, required: true
 
   def sort_link(assigns) do
@@ -457,7 +458,8 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       id={@id}
       patch={@path}
       class={[
-        "group/sort -mx-1 inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded px-1 py-0.5 outline-none",
+        "group/sort -mx-1 inline-flex max-w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 outline-none",
+        if(@wrap?, do: "text-balance", else: "whitespace-nowrap"),
         "transition-colors duration-150 hover:bg-base-300/60 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary",
         @dir && "text-base-content",
         @center? && "justify-center"
@@ -750,11 +752,11 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   The table header, stuck under the plan bar (`--plan-bar-h`, published by the
   bar's `PlanBarHeight` hook) while the rows scroll. It tucks 1px under the bar,
   so no row ever shows between the two. Above the rows, below the plan bar.
-  From lg only: below it the table scrolls sideways in its own box, and a
+  From md only: below it the table scrolls sideways in its own box, and a
   sticky header would be offset inside that box.
   """
   def sticky_thead() do
-    "lg:sticky lg:top-[calc(var(--plan-bar-h,5.5rem)_+_env(safe-area-inset-top,0px)_-_1px)] lg:z-20 text-xs text-base-content/70"
+    "md:sticky md:top-[calc(var(--plan-bar-h,5.5rem)_+_env(safe-area-inset-top,0px)_-_1px)] md:z-20 text-xs text-base-content/70"
   end
 
   @doc """
@@ -862,9 +864,9 @@ defmodule SanbaseWeb.MetricsAccessComponents do
           "text-left font-normal normal-case tracking-normal text-base-content shadow-xl outline-none",
           "absolute right-4 top-full mt-1 [overflow-anchor:none]",
           "max-h-[calc(100vh-var(--plan-bar-h,5.5rem)-8rem)]",
-          # Below lg: a bottom sheet, clear of the sticky plan bar at the top.
-          "max-lg:fixed max-lg:inset-x-4 max-lg:bottom-4 max-lg:top-auto max-lg:mt-0 max-lg:w-auto",
-          "max-lg:max-h-[calc(100dvh-var(--plan-bar-h,5.5rem)-2rem)]"
+          # Below md: a bottom sheet, clear of the sticky plan bar at the top.
+          "max-md:fixed max-md:inset-x-4 max-md:bottom-4 max-md:top-auto max-md:mt-0 max-md:w-auto",
+          "max-md:max-h-[calc(100dvh-var(--plan-bar-h,5.5rem)-2rem)]"
         ]
       }
     >
@@ -1010,7 +1012,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
 
   attr :crumb?, :boolean,
     default: false,
-    doc: "below md, the category breadcrumb under the names (the column is hidden)"
+    doc: "below lg, the category breadcrumb under the names (the column is hidden)"
 
   attr :sticky?, :boolean,
     default: false,
@@ -1020,19 +1022,23 @@ defmodule SanbaseWeb.MetricsAccessComponents do
     ~H"""
     <td
       data-sticky={@sticky? && "true"}
-      class={[
-        "min-w-[10rem] max-w-[22rem] px-3 py-2.5 align-middle text-sm leading-5 md:min-w-[15rem] md:px-4",
-        @sticky? && sticky_cell()
-      ]}
+      class={
+        [
+          # Below md the table scrolls sideways, so the column keeps a readable
+          # width; from md it takes what the fixed-width columns leave.
+          "min-w-[10rem] px-3 py-2.5 align-middle text-sm leading-5 md:min-w-0 md:px-4",
+          @sticky? && sticky_cell()
+        ]
+      }
     >
       <a
         href={~p"/available_metrics/#{@item.primary}"}
-        class="block break-words font-medium underline-offset-2 hover:text-primary hover:underline"
+        class="block font-medium underline-offset-2 [overflow-wrap:anywhere] hover:text-primary hover:underline"
       >
         {@item.primary}
       </a>
       <div class="text-xs text-base-content/70">{@item.name}</div>
-      <div :if={@crumb?} class="mt-1 md:hidden">
+      <div :if={@crumb?} class="mt-1 lg:hidden">
         <.category_crumb
           id={"#{@item.id}-category-inline"}
           category={@item.category}
@@ -1127,13 +1133,15 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       ]}
     >
       <.metric_cell item={@item} crumb?={true} />
-      <td class="hidden px-4 py-2.5 align-middle md:table-cell">
-        <.category_crumb
-          id={"#{@item.id}-category"}
-          category={@item.category}
-          group={@item.group}
-          hue={@item.hue}
-        />
+      <td class="px-0 py-2.5 align-middle lg:px-4">
+        <div class="hidden lg:block">
+          <.category_crumb
+            id={"#{@item.id}-category"}
+            category={@item.category}
+            group={@item.group}
+            hue={@item.hue}
+          />
+        </div>
       </td>
       <.access_cell
         :for={channel <- @channels}

@@ -202,11 +202,11 @@ defmodule SanbaseWeb.MetricsAccessList do
 
   @doc """
   Every filter back to its default. What is not a filter stays: the plan, the
-  view, the compare channel, the dates and the variants mode.
+  view, the compare channel, the dates, the variants mode and show locked.
   """
   @spec cleared(filter()) :: filter()
   def cleared(filter) do
-    %{filter | category: nil, q: "", locked: :hide, access: :all, sort: :category, dir: :asc}
+    %{filter | category: nil, q: "", access: :all, sort: :category, dir: :asc}
   end
 
   @doc """
@@ -226,13 +226,12 @@ defmodule SanbaseWeb.MetricsAccessList do
   Everything the page shows about the list for `filter`:
 
     * `:entries` - the `{row, matched names}` on screen, in order
-    * `:all_total` - every row (or variant, when expanded), no filter applied
+    * `:all_total` - every row (or variant, when expanded) the locked setting
+      shows, no filter applied
     * `:included_rows` - the rows matching the search and the category, which the
       Included counts are taken over: show locked and the access filter would
       only hide the locked rows those counts are about
     * `:category_counts` - per category, the rows every other filter keeps
-    * `:locked_hidden` - how many rows show locked hides (search and category
-      applied)
   """
   @spec build([PlanMetricAccess.row()], filter()) :: map()
   def build(rows, filter) do
@@ -245,10 +244,11 @@ defmodule SanbaseWeb.MetricsAccessList do
 
     %{
       entries: shown |> filter_access(filter) |> sort(filter),
-      all_total: length(rows),
+      # The unfiltered total for the locked setting: hiding locked rows is no
+      # filter, so the count compares against what the page shows without one.
+      all_total: rows |> Enum.map(&{&1, []}) |> reject_locked(filter) |> length(),
       included_rows: Enum.map(in_category, &elem(&1, 0)),
-      category_counts: Enum.frequencies_by(other_filters, fn {row, _} -> row.category end),
-      locked_hidden: length(in_category) - length(shown)
+      category_counts: Enum.frequencies_by(other_filters, fn {row, _} -> row.category end)
     }
   end
 

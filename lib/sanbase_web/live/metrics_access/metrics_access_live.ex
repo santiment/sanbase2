@@ -83,9 +83,8 @@ defmodule SanbaseWeb.MetricsAccessLive do
       plan_counts: plan_counts(list.included_rows, filter.channel),
       categories: categories,
       all_count: Enum.sum_by(categories, & &1.count),
-      locked_hidden: list.locked_hidden,
       clearable?: filter.q != "" or not is_nil(filter.category) or filter.access != :all,
-      chips: chips(filter, categories, list.locked_hidden),
+      chips: chips(filter, categories),
       search_form: search_form(filter)
     )
   end
@@ -384,23 +383,31 @@ defmodule SanbaseWeb.MetricsAccessLive do
         </div>
       </div>
 
-      <%!-- Clips the rounded corners below lg, where the table scrolls sideways;
-           from lg it must not, so the bar legend popover (in the sticky header)
+      <%!-- Clips the rounded corners below md, where the table scrolls sideways;
+           from md it must not, so the bar legend popover (in the sticky header)
            can overlay past the card's edge. --%>
       <div>
         <div class={[
-          "overflow-clip rounded-xl border border-base-300 bg-base-100 lg:overflow-visible",
+          "overflow-clip rounded-xl border border-base-300 bg-base-100 md:overflow-visible",
           if(@chips != [], do: "mt-3", else: "mt-6")
         ]}>
-          <%!-- Sticky table headers need an ancestor that does not scroll: the table
-             scrolls sideways only below lg, where it is wider than the page. The
-             card clips (overflow: clip), which is not a scroll container. --%>
-          <div class="overflow-x-auto lg:overflow-visible">
+          <%!-- Sticky table headers need an ancestor that does not scroll. From md
+             both tables fit (fixed layout, fixed-width access columns), so only
+             below md does the table scroll sideways in its own box. --%>
+          <div class="overflow-x-auto md:overflow-visible">
             <table
               :if={@filter.view == :plan}
               id="plan-table"
-              class="w-full text-left md:min-w-[54rem]"
+              class="w-full text-left md:table-fixed"
             >
+              <%!-- A fixed layout takes the widths from here (its first row is the
+                   full-width caption). The category column is zero wide below lg,
+                   where the breadcrumb sits under the metric name instead. --%>
+              <colgroup>
+                <col />
+                <col id="col-category" class="w-0 lg:w-[15rem]" />
+                <col :for={_channel <- @channels} class="md:w-[136px]" />
+              </colgroup>
               <thead class={sticky_thead()}>
                 <.caption_row colspan={4} today={@today}>
                   Access on {@plan.label}, in Sanbase and via the API
@@ -424,22 +431,27 @@ defmodule SanbaseWeb.MetricsAccessLive do
                     id="th-category"
                     scope="col"
                     aria-sort={aria_sort(@filter, :category)}
-                    class={["hidden px-4 py-2 align-bottom font-medium md:table-cell", header_cell()]}
+                    class={["px-0 py-2 align-bottom font-medium lg:px-4", header_cell()]}
                   >
-                    <.sort_link
-                      id="sort-category"
-                      path={path(MetricsAccessList.sorted_by(@filter, :category))}
-                      dir={sort_dir(@filter, :category)}
-                    >
-                      Category
-                    </.sort_link>
+                    <div class="hidden lg:block">
+                      <.sort_link
+                        id="sort-category"
+                        path={path(MetricsAccessList.sorted_by(@filter, :category))}
+                        dir={sort_dir(@filter, :category)}
+                      >
+                        Category
+                      </.sort_link>
+                    </div>
                   </th>
                   <th
                     :for={channel <- @channels}
                     id={"th-#{channel.key}"}
                     scope="col"
                     aria-sort={aria_sort(@filter, channel.key)}
-                    class={["px-3 py-2 text-center align-bottom font-medium md:px-4", header_cell()]}
+                    class={[
+                      "px-3 py-2 text-center align-bottom font-medium md:px-4",
+                      header_cell()
+                    ]}
                   >
                     <.sort_link
                       id={"sort-#{channel.key}"}
@@ -466,8 +478,13 @@ defmodule SanbaseWeb.MetricsAccessLive do
             <table
               :if={@filter.view == :compare}
               id="compare-table"
-              class="w-full min-w-[48rem] text-left"
+              class="w-full text-left max-md:min-w-[44rem] md:table-fixed"
             >
+              <%!-- Fixed-width plan columns; the metric column takes the rest. --%>
+              <colgroup>
+                <col />
+                <col :for={_plan <- @plans} class="md:w-[104px]" />
+              </colgroup>
               <thead class={sticky_thead()}>
                 <.caption_row colspan={length(@plans) + 1} today={@today}>
                   Every plan, via the <.channel_word channel={@filter.channel} />
@@ -495,19 +512,23 @@ defmodule SanbaseWeb.MetricsAccessLive do
                     scope="col"
                     data-plan={plan.key}
                     aria-sort={aria_sort(@filter, {:plan, plan.key})}
-                    class={["px-3 py-2 text-center align-bottom font-medium", header_cell()]}
+                    class={[
+                      "px-2 py-2 text-center align-bottom font-medium",
+                      header_cell()
+                    ]}
                   >
                     <.sort_link
                       id={"compare-plan-link-#{plan.key}"}
                       path={path(MetricsAccessList.sorted_by(@filter, {:plan, plan.key}))}
                       dir={sort_dir(@filter, {:plan, plan.key})}
                       center?={true}
+                      wrap?={true}
                     >
                       {plan.label}
                     </.sort_link>
                     <span
                       id={"compare-count-#{plan.key}"}
-                      class="mt-0.5 block whitespace-nowrap text-[11px] font-normal text-base-content/70"
+                      class="mt-0.5 block text-[11px] font-normal text-base-content/70"
                     >
                       {if @filter.channel == :api, do: "via", else: "in"}
                       <.channel_word channel={@filter.channel} />
@@ -579,7 +600,9 @@ defmodule SanbaseWeb.MetricsAccessLive do
   ## Count line and chips
 
   # One chip per filter narrowing the list, each linking to the URL without it.
-  defp chips(filter, categories, locked_hidden) do
+  # Hiding locked rows (Show locked off) is not a filter: it has no chip, and
+  # only the switch changes it.
+  defp chips(filter, categories) do
     access_label =
       Enum.find_value(MetricsAccessList.access_options(), fn {value, _, label} ->
         value == filter.access && label
@@ -604,10 +627,7 @@ defmodule SanbaseWeb.MetricsAccessLive do
           id: "chip-access",
           text: "Access: #{access_label}#{if filter.view == :plan, do: " (Sanbase or API)"}",
           path: path(%{filter | access: :all})
-        },
-      # An access filter already leaves every locked row out.
-      (locked_hidden > 0 and filter.access == :all) &&
-        %{id: "chip-locked", text: "Locked hidden", path: path(%{filter | locked: :show})}
+        }
     ]
     |> Enum.filter(& &1)
   end

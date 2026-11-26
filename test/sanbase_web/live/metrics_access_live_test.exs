@@ -507,9 +507,16 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       # Locked in one channel only: stays.
       assert has_element?(view, "##{ctx.aave_row}")
       assert has_element?(view, "##{ctx.price_row}")
-      total = length(PlanMetricAccess.rows())
-      assert text(view, "#metric-count") == "2 of #{total} metrics match your filters"
-      assert has_element?(view, "#chip-locked")
+      # The count compares against the rows the locked setting leaves, and the
+      # hiding itself is no filter: no chip for it.
+      assert text(view, "#metric-count") ==
+               "2 of #{visible_total("free")} metrics match your filters"
+
+      refute has_element?(view, "#chip-locked")
+
+      # Hiding locked rows alone does not make a count line.
+      {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access")
+      refute has_element?(view, "#metric-count")
     end
 
     test "locked=show reveals them, and the switch round-trips in the URL", ctx do
@@ -599,8 +606,9 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       change(view, %{"access" => "delayed"})
       assert_patch(view, "/metrics_access?category=#{@category_slug}&access=delayed")
       assert Enum.sort(row_ids(view)) == Enum.sort([ctx.mvrv_row, ctx.aave_row])
-      total = length(PlanMetricAccess.rows())
-      assert text(view, "#metric-count") == "2 of #{total} metrics match your filters"
+
+      assert text(view, "#metric-count") ==
+               "2 of #{visible_total("free")} metrics match your filters"
 
       change(view, %{"access" => "all"})
       assert_patch(view, "/metrics_access?category=#{@category_slug}")
@@ -861,9 +869,9 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
         # The bar measures its height for the header's offset.
         assert has_element?(view, "#plan-bar.sticky[phx-hook=PlanBarHeight]")
-        # From lg only: below it the table scrolls sideways in its own box, and a
+        # From md only: below it the table scrolls sideways in its own box, and a
         # sticky header there would be offset inside that box.
-        assert has_element?(view, "table thead.lg\\:sticky")
+        assert has_element?(view, "table thead.md\\:sticky")
         refute has_element?(view, "table thead.sticky")
         # The caption with the bar legend is part of the sticky header.
         assert has_element?(view, "table thead #table-caption")
@@ -924,24 +932,55 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       assert attribute(view, "##{ctx.aave_row}-category", "data-hue") == hue
     end
 
-    test "below md the breadcrumb moves under the display name; the column hides", ctx do
+    test "below lg the breadcrumb moves under the display name; the column hides", ctx do
       {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
 
-      # The column (header and cell) is for md and up only.
-      assert has_element?(view, "#plan-table thead th.hidden.md\\:table-cell", "Category")
+      # The column is for lg and up only: below it, zero wide and empty (a fixed
+      # layout takes its widths from the colgroup).
+      assert has_element?(view, "#plan-table colgroup col#col-category.w-0.lg\\:w-\\[15rem\\]")
+      assert has_element?(view, "#th-category > .hidden.lg\\:block", "Category")
 
       assert has_element?(
                view,
-               "##{ctx.mvrv_row} td.hidden.md\\:table-cell ##{ctx.mvrv_row}-category"
+               "##{ctx.mvrv_row} td > .hidden.lg\\:block ##{ctx.mvrv_row}-category"
              )
 
-      # A second, smaller breadcrumb in the metric cell, below md only.
+      # A second, smaller breadcrumb in the metric cell, below lg only.
       assert has_element?(view, "##{ctx.mvrv_row}-category-inline")
 
       assert has_element?(
                view,
-               "##{ctx.mvrv_row} td .md\\:hidden ##{ctx.mvrv_row}-category-inline"
+               "##{ctx.mvrv_row} td .lg\\:hidden ##{ctx.mvrv_row}-category-inline"
              )
+    end
+
+    test "from md both tables fit without sideways scrolling", %{conn: conn} do
+      for path <- ["/metrics_access", "/metrics_access?view=compare"] do
+        {:ok, view, _html} = live(conn, path)
+
+        # The table scrolls sideways (and the card clips) below md only.
+        assert has_element?(view, "div.overflow-x-auto.md\\:overflow-visible > table")
+        assert has_element?(view, ".overflow-clip.md\\:overflow-visible table")
+        assert has_element?(view, "table.w-full.md\\:table-fixed")
+        # No minimum width from md (one below md lets the compare table scroll).
+        refute has_element?(view, "table[class*=' md:min-w'], table[class^='md:min-w']")
+      end
+
+      # Widths come from the colgroups (the first row is the full-width caption).
+      {:ok, view, _html} = live(conn, ~p"/metrics_access")
+      assert has_element?(view, "#plan-table colgroup col.md\\:w-\\[136px\\]")
+
+      # Compare: fixed-width plan columns, the metric column takes the rest.
+      {:ok, view, _html} = live(conn, ~p"/metrics_access?view=compare")
+
+      widths =
+        view
+        |> render()
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query("#compare-table colgroup col.md\\:w-\\[104px\\]")
+        |> Enum.count()
+
+      assert widths == 5
     end
 
     test "an uncategorized row shows one muted Other segment", %{conn: conn} do
@@ -1005,7 +1044,8 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
       assert href(view, "#chip-access") == String.replace(path, "&access=all_history", "")
 
-      assert href(view, "#clear-filters") == "/metrics_access?plan=business_pro&dates=exact"
+      assert href(view, "#clear-filters") ==
+               "/metrics_access?plan=business_pro&dates=exact&locked=show"
 
       assert has_element?(view, "#metric-search[data-active]")
       assert href(view, "#search-clear") == String.replace(path, "&q=usd", "")
@@ -1016,29 +1056,29 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       assert has_element?(view, "#chip-category")
     end
 
-    test "the Locked hidden chip shows only while locked rows are hidden", ctx do
+    test "hidden locked rows never make a chip; the count follows the switch", ctx do
       mock(Sanbase.Billing.Plan.AccessChecker, :plan_has_access?, fn
         {:metric, "mvrv_usd"}, _product, _plan_name -> false
         query, product, plan_name -> :meck.passthrough([query, product, plan_name])
       end)
 
-      {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
-      assert text(view, "#chip-locked") == "Locked hidden"
+      total = length(PlanMetricAccess.rows())
+      hidden = visible_total("free")
+      assert hidden < total
 
-      assert href(view, "#chip-locked") ==
-               "/metrics_access?category=#{@category_slug}&locked=show"
+      {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
+      refute has_element?(view, "#chip-locked")
+      refute text(view, "#metrics-access") =~ "Locked hidden"
+      assert text(view, "#metric-count") == "2 of #{hidden} metrics match your filters"
 
       {:ok, view, _html} =
         live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}&locked=show")
 
       refute has_element?(view, "#chip-locked")
+      assert text(view, "#metric-count") == "3 of #{total} metrics match your filters"
 
-      # An access filter already leaves locked rows out: the chip would do nothing.
-      {:ok, view, _html} =
-        live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}&access=delayed")
-
-      refute has_element?(view, "#chip-locked")
-      assert has_element?(view, "#chip-access")
+      # Clear all keeps the Show locked setting.
+      assert href(view, "#clear-filters") == "/metrics_access?locked=show"
     end
 
     test "the empty result keeps a Clear filters action", %{conn: conn} do
@@ -1459,6 +1499,14 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
     |> LazyHTML.attribute("id")
     # Compare rows carry a view prefix; compare them by their plan-view ids.
     |> Enum.map(&String.replace_prefix(&1, "compare-", ""))
+  end
+
+  # Rows the plan view shows with locked rows hidden (no other filter).
+  defp visible_total(plan) do
+    Enum.count(PlanMetricAccess.rows(), fn row ->
+      not (match?({:locked, _}, row.access[{plan, :sanbase}]) and
+             match?({:locked, _}, row.access[{plan, :api}]))
+    end)
   end
 
   defp locked_count(rows, plan, channel, unlocking_plan) do

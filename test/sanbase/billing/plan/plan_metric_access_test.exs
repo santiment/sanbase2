@@ -250,6 +250,31 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
       refute Enum.any?(rows, &String.contains?(&1.name, ["{{", "}}"]))
     end
 
+    test "each name carries its documentation link, web links only" do
+      mock(Sanbase.Metric, :metadata, fn
+        "price_usd" = metric ->
+          {:ok, metadata} = :meck.passthrough([metric])
+          docs = [%{link: "javascript:alert(1)"}, %{link: " https://example.com/price "}]
+          {:ok, Map.put(metadata, :docs, docs)}
+
+        "volume_usd" = metric ->
+          {:ok, metadata} = :meck.passthrough([metric])
+          {:ok, Map.put(metadata, :docs, nil)}
+
+        metric ->
+          :meck.passthrough([metric])
+      end)
+
+      rows = PlanMetricAccess.compute_rows()
+
+      row = row_for(rows, "active_addresses_24h")
+      assert row.docs |> Map.keys() |> Enum.sort() == Enum.sort(row.metrics)
+      assert Enum.all?(Map.values(row.docs), &String.starts_with?(&1, "https://"))
+
+      assert row_for(rows, "price_usd").docs == %{"price_usd" => "https://example.com/price"}
+      assert row_for(rows, "volume_usd").docs == %{}
+    end
+
     test "each name of a row carries its own display name, for the expanded variants" do
       rows = PlanMetricAccess.compute_rows()
       row = row_for(rows, "active_addresses_24h")
@@ -496,6 +521,7 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccessTest do
                    :access,
                    :category,
                    :category_slug,
+                   :docs,
                    :group,
                    :id,
                    :metrics,

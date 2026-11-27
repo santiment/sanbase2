@@ -271,6 +271,7 @@ defmodule SanbaseWeb.MetricsAccessList do
             name: name,
             metrics: [metric],
             variant_names: %{metric => name},
+            docs: Map.take(row.docs, [metric]),
             search_text: String.downcase(name <> "\n" <> metric)
         }
       end)

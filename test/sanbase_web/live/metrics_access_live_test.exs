@@ -1395,6 +1395,45 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
     end
   end
 
+  describe "documentation links" do
+    test "a metric name opens its documentation in a new tab, in both views", %{
+      conn: conn,
+      price_row: price_row
+    } do
+      {:ok, view, _html} = live(conn, ~p"/metrics_access?category=#{@category_slug}")
+
+      assert href(view, "##{price_row}-docs") == "https://academy.santiment.net/metrics/price"
+      assert attribute(view, "##{price_row}-docs", "target") == "_blank"
+      assert attribute(view, "##{price_row}-docs", "rel") == "noopener noreferrer"
+      refute has_element?(view, ~s(a[href^="/available_metrics"]))
+
+      {:ok, view, _html} =
+        live(conn, ~p"/metrics_access?view=compare&category=#{@category_slug}")
+
+      assert href(view, "#compare-#{price_row}-docs") ==
+               "https://academy.santiment.net/metrics/price"
+    end
+
+    test "a metric without documentation shows its name, not a link", %{
+      conn: conn,
+      price_row: price_row
+    } do
+      mock(Sanbase.Metric, :metadata, fn
+        "price_usd" = metric ->
+          {:ok, metadata} = :meck.passthrough([metric])
+          {:ok, Map.put(metadata, :docs, [])}
+
+        metric ->
+          :meck.passthrough([metric])
+      end)
+
+      {:ok, view, _html} = live(conn, ~p"/metrics_access?category=#{@category_slug}")
+
+      refute has_element?(view, "##{price_row}-docs")
+      assert has_element?(view, "##{price_row}-name", "price_usd")
+    end
+  end
+
   describe "mobile (below md only)" do
     test "plan view rows stay one compact line: metric, then two narrow access columns", ctx do
       {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")

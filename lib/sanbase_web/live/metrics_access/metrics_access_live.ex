@@ -699,6 +699,10 @@ defmodule SanbaseWeb.MetricsAccessLive do
       name: row.name,
       primary: primary,
       variants: variants,
+      # The row's documentation page: the primary name's, else the first variant's
+      # (one page usually documents every interval of a metric).
+      docs_url: Enum.find_value([primary | variants], &Map.get(row.docs, &1)),
+      variant_docs: Map.take(row.docs, variants),
       # Listed inline only when the search picks out some of the names; when every
       # name matches, the row as a whole is the match.
       matched: if(length(matched) < length(row.metrics), do: matched, else: [])

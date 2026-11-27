@@ -40,6 +40,7 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
           category_slug: String.t(),
           group: String.t() | nil,
           search_text: String.t(),
+          docs: %{String.t() => String.t()},
           access: %{{plan_key(), channel()} => access()}
         }
 
@@ -225,7 +226,7 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
       |> Enum.split_with(&Map.has_key?(registry_index, &1))
 
     (registry_rows(registry_metrics, registry_index) ++ Enum.map(code_metrics, &code_row/1))
-    |> Enum.map(&put_taxonomy(&1, categories_map))
+    |> Enum.map(&(&1 |> put_taxonomy(categories_map) |> put_docs()))
     |> AvailableMetrics.sort_by_taxonomy()
     # Only the sort reads these; every page request copies the rows, so drop them.
     |> Enum.map(&Map.drop(&1, [:metric, :categories]))
@@ -384,6 +385,48 @@ defmodule Sanbase.Billing.Plan.PlanMetricAccess do
   end
 
   defp clean_name(_), do: nil
+
+  # Each name's documentation page, for the names that have one.
+  defp put_docs(%{metrics: metrics} = row) do
+    docs =
+      Enum.flat_map(metrics, fn metric ->
+        case docs_link(metric) do
+          nil -> []
+          link -> [{metric, link}]
+        end
+      end)
+
+    Map.put(row, :docs, Map.new(docs))
+  end
+
+  # The first web link among the metric's documentation links. Registry metrics
+  # take theirs from the registry, code metrics from their adapter.
+  defp docs_link(metric) do
+    case Sanbase.Metric.metadata(metric) do
+      {:ok, metadata} ->
+        (Map.get(metadata, :docs) || [])
+        |> Enum.find_value(fn doc -> doc |> Map.get(:link) |> web_link() end)
+
+      _ ->
+        nil
+    end
+  end
+
+  # Only http(s) links with a host are rendered as links on a public page.
+  defp web_link(link) when is_binary(link) do
+    link = String.trim(link)
+
+    case URI.parse(link) do
+      %URI{scheme: scheme, host: host}
+      when scheme in ["http", "https"] and is_binary(host) and host != "" ->
+        link
+
+      _ ->
+        nil
+    end
+  end
+
+  defp web_link(_), do: nil
 
   defp put_taxonomy(%{name: name, metrics: metrics} = row, categories_map) do
     categories = metrics |> Enum.flat_map(&Map.get(categories_map, &1, [])) |> Enum.uniq()

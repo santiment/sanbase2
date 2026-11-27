@@ -1208,12 +1208,24 @@ defmodule SanbaseWeb.MetricsAccessComponents do
         ]
       }
     >
+      <%!-- The metric's documentation, when it has a page; the bare name otherwise. --%>
       <a
-        href={~p"/available_metrics/#{@item.primary}"}
-        class="block break-words font-medium underline-offset-2 hover:text-primary hover:underline"
+        :if={@item.docs_url}
+        id={"#{@item.id}-docs"}
+        href={@item.docs_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Open the documentation"
+        class="group/docs block break-words font-medium underline-offset-2 hover:text-primary hover:underline"
       >
-        <.breakable_name name={@item.primary} />
+        <.breakable_name name={@item.primary} /><.icon
+          name="hero-arrow-up-right-mini"
+          class="ml-0.5 size-3.5 align-[-2px] text-base-content/40 transition-colors duration-150 group-hover/docs:text-primary"
+        />
       </a>
+      <div :if={!@item.docs_url} id={"#{@item.id}-name"} class="break-words font-medium">
+        <.breakable_name name={@item.primary} />
+      </div>
       <div class="text-xs text-base-content/70">{@item.name}</div>
       <div :if={@crumb?} class="mt-1">
         <.category_crumb
@@ -1235,7 +1247,18 @@ defmodule SanbaseWeb.MetricsAccessComponents do
           />
         </summary>
         <ul class="mt-1 space-y-0.5 break-all text-base-content/70">
-          <li :for={variant <- @item.variants}>{variant}</li>
+          <li :for={variant <- @item.variants}>
+            <a
+              :if={@item.variant_docs[variant]}
+              href={@item.variant_docs[variant]}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline-offset-2 hover:text-primary hover:underline"
+            >
+              {variant}
+            </a>
+            <span :if={!@item.variant_docs[variant]}>{variant}</span>
+          </li>
         </ul>
       </details>
       <div :if={@item.matched != []} id={"#{@item.id}-matched"} class="mt-1 text-xs">

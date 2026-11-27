@@ -172,11 +172,14 @@ defmodule Sanbase.Metric.Registry.Sync do
     # known Santiment hosts to prevent the caller-supplied url from being used as
     # an SSRF vector pointing at internal services or cloud metadata endpoints.
     if allowed_confirmation_url?(url) do
-      Logger.info("Confirming that a Metric Registry sync was completed to url #{url}")
+      # The url contains the sync secret, so it must not be logged.
+      Logger.info("Confirming that a Metric Registry sync was completed")
       Req.post(url, json: %{actual_changes: actual_changes})
     else
-      Logger.error("Refusing to send sync confirmation to disallowed url #{inspect(url)}")
-      {:error, "confirmation_endpoint host #{url} is not allowed"}
+      # Only the host is logged/returned, the url contains the sync secret.
+      host = if is_binary(url), do: URI.parse(url).host
+      Logger.error("Refusing to send sync confirmation to disallowed host #{inspect(host)}")
+      {:error, "confirmation_endpoint host #{host} is not allowed"}
     end
   end
 

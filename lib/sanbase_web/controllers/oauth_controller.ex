@@ -26,6 +26,8 @@ defmodule SanbaseWeb.OAuthController do
       registration_endpoint: "#{backend_url}/oauth/register",
       response_types_supported: ["code"],
       grant_types_supported: ["authorization_code", "refresh_token"],
+      # The team scopes (mcp:knowledge, mcp:dev) are advertised only by their resources'
+      # metadata: a non-team user requesting them here would fail the whole authorization.
       scopes_supported: ["openid", "profile", "email", "offline_access", "read", "write", "mcp"],
       code_challenge_methods_supported: ["S256"],
       token_endpoint_auth_methods_supported: ["none", "client_secret_post", "client_secret_basic"]
@@ -38,15 +40,23 @@ defmodule SanbaseWeb.OAuthController do
 
   # RFC 9728 path-suffixed metadata, so tokens bind to `/mcp_knowledge`, not `/mcp`.
   def knowledge_protected_resource(conn, _params),
-    do: protected_resource_json(conn, "/mcp_knowledge")
+    do: protected_resource_json(conn, "/mcp_knowledge", ["mcp:knowledge"])
 
-  defp protected_resource_json(conn, path) do
+  def dev_protected_resource(conn, _params),
+    do: protected_resource_json(conn, "/mcp_dev", ["mcp:dev"])
+
+  defp protected_resource_json(conn, path, scopes_supported \\ nil) do
     backend_url = Config.module_get(SanbaseWeb.Endpoint, :backend_url)
 
     resource = %{
       resource: "#{backend_url}#{path}",
       authorization_servers: ["#{backend_url}"]
     }
+
+    resource =
+      if scopes_supported,
+        do: Map.put(resource, :scopes_supported, scopes_supported),
+        else: resource
 
     conn |> put_cors_headers() |> json(resource)
   end
@@ -395,6 +405,7 @@ defmodule SanbaseWeb.OAuthController do
   defp consent_html(user, conn, response) do
     user_display = Sanbase.Accounts.User.get_name(user)
     client_name = response.client.name || conn.params["client_id"] || "Unknown"
+    scope_row = consent_scope_row(response.scope) <> team_scope_warning(response.scope)
     csrf_token = Plug.CSRFProtection.get_csrf_token()
     query_string = conn.query_string
 
@@ -410,6 +421,7 @@ defmodule SanbaseWeb.OAuthController do
       .card dt { font-weight: 500; font-size: 0.75em; color: #9faac4; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 16px; }
       .card dt:first-child { margin-top: 0; }
       .card dd { margin: 4px 0 0 0; font-size: 1.05em; color: #2f354a; }
+      .card dd.warning { color: #c0392b; font-weight: 500; }
       .actions { display: flex; gap: 12px; margin-top: 28px; width: 100%; }
       button { padding: 12px 32px; border-radius: 8px; border: 1px solid #e7eaf3; cursor: pointer; font-size: 1em; font-weight: 500; transition: all 0.15s; }
       .approve { background: #14c393; color: white; border-color: #14c393; }
@@ -423,7 +435,7 @@ defmodule SanbaseWeb.OAuthController do
       <p>An application is requesting access to your Santiment account.</p>
       <dl class="card">
         <dt>Signed in as</dt><dd>#{Phoenix.HTML.html_escape(user_display) |> Phoenix.HTML.safe_to_string()}</dd>
-        <dt>Client</dt><dd>#{Phoenix.HTML.html_escape(client_name) |> Phoenix.HTML.safe_to_string()}</dd>
+        <dt>Client</dt><dd>#{Phoenix.HTML.html_escape(client_name) |> Phoenix.HTML.safe_to_string()}</dd>#{scope_row}
       </dl>
       <form method="post" action="/oauth/authorize?#{Phoenix.HTML.html_escape(query_string) |> Phoenix.HTML.safe_to_string()}">
         <input type="hidden" name="_csrf_token" value="#{csrf_token}" />
@@ -436,6 +448,33 @@ defmodule SanbaseWeb.OAuthController do
     </html>
     """
   end
+
+  defp consent_scope_row(scope) when is_binary(scope) and scope != "" do
+    escaped = Phoenix.HTML.html_escape(scope) |> Phoenix.HTML.safe_to_string()
+    "\n        <dt>Permissions</dt><dd>#{escaped}</dd>"
+  end
+
+  defp consent_scope_row(_), do: ""
+
+  @team_scope_descriptions [
+    {"mcp:knowledge", "the internal Santiment knowledge MCP, including customer account data"},
+    {"mcp:dev", "the internal Santiment dev MCP, which runs SQL on Santiment data"}
+  ]
+
+  defp team_scope_warning(scope) when is_binary(scope) do
+    scopes = String.split(scope)
+
+    case for({name, text} <- @team_scope_descriptions, name in scopes, do: text) do
+      [] ->
+        ""
+
+      texts ->
+        "\n        <dt>Access</dt><dd class=\"warning\">Grants access to " <>
+          Enum.join(texts, " and ") <> ". Approve only for your own AI client.</dd>"
+    end
+  end
+
+  defp team_scope_warning(_), do: ""
 
   defp denied_html(retry_path) do
     """

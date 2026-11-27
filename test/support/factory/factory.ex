@@ -793,6 +793,20 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def role_mcp_knowledge_access_factory() do
+    %Role{
+      id: Sanbase.Accounts.Role.mcp_knowledge_access_role_id(),
+      name: "Knowledge MCP User"
+    }
+  end
+
+  def role_mcp_dev_access_factory() do
+    %Role{
+      id: Sanbase.Accounts.Role.mcp_dev_access_role_id(),
+      name: "Dev MCP User"
+    }
+  end
+
   def user_role_factory() do
     %UserRole{}
   end

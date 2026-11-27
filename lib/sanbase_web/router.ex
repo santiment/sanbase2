@@ -82,6 +82,14 @@ defmodule SanbaseWeb.Router do
     )
 
     options("/oauth-protected-resource/mcp_knowledge", SanbaseWeb.OAuthController, :preflight)
+
+    get(
+      "/oauth-protected-resource/mcp_dev",
+      SanbaseWeb.OAuthController,
+      :dev_protected_resource
+    )
+
+    options("/oauth-protected-resource/mcp_dev", SanbaseWeb.OAuthController, :preflight)
   end
 
   # OAuth 2.0 browser flow (authorize, consent, dev login)
@@ -134,7 +142,11 @@ defmodule SanbaseWeb.Router do
 
   # Team-only knowledge MCP (FAQ, Academy, Insights, FAQ drafts)
   pipeline :mcp_knowledge_auth do
-    plug(Sanbase.MCP.Knowledge.AuthPlug)
+    plug(Sanbase.MCP.TeamAuthPlug,
+      resource_path: "/mcp_knowledge",
+      access: Sanbase.MCP.Knowledge.Access,
+      scope: "mcp:knowledge"
+    )
   end
 
   scope "/mcp_knowledge" do
@@ -142,9 +154,19 @@ defmodule SanbaseWeb.Router do
     forward("/", Sanbase.MCP.Knowledge.StreamableHTTPPlug)
   end
 
-  # Dev MCP server exposing search docs
-  # TODO: Uncomment this to enable it
-  # forward "/mcp_dev", Sanbase.MCP.StreamableHTTPDevPlug
+  # Team-only dev MCP (ClickHouse SQL, social messages from metrics-hub)
+  pipeline :mcp_dev_auth do
+    plug(Sanbase.MCP.TeamAuthPlug,
+      resource_path: "/mcp_dev",
+      access: Sanbase.MCP.Dev.Access,
+      scope: "mcp:dev"
+    )
+  end
+
+  scope "/mcp_dev" do
+    pipe_through(:mcp_dev_auth)
+    forward("/", Sanbase.MCP.Dev.StreamableHTTPPlug)
+  end
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)

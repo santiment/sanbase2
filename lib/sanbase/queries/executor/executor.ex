@@ -10,16 +10,19 @@ defmodule Sanbase.Queries.Executor do
 
   The SQL query and its parameters are taken from the query and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
+
+  `opts` may hold `:settings`, extra ClickHouse settings added to the query
+  (see `Sanbase.Clickhouse.Query.new/3`).
   """
-  @spec run(Query.t(), QueryMetadata.t(), Environment.t()) ::
+  @spec run(Query.t(), QueryMetadata.t(), Environment.t(), Keyword.t()) ::
           {:ok, Result.t()} | {:error, String.t()}
-  def run(%Query{} = query, %{} = query_metadata, %{} = environment) do
+  def run(%Query{} = query, %{} = query_metadata, %{} = environment, opts \\ []) do
     query_start_time = DateTime.utc_now() |> DateTime.truncate(:millisecond)
 
     _ = put_dynamic_repo()
 
     %Clickhouse.Query{} =
-      clickhouse_query = create_clickhouse_query(query, query_metadata, environment)
+      clickhouse_query = create_clickhouse_query(query, query_metadata, environment, opts)
 
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(
            clickhouse_query,
@@ -32,7 +35,7 @@ defmodule Sanbase.Queries.Executor do
            query_id: query.id,
            clickhouse_query_id: map.query_id,
            summary: make_summary_values_numbers(map.summary),
-           rows: map.rows,
+           rows: Clickhouse.JsonSafe.rows(map.rows, map.column_types),
            compressed_rows: nil,
            columns: map.column_names,
            column_types: map.column_types,
@@ -63,8 +66,12 @@ defmodule Sanbase.Queries.Executor do
     Sanbase.ClickhouseRepo.put_dynamic_repo(dynamic_repo)
   end
 
-  defp create_clickhouse_query(query, query_metadata, environment) do
-    opts = [log_comment: query_metadata, environment: environment]
+  defp create_clickhouse_query(query, query_metadata, environment, opts) do
+    opts = [
+      log_comment: query_metadata,
+      environment: environment,
+      settings: Keyword.get(opts, :settings, [])
+    ]
 
     Clickhouse.Query.new(query.sql_query_text, query.sql_query_parameters, opts)
     |> extend_sql_query(query_metadata)

@@ -28,15 +28,24 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
     default_dynamic_repo: default_dynamic_repo
 
   def init(_, opts) do
-    pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
-
     opts =
       opts
       |> Keyword.put(:url, System.get_env("CLICKHOUSE_READONLY_DATABASE_URL"))
-      |> Keyword.put(:pool_size, pool_size)
+      |> Keyword.put(:pool_size, pool_size(opts))
       |> Keyword.put(:username, "sql_dashboard_user")
 
     {:ok, opts}
+  end
+
+  # A pool_size passed in the child spec wins over the configured one.
+  defp pool_size(opts) do
+    case Keyword.get(opts, :pool_size) do
+      size when is_integer(size) and size > 0 ->
+        size
+
+      _ ->
+        Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
+    end
   end
 end
 

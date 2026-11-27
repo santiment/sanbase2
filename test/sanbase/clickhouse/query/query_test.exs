@@ -102,6 +102,55 @@ defmodule Sanbase.Clickhouse.QueryTest do
     end
   end
 
+  describe "extra settings" do
+    test "are added to the SETTINGS clause" do
+      query =
+        Query.new("SELECT 1", %{},
+          settings: [max_result_rows: 101, result_overflow_mode: "break"]
+        )
+
+      {:ok, %{sql: sql}} = Query.get_sql_args(query)
+
+      assert sql =~ "SETTINGS max_result_rows=101, result_overflow_mode='break',"
+      assert sql =~ "log_comment="
+    end
+
+    test "cannot override log_comment or log_queries", %{protected: user} do
+      ctx = %RequestContext{origin: :graphql, user_id: user.id, activity_traces_hidden: true}
+
+      query =
+        Query.new("SELECT 1", %{},
+          context: ctx,
+          settings: [log_queries: 1, log_comment: "x", max_result_rows: 5]
+        )
+
+      {:ok, %{sql: sql}} = Query.get_sql_args(query)
+
+      assert sql =~ "log_queries=0"
+      refute sql =~ "log_queries=1"
+      refute sql =~ "log_comment='x'"
+      assert sql =~ "max_result_rows=5"
+    end
+
+    test "a quote in a string value is escaped" do
+      query = Query.new("SELECT 1", %{}, settings: [result_overflow_mode: "break', readonly=0"])
+
+      {:ok, %{sql: sql}} = Query.get_sql_args(query)
+
+      assert sql =~ "result_overflow_mode='break\\', readonly=0'"
+    end
+
+    test "an invalid name or value raises" do
+      assert_raise ArgumentError, fn ->
+        Query.new("SELECT 1", %{}, settings: [{:"bad name", 1}]) |> Query.get_sql_args()
+      end
+
+      assert_raise ArgumentError, fn ->
+        Query.new("SELECT 1", %{}, settings: [max_result_rows: [1]]) |> Query.get_sql_args()
+      end
+    end
+  end
+
   describe "log_comment SQL literal escaping" do
     # `graphql_request_log_id` carries the client's `x-request-id` header.
     test "a quote in the log_comment cannot close the literal and add SETTINGS" do

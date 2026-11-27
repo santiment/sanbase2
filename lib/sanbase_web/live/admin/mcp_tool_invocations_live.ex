@@ -461,6 +461,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             <th>Timestamp</th>
             <th>User</th>
             <th>Tool Name</th>
+            <th>Server</th>
             <th>Kind</th>
             <th>Client</th>
             <th>Plan</th>
@@ -474,7 +475,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         <tbody>
           <AdminSharedComponents.empty_table_row
             :if={@invocations == []}
-            colspan={12}
+            colspan={13}
             message="No invocations found matching your filters."
           />
           <tr
@@ -519,6 +520,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
               <.user_label user={row.inv.user} />
             </td>
             <td><.tool_badge tool_name={row.inv.tool_name} /></td>
+            <td class="text-base-content/70">{row.inv.server}</td>
             <td class="text-base-content/70">{row.inv.kind}</td>
             <td class="text-base-content/70">{row.inv.client || "-"}</td>
             <td class="text-base-content/70 whitespace-nowrap">
@@ -683,6 +685,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     >
       <div class="text-sm text-base-content/60 mb-2">
         Invocation #{@modal_invocation.id} — {@modal_invocation.tool_name}
+        <span class="badge badge-xs ml-1">{@modal_invocation.server}</span>
         <span class="badge badge-xs ml-1">{@modal_invocation.kind}</span>
         <span :if={@modal_invocation.client} class="badge badge-xs ml-1">
           {@modal_invocation.client}

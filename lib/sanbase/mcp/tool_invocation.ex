@@ -13,6 +13,8 @@ defmodule Sanbase.MCP.ToolInvocation do
   @user_agent_max 512
   @client_max 32
   @kinds ~w(tool prompt)
+  # The MCP endpoint that served the call: /mcp, /mcp_dev, /mcp_knowledge.
+  @servers ~w(mcp mcp_dev mcp_knowledge)
 
   schema "mcp_tool_invocations" do
     belongs_to(:user, User)
@@ -29,6 +31,7 @@ defmodule Sanbase.MCP.ToolInvocation do
     field(:client, :string)
     field(:session_id, :string)
     field(:kind, :string, default: "tool")
+    field(:server, :string, default: "mcp")
     field(:product_code, :string)
     field(:plan_name, :string)
 
@@ -50,6 +53,7 @@ defmodule Sanbase.MCP.ToolInvocation do
     :client,
     :session_id,
     :kind,
+    :server,
     :product_code,
     :plan_name
   ]
@@ -61,6 +65,7 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> update_change(:client, &truncate_client/1)
     |> validate_required([:tool_name, :is_successful, :duration_ms, :kind])
     |> validate_inclusion(:kind, @kinds)
+    |> validate_inclusion(:server, @servers)
   end
 
   @doc """
@@ -395,6 +400,7 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> maybe_filter_tool_name(Keyword.get(opts, :tool_name))
     |> maybe_filter_client(Keyword.get(opts, :client))
     |> maybe_filter_kind(Keyword.get(opts, :kind))
+    |> maybe_filter_server(Keyword.get(opts, :server))
     |> apply_plan_filters(opts)
     |> group_by([i], selected_as(:bucket))
     |> order_by([i], asc: selected_as(:bucket))
@@ -533,7 +539,7 @@ defmodule Sanbase.MCP.ToolInvocation do
 
     query =
       from(i in __MODULE__,
-        where: i.user_id == ^user_id,
+        where: i.user_id == ^user_id and i.server == "mcp",
         select: %{
           month:
             fragment(
@@ -645,6 +651,7 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> maybe_filter_metric(Keyword.get(opts, :metric))
     |> apply_plan_filters(opts)
     |> maybe_filter_kind(Keyword.get(opts, :kind))
+    |> maybe_filter_server(Keyword.get(opts, :server))
     |> maybe_filter_client(Keyword.get(opts, :client))
     |> maybe_hide_auto_rejected(Keyword.get(opts, :hide_auto_rejected, false))
   end
@@ -782,6 +789,10 @@ defmodule Sanbase.MCP.ToolInvocation do
   defp maybe_filter_kind(query, nil), do: query
   defp maybe_filter_kind(query, ""), do: query
   defp maybe_filter_kind(query, kind), do: where(query, [i], i.kind == ^kind)
+
+  defp maybe_filter_server(query, nil), do: query
+  defp maybe_filter_server(query, ""), do: query
+  defp maybe_filter_server(query, server), do: where(query, [i], i.server == ^server)
 
   defp maybe_filter_plan_name(query, nil), do: query
   defp maybe_filter_plan_name(query, ""), do: query

@@ -23,6 +23,23 @@ defmodule Sanbase.MCP.RateLimitTest do
       end)
     end
 
+    test "does not count calls to the team MCP servers", %{user: user} do
+      with_overrides(%{global: %{free: %{minute: 3}}}, fn ->
+        for _ <- 1..3 do
+          {:ok, _} =
+            ToolInvocation.create(%{
+              user_id: user.id,
+              tool_name: "execute_sql",
+              server: "mcp_dev",
+              is_successful: true,
+              duration_ms: 100
+            })
+        end
+
+        assert {:ok, true} = ToolInvocation.check_rate_limit(user.id, :free)
+      end)
+    end
+
     test "returns error when hour limit is reached", %{user: user} do
       with_overrides(%{global: %{free: %{hour: 3}}}, fn ->
         insert_invocations(user.id, "fetch_metric_data_tool", 3)

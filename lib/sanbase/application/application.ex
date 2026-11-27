@@ -274,6 +274,14 @@ defmodule Sanbase.Application do
         )
       end
 
+    # mcp only needs BusinessMaxUser, for the dev MCP SQL tools.
+    clickhouse_mcp_children =
+      start_in_and_if(
+        fn -> {Sanbase.ClickhouseRepo.BusinessMaxUser, pool_size: 3} end,
+        [:dev, :prod],
+        fn -> container_type() == "mcp" and Sanbase.ClickhouseRepo.enabled?() end
+      )
+
     [
       Sanbase.Logger.ActivityTracesFilterWatchdog,
 
@@ -292,6 +300,7 @@ defmodule Sanbase.Application do
       ),
       clickhouse_readonly_children,
       clickhouse_readonly_per_plan_children,
+      clickhouse_mcp_children,
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
       # Deep research runners keep a run alive across LiveView disconnects.

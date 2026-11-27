@@ -2,16 +2,25 @@ defmodule Sanbase.MCP.Auth do
   @doc """
   Resolves the user from the Authorization header.
   Supports both OAuth bearer tokens and API key authentication.
-  Tries OAuth first, then falls back to API key.
+  Tries OAuth first, then falls back to API key. With `required_scope:` only an
+  OAuth token that has that scope is accepted.
   """
   alias Boruta.Oauth.Authorization
+  alias Boruta.Oauth.Scope
 
-  @spec headers_list_to_user([{String.t(), String.t()}]) ::
+  @spec headers_list_to_user([{String.t(), String.t()}], Keyword.t()) ::
           Sanbase.Accounts.User.t() | nil
-  def headers_list_to_user(headers) do
+  def headers_list_to_user(headers, opts \\ []) do
+    required_scope = Keyword.get(opts, :required_scope)
+
     case get_header(headers, "authorization") do
+      # A required scope can only be carried by an OAuth token, so API keys are
+      # not accepted there.
+      {"authorization", header_value} when is_binary(required_scope) ->
+        oauth_to_user(header_value, required_scope)
+
       {"authorization", header_value} ->
-        oauth_to_user(header_value) || apikey_to_user(header_value)
+        oauth_to_user(header_value, nil) || apikey_to_user(header_value)
 
       _ ->
         nil
@@ -49,16 +58,36 @@ defmodule Sanbase.MCP.Auth do
     end
   end
 
-  defp oauth_to_user(header_value) do
+  defp oauth_to_user(header_value, required_scope) do
     with "Bearer " <> token <- header_value,
          false <- String.starts_with?(token, "Apikey "),
          {:ok, oauth_token} <- Authorization.AccessToken.authorize(value: token),
-         {:ok, user} <- Sanbase.Accounts.User.by_id(Sanbase.Math.to_integer(oauth_token.sub)) do
+         true <- has_required_scope?(oauth_token.scope, required_scope),
+         {:ok, user_id} <- parse_user_id(oauth_token.sub),
+         {:ok, user} <- Sanbase.Accounts.User.by_id(user_id) do
       user
     else
       _ -> nil
     end
   end
+
+  defp has_required_scope?(_token_scope, nil), do: true
+
+  defp has_required_scope?(token_scope, required_scope) when is_binary(required_scope) do
+    required_scope in Scope.split(token_scope)
+  end
+
+  # client_credentials tokens have a nil sub.
+  defp parse_user_id(sub) when is_integer(sub), do: {:ok, sub}
+
+  defp parse_user_id(sub) when is_binary(sub) do
+    case Integer.parse(sub) do
+      {user_id, ""} -> {:ok, user_id}
+      _ -> :error
+    end
+  end
+
+  defp parse_user_id(_), do: :error
 
   defp apikey_to_user(header_value) do
     case extract_apikey(header_value) do

@@ -10,7 +10,15 @@ defmodule Sanbase.Clickhouse.Query do
   alias Sanbase.RequestContext
   alias Sanbase.Accounts.ActivityTracesConfig
 
-  defstruct [:sql, :parameters, :log_comment, :leading_comments, :environment, :context]
+  defstruct [
+    :sql,
+    :parameters,
+    :log_comment,
+    :leading_comments,
+    :environment,
+    :context,
+    settings: []
+  ]
 
   @type sql :: String.t()
   @type parameters :: Map.t()
@@ -21,7 +29,8 @@ defmodule Sanbase.Clickhouse.Query do
           log_comment: map() | nil,
           leading_comments: [],
           environment: Environment.t(),
-          context: RequestContext.t() | nil
+          context: RequestContext.t() | nil,
+          settings: [{atom(), integer() | float() | String.t()}]
         }
 
   @doc ~s"""
@@ -29,6 +38,9 @@ defmodule Sanbase.Clickhouse.Query do
   represented as a map and an optional list of options - settings, etc.
 
   The SQL is parametrized by templating and named parameters.
+
+  `:settings` adds ClickHouse settings, e.g. `[max_result_rows: 1000]`. `log_comment`
+  and `log_queries` cannot be overridden.
 
     ## Examples
     iex> Sanbase.Clickhouse.Query.new(
@@ -49,7 +61,8 @@ defmodule Sanbase.Clickhouse.Query do
       log_comment: Keyword.get(opts, :log_comment, %{}),
       environment: Keyword.get(opts, :environment, Environment.empty()),
       leading_comments: Keyword.get(opts, :leading_comments, []),
-      context: Keyword.get(opts, :context)
+      context: Keyword.get(opts, :context),
+      settings: Keyword.get(opts, :settings, [])
     }
   end
 
@@ -238,7 +251,7 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   defp apply_settings(
-         %{sql: sql, log_comment: log_comment} = query,
+         %{sql: sql, log_comment: log_comment, settings: settings} = query,
          user_id,
          activity_traces_hidden?
        ) do
@@ -265,8 +278,13 @@ defmodule Sanbase.Clickhouse.Query do
 
     log_queries_str = if activity_traces_hidden?, do: " log_queries=0"
 
+    extra_settings_strs =
+      (settings || [])
+      |> Keyword.drop([:log_comment, :log_queries])
+      |> Enum.map(fn {key, value} -> " #{setting_name!(key)}=#{setting_value!(value)}" end)
+
     settings_parts =
-      [log_comment_str, log_queries_str]
+      (extra_settings_strs ++ [log_comment_str, log_queries_str])
       |> Enum.reject(&is_nil/1)
 
     settings_str =
@@ -277,6 +295,21 @@ defmodule Sanbase.Clickhouse.Query do
 
     %{query | sql: sql <> settings_str}
   end
+
+  defp setting_name!(key) when is_atom(key) do
+    name = Atom.to_string(key)
+
+    if Regex.match?(~r/^[a-z_][a-z0-9_]*$/, name),
+      do: name,
+      else: raise(ArgumentError, "Invalid ClickHouse setting name: #{inspect(key)}")
+  end
+
+  defp setting_value!(value) when is_integer(value), do: Integer.to_string(value)
+  defp setting_value!(value) when is_float(value), do: Float.to_string(value)
+  defp setting_value!(value) when is_binary(value), do: "'#{escape_string_literal(value)}'"
+
+  defp setting_value!(value),
+    do: raise(ArgumentError, "Invalid ClickHouse setting value: #{inspect(value)}")
 
   # `graphql_request_log_id` is the client's `x-request-id` and Jason does not
   # escape `'`. Backslash first, so the ones added here are not re-escaped.

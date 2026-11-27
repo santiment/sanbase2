@@ -18,6 +18,9 @@ defmodule Sanbase.Accounts.Role do
   @admin_panel_editor_role_id 10
   @admin_panel_owner_role_id 11
 
+  @mcp_knowledge_access_role_id 12
+  @mcp_dev_access_role_id 13
+
   schema "roles" do
     field(:name, :string)
   end
@@ -39,11 +42,24 @@ defmodule Sanbase.Accounts.Role do
   def admin_panel_editor_role_id(), do: @admin_panel_editor_role_id
   def admin_panel_owner_role_id(), do: @admin_panel_owner_role_id
 
+  def mcp_knowledge_access_role_id(), do: @mcp_knowledge_access_role_id
+  def mcp_dev_access_role_id(), do: @mcp_dev_access_role_id
+
   def metric_registry_viewer_role_id(), do: @registry_viewer_role_id
   def metric_registry_change_suggester_role_id(), do: @registry_change_suggester_role_id
   def metric_registry_change_approver_role_id(), do: @registry_change_approver_role_id
   def metric_registry_deployer_role_id(), do: @registry_deployer_role_id
   def metric_registry_owner_role_id(), do: @registry_owner_role_id
+
+  @spec user_has_role?(non_neg_integer() | nil, non_neg_integer()) :: boolean()
+  def user_has_role?(user_id, role_id) when is_integer(user_id) do
+    from(ur in Sanbase.Accounts.UserRole,
+      where: ur.user_id == ^user_id and ur.role_id == ^role_id
+    )
+    |> Sanbase.Repo.exists?()
+  end
+
+  def user_has_role?(_user_id, _role_id), do: false
 
   def by_names(names) do
     from(

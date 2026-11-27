@@ -8,6 +8,8 @@
 #     Sanbase.Repo.insert(%Sanbase.SomeSchema{})
 #
 
+Sanbase.Seeds.LocalOnly.ensure!()
+
 alias Sanbase.Project
 alias Sanbase.ProjectEthAddress
 alias Sanbase.Model.Infrastructure

@@ -56,6 +56,25 @@ defmodule Sanbase.MCP.AuthTest do
       assert Auth.headers_list_to_user([]) == nil
     end
 
+    test "returns nil for an OAuth token without a sub" do
+      {:ok, client} =
+        %Boruta.Ecto.Client{}
+        |> Boruta.Ecto.Client.create_changeset(%{redirect_uris: ["http://localhost/cb"]})
+        |> Sanbase.Repo.insert()
+
+      {:ok, token} =
+        %Boruta.Ecto.Token{}
+        |> Boruta.Ecto.Token.changeset(%{
+          client_id: client.id,
+          sub: nil,
+          scope: "",
+          access_token_ttl: client.access_token_ttl
+        })
+        |> Sanbase.Repo.insert()
+
+      assert Auth.headers_list_to_user([{"authorization", "Bearer #{token.value}"}]) == nil
+    end
+
     test "returns nil for invalid OAuth token" do
       headers = [{"authorization", "Bearer invalid_token"}]
       assert Auth.headers_list_to_user(headers) == nil
@@ -64,6 +83,46 @@ defmodule Sanbase.MCP.AuthTest do
     test "returns nil for invalid apikey" do
       headers = [{"authorization", "Apikey invalid_apikey"}]
       assert Auth.headers_list_to_user(headers) == nil
+    end
+
+    test "with required_scope accepts only OAuth tokens that have the scope", context do
+      {:ok, client} =
+        %Boruta.Ecto.Client{}
+        |> Boruta.Ecto.Client.create_changeset(%{redirect_uris: ["http://localhost/cb"]})
+        |> Sanbase.Repo.insert()
+
+      {:ok, dev_token} =
+        %Boruta.Ecto.Token{}
+        |> Boruta.Ecto.Token.changeset(%{
+          client_id: client.id,
+          sub: to_string(context.user.id),
+          scope: "mcp:dev",
+          access_token_ttl: client.access_token_ttl
+        })
+        |> Sanbase.Repo.insert()
+
+      # Token without mcp:dev (scope: "") is rejected when mcp:dev is required
+      assert Auth.headers_list_to_user(
+               [{"authorization", "Bearer #{context.bearer_token}"}],
+               required_scope: "mcp:dev"
+             ) == nil
+
+      # Token with mcp:dev is accepted
+      assert Auth.headers_list_to_user(
+               [{"authorization", "Bearer #{dev_token.value}"}],
+               required_scope: "mcp:dev"
+             ).id == context.user.id
+
+      # An API key carries no scope, so it is rejected when a scope is required
+      for authorization <- ["Apikey #{context.apikey}", "Bearer #{context.apikey}"] do
+        assert Auth.headers_list_to_user([{"authorization", authorization}],
+                 required_scope: "mcp:dev"
+               ) == nil
+      end
+
+      # Without a required scope the API key still works, as on the public /mcp
+      assert Auth.headers_list_to_user([{"authorization", "Apikey #{context.apikey}"}]).id ==
+               context.user.id
     end
   end
 

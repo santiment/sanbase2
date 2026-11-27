@@ -1146,7 +1146,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
 
   attr :crumb?, :boolean,
     default: false,
-    doc: "below lg, the category breadcrumb under the names (the column is hidden)"
+    doc: "the category breadcrumb under the names (the plan view)"
 
   attr :sticky?, :boolean,
     default: false,
@@ -1160,7 +1160,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
         [
           # Below md the table scrolls sideways, so the column keeps a readable
           # width; from md it takes what the fixed-width columns leave.
-          "min-w-[10rem] px-3 py-2.5 align-middle text-sm leading-5 md:min-w-0 md:px-4",
+          "min-w-0 px-3 py-2.5 align-middle text-sm leading-5 max-md:min-w-[10rem] md:px-4",
           # Plan view below md: the stacked row's first line, across both columns.
           @crumb? && "max-md:col-span-2 max-md:pb-1",
           @sticky? && sticky_cell()
@@ -1174,9 +1174,9 @@ defmodule SanbaseWeb.MetricsAccessComponents do
         {@item.primary}
       </a>
       <div class="text-xs text-base-content/70">{@item.name}</div>
-      <div :if={@crumb?} class="mt-1 lg:hidden">
+      <div :if={@crumb?} class="mt-1">
         <.category_crumb
-          id={"#{@item.id}-category-inline"}
+          id={"#{@item.id}-category"}
           category={@item.category}
           group={@item.group}
           hue={@item.hue}
@@ -1232,21 +1232,29 @@ defmodule SanbaseWeb.MetricsAccessComponents do
         if(@group, do: "Category: #{@category}, group: #{@group}", else: "Category: #{@category}")
       }
       data-hue={@hue.key}
-      class={[
-        "inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-md border border-l-2 border-base-300 bg-base-100 pl-2 pr-2.5 leading-none",
-        @hue.edge,
-        if(@small?, do: "h-[18px] text-[11px]", else: "h-[22px] text-xs")
-      ]}
+      class={
+        [
+          # Wraps rather than overflow: the group (with its arrow) drops to the
+          # next line when the cell is too narrow, and a long name breaks.
+          "inline-flex max-w-full flex-wrap items-center gap-x-1 rounded-md border border-l-2 border-base-300 bg-base-100 pl-2 pr-2.5",
+          @hue.edge,
+          if(@small?,
+            do: "min-h-[18px] py-px text-[11px] leading-4",
+            else: "min-h-[22px] py-0.5 text-xs leading-4"
+          )
+        ]
+      }
     >
-      <span class={
+      <span class={[
+        "min-w-0 [overflow-wrap:anywhere]",
         if(@other?, do: "italic text-base-content/70", else: "font-medium text-base-content")
-      }>
+      ]}>
         {@category}
       </span>
-      <%= if @group && !@other? do %>
+      <span :if={@group && !@other?} class="inline-flex min-w-0 items-center gap-1">
         <.icon name="hero-chevron-right-mini" class={"size-3.5 shrink-0 #{@hue.arrow}"} />
-        <span class="text-base-content/80">{@group}</span>
-      <% end %>
+        <span class="min-w-0 text-base-content/80 [overflow-wrap:anywhere]">{@group}</span>
+      </span>
     </div>
     """
   end
@@ -1270,16 +1278,6 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       ]}
     >
       <.metric_cell item={@item} crumb?={true} />
-      <td class="px-0 py-2.5 align-middle max-md:hidden lg:px-4">
-        <div class="hidden lg:block">
-          <.category_crumb
-            id={"#{@item.id}-category"}
-            category={@item.category}
-            group={@item.group}
-            hue={@item.hue}
-          />
-        </div>
-      </td>
       <.access_cell
         :for={channel <- @channels}
         id={"#{@item.id}-#{channel.key}"}

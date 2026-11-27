@@ -188,17 +188,15 @@ defmodule SanbaseWeb.MetricsAccessList do
   end
 
   @doc """
-  The filter a click on a column header gives: sorted by `sort`, ascending (best
-  access first, or A to Z) unless it already is, then descending. `:category`
-  is the default order.
+  The filter a click on a column header gives. Clicks cycle: ascending (best
+  access first, or A to Z), then descending, then back to the default
+  (taxonomy) order, `:category`.
   """
   @spec sorted_by(filter(), atom() | {:plan, String.t()}) :: filter()
   def sorted_by(filter, :category), do: %{filter | sort: :category, dir: :asc}
-
-  def sorted_by(filter, sort) do
-    dir = if filter.sort == sort and filter.dir == :asc, do: :desc, else: :asc
-    %{filter | sort: sort, dir: dir}
-  end
+  def sorted_by(%{sort: sort, dir: :asc} = filter, sort), do: %{filter | dir: :desc}
+  def sorted_by(%{sort: sort, dir: :desc} = filter, sort), do: sorted_by(filter, :category)
+  def sorted_by(filter, sort), do: %{filter | sort: sort, dir: :asc}
 
   @doc """
   Every filter back to its default. What is not a filter stays: the plan, the

@@ -73,7 +73,9 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       assert has_element?(view, "#metrics-access-filters #access-select")
       refute has_element?(view, "#sort-select")
       # Category order is the default sort.
-      assert has_element?(view, "#plan-table th#th-category[aria-sort=ascending]")
+      # The default (taxonomy) order: no column is the sort.
+      refute has_element?(view, "#plan-table [aria-sort]")
+      refute has_element?(view, "#th-category")
       assert has_element?(view, "#show-locked[role=switch][aria-checked=false]")
       assert has_element?(view, "#variants-collapsed[aria-pressed=true]")
       # Dates: a two-option toggle, no visible prefix; the group keeps its name.
@@ -629,7 +631,6 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       assert_patch(view, base <> "&sort=api")
       assert row_ids(view) == [price, mvrv, aave]
       assert has_element?(view, "#th-api[aria-sort=ascending]")
-      refute has_element?(view, "#th-category[aria-sort]")
       assert href(view, "#sort-api") == base <> "&sort=api&dir=desc"
 
       view |> element("#sort-api") |> render_click()
@@ -637,8 +638,12 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       assert row_ids(view) == [aave, mvrv, price]
       assert has_element?(view, "#th-api[aria-sort=descending]")
 
-      # Category goes back to the default order.
-      assert href(view, "#sort-category") == base
+      # A third click goes back to the default (taxonomy) order.
+      assert href(view, "#sort-api") == base
+      view |> element("#sort-api") |> render_click()
+      assert_patch(view, base)
+      refute has_element?(view, "[aria-sort]")
+      assert href(view, "#sort-api") == base <> "&sort=api"
     end
 
     test "ties keep the taxonomy order in both directions", ctx do
@@ -717,7 +722,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       {:ok, default, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
 
       assert row_ids(view) == row_ids(default)
-      assert has_element?(view, "#th-category[aria-sort=ascending]")
+      refute has_element?(view, "[aria-sort]")
       assert href(view, "#sort-api") == "/metrics_access?category=#{@category_slug}&sort=api"
     end
   end
@@ -905,18 +910,23 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
   end
 
   describe "category column" do
-    test "category and group are one breadcrumb cell, coloured per category", ctx do
+    test "the breadcrumb sits under the metric name; there is no Category column", ctx do
       {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
 
       headers =
         view
         |> render()
         |> LazyHTML.from_fragment()
-        |> LazyHTML.query("#plan-table thead th")
+        |> LazyHTML.query("#plan-table thead tr:last-child th")
         |> Enum.map(&(&1 |> LazyHTML.text() |> String.split() |> Enum.join(" ")))
 
-      assert Enum.any?(headers, &(&1 == "Category"))
-      refute Enum.any?(headers, &(&1 == "Group"))
+      assert headers == ["Metric", "In Sanbase", "Via API"]
+      refute has_element?(view, "#plan-table col#col-category")
+
+      # One breadcrumb per row, in the metric cell, at every width.
+      assert has_element?(view, "##{ctx.mvrv_row} > td:first-child ##{ctx.mvrv_row}-category")
+      refute has_element?(view, "##{ctx.mvrv_row}-category-inline")
+      refute has_element?(view, "##{ctx.mvrv_row} [class*='lg:hidden'] ##{ctx.mvrv_row}-category")
 
       assert text(view, "##{ctx.mvrv_row}-category") == "#{@category_name} Valuation"
       assert text(view, "##{ctx.price_row}-category") == "#{@category_name} Pricing"
@@ -930,28 +940,10 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       assert hue not in [nil, "other"]
       assert attribute(view, "##{ctx.price_row}-category", "data-hue") == hue
       assert attribute(view, "##{ctx.aave_row}-category", "data-hue") == hue
-    end
 
-    test "below lg the breadcrumb moves under the display name; the column hides", ctx do
-      {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
-
-      # The column is for lg and up only: below it, zero wide and empty (a fixed
-      # layout takes its widths from the colgroup).
-      assert has_element?(view, "#plan-table colgroup col#col-category.w-0.lg\\:w-\\[15rem\\]")
-      assert has_element?(view, "#th-category > .hidden.lg\\:block", "Category")
-
-      assert has_element?(
-               view,
-               "##{ctx.mvrv_row} td > .hidden.lg\\:block ##{ctx.mvrv_row}-category"
-             )
-
-      # A second, smaller breadcrumb in the metric cell, below lg only.
-      assert has_element?(view, "##{ctx.mvrv_row}-category-inline")
-
-      assert has_element?(
-               view,
-               "##{ctx.mvrv_row} td .lg\\:hidden ##{ctx.mvrv_row}-category-inline"
-             )
+      # It wraps rather than overflow, in a cell that may shrink.
+      assert has_element?(view, "##{ctx.mvrv_row}-category.flex-wrap")
+      assert has_element?(view, "##{ctx.mvrv_row} > td.min-w-0:first-child")
     end
 
     test "from md both tables fit without sideways scrolling", %{conn: conn} do
@@ -969,6 +961,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       # Widths come from the colgroups (the first row is the full-width caption).
       {:ok, view, _html} = live(conn, ~p"/metrics_access")
       assert has_element?(view, "#plan-table colgroup col.md\\:w-\\[136px\\]")
+      refute has_element?(view, "#plan-table colgroup col#col-category")
 
       # Compare: fixed-width plan columns, the metric column takes the rest.
       {:ok, view, _html} = live(conn, ~p"/metrics_access?view=compare")
@@ -1228,7 +1221,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
     test "a sort from the other view does not leak in", ctx do
       # A plan column sort means nothing in the plan view...
       {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?sort=free&dir=desc")
-      assert has_element?(view, "#th-category[aria-sort=ascending]")
+      refute has_element?(view, "[aria-sort]")
       refute has_element?(view, "[aria-sort=descending]")
 
       # ...and a channel column sort nothing in the compare view.
@@ -1327,7 +1320,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
     test "dir without a sort is ignored: the default order has no direction", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/metrics_access?dir=desc")
-      assert has_element?(view, "#th-category[aria-sort=ascending]")
+      refute has_element?(view, "[aria-sort]")
       refute has_element?(view, "[aria-sort=descending]")
       assert href(view, "#sort-metric") == "/metrics_access?sort=metric"
     end
@@ -1398,7 +1391,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       assert has_element?(view, "#plan-table thead tr.max-md\\:block #bar-help-button")
       assert has_element?(view, "#{row}.max-md\\:grid.max-md\\:grid-cols-2")
       assert has_element?(view, "#{row} > td.max-md\\:col-span-2 a", "mvrv_usd")
-      assert has_element?(view, "#{row} > td.max-md\\:hidden ##{ctx.mvrv_row}-category")
+      assert has_element?(view, "#{row} > td.max-md\\:col-span-2 ##{ctx.mvrv_row}-category")
 
       # A label above each bar, drawn from the cell's data-label (CSS only, so
       # it adds no text and nothing at md and up).

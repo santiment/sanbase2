@@ -404,18 +404,17 @@ defmodule SanbaseWeb.MetricsAccessLive do
               class="w-full text-left max-md:block md:table-fixed"
             >
               <%!-- A fixed layout takes the widths from here (its first row is the
-                   full-width caption). The category column is zero wide below lg,
-                   where the breadcrumb sits under the metric name instead. --%>
+                   full-width caption). The category breadcrumb sits under the
+                   metric name. --%>
               <colgroup>
                 <col />
-                <col id="col-category" class="w-0 lg:w-[15rem]" />
                 <col :for={_channel <- @channels} class="md:w-[136px]" />
               </colgroup>
               <%!-- Below md the rows stack (metric, then both channels side by
                    side, each labelled), so the column-name row is hidden; the
                    caption row (bar key, "What do these mean?") stays. --%>
               <thead class={[sticky_thead(), "max-md:block"]}>
-                <.caption_row colspan={4} today={@today} block_below_md?={true}>
+                <.caption_row colspan={3} today={@today} block_below_md?={true}>
                   Access on {@plan.label}, in Sanbase and via the API
                 </.caption_row>
                 <tr class="max-md:hidden">
@@ -432,22 +431,6 @@ defmodule SanbaseWeb.MetricsAccessLive do
                     >
                       Metric
                     </.sort_link>
-                  </th>
-                  <th
-                    id="th-category"
-                    scope="col"
-                    aria-sort={aria_sort(@filter, :category)}
-                    class={["px-0 py-2 align-bottom font-medium lg:px-4", header_cell()]}
-                  >
-                    <div class="hidden lg:block">
-                      <.sort_link
-                        id="sort-category"
-                        path={path(MetricsAccessList.sorted_by(@filter, :category))}
-                        dir={sort_dir(@filter, :category)}
-                      >
-                        Category
-                      </.sort_link>
-                    </div>
                   </th>
                   <th
                     :for={channel <- @channels}

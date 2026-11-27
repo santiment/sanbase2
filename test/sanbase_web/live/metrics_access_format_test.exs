@@ -13,7 +13,7 @@ defmodule SanbaseWeb.MetricsAccessFormatTest do
 
     test "relative" do
       assert history(730, :relative, @today) == "Last 2 years"
-      assert history(365, :relative, @today) == "Last year"
+      assert history(365, :relative, @today) == "Last 1 year"
       assert history(1095, :relative, @today) == "Last 3 years"
       assert history(90, :relative, @today) == "Last 90 days"
       assert history(400, :relative, @today) == "Last 400 days"
@@ -68,7 +68,7 @@ defmodule SanbaseWeb.MetricsAccessFormatTest do
   describe "label/3, the full text of an access value" do
     test "windows" do
       assert label({:window, nil, nil}, :relative, @today) == "All history · No delay"
-      assert label({:window, 365, 30}, :relative, @today) == "Last year · 30-day delay"
+      assert label({:window, 365, 30}, :relative, @today) == "Last 1 year · 30-day delay"
       assert label({:window, 730, nil}, :relative, @today) == "Last 2 years · No delay"
 
       assert label({:window, 730, 30}, :exact, @today) ==

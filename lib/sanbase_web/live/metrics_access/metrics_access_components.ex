@@ -663,11 +663,12 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   The two-segment bar of one access value, one size everywhere on the page:
   64 x 8px, two fully rounded halves 4px apart. `role="img"`, labelled with the
   full text; `data-state`, `data-history` and `data-delay` name what it shows.
-  With `highlight`, only that half keeps its colour (the legend's swatches).
+  With `focus`, only that half keeps its colour; the other is the empty grey of
+  a locked half (the legend's examples and swatches).
   """
   attr :access, :any, required: true
   attr :label, :string, required: true
-  attr :highlight, :atom, default: nil, values: [nil, :history, :delay]
+  attr :focus, :atom, default: nil, values: [nil, :history, :delay]
 
   def access_bar(assigns) do
     assigns = assign(assigns, bar_state(assigns.access))
@@ -679,24 +680,24 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       data-state={@state}
       data-history={@history}
       data-delay={@delay}
-      data-highlight={@highlight}
+      data-focus={@focus}
       class="relative inline-grid w-16 shrink-0 grid-cols-2 gap-1 align-middle"
       style="grid-template-columns: 1fr 1fr"
     >
-      <span class={[
-        "block h-2 rounded-full",
-        if(@highlight == :delay,
-          do: "bg-base-content/15",
-          else: fill(@state, @history, :history)
-        )
-      ]} />
-      <span class={[
-        "block h-2 rounded-full",
-        if(@highlight == :history,
-          do: "bg-base-content/15",
-          else: fill(@state, @delay, :delay)
-        )
-      ]} />
+      <span
+        data-unfocused={@focus == :delay && "true"}
+        class={[
+          "block h-2 rounded-full",
+          if(@focus == :delay, do: unfocused_fill(), else: fill(@state, @history, :history))
+        ]}
+      />
+      <span
+        data-unfocused={@focus == :history && "true"}
+        class={[
+          "block h-2 rounded-full",
+          if(@focus == :history, do: unfocused_fill(), else: fill(@state, @delay, :delay))
+        ]}
+      />
       <span
         :if={@state == "locked"}
         data-lockmark
@@ -718,6 +719,16 @@ defmodule SanbaseWeb.MetricsAccessComponents do
 
   # Locked whether or not a listed plan unlocks it: the page sells no custom plans.
   defp bar_state({:locked, _plan}), do: %{state: "locked", history: nil, delay: nil}
+
+  # The half a legend example is not about: thin diagonal stripes and a hairline,
+  # in the text colour at low strength (so in both themes), distinct from a
+  # locked half's solid grey.
+  defp unfocused_fill() do
+    [
+      "bg-[repeating-linear-gradient(135deg,color-mix(in_oklab,var(--color-base-content)_22%,transparent)_0_2px,transparent_2px_4px)]",
+      "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--color-base-content)_22%,transparent)]"
+    ]
+  end
 
   defp fill("locked", _, _), do: "bg-base-content/10"
   defp fill("window", "full", :history), do: "bg-success"
@@ -782,6 +793,34 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   attr :today, Date, required: true
   attr :compact?, :boolean, default: false, doc: ~s(drop "since " from an exact date)
 
+  attr :focus, :atom,
+    default: nil,
+    values: [nil, :history, :delay],
+    doc: "only this half is coloured and labelled; the other is grey, its code blank"
+
+  def access_glyph(%{focus: focus} = assigns) when focus in [:history, :delay] do
+    {:window, history, delay} = assigns.access
+    history = MetricsAccessFormat.history_code(history, assigns.dates, assigns.today)
+
+    history =
+      if assigns.compact?, do: String.replace_prefix(history, "since ", ""), else: history
+
+    delay = MetricsAccessFormat.delay_code(delay, assigns.dates, assigns.today) || "—"
+
+    assigns =
+      assign(assigns,
+        left: if(focus == :history, do: history, else: ""),
+        right: if(focus == :delay, do: delay, else: "")
+      )
+
+    ~H"""
+    <div class="flex flex-col items-center gap-1">
+      <.access_bar access={@access} label={@label} focus={@focus} />
+      <.code_grid left={@left} right={@right} />
+    </div>
+    """
+  end
+
   def access_glyph(assigns) do
     ~H"""
     <div class="flex flex-col items-center gap-1">
@@ -822,16 +861,21 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       class={["relative grid w-16 grid-cols-2 gap-1", @class]}
       style="grid-template-columns: 1fr 1fr"
     >
-      <span class={[
-        "whitespace-nowrap",
-        if(String.length(@left) > 4,
-          do: "[justify-self:unsafe_end] text-right",
-          else: "justify-self-center"
-        )
-      ]}>
-        {@left}<span class="sr-only"> · </span>
+      <span
+        data-blank={@left == "" && "true"}
+        class={[
+          "whitespace-nowrap",
+          if(String.length(@left) > 4,
+            do: "[justify-self:unsafe_end] text-right",
+            else: "justify-self-center"
+          )
+        ]}
+      >
+        {@left}<span :if={@left != "" and @right != ""} class="sr-only"> · </span>
       </span>
-      <span class="justify-self-center whitespace-nowrap">{@right}</span>
+      <span data-blank={@right == "" && "true"} class="justify-self-center whitespace-nowrap">
+        {@right}
+      </span>
     </span>
     """
   end
@@ -1023,10 +1067,14 @@ defmodule SanbaseWeb.MetricsAccessComponents do
           title="History — left half"
           definition="How far back the data goes on this plan."
           examples={[
-            {"full", {:window, nil, nil}, :relative, "all history, nothing held back"},
-            {"2y", {:window, 730, nil}, :relative, "the last 2 years"},
-            {"1y", {:window, 365, nil}, :relative, "the last year"},
-            {"exact", {:window, 730, nil}, :exact, "exact dates: from that month on"}
+            {"full", {:window, nil, nil}, :relative,
+             "all data since the metric started is accessible"},
+            {"2y", {:window, 730, nil}, :relative,
+             "only the last 2 years are accessible; older data is not"},
+            {"1y", {:window, 365, nil}, :relative,
+             "only the last 1 year is accessible; older data is not"},
+            {"exact", {:window, 730, nil}, :exact,
+             "only data from #{Calendar.strftime(Date.add(@today, -730), "%b %Y")} on is accessible; older data is not"}
           ]}
           today={@today}
         />
@@ -1036,8 +1084,9 @@ defmodule SanbaseWeb.MetricsAccessComponents do
           definition="Whether the plan holds back the newest data."
           examples={[
             {"none", {:window, nil, nil}, :relative,
-             "no delay: data up to the latest computed point"},
-            {"delayed", {:window, nil, 30}, :relative, "the latest 30 days are held back"}
+             "nothing held back: data up to the latest computed point is accessible"},
+            {"delayed", {:window, nil, 30}, :relative,
+             "the latest 30 days are not accessible; data ends 30 days before today"}
           ]}
           today={@today}
         />
@@ -1097,19 +1146,22 @@ defmodule SanbaseWeb.MetricsAccessComponents do
         <.access_bar
           access={{:window, nil, nil}}
           label={@title}
-          highlight={String.to_existing_atom(@term)}
+          focus={String.to_existing_atom(@term)}
         />
         {@title}
       </h3>
       <p data-part="definition" class="mt-1.5 text-sm text-base-content/80">{@definition}</p>
       <ul class="mt-3 grid grid-cols-[64px_1fr] items-center gap-x-4 gap-y-3">
         <li :for={{key, access, mode, meaning} <- @examples} data-example={key} class="contents">
+          <%!-- Only the section's half is lit and labelled, and the bar's label
+               is the explanation next to it. --%>
           <.access_glyph
             access={access}
-            label={MetricsAccessFormat.label(access, mode, @today)}
+            label={meaning}
             dates={mode}
             today={@today}
             compact?={true}
+            focus={String.to_existing_atom(@term)}
           />
           <span data-part="meaning" class="text-xs text-base-content/70">{meaning}</span>
         </li>

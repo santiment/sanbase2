@@ -3,7 +3,7 @@ defmodule SanbaseWeb.MetricsAccessFormat do
   Pure functions turning metric access values (days of history / delay, minimum
   plan) into the labels shown on the metrics access page.
 
-  Every label comes in a full form ("Last year · 30-day delay", shown in the plan
+  Every label comes in a full form ("Last 1 year · 30-day delay", shown in the plan
   view, on hover and to screen readers) and, for windows, a compact code
   ("1y · 30d delay") for the narrow cells of the compare view.
   """
@@ -20,7 +20,7 @@ defmodule SanbaseWeb.MetricsAccessFormat do
 
   def history(days, :relative, _today) when is_integer(days) do
     case whole_years(days) do
-      1 -> "Last year"
+      1 -> "Last 1 year"
       nil -> "Last #{days} days"
       years -> "Last #{years} years"
     end

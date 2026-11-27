@@ -8,7 +8,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
   On the seeded data, in the fixture category:
     * price_usd - not restricted: all history, no delay everywhere
-    * mvrv_usd - restricted: Free gets the last year with a 30-day delay via the
+    * mvrv_usd - restricted: Free gets the last 1 year with a 30-day delay via the
       API, the last 2 years with a 30-day delay in Sanbase
     * aave_v2_action_deposits - restricted, min plan SANAPI "pro", SANBASE "free":
       locked on Free via the API only
@@ -145,7 +145,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
       {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
 
       assert text(view, "##{ctx.mvrv_row}-api") == "1y · 30d"
-      assert has_element?(view, "##{ctx.mvrv_row}-api[title='Last year · 30-day delay']")
+      assert has_element?(view, "##{ctx.mvrv_row}-api[title='Last 1 year · 30-day delay']")
 
       assert has_element?(
                view,
@@ -154,7 +154,7 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
       assert has_element?(
                view,
-               "##{ctx.mvrv_row}-api [role=img][aria-label='Last year · 30-day delay']"
+               "##{ctx.mvrv_row}-api [role=img][aria-label='Last 1 year · 30-day delay']"
              )
     end
 
@@ -220,32 +220,45 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
                  "Whether the plan holds back the newest data."
 
         # Every example is a real cell: the same bar and aligned code as the table.
-        since = Calendar.strftime(Date.add(Date.utc_today(), -730), "%b '%y")
+        two_years_ago = Date.add(Date.utc_today(), -730)
+        since = Calendar.strftime(two_years_ago, "%b '%y")
+        since_month = Calendar.strftime(two_years_ago, "%b %Y")
 
         for {term, examples} <- [
+              # Only the half a section is about is coloured and labelled; the
+              # other is grey with its code left blank ("All", not "Full").
               history: [
-                {"full", "Full", "all history, nothing held back"},
-                {"2y", "2y · —", "the last 2 years"},
-                {"1y", "1y · —", "the last year"},
+                {"full", "All", "all data since the metric started is accessible"},
+                {"2y", "2y", "only the last 2 years are accessible; older data is not"},
+                {"1y", "1y", "only the last 1 year is accessible; older data is not"},
                 # The legend shows the month alone, so it stays under its half.
-                {"exact", "#{since} · —", "exact dates: from that month on"}
+                {"exact", since,
+                 "only data from #{since_month} on is accessible; older data is not"}
               ],
               delay: [
-                {"none", "Full", "no delay: data up to the latest computed point"},
-                {"delayed", "All · 30d", "the latest 30 days are held back"}
+                {"none", "—",
+                 "nothing held back: data up to the latest computed point is accessible"},
+                {"delayed", "30d",
+                 "the latest 30 days are not accessible; data ends 30 days before today"}
               ]
             ] do
           for {key, code, meaning} <- examples do
             row = "#bar-help [data-term=#{term}] [data-example='#{key}']"
-            assert has_element?(view, "#{row} span[role=img].w-16")
+            assert has_element?(view, "#{row} span[role=img].w-16[data-focus=#{term}]")
+            # The other half: thin diagonal stripes, unlike a locked half's solid grey.
+            assert has_element?(view, "#{row} span[role=img] > span[data-unfocused]")
             assert text(view, "#{row} [data-part=code]") == code
+            # The blank half keeps its slot, so the code stays under its half.
+            assert has_element?(view, "#{row} [data-part=code] > span[data-blank]")
             assert text(view, "#{row} [data-part=meaning]") == meaning
+            # The bar says the same to screen readers and on hover.
+            assert attribute(view, "#{row} span[role=img]", "aria-label") == meaning
           end
 
           # The heading's swatch is the same bar, with only its own half lit.
           assert has_element?(
                    view,
-                   "#bar-help [data-term=#{term}] h3 span[role=img][data-highlight=#{term}]"
+                   "#bar-help [data-term=#{term}] h3 span[role=img][data-focus=#{term}]"
                  )
         end
 
@@ -764,10 +777,14 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
 
       assert has_element?(
                view,
-               "#compare-#{ctx.mvrv_row}-free [role=img][aria-label='Last year · 30-day delay']"
+               "#compare-#{ctx.mvrv_row}-free [role=img][aria-label='Last 1 year · 30-day delay']"
              )
 
-      assert has_element?(view, "#compare-#{ctx.mvrv_row}-free[title='Last year · 30-day delay']")
+      assert has_element?(
+               view,
+               "#compare-#{ctx.mvrv_row}-free[title='Last 1 year · 30-day delay']"
+             )
+
       assert text(view, "#compare-#{ctx.price_row}-business_max") == "Full"
       assert text(view, "#compare-#{ctx.mvrv_row}-business_pro") == "2y · —"
     end

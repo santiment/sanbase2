@@ -20,6 +20,15 @@ defmodule SanbaseWeb.Router do
     {SanbaseWeb.AdminUserAuth, :ensure_user_has_admin_panel_owner_role}
   ]
 
+  # For the LiveViews whose page performs writes (grants, subscriptions, mass
+  # notifications, promo trials). Admin Panel Viewer is read-only, so it is
+  # rejected here; Editor and Owner pass (`Sanbase.Admin.Permissions.can?(:edit, ..)`).
+  @admin_panel_editor_on_mount [
+    {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
+    {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles},
+    {SanbaseWeb.AdminUserAuth, :ensure_user_has_admin_panel_editor_role}
+  ]
+
   pipeline :admin_pod_only do
     plug(SanbaseWeb.Plug.AdminPodOnly)
   end
@@ -300,13 +309,13 @@ defmodule SanbaseWeb.Router do
     end
 
     scope "/bundle_subscriptions" do
-      live_session :bundle_subscriptions_admin, on_mount: @admin_panel_on_mount do
+      live_session :bundle_subscriptions_admin, on_mount: @admin_panel_editor_on_mount do
         live("/", Admin.BundleSubscriptionsLive)
       end
     end
 
     scope "/subscription_grants" do
-      live_session :subscription_grants_admin, on_mount: @admin_panel_on_mount do
+      live_session :subscription_grants_admin, on_mount: @admin_panel_editor_on_mount do
         live("/", Admin.SubscriptionGrantsLive)
       end
     end
@@ -353,11 +362,7 @@ defmodule SanbaseWeb.Router do
       live("/upload_image_live", UploadImageLive)
       live("/uploaded_images_live", UploadedImagesLive)
 
-      live "/notifications/manual/discord", NotificationsLive.ManualDiscordFormLive
-      live "/notifications/manual/email", NotificationsLive.ManualEmailFormLive
-      live "/notifications/broadcast", NotificationsLive.BroadcastNotificationFormLive
       live "/notifications/broadcast/overview", NotificationsLive.BroadcastOverviewLive
-      live "/notifications/digest/:action", NotificationsLive.DigestFormLive
       # Add route for scheduled deprecation notification UI
       live "/scheduled_deprecations", ScheduledDeprecationIndexLive, :index
       live "/scheduled_deprecations/new", ScheduledDeprecationLive, :new
@@ -377,7 +382,15 @@ defmodule SanbaseWeb.Router do
 
     live_session :promo_trials_admin, on_mount: @admin_panel_on_mount do
       live "/promo_trials", Admin.PromoTrialLive.Index, :index
+    end
+
+    # These pages send notifications or start trials: Editor or Owner only.
+    live_session :admin_panel_write_forms, on_mount: @admin_panel_editor_on_mount do
       live "/promo_trials/new", Admin.PromoTrialLive.Form, :new
+      live "/notifications/manual/discord", NotificationsLive.ManualDiscordFormLive
+      live "/notifications/manual/email", NotificationsLive.ManualEmailFormLive
+      live "/notifications/broadcast", NotificationsLive.BroadcastNotificationFormLive
+      live "/notifications/digest/:action", NotificationsLive.DigestFormLive
     end
 
     resources("/generic", GenericAdminController)

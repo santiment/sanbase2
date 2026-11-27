@@ -507,6 +507,7 @@ defmodule SanbaseWeb.Router do
 
     get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", DataController, :projects_data)
+    get("/non_crypto_assets_data", DataController, :non_crypto_assets_data)
     get("/projects_twitter_handles", DataController, :projects_twitter_handles)
     get("/monitored_twitter_handles/:secret", DataController, :monitored_twitter_handles)
     get("/ecosystems_data", DataController, :ecosystems_data)

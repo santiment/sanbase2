@@ -7,6 +7,9 @@ defmodule Sanbase.ShortUrl do
   alias Sanbase.Repo
 
   @short_url_length 8
+  @max_full_url_length 20_000
+  @max_data_length 10_000
+  @allowed_host_suffix "santiment.net"
 
   schema "short_urls" do
     field(:short_url, :string)
@@ -22,7 +25,41 @@ defmodule Sanbase.ShortUrl do
     url
     |> cast(attrs, [:full_url, :short_url, :user_id, :data])
     |> validate_required([:full_url, :short_url])
+    |> validate_length(:full_url, max: @max_full_url_length)
+    |> validate_length(:data, max: @max_data_length)
+    |> validate_change(:full_url, &validate_full_url/2)
     |> unique_constraint(:short_url)
+  end
+
+  @doc false
+  # The short url is resolved and followed by the frontend, so only a path on the
+  # same site ("/charts?...") or an https url on a santiment.net host is accepted.
+  # This rules out javascript:/data: schemes, arbitrary external hosts and
+  # internal addresses.
+  def validate_full_url(field, full_url) do
+    case allowed_full_url?(full_url) do
+      true -> []
+      false -> [{field, "must be a relative path or an https url on #{@allowed_host_suffix}"}]
+    end
+  end
+
+  defp allowed_full_url?("/" <> rest = url) do
+    # Reject protocol-relative ("//host") and backslash ("/\\host") forms that
+    # browsers treat as another host, and control characters.
+    not String.starts_with?(rest, ["/", "\\"]) and not String.match?(url, ~r/[\x00-\x1f\x7f]/)
+  end
+
+  defp allowed_full_url?(url) do
+    case URI.parse(url) do
+      %URI{scheme: "https", host: host, userinfo: nil} when is_binary(host) ->
+        host = String.downcase(host)
+
+        (host == @allowed_host_suffix or String.ends_with?(host, "." <> @allowed_host_suffix)) and
+          not String.match?(url, ~r/[\x00-\x20\x7f\\]/)
+
+      _ ->
+        false
+    end
   end
 
   def create(%{full_url: full_url} = args) when is_binary(full_url) do

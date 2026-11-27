@@ -375,12 +375,37 @@ defmodule Sanbase.StripeApi do
     Stripe.CustomerBalanceTransaction.list(customer_id, params)
   end
 
+  def list_all_customer_balance_transactions(customer_id) do
+    do_list_all_customer_balance_transactions(customer_id, %{limit: 100}, [])
+  end
+
+  defp do_list_all_customer_balance_transactions(customer_id, params, acc) do
+    case list_customer_balance_transactions(customer_id, params) do
+      {:ok, %{data: [_ | _] = data, has_more: true}} ->
+        params = Map.put(params, :starting_after, List.last(data).id)
+        do_list_all_customer_balance_transactions(customer_id, params, [data | acc])
+
+      {:ok, %{data: data}} ->
+        {:ok, [data | acc] |> Enum.reverse() |> List.flatten()}
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  # The idempotency key is derived from the burn hash, so a retry of the same
+  # burn within Stripe's idempotency window (at least 24 hours) returns the
+  # credit created by the first request instead of adding a second one.
   def add_credit(customer_id, amount, trx_id) do
-    Stripe.CustomerBalanceTransaction.create(customer_id, %{
-      amount: amount,
-      currency: "USD",
-      description: "https://etherscan.io/tx/#{trx_id}"
-    })
+    Stripe.CustomerBalanceTransaction.create(
+      customer_id,
+      %{
+        amount: amount,
+        currency: "USD",
+        description: "https://etherscan.io/tx/#{trx_id}"
+      },
+      idempotency_key: "san-burn-credit-#{String.downcase(trx_id)}"
+    )
   end
 
   # Helpers

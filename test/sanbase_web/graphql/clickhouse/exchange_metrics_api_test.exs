@@ -54,6 +54,27 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
   end
 
   describe "top exchanges api" do
+    test "computes the balances from the deltas with the delta source", context do
+      test_pid = self()
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, fn sql, _args, _opts ->
+        send(test_pid, {:sql, sql})
+        {:ok, %{rows: [["binance", "centralized_exchange", 10.0, 1.0, 2.0, 3.0, 1_714_521_600]]}}
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, [%{owner: "binance", balance: 10.0, balance_change30d: 3.0}]} =
+                 Sanbase.Clickhouse.Exchanges.top_exchanges_by_balance(
+                   %{slug: context.project.slug},
+                   10,
+                   source: :delta
+                 )
+
+        assert_received {:sql, sql}
+        assert sql =~ "'combined_labeled_balance_delta'"
+        assert sql =~ "sum(delta) AS latest_balance"
+      end)
+    end
+
     test "get top exchanges by balance", context do
       query = top_exchanges_by_balance(context.project.slug, 10)
       dt = ~U[2024-05-01 00:00:00Z]

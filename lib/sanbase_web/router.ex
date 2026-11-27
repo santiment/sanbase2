@@ -476,6 +476,8 @@ defmodule SanbaseWeb.Router do
     # REST endpoint for downloading a CSV with the available metrics
     live("/available_metrics", AvailableMetricsLive)
     live("/available_metrics/:metric", MetricDetailsLive)
+    # Public: what each plan unlocks, per metric, in Sanbase and via the API
+    live("/metrics_access", MetricsAccessLive)
 
     get("/export_available_metrics", AvailableMetricsController, :export)
   end

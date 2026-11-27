@@ -1621,12 +1621,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1640,12 +1636,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1674,12 +1666,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1693,12 +1681,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1712,12 +1696,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1731,12 +1711,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1750,12 +1726,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1769,12 +1741,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1788,12 +1756,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         },
@@ -1807,12 +1771,8 @@
               "realtime_data_cut_off_in_days": 30
             },
             "subscription_product=SANBASE": {
-              "historical_data_in_days": {
-                "__raise__": "CaseClauseError"
-              },
-              "realtime_data_cut_off_in_days": {
-                "__raise__": "CaseClauseError"
-              }
+              "historical_data_in_days": 365,
+              "realtime_data_cut_off_in_days": 30
             }
           }
         }

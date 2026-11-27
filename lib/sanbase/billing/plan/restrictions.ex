@@ -88,10 +88,29 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   @doc ~s"""
   Return a list in which every element describes either a metric or a query.
   The elements are maps describing the time restrictions of the given metric/query.
+
+  `subscription_product` is the product the plan was bought on. `nil` means the same as
+  `product_code`. It differs when, for example, a Sanbase PRO subscriber asks about the API:
+  the requested product is `SANAPI` but the windows are those of the `SANBASE` subscription.
   """
-  @spec get_all(String.t(), String.t(), :query | :metric | :signal | nil, entitlement, grant) ::
-          list(restriction)
-  def get_all(plan_name, product_code, filter \\ nil, entitlement \\ nil, grant \\ nil) do
+  @spec get_all(
+          String.t(),
+          String.t(),
+          :query | :metric | :signal | nil,
+          entitlement,
+          grant,
+          String.t() | nil
+        ) :: list(restriction)
+  def get_all(
+        plan_name,
+        product_code,
+        filter \\ nil,
+        entitlement \\ nil,
+        grant \\ nil,
+        subscription_product \\ nil
+      ) do
+    subscription_product = subscription_product || product_code
+
     metrics = Sanbase.Metric.available_metrics() |> Enum.map(&{:metric, &1})
     signals = Sanbase.Signal.available_signals() |> Enum.map(&{:signal, &1})
     queries = Sanbase.Project.AvailableQueries.all_atom_names() |> Enum.map(&{:query, &1})
@@ -100,7 +119,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     result =
       (queries ++ metrics ++ signals)
       |> Enum.map(fn query_or_argument ->
-        get(query_or_argument, product_code, product_code, plan_name, entitlement, grant)
+        get(query_or_argument, product_code, subscription_product, plan_name, entitlement, grant)
       end)
 
     (get_extra_queries(plan_name, product_code) ++ result)

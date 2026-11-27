@@ -78,6 +78,27 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     end
   end
 
+  test "sanbase pro user calling with an apikey gets the API windows enforcement applies", %{
+    user: user
+  } do
+    insert(:subscription_pro_sanbase, user: user)
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    conn = setup_apikey_auth(build_conn(), apikey)
+
+    r = get_access_restrictions(conn) |> Enum.find(&(&1["name"] == "mvrv_usd"))
+
+    # 1 year history, 30-day realtime cut-off
+    assert r["restrictedFrom"]
+           |> Sanbase.Utils.DateTime.from_iso8601!()
+           |> days_ago()
+           |> Kernel.in([364, 365, 366])
+
+    assert r["restrictedTo"]
+           |> Sanbase.Utils.DateTime.from_iso8601!()
+           |> days_ago()
+           |> Kernel.in([29, 30, 31])
+  end
+
   test "pro+ sanbase user", %{conn: conn, user: user} do
     insert(:subscription_pro_plus_sanbase, user: user)
 
@@ -124,6 +145,33 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
   end
 
   describe "plan_name argument" do
+    test "named plan answers are unchanged: plan PRO, product SANAPI is API PRO", %{user: user} do
+      # A Sanbase PRO caller naming a plan must not get their own subscription product applied.
+      insert(:subscription_pro_sanbase, user: user)
+      {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+      conn = setup_apikey_auth(build_conn(), apikey)
+
+      query = """
+      {
+        getAccessRestrictions(plan: PRO, product: SANAPI, filter: METRIC) {
+          name
+          restrictedFrom
+          restrictedTo
+        }
+      }
+      """
+
+      r =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "getAccessRestrictions"])
+        |> Enum.find(&(&1["name"] == "mvrv_usd"))
+
+      assert r["restrictedFrom"] == nil
+      assert r["restrictedTo"] == nil
+    end
+
     test "using plan_name with a standard plan works", %{conn: conn} do
       result = get_access_restrictions_with_plan_name(conn, "PRO")
       assert is_list(result)
@@ -325,6 +373,8 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     |> json_response(200)
     |> get_in(["data", "getAccessRestrictions"])
   end
+
+  defp days_ago(datetime), do: DateTime.diff(DateTime.utc_now(), datetime, :day)
 
   def iso_datetime_older_than_years(iso_datetime, years) do
     datetime = Sanbase.Utils.DateTime.from_iso8601!(iso_datetime)

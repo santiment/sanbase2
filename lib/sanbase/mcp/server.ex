@@ -11,8 +11,6 @@ defmodule Sanbase.MCP.Server do
   alias Sanbase.MCP.{Auth, Restrictions, ToolInvocation}
   alias Sanbase.RequestContext
 
-  require Logger
-
   @banned_message "Your account is banned from the Santiment MCP server. Contact support."
 
   @impl true
@@ -224,6 +222,10 @@ defmodule Sanbase.MCP.Server do
       ToolInvocation.create(attrs)
     end
   else
+    # Required here, not at the top: this is the only Logger macro call and it is
+    # not compiled in test, where a module-level require warns as unused.
+    require Logger
+
     # Re-seed `Logger.metadata` inside the spawned Task so any incidental
     # logging or ClickHouse activity in `ToolInvocation.create/1` still
     # carries the request's privacy flag. `Task.Supervisor.start_child/2`

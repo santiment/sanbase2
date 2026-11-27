@@ -1,5 +1,5 @@
 defmodule Sanbase.SocialData.Tweet do
-  require Mockery.Macro
+  use Mockery.Macro
   @tweet_types [:most_positive, :most_negative, :most_retweets, :most_replies]
   @tweet_type_mapping %{
     most_positive: :sentiment_pos,
@@ -74,7 +74,7 @@ defmodule Sanbase.SocialData.Tweet do
     http_client().get(url, [], options)
   end
 
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
+  defp http_client(), do: mockable(HTTPoison)
 
   defp metrics_hub_url() do
     Sanbase.Utils.Config.module_get(Sanbase.SocialData, :metricshub_url)

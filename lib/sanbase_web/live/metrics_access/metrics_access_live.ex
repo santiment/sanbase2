@@ -397,27 +397,37 @@ defmodule SanbaseWeb.MetricsAccessLive do
           <%!-- Sticky table headers need an ancestor that does not scroll. From md
              both tables fit (fixed layout, fixed-width access columns), so only
              below md does the table scroll sideways in its own box. --%>
-          <div class="overflow-x-auto md:overflow-visible">
+          <%!-- The plan table fits at every width (narrow access columns below
+               md), so it never scrolls sideways and its header can stick. --%>
+          <div class={[
+            "overflow-x-auto md:overflow-visible",
+            @filter.view == :plan && "max-md:overflow-visible"
+          ]}>
             <table
               :if={@filter.view == :plan}
               id="plan-table"
-              class="w-full text-left max-md:block md:table-fixed"
+              class="w-full text-left max-md:table-fixed md:table-fixed"
             >
               <%!-- A fixed layout takes the widths from here (its first row is the
                    full-width caption). The category breadcrumb sits under the
                    metric name. --%>
               <colgroup>
                 <col />
-                <col :for={_channel <- @channels} class="md:w-[136px]" />
+                <%!-- The last one is wider by its right inset (max-md:last:pr-3). --%>
+                <col
+                  :for={_channel <- @channels}
+                  class="max-md:w-[72px] max-md:last:w-[80px] md:w-[136px]"
+                />
               </colgroup>
-              <%!-- Below md the rows stack (metric, then both channels side by
-                   side, each labelled), so the column-name row is hidden; the
-                   caption row (bar key, "What do these mean?") stays. --%>
-              <thead class={[sticky_thead(), "max-md:block"]}>
-                <.caption_row colspan={3} today={@today} block_below_md?={true}>
+              <%!-- Sticky below md too: the plan table does not scroll sideways. --%>
+              <thead class={[
+                sticky_thead(),
+                "max-md:sticky max-md:top-[calc(var(--plan-bar-h,5.5rem)_+_env(safe-area-inset-top,0px)_-_1px)] max-md:z-20"
+              ]}>
+                <.caption_row colspan={3} today={@today}>
                   Access on {@plan.label}, in Sanbase and via the API
                 </.caption_row>
-                <tr class="max-md:hidden">
+                <tr>
                   <th
                     id="th-metric"
                     scope="col"
@@ -437,8 +447,9 @@ defmodule SanbaseWeb.MetricsAccessLive do
                     id={"th-#{channel.key}"}
                     scope="col"
                     aria-sort={aria_sort(@filter, channel.key)}
+                    data-short={short_channel_label(channel.key)}
                     class={[
-                      "px-3 py-2 text-center align-bottom font-medium md:px-4",
+                      "px-3 py-2 text-center align-bottom font-medium max-md:px-0.5 md:px-4",
                       header_cell()
                     ]}
                   >
@@ -448,12 +459,18 @@ defmodule SanbaseWeb.MetricsAccessLive do
                       dir={sort_dir(@filter, channel.key)}
                       center?={true}
                     >
-                      {channel.label}
+                      <%!-- Below md the short name ("API") comes from CSS, so the
+                           text stays the full name. --%>
+                      <span
+                        aria-hidden="true"
+                        data-short={short_channel_label(channel.key)}
+                        class="md:hidden before:content-[attr(data-short)]"
+                      /><span class="max-md:hidden">{channel.label}</span>
                     </.sort_link>
                   </th>
                 </tr>
               </thead>
-              <tbody id="plan-metric-rows" phx-update="stream" class="max-md:block">
+              <tbody id="plan-metric-rows" phx-update="stream">
                 <.metric_row
                   :for={{_dom_id, item} <- @streams.rows}
                   item={item}
@@ -627,6 +644,9 @@ defmodule SanbaseWeb.MetricsAccessLive do
     ]
     |> Enum.filter(& &1)
   end
+
+  defp short_channel_label(:sanbase), do: "Sanbase"
+  defp short_channel_label(:api), do: "API"
 
   # The direction a header's indicator shows: nil unless it is the sort column.
   defp sort_dir(%{sort: sort, dir: dir}, sort), do: dir

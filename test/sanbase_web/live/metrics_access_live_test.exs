@@ -1396,25 +1396,62 @@ defmodule SanbaseWeb.MetricsAccessLiveTest do
   end
 
   describe "mobile (below md only)" do
-    test "plan view rows stack: the metric on top, the two channels side by side", ctx do
+    test "plan view rows stay one compact line: metric, then two narrow access columns", ctx do
       {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
       row = "##{ctx.mvrv_row}"
 
-      # Below md only the column-name row is hidden; the caption row (bar key and
-      # "What do these mean?") stays.
-      refute has_element?(view, "#plan-table thead.max-md\\:hidden")
-      assert has_element?(view, "#plan-table.max-md\\:block thead tr.max-md\\:hidden #th-metric")
-      refute has_element?(view, "#plan-table thead tr.max-md\\:hidden #bar-help-button")
-      assert has_element?(view, "#plan-table thead tr.max-md\\:block #bar-help-button")
-      assert has_element?(view, "#{row}.max-md\\:grid.max-md\\:grid-cols-2")
-      assert has_element?(view, "#{row} > td.max-md\\:col-span-2 a", "mvrv_usd")
-      assert has_element?(view, "#{row} > td.max-md\\:col-span-2 ##{ctx.mvrv_row}-category")
+      # A real table at every width: no stacking, no per-row labels.
+      refute has_element?(view, "#plan-table[class*='max-md:block']")
+      refute has_element?(view, "#{row}[class*='max-md:grid']")
+      refute has_element?(view, "#{row} [data-label]")
 
-      # A label above each bar, drawn from the cell's data-label (CSS only, so
-      # it adds no text and nothing at md and up).
-      assert has_element?(view, "#{row}-sanbase[data-label='In Sanbase']")
-      assert has_element?(view, "#{row}-api[data-label='Via API']")
-      assert text(view, "#{row}-api") == "1y · 30d"
+      # Narrow access columns below md; the metric column takes the rest and may shrink.
+      cols =
+        view
+        |> render()
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query("#plan-table colgroup col.max-md\\:w-\\[72px\\]")
+        |> Enum.count()
+
+      assert cols == 2
+      assert has_element?(view, "#{row} > td.min-w-0:first-child ##{ctx.mvrv_row}-category")
+      assert has_element?(view, "#{row}-api.max-md\\:align-top")
+
+      # The column names show (short below md) and stick under the plan bar; the
+      # table does not scroll sideways, so the header can stick.
+      refute has_element?(view, "#plan-table thead tr.max-md\\:hidden")
+      assert has_element?(view, "#th-sanbase[data-short=Sanbase]")
+      assert has_element?(view, "#th-api[data-short=API]")
+      assert text(view, "#th-api") == "Via API"
+      assert has_element?(view, "#plan-table thead.max-md\\:sticky")
+      assert has_element?(view, "div.max-md\\:overflow-visible > #plan-table")
+    end
+
+    test "technical names break after underscores, never mid-word", ctx do
+      for path <- [
+            "/metrics_access?category=#{@category_slug}",
+            "/metrics_access?view=compare&category=#{@category_slug}"
+          ] do
+        {:ok, view, _html} = live(ctx.conn, path)
+        row = if path =~ "compare", do: "#compare-#{ctx.mvrv_row}", else: "##{ctx.mvrv_row}"
+        link = "#{row} > td:first-child a"
+
+        # "mvrv_usd": below md, a break opportunity after the underscore and none
+        # mid-word; from md the plain name (identical rendering on desktop).
+        assert text(view, "#{link} > .max-md\\:hidden") == "mvrv_usd"
+        assert text(view, "#{link} > .md\\:hidden") == "mvrv_usd"
+        assert has_element?(view, "#{link} > .md\\:hidden wbr")
+        refute has_element?(view, "#{link} > .max-md\\:hidden wbr")
+        refute has_element?(view, "#{link}[class*='overflow-wrap:anywhere']")
+        assert has_element?(view, "#{link}.break-words")
+      end
+    end
+
+    test "the last access column keeps an inset from the card's edge", ctx do
+      {:ok, view, _html} = live(ctx.conn, ~p"/metrics_access?category=#{@category_slug}")
+      assert has_element?(view, "##{ctx.mvrv_row}-api.max-md\\:last\\:pr-3")
+      # The last column is wider by that padding, so the bar fits inside it.
+      assert has_element?(view, "#plan-table colgroup col.max-md\\:last\\:w-\\[80px\\]")
     end
 
     test "the plan options scroll sideways in one row; the plan view drops the channel line",

@@ -742,7 +742,6 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   line. The full wording is the cell's `title` and the bar's label.
   """
   attr :id, :string, required: true
-  attr :channel_label, :string, required: true, doc: "shown above the bar below md"
   attr :access, :any, required: true
   attr :dates, :atom, required: true
   attr :today, Date, required: true
@@ -757,16 +756,12 @@ defmodule SanbaseWeb.MetricsAccessComponents do
     <td
       id={@id}
       data-locked={locked?(@access) && "true"}
-      data-label={@channel_label}
       title={@label}
       class={
         [
           "px-3 py-2.5 text-center align-middle md:px-4",
-          # Below md the row stacks: the channel's name above its bar, from the
-          # data-label (no text in the cell, nothing at md and up).
-          "max-md:before:mb-1 max-md:before:block max-md:before:text-[10px] max-md:before:font-medium",
-          "max-md:before:uppercase max-md:before:tracking-wider max-md:before:text-base-content/60",
-          "max-md:before:content-[attr(data-label)]"
+          # Below md: a narrow column, the bar level with the metric's name line.
+          "max-md:px-1 max-md:pt-4 max-md:align-top max-md:last:pr-3"
         ]
       }
     >
@@ -774,7 +769,7 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       <span
         :if={match?({:locked, plan} when is_binary(plan), @access)}
         aria-hidden="true"
-        class="block whitespace-nowrap text-[11px] leading-4 text-base-content/60"
+        class="block whitespace-nowrap text-[11px] leading-4 text-base-content/60 max-md:whitespace-normal max-md:text-[10px] max-md:leading-3"
       >
         {MetricsAccessFormat.plan_label(elem(@access, 1))}
       </span>
@@ -959,22 +954,17 @@ defmodule SanbaseWeb.MetricsAccessComponents do
   attr :colspan, :integer, required: true
   attr :today, Date, required: true
 
-  attr :block_below_md?, :boolean,
-    default: false,
-    doc: "below md, a block spanning the table (the plan view's stacked rows)"
-
   slot :inner_block, required: true
 
   def caption_row(assigns) do
     assigns = assign(assigns, states: @key_states)
 
     ~H"""
-    <tr class={@block_below_md? && "max-md:block"}>
+    <tr>
       <th
         colspan={@colspan}
         class={[
-          "relative rounded-t-xl bg-base-100 px-4 py-2 text-left font-normal shadow-[inset_0_-1px_0_var(--color-base-300)]",
-          @block_below_md? && "max-md:block"
+          "relative rounded-t-xl bg-base-100 px-4 py-2 text-left font-normal shadow-[inset_0_-1px_0_var(--color-base-300)]"
         ]}
       >
         <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -1214,16 +1204,15 @@ defmodule SanbaseWeb.MetricsAccessComponents do
           # width; from md it takes what the fixed-width columns leave.
           "min-w-0 px-3 py-2.5 align-middle text-sm leading-5 max-md:min-w-[10rem] md:px-4",
           # Plan view below md: the stacked row's first line, across both columns.
-          @crumb? && "max-md:col-span-2 max-md:pb-1",
           @sticky? && sticky_cell()
         ]
       }
     >
       <a
         href={~p"/available_metrics/#{@item.primary}"}
-        class="block font-medium underline-offset-2 [overflow-wrap:anywhere] hover:text-primary hover:underline"
+        class="block break-words font-medium underline-offset-2 hover:text-primary hover:underline"
       >
-        {@item.primary}
+        <.breakable_name name={@item.primary} />
       </a>
       <div class="text-xs text-base-content/70">{@item.name}</div>
       <div :if={@crumb?} class="mt-1">
@@ -1311,6 +1300,27 @@ defmodule SanbaseWeb.MetricsAccessComponents do
     """
   end
 
+  # A technical name that wraps only after its underscores ("aave_v2_<wbr>…"),
+  # never mid-word; `break-words` on the link is the last resort for one very
+  # long segment. Below md only: split text shapes slightly differently, so from
+  # md the name stays one plain text node (desktop renders exactly as before).
+  # Each part is its own span: no whitespace between them.
+  attr :name, :string, required: true
+
+  defp breakable_name(assigns) do
+    assigns = assign(assigns, parts: name_parts(assigns.name))
+
+    ~H"""
+    <span class="max-md:hidden">{@name}</span><span class="md:hidden"><span :for={part <- @parts}>{part}<wbr /></span></span>
+    """
+  end
+
+  # "a_b_c" => ["a_", "b_", "c"]
+  defp name_parts(name) do
+    [last | rest] = name |> String.split("_") |> Enum.reverse()
+    Enum.reverse([last | Enum.map(rest, &(&1 <> "_"))])
+  end
+
   @doc "A metric row of the plan view."
   attr :item, :map, required: true
   attr :channels, :list, required: true
@@ -1325,7 +1335,6 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       data-locked={@item.locked? && "true"}
       class={[
         "border-b border-base-200 transition-colors duration-150 last:border-b-0 hover:bg-base-200/50",
-        "max-md:grid max-md:grid-cols-2",
         @item.locked? && "bg-base-200/40"
       ]}
     >
@@ -1333,7 +1342,6 @@ defmodule SanbaseWeb.MetricsAccessComponents do
       <.access_cell
         :for={channel <- @channels}
         id={"#{@item.id}-#{channel.key}"}
-        channel_label={channel.label}
         access={@item.access[channel.key]}
         dates={@dates}
         today={@today}

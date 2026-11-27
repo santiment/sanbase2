@@ -425,7 +425,7 @@ defimpl Sanbase.Alert, for: Any do
   defp maybe_extend_payload_telegram_channel(payload, _, _), do: {payload, []}
 
   defp do_send_email(user, payload) do
-    payload_html = Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2)
+    payload_html = Sanbase.Markdown.to_html(payload, breaks: true)
     name = Sanbase.Accounts.User.get_name(user)
 
     try do
@@ -569,7 +569,7 @@ defimpl Sanbase.Alert, for: Any do
   defp send_limit_reached_notification("email", user) do
     payload_html =
       limit_reached_payload("email")
-      |> Earmark.as_html!(breaks: true, timeout: nil, mapper: &Enum.map/2)
+      |> Sanbase.Markdown.to_html(breaks: true)
 
     name = Sanbase.Accounts.User.get_name(user)
 

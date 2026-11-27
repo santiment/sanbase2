@@ -1450,14 +1450,12 @@ defmodule SanbaseWeb.DeepResearch.Components do
     "#{minutes}m #{String.pad_leading(Integer.to_string(rest), 2, "0")}s"
   end
 
-  # The markdown arrives over the wire, so sanitize before injecting it raw - Earmark
-  # converts, it does not sanitize. `as_html/1`, not the bang: streaming renders parse
-  # PARTIAL markdown (an open ``` fence) and `as_html!/1` prints every parse error to
-  # stderr on each re-render. Both return best-effort HTML.
+  # The markdown arrives over the wire, so sanitize before injecting it raw. Streaming
+  # renders parse PARTIAL markdown (e.g. an open ``` fence); MDEx renders that as
+  # best-effort HTML without erroring.
   defp markdown(text) when is_binary(text) do
-    {_status, html, _messages} = Earmark.as_html(text)
-
-    html
+    text
+    |> Sanbase.Markdown.to_html()
     |> HtmlSanitizeEx.markdown_html()
     |> Phoenix.HTML.raw()
   end

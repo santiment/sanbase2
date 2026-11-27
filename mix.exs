@@ -71,7 +71,7 @@ defmodule Sanbase.Mixfile do
       # `number` (latest 1.0.5) still requires decimal ~> 2.0, hence the override.
       {:decimal, "~> 3.2", override: true},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
-      {:earmark, "~> 1.2"},
+      {:mdex, "~> 0.14"},
       {:ecto_psql_extras, "~> 0.3"},
       {:ecto_sql, "~> 3.14"},
       # 3.14.3 fixes CVE-2026-118391

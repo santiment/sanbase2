@@ -44,7 +44,7 @@ defmodule Sanbase.DeepResearch.ReportMarkdownTest do
     test "grouped markers on one line are one source, not a crammed section" do
       # The agent lists an internal data source ONCE and groups every [n] it backs on that
       # line. Counting single markers (8) against marker lines (3) called this crammed, split
-      # the line before "[8] " and left a bare "-" under each following entry, which Earmark
+      # the line before "[8] " and left a bare "-" under each following entry, which markdown
       # renders as a setext <h2>: some Sources rows came out huge and bold, others not.
       md =
         "## Sources\n- [1][2][3][4][5][8] Santiment\n" <>

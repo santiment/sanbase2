@@ -64,12 +64,9 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
 
   def handle_event("render_markdown", %{"markdown" => markdown}, socket) do
     html =
-      case Earmark.as_html(markdown || "") do
-        {:ok, html} -> HtmlSanitizeEx.html5(html)
-        {:ok, html, _} -> HtmlSanitizeEx.html5(html)
-        {:error, html, _} -> HtmlSanitizeEx.html5(html)
-        {:error, _} -> "<p class=\"text-base-content/60\">Invalid markdown</p>"
-      end
+      (markdown || "")
+      |> Sanbase.Markdown.to_html()
+      |> HtmlSanitizeEx.html5()
 
     {:reply, %{html: html}, socket}
   end

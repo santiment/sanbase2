@@ -238,7 +238,7 @@ defmodule Sanbase.Knowledge do
   end
 
   # The date goes inside a `{{date:...}}` sentinel that `SanbaseWeb.AskLive` turns into a
-  # greyed span AFTER markdown rendering, so Earmark escaping stays on for the
+  # greyed span AFTER markdown rendering, so markdown escaping stays on for the
   # user-generated titles (no XSS). Only insights carry a date.
   defp format_published_at(%NaiveDateTime{} = dt),
     do: dt |> NaiveDateTime.to_date() |> Date.to_iso8601()

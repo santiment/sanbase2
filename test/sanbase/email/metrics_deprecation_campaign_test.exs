@@ -5,6 +5,18 @@ defmodule Sanbase.Email.MetricsDeprecationCampaignTest do
 
   alias Sanbase.Email.MetricsDeprecationCampaign
 
+  describe "markdown_to_html/1" do
+    test "keeps the Mailjet unsubscribe placeholder as a literal link target" do
+      {:ok, html} =
+        MetricsDeprecationCampaign.markdown_to_html(
+          "You can [unsubscribe here]([[UNSUB_LINK_EN]]) or read [more](https://x.y/%5Ba%5D)."
+        )
+
+      assert html =~ ~s(<a href="[[UNSUB_LINK_EN]]">unsubscribe here</a>)
+      assert html =~ ~s(<a href="https://x.y/%5Ba%5D">more</a>)
+    end
+  end
+
   describe "get_active_sanapi_users/1" do
     setup do
       # `subscription_pro` is plan_id 3, which belongs to the SanAPI product.

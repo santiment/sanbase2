@@ -517,7 +517,7 @@ defmodule Sanbase.Billing.Subscription do
     # don't allow upgrade/downgrade for incomplete and canceled subscriptions
     with :ok <- check_can_upgrade_downgrade(db_subscription),
          :ok <- check_same_product(db_subscription, plan),
-         :ok <- check_trial_allowed_on_plan(db_subscription, plan),
+         :ok <- check_not_trialing(db_subscription),
          {:ok, stripe_subscription} <- StripeApi.upgrade_downgrade(db_subscription, plan),
          {:ok, db_subscription} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
@@ -557,20 +557,19 @@ defmodule Sanbase.Billing.Subscription do
      }}
   end
 
-  # Stripe keeps `trial_end` when only the price changes, so a trialing subscription
-  # takes its trial to the new plan. See `Billing.trial_plan_change_allowed?/2` for which
-  # moves that is acceptable for. The rest are refused rather than ending the trial
-  # here: ending a trial charges the card immediately, which a plan change must not do.
-  defp check_trial_allowed_on_plan(
-         %__MODULE__{plan: %Plan{} = current_plan} = subscription,
-         %Plan{} = plan
-       ) do
-    if trialing?(subscription) and not Billing.trial_plan_change_allowed?(current_plan, plan) do
+  # A trial stays on the plan it was started on. Stripe keeps `trial_end` when only the
+  # price changes, so a trialing subscription would take its trial to the new plan -
+  # any plan change during a trial is refused, interval and downgrades included. The
+  # client either waits for the trial to end or ends it with `payNow` (which charges
+  # for the current plan) and then changes plan. Admin tools (promo trials, the Stripe
+  # dashboard) do not go through `update_subscription/2` and are not limited by this.
+  defp check_not_trialing(%__MODULE__{} = subscription) do
+    if trialing?(subscription) do
       {:error,
        %__MODULE__.Error{
          message:
-           "#{Plan.plan_full_name(plan)} is not available during the free trial. " <>
-             "You can change to it once the trial has ended."
+           "Plan changes are not available during the free trial. Pay now to end the " <>
+             "trial, or change the plan once the trial has ended."
        }}
     else
       :ok
